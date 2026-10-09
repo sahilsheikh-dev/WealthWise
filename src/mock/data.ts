@@ -1,5 +1,6 @@
 import type {
   EfEntry,
+  AppData,
   Goal,
   Holding,
   Loan,
@@ -85,13 +86,11 @@ export const emergencyFundEntries: EfEntry[] = [
   { id: 'ef-september', date: '2026-09-08', amount: 2_000, note: 'ICICI RD transfer' },
 ];
 
-export const displaySummary = {
-  netWorth: 222_341,
-  assets: 524_341,
-  liabilities: 302_000,
-  emergencyMonthsCovered: 6.8,
-  loanMonthsLeft: 66,
-  monthlyExpenses: 22_713,
-  monthlyIncome: 50_000,
-  monthlyInvestment: 23_200,
-} as const;
+export const mockAppData: AppData = {
+  settings: { name: 'Sahil', theme: 'system' },
+  transactions,
+  goals,
+  holdings,
+  loans,
+  efEntries: emergencyFundEntries,
+};

@@ -10,8 +10,10 @@ import {
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
-import { displaySummary, goals } from '../../src/mock/data';
+import { homeSummary } from '../../src/domain/summary';
 import { formatINR, formatINRShort } from '../../src/lib/format';
+import { useAppData } from '../../src/data/useAppData';
+import { todayISO } from '../../src/lib/clock';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -24,19 +26,25 @@ const actions = [
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const data = useAppData();
+  const summary = homeSummary(data, todayISO());
   return (
     <Screen>
       <View style={styles.homeHeader}>
         <AppText style={[typography.meta, { color: colors.text3 }]}>Good evening,</AppText>
-        <AppText weight="bold" style={typography.h1}>Sahil</AppText>
+        <AppText weight="bold" style={typography.h1}>{data.settings.name}</AppText>
       </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net worth</AppText>
-        <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(displaySummary.netWorth)}</AppText>
+        <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
         <StatPillRow>
-          <StatPill label="Assets" value={formatINRShort(displaySummary.assets)} tone="ok" />
-          <StatPill label="Liabilities" value={formatINRShort(displaySummary.liabilities)} tone="err" />
-          <StatPill label="Emergency fund" value={`${displaySummary.emergencyMonthsCovered} mo`} tone="primary" />
+          <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
+          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" />
+          <StatPill
+            label="Emergency fund"
+            value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
+            tone="primary"
+          />
         </StatPillRow>
       </Card>
 
@@ -57,25 +65,22 @@ export default function HomeScreen() {
       </View>
 
       <SectionTitle>Goal progress</SectionTitle>
-      {goals.slice(0, 3).map((goal) => {
-        const percent = Math.min(100, (goal.saved / goal.target) * 100);
-        return (
-          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.goalTop}>
-              <View style={styles.goalNameBlock}>
-                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
-              </View>
-              <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{percent.toFixed(1)}%</AppText>
+      {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => (
+        <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.goalTop}>
+            <View style={styles.goalNameBlock}>
+              <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
             </View>
-            <ProgressBar percent={percent} />
-            <View style={styles.goalAmounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(goal.saved)} saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - goal.saved))} left</AppText>
-            </View>
+            <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
           </View>
-        );
-      })}
+          <ProgressBar percent={pct} />
+          <View style={styles.goalAmounts}>
+            <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }

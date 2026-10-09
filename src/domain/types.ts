@@ -89,3 +89,12 @@ export type Settings = {
   name: string;
   theme: 'system' | 'dark' | 'light';
 };
+
+export type AppData = {
+  settings: Settings;
+  transactions: Transaction[];
+  goals: Goal[];
+  holdings: Holding[];
+  loans: Loan[];
+  efEntries: EfEntry[];
+};
