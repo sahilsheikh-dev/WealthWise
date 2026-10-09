@@ -4,8 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../src/components/ui';
-import { useTheme } from '../../src/theme/useTheme';
 import { typography } from '../../src/theme/tokens';
+import { useTheme } from '../../src/theme/useTheme';
 
 const tabIcons = {
   index: 'home',
@@ -62,5 +62,5 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2 },
+  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 60, marginTop: 10 },
 });
