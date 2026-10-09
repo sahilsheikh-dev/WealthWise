@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Wealth Wise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pr: #c9a84c;
+      --ok: #2ecc71;
+      --er: #e53935;
+      --in: #4a9eff;
+      --pu: #8b7cf6;
+      --f: Montserrat, system-ui, sans-serif
+    }
+
+    body.dark {
+      --bg: #080808;
+      --b2: #111;
+      --b3: #181818;
+      --b4: #242424;
+      --bd: #262626;
+      --t1: #f2f2f2;
+      --t2: #a0a0a0;
+      --t3: #6c6c6c;
+      --prd: #c9a84c22;
+      --okd: #0e2a1a;
+      --erd: #2a0e0e;
+      --ind: #0a1a2a;
+      --pud: #16103a
+    }
+
+    body.light {
+      --bg: #f4f5f9;
+      --b2: #fff;
+      --b3: #f1f3f9;
+      --b4: #e3e7f1;
+      --bd: #e3e6ef;
+      --t1: #0f172a;
+      --t2: #475569;
+      --t3: #7a879b;
+      --prd: #f6efe0;
+      --okd: #e8f7ee;
+      --erd: #fdecec;
+      --ind: #eaf1ff;
+      --pud: #f1edff;
+      --ok: #16a34a;
+      --er: #dc2626;
+      --in: #2563eb;
+      --pu: #7c3aed
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: var(--f);
+      background: var(--bg);
+      color: var(--t1);
+      display: flex;
+      justify-content: center
+    }
+
+    button {
+      font-family: var(--f)
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      height: 100dvh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden
+    }
+
+    @media(min-width:500px) {
+      body {
+        padding: 16px 0
+      }
+
+      .app {
+        height: min(880px, calc(100vh - 32px));
+        border: 1px solid var(--bd);
+        border-radius: 36px
+      }
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 0
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 15px
+    }
+
+    .logo b {
+      color: var(--pr)
+    }
+
+    .ib {
+      background: var(--b2);
+      border: 1px solid var(--bd);
+      color: var(--t2);
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      cursor: pointer
+    }
+
+    #main {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 100px;
+      scrollbar-width: none
+    }
+
+    .nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      background: var(--b2);
+      border-top: 1px solid var(--bd);
+      padding: 8px 0 16px;
+      z-index: 5
+    }
+
+    .nav button {
+      flex: 1;
+      background: none;
+      border: 0;
+      color: var(--t3);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px
+    }
+
+    .nav i {
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1
+    }
+
+    .nav .on {
+      color: var(--pr)
+    }
+
+    .hd {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 0
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.5px
+    }
+
+    .card {
+      margin: 14px 20px 0;
+      background: var(--b2);
+      border: 1px solid var(--bd);
+      border-radius: 18px;
+      padding: 18px
+    }
+
+    .lbl {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--t3);
+      margin-bottom: 6px
+    }
+
+    .big {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -1px
+    }
+
+    .sub {
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 4px
+    }
+
+    .pills {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px
+    }
+
+    .pill {
+      flex: 1;
+      background: var(--b3);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 10px 12px
+    }
+
+    .pill .lbl {
+      margin-bottom: 3px
+    }
+
+    .pv {
+      font-size: 13px;
+      font-weight: 700
+    }
+
+    .trk {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--b4);
+      overflow: hidden;
+      margin-top: 10px
+    }
+
+    .fl {
+      height: 100%;
+      border-radius: 2px;
+      min-width: 2px
+    }
+
+    .sec {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--t3);
+      margin: 20px 20px 10px
+    }
+
+    .it {
+      background: var(--b2);
+      border: 1px solid var(--bd);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 0 20px 10px
+    }
+
+    .it[data-a] {
+      cursor: pointer
+    }
+
+    .dim {
+      opacity: .55
+    }
+
+    .rw {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start
+    }
+
+    .r {
+      text-align: right
+    }
+
+    .nm {
+      font-size: 13px;
+      font-weight: 600
+    }
+
+    .mt {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--t3);
+      margin-top: 2px
+    }
+
+    .am {
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .st {
+      font-size: 11px;
+      color: var(--t2);
+      margin-top: 8px;
+      line-height: 1.6
+    }
+
+    .acts {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--bd);
+      flex-wrap: wrap
+    }
+
+    .bs {
+      background: var(--b3);
+      border: 1px solid var(--bd);
+      color: var(--t2);
+      border-radius: 8px;
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .bs.p {
+      color: var(--pr);
+      background: var(--prd);
+      border-color: transparent
+    }
+
+    .bs.d {
+      color: var(--er)
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      padding: 12px 20px 0;
+      overflow-x: auto;
+      scrollbar-width: none
+    }
+
+    .chip {
+      white-space: nowrap;
+      background: var(--b3);
+      border: 1px solid var(--bd);
+      color: var(--t3);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .chip.on {
+      background: var(--prd);
+      color: var(--pr)
+    }
+
+    .tx {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--bd);
+      cursor: pointer
+    }
+
+    .ico {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0
+    }
+
+    .fx {
+      flex: 1;
+      min-width: 0
+    }
+
+    .nm,
+    .mt {
+      overflow-wrap: anywhere
+    }
+
+    .day {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--t3);
+      margin: 14px 0 2px
+    }
+
+    .qa {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 14px 20px 0
+    }
+
+    .qa button {
+      background: var(--b2);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 14px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--t2);
+      cursor: pointer
+    }
+
+    .fab {
+      position: absolute;
+      bottom: 92px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--pr);
+      color: #111;
+      font-size: 26px;
+      border: 0;
+      cursor: pointer;
+      z-index: 4
+    }
+
+    .wn {
+      margin: 12px 20px 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--erd);
+      color: var(--er);
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .ov {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      display: flex;
+      align-items: flex-end;
+      z-index: 20
+    }
+
+    .sh {
+      background: var(--b2);
+      width: 100%;
+      max-height: 92%;
+      overflow-y: auto;
+      border-radius: 22px 22px 0 0;
+      padding: 18px 18px 26px
+    }
+
+    .shh {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 16px
+    }
+
+    .lb {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--t2);
+      margin-bottom: 5px
+    }
+
+    .in {
+      width: 100%;
+      background: var(--b3);
+      border: 1px solid var(--bd);
+      color: var(--t1);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--f)
+    }
+
+    .in.bad {
+      border-color: var(--er)
+    }
+
+    .in:focus {
+      outline: 2px solid var(--pr);
+      outline-offset: 1px
+    }
+
+    .err {
+      color: var(--er);
+      font-size: 11px;
+      min-height: 15px;
+      margin: 3px 0 6px
+    }
+
+    .cta {
+      width: 100%;
+      background: var(--pr);
+      color: #111;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px
+    }
+
+    .cta.del {
+      background: var(--erd);
+      color: var(--er)
+    }
+
+    .lg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--bd)
+    }
+
+    .mi {
+      width: 100%;
+      text-align: left;
+      background: var(--b3);
+      border: 1px solid var(--bd);
+      color: var(--t1);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    button:focus-visible,
+    .chip:focus-visible {
+      outline: 2px solid var(--pr);
+      outline-offset: 2px
+    }
+  </style>
+</head>
+
+<body class="dark">
+  <div class="app">
+    <div class="top">
+      <div class="logo">Wealth<b>Wise</b></div><button class="ib" data-a="theme" aria-label="Toggle theme">◐</button>
+    </div>
+    <main id="main"></main>
+    <nav class="nav">
+      <button data-a="go" data-id="home"><i>⌂</i>Home</button>
+      <button data-a="go" data-id="tx"><i>≡</i>Txns</button>
+      <button data-a="go" data-id="goals"><i>◎</i>Goals</button>
+      <button data-a="go" data-id="inv"><i>↗</i>Invest</button>
+      <button data-a="go" data-id="more"><i>⋯</i>More</button>
+    </nav>
+    <div id="ov"></div>
+  </div>
+  <script>
+    /* ---------- helpers ---------- */
+    const $ = s => document.querySelector(s), Y = new Date().getFullYear();
+    const iso = (d = new Date()) => new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+    const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d) };
+    const inr = n => (n < 0 ? '-' : '') + '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN');
+    const sh = n => { const a = Math.abs(n), s = n < 0 ? '-' : ''; return s + (a >= 1e7 ? '₹' + (a / 1e7).toFixed(2) + ' Cr' : a >= 1e5 ? '₹' + (a / 1e5).toFixed(2) + ' L' : '₹' + Math.round(a).toLocaleString('en-IN')) };
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const uid = () => Math.random().toString(36).slice(2, 9);
+    const pct = (a, b) => b > 0 ? Math.min(100, Math.max(0, a / b * 100)) : 0;
+    const cap = s => s[0].toUpperCase() + s.slice(1);
+    const mon = m => new Date(m + '-01T00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    const fdate = d => new Date(d + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const mmy = n => { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) };
+    const dup = (a, n, id) => a.some(x => x.id !== id && x.name.toLowerCase() === n.toLowerCase());
+    const up = (a, e, o, x = {}) => e ? Object.assign(e, o) : a.push({ id: uid(), ...o, ...x });
+    const em = t => `<div class="mt" style="margin:14px 20px">${t}</div>`;
+
+    /* ---------- state ---------- */
+    const KEY = 'wealthwise.v2'; let S, V = 'home', M = iso().slice(0, 7), F = 'all', Q = '', IT = 'All', CF = null;
+    const seed = () => ({
+      theme: 'dark', extra: 2000,
+      tx: [['income', 47000, 'Salary', 'Salary', 3], ['income', 3000, 'Freelance', 'Side income', 3], ['expense', 15000, 'Living', 'Rent and hostel', 2], ['expense', 7000, 'Family', 'Monty fees', 2], ['invest', 2000, 'Investment', 'ICICI RD', 1], ['expense', 5713, 'EMI', 'Bank EMI', 1]].map(([type, amt, cat, note, d]) => ({ id: uid(), type, amt, cat, note, date: ago(d) })),
+      goals: [['First ₹5L portfolio', 500000, 315841, Y], ['Home - Nagpur', 10000000, 0, 2041], ['Poultry farm', 200000, 0, Y]].map(([name, target, saved, year]) => ({ id: uid(), name, target, saved, year })),
+      inv: [['EPFO - PF', 'Pension / PF', 96985, 135385], ['HDFC Fixed Deposit', 'Fixed deposit', 110000, 135456], ['ICICI RD', 'Recurring deposit', 22000, 22000]].map(([name, type, invested, value]) => ({ id: uid(), name, type, invested, value })),
+      ef: [{ id: uid(), date: ago(60), amt: 153000, note: 'Opening balance' }, { id: uid(), date: ago(1), amt: 2000, note: 'ICICI RD' }],
+      sips: [['Retirement fund', 'monthly', 21200, 12, 6, 34, ago(30)], ['Home - Nagpur', 'monthly', 10000, 12, 6, 15, '2027-01-01'], ['Audi car fund', 'monthly', 2000, 12, 6, 16, '2027-01-01']].map(([name, freq, amt, rate, step, tenure, start]) => ({ id: uid(), name, freq, amt, rate, step, tenure, start, logs: [] })),
+      loans: [{
+        id: uid(), name: 'Bank EMI', principal: 330000, rate: 11, tenure: 72, emi: 5713, start: '2026-04-01',
+        logs: [0, 1, 2, 3, 4, 5].map(k => iso(new Date(2026, 3 + k, 5))).filter(d => d <= iso()).map(date => ({ id: uid(), date, amt: 5713, type: 'EMI', note: '' }))
+      }]
+    });
+    try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) { }
+    function migrate() {
+      const T = { 'Equity / MF': 'Mutual fund / SIP', 'Pension / PF': 'EPFO / PF', 'Gold / Silver': 'Gold' };
+      if (S.sips) { S.sips.forEach(x => S.inv.push({ id: x.id, name: x.name, type: 'Mutual fund / SIP', freq: x.freq, amt: x.amt, rate: x.rate, step: x.step, tenure: x.tenure, start: x.start, opening: 0, actual: null, logs: x.logs || [] })); delete S.sips }
+      S.inv.forEach(h => { if (T[h.type]) h.type = T[h.type] })
+    }
+    if (!S || !S.tx) S = seed();
+    migrate();
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) { } };
+
+    /* ---------- calculators ---------- */
+    const PER = { daily: 365, weekly: 52, monthly: 12, yearly: 1 }, U = { daily: 'day', weekly: 'wk', monthly: 'mo', yearly: 'yr' };
+    const sipProj = s => {
+      const n = PER[s.freq], ir = Math.pow(1 + s.rate / 100, 1 / n) - 1, T = Math.round(s.tenure * n); let v = 0, inv = 0;
+      for (let i = 0; i < T; i++) { const a = s.amt * Math.pow(1 + s.step / 100, Math.floor(i / n)); v = v * (1 + ir) + a; inv += a } return { fv: v, inv }
+    };
+    const sipNow = s => {
+      const d = (new Date() - new Date(s.start + 'T00:00')) / 864e5, n = PER[s.freq], T = s.tenure * n;
+      return { due: d < 0 ? 0 : Math.min(T, Math.floor(d * n / 365) + 1), cur: s.amt * Math.pow(1 + s.step / 100, Math.max(0, Math.floor(d / 365))), got: s.logs.length, paid: s.logs.reduce((a, l) => a + l.amt, 0) }
+    };
+    const emiAuto = (P, r, n) => { const i = r / 1200; return Math.round(i ? P * i * Math.pow(1 + i, n) / (Math.pow(1 + i, n) - 1) : P / n) };
+    const loanState = l => {
+      let B = l.principal, last = new Date(l.start + 'T00:00'), paid = 0, int = 0;
+      const acc = to => { const it = B * l.rate / 100 * Math.max(0, (to - last) / 864e5) / 365; B += it; int += it; if (to > last) last = to };
+      [...l.logs].sort((a, b) => a.date < b.date ? -1 : 1).forEach(p => { acc(new Date(p.date + 'T00:00')); B = Math.max(0, B - p.amt); paid += p.amt });
+      acc(new Date()); return { bal: B, paid, int }
+    };
+    const mLeft = (B, e, r, x = 0) => { if (B < 1) return 0; e += x; const i = r / 1200; if (!i) return Math.ceil(B / e); if (e <= B * i) return Infinity; return Math.ceil(-Math.log(1 - B * i / e) / Math.log(1 + i)) };
+    const monthly = k => { const m = {}; S.tx.filter(t => t.type === k).forEach(t => { const x = t.date.slice(0, 7); m[x] = (m[x] || 0) + t.amt }); const x = Object.keys(m).sort().pop(); return x ? m[x] : 0 };
+    const sipVal = s => s.logs.reduce((a, l) => a + l.amt * Math.pow(1 + s.rate / 100, Math.max(0, (new Date() - new Date(l.date + 'T00:00')) / 31557600000)), 0);
+    const isPlan = h => !!h.freq;
+    const hInv = h => isPlan(h) ? (h.opening || 0) + sipNow(h).paid : h.invested;
+    const hVal = h => isPlan(h) ? (h.actual != null ? h.actual : (h.opening || 0) + sipVal(h)) : h.value;
+    const tot = () => { const man = S.inv.reduce((a, h) => a + hVal(h), 0), ef = S.ef.reduce((a, e) => a + e.amt, 0), liab = S.loans.reduce((a, l) => a + loanState(l).bal, 0), assets = man + ef; return { man, ef, liab, assets, nw: assets - liab } };
+    const gSaved = g => g.auto === 'ef' ? tot().ef : g.saved;
+
+    /* ---------- sheet + validated form engine ---------- */
+    const openSheet = (t, h) => { $('#ov').innerHTML = `<div class="ov"><div class="sh" role="dialog" aria-modal="true"><div class="shh"><b>${t}</b><button class="ib" data-a="x" aria-label="Close">✕</button></div>${h}</div></div>` };
+    const closeSheet = () => { $('#ov').innerHTML = ''; CF = null };
+    function form(c) {
+      CF = c; const v = c.val || {};
+      const fld = f => {
+        const val = v[f.k] ?? f.d ?? '';
+        const el = f.t === 'select' ? `<select class="in" name="${f.k}">${f.o.map(o => `<option${o == val ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+          : `<input class="in" name="${f.k}" type="${f.t || 'text'}" value="${esc(val)}"${f.t === 'number' ? ' step="any" inputmode="decimal"' : ''}${f.mx ? ` max="${f.mx}"` : ''}${f.mn ? ` min="${f.mn}"` : ''}${f.p ? ` placeholder="${esc(f.p)}"` : ''}>`;
+        return `<label class="lb">${f.l}</label>${el}<div class="err" data-e="${f.k}"></div>`
+      };
+      openSheet(c.title, `<form novalidate>${c.fields.map(fld).join('')}<button class="cta">${c.ok || 'Save'}</button>${c.del ? '<button type="button" class="cta del" data-a="fdel">Delete</button>' : ''}</form>`);
+      const fm = $('#ov form');
+      fm.onsubmit = e => {
+        e.preventDefault(); const o = {}, er = {};
+        c.fields.forEach(f => {
+          const r = fm.elements[f.k].value.trim();
+          if (!r) { if (f.r) er[f.k] = 'Required'; o[f.k] = f.t === 'number' ? null : ''; return }
+          let x = r;
+          if (f.t === 'number') {
+            x = Number(r);
+            if (!isFinite(x)) er[f.k] = 'Enter a valid number';
+            else if (f.i && !Number.isInteger(x)) er[f.k] = 'Whole numbers only';
+            else if (f.min != null && x < f.min) er[f.k] = 'Minimum is ' + f.min;
+            else if (f.max != null && x > f.max) er[f.k] = 'Maximum is ' + f.max.toLocaleString('en-IN')
+          }
+          else if (f.t === 'date') {
+            if (isNaN(new Date(r))) er[f.k] = 'Enter a valid date';
+            else if (f.mx && r > f.mx) er[f.k] = 'Date cannot be after ' + fdate(f.mx);
+            else if (f.mn && r < f.mn) er[f.k] = 'Date cannot be before ' + fdate(f.mn)
+          }
+          else if (f.n && r.length > f.n) er[f.k] = 'Maximum ' + f.n + ' characters';
+          o[f.k] = x
+        });
+        if (!Object.keys(er).length) Object.assign(er, c.check ? c.check(o) || {} : {});
+        fm.querySelectorAll('.err').forEach(d => { d.textContent = er[d.dataset.e] || ''; fm.elements[d.dataset.e].classList.toggle('bad', !!er[d.dataset.e]) });
+        const first = Object.keys(er)[0]; if (first) { fm.elements[first].focus(); return }
+        c.save(o); save(); (c.after || closeSheet)(); render()
+      };
+    }
+
+    /* ---------- forms per instrument ---------- */
+    const CATS = ['Salary', 'Freelance', 'Living', 'Food', 'Transport', 'Family', 'EMI', 'Shopping', 'Health', 'Investment', 'Other'];
+    const INV_T = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other'];
+    const RECUR_T = ['Mutual fund / SIP', 'Recurring deposit', 'Stocks / ETF', 'Gold', 'Silver', 'Other'];
+    const txForm = t => form({
+      title: t ? 'Edit transaction' : 'Add transaction', val: t || { type: 'expense', date: iso(), cat: 'Living' }, del: t && (() => S.tx = S.tx.filter(x => x !== t)),
+      fields: [{ k: 'type', l: 'Type', t: 'select', o: ['expense', 'income', 'invest'] }, { k: 'amt', l: 'Amount (₹)', t: 'number', r: 1, min: 1, max: 1e8 }, { k: 'cat', l: 'Category', t: 'select', o: CATS }, { k: 'note', l: 'Note (optional)', n: 60 }, { k: 'date', l: 'Date', t: 'date', r: 1, mx: iso() }],
+      save: o => up(S.tx, t, o)
+    });
+    const goalForm = g => form({
+      title: g ? 'Edit goal' : 'New goal', val: g || { saved: 0, year: Y + 5 }, del: g && !g.auto && (() => S.goals = S.goals.filter(x => x !== g)),
+      fields: [...(g && g.auto ? [] : [{ k: 'name', l: 'Goal name', r: 1, n: 40 }]), { k: 'target', l: 'Target amount (₹)', t: 'number', r: 1, min: 1, max: 1e10 }, ...(g && g.auto ? [] : [{ k: 'saved', l: 'Saved so far (₹)', t: 'number', min: 0, max: 1e10 }]), { k: 'year', l: 'Target year', t: 'number', r: 1, i: 1, min: Y, max: Y + 60 }],
+      check: o => ({ ...(o.name && dup(S.goals, o.name, g?.id) && { name: 'A goal with this name exists' }), ...(o.saved > o.target && { saved: 'Cannot exceed the target' }) }),
+      save: o => { if (!(g && g.auto)) o.saved = o.saved || 0; up(S.goals, g, o) }
+    });
+    const invForm = i => form({
+      title: i ? 'Edit investment' : 'Add investment', val: i || { type: INV_T[0] }, del: i && (() => S.inv = S.inv.filter(x => x !== i)),
+      fields: [{ k: 'name', l: 'Name', r: 1, n: 40 }, { k: 'type', l: 'Type', t: 'select', o: INV_T }, { k: 'invested', l: 'Amount invested (₹)', t: 'number', r: 1, min: 1, max: 1e10 }, { k: 'value', l: 'Current value (₹)', t: 'number', r: 1, min: 0, max: 1e10 }],
+      check: o => dup(S.inv, o.name, i?.id) ? { name: 'An investment with this name exists' } : {},
+      save: o => up(S.inv, i, o)
+    });
+    const efForm = () => form({
+      title: 'Log emergency fund entry', val: { kind: 'Deposit', date: iso() },
+      fields: [{ k: 'kind', l: 'Entry type', t: 'select', o: ['Deposit', 'Withdrawal'] }, { k: 'amt', l: 'Amount (₹)', t: 'number', r: 1, min: 1, max: 1e8 }, { k: 'date', l: 'Date', t: 'date', r: 1, mx: iso() }, { k: 'note', l: 'Note (optional)', n: 60 }],
+      check: o => o.kind === 'Withdrawal' && o.amt > tot().ef ? { amt: 'Exceeds balance of ' + inr(tot().ef) } : {},
+      save: o => S.ef.push({ id: uid(), date: o.date, amt: o.kind === 'Deposit' ? o.amt : -o.amt, note: o.note })
+    });
+    const planForm = h => form({
+      title: h ? 'Edit SIP / recurring plan' : 'New SIP / recurring plan', val: h || { type: RECUR_T[0], freq: 'monthly', rate: 12, step: 0, tenure: 10, start: iso(), opening: 0 },
+      del: h && (() => S.inv = S.inv.filter(x => x !== h)),
+      fields: [{ k: 'name', l: 'Name', r: 1, n: 40 }, { k: 'type', l: 'Type', t: 'select', o: RECUR_T }, { k: 'freq', l: 'Frequency', t: 'select', o: Object.keys(PER) }, { k: 'amt', l: 'Amount per installment (₹)', t: 'number', r: 1, min: 1, max: 1e7 },
+      { k: 'rate', l: 'Expected return / interest (% p.a.)', t: 'number', r: 1, min: 0, max: 30 }, { k: 'step', l: 'Annual step-up (%)', t: 'number', min: 0, max: 50 }, { k: 'tenure', l: 'Tenure (years)', t: 'number', r: 1, i: 1, min: 1, max: 50 }, { k: 'start', l: 'Start date', t: 'date', r: 1 },
+      { k: 'opening', l: 'Already invested before logging (₹, optional)', t: 'number', min: 0, max: 1e10 }, { k: 'actual', l: 'Latest actual value (₹, optional, overrides the estimate)', t: 'number', min: 0, max: 1e10 }],
+      check: o => dup(S.inv, o.name, h?.id) ? { name: 'A holding with this name exists' } : {},
+      save: o => { o.step = o.step || 0; o.opening = o.opening || 0; up(S.inv, h, o, { logs: [] }) }
+    });
+    const loanForm = l => form({
+      title: l ? 'Edit loan' : 'New loan', val: l || { rate: 10, start: iso() },
+      del: l && (() => { S.loans = S.loans.filter(x => x !== l) }),
+      fields: [{ k: 'name', l: 'Loan name', r: 1, n: 40 }, { k: 'principal', l: 'Original loan amount (₹)', t: 'number', r: 1, min: 1, max: 1e9 }, { k: 'rate', l: 'Interest rate (% p.a.)', t: 'number', r: 1, min: 0, max: 60 },
+      { k: 'tenure', l: 'Tenure (months)', t: 'number', r: 1, i: 1, min: 1, max: 480 }, { k: 'start', l: 'Start date', t: 'date', r: 1, mx: iso() }, { k: 'emi', l: 'Monthly EMI (leave blank to calculate)', t: 'number', min: 1, max: 1e8 }],
+      check: o => ({ ...(dup(S.loans, o.name, l?.id) && { name: 'A loan with this name exists' }), ...(o.emi && o.emi <= o.principal * o.rate / 1200 && { emi: 'EMI must exceed monthly interest of ' + inr(o.principal * o.rate / 1200) }) }),
+      save: o => { o.emi = o.emi || emiAuto(o.principal, o.rate, o.tenure); up(S.loans, l, o, { logs: [] }) }
+    });
+
+    /* ---------- SIP logs and loan payments (shared) ---------- */
+    const own = (k, id) => (k === 'sip' ? S.inv : S.loans).find(x => x.id === id);
+    function logs(k, id) {
+      const o = own(k, id); if (!o) return closeSheet();
+      const L = [...o.logs].sort((a, b) => a.date < b.date ? 1 : -1), sum = L.reduce((a, l) => a + l.amt, 0), w = k === 'sip' ? 'log' : 'payment';
+      openSheet(esc(o.name) + (k === 'sip' ? ' - SIP logs' : ' - payments'), `<button class="cta" data-a="addLog" data-k="${k}" data-id="${id}">Add ${w}</button>
+ <div class="mt" style="margin:12px 0 4px">${L.length} entries, total ${inr(sum)}</div>
+ ${L.map(l => `<div class="lg"><div class="fx"><div class="nm">${inr(l.amt)}${l.type ? ' (' + l.type + ')' : ''}</div><div class="mt">${fdate(l.date)}${l.note ? ', ' + esc(l.note) : ''}</div></div>
+ <button class="bs" data-a="editLog" data-k="${k}" data-id="${id}" data-l="${l.id}">Edit</button><button class="bs d" data-a="delLog" data-k="${k}" data-id="${id}" data-l="${l.id}">Delete</button></div>`).join('') || em('No entries yet. Add the first one.')}`)
+    }
+    function logForm(k, id, lid) {
+      const o = own(k, id), e = lid && o.logs.find(l => l.id === lid);
+      const f = [{ k: 'date', l: 'Date', t: 'date', r: 1, mx: iso(), mn: o.start }, { k: 'amt', l: 'Amount (₹)', t: 'number', r: 1, min: 1, max: 1e8 }];
+      if (k === 'loan') f.push({ k: 'type', l: 'Payment type', t: 'select', o: ['EMI', 'Prepayment'] });
+      f.push({ k: 'note', l: 'Note (optional)', n: 60 });
+      form({
+        title: e ? 'Edit entry' : 'New entry', fields: f, ok: 'Save entry', del: e && (() => o.logs = o.logs.filter(l => l !== e)),
+        val: e || { date: iso(), amt: Math.round(k === 'sip' ? sipNow(o).cur : Math.min(o.emi, Math.ceil(loanState(o).bal))), type: 'EMI' },
+        check: v => { if (k === 'loan') { const b = loanState(o).bal + (e ? e.amt : 0); if (v.amt > Math.ceil(b) + 1) return { amt: 'Exceeds outstanding balance of ' + inr(b) } } return {} },
+        save: v => { v.note = v.note || ''; e ? Object.assign(e, v) : o.logs.push({ id: uid(), ...v }) }, after: () => logs(k, id)
+      })
+    }
+
+    /* ---------- views ---------- */
+    const hd = (t, b = '') => `<div class="hd"><h1>${t}</h1>${b}</div>`;
+    const ab = (a, t) => `<button class="bs p" data-a="${a}">${t}</button>`;
+    const prog = (p, c) => `<div class="trk"><div class="fl" style="width:${p}%;background:${c}"></div></div>`;
+    const gc = g0 => { const g = { ...g0, saved: gSaved(g0) }; return `<div class="it" data-a="editGoal" data-id="${g.id}"><div class="rw"><div><div class="nm">${esc(g.name)}</div><div class="mt">Target ${g.year}${g.auto ? ", synced from Emergency fund" : ""}</div></div><b style="font-size:12px;color:var(--pr)">${pct(g.saved, g.target).toFixed(1)}%</b></div>${prog(pct(g.saved, g.target), 'var(--pr)')}<div class="rw st"><span style="color:var(--ok)">${sh(g.saved)} saved</span><span>${sh(Math.max(0, g.target - g.saved))} left of ${sh(g.target)}</span></div></div>` };
+
+    const vHome = () => {
+      const t = tot(), me = monthly('expense'), h = new Date().getHours();
+      return `<div class="hd"><div><div class="mt">${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'},</div><h1>Sahil</h1></div></div>
+ <div class="card"><div class="lbl">Net worth</div><div class="big" style="color:${t.nw < 0 ? 'var(--er)' : 'var(--t1)'}">${inr(t.nw)}</div>
+ <div class="pills"><div class="pill"><div class="lbl">Assets</div><div class="pv" style="color:var(--ok)">${sh(t.assets)}</div></div><div class="pill"><div class="lbl">Liabilities</div><div class="pv" style="color:var(--er)">${sh(t.liab)}</div></div><div class="pill"><div class="lbl">Emergency fund</div><div class="pv" style="color:var(--pr)">${me ? (t.ef / me).toFixed(1) + ' mo' : 'n/a'}</div></div></div></div>
+ <div class="qa">${[['addTx', 'Add txn'], ['addPlan', 'New SIP'], ['addLoan', 'New loan'], ['addEf', 'Log EF']].map(([a, l]) => `<button data-a="${a}">${l}</button>`).join('')}</div>
+ <div class="sec">Goal progress</div>${S.goals.slice(0, 3).map(gc).join('') || em('No goals yet.')}`
+    };
+
+    const vTx = () => {
+      const L = S.tx.filter(t => t.date.startsWith(M)), sum = k => L.filter(t => t.type === k).reduce((a, t) => a + t.amt, 0), inc = sum('income'), exp = sum('expense'), iv = sum('invest');
+      const rows = L.filter(t => (F === 'all' || t.type === F) && (!Q || (t.note + t.cat).toLowerCase().includes(Q.toLowerCase()))).sort((a, b) => a.date < b.date ? 1 : -1);
+      const C = { income: ['var(--okd)', 'var(--ok)', '+'], expense: ['var(--erd)', 'var(--er)', '-'], invest: ['var(--prd)', 'var(--pr)', ''] }; let last = '';
+      return hd('Transactions') + `<div class="hd" style="padding-top:12px"><button class="ib" data-a="pm" aria-label="Previous month">‹</button><b style="font-size:14px">${mon(M)}</b><button class="ib" data-a="nm" aria-label="Next month">›</button></div>
+ <div class="pills" style="margin:12px 20px 0"><div class="pill"><div class="lbl">Income</div><div class="pv" style="color:var(--ok)">${inr(inc)}</div></div><div class="pill"><div class="lbl">Expense</div><div class="pv" style="color:var(--er)">${inr(exp)}</div></div><div class="pill"><div class="lbl">Invested</div><div class="pv" style="color:var(--pr)">${inr(iv)}</div></div></div>
+ <div class="mt" style="margin:8px 20px 0">${inc ? `Savings rate ${Math.round(iv / inc * 100)}% of income` : 'No income logged this month'}</div>
+ ${inc && exp + iv > inc ? `<div class="wn">Spending plus investing is ${inr(exp + iv - inc)} more than income this month.</div>` : ''}
+ <div class="chips">${['all', 'income', 'expense', 'invest'].map(k => `<button class="chip${F === k ? ' on' : ''}" data-a="flt" data-id="${k}">${cap(k)}</button>`).join('')}</div>
+ <div style="padding:12px 20px 0"><input class="in" type="search" placeholder="Search note or category" value="${esc(Q)}" data-ch="q" aria-label="Search transactions"></div>
+ <div style="padding:0 20px">${rows.map(t => {
+        const c = C[t.type], h = t.date !== last ? `<div class="day">${fdate(t.date)}</div>` : ''; last = t.date;
+        return h + `<div class="tx" data-a="editTx" data-id="${t.id}"><div class="ico" style="background:${c[0]};color:${c[1]}">${t.type[0].toUpperCase()}</div><div class="fx"><div class="nm">${esc(t.note || t.cat)}</div><div class="mt">${esc(t.cat)}</div></div><div class="am" style="color:${c[1]}">${c[2]}${inr(t.amt)}</div></div>`
+      }).join('') || em('No transactions match. Add one with the + button.')}</div>
+ <button class="fab" data-a="addTx" aria-label="Add transaction">+</button>`};
+
+    const vGoals = () => {
+      const T = S.goals.reduce((a, g) => a + g.target, 0), Sv = S.goals.reduce((a, g) => a + gSaved(g), 0);
+      return hd('Goals', ab('addGoal', 'New goal')) + `<div class="card"><div class="lbl">Total target</div><div class="big">${sh(T)}</div><div class="sub" style="color:var(--t3)">${sh(Sv)} saved, ${pct(Sv, T).toFixed(2)}% funded</div>${prog(pct(Sv, T), 'var(--pr)')}</div>
+ <div class="sec">Active goals</div>${S.goals.map(gc).join('') || em('No goals yet. Add your first goal.')}`
+    };
+
+    const planCard = h => {
+      const p = sipProj(h), n = sipNow(h), late = n.due - n.got;
+      return `<div class="it"><div class="rw"><div><div class="nm">${esc(h.name)}</div><div class="mt">${h.type}, ${cap(h.freq)} ${inr(n.cur)}, ${h.step}% step-up, ${h.tenure} yrs, ${h.rate}% p.a.</div></div><div class="r"><div class="am">${inr(hVal(h))}</div><div class="mt">${h.actual != null ? 'Actual value' : 'Estimated value'}</div></div></div>
+ ${prog(pct(n.paid, p.inv), 'var(--pr)')}
+ <div class="st">Invested ${inr(hInv(h))}. Plan: ${sh(p.inv)} of contributions grows to about ${sh(p.fv)} by maturity. ${n.due ? `${n.got} of ${n.due} installments logged.` : 'Starts ' + fdate(h.start) + '.'}${late > 0 ? ` <b style="color:var(--er)">${late} behind.</b>` : ''}</div>
+ <div class="acts"><button class="bs p" data-a="logSip" data-id="${h.id}">Log installment</button><button class="bs" data-a="sipLogs" data-id="${h.id}">Logs (${n.got})</button><button class="bs" data-a="editInv" data-id="${h.id}">Edit</button></div></div>`
+    };
+    const vInv = () => {
+      const T = tot(), all = [...S.inv.map(h => ({ id: h.id, h, name: h.name, type: h.type, inv: hInv(h), val: hVal(h), plan: isPlan(h) })), { id: 'ef', name: 'Emergency fund', type: 'Emergency fund', inv: T.ef, val: T.ef, auto: 1 }],
+        val = all.reduce((a, i) => a + i.val, 0), inv = all.reduce((a, i) => a + i.inv, 0), g = val - inv, mo = S.inv.filter(isPlan).reduce((a, h) => a + h.amt * PER[h.freq] / 12, 0),
+        L = all.filter(i => IT === 'All' || (IT === 'Recurring' ? i.plan : i.type === IT));
+      return hd('Portfolio', `<div style="display:flex;gap:6px">${ab('addPlan', 'New SIP')}${ab('addInv', 'Add')}</div>`) + `<div class="card"><div class="lbl">Total value</div><div class="big">${inr(val)}</div><div class="sub" style="color:${g < 0 ? 'var(--er)' : 'var(--ok)'}">${g < 0 ? '' : '+'}${inr(g)} (${inv ? (g / inv * 100).toFixed(1) : 0}% overall)</div>
+ <div class="pills"><div class="pill"><div class="lbl">Invested</div><div class="pv">${inr(inv)}</div></div><div class="pill"><div class="lbl">Gain</div><div class="pv" style="color:${g < 0 ? 'var(--er)' : 'var(--ok)'}">${inr(g)}</div></div><div class="pill"><div class="lbl">Monthly SIP/RD</div><div class="pv" style="color:var(--pr)">${inr(mo)}</div></div></div></div>
+ <div class="chips">${['All', 'Recurring', ...INV_T, 'Emergency fund'].map(k => `<button class="chip${IT === k ? ' on' : ''}" data-a="itab" data-id="${k}">${k}</button>`).join('')}</div>
+ <div style="margin-top:12px">${L.map(i => {
+        if (i.plan) return planCard(i.h); const p = i.inv ? (i.val - i.inv) / i.inv * 100 : 0;
+        return `<div class="it" data-a="${i.auto ? 'go' : 'editInv'}" data-id="${i.id}"><div class="rw"><div><div class="nm">${esc(i.name)}</div><div class="mt">${i.type}, invested ${inr(i.inv)}${i.auto ? ', auto-synced' : ''}</div></div><div class="r"><div class="am">${inr(i.val)}</div><div class="mt" style="color:${p < 0 ? 'var(--er)' : p > 0 ? 'var(--ok)' : 'var(--t3)'}">${p > 0 ? '+' : ''}${p.toFixed(1)}%</div></div></div></div>`
+      }).join('') || em('Nothing here yet. Use Add or New SIP.')}</div>
+ <div class="mt" style="margin:4px 20px">SIP values are estimates from your logs unless you enter an actual value. Update actuals from your statements.</div>`};
+    const loanCard = l => {
+      const s = loanState(l), ml = mLeft(s.bal, l.emi, l.rate), mx = mLeft(s.bal, l.emi, l.rate, S.extra), done = s.bal < 1;
+      return `<div class="it${done ? ' dim' : ''}"><div class="rw"><div><div class="nm">${esc(l.name)}</div><div class="mt">${l.rate}% p.a., ${l.tenure} months, since ${fdate(l.start)}</div></div><div class="r"><div class="am">${inr(s.bal)}</div><div class="mt" style="color:var(--er)">${inr(l.emi)}/mo</div></div></div>
+ ${prog(pct(l.principal - s.bal, l.principal), 'var(--ok)')}
+ <div class="st">Paid ${inr(s.paid)}. Interest accrued ${inr(s.int)}.<br>${done ? '<b style="color:var(--ok)">Cleared</b>' : ml === Infinity ? '<b style="color:var(--er)">EMI is too low to clear this loan.</b>' : `${ml} months left, done by ${mmy(ml)}.${S.extra && isFinite(mx) && mx < ml ? ` With ${inr(S.extra)} extra per month: ${mx} months, saves ${ml - mx}.` : ''}`}</div>
+ <div class="acts">${done ? '' : `<button class="bs p" data-a="payEmi" data-id="${l.id}">Pay EMI</button>`}<button class="bs" data-a="loanLogs" data-id="${l.id}">Payments (${l.logs.length})</button><button class="bs" data-a="editLoan" data-id="${l.id}">Edit</button></div></div>`
+    };
+    const vLoan = () => {
+      const st = S.loans.map(l => [l, loanState(l)]), act = st.filter(x => x[1].bal >= 1), out = st.reduce((a, x) => a + x[1].bal, 0), emi = act.reduce((a, x) => a + x[0].emi, 0), inc = monthly('income'),
+        ml = act.map(x => mLeft(x[1].bal, x[0].emi, x[0].rate)), fin = ml.every(isFinite) ? Math.max(0, ...ml) : null;
+      return hd('Loans', ab('addLoan', 'New loan')) + `<div class="card"><div class="lbl">Total outstanding</div><div class="big">${inr(out)}</div><div class="sub" style="color:var(--er)">${act.length ? (fin == null ? 'Check EMI amounts' : 'Loan-free by ' + mmy(fin)) : 'Debt free'}</div>
+ <div class="pills"><div class="pill"><div class="lbl">Monthly EMI</div><div class="pv" style="color:var(--er)">${inr(emi)}</div></div><div class="pill"><div class="lbl">Of income</div><div class="pv">${inc ? (emi / inc * 100).toFixed(1) + '%' : 'n/a'}</div></div></div>
+ <label class="lb" style="margin-top:14px" for="xtra">What if I pay extra each month (₹)</label><input id="xtra" class="in" type="number" min="0" max="1000000" value="${S.extra}" data-ch="extra"></div>
+ <div class="sec">Your loans</div>${S.loans.map(loanCard).join('') || em('No loans. Tap New loan to add one.')}`
+    };
+
+    const vEf = () => {
+      const bal = tot().ef, me = monthly('expense'); let run = 0;
+      const rows = [...S.ef].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map(e => ({ ...e, run: run += e.amt })).reverse();
+      return hd('Emergency fund', ab('addEf', 'Log entry')) + `<div class="card"><div class="lbl">Current balance</div><div class="big">${inr(bal)}</div><div class="sub" style="color:var(--pr)">${me ? (bal / me).toFixed(1) + ' months of expenses covered' : 'Log expenses to see months covered'}</div>
+ ${me ? `<div class="pills">${[3, 6, 12].map(m => { const p = pct(bal, me * m); return `<div class="pill"><div class="lbl">${m} months</div><div class="pv" style="color:${p >= 100 ? 'var(--ok)' : 'var(--pr)'}">${p >= 100 ? 'Done' : p.toFixed(0) + '%'}</div></div>` }).join('')}</div><div class="mt" style="margin-top:8px">Based on ${inr(me)} expenses in your latest month.</div>` : ''}</div>
+ <div class="sec">Passbook</div><div style="padding:0 20px">${rows.map(e => `<div class="lg"><div class="fx"><div class="nm" style="color:${e.amt < 0 ? 'var(--er)' : 'var(--ok)'}">${e.amt < 0 ? '-' : '+'}${inr(Math.abs(e.amt))}</div><div class="mt">${fdate(e.date)}${e.note ? ', ' + esc(e.note) : ''}</div></div><div class="am">${inr(e.run)}</div><button class="bs d" data-a="delEf" data-id="${e.id}" aria-label="Delete entry">✕</button></div>`).join('') || em('No entries yet.')}</div>`
+    };
+
+    const VIEWS = { home: vHome, tx: vTx, goals: vGoals, inv: vInv, loan: vLoan, ef: vEf };
+    function render() {
+      const sc = $('#main').scrollTop; document.body.className = S.theme; $('#main').innerHTML = VIEWS[V](); $('#main').scrollTop = sc;
+      document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.id === (['loan', 'ef'].includes(V) ? 'more' : V)))
+    }
+
+    /* ---------- actions ---------- */
+    const by = (a, id) => a.find(x => x.id === id);
+    const A = {
+      x: closeSheet,
+      theme: () => { S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); render() },
+      go: id => { if (id === 'more') return openMore(); V = id; closeSheet(); render(); $('#main').scrollTop = 0 },
+      pm: () => { const d = new Date(M + '-01T00:00'); d.setMonth(d.getMonth() - 1); M = iso(d).slice(0, 7); render() },
+      nm: () => { const d = new Date(M + '-01T00:00'); d.setMonth(d.getMonth() + 1); M = iso(d).slice(0, 7); render() },
+      flt: id => { F = id; render() }, itab: id => { IT = id; render() },
+      addTx: () => txForm(), editTx: id => txForm(by(S.tx, id)),
+      addGoal: () => goalForm(), editGoal: id => goalForm(by(S.goals, id)),
+      addInv: () => invForm(), editInv: id => { const h = by(S.inv, id); isPlan(h) ? planForm(h) : invForm(h) },
+      addEf: () => efForm(),
+      delEf: id => { if (confirm('Delete this entry?')) { S.ef = S.ef.filter(e => e.id !== id); save(); render() } },
+      addPlan: () => planForm(), logSip: id => logForm('sip', id), sipLogs: id => logs('sip', id),
+      addLoan: () => loanForm(), editLoan: id => loanForm(by(S.loans, id)), loanLogs: id => logs('loan', id),
+      payEmi: id => { const l = by(S.loans, id), amt = Math.min(l.emi, Math.ceil(loanState(l).bal)); if (confirm(`Log an EMI payment of ${inr(amt)} for today?`)) { l.logs.push({ id: uid(), date: iso(), amt, type: 'EMI', note: '' }); save(); render() } },
+      addLog: (id, el) => logForm(el.dataset.k, id), editLog: (id, el) => logForm(el.dataset.k, id, el.dataset.l),
+      delLog: (id, el) => { const o = own(el.dataset.k, id); if (confirm('Delete this entry?')) { o.logs = o.logs.filter(l => l.id !== el.dataset.l); save(); logs(el.dataset.k, id); render() } },
+      fdel: () => { if (!confirm('Delete this item and its history?')) return; try { CF.del() } catch (e) { return } save(); closeSheet(); render() },
+      exp: () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' })); a.download = 'wealthwise-' + iso() + '.json'; a.click() },
+      reset: () => { if (confirm('Replace all data with the demo data? This cannot be undone.')) { S = seed(); migrate(); ensureEfGoal(); V = 'home'; closeSheet(); render() } }
+    };
+    function openMore() { openSheet('More', [['go', 'loan', 'Loans'], ['go', 'ef', 'Emergency fund'], ['exp', '', 'Export data (JSON)'], ['theme', '', 'Switch theme'], ['reset', '', 'Reset to demo data']].map(([a, id, l]) => `<button class="mi" data-a="${a}" data-id="${id}">${l}</button>`).join('')) }
+
+    document.addEventListener('click', e => {
+      if (e.target.classList.contains('ov')) return closeSheet();
+      const el = e.target.closest('[data-a]'); if (el && A[el.dataset.a]) A[el.dataset.a](el.dataset.id, el)
+    });
+    document.addEventListener('change', e => {
+      const c = e.target.dataset.ch; if (!c) return;
+      if (c === 'q') Q = e.target.value;
+      if (c === 'extra') { const x = Number(e.target.value); S.extra = isFinite(x) && x >= 0 && x <= 1e6 ? Math.round(x) : 0; save() }
+      render()
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet() });
+    function ensureEfGoal() {
+      const g = S.goals.find(x => x.auto === 'ef') || S.goals.find(x => x.name.toLowerCase() === 'emergency fund');
+      if (!g) S.goals.unshift({ id: uid(), name: 'Emergency fund', target: Math.round(monthly('expense') * 6 / 1000) * 1000 || 300000, saved: 0, year: Y + 2, auto: 'ef' });
+      else { g.auto = 'ef'; if (S.goals[0] !== g) { S.goals = S.goals.filter(x => x !== g); S.goals.unshift(g) } } save()
+    }
+    ensureEfGoal();
+    render();
+  </script>
+</body>
+
+</html>
