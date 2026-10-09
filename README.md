@@ -1,56 +1,43 @@
-# Welcome to your Expo app 👋
+# WealthWise
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Phase 1 of the WealthWise mobile MVP: Expo, TypeScript, Expo Router tabs, a
+typed in-memory theme, bundled Montserrat and Feather assets, and static demo
+screens. No authentication, network services, persistence, or form flows are
+included in this phase.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Create and install
 
 ```bash
-npm run reset-project
+npx create-expo-app@latest WealthWise --template blank-typescript
+cd WealthWise
+npx expo install expo-router expo-font expo-status-bar expo-splash-screen expo-constants expo-linking react-native-safe-area-context react-native-screens @expo/vector-icons @expo-google-fonts/montserrat
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then copy the Phase 1 source into the project and start it:
 
-### Other setup steps
+```bash
+npx expo start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Open the QR code with Expo Go, or use the interactive terminal menu to launch
+an iOS simulator or Android emulator.
 
-## Learn more
+## Structure
 
-To learn more about developing your project with Expo, look at the following resources:
+- `app/` contains the Expo Router root stack, five tabs, Loans, and Emergency
+  fund screens.
+- `src/theme/` contains dark/light tokens and the in-memory system-aware theme.
+- `src/components/ui.tsx` contains reusable accessible, themed UI components.
+- `src/domain/types.ts` locks the static data schema.
+- `src/mock/data.ts` contains demo values and precomputed summary figures.
+- `src/lib/format.ts` provides Indian currency and date formatting.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Validation
 
-## Join the community
+```bash
+npx expo lint
+npx tsc --noEmit
+```
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The theme switch is intentionally in-memory. Form-entry actions are tappable
+placeholders for Phase 5; Export and Reset remain disabled in this static phase.
