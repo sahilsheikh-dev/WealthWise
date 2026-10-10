@@ -9,6 +9,7 @@ import {
   Card,
   DetailTabBar,
   EmptyState,
+  Button,
   ProgressBar,
   Screen,
   StatPill,
@@ -52,9 +53,7 @@ export default function LoansScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="New loan"
-              onPress={() => {
-                // TODO(phase4)
-              }}
+              onPress={() => router.push('/loan-form')}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New loan</AppText>
             </Pressable>
@@ -137,22 +136,19 @@ export default function LoansScreen() {
               ) : null}
               <ActionRow
                 actions={[
-                  { label: 'Pay EMI', variant: 'primary', onPress: () => {
-                    // TODO(phase4)
-                  } },
-                  { label: `Payments (${loan.payments.length})`, onPress: () => {
-                    // TODO(phase4)
-                  } },
-                  { label: 'Edit', onPress: () => {
-                    // TODO(phase4)
-                  } },
+                  ...(!summary.cleared ? [{ label: 'Pay EMI', variant: 'primary' as const, onPress: () => router.push({ pathname: '/loan-payment-form', params: { loanId: loan.id, mode: 'emi' } }) }] : []),
+                  { label: `Payments (${loan.payments.length})`, onPress: () => router.push({ pathname: '/loan-payments', params: { id: loan.id } }) },
+                  { label: 'Edit', onPress: () => router.push({ pathname: '/loan-form', params: { id: loan.id } }) },
                 ]}
               />
             </View>
           );
         })}
         {data.loans.length === 0 ? (
-          <EmptyState title="No loans yet" subtitle="Add a loan to track your outstanding balance." />
+          <>
+            <EmptyState title="No loans yet" subtitle="Add a loan to track your outstanding balance." />
+            <View style={styles.emptyAction}><Button label="Add a loan" variant="primary" onPress={() => router.push('/loan-form')} /></View>
+          </>
         ) : null}
       </Screen>
       <DetailTabBar />
@@ -180,4 +176,5 @@ const styles = StyleSheet.create({
   amountBlock: { alignItems: 'flex-end', gap: 3 },
   loanStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 5 },
+  emptyAction: { marginHorizontal: 20, marginTop: 10 },
 });

@@ -31,6 +31,7 @@ export const holdings: Holding[] = [
     type: 'EPFO / PF',
     invested: 96_985,
     value: 135_385,
+    valueAsOf: '2026-10-01',
   },
   {
     id: 'holding-fd',
@@ -39,6 +40,7 @@ export const holdings: Holding[] = [
     type: 'Fixed deposit',
     invested: 110_000,
     value: 135_456,
+    valueAsOf: '2026-10-01',
   },
   {
     id: 'holding-sip',

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { AppText, Button, EmptyState } from '../src/components/ui';
@@ -11,15 +11,18 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
+import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { useAppActions } from '../src/data/useAppData';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { monthKey } from '../src/domain/dates';
+import { describeSource } from '../src/domain/links';
 import { makeTransactionFormSchema, TRANSACTION_CATEGORIES, type TransactionFormInput, type TransactionFormOutput } from '../src/domain/schemas';
 import type { Transaction } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+import { confirmAsync } from '../src/lib/confirm';
 
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
@@ -37,6 +40,7 @@ export default function TransactionFormScreen() {
   const today = useMemo(() => todayISO(), []);
   const editing = transactionId !== undefined;
   const transaction = editing ? data.transactions.find((row) => row.id === transactionId) : undefined;
+  const linkedSource = transaction?.source ? describeSource(data, transaction.source) : null;
   const submitting = useRef(false);
   const legacyCategories = useMemo(() => {
     const categories: readonly string[] = transaction ? TRANSACTION_CATEGORIES[transaction.type] : [];
@@ -78,20 +82,21 @@ export default function TransactionFormScreen() {
       router.back();
       return;
     }
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
 
   const save = async (values: TransactionFormOutput) => {
     const input: Omit<Transaction, 'id'> = values;
-    if (transactionId) actions.updateTransaction(transactionId, input);
+    if (transactionId && transaction?.source) actions.updateTransaction(transactionId, { note: values.note });
+    else if (transactionId) actions.updateTransaction(transactionId, input);
     else actions.addTransaction(input);
 
     const store = useAppStore.getState();
     if (store.lastError) {
-      Alert.alert('Could not save transaction', store.lastError);
+      void confirmAsync({ title: 'Could not save transaction', message: store.lastError, confirmLabel: 'OK' });
       return;
     }
     const saved = transactionId
@@ -107,31 +112,31 @@ export default function TransactionFormScreen() {
     submitting.current = true;
     void handleSubmit(save)()
       .catch((error: unknown) => {
-        Alert.alert('Could not save transaction', error instanceof Error ? error.message : 'Please try again.');
+        void confirmAsync({
+          title: 'Could not save transaction',
+          message: error instanceof Error ? error.message : 'Please try again.',
+          confirmLabel: 'OK',
+        });
       })
       .finally(() => {
         submitting.current = false;
       });
   };
 
-  const remove = () => Alert.alert(
-    'Delete transaction',
-    "Delete this transaction? This can't be undone.",
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          if (!transactionId) return;
-          actions.deleteTransaction(transactionId);
-          const state = useAppStore.getState();
-          if (state.lastError) Alert.alert('Could not delete transaction', state.lastError);
-          else router.back();
-        },
-      },
-    ],
-  );
+  const remove = () => {
+    void confirmAsync({
+      title: 'Delete transaction',
+      message: "Delete this transaction? This can't be undone.",
+      confirmLabel: 'Delete',
+      destructive: true,
+    }).then((confirmed) => {
+      if (!confirmed || !transactionId) return;
+      actions.deleteTransaction(transactionId);
+      const state = useAppStore.getState();
+      if (state.lastError) void confirmAsync({ title: 'Could not delete transaction', message: state.lastError, confirmLabel: 'OK' });
+      else router.back();
+    });
+  };
 
   if (editing && !transaction) {
     return (
@@ -156,7 +161,7 @@ export default function TransactionFormScreen() {
       onClose={requestClose}
       footer={
         <View style={styles.footerActions}>
-          {transactionId ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
+          {transactionId && !transaction?.source ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
           {submitCount > 0 && errorCount > 0 ? (
             <View style={styles.errorSummary}>
               <AppText style={[typography.meta, { color: colors.err }]}>
@@ -175,62 +180,97 @@ export default function TransactionFormScreen() {
         </View>
       }>
       <>
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <SegmentedControl
-                label="Type"
-                value={field.value}
-                options={typeOptions}
-                error={errors.type?.message}
-                onChange={(type) => {
-                  const category = getValues('category');
-                  field.onChange(type);
-                  if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
-                    setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
-                  }
-                }}
+          {transaction?.source ? (
+            <>
+              <ReadOnlyRow
+                label="Linked transaction"
+                value={`Linked to ${linkedSource?.label ?? 'another entry'}. Change amount, date or delete it from there.`}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="amount"
-            render={({ field }) => (
-              <MoneyField
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.amount?.message}
+              {linkedSource ? (
+                <Button
+                  label={linkedSource.route === '/plan-logs'
+                    ? 'Open plan logs'
+                    : linkedSource.route === '/loan-payments' ? 'Open loan payments' : 'Open emergency fund'}
+                  onPress={() => {
+                    if (linkedSource.route === '/plan-logs') {
+                      router.push({ pathname: '/plan-logs', params: linkedSource.params });
+                    } else if (linkedSource.route === '/loan-payments') {
+                      router.push({ pathname: '/loan-payments', params: linkedSource.params });
+                    } else {
+                      router.push('/emergency-fund');
+                    }
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
+          {transaction?.source ? (
+            <>
+              <ReadOnlyRow label="Type" value={transaction.type} />
+              <ReadOnlyRow label="Amount" value={`₹${transaction.amount.toLocaleString('en-IN')}`} />
+              <ReadOnlyRow label="Category" value={transaction.category} />
+              <ReadOnlyRow label="Date" value={transaction.date} />
+            </>
+          ) : (
+            <>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <SegmentedControl
+                    label="Type"
+                    value={field.value}
+                    options={typeOptions}
+                    error={errors.type?.message}
+                    onChange={(type) => {
+                      const category = getValues('category');
+                      field.onChange(type);
+                      if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
+                        setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
+                      }
+                    }}
+                  />
+                )}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="category"
-            render={({ field }) => (
-              <ChoiceField
-                label="Category"
-                value={field.value}
-                choices={choices}
-                onChange={field.onChange}
-                error={errors.category?.message}
+              <Controller
+                control={control}
+                name="amount"
+                render={({ field }) => (
+                  <MoneyField
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                    error={errors.amount?.message}
+                  />
+                )}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="date"
-            render={({ field }) => (
-              <DateField
-                value={field.value}
-                onChange={field.onChange}
-                maximumDate={today}
-                error={errors.date?.message}
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <ChoiceField
+                    label="Category"
+                    value={field.value}
+                    choices={choices}
+                    onChange={field.onChange}
+                    error={errors.category?.message}
+                  />
+                )}
               />
-            )}
-          />
+              <Controller
+                control={control}
+                name="date"
+                render={({ field }) => (
+                  <DateField
+                    value={field.value}
+                    onChange={field.onChange}
+                    maximumDate={today}
+                    error={errors.date?.message}
+                  />
+                )}
+              />
+            </>
+          )}
           <Controller
             control={control}
             name="note"

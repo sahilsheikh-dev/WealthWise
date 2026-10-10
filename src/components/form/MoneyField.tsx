@@ -21,12 +21,14 @@ function grouped(value: string): string {
 
 export function MoneyField({
   value,
+  label = 'Amount',
   onChangeText,
   onBlur,
   error,
   accessibilityLabel = 'Amount in rupees',
 }: {
   value: string;
+  label?: string;
   onChangeText: (value: string) => void;
   onBlur?: () => void;
   error?: string;
@@ -36,7 +38,7 @@ export function MoneyField({
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
-      <AppText style={[typography.meta, { color: colors.text2 }]}>Amount</AppText>
+      <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
       <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: error ? colors.err : colors.border }]}>
         <AppText weight="semibold" style={[styles.currency, { color: colors.text3 }]}>₹</AppText>
         <TextInput
