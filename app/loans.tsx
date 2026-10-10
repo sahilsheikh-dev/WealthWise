@@ -53,7 +53,7 @@ export default function LoansScreen() {
               accessibilityRole="button"
               accessibilityLabel="New loan"
               onPress={() => {
-                // TODO(phase5)
+                // TODO(phase4)
               }}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New loan</AppText>
@@ -138,13 +138,13 @@ export default function LoansScreen() {
               <ActionRow
                 actions={[
                   { label: 'Pay EMI', variant: 'primary', onPress: () => {
-                    // TODO(phase5)
+                    // TODO(phase4)
                   } },
                   { label: `Payments (${loan.payments.length})`, onPress: () => {
-                    // TODO(phase5)
+                    // TODO(phase4)
                   } },
                   { label: 'Edit', onPress: () => {
-                    // TODO(phase5)
+                    // TODO(phase4)
                   } },
                 ]}
               />

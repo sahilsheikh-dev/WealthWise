@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -18,9 +19,9 @@ import {
 import { groupByDate, monthSummary, filterTransactions } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { useAppData } from '../../src/data/useAppData';
-import { todayISO } from '../../src/lib/clock';
+import { useUIStore } from '../../src/data/uiStore';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
-import { monthKey, shiftMonth } from '../../src/domain/dates';
+import { shiftMonth } from '../../src/domain/dates';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -34,7 +35,8 @@ const transactionTone = {
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
-  const [month, setMonth] = useState(() => monthKey(todayISO()));
+  const month = useUIStore((state) => state.txMonth);
+  const setTxMonth = useUIStore((state) => state.setTxMonth);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
@@ -53,7 +55,7 @@ export default function TransactionsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Previous month"
-            onPress={() => setMonth((current) => shiftMonth(current, -1))}
+            onPress={() => setTxMonth(shiftMonth(month, -1))}
             style={[styles.monthButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name="chevron-left" size={18} color={colors.text2} />
           </Pressable>
@@ -61,7 +63,7 @@ export default function TransactionsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Next month"
-            onPress={() => setMonth((current) => shiftMonth(current, 1))}
+            onPress={() => setTxMonth(shiftMonth(month, 1))}
             style={[styles.monthButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name="chevron-right" size={18} color={colors.text2} />
           </Pressable>
@@ -88,7 +90,7 @@ export default function TransactionsScreen() {
         )}
         {summary.overspend > 0 ? (
           <WarningBanner>
-            Spending plus investing is Rs {formatINR(summary.overspend).replace('₹', '')} more than income this month
+            Spending plus investing is {formatINR(summary.overspend)} more than income this month
           </WarningBanner>
         ) : null}
 
@@ -127,6 +129,7 @@ export default function TransactionsScreen() {
                     amount={`${tone.symbol}${formatINR(item.amount)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
+                    onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}
                   />
                 );
               })}
@@ -134,9 +137,7 @@ export default function TransactionsScreen() {
           ))}
         </View>
       </ScrollView>
-      <Fab label="Add transaction" onPress={() => {
-        // TODO(phase5)
-      }} />
+      <Fab label="Add transaction" onPress={() => router.push('/transaction-form')} />
     </Screen>
   );
 }
