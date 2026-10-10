@@ -6,21 +6,27 @@ import { behindBy } from '../../domain/sip';
 import { validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/loan';
 import { makeLoanPaymentFormSchema } from '../../domain/schemas';
+import { createBackup, parseBackup } from '../../domain/backup';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
   setItemCalls = 0;
+  calls: string[] = [];
+  failSetKey: string | null = null;
 
   getItem(name: string): string | null {
     return this.values.get(name) ?? null;
   }
 
   setItem(name: string, value: string): void {
+    this.calls.push(`set:${name}`);
     this.setItemCalls += 1;
+    if (name === this.failSetKey) throw new Error('write failed');
     this.values.set(name, value);
   }
 
   removeItem(name: string): void {
+    this.calls.push(`remove:${name}`);
     this.values.delete(name);
   }
 }
@@ -29,13 +35,19 @@ const makeStore = (storage: StateStorage, overrides: {
   newId?: () => string;
   reload?: () => void;
   isDev?: boolean;
+  removeLockSettings?: () => Promise<void>;
   today?: () => '2026-10-10' | '2026-10-11';
 } = {}) => createAppStore(storage, {
   newId: overrides.newId ?? (() => 'fixed-id'),
   today: overrides.today ?? (() => '2026-10-10'),
   reload: overrides.reload,
+  removeLockSettings: overrides.removeLockSettings,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
 });
+const { createHash } = jest.requireActual<{
+  createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
+}>('crypto');
+const sha256 = async (text: string) => createHash('sha256').update(text).digest('hex');
 
 async function waitForHydration(store: ReturnType<typeof makeStore>) {
   if (store.getState().hydrated) return;
@@ -115,6 +127,138 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls).toBe(writes);
   });
 
+  it('does not start fresh after a read error and retries hydration successfully', async () => {
+    class RetryReadStorage extends MemoryStorage {
+      reads = 0;
+      getItem(name: string): string | null {
+        if (name === 'wealthwise.app.v1' && this.reads++ === 0) throw new Error('temporary read failure');
+        return super.getItem(name);
+      }
+    }
+    const storage = new RetryReadStorage();
+    const raw = JSON.stringify({ state: { data: mockAppData }, version: 1 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    expect(store.getState()).toMatchObject({
+      status: 'recovery',
+      recoveryReason: 'read-error',
+      storageError: "Your saved data couldn't be read right now. It has not been changed.",
+    });
+    expect([...storage.values.keys()].some((key) => key.includes('.corrupt.'))).toBe(false);
+    expect(storage.values.get('wealthwise.app.v1')).toBe(raw);
+    const beforeData = store.getState().data;
+    const beforeBytes = storage.values.get('wealthwise.app.v1');
+    const writes = storage.setItemCalls;
+    store.getState().actions.resolveRecovery('start-fresh');
+    expect(store.getState().data).toBe(beforeData);
+    expect(storage.values.get('wealthwise.app.v1')).toBe(beforeBytes);
+    expect(storage.setItemCalls).toBe(writes);
+
+    store.getState().actions.retryHydration();
+    await new Promise<void>((resolve) => {
+      const unsubscribe = store.subscribe((state) => {
+        if (state.status === 'ready' && state.hydrated) {
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
+    expect(store.getState().status).toBe('ready');
+    expect(store.getState().data).toEqual(mockAppData);
+    expect(storage.values.get('wealthwise.app.v1')).toBe(raw);
+  });
+
+    it('confirms a holding valuation through one persisted write without changing its value', async () => {
+      const storage = new MemoryStorage();
+      const store = makeStore(storage);
+      await waitForHydration(store);
+      store.getState().actions.addHolding({
+        name: 'Old FD', type: 'Fixed deposit', invested: 100_000, value: 110_000,
+      });
+      const holding = store.getState().data.holdings[0]!;
+      if (holding.kind !== 'manual') throw new Error('Expected a manual holding.');
+      const beforeWrites = storage.setItemCalls;
+      store.getState().actions.confirmHoldingValue(holding.id);
+      expect(storage.setItemCalls - beforeWrites).toBe(1);
+      expect(store.getState().data.holdings[0]).toMatchObject({
+        id: holding.id, value: 110_000, valueAsOf: '2026-10-10',
+      });
+    });
+
+    it('writes a preimport snapshot before replacement and undo restores and consumes it', async () => {
+      const storage = new MemoryStorage();
+      const store = makeStore(storage);
+      await waitForHydration(store);
+      store.getState().actions.addTransaction({
+        type: 'income', amount: 900, category: 'Other', note: 'Old data', date: '2026-10-10',
+      });
+      const original = store.getState().data;
+      storage.calls = [];
+      const beforeWrites = storage.setItemCalls;
+      await expect(store.getState().actions.replaceAllData(mockAppData)).resolves.toEqual({ ok: true });
+      expect(storage.setItemCalls - beforeWrites).toBe(2);
+      expect(storage.calls.slice(0, 2)).toEqual([
+        'set:wealthwise.app.v1.preimport',
+        'set:wealthwise.app.v1',
+      ]);
+      expect(store.getState().data).toEqual(mockAppData);
+      await expect(store.getState().actions.undoImport()).resolves.toEqual({ ok: true });
+      expect(store.getState().data).toEqual(original);
+      expect(storage.values.has('wealthwise.app.v1.preimport')).toBe(false);
+    });
+
+    it('does not change data or main storage when saving the preimport snapshot fails', async () => {
+      const storage = new MemoryStorage();
+      const store = makeStore(storage);
+      await waitForHydration(store);
+      store.getState().actions.addTransaction({
+        type: 'income', amount: 900, category: 'Other', note: 'Old data', date: '2026-10-10',
+      });
+      const originalData = store.getState().data;
+      const originalMain = storage.values.get('wealthwise.app.v1');
+      const writesBeforeInvalid = storage.setItemCalls;
+      const invalidData = {
+        ...mockAppData,
+        transactions: [{ ...mockAppData.transactions[0]!, amount: -1 }],
+      };
+      await expect(store.getState().actions.replaceAllData(invalidData)).resolves.toMatchObject({ ok: false });
+      expect(storage.setItemCalls).toBe(writesBeforeInvalid);
+      expect(storage.values.get('wealthwise.app.v1')).toBe(originalMain);
+      storage.failSetKey = 'wealthwise.app.v1.preimport';
+      await expect(store.getState().actions.replaceAllData(mockAppData)).resolves.toMatchObject({ ok: false });
+      expect(store.getState().data).toBe(originalData);
+      expect(storage.values.get('wealthwise.app.v1')).toBe(originalMain);
+    });
+
+    it('refuses replacement in recovery and restores the undo marker on a new store', async () => {
+      const storage = new MemoryStorage();
+      const store = makeStore(storage);
+      await waitForHydration(store);
+      await store.getState().actions.replaceAllData(mockAppData);
+      const restored = makeStore(storage);
+      await new Promise<void>((resolve) => {
+        const unsubscribe = restored.subscribe((state) => {
+          if (state.undoImport) {
+            unsubscribe();
+            resolve();
+          }
+        });
+        if (restored.getState().undoImport) {
+          unsubscribe();
+          resolve();
+        }
+      });
+      expect(restored.getState().undoImport).toEqual({ savedAt: '2026-10-10' });
+
+      const recoveryStorage = new MemoryStorage();
+      recoveryStorage.values.set('wealthwise.app.v1', '{invalid');
+      const recovery = makeStore(recoveryStorage);
+      await waitForHydration(recovery);
+      const beforeWrites = recoveryStorage.setItemCalls;
+      await expect(recovery.getState().actions.replaceAllData(mockAppData)).resolves.toMatchObject({ ok: false });
+      expect(recoveryStorage.setItemCalls).toBe(beforeWrites);
+    });
   it('persists name and theme settings', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
@@ -146,7 +290,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().storageError).toBeNull();
   });
 
-  it('exposes developer-only demo, erase, and corruption controls', async () => {
+  it('exposes developer-only demo and corruption controls', async () => {
     const reload = jest.fn();
     const storage = new MemoryStorage();
     const store = makeStore(storage, { reload, isDev: true });
@@ -155,8 +299,6 @@ describe('createAppStore persistence', () => {
     expect(dev).toBeDefined();
     dev!.loadDemoData();
     expect(store.getState().data.transactions).toEqual(mockAppData.transactions);
-    dev!.eraseAll();
-    expect(store.getState().data.transactions).toEqual([]);
     await dev!.simulateCorruption();
     expect(storage.values.get('wealthwise.app.v1')).toBe('{not json');
     expect(reload).toHaveBeenCalledTimes(1);
@@ -188,18 +330,6 @@ describe('createAppStore persistence', () => {
     expect(store.getState().storageError).toMatch(/Free up storage/);
     store.getState().actions.dismissStorageError();
     expect(store.getState().storageError).toBeNull();
-  });
-
-  it('captures store hydration read errors as recovery', async () => {
-    class FailingReadStorage extends MemoryStorage {
-      getItem(name: string): string | null {
-        if (name === 'wealthwise.app.v1') throw new Error('storage unavailable');
-        return super.getItem(name);
-      }
-    }
-    const store = makeStore(new FailingReadStorage());
-    await waitForHydration(store);
-    expect(store.getState()).toMatchObject({ status: 'recovery', recoveryReason: 'corrupt', hydrated: true });
   });
 
   it('covers successful action updates and non-Error factory failures', async () => {
@@ -412,4 +542,76 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions).toEqual([]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
+});
+
+it('erases all supported storage keys and hydrates to empty data', async () => {
+  const storage = new MemoryStorage();
+  const secureStore = new Map([['wealthwise.lock.v1', '{"enabled":true}']]);
+  const store = makeStore(storage, {
+    removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
+  });
+  await waitForHydration(store);
+  store.getState().actions.addTransaction({
+    type: 'expense', amount: 500, category: 'Food', note: 'Old', date: '2026-10-10',
+  });
+  storage.values.set('wealthwise.app.v1.corrupt.latest', 'bad');
+  storage.values.set('wealthwise.app.v1.corrupt.previous', 'old bad');
+  storage.values.set('wealthwise.meta.v1', '{"lastExportAt":"2026-10-10T00:00:00.000Z"}');
+  storage.values.set('wealthwise.app.v1.preimport', '{}');
+  await expect(store.getState().actions.eraseAllData()).resolves.toEqual({ ok: true });
+  expect(store.getState().data.transactions).toEqual([]);
+  expect(storage.values.has('wealthwise.app.v1')).toBe(true);
+  expect(JSON.parse(storage.values.get('wealthwise.app.v1')!).state.data.transactions).toEqual([]);
+  for (const key of [
+    'wealthwise.app.v1.preimport',
+    'wealthwise.app.v1.corrupt.latest',
+    'wealthwise.app.v1.corrupt.previous',
+    'wealthwise.meta.v1',
+    'wealthwise.lock.v1',
+  ]) {
+    expect(storage.values.has(key)).toBe(false);
+  }
+  expect(secureStore.has('wealthwise.lock.v1')).toBe(false);
+  const restored = makeStore(storage);
+  await waitForHydration(restored);
+  expect(restored.getState().data.transactions).toEqual([]);
+});
+
+it('round-trips linked plans, loan payments, emergency-fund deposits, goals and holdings', async () => {
+  const storage = new MemoryStorage();
+  let sequence = 0;
+  const store = makeStore(storage, { newId: () => `generated-${++sequence}` });
+  await waitForHydration(store);
+  const actions = store.getState().actions;
+  actions.addPlan({
+    name: 'Round trip SIP', type: 'Mutual fund / SIP', frequency: 'monthly',
+    amount: 2_000, ratePct: 10, stepUpPct: 0, tenureYears: 5, startDate: '2026-01-01',
+    trackFrom: '2026-01-01', opening: 0, actualValue: null, actualValueDate: null,
+  });
+  const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan')!;
+  actions.addPlanLog(plan.id, { date: '2026-02-01', amount: 2_000, note: '' }, { recordTransaction: true });
+  actions.addLoan({
+    name: 'Round trip loan', principal: 50_000, ratePct: 8, tenureMonths: 12,
+    emi: null, startDate: '2026-01-01',
+  });
+  const loan = store.getState().data.loans[0]!;
+  actions.addLoanPayment(loan.id, {
+    date: '2026-02-01', amount: 4_350, kind: 'EMI', note: '',
+  }, { recordTransaction: true });
+  actions.addEfEntry(
+    { date: '2026-02-02', amount: 3_000, note: 'Funding' },
+    { recordTransaction: true },
+  );
+  actions.addGoal({ name: 'Travel', target: 30_000, saved: 2_000, year: 2028 });
+  actions.addHolding({ name: 'Round trip FD', type: 'Fixed deposit', invested: 10_000, value: 10_200 });
+  const original = store.getState().data;
+  const backup = await createBackup(original, { exportedAt: '2026-10-10T10:00:00.000Z', digest: sha256 });
+  const parsed = await parseBackup(backup, { digest: sha256 });
+  expect(parsed.ok).toBe(true);
+  if (!parsed.ok) throw new Error(parsed.message);
+  const emptyStore = makeStore(new MemoryStorage());
+  await waitForHydration(emptyStore);
+  await expect(emptyStore.getState().actions.replaceAllData(parsed.data)).resolves.toEqual({ ok: true });
+  expect(emptyStore.getState().data).toEqual(original);
+  expect(validateIntegrity(emptyStore.getState().data)).toEqual([]);
 });

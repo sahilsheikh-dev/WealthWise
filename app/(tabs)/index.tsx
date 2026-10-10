@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { Alert, View, StyleSheet, Pressable } from 'react-native';
 
 import {
   AppText,
   Card,
+  Button,
   ProgressBar,
   Screen,
   SectionTitle,
@@ -16,6 +17,11 @@ import { formatINR, formatINRShort } from '../../src/lib/format';
 import { useAppData } from '../../src/data/useAppData';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { greetingFor } from '../../src/lib/greeting';
+import { addDays } from '../../src/domain/dates';
+import { shouldNudge } from '../../src/domain/backupNudge';
+import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -25,11 +31,26 @@ const actions = [
   { label: 'New loan', icon: 'credit-card' as const },
   { label: 'Log EF', icon: 'shield' as const },
 ];
+const metaStore = createMetaStore(AsyncStorage);
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const data = useAppData();
-  const summary = homeSummary(data, todayISO());
+  const today = todayISO();
+  const summary = homeSummary(data, today);
+  const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
+  useEffect(() => {
+    void metaStore.getMeta().then(setBackupMeta);
+  }, []);
+  const recordCount = data.transactions.length
+    + data.goals.filter((goal) => !goal.auto).length
+    + data.holdings.length + data.loans.length + data.efEntries.length;
+  const nudge = shouldNudge({
+    recordCount,
+    lastExportAt: backupMeta.lastExportAt,
+    nudgeDismissedUntil: backupMeta.nudgeDismissedUntil,
+    today,
+  });
   return (
     <Screen>
       <View style={styles.homeHeader}>
@@ -49,6 +70,27 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
+
+      {nudge.show ? (
+        <Card style={styles.backupCard}>
+          <AppText weight="semibold">
+            {nudge.reason === 'stale'
+              ? `Your last export was ${nudge.days} days ago.`
+              : 'You have data that exists only on this phone. Export a backup.'}
+          </AppText>
+          <View style={styles.backupActions}>
+            <Button label="Export now" variant="primary" onPress={() => router.push('/backup')} />
+            <Button
+              label="Later"
+              onPress={() => {
+                void metaStore.updateMeta({ nudgeDismissedUntil: addDays(today, 7) })
+                  .then(setBackupMeta)
+                  .catch(() => Alert.alert('Could not save', 'The reminder could not be dismissed. Try again.'));
+              }}
+            />
+          </View>
+        </Card>
+      ) : null}
 
       <View style={styles.quickActions}>
         {actions.map((action) => (
@@ -79,27 +121,33 @@ export default function HomeScreen() {
       </View>
 
       <SectionTitle>Goal progress</SectionTitle>
-      {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => (
-        <Pressable
-          key={goal.id}
-          accessibilityRole="button"
-          accessibilityLabel={`Edit ${goal.name}`}
-          onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-          style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.goalTop}>
-            <View style={styles.goalNameBlock}>
-              <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
+      {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => {
+        const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
+        return (
+          <Pressable
+            key={goal.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${goal.name}`}
+            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.goalTop}>
+              <View style={styles.goalNameBlock}>
+                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
+                {targetYearPassed ? (
+                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
+                ) : null}
+              </View>
+              <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
-            <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
-          </View>
-          <ProgressBar percent={pct} />
-          <View style={styles.goalAmounts}>
-            <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
-          </View>
-        </Pressable>
-      ))}
+            <ProgressBar percent={pct} />
+            <View style={styles.goalAmounts}>
+              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
+            </View>
+          </Pressable>
+        );
+      })}
     </Screen>
   );
 }
@@ -107,6 +155,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
+  backupCard: { gap: 10 },
+  backupActions: { flexDirection: 'row', gap: 8 },
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   quickAction: { minHeight: 76, flex: 1, minWidth: 0, paddingHorizontal: 4, paddingVertical: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 8 },
   actionLabel: { fontSize: 10, textAlign: 'center' },

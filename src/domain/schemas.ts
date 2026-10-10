@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { addDays, isValidISO } from './dates';
 import { emiCoversInterest } from './loan';
-import { formatINR } from '../lib/format';
+import { formatDate, formatINR } from '../lib/format';
 import type { AppData, ISODate, Transaction } from './types';
 
 export const SCHEMA_VERSION = 1;
@@ -308,10 +308,12 @@ export function makeLoanFormSchema(
 
 export function makeGoalFormSchema(
   today: ISODate,
-  ctx: { otherNames: string[]; locked: boolean },
+  ctx: { otherNames: string[]; locked: boolean; existingYear?: number },
 ) {
   const year = Number(today.slice(0, 4));
   const yearMessage = `Enter a year between ${year} and ${year + 60}`;
+  const isAllowedYear = (value: number) =>
+    (value >= year && value <= year + 60) || value === ctx.existingYear;
   return z.object({
     name: z.string().transform((name) => name.trim())
       .refine((name) => ctx.locked || (name.length >= 1 && name.length <= 40), 'Enter a name up to 40 characters')
@@ -321,7 +323,7 @@ export function makeGoalFormSchema(
       ? z.string().transform(() => 0)
       : moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, maximumMessage: "Saved can't exceed the target" }),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
-      .transform(Number).refine((value) => value >= year && value <= year + 60, yearMessage),
+      .transform(Number).refine(isAllowedYear, yearMessage),
   }).superRefine((value, context) => {
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
@@ -341,7 +343,7 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[] }) {
 
 export function makeEfEntryFormSchema(
   today: ISODate,
-  ctx: { balanceOn: (date: ISODate) => number },
+  ctx: { firstNegativeDate: (candidate: { date: ISODate; amount: number }) => ISODate | null },
 ) {
   return z.object({
     kind: z.enum(['Deposit', 'Withdrawal']),
@@ -351,11 +353,15 @@ export function makeEfEntryFormSchema(
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     recordTransaction: z.boolean(),
   }).superRefine((value, context) => {
-    if (value.kind === 'Withdrawal' && value.amount > ctx.balanceOn(value.date)) {
+    const firstNegativeDate = ctx.firstNegativeDate({
+      date: value.date,
+      amount: value.kind === 'Deposit' ? value.amount : -value.amount,
+    });
+    if (firstNegativeDate) {
       context.addIssue({
         code: 'custom',
         path: ['amount'],
-        message: `Exceeds the balance of ${formatINR(ctx.balanceOn(value.date))} on that date`,
+        message: `This would make the balance negative on ${formatDate(firstNegativeDate)}`,
       });
     }
     if (value.kind === 'Withdrawal' && value.recordTransaction) {

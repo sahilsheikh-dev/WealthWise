@@ -17,7 +17,7 @@ import {
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
-import { useAppData } from '../../src/data/useAppData';
+import { useAppActions, useAppData } from '../../src/data/useAppData';
 import {
   buildPortfolioRows,
   filterRows,
@@ -153,6 +153,7 @@ function HoldingItem({
   asOf: ReturnType<typeof todayISO>;
 }) {
   const { colors } = useTheme();
+  const actions = useAppActions();
   const staleness = valueStaleness(holding.valueAsOf, asOf);
   return (
     <View style={styles.manualCard}>
@@ -165,11 +166,20 @@ function HoldingItem({
         icon="briefcase"
         onPress={() => router.push({ pathname: '/holding-form', params: { id: holding.id } })}
       />
-      <AppText style={[typography.meta, styles.staleLine, { color: colors.text3 }]}>
-        {staleness.days === null ? 'Value date unknown' : staleness.stale
-          ? `Value not updated in ${staleness.days} days`
-          : `Updated ${formatDate(holding.valueAsOf!)}`}
-      </AppText>
+      <View style={styles.staleLine}>
+        <AppText style={[typography.meta, { color: colors.text3 }]}>
+          {staleness.days === null ? 'Value date unknown' : staleness.stale
+            ? `Value not updated in ${staleness.days} days`
+            : `Updated ${formatDate(holding.valueAsOf!)}`}
+        </AppText>
+        {staleness.stale ? (
+          <Button
+            label="Confirm"
+            accessibilityLabel={`Confirm ${holding.name} value is still correct today`}
+            onPress={() => actions.confirmHoldingValue(holding.id)}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -236,7 +246,7 @@ const styles = StyleSheet.create({
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
   manualCard: { marginBottom: 8 },
-  staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8 },
+  staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },
 });

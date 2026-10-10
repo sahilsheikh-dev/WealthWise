@@ -3,6 +3,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { createAppStore } from '../createAppStore';
 import { validateIntegrity } from '../../domain/links';
 import { goalSaved } from '../../domain/goals';
+import { efBalance } from '../../domain/ef';
 import { valueStaleness } from '../../domain/holdingActions';
 
 class MemoryStorage implements StateStorage {
@@ -48,7 +49,7 @@ describe('Phase 5 store integration', () => {
     perform(() => store.getState().actions.addEfEntry(
       { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' }, { recordTransaction: false },
     ));
-    expect(goalSaved(store.getState().data.goals[0]!, 30_000)).toBe(30_000);
+    expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(30_000);
 
     const original = store.getState().data;
     const beforeRejectedWrites = storage.setItemCalls;
@@ -66,7 +67,7 @@ describe('Phase 5 store integration', () => {
 
     perform(() => store.getState().actions.updateEfEntry('ef-1', { amount: 70_000 }));
     expect(store.getState().data.transactions[0]).toMatchObject({ amount: 70_000, date: '2026-10-01' });
-    expect(goalSaved(store.getState().data.goals[0]!, 50_000)).toBe(50_000);
+    expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(50_000);
     const restored = createStore(storage, () => `restored-${++id}`);
     await hydrated(restored);
     expect(restored.getState().data).toEqual(store.getState().data);

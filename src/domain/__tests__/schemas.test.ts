@@ -12,6 +12,7 @@ import {
   TRANSACTION_CATEGORIES,
 } from '../schemas';
 import { mockAppData } from '../../mock/data';
+import { efEndOfDayBalances } from '../efActions';
 
 const validInput = {
   amount: '1,500.50',
@@ -221,6 +222,11 @@ describe('makeTransactionFormSchema', () => {
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
+      const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
+        otherNames: [], locked: false, existingYear: 2020,
+      });
+      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2020' }).success).toBe(true);
+      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(false);
 
       const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
       const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };
@@ -228,15 +234,32 @@ describe('makeTransactionFormSchema', () => {
       expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
 
-      const efSchema = makeEfEntryFormSchema('2026-10-10', { balanceOn: (date) => date === '2026-10-01' ? 100 : 0 });
+      const efEntries = [
+        { id: 'funding', date: '2026-10-01', amount: 100, note: '' },
+        { id: 'later-spend', date: '2026-10-10', amount: -80, note: '' },
+      ];
+      const schemaFor = (existingId?: string) => makeEfEntryFormSchema('2026-10-10', {
+        firstNegativeDate: (candidate) => efEndOfDayBalances([
+          ...efEntries.filter((entry) => entry.id !== existingId),
+          { id: 'candidate', ...candidate, note: '' },
+        ]).find(({ balance }) => balance < 0)?.date ?? null,
+      });
+      const efSchema = schemaFor();
       const deposit = { kind: 'Deposit', amount: '100000000', date: '2026-10-10', note: '', recordTransaction: true };
       expect(efSchema.parse(deposit).amount).toBe(100_000_000);
       expect(efSchema.safeParse({ ...deposit, amount: '100000000.01' }).success).toBe(false);
-      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01', recordTransaction: false }).success).toBe(false);
+      const backdated = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '30', date: '2026-10-05', recordTransaction: false });
+      expect(backdated.success).toBe(false);
+      if (!backdated.success) expect(backdated.error.issues.some((issue) => issue.message.includes('10 Oct 2026'))).toBe(true);
+      const fundingEditSchema = schemaFor('funding');
+      const loweredDeposit = fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '50', date: '2026-10-01' });
+      expect(loweredDeposit.success).toBe(false);
+      expect(fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '20', date: '2026-10-05', recordTransaction: false }).success).toBe(true);
       const exceeded = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01', recordTransaction: false });
       expect(exceeded.success).toBe(false);
-      if (!exceeded.success) expect(exceeded.error.issues.some((issue) => issue.message === 'Exceeds the balance of ₹100 on that date')).toBe(true);
-      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '100', date: '2026-10-01', recordTransaction: false }).success).toBe(true);
+      if (!exceeded.success) expect(exceeded.error.issues.some((issue) => issue.message.includes('This would make the balance negative on'))).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
       expect(efSchema.safeParse({ ...deposit, date: '2026-10-11' }).success).toBe(false);
       expect(efSchema.safeParse({ ...deposit, note: 'x'.repeat(61) }).success).toBe(false);
     });

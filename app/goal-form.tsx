@@ -30,7 +30,8 @@ export default function GoalFormScreen() {
   const schema = useMemo(() => makeGoalFormSchema(today, {
     otherNames: data.goals.filter((item) => item.id !== goalId).map((item) => item.name),
     locked: Boolean(locked),
-  }), [data.goals, goalId, locked, today]);
+    existingYear: goal?.year,
+  }), [data.goals, goalId, goal?.year, locked, today]);
   const submitting = useRef(false);
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<GoalFormInput, undefined, GoalFormOutput>({
