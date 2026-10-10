@@ -66,6 +66,38 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists each manual ledger action once with its linked transaction', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `ledger-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const performOnce = (action: () => void) => {
+      const writes = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - writes).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+    performOnce(() => actions.addHolding({
+      name: 'Ledger manual', type: 'Gold', invested: 10_000, value: 10_000,
+    }));
+    const holding = store.getState().data.holdings.find((item) => item.name === 'Ledger manual')!;
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2026-10-02', amount: 5_000, kind: 'Deposit', note: '',
+    }));
+    const deposit = store.getState().data.holdings.find((item) => item.id === holding.id)!.logs[0]!;
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2026-10-03', amount: 2_000, kind: 'Withdrawal', note: '',
+    }));
+    const withdrawal = store.getState().data.holdings.find((item) => item.id === holding.id)!.logs[1]!;
+    performOnce(() => actions.updateInvestmentEntry(holding.id, withdrawal.id, { amount: 1_500 }));
+    performOnce(() => actions.updateHolding(holding.id, { name: 'Renamed manual' }));
+    expect(store.getState().data.transactions.find((tx) => tx.source?.entryId === deposit.id)?.note).toBe('Renamed manual deposit');
+    performOnce(() => actions.deleteInvestmentEntry(holding.id, deposit.id));
+    expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
+  });
+
   it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
     const storage = new MemoryStorage();
     const v1 = makeV1Fixture();
@@ -417,7 +449,7 @@ describe('createAppStore persistence', () => {
     const planId = store.getState().data.holdings[0]!.id;
     for (const date of ['2026-07-05', '2026-08-05', '2026-09-05']) {
       const before = storage.setItemCalls;
-      store.getState().actions.addPlanLog(planId, { date, amount: 10_000, note: '' });
+      store.getState().actions.addInvestmentEntry(planId, { date, amount: 10_000, note: '', kind: 'Deposit' });
       expect(storage.setItemCalls - before).toBe(1);
       expect(store.getState().lastError).toBeNull();
       expect(validateIntegrity(store.getState().data)).toEqual([]);
@@ -437,11 +469,11 @@ describe('createAppStore persistence', () => {
     if (planAfterRestore.kind !== 'plan') throw new Error('Expected a plan after restore');
     const august = planAfterRestore.logs.find((log) => log.date === '2026-08-05')!;
     const augustTransaction = restored.getState().data.transactions.find((row) => row.source?.entryId === august.id)!;
-    restored.getState().actions.updatePlanLog(planId, august.id, { amount: 11_000 });
+    restored.getState().actions.updateInvestmentEntry(planId, august.id, { amount: 11_000 });
     expect(restored.getState().data.transactions.find((row) => row.id === augustTransaction.id)?.amount).toBe(11_000);
     expect(validateIntegrity(restored.getState().data)).toEqual([]);
     const september = planAfterRestore.logs.find((log) => log.date === '2026-09-05')!;
-    restored.getState().actions.deletePlanLog(planId, september.id);
+    restored.getState().actions.deleteInvestmentEntry(planId, september.id);
     expect(restored.getState().data.transactions.some((row) => row.source?.entryId === september.id)).toBe(false);
     expect(validateIntegrity(restored.getState().data)).toEqual([]);
     restored.getState().actions.deletePlan(planId, { linkedTransactions: 'keep' });
@@ -461,13 +493,13 @@ describe('createAppStore persistence', () => {
     };
     store.getState().actions.addPlan(planInput);
     const keepPlanId = store.getState().data.holdings[0]!.id;
-    store.getState().actions.addPlanLog(keepPlanId, { date: '2026-01-02', amount: 100, note: '' });
+    store.getState().actions.addInvestmentEntry(keepPlanId, { date: '2026-01-02', amount: 100, note: '', kind: 'Deposit' });
     store.getState().actions.deletePlan(keepPlanId, { linkedTransactions: 'keep' });
     expect(store.getState().data.transactions[0]?.source).toBeUndefined();
 
     store.getState().actions.addPlan(planInput);
     const deletePlanId = store.getState().data.holdings[0]!.id;
-    store.getState().actions.addPlanLog(deletePlanId, { date: '2026-01-02', amount: 100, note: '' });
+    store.getState().actions.addInvestmentEntry(deletePlanId, { date: '2026-01-02', amount: 100, note: '', kind: 'Deposit' });
     store.getState().actions.deletePlan(deletePlanId, { linkedTransactions: 'delete' });
     expect(store.getState().data.transactions).toHaveLength(1);
     expect(store.getState().data.transactions[0]?.source).toBeUndefined();
@@ -528,17 +560,17 @@ describe('createAppStore persistence', () => {
     });
     const planId = store.getState().data.holdings[0]!.id;
     actions.updatePlan(planId, { amount: 600 });
-    actions.addPlanLog(planId, { date: '2026-02-01', amount: 600, note: '' });
+    actions.addInvestmentEntry(planId, { date: '2026-02-01', amount: 600, note: '', kind: 'Deposit' });
     const plan = store.getState().data.holdings[0]!;
     if (plan.kind !== 'plan') throw new Error('Expected plan');
     const logId = plan.logs[0]!.id;
     const txId = store.getState().data.transactions[0]!.id;
-    actions.updatePlanLog(planId, logId, { note: 'Updated' });
+    actions.updateInvestmentEntry(planId, logId, { note: 'Updated' });
     actions.updateTransaction(txId, { amount: 100 });
     expect(store.getState().lastError).toContain('linked');
     actions.deleteTransaction(txId);
     expect(store.getState().lastError).toContain('linked');
-    actions.deletePlanLog(planId, logId);
+    actions.deleteInvestmentEntry(planId, logId);
     actions.deletePlan(planId, { linkedTransactions: 'delete' });
 
     actions.addLiability({ kind: 'recurring', type: 'Other', name: 'Wrapper loan', principal: 10_000, ratePct: 0, tenureMonths: 10, emi: 1000, startDate: '2026-01-01' });
@@ -658,7 +690,7 @@ it('round-trips linked plans, loan payments, emergency-fund deposits, goals and 
     trackFrom: '2026-01-01', opening: 0, actualValue: null, actualValueDate: null,
   });
   const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan')!;
-  actions.addPlanLog(plan.id, { date: '2026-02-01', amount: 2_000, note: '' });
+  actions.addInvestmentEntry(plan.id, { date: '2026-02-01', amount: 2_000, note: '', kind: 'Deposit' });
   actions.addLiability({
   kind: 'recurring', type: 'Other', name: 'Round trip loan', principal: 50_000, ratePct: 8, tenureMonths: 12,
     emi: null, startDate: '2026-01-01',

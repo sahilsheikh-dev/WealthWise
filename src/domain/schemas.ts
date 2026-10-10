@@ -301,12 +301,24 @@ export function makePlanFormSchema(
   });
 }
 
-export function makePlanLogFormSchema(today: ISODate, ctx: { startDate: ISODate }) {
+export function makeInvestmentEntryFormSchema(
+  today: ISODate,
+  ctx: { startDate: ISODate | null; currentValue: number },
+) {
   return z.object({
+    kind: z.enum(['Deposit', 'Withdrawal']),
     date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
-      .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the plan started'),
+      .refine((date) => !isValidISO(date) || ctx.startDate === null || date >= ctx.startDate, 'Date is before the plan started'),
     amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+  }).superRefine((value, context) => {
+    if (value.kind === 'Withdrawal' && value.amount > ctx.currentValue) {
+      context.addIssue({
+        code: 'custom',
+        path: ['amount'],
+        message: `Exceeds the current value of ${formatINR(ctx.currentValue)}`,
+      });
+    }
   });
 }
 
@@ -451,8 +463,8 @@ export function makeLiabilityPaymentFormSchema(
 
 export type PlanFormInput = z.input<ReturnType<typeof makePlanFormSchema>>;
 export type PlanFormOutput = z.output<ReturnType<typeof makePlanFormSchema>>;
-export type PlanLogFormInput = z.input<ReturnType<typeof makePlanLogFormSchema>>;
-export type PlanLogFormOutput = z.output<ReturnType<typeof makePlanLogFormSchema>>;
+export type InvestmentEntryFormInput = z.input<ReturnType<typeof makeInvestmentEntryFormSchema>>;
+export type InvestmentEntryFormOutput = z.output<ReturnType<typeof makeInvestmentEntryFormSchema>>;
 export type LiabilityFormInput = z.input<ReturnType<typeof makeLiabilityFormSchema>>;
 export type LiabilityFormOutput = z.output<ReturnType<typeof makeLiabilityFormSchema>>;
 export type LiabilityPaymentFormInput = z.input<ReturnType<typeof makeLiabilityPaymentFormSchema>>;

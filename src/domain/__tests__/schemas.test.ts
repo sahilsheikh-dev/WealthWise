@@ -8,7 +8,7 @@ import {
   makeLiabilityFormSchema,
   makeLiabilityPaymentFormSchema,
   makePlanFormSchema,
-  makePlanLogFormSchema,
+  makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
   SCHEMA_VERSION,
   TRANSACTION_CATEGORIES,
@@ -156,13 +156,14 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, startDate: '2026-02-30' }).success).toBe(false);
     });
 
-    it('validates plan logs including date limits and amount range', () => {
-      const schema = makePlanLogFormSchema('2026-10-10', { startDate: '2026-09-01' });
-      const valid = { date: '2026-10-10', amount: '100000000', note: '  Monthly  ' };
+    it('validates investment entries including date, kind and withdrawal bounds', () => {
+      const schema = makeInvestmentEntryFormSchema('2026-10-10', { startDate: '2026-09-01', currentValue: 100 });
+      const valid = { kind: 'Deposit', date: '2026-10-10', amount: '100000000', note: '  Monthly  ' };
       expect(schema.parse(valid)).toMatchObject({ amount: 100_000_000, note: 'Monthly' });
       expect(schema.safeParse({ ...valid, date: '2026-08-31' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, date: '2026-10-11' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, date: '2026-02-30' }).success).toBe(false);
+      expect(schema.safeParse({ ...valid, kind: 'Withdrawal', amount: '101' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, amount: '0' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, amount: '100000000.01' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, amount: '10.123' }).success).toBe(false);

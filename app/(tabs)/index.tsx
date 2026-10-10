@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,7 +27,7 @@ import { useTheme } from '../../src/theme/useTheme';
 
 const actions = [
   { label: 'Add Txn', icon: 'plus-circle' as const },
-  { label: 'New SIP', icon: 'repeat' as const },
+  { label: 'New investment', icon: 'repeat' as const },
   { label: 'New liability', icon: 'credit-card' as const },
   { label: 'Log EF', icon: 'shield' as const },
 ];
@@ -104,8 +104,8 @@ export default function HomeScreen() {
                 router.push('/transaction-form');
                 return;
               }
-              if (action.label === 'New SIP') {
-                router.push('/plan-form');
+              if (action.label === 'New investment') {
+                router.push('/investment-form' as Href);
                 return;
               }
               if (action.label === 'New liability') {

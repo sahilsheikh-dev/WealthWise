@@ -1,5 +1,6 @@
 import { NotFoundError } from './actions';
 import { daysBetween } from './dates';
+import { deleteHoldingWithTransactions, syncHoldingTransactions } from './investmentActions';
 import type { AppData, ISODate, ManualHolding } from './types';
 
 export type AddHoldingInput = Omit<ManualHolding, 'id' | 'kind' | 'logs'>;
@@ -13,13 +14,22 @@ export function addHolding(data: AppData, input: AddHoldingInput, newId: () => s
 export function updateHolding(data: AppData, id: string, patch: HoldingPatch): AppData {
   const current = data.holdings.find((holding) => holding.id === id);
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
-  return { ...data, holdings: data.holdings.map((holding) => holding.id === id ? { ...current, ...patch } : holding) };
+  const updated = { ...current, ...patch };
+  return {
+    ...data,
+    holdings: data.holdings.map((holding) => holding.id === id ? updated : holding),
+    transactions: syncHoldingTransactions(data.transactions, current, updated),
+  };
 }
 
-export function deleteHolding(data: AppData, id: string): AppData {
+export function deleteHolding(
+  data: AppData,
+  id: string,
+  options: { linkedTransactions: 'delete' | 'keep' } = { linkedTransactions: 'delete' },
+): AppData {
   const current = data.holdings.find((holding) => holding.id === id);
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
-  return { ...data, holdings: data.holdings.filter((holding) => holding.id !== id) };
+  return deleteHoldingWithTransactions(data, id, options);
 }
 
 export function confirmHoldingValue(data: AppData, id: string, today: ISODate): AppData {

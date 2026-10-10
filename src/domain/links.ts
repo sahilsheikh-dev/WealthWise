@@ -29,7 +29,7 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
   if (source.kind === 'holding-entry') {
     const holding = data.holdings.find((item) => item.id === source.parentId);
     return holding && holdingEntries(holding).some((entry) => entry.id === source.entryId)
-      ? { label: holding.name, route: '/plan-logs', params: { id: holding.id } }
+      ? { label: holding.name, route: '/investment-entries', params: { id: holding.id } }
       : null;
   }
   if (source.kind === 'liability-payment') {

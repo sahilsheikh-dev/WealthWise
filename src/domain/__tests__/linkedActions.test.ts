@@ -2,8 +2,10 @@ import { deleteTransaction, emptyAppData, updateTransaction, NotFoundError } fro
 import { LinkedTransactionError, findLinkedTransaction, investCategoryFor, validateIntegrity } from '../links';
 import { loanState } from '../liability';
 import {
-  addPlan, addPlanLog, deletePlan, deletePlanLog, updatePlan, updatePlanLog,
+  addPlan, deletePlan, updatePlan,
 } from '../planActions';
+import { addInvestmentEntry, deleteInvestmentEntry, updateInvestmentEntry } from '../investmentActions';
+import { addHolding } from '../holdingActions';
 import {
   addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
 } from '../liabilityActions';
@@ -46,7 +48,7 @@ describe('linked log and payment actions', () => {
     expect(validateIntegrity(empty())).toEqual([]);
     expect(validateIntegrity(mockAppData)).toEqual([]);
     const planData = addPlan(empty(), makePlan(), () => 'plan');
-    const withLog = addPlanLog(planData, 'plan', { date: '2026-07-01', amount: 10, note: '' }, { newId: idSequence('log', 'tx') });
+    const withLog = addInvestmentEntry(planData, 'plan', { date: '2026-07-01', amount: 10, note: '', kind: 'Deposit' }, idSequence('log', 'tx'), '2026-07-01');
     expect(findLinkedTransaction(withLog, 'holding-entry', 'log')).toMatchObject({ id: 'tx' });
     expect(investCategoryFor('Mutual fund / SIP')).toBe('Mutual fund / SIP');
     expect(investCategoryFor('Stocks / ETF')).toBe('Stocks / ETF');
@@ -70,6 +72,16 @@ describe('linked log and payment actions', () => {
     ]));
   });
 
+  it('leaves unrelated holdings unchanged when a plan is updated', () => {
+    let data = addPlan(empty(), makePlan(), () => 'plan');
+    data = addHolding(data, {
+      name: 'Manual', type: 'Cash', invested: 10, value: 10, valueAsOf: '2026-07-01',
+    }, () => 'manual');
+    data = updatePlan(data, 'plan', { name: 'Updated plan' });
+    expect(data.holdings[0]?.name).toBe('Updated plan');
+    expect(data.holdings[1]?.name).toBe('Manual');
+  });
+
   it('performs the complete plan scenario immutably, links, syncs, removes, and keeps transactions', () => {
     let data = empty();
     const planInput = makePlan();
@@ -78,16 +90,16 @@ describe('linked log and payment actions', () => {
     expect(planInput).toEqual(initialInput);
     expect(data.holdings[0]?.id).toBe('plan-1');
     expect(validateIntegrity(data)).toEqual([]);
-    data = addPlanLog(data, 'plan-1', { date: '2026-07-05', amount: 10_000, note: 'July' }, { newId: idSequence('jul', 'tx-jul') });
-    data = addPlanLog(data, 'plan-1', { date: '2026-08-05', amount: 10_000, note: 'August' }, { newId: idSequence('aug', 'tx-aug') });
-    data = addPlanLog(data, 'plan-1', { date: '2026-09-05', amount: 10_000, note: 'September' }, { newId: idSequence('sep', 'tx-sep') });
+    data = addInvestmentEntry(data, 'plan-1', { date: '2026-07-05', amount: 10_000, note: 'July', kind: 'Deposit' }, idSequence('jul', 'tx-jul'), '2026-10-09');
+    data = addInvestmentEntry(data, 'plan-1', { date: '2026-08-05', amount: 10_000, note: 'August', kind: 'Deposit' }, idSequence('aug', 'tx-aug'), '2026-10-09');
+    data = addInvestmentEntry(data, 'plan-1', { date: '2026-09-05', amount: 10_000, note: 'September', kind: 'Deposit' }, idSequence('sep', 'tx-sep'), '2026-10-09');
     expect(behindBy(data.holdings[0] as PlanHolding, '2026-10-09')).toBe(1);
     expect(validateIntegrity(data)).toEqual([]);
     const before = data;
-    data = updatePlanLog(data, 'plan-1', 'aug', { amount: 11_000, date: '2026-08-06' });
+    data = updateInvestmentEntry(data, 'plan-1', 'aug', { amount: 11_000, date: '2026-08-06' }, '2026-10-09');
     expect(data.transactions.find((row) => row.id === 'tx-aug')).toMatchObject({ amount: 11_000, date: '2026-08-06' });
     expect(before.transactions.find((row) => row.id === 'tx-aug')?.amount).toBe(10_000);
-    data = deletePlanLog(data, 'plan-1', 'sep');
+    data = deleteInvestmentEntry(data, 'plan-1', 'sep');
     expect(data.transactions.some((row) => row.id === 'tx-sep')).toBe(false);
     data = updatePlan(data, 'plan-1', { amount: 12_000 });
     expect((data.holdings[0] as PlanHolding).logs).toHaveLength(2);
@@ -100,13 +112,13 @@ describe('linked log and payment actions', () => {
 
   it('deletes linked plan transactions in delete mode and rejects invalid/unknown mutations atomically', () => {
     let data = addPlan(empty(), makePlan(), () => 'p');
-    data = addPlanLog(data, 'p', { date: '2026-07-01', amount: 50, note: '' }, { newId: idSequence('entry', 'txn') });
+    data = addInvestmentEntry(data, 'p', { date: '2026-07-01', amount: 50, note: '', kind: 'Deposit' }, idSequence('entry', 'txn'), '2026-07-01');
     const original = data;
     expect(() => updatePlan(data, 'p', { trackFrom: '2026-06-30' })).toThrow("Tracking can't start before the plan");
     expect(data).toBe(original);
-    expect(() => addPlanLog(data, 'absent', { date: '2026-07-01', amount: 1, note: '' }, { newId: () => 'x' })).toThrow(NotFoundError);
-    expect(() => updatePlanLog(data, 'p', 'absent', { note: 'x' })).toThrow(NotFoundError);
-    expect(() => deletePlanLog(data, 'p', 'absent')).toThrow(NotFoundError);
+    expect(() => addInvestmentEntry(data, 'absent', { date: '2026-07-01', amount: 1, note: '', kind: 'Deposit' }, () => 'x', '2026-07-01')).toThrow(NotFoundError);
+    expect(() => updateInvestmentEntry(data, 'p', 'absent', { note: 'x' }, '2026-07-01')).toThrow(NotFoundError);
+    expect(() => deleteInvestmentEntry(data, 'p', 'absent')).toThrow(NotFoundError);
     expect(() => deletePlan(data, 'absent', { linkedTransactions: 'delete' })).toThrow(NotFoundError);
     data = deletePlan(data, 'p', { linkedTransactions: 'delete' });
     expect(data.transactions).toEqual([]);
@@ -201,7 +213,7 @@ describe('linked log and payment actions', () => {
 
   it('restricts transaction editing and deletion when a transaction is linked', () => {
     let data = addPlan(empty(), makePlan(), () => 'p');
-    data = addPlanLog(data, 'p', { date: '2026-07-01', amount: 100, note: '' }, { newId: idSequence('l', 'tx') });
+    data = addInvestmentEntry(data, 'p', { date: '2026-07-01', amount: 100, note: '', kind: 'Deposit' }, idSequence('l', 'tx'), '2026-07-01');
     const transaction = data.transactions[0]!;
     expect(updateTransaction(data, transaction.id, { note: 'Renamed' }).transactions[0]?.note).toBe('Renamed');
     expect(updateTransaction(data, transaction.id, { amount: transaction.amount, note: 'Renamed' }).transactions[0]?.note).toBe('Renamed');
@@ -218,16 +230,16 @@ describe('linked log and payment actions', () => {
     data = addPlan(data, makePlan(), () => 'p');
     expect(() => updatePlan(data, 'holding-pf', { amount: 1 })).toThrow(NotFoundError);
     expect(() => updatePlan(data, 'p', { actualValue: 10 })).toThrow('Actual value and snapshot date');
-    const withLinkedLog = addPlanLog(data, 'p', { date: '2026-07-01', amount: 20, note: '' }, { newId: idSequence('linked-log', 'linked-log-tx') });
-    const noteOnly = updatePlanLog(withLinkedLog, 'p', 'linked-log', { note: 'private' });
+    const withLinkedLog = addInvestmentEntry(data, 'p', { date: '2026-07-01', amount: 20, note: '', kind: 'Deposit' }, idSequence('linked-log', 'linked-log-tx'), '2026-07-01');
+    const noteOnly = updateInvestmentEntry(withLinkedLog, 'p', 'linked-log', { note: 'private' }, '2026-07-01');
     expect(noteOnly.transactions[0]).toMatchObject({ amount: 20, note: 'Monthly SIP installment' });
-    const withTxn = addPlanLog(noteOnly, 'p', { date: '2026-07-02', amount: 30, note: '' }, { newId: idSequence('linked', 'tx') });
-    const noteUpdate = updatePlanLog(withTxn, 'p', 'linked', { note: 'changed' });
+    const withTxn = addInvestmentEntry(noteOnly, 'p', { date: '2026-07-02', amount: 30, note: '', kind: 'Deposit' }, idSequence('linked', 'tx'), '2026-07-02');
+    const noteUpdate = updateInvestmentEntry(withTxn, 'p', 'linked', { note: 'changed' }, '2026-07-02');
     expect(findLinkedTransaction(noteUpdate, 'holding-entry', 'linked')).toMatchObject({ amount: 30 });
     const firstTransaction = findLinkedTransaction(noteUpdate, 'holding-entry', 'linked-log')!;
     const extra = { ...firstTransaction, id: 'ordinary', source: undefined };
     const withOrdinary = { ...noteUpdate, transactions: [...noteUpdate.transactions, extra] };
-    const removed = deletePlanLog(withOrdinary, 'p', 'linked');
+    const removed = deleteInvestmentEntry(withOrdinary, 'p', 'linked');
     expect(removed.transactions).toEqual([noteOnly.transactions[0], extra]);
     expect(() => addPlan(data, { ...planInput, trackFrom: '2026-06-30' }, () => 'bad')).toThrow("Tracking can't start before the plan");
     expect(validateIntegrity({

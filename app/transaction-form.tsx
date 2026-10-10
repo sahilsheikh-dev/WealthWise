@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
@@ -188,12 +188,12 @@ export default function TransactionFormScreen() {
               />
               {linkedSource ? (
                 <Button
-                  label={linkedSource.route === '/plan-logs'
-                    ? 'Open plan logs'
+                  label={linkedSource.route === '/investment-entries'
+                    ? 'Open investment entries'
                     : linkedSource.route === '/liability-payments' ? 'Open liability payments' : 'Open emergency fund'}
                   onPress={() => {
-                    if (linkedSource.route === '/plan-logs') {
-                      router.push({ pathname: '/plan-logs', params: linkedSource.params });
+                    if (linkedSource.route === '/investment-entries') {
+                      router.push(`/investment-entries?id=${encodeURIComponent(linkedSource.params.id ?? '')}` as Href);
                     } else if (linkedSource.route === '/liability-payments') {
                       router.push({ pathname: '/liability-payments', params: linkedSource.params });
                     } else {

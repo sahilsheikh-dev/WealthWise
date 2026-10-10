@@ -3,9 +3,13 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 
 import { addTransaction, deleteTransaction, emptyAppData, updateSettings, updateTransaction } from '../domain/actions';
 import {
-  addPlan, addPlanLog, deletePlan, deletePlanLog, updatePlan, updatePlanLog,
-  type AddPlanInput, type PlanLogPatch, type PlanPatch,
+  addPlan, deletePlan, updatePlan,
+  type AddPlanInput, type PlanPatch,
 } from '../domain/planActions';
+import {
+  addInvestmentEntry, deleteInvestmentEntry, updateInvestmentEntry,
+  type InvestmentEntryInput, type InvestmentEntryPatch,
+} from '../domain/investmentActions';
 import {
   addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
@@ -18,7 +22,7 @@ import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
-import type { AppData, EfEntry, Holding, ISODate, InvestmentEntry, LiabilityPayment, Settings, Transaction } from '../domain/types';
+import type { AppData, EfEntry, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { validateImportData } from '../domain/backup';
@@ -34,9 +38,9 @@ export type AppActions = {
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
-  addPlanLog: (planId: string, input: Pick<InvestmentEntry, 'date' | 'amount' | 'note'>) => void;
-  updatePlanLog: (planId: string, logId: string, patch: PlanLogPatch) => void;
-  deletePlanLog: (planId: string, logId: string) => void;
+  addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
+  updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
+  deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -48,7 +52,7 @@ export type AppActions = {
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
-  deleteHolding: (id: string) => void;
+  deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
@@ -159,14 +163,14 @@ export function createAppStore(
         deletePlan(id, options) {
           applyDataAction((data) => deletePlan(data, id, options));
         },
-        addPlanLog(planId, input) {
-          applyDataAction((data) => addPlanLog(data, planId, input, { newId: deps.newId }));
+        addInvestmentEntry(holdingId, input) {
+          applyDataAction((data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()));
         },
-        updatePlanLog(planId, logId, patch) {
-          applyDataAction((data) => updatePlanLog(data, planId, logId, patch));
+        updateInvestmentEntry(holdingId, entryId, patch) {
+          applyDataAction((data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()));
         },
-        deletePlanLog(planId, logId) {
-          applyDataAction((data) => deletePlanLog(data, planId, logId));
+        deleteInvestmentEntry(holdingId, entryId) {
+          applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
@@ -207,8 +211,8 @@ export function createAppStore(
             return updateHolding(data, id, { ...patch, valueAsOf });
           });
         },
-        deleteHolding(id) {
-          applyDataAction((data) => deleteHolding(data, id));
+        deleteHolding(id, options) {
+          applyDataAction((data) => deleteHolding(data, id, options));
         },
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));

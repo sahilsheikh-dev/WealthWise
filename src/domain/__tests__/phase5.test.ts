@@ -104,7 +104,7 @@ describe('Phase 5 domain actions', () => {
     expect(() => deleteHolding(data, 'missing')).toThrow('not found');
     data = updateHolding(data, 'holding', { value: 125 });
     expect(data.holdings[0]).toMatchObject({ value: 125, valueAsOf: '2026-10-10' });
-    data = deleteHolding(data, 'holding');
+    data = deleteHolding(data, 'holding', { linkedTransactions: 'delete' });
     expect(data.holdings).toHaveLength(1);
   });
 
@@ -190,7 +190,7 @@ describe('Phase 5 domain actions', () => {
     };
     const withParents = { ...data, holdings: [plan], liabilities: [loan] };
     expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'plan', entryId: 'holding-entry' }))
-      .toEqual({ label: 'Travel SIP', route: '/plan-logs', params: { id: 'plan' } });
+      .toEqual({ label: 'Travel SIP', route: '/investment-entries', params: { id: 'plan' } });
     expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'plan', entryId: 'missing' })).toBeNull();
     expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'wrong', entryId: 'holding-entry' })).toBeNull();
     expect(describeSource(withParents, { kind: 'liability-payment', parentId: 'loan', entryId: 'liability-payment' }))
