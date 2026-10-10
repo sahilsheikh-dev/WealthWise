@@ -1,7 +1,7 @@
-import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AppHeader } from '../src/components/AppHeader';
 import {
   AppText,
   Card,
@@ -18,6 +18,8 @@ import { formatDate, formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function EmergencyFundScreen() {
   const { colors } = useTheme();
   const data = useAppData();
@@ -31,33 +33,18 @@ export default function EmergencyFundScreen() {
   return (
     <>
       <Screen bottomPadding={120}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-              style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Feather name="arrow-left" size={18} color={colors.text1} />
-            </Pressable>
-            <AppText weight="bold" style={[typography.h1, styles.title]}>Emergency fund</AppText>
-          </View>
-          <View style={styles.headerActionRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Log Emergency fund Entry"
-              onPress={() => router.push('/ef-entry-form')}
-              style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
-              <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Log entry</AppText>
-            </Pressable>
-          </View>
-        </View>
+        <AppHeader
+          title="Emergency fund"
+          showBack
+          fallbackHref="/(tabs)"
+          rightActions={[{ icon: 'plus', label: 'Log Emergency fund entry', onPress: () => router.push('/ef-entry-form') }]}
+        />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Current balance</AppText>
           <AppText weight="bold" style={[typography.big, styles.balance]}>{formatINR(balance)}</AppText>
-          {baseline > 0 ? (
+          {baseline > 0 && covered !== null ? (
             <AppText style={[typography.meta, { color: colors.primary }]}>
-              {covered!.toFixed(1)} months of expenses covered
+              {covered.toFixed(1)} months of expenses covered
             </AppText>
           ) : (
             <AppText style={[typography.meta, { color: colors.text3 }]}>Log expenses to see months covered</AppText>
@@ -107,12 +94,6 @@ export default function EmergencyFundScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 20, paddingTop: 14, gap: 8 },
-  headerTop: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerActionRow: { alignItems: 'flex-end' },
-  back: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center', alignItems: 'center' },
-  title: { flex: 1, minWidth: 0 },
-  headerAction: { minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
   balance: { marginTop: 5 },
   basedOn: { marginTop: 8 },
   passbook: { marginHorizontal: 20 },

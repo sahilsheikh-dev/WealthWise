@@ -87,29 +87,6 @@ export function Screen({
   );
 }
 
-export function ScreenHeader({
-  title,
-  right,
-  subtitle,
-}: {
-  title: string;
-  right?: ReactNode;
-  subtitle?: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerTitle}>
-        <AppText style={typography.h1} numberOfLines={2}>
-          {title}
-        </AppText>
-        {subtitle ? <AppText style={[styles.subtitle, { color: colors.text3 }]}>{subtitle}</AppText> : null}
-      </View>
-      {right ? <View style={styles.headerRight}>{right}</View> : null}
-    </View>
-  );
-}
-
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
   const { colors } = useTheme();
   return (
@@ -312,7 +289,7 @@ export function Button({
   disabled?: boolean;
   icon?: keyof typeof Feather.glyphMap;
   style?: StyleProp<ViewStyle>;
-} & Pick<PressableProps, 'accessibilityLabel'>) {
+} & Pick<PressableProps, 'accessibilityHint' | 'accessibilityLabel'>) {
   const { colors } = useTheme();
   const backgroundColor = variant === 'primary' ? colors.primaryDim : colors.surface2;
   const foregroundColor = variant === 'primary' ? colors.primary : variant === 'danger-text' ? colors.err : colors.text2;
@@ -423,15 +400,13 @@ export function SearchField({
   );
 }
 
-export function DetailTabBar({ active }: { active: 'Home' | 'More' }) {
+export function DetailTabBar({ active = 'Home' }: { active?: 'Home' | 'none' }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const tabs = [
     { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
     { label: 'Txns', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
     { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
-    { label: 'Invest', route: '/(tabs)/invest' as const, icon: 'pie-chart' as const, active: false },
-    { label: 'More', route: '/(tabs)/more' as const, icon: 'grid' as const, active: active === 'More' },
   ] as const;
   return (
     <View style={[styles.detailTabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -454,10 +429,6 @@ export function DetailTabBar({ active }: { active: 'Home' | 'More' }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   scrollContent: { paddingBottom: 26 },
-  header: { minHeight: 56, paddingHorizontal: 20, paddingTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  headerTitle: { flex: 1, minWidth: 0 },
-  headerRight: { flexShrink: 0, alignItems: 'flex-end' },
-  subtitle: { ...typography.meta, marginTop: 3 },
   card: { marginHorizontal: 20, marginTop: 14, padding: 18, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.card },
   statRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
   statPill: { flex: 1, minWidth: 0, paddingVertical: 9, paddingHorizontal: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.pill },

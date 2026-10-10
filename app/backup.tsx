@@ -5,9 +5,9 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
 
-import { AppText, Button, Card, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../src/data/metaStore';
 import { useAppStore } from '../src/data/store';
 import { backupFileName, createBackup, parseBackup, type ParseBackupResult } from '../src/domain/backup';
@@ -15,6 +15,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 const metaStore = createMetaStore(AsyncStorage);
 const digest = (text: string) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text);
@@ -163,7 +165,7 @@ export default function BackupScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Backup and restore" right={<Button label="Back" onPress={() => router.back()} />} />
+      <AppHeader title="Backup and restore" showBack />
       <SectionTitle>Export</SectionTitle>
       <Card>
         <AppText style={[typography.meta, { color: colors.text2, lineHeight: 19 }]}>

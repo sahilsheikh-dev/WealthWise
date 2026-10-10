@@ -7,8 +7,7 @@ export type TransactionMonthSummary = {
   expense: number;
   invest: number;
   net: number;
-  savedPct: number | null;
-  investedPct: number | null;
+  rates: { savedPct: number; investedPct: number } | null;
   overspend: number;
 };
 
@@ -31,8 +30,12 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
     expense,
     invest,
     net: income - expense - invest,
-    savedPct: earnedIncome === 0 ? null : (earnedIncome - expense) / earnedIncome * 100,
-    investedPct: earnedIncome === 0 ? null : invest / earnedIncome * 100,
+    rates: earnedIncome <= 0
+      ? null
+      : {
+        savedPct: (earnedIncome - expense) / earnedIncome * 100,
+        investedPct: invest / earnedIncome * 100,
+      },
     overspend: income > 0 ? Math.max(0, expense + invest - income) : 0,
   };
 }

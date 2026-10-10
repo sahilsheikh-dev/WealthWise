@@ -1,10 +1,10 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useSecuritySettings } from '../src/components/SecurityProvider';
-import { AppText, Button, Card, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Card, Screen, SectionTitle } from '../src/components/ui';
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { createAuthenticator } from '../src/lib/authenticate';
@@ -25,6 +25,8 @@ const graceMsFor = (label: (typeof graceChoices)[number]) => ({
 }[label]);
 const graceLabelFor = (graceMs: number) =>
   graceChoices.find((label) => graceMsFor(label) === graceMs) ?? '30 seconds';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function SecurityScreen() {
   const { colors } = useTheme();
@@ -75,7 +77,7 @@ export default function SecurityScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Security" right={<Button label="Back" onPress={() => router.back()} />} />
+      <AppHeader title="Security" showBack />
       <SectionTitle>App lock</SectionTitle>
       <Card>
         <SwitchRow label="App lock" value={settings.enabled} disabled={busy} onValueChange={(value) => void changeLock(value)} />

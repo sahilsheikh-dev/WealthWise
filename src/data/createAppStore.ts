@@ -1,7 +1,9 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
-import { addTransaction, deleteTransaction, emptyAppData, updateSettings, updateTransaction } from '../domain/actions';
+import {
+  addTransaction, completeOnboarding, deleteTransaction, emptyAppData, updateSettings, updateTransaction,
+} from '../domain/actions';
 import {
   addPlan, deletePlan, updatePlan,
   type AddPlanInput, type PlanPatch,
@@ -72,6 +74,7 @@ export type AppActions = {
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
   deleteEfEntry: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  completeOnboarding: (profile: { name: string; monthlySalary: number | null }) => void;
   dismissStorageError: () => void;
   resolveRecovery: (action: 'start-fresh') => void;
   retryHydration: () => void;
@@ -185,6 +188,9 @@ export function createAppStore(
         },
         updateSettings(patch) {
           applyDataAction((data) => updateSettings(data, patch));
+        },
+        completeOnboarding(profile) {
+          applyDataAction((data) => completeOnboarding(data, profile));
         },
         addPlan(input) {
           applyDataAction((data) => addPlan(data, input, deps.newId));
@@ -360,6 +366,7 @@ export function createAppStore(
           try {
             await storage.removeItem(PERSIST_NAME);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v1`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v2`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);

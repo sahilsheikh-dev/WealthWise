@@ -23,7 +23,7 @@ class MemoryStorage implements StateStorage {
   }
 }
 
-const blob = (data: unknown = mockAppData, version = 2) => JSON.stringify({ state: { data }, version });
+const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
 
 describe('createSafeStorage', () => {
   it('returns valid serialized data without creating a backup', async () => {
@@ -40,8 +40,8 @@ describe('createSafeStorage', () => {
   it.each([
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
-    ['invalid-schema', blob({ transactions: [] }), 'corrupt'],
-    ['newer-version', blob(mockAppData, 3), 'newer-version'],
+    ['invalid-schema', blob({ transactions: [] }, 3), 'corrupt'],
+    ['newer-version', blob(mockAppData, 4), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
@@ -97,5 +97,26 @@ describe('createSafeStorage', () => {
     const blocked = createSafeStorage(base, { onWriteError, onCorrupt: jest.fn() }, { blockWrites: () => true });
     await blocked.setItem('blocked', 'value');
     expect(base.values.has('blocked')).toBe(false);
+  });
+
+  it('preserves the exact v2 payload once before its first migrated write', async () => {
+    const base = new MemoryStorage();
+    const raw = blob({
+      ...mockAppData,
+      settings: { name: 'Legacy v2', theme: 'dark' },
+    }, 2);
+    base.values.set('wealthwise.app.v1', raw);
+    const safe = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await safe.getItem('wealthwise.app.v1');
+    await safe.setItem('wealthwise.app.v1', 'migrated');
+    expect(base.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
+    await safe.getItem('wealthwise.app.v1');
+    await safe.setItem('wealthwise.app.v1', 'migrated-again');
+    expect(base.setCalls.filter((key) => key === 'wealthwise.app.v1.premigration.v2')).toHaveLength(1);
+    expect(base.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
   });
 });

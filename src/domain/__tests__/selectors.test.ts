@@ -13,6 +13,7 @@ import {
   holdingInvested,
   holdingValue,
   homeSummary,
+  incomeBaselineFor,
   liabilitiesOverview,
   milestones,
   monthlyBaseline,
@@ -35,13 +36,46 @@ const tx = (
 ): Transaction => ({ id, type, amount, date, note, category });
 
 const baseData = (changes: Partial<AppData> = {}): AppData => ({
-  settings: { name: 'Test', theme: 'system' },
+  settings: { name: 'Test', theme: 'system', monthlySalary: null, onboarded: true },
   transactions: [],
   goals: [],
   holdings: [],
   liabilities: [],
   efEntries: [],
   ...changes,
+});
+
+describe('income baseline selection', () => {
+  it('prefers earned-income history, falls back to salary, and otherwise returns null', () => {
+    expect(incomeBaselineFor(baseData({
+      transactions: [
+        tx('salary-history', 'income', 40_000, '2025-12-10', 'Salary', 'Salary'),
+        tx('withdrawal', 'income', 20_000, '2025-12-12', 'Withdrawal', 'Withdrawal'),
+      ],
+      settings: { ...baseData().settings, monthlySalary: 70_000 },
+    }), '2026-01-01')).toEqual({ amount: 40_000, source: 'transactions' });
+    expect(incomeBaselineFor(baseData({
+      settings: { ...baseData().settings, monthlySalary: 70_000 },
+      transactions: [tx('withdrawal', 'income', 20_000, '2025-12-12', 'Withdrawal', 'Withdrawal')],
+    }), '2026-01-01')).toEqual({ amount: 70_000, source: 'salary' });
+    expect(incomeBaselineFor(baseData(), '2026-01-01')).toBeNull();
+  });
+
+  it('marks salary-based liability ratios without changing actual-history ratios', () => {
+    const liability: RecurringLiability = {
+      id: 'salary-liability', kind: 'recurring', name: 'Loan', type: 'Other',
+      principal: 100_000, ratePct: 0, startDate: '2025-01-01', tenureMonths: 12, emi: 10_000, payments: [],
+    };
+    expect(liabilitiesOverview(baseData({
+      liabilities: [liability],
+      settings: { ...baseData().settings, monthlySalary: 50_000 },
+    }), '2026-01-01', 0)).toMatchObject({ emiPctOfIncome: 20, incomeSource: 'salary' });
+    expect(liabilitiesOverview(baseData({
+      liabilities: [liability],
+      settings: { ...baseData().settings, monthlySalary: 50_000 },
+      transactions: [tx('salary', 'income', 40_000, '2025-12-10', 'Salary', 'Salary')],
+    }), '2026-01-01', 0)).toMatchObject({ emiPctOfIncome: 25, incomeSource: 'transactions' });
+  });
 });
 
 describe('emergency fund calculations', () => {
@@ -144,10 +178,10 @@ describe('transaction selectors', () => {
       expense: 27_713,
       invest: 2_000,
       net: 20_287,
-      investedPct: 4,
       overspend: 0,
     });
-    expect(summary.savedPct).toBeCloseTo(44.6, 1);
+    expect(summary.rates?.savedPct).toBeCloseTo(44.6, 1);
+    expect(summary.rates?.investedPct).toBe(4);
     const over = monthSummary([
       tx('i', 'income', 10_000, '2026-10-01'),
       tx('e', 'expense', 9_000, '2026-10-02'),
@@ -156,8 +190,7 @@ describe('transaction selectors', () => {
     expect(over.overspend).toBe(2_000);
     expect(monthSummary([tx('e', 'expense', 5, '2026-10-01')], '2026-10')).toMatchObject({
       income: 0,
-      savedPct: null,
-      investedPct: null,
+      rates: null,
       overspend: 0,
     });
     const includesWithdrawal = monthSummary([
@@ -171,10 +204,18 @@ describe('transaction selectors', () => {
       withdrawals: 10_000,
       earnedIncome: 40_000,
       net: 26_000,
-      savedPct: 50,
-      investedPct: 10,
+      rates: { savedPct: 50, investedPct: 10 },
       overspend: 0,
     });
+  });
+
+  it('returns null rates for exactly zero earned income and preserves expenses-only summaries', () => {
+    expect(monthSummary([
+      tx('withdrawal', 'income', 10_000, '2026-10-02', 'Withdrawal', 'Withdrawal'),
+    ], '2026-10').rates).toBeNull();
+    expect(monthSummary([
+      tx('expense', 'expense', 100, '2026-10-01'),
+    ], '2026-10')).toMatchObject({ income: 0, expense: 100, rates: null });
   });
 
   it('filters by month, type, and case-insensitive query, then groups in order', () => {

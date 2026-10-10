@@ -1,4 +1,6 @@
-import { addTransaction, deleteTransaction, emptyAppData, NotFoundError, updateSettings, updateTransaction } from '../actions';
+import {
+  addTransaction, completeOnboarding, deleteTransaction, emptyAppData, NotFoundError, updateSettings, updateTransaction,
+} from '../actions';
 import { confirmHoldingValue } from '../holdingActions';
 import type { AppData, Transaction } from '../types';
 
@@ -17,7 +19,7 @@ const base = (transactions: Transaction[] = []): AppData => ({
 describe('immutable app actions', () => {
   it('creates an empty app with its pinned emergency fund goal', () => {
     expect(emptyAppData('2026-10-10')).toEqual({
-      settings: { name: '', theme: 'system' },
+      settings: { name: '', theme: 'system', monthlySalary: null, onboarded: false },
       transactions: [],
       goals: [{
         id: 'goal-emergency',
@@ -64,11 +66,21 @@ describe('immutable app actions', () => {
   });
 
   it('merges settings patches while preserving other preferences and app data', () => {
-    const data = { ...base(), settings: { name: 'A', theme: 'dark' as const } };
+    const data = { ...base(), settings: { ...emptyAppData('2026-10-10').settings, name: 'A', theme: 'dark' as const } };
     expect(updateSettings(data, { name: 'B' })).toMatchObject({
       settings: { name: 'B', theme: 'dark' },
       goals: data.goals,
     });
+  });
+
+  it('completes onboarding with the supplied name, salary, and flag in one immutable result', () => {
+    const data = base();
+    const completed = completeOnboarding(data, { name: 'Asha', monthlySalary: 80_000 });
+    expect(completed.settings).toEqual({
+      name: 'Asha', theme: 'system', monthlySalary: 80_000, onboarded: true,
+    });
+    expect(data.settings.onboarded).toBe(false);
+    expect(completeOnboarding(data, { name: '', monthlySalary: null }).settings.onboarded).toBe(true);
   });
 
   it('confirms a manual holding value without changing the value and rejects other holding ids', () => {

@@ -9,17 +9,20 @@ import {
   Card,
   Chip,
   ChipRow,
+  DetailTabBar,
   EmptyState,
   Screen,
-  ScreenHeader,
   StatusBadge,
 } from '../src/components/ui';
-import { useAppData } from '../src/data/useAppData';
+import { AppHeader } from '../src/components/AppHeader';
+import { useAppStore } from '../src/data/store';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
 import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
+import { choiceAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -35,11 +38,14 @@ const badgeTone: Record<ScheduleStatus, 'ok' | 'primary' | 'err' | 'neutral'> = 
   upcoming: 'neutral',
 };
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function InvestmentEntriesScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const holdingId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
+  const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [tab, setTab] = useState<Tab>('Schedule');
@@ -62,7 +68,7 @@ export default function InvestmentEntriesScreen() {
   const listRows: ListRow[] = effectiveTab === 'Schedule' ? filteredSchedule : entries;
 
   if (!holding) {
-    return <Screen><ScreenHeader title="Investment entries" /><EmptyState title="Holding not found" /></Screen>;
+    return <Screen><AppHeader title="Investment entries" showBack fallbackHref="/assets" /><EmptyState title="Holding not found" /></Screen>;
   }
 
   const routeEntryForm = (row: ListRow) => {
@@ -81,7 +87,46 @@ export default function InvestmentEntriesScreen() {
 
   const renderHeader = () => (
     <View>
-      <ScreenHeader title={`${holding.name} ${effectiveTab === 'Schedule' ? 'schedule' : 'entries'}`} />
+      <AppHeader
+        title={`${holding.name} ${effectiveTab === 'Schedule' ? 'schedule' : 'entries'}`}
+        showBack
+        fallbackHref="/assets"
+        rightActions={[{
+          icon: 'plus',
+          label: 'Add investment entry',
+          onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href),
+        }]}
+        menu={[
+          {
+            label: 'Edit',
+            icon: 'edit',
+            onPress: () => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href),
+          },
+          {
+            label: 'Delete',
+            icon: 'trash-2',
+            destructive: true,
+            onPress: () => {
+              const linkedCount = data.transactions.filter((transaction) =>
+                transaction.source?.kind === 'holding-entry' && transaction.source.parentId === holding.id,
+              ).length;
+              void choiceAsync({
+                title: 'Delete investment?',
+                message: `This removes ${holding.logs.length} entries and affects ${linkedCount} linked transactions.`,
+                choices: [
+                  { id: 'keep', label: 'Keep transactions' },
+                  { id: 'delete', label: 'Delete everything', destructive: true },
+                ],
+              }).then((choice) => {
+                if (choice !== 'keep' && choice !== 'delete') return;
+                if (holding.kind === 'plan') actions.deletePlan(holding.id, { linkedTransactions: choice });
+                else actions.deleteHolding(holding.id, { linkedTransactions: choice });
+                if (!useAppStore.getState().lastError) router.back();
+              });
+            },
+          },
+        ]}
+      />
       {holding.kind === 'plan' ? (
         <View style={styles.segment}>
           <SegmentedControl
@@ -137,6 +182,7 @@ export default function InvestmentEntriesScreen() {
   );
 
   return (
+    <>
     <Screen scroll={false}>
       <FlatList<ListRow>
         data={listRows}
@@ -179,6 +225,8 @@ export default function InvestmentEntriesScreen() {
         }}
       />
     </Screen>
+    <DetailTabBar active="none" />
+    </>
   );
 }
 
@@ -186,7 +234,7 @@ const styles = StyleSheet.create({
   segment: { paddingHorizontal: 20, marginTop: 6 },
   summaryLine: { marginTop: 7, fontSize: 12 },
   addAction: { paddingHorizontal: 20, marginTop: 12 },
-  listContent: { paddingBottom: 28 },
+  listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   rowTitle: { flex: 1, gap: 3 },

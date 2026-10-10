@@ -20,7 +20,7 @@ export function createSafeStorage(
   hooks: SafeStorageHooks,
   options: { blockWrites: () => boolean },
 ): StateStorage {
-  let premigrationRaw: string | null = null;
+  let premigration: { raw: string; version: 1 | 2 } | null = null;
   return {
     async getItem(name) {
       const raw = await base.getItem(name);
@@ -36,12 +36,12 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            envelope.version === 1 &&
+            (envelope.version === 1 || envelope.version === 2) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state
           ) {
-            premigrationRaw = raw;
+            premigration = { raw, version: envelope.version };
           } else if (
             typeof envelope.state !== 'object' ||
             envelope.state === null ||
@@ -73,11 +73,11 @@ export function createSafeStorage(
     async setItem(name, value) {
       if (options.blockWrites()) return;
       try {
-        if (name && premigrationRaw !== null) {
-          const premigrationKey = `${name}.premigration.v1`;
+        if (name && premigration !== null) {
+          const premigrationKey = `${name}.premigration.v${premigration.version}`;
           const existing = await base.getItem(premigrationKey);
-          if (existing === null) await base.setItem(premigrationKey, premigrationRaw);
-          premigrationRaw = null;
+          if (existing === null) await base.setItem(premigrationKey, premigration.raw);
+          premigration = null;
         }
         await base.setItem(name, value);
       } catch {

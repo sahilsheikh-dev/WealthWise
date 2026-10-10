@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useSecuritySettings } from '../src/components/SecurityProvider';
-import { AppText, Button, Card, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/ui';
 import { TextField } from '../src/components/form/TextField';
 import { useAppStore } from '../src/data/store';
 import { createAuthenticator } from '../src/lib/authenticate';
@@ -17,6 +18,8 @@ const authenticator = createAuthenticator({
   isEnrolledAsync: LocalAuthentication.isEnrolledAsync,
   authenticateAsync: async (options) => LocalAuthentication.authenticateAsync(options),
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function EraseDataScreen() {
   const { colors } = useTheme();
@@ -60,7 +63,7 @@ export default function EraseDataScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Erase all data" right={<Button label="Back" onPress={() => router.back()} />} />
+      <AppHeader title="Erase all data" showBack />
       <SectionTitle>What will be deleted</SectionTitle>
       <Card>
         <AppText style={[typography.meta, { color: colors.text2, lineHeight: 20 }]}>

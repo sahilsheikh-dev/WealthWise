@@ -7,17 +7,20 @@ import {
   AppText,
   Button,
   Card,
+  DetailTabBar,
   EmptyState,
   Screen,
-  ScreenHeader,
   StatusBadge,
 } from '../src/components/ui';
-import { useAppData } from '../src/data/useAppData';
+import { AppHeader } from '../src/components/AppHeader';
+import { useAppStore } from '../src/data/store';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import { liabilitySummary } from '../src/domain/liability';
 import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
+import { choiceAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -31,11 +34,14 @@ const badgeTone: Record<ScheduleStatus, 'ok' | 'primary' | 'err' | 'neutral'> = 
   upcoming: 'neutral',
 };
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function LiabilityPaymentsScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const liabilityId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
+  const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
   const liability = data.liabilities.find((entry) => entry.id === liabilityId);
   const [tab, setTab] = useState<Tab>('Schedule');
@@ -50,7 +56,7 @@ export default function LiabilityPaymentsScreen() {
   const listRows: ListRow[] = tab === 'Schedule' ? schedule?.rows ?? [] : payments;
 
   if (!liability || !schedule) {
-    return <Screen><ScreenHeader title="Liability schedule" /><EmptyState title="Liability not found" /></Screen>;
+    return <Screen><AppHeader title="Liability schedule" showBack fallbackHref="/liabilities" /><EmptyState title="Liability not found" /></Screen>;
   }
 
   const openPayment = (row: ListRow) => {
@@ -77,7 +83,45 @@ export default function LiabilityPaymentsScreen() {
   const summary = liabilitySummary(liability, today);
   const renderHeader = () => (
     <View>
-      <ScreenHeader title={`${liability.name} ${tab === 'Schedule' ? 'schedule' : 'payments'}`} />
+      <AppHeader
+        title={`${liability.name} ${tab === 'Schedule' ? 'schedule' : 'payments'}`}
+        showBack
+        fallbackHref="/liabilities"
+        rightActions={[{
+          icon: 'plus',
+          label: 'Add liability payment',
+          onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
+        }]}
+        menu={[
+          {
+            label: 'Edit',
+            icon: 'edit',
+            onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }),
+          },
+          {
+            label: 'Delete',
+            icon: 'trash-2',
+            destructive: true,
+            onPress: () => {
+              const linkedCount = data.transactions.filter((transaction) =>
+                transaction.source?.kind === 'liability-payment' && transaction.source.parentId === liability.id,
+              ).length;
+              void choiceAsync({
+                title: 'Delete liability?',
+                message: `This removes ${liability.payments.length} payments and affects ${linkedCount} linked transactions.`,
+                choices: [
+                  { id: 'keep', label: 'Keep transactions' },
+                  { id: 'delete', label: 'Delete everything', destructive: true },
+                ],
+              }).then((choice) => {
+                if (choice !== 'keep' && choice !== 'delete') return;
+                actions.deleteLiability(liability.id, { linkedTransactions: choice });
+                if (!useAppStore.getState().lastError) router.back();
+              });
+            },
+          },
+        ]}
+      />
       <View style={styles.segment}>
         <SegmentedControl
           label="View"
@@ -125,6 +169,7 @@ export default function LiabilityPaymentsScreen() {
   );
 
   return (
+    <>
     <Screen scroll={false}>
       <FlatList<ListRow>
         data={listRows}
@@ -176,6 +221,8 @@ export default function LiabilityPaymentsScreen() {
         }}
       />
     </Screen>
+    <DetailTabBar active="none" />
+    </>
   );
 }
 
@@ -184,7 +231,7 @@ const styles = StyleSheet.create({
   summaryLine: { marginTop: 7, fontSize: 12 },
   balance: { marginTop: 5 },
   addAction: { paddingHorizontal: 20, marginTop: 12 },
-  listContent: { paddingBottom: 28 },
+  listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   rowTitle: { flex: 1, gap: 3 },

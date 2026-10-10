@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
-import { AppText, Button, EmptyState, ListItem, Screen, ScreenHeader } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Button, EmptyState, ListItem, Screen } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { findUnlinkedEntries } from '../src/domain/instruments';
@@ -11,6 +12,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { formatDate, formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LinkMissingScreen() {
   const data = useAppStore((state) => state.data);
@@ -38,7 +41,7 @@ export default function LinkMissingScreen() {
   return (
     <Screen scroll={false}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Link missing transactions" right={<Button label="Back" onPress={() => router.back()} />} />
+        <AppHeader title="Link missing transactions" showBack />
         <FormErrorBanner message={lastError} />
         {entries.length === 0 ? (
           <EmptyState title="All entries are linked" subtitle="There are no missing transactions to create." />

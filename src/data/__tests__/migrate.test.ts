@@ -1,5 +1,8 @@
-import { migratePersisted, migrateV1ToV2, PersistedVersionError } from '../migrate';
-import { makeV1Fixture } from '../testFixtures/v1';
+import { migratePersisted, migrateV1ToV2, migrateV2ToV3, PersistedVersionError } from '../migrate';
+import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
+import { validateImportData } from '../../domain/backup';
+import { efBalance } from '../../domain/ef';
+import { netWorth } from '../../domain/summary';
 
 describe('schema migration', () => {
   it('migrates a v1 database to the exact v2 shape', () => {
@@ -25,8 +28,52 @@ describe('schema migration', () => {
       }],
       efEntries: v1.efEntries,
     };
-    expect(migratePersisted({ data: v1 }, 1)).toEqual({ data: expected });
     expect(migrateV1ToV2(v1)).toEqual(expected);
+    expect(migratePersisted({ data: v1 }, 1)).toEqual({
+      data: { ...expected, settings: { ...expected.settings, monthlySalary: null, onboarded: true } },
+    });
+  });
+
+  it('upgrades v2 settings and detects onboarded only for non-empty user data', () => {
+    const v2 = makeV2Fixture();
+    const expected = {
+      ...v2,
+      settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+    };
+    expect(migrateV2ToV3(v2)).toEqual(expected);
+    expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expected });
+    const before = validateImportData({
+      ...v2,
+      settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+    });
+    const after = validateImportData(migrateV2ToV3(v2));
+    if (!before.ok || !after.ok) throw new Error('Expected the v2 migration fixture to validate.');
+    expect(netWorth(after.data, '2026-09-03')).toEqual(netWorth(before.data, '2026-09-03'));
+    expect(efBalance(after.data.efEntries)).toBe(efBalance(before.data.efEntries));
+    const empty = {
+      ...v2,
+      settings: { ...v2.settings, name: '' },
+      transactions: [],
+      goals: v2.goals.filter((goal) => goal.auto === 'ef'),
+      holdings: [],
+      liabilities: [],
+      efEntries: [],
+    };
+    expect(migrateV2ToV3(empty)).toMatchObject({ settings: { onboarded: false, monthlySalary: null } });
+    expect(migrateV2ToV3({ ...empty, settings: { ...empty.settings, name: 'Only name' } }))
+      .toMatchObject({ settings: { onboarded: true } });
+    expect(migrateV2ToV3({ ...empty, transactions: [v2.transactions[0]] }))
+      .toMatchObject({ settings: { onboarded: true } });
+    expect(migrateV2ToV3({ ...empty, holdings: [v2.holdings[0]] }))
+      .toMatchObject({ settings: { onboarded: true } });
+    expect(migrateV2ToV3({ ...empty, liabilities: [v2.liabilities[0]] }))
+      .toMatchObject({ settings: { onboarded: true } });
+    expect(migrateV2ToV3({ ...empty, efEntries: [v2.efEntries[0]] }))
+      .toMatchObject({ settings: { onboarded: true } });
+    expect(migrateV2ToV3({
+      ...empty,
+      goals: [{ id: 'goal', name: 'Goal', target: 100, saved: 0, year: 2028 }],
+    })).toMatchObject({ settings: { onboarded: true } });
   });
 
   it('rejects v2 input passed to the v1 migration and unknown or future versions', () => {
@@ -35,14 +82,14 @@ describe('schema migration', () => {
     expect(() => migratePersisted({}, 0)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
-    expect(() => migratePersisted({}, 3)).toThrow(
+    expect(() => migratePersisted({}, 4)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { liabilities: [] } };
-    expect(migratePersisted(persisted, 2)).toBe(persisted);
+    const persisted = { data: { version3: true } };
+    expect(migratePersisted(persisted, 3)).toBe(persisted);
   });
 });

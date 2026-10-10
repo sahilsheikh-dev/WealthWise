@@ -3,38 +3,36 @@ import { useColorScheme } from 'react-native';
 
 import { useAppActions } from '../data/useAppData';
 import { useAppStore } from '../data/store';
-import { darkColors, lightColors, type ThemeColors } from './tokens';
-
-export type ThemePreference = 'system' | 'dark' | 'light';
+import type { ThemeId } from '../domain/types';
+import { resolveTheme, themes, type ConcreteThemeId } from './themes';
+import type { ThemeColors } from './tokens';
 
 export type ThemeContextValue = {
   colors: ThemeColors;
   isDark: boolean;
-  themePreference: ThemePreference;
-  toggleTheme: () => void;
+  themeId: ThemeId;
+  resolvedId: ConcreteThemeId;
+  statusBar: 'light' | 'dark';
+  setTheme: (theme: ThemeId) => void;
 };
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const systemScheme = useColorScheme();
-  const themePreference = useAppStore((state) => state.data.settings.theme);
+  const themeId = useAppStore((state) => state.data.settings.theme);
   const actions = useAppActions();
-  const isDark = themePreference === 'system' ? systemScheme === 'dark' : themePreference === 'dark';
+  const resolvedId = resolveTheme(themeId, systemScheme === 'dark' ? 'dark' : systemScheme === 'light' ? 'light' : null);
+  const palette = themes[resolvedId];
 
   const value = useMemo<ThemeContextValue>(() => ({
-    colors: isDark ? darkColors : lightColors,
-    isDark,
-    themePreference,
-    toggleTheme: () => {
-      const next: Record<ThemePreference, ThemePreference> = {
-        system: 'dark',
-        dark: 'light',
-        light: 'system',
-      };
-      actions.updateSettings({ theme: next[themePreference] });
-    },
-  }), [actions, isDark, themePreference]);
+    colors: palette.colors,
+    isDark: palette.isDark,
+    themeId,
+    resolvedId,
+    statusBar: palette.statusBar,
+    setTheme: (theme) => actions.updateSettings({ theme }),
+  }), [actions, palette, resolvedId, themeId]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

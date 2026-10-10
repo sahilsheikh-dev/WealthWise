@@ -11,17 +11,15 @@ const tabIcons = {
   index: 'home',
   transactions: 'repeat',
   goals: 'target',
-  invest: 'pie-chart',
-  more: 'grid',
 } as const;
 
 const tabLabels = {
   index: 'Home',
   transactions: 'Txns',
   goals: 'Goals',
-  invest: 'Invest',
-  more: 'More',
 } as const;
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -55,8 +53,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="transactions" options={{ title: 'Txns' }} />
       <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
-      <Tabs.Screen name="invest" options={{ title: 'Invest' }} />
-      <Tabs.Screen name="more" options={{ title: 'More' }} />
     </Tabs>
   );
 }
