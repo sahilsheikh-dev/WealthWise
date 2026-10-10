@@ -24,7 +24,7 @@ jest.mock('../ui', () => {
 });
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => ({
-    colors: { bg: '#000', surface: '#111', border: '#222', text1: '#fff', text2: '#ddd', text3: '#888', primary: '#08f', err: '#f00' },
+    colors: jest.requireActual('../../theme/themes').themes.dark.colors,
   }),
 }));
 

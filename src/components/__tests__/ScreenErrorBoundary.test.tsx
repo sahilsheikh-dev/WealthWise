@@ -26,10 +26,12 @@ jest.mock('../ui', () => {
 });
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => ({
-    colors: { bg: '#000', surface: '#111', border: '#222', text1: '#fff', text3: '#888', primary: '#08f' },
+    colors: jest.requireActual('../../theme/themes').themes.dark.colors,
     isDark: true,
-    themePreference: 'dark',
-    toggleTheme: jest.fn(),
+    themeId: 'dark',
+    resolvedId: 'dark',
+    statusBar: 'light',
+    setTheme: jest.fn(),
   }),
 }));
 

@@ -7,7 +7,7 @@ const mockAddEfEntry = jest.fn();
 const mockBack = jest.fn();
 const mockState = {
   data: {
-    settings: { name: '', theme: 'system' as const },
+    settings: { name: '', theme: 'system' as const, monthlySalary: null, onboarded: false },
     transactions: [],
     goals: [],
     holdings: [],

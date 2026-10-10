@@ -64,6 +64,9 @@ export default function LiabilitiesScreen() {
             <StatPill label="Monthly EMI" value={formatINR(overview.monthlyEmi)} tone="err" />
             <StatPill label="Of income" value={overview.emiPctOfIncome === null ? '—' : `${overview.emiPctOfIncome.toFixed(1)}%`} />
           </StatPillRow>
+          {overview.incomeSource === 'salary' ? (
+            <AppText style={[typography.meta, { color: colors.text3 }]}>based on your stated salary</AppText>
+          ) : null}
           {hasRecurring ? (
             <>
               <AppText weight="semibold" style={[typography.meta, styles.whatIfLabel, { color: colors.text2 }]}>

@@ -43,7 +43,7 @@ const metaStore = createMetaStore(AsyncStorage);
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function HomeScreen() {
-  const { colors, themePreference, toggleTheme } = useTheme();
+  const { colors, themeId } = useTheme();
   const data = useAppData();
   const devActions = useAppStore((state) => state.devActions);
   const today = todayISO();
@@ -62,18 +62,20 @@ export default function HomeScreen() {
     nudgeDismissedUntil: backupMeta.nudgeDismissedUntil,
     today,
   });
-  const themeLabels = { system: 'System', dark: 'Dark', light: 'Light' } as const;
+  const themeLabels = {
+    system: 'System', light: 'Light', dark: 'Dark', sky: 'Sky', mint: 'Mint', blush: 'Blush', midnight: 'Midnight',
+  } as const;
   const menu = buildHomeMenu({
     hasUnlinked: findUnlinkedEntries(data).length > 0,
     isDev: __DEV__,
-    themeLabel: themeLabels[themePreference],
+    themeLabel: themeLabels[themeId],
   }).map((item) => ({
     ...item,
     onPress: () => {
       if (item.label === 'Backup and restore') router.push('/backup');
       else if (item.label === 'Security') router.push('/security');
-      else if (item.label === 'Your name') router.push('/name-form');
-      else if (item.label.startsWith('Theme')) toggleTheme();
+      else if (item.label === 'Profile') router.push('/profile-form' as Href);
+      else if (item.label === 'Theme') router.push('/theme' as Href);
       else if (item.label === 'Link missing transactions') router.push('/link-missing' as Href);
       else if (item.label === 'Erase all data') router.push('/erase-data');
       else if (item.label === 'Load demo data' && devActions) {

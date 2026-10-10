@@ -6,8 +6,8 @@ describe('buildHomeMenu', () => {
     expect(labels).toEqual([
       'Backup and restore',
       'Security',
-      'Your name',
-      'Theme (Dark)',
+      'Profile',
+      'Theme',
       'Erase all data',
     ]);
     expect(buildHomeMenu({ hasUnlinked: true, isDev: false, themeLabel: 'System' }).map(({ label }) => label))
@@ -16,7 +16,8 @@ describe('buildHomeMenu', () => {
 
   it('places developer actions after production actions and omits them in production', () => {
     const menu = buildHomeMenu({ hasUnlinked: false, isDev: true, themeLabel: 'Light' });
-    expect(menu.slice(-2).map(({ label }) => label)).toEqual(['Load demo data', 'Simulate corrupt storage']);
+    expect(menu.slice(-3).map(({ label }) => label))
+      .toEqual(['Load demo data', 'Simulate corrupt storage', 'Erase all data']);
     expect(buildHomeMenu({ hasUnlinked: false, isDev: false, themeLabel: 'Light' })
       .some(({ label }) => label === 'Load demo data')).toBe(false);
   });

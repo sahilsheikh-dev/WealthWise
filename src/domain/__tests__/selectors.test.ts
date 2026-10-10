@@ -13,6 +13,7 @@ import {
   holdingInvested,
   holdingValue,
   homeSummary,
+  incomeBaselineFor,
   liabilitiesOverview,
   milestones,
   monthlyBaseline,
@@ -35,13 +36,46 @@ const tx = (
 ): Transaction => ({ id, type, amount, date, note, category });
 
 const baseData = (changes: Partial<AppData> = {}): AppData => ({
-  settings: { name: 'Test', theme: 'system' },
+  settings: { name: 'Test', theme: 'system', monthlySalary: null, onboarded: true },
   transactions: [],
   goals: [],
   holdings: [],
   liabilities: [],
   efEntries: [],
   ...changes,
+});
+
+describe('income baseline selection', () => {
+  it('prefers earned-income history, falls back to salary, and otherwise returns null', () => {
+    expect(incomeBaselineFor(baseData({
+      transactions: [
+        tx('salary-history', 'income', 40_000, '2025-12-10', 'Salary', 'Salary'),
+        tx('withdrawal', 'income', 20_000, '2025-12-12', 'Withdrawal', 'Withdrawal'),
+      ],
+      settings: { ...baseData().settings, monthlySalary: 70_000 },
+    }), '2026-01-01')).toEqual({ amount: 40_000, source: 'transactions' });
+    expect(incomeBaselineFor(baseData({
+      settings: { ...baseData().settings, monthlySalary: 70_000 },
+      transactions: [tx('withdrawal', 'income', 20_000, '2025-12-12', 'Withdrawal', 'Withdrawal')],
+    }), '2026-01-01')).toEqual({ amount: 70_000, source: 'salary' });
+    expect(incomeBaselineFor(baseData(), '2026-01-01')).toBeNull();
+  });
+
+  it('marks salary-based liability ratios without changing actual-history ratios', () => {
+    const liability: RecurringLiability = {
+      id: 'salary-liability', kind: 'recurring', name: 'Loan', type: 'Other',
+      principal: 100_000, ratePct: 0, startDate: '2025-01-01', tenureMonths: 12, emi: 10_000, payments: [],
+    };
+    expect(liabilitiesOverview(baseData({
+      liabilities: [liability],
+      settings: { ...baseData().settings, monthlySalary: 50_000 },
+    }), '2026-01-01', 0)).toMatchObject({ emiPctOfIncome: 20, incomeSource: 'salary' });
+    expect(liabilitiesOverview(baseData({
+      liabilities: [liability],
+      settings: { ...baseData().settings, monthlySalary: 50_000 },
+      transactions: [tx('salary', 'income', 40_000, '2025-12-10', 'Salary', 'Salary')],
+    }), '2026-01-01', 0)).toMatchObject({ emiPctOfIncome: 25, incomeSource: 'transactions' });
+  });
 });
 
 describe('emergency fund calculations', () => {

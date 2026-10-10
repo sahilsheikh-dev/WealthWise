@@ -45,6 +45,7 @@ export type LiabilitiesOverview = {
   totalOutstanding: number;
   monthlyEmi: number;
   emiPctOfIncome: number | null;
+  incomeSource: 'transactions' | 'salary' | null;
   debtFreeBy: ISODate | 'never' | null;
   items: LiabilitySummary[];
 };
@@ -55,12 +56,7 @@ export function liabilitiesOverview(data: AppData, asOf: ISODate, extra: number)
     data.liabilities.filter((liability): liability is RecurringLiability => liability.kind === 'recurring')
       .map((liability) => ({ liability, summary: liabilitySummary(liability, asOf, extra) }))
       .filter(({ summary }) => !summary.cleared);
-  const incomeBaseline = monthlyBaseline(
-    data.transactions,
-    'income',
-    asOf,
-    { excludeCategories: ['Withdrawal'] },
-  );
+  const incomeBaseline = incomeBaselineFor(data, asOf);
   const debtFreeBy: LiabilitiesOverview['debtFreeBy'] = activeRecurring.length === 0
     ? null
     : activeRecurring.some(({ summary }) => summary.monthsLeft === null)
@@ -73,8 +69,26 @@ export function liabilitiesOverview(data: AppData, asOf: ISODate, extra: number)
   return {
     totalOutstanding: items.reduce((total, item) => total + item.balance, 0),
     monthlyEmi,
-    emiPctOfIncome: incomeBaseline > 0 ? monthlyEmi / incomeBaseline * 100 : null,
+    emiPctOfIncome: incomeBaseline ? monthlyEmi / incomeBaseline.amount * 100 : null,
+    incomeSource: incomeBaseline?.source ?? null,
     debtFreeBy,
     items,
   };
+}
+
+export function incomeBaselineFor(
+  data: AppData,
+  asOf: ISODate,
+): { amount: number; source: 'transactions' | 'salary' } | null {
+  const earnedIncome = monthlyBaseline(
+    data.transactions,
+    'income',
+    asOf,
+    { excludeCategories: ['Withdrawal'] },
+  );
+  if (earnedIncome > 0) return { amount: earnedIncome, source: 'transactions' };
+  if (data.settings.monthlySalary !== null) {
+    return { amount: data.settings.monthlySalary, source: 'salary' };
+  }
+  return null;
 }

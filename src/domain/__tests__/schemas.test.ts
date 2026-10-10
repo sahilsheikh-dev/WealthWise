@@ -7,6 +7,8 @@ import {
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
   makeLiabilityPaymentFormSchema,
+  makeOnboardingFormSchema,
+  makeProfileFormSchema,
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
@@ -23,9 +25,29 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version two', () => {
+  it('accepts the typed mock app data and exports schema version three', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
+  });
+
+  describe('onboarding and profile schemas', () => {
+    it('trims names, allows a cleared salary and returns normalized salary values', () => {
+      expect(makeOnboardingFormSchema().parse({ name: '  Asha  ', monthlySalary: '50000' }))
+        .toEqual({ name: 'Asha', monthlySalary: 50_000 });
+      expect(makeProfileFormSchema().parse({ name: 'Asha', monthlySalary: '' }))
+        .toEqual({ name: 'Asha', monthlySalary: null });
+    });
+
+    it('uses stable name and salary validation messages', () => {
+      const schema = makeOnboardingFormSchema();
+      expect(schema.safeParse({ name: '  ', monthlySalary: '' }).error?.issues[0]?.message)
+        .toBe('Enter your name');
+      expect(schema.safeParse({ name: 'x'.repeat(41), monthlySalary: '' }).error?.issues[0]?.message)
+        .toBe('Keep your name under 40 characters');
+      expect(schema.safeParse({ name: 'Asha', monthlySalary: '1000000001' }).error?.issues[0]?.message)
+        .toBe('Salary must be 1,000,000,000 or less');
+      expect(schema.safeParse({ name: 'Asha', monthlySalary: 'not money' }).success).toBe(false);
+    });
   });
 
   it('rejects malformed holdings, invalid dates, negative transactions and mismatched snapshots', () => {
@@ -78,7 +100,7 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      settings: { name: 'Test', theme: 'unknown' },
+      settings: { ...mockAppData.settings, theme: 'unknown' },
     }).success).toBe(false);
   });
 });

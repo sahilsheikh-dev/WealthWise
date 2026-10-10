@@ -62,16 +62,45 @@ export function migrateV1ToV2(data: unknown): unknown {
   return { ...rest, holdings, liabilities, transactions };
 }
 
+export function migrateV2ToV3(data: unknown): unknown {
+  if (
+    !isRecord(data) ||
+    !isRecord(data.settings) ||
+    !Array.isArray(data.transactions) ||
+    !Array.isArray(data.goals) ||
+    !Array.isArray(data.holdings) ||
+    !Array.isArray(data.liabilities) ||
+    !Array.isArray(data.efEntries)
+  ) {
+    throw new PersistedVersionError(2, 'unknown-version');
+  }
+  const settings = {
+    ...data.settings,
+    monthlySalary: null,
+    onboarded: data.settings.name !== ''
+      || data.transactions.length > 0
+      || data.goals.some((goal) => !isRecord(goal) || goal.auto !== 'ef')
+      || data.holdings.length > 0
+      || data.liabilities.length > 0
+      || data.efEntries.length > 0,
+  };
+  return { ...data, settings };
+}
+
 export function migratePersisted(persisted: unknown, fromVersion: number): unknown {
   if (fromVersion === SCHEMA_VERSION) return persisted;
   if (fromVersion > SCHEMA_VERSION) throw new PersistedVersionError(fromVersion, 'future-version');
   if (fromVersion < 0 || !Number.isInteger(fromVersion)) {
     throw new PersistedVersionError(fromVersion, 'unknown-version');
   }
-  if (fromVersion !== 1) throw new PersistedVersionError(fromVersion, 'unknown-version');
-
+  if (fromVersion !== 1 && fromVersion !== 2) throw new PersistedVersionError(fromVersion, 'unknown-version');
+  const migrateData = (data: unknown) => {
+    let result = data;
+    if (fromVersion === 1) result = migrateV1ToV2(result);
+    return migrateV2ToV3(result);
+  };
   if (isRecord(persisted) && 'data' in persisted) {
-    return { ...persisted, data: migrateV1ToV2(persisted.data) };
+    return { ...persisted, data: migrateData(persisted.data) };
   }
-  return migrateV1ToV2(persisted);
+  return migrateData(persisted);
 }

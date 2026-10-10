@@ -108,7 +108,7 @@ export const emergencyFundEntries: EfEntry[] = [
 ];
 
 export const mockAppData: AppData = {
-  settings: { name: 'Sahil', theme: 'system' },
+  settings: { name: 'Sahil', theme: 'system', monthlySalary: null, onboarded: true },
   transactions,
   goals,
   holdings,

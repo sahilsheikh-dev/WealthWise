@@ -4,7 +4,7 @@ import { ensureEfGoal } from './goals';
 import { validateIntegrity } from './links';
 import { migratePersisted } from '../data/migrate';
 import { appDataSchema, SCHEMA_VERSION } from './schemas';
-import type { AppData, ISODate } from './types';
+import { THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -16,7 +16,7 @@ const idSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
 const money = z.number().finite().max(100_000_000_000).min(-100_000_000_000);
 const positiveMoney = money.positive();
 const note = z.string().max(200);
-const name = z.string().max(80);
+const name = z.string().max(40);
 const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
@@ -80,7 +80,12 @@ const efEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: money.refine((amount) => amount !== 0), note,
 });
 export const importDataSchema = z.strictObject({
-  settings: z.strictObject({ name, theme: z.enum(['system', 'dark', 'light']) }),
+  settings: z.strictObject({
+    name,
+    theme: z.enum(THEME_IDS),
+    monthlySalary: z.number().finite().min(0.01).max(1_000_000_000).nullable(),
+    onboarded: z.boolean(),
+  }),
   transactions: z.array(transactionSchema).max(100_000),
   goals: z.array(goalSchema).max(100_000),
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),

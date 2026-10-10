@@ -54,7 +54,7 @@ const oneTimeLiability: OneTimeLiability = {
 };
 
 const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability | OneTimeLiability)[] = []): AppData => ({
-  settings: { name: '', theme: 'system' },
+  settings: { name: '', theme: 'system', monthlySalary: null, onboarded: false },
   transactions: [],
   goals: [],
   holdings,

@@ -1,42 +1,43 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { StyleSheet, View } from 'react-native';
+import type { z } from 'zod';
 
 import { FormScreen } from '../src/components/form/FormScreen';
+import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
 import { useAppActions } from '../src/data/useAppData';
 import { useAppStore } from '../src/data/store';
-import { useTheme } from '../src/theme/useTheme';
-import { typography } from '../src/theme/tokens';
+import { makeProfileFormSchema } from '../src/domain/schemas';
 import { confirmAsync } from '../src/lib/confirm';
-
-const nameSchema = z.object({
-  name: z.string().trim().min(1, 'Enter your name').max(40, 'Keep your name under 40 characters'),
-});
-
-type NameFormInput = z.input<typeof nameSchema>;
-type NameFormOutput = z.output<typeof nameSchema>;
+import { typography } from '../src/theme/tokens';
+import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
-export default function NameFormScreen() {
-  const currentName = useAppStore((state) => state.data.settings.name);
+const schema = makeProfileFormSchema();
+type ProfileInput = z.input<typeof schema>;
+type ProfileOutput = z.output<typeof schema>;
+
+export default function ProfileFormScreen() {
+  const settings = useAppStore((state) => state.data.settings);
   const actions = useAppActions();
   const { colors } = useTheme();
   const {
     control,
     handleSubmit,
     formState: { errors, isDirty, isSubmitting, submitCount },
-  } = useForm<NameFormInput, undefined, NameFormOutput>({
-    resolver: zodResolver(nameSchema),
+  } = useForm<ProfileInput, undefined, ProfileOutput>({
+    resolver: zodResolver(schema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { name: currentName },
+    defaultValues: {
+      name: settings.name,
+      monthlySalary: settings.monthlySalary === null ? '' : String(settings.monthlySalary),
+    },
   });
-
   const close = () => {
     if (!isDirty) {
       router.back();
@@ -47,34 +48,32 @@ export default function NameFormScreen() {
       confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
     }).then((discard) => { if (discard) router.back(); });
   };
-
-  const save = (value: NameFormOutput) => {
-    actions.updateSettings({ name: value.name });
-    const state = useAppStore.getState();
-    if (state.lastError) {
-      void confirmAsync({ title: 'Could not save your name', message: state.lastError, confirmLabel: 'OK' });
+  const save = (value: ProfileOutput) => {
+    actions.updateSettings({ name: value.name, monthlySalary: value.monthlySalary });
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      void confirmAsync({ title: 'Could not save your profile', message: error, confirmLabel: 'OK' });
       return;
     }
     router.back();
   };
 
-  const invalidCount = Object.keys(errors).length;
   return (
     <FormScreen
-      title="Your name"
+      title="Profile"
       onClose={close}
       footer={
         <View style={styles.footer}>
-          {submitCount > 0 && invalidCount > 0 ? (
-            <AppText style={[typography.meta, styles.error, { color: colors.err }]}>
-              Fix {invalidCount} {invalidCount === 1 ? 'field' : 'fields'}
+          {submitCount > 0 && Object.keys(errors).length > 0 ? (
+            <AppText style={[typography.meta, { color: colors.err }]}>
+              Fix {Object.keys(errors).length} {Object.keys(errors).length === 1 ? 'field' : 'fields'}
             </AppText>
           ) : null}
           <Button
             label="Save"
             variant="primary"
-            accessibilityLabel="Save name"
-            disabled={isSubmitting || (submitCount > 0 && invalidCount > 0)}
+            accessibilityLabel="Save profile"
+            disabled={isSubmitting}
             onPress={handleSubmit(save)}
             style={styles.save}
           />
@@ -97,12 +96,31 @@ export default function NameFormScreen() {
           />
         )}
       />
+      <Controller
+        control={control}
+        name="monthlySalary"
+        render={({ field }) => (
+          <View style={styles.salary}>
+            <MoneyField
+              label="Monthly take-home salary (₹)"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              accessibilityLabel="Monthly take-home salary"
+              error={errors.monthlySalary?.message}
+            />
+            <AppText style={[typography.meta, { color: colors.text3 }]}>
+              Used to estimate how much of your income goes to EMIs
+            </AppText>
+          </View>
+        )}
+      />
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
   footer: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  error: { flex: 1, textAlign: 'center' },
   save: { flex: 1 },
+  salary: { gap: 7 },
 });

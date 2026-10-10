@@ -9,7 +9,7 @@ import {
   validateImportData,
 } from '../backup';
 import { mockAppData } from '../../mock/data';
-import { makeV1Fixture } from '../../data/testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture } from '../../data/testFixtures/v1';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -29,6 +29,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 3 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -43,7 +44,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 3;
+    newer.schemaVersion = 4;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     await expect(parseBackup('x'.repeat(MAX_BACKUP_CHARS + 1), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'too-large' });
@@ -56,7 +57,7 @@ describe('backup validation and serialization', () => {
     expect(() => backupFileName('not a date')).toThrow('Invalid export date');
   });
 
-  it('verifies a v1 data checksum before migration and imports the v2 result', async () => {
+  it('verifies a v1 data checksum before migration and imports the v3 result', async () => {
     const data = makeV1Fixture();
     const envelope = {
       app: 'wealthwise',
@@ -69,8 +70,36 @@ describe('backup validation and serialization', () => {
     const result = await parseBackup(JSON.stringify(envelope), { digest });
     expect(result).toMatchObject({
       ok: true,
-      data: { liabilities: [{ kind: 'recurring', type: 'Other' }] },
+      data: { settings: { monthlySalary: null, onboarded: true }, liabilities: [{ kind: 'recurring', type: 'Other' }] },
     });
+
+    const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
+    await expect(parseBackup(JSON.stringify(corrupted), { digest }))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v2 data as written before migrating and validates the v3 result', async () => {
+    const data = makeV2Fixture();
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: 1,
+      schemaVersion: 2,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
+      data,
+    };
+    const result = await parseBackup(JSON.stringify(envelope), { digest });
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        settings: { monthlySalary: null, onboarded: true },
+        liabilities: [{ kind: 'recurring', type: 'Other' }],
+      },
+    });
+    if (result.ok) {
+      expect(result.data.settings.theme).toBe(data.settings.theme);
+      expect(result.data.transactions).toEqual(data.transactions);
+    }
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
     await expect(parseBackup(JSON.stringify(corrupted), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
@@ -96,7 +125,10 @@ describe('backup validation and serialization', () => {
     const result = validateImportData(dataWithoutEfGoal);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.goals.some((goal) => goal.auto === 'ef')).toBe(true);
-    const invalid = validateImportData({ ...mockAppData, settings: { name: 'x'.repeat(81), theme: 'dark' } });
+    const invalid = validateImportData({
+      ...mockAppData,
+      settings: { ...mockAppData.settings, name: 'x'.repeat(41) },
+    });
     expect(invalid).toMatchObject({ ok: false, reason: 'invalid-data' });
     if (!invalid.ok) expect(invalid.issues.length).toBeLessThanOrEqual(10);
     const invalidSnapshot = validateImportData({

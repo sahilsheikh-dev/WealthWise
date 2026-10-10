@@ -2,9 +2,10 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionsScreen from '../../../app/(tabs)/transactions';
+import { THEME_IDS, type ThemeId } from '../../domain/types';
 
 const mockData = {
-  settings: { name: 'Test', theme: 'light' as const },
+  settings: { name: 'Test', theme: 'light' as const, monthlySalary: null, onboarded: true },
   transactions: [{
     id: 'withdrawal',
     type: 'income' as const,
@@ -18,12 +19,7 @@ const mockData = {
   liabilities: [],
   efEntries: [],
 };
-const mockThemeColors = {
-  bg: '#fff', surface: '#fff', surface2: '#eee', surface3: '#ddd', border: '#ccc',
-  text1: '#111', text2: '#333', text3: '#666', primary: '#00f', primaryDim: '#eef',
-  ok: '#0a0', okDim: '#efe', err: '#f00', errDim: '#fee', info: '#08f',
-  infoDim: '#eef', purple: '#80f', purpleDim: '#fef',
-};
+const mockThemeId: { current: ThemeId } = { current: 'light' };
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('../../data/useAppData', () => ({
@@ -34,7 +30,19 @@ jest.mock('../../data/uiStore', () => ({
     selector({ txMonth: '2026-10', setTxMonth: jest.fn() }),
 }));
 jest.mock('../../theme/useTheme', () => ({
-  useTheme: () => ({ colors: mockThemeColors, isDark: false, themePreference: 'light', toggleTheme: jest.fn() }),
+  useTheme: () => {
+    const { themes } = jest.requireActual('../../theme/themes');
+    const themeId = mockThemeId.current;
+    const resolvedId = themeId === 'system' ? 'light' : themeId;
+    return {
+      colors: themes[resolvedId].colors,
+      isDark: themes[resolvedId].isDark,
+      themeId,
+      resolvedId,
+      statusBar: themes[resolvedId].statusBar,
+      setTheme: jest.fn(),
+    };
+  },
 }));
 jest.mock('../AppHeader', () => ({
   AppHeader: ({ title }: { title: string }) => {
@@ -75,7 +83,8 @@ jest.mock('../ui', () => {
 });
 
 describe('Transactions screen withdrawals-only month', () => {
-  it('renders the no-earned-income and investment withdrawal lines without crashing', () => {
+  it.each(THEME_IDS)('renders the withdrawals-only state under the %s theme', (id) => {
+    mockThemeId.current = id;
     const rendererRef: { current?: TestRenderer.ReactTestRenderer } = {};
     act(() => {
       rendererRef.current = TestRenderer.create(<TransactionsScreen />);
