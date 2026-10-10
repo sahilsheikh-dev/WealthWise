@@ -14,10 +14,12 @@ import {
   Screen,
   StatPill,
   StatPillRow,
+  StatusBadge,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitiesOverview } from '../src/domain/summary';
+import { liabilitySchedule } from '../src/domain/schedule';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR, formatMonth } from '../src/lib/format';
@@ -122,6 +124,7 @@ export default function LiabilitiesScreen() {
 function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiability; asOf: string; extra: number }) {
   const { colors } = useTheme();
   const summary = liabilitySummary(liability, asOf, extra);
+  const schedule = liabilitySchedule(liability, asOf);
   const scenarioDate = summary.monthsLeftWithExtra === null
     ? null
     : payoffDate(summary.monthsLeftWithExtra, asOf);
@@ -140,6 +143,11 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         </View>
       </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
+      {!summary.cleared && schedule.summary.nextDue ? (
+        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {formatDate(schedule.summary.nextDue.dueDate)}, {formatINR(schedule.summary.nextDue.amount)}
+        </AppText>
+      ) : null}
       <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Paid {formatINR(summary.paidTotal)}. Interest accrued {formatINR(summary.interestAccrued)}.
         {'\n'}{summary.cleared
@@ -148,6 +156,9 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
             ? 'EMI is too low to clear this liability'
             : `${summary.monthsLeft} months left · Payoff ${formatMonth(payoffDate(summary.monthsLeft, asOf).slice(0, 7))}.`}
       </AppText>
+      {!summary.cleared && schedule.summary.overdue > 0
+        ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
+        : null}
       {!summary.cleared && extra > 0 ? (
         <AppText style={[typography.meta, styles.scenario, { color: colors.primary }]}>
           {scenarioDate === null
@@ -173,6 +184,7 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
 function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: string }) {
   const { colors } = useTheme();
   const summary = liabilitySummary(liability, asOf);
+  const schedule = liabilitySchedule(liability, asOf);
   const overdue = summary.overdueDays !== undefined && !summary.cleared;
   return (
     <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -188,10 +200,18 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
         </View>
       </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
+      {!summary.cleared && schedule.summary.nextDue ? (
+        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, {formatINR(schedule.summary.nextDue.amount)}
+        </AppText>
+      ) : null}
       <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Due {liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid {formatINR(summary.paidTotal)}
         {overdue ? `\nOverdue by ${summary.overdueDays} days` : ''}
       </AppText>
+      {!summary.cleared && schedule.summary.overdue > 0
+        ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
+        : null}
       <ActionRow actions={[
         ...(!summary.cleared ? [{
           label: 'Pay',

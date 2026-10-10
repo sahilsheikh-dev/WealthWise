@@ -5,6 +5,7 @@ export * from './instruments';
 export * from './liability';
 export * from './liabilityActions';
 export * from './portfolio';
+export * from './schedule';
 export * from './sip';
 export * from './summary';
 export * from './transactions';

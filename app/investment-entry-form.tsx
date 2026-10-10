@@ -22,10 +22,12 @@ import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
 export default function InvestmentEntryFormScreen() {
-  const params = useLocalSearchParams<{ holdingId?: string; entryId?: string; kind?: 'Deposit' | 'Withdrawal' }>();
+  const params = useLocalSearchParams<{ holdingId?: string; entryId?: string; kind?: 'Deposit' | 'Withdrawal'; date?: string; amount?: string }>();
   const holdingId = Array.isArray(params.holdingId) ? params.holdingId[0] : params.holdingId;
   const entryId = Array.isArray(params.entryId) ? params.entryId[0] : params.entryId;
   const requestedKind = Array.isArray(params.kind) ? params.kind[0] : params.kind;
+  const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
+  const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -50,7 +52,15 @@ export default function InvestmentEntryFormScreen() {
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: entry
       ? { kind: entry.kind, date: entry.date, amount: String(entry.amount), note: entry.note }
-      : { kind: requestedKind ?? 'Deposit', date: today, amount: holding?.kind === 'plan' && requestedKind !== 'Withdrawal' ? String(Math.round(currentInstallmentAmount(holding, today) * 100) / 100) : '', note: '' },
+      : {
+        kind: requestedKind ?? 'Deposit',
+        date: requestedDate ?? today,
+        amount: requestedAmount
+          ?? (holding?.kind === 'plan' && requestedKind !== 'Withdrawal'
+            ? String(Math.round(currentInstallmentAmount(holding, today) * 100) / 100)
+            : ''),
+        note: '',
+      },
   });
   const close = () => {
     if (!isDirty) return router.back();

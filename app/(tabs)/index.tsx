@@ -13,14 +13,16 @@ import {
   SectionTitle,
   StatPill,
   StatPillRow,
+  StatusBadge,
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { addDays } from '../../src/domain/dates';
 import { homeSummary } from '../../src/domain/summary';
+import { upcomingDue } from '../../src/domain/schedule';
 import { currentHour, todayISO } from '../../src/lib/clock';
-import { formatINR, formatINRShort } from '../../src/lib/format';
+import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -38,6 +40,7 @@ export default function HomeScreen() {
   const data = useAppData();
   const today = todayISO();
   const summary = homeSummary(data, today);
+  const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
@@ -121,6 +124,40 @@ export default function HomeScreen() {
         ))}
       </View>
 
+      {dueItems.length > 0 ? (
+        <Card style={styles.upcomingCard}>
+          <AppText weight="semibold" style={typography.name}>Upcoming and due</AppText>
+          {dueItems.map((item) => {
+            const noDueDate = item.kind === 'liability'
+              && data.liabilities.some((liability) => liability.id === item.parentId && liability.kind === 'one-time' && liability.dueDate === null);
+            return (
+              <Pressable
+                key={`${item.kind}:${item.parentId}:${item.row.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${item.row.status}, ${formatINR(item.row.amount)}`}
+                onPress={() => router.push(item.kind === 'plan'
+                  ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
+                  : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
+                style={[styles.dueRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.dueTitle}>
+                  <AppText weight="semibold" style={typography.name} numberOfLines={1}>{item.name}</AppText>
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    {noDueDate ? 'No due date' : formatDate(item.row.dueDate)}
+                  </AppText>
+                </View>
+                <View style={styles.dueRight}>
+                  <AppText weight="semibold" style={typography.meta}>{formatINR(item.row.amount)}</AppText>
+                  <StatusBadge
+                    label={item.row.status}
+                    tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
+                  />
+                </View>
+              </Pressable>
+            );
+          })}
+        </Card>
+      ) : null}
+
       <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => {
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
@@ -159,6 +196,10 @@ const styles = StyleSheet.create({
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
+  upcomingCard: { gap: 7 },
+  dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  dueTitle: { flex: 1, minWidth: 0, gap: 3 },
+  dueRight: { alignItems: 'flex-end', gap: 4 },
   quickAction: { minHeight: 76, flex: 1, minWidth: 0, paddingHorizontal: 4, paddingVertical: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 8 },
   actionLabel: { fontSize: 10, textAlign: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },

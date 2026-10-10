@@ -16,6 +16,7 @@ import {
   ScreenHeader,
   StatPill,
   StatPillRow,
+  StatusBadge,
 } from '../../src/components/ui';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { valueStaleness } from '../../src/domain/holdingActions';
@@ -27,6 +28,7 @@ import {
   type PortfolioRow,
 } from '../../src/domain/portfolio';
 import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { planSchedule } from '../../src/domain/schedule';
 import type { Holding, HoldingType } from '../../src/domain/types';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -185,6 +187,7 @@ function PlanCard({
   const { colors } = useTheme();
   const due = installmentsTracked(holding, asOf);
   const overdue = behindBy(holding, asOf);
+  const schedule = planSchedule(holding, asOf);
   const planProjection = projection(holding);
   const currentValue = planValue(holding, asOf);
   const contributionPlan = planProjection.totalContributions;
@@ -208,12 +211,20 @@ function PlanCard({
         </View>
       </View>
       <ProgressBar percent={progress} />
+      {schedule.summary.nextDue ? (
+        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {formatDate(schedule.summary.nextDue.dueDate)}, {formatINR(schedule.summary.nextDue.amount)}
+        </AppText>
+      ) : null}
       <AppText style={[typography.meta, styles.planDescription, { color: colors.text2 }]}>
         Invested {formatINR(planInvested(holding))}. Plan: {formatINRShort(contributionPlan)} in contributions.
         {' '}{loggedTrackedCount(holding)} logged since tracking began, {due} due.
       </AppText>
       {overdue > 0 ? (
-        <AppText style={[typography.meta, { color: colors.err, marginTop: 4 }]}>{overdue} behind</AppText>
+        <View style={styles.overdueLine}>
+          <AppText style={[typography.meta, { color: colors.err }]}>{overdue} behind</AppText>
+          {schedule.summary.nextDue ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" /> : null}
+        </View>
       ) : null}
       <ActionRow
         actions={[
@@ -237,6 +248,7 @@ const styles = StyleSheet.create({
   planTitle: { flex: 1, minWidth: 0, gap: 3 },
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
+  overdueLine: { marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   manualCard: { marginBottom: 8 },
   staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },

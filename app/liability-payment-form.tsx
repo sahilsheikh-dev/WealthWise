@@ -21,9 +21,12 @@ import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
 export default function LiabilityPaymentFormScreen() {
-  const params = useLocalSearchParams<{ liabilityId?: string; paymentId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ liabilityId?: string; paymentId?: string; mode?: string; kind?: 'EMI' | 'Payment'; amount?: string; date?: string }>();
   const liabilityId = Array.isArray(params.liabilityId) ? params.liabilityId[0] : params.liabilityId;
   const paymentId = Array.isArray(params.paymentId) ? params.paymentId[0] : params.paymentId;
+  const requestedKind = Array.isArray(params.kind) ? params.kind[0] : params.kind;
+  const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
+  const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -56,12 +59,12 @@ export default function LiabilityPaymentFormScreen() {
       }
       : liability
         ? {
-          date: today,
-          amount: String(Math.min(
+          date: requestedDate ?? today,
+          amount: requestedAmount ?? String(Math.min(
             liability.kind === 'recurring' ? liability.emi : loanState(liability, today).balance,
             Math.ceil(loanState(liability, today).balance),
           )),
-          kind: liability.kind === 'recurring' ? 'EMI' : 'Payment',
+          kind: requestedKind ?? (liability.kind === 'recurring' ? 'EMI' : 'Payment'),
           note: '',
         }
         : { date: today, amount: '', kind: 'EMI', note: '' },

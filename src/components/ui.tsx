@@ -228,6 +228,15 @@ export function ChipRow({ children }: PropsWithChildren) {
   );
 }
 
+export function StatusBadge({ label, tone }: { label: string; tone: Tone }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statusBadge, { backgroundColor: toneBackground(colors, tone) }]}>
+      <AppText weight="semibold" style={[typography.label, { color: toneColor(colors, tone) }]}>{label}</AppText>
+    </View>
+  );
+}
+
 export function ListItem({
   title,
   subtitle,
@@ -460,6 +469,7 @@ const styles = StyleSheet.create({
   fill: { height: '100%', borderRadius: 3, minWidth: 2 },
   chip: { minHeight: 44, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   chipRow: { alignItems: 'center', gap: 6, paddingHorizontal: 20, marginTop: 10 },
+  statusBadge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   listItem: { minHeight: 60, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   listIcon: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   flexText: { flex: 1, minWidth: 0, gap: 3 },
