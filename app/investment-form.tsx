@@ -18,6 +18,7 @@ import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
+import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import {
   makeHoldingFormSchema,
@@ -50,8 +51,9 @@ function plusDays(value: string, days: number) {
 type InvestmentKind = 'recurring' | 'one-time';
 
 export default function InvestmentFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, fromTransaction } = useLocalSearchParams<{ id?: string; fromTransaction?: string }>();
   const holdingId = Array.isArray(id) ? id[0] : id;
+  const isTransactionPicker = fromTransaction === '1';
   const data = useAppStore((state) => state.data);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [kind, setKind] = useState<InvestmentKind>('recurring');
@@ -66,6 +68,7 @@ export default function InvestmentFormScreen() {
           key="recurring"
           nameSeed={name}
           onNameChange={setName}
+          fromTransaction={isTransactionPicker}
           modeControl={<SegmentedControl
             label="Investment type"
             value={kind}
@@ -80,6 +83,7 @@ export default function InvestmentFormScreen() {
           key="one-time"
           nameSeed={name}
           onNameChange={setName}
+          fromTransaction={isTransactionPicker}
           modeControl={<SegmentedControl
             label="Investment type"
             value={kind}
@@ -99,11 +103,13 @@ function PlanEditor({
   nameSeed = '',
   onNameChange,
   modeControl,
+  fromTransaction = false,
 }: {
   plan?: PlanHolding;
   nameSeed?: string;
   onNameChange: (name: string) => void;
   modeControl?: React.ReactNode;
+  fromTransaction?: boolean;
 }) {
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
@@ -156,7 +162,14 @@ function PlanEditor({
     try {
       if (plan) actions.updatePlan(plan.id, values);
       else actions.addPlan(values);
-      if (!useAppStore.getState().lastError) router.back();
+      const state = useAppStore.getState();
+      if (!state.lastError) {
+        if (!plan && fromTransaction) {
+          const created = state.data.holdings.at(-1);
+          if (created) useUIStore.getState().setLastCreatedInstrumentId(created.id);
+        }
+        router.back();
+      }
     } finally { submitting.current = false; }
   };
   const remove = () => {
@@ -193,15 +206,18 @@ function ManualEditor({
   nameSeed = '',
   onNameChange,
   modeControl,
+  fromTransaction = false,
 }: {
   holding?: ManualHolding;
   nameSeed?: string;
   onNameChange: (name: string) => void;
   modeControl?: React.ReactNode;
+  fromTransaction?: boolean;
 }) {
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
+  const setLastCreatedInstrumentId = useUIStore((state) => state.setLastCreatedInstrumentId);
   const today = todayISO();
   const schema = useMemo(() => makeHoldingFormSchema({
     otherNames: data.holdings.filter((item) => item.id !== holding?.id).map((item) => item.name),
@@ -224,7 +240,14 @@ function ManualEditor({
   const save = (values: HoldingFormOutput) => {
     if (holding) actions.updateHolding(holding.id, values);
     else actions.addHolding(values);
-    if (!useAppStore.getState().lastError) router.back();
+    const state = useAppStore.getState();
+    if (!state.lastError) {
+      if (!holding && fromTransaction) {
+        const created = state.data.holdings.at(-1);
+        if (created) setLastCreatedInstrumentId(created.id);
+      }
+      router.back();
+    }
   };
   const remove = () => {
     if (!holding) return;

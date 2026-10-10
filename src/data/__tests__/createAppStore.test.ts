@@ -11,6 +11,7 @@ import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
 import { createAppStore } from '../createAppStore';
 import { makeV1Fixture } from '../testFixtures/v1';
+import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -66,6 +67,52 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists each instrument transaction action once', async () => {
+    const storage = new MemoryStorage();
+    const seed = emptyAppData('2026-10-10');
+    seed.holdings.push({
+      id: 'seed-holding',
+      kind: 'manual',
+      name: 'Seed holding',
+      type: 'Gold',
+      invested: 100,
+      value: 100,
+      valueAsOf: '2026-10-10',
+      logs: [{ id: 'old-entry', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }],
+    });
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 2 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `instrument-${++id}` });
+    await waitForHydration(store);
+    const perform = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+
+    perform(() => store.getState().actions.createMissingTransactions());
+    const seededTransaction = store.getState().data.transactions[0]!;
+    perform(() => store.getState().actions.updateLinkedTransaction(seededTransaction.id, { amount: 60 }));
+    perform(() => store.getState().actions.deleteLinkedTransaction(seededTransaction.id));
+
+    store.getState().actions.addTransaction({
+      type: 'invest', amount: 75, date: '2026-10-02', category: 'Other', note: 'Legacy',
+    });
+    const legacy = store.getState().data.transactions.at(-1)!;
+    perform(() => store.getState().actions.linkExistingTransaction(legacy.id, 'seed-holding', 'Linked legacy'));
+    const linkedLegacy = store.getState().data.transactions.find((item) => item.id === legacy.id)!;
+    expect(linkedLegacy).toMatchObject({ note: 'Linked legacy', source: { kind: 'holding-entry' } });
+
+    perform(() => store.getState().actions.addInstrumentTransaction({
+      kind: 'deposit', instrumentId: 'seed-holding', amount: 30, date: '2026-10-03', note: 'New deposit',
+    }));
+    const created = store.getState().data.transactions.at(-1)!;
+    perform(() => store.getState().actions.updateLinkedTransaction(created.id, { instrumentId: 'ef' }));
+    perform(() => store.getState().actions.deleteLinkedTransaction(created.id));
+  });
+
   it('persists each manual ledger action once with its linked transaction', async () => {
     const storage = new MemoryStorage();
     let id = 0;

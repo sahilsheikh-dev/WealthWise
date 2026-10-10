@@ -19,6 +19,7 @@ import {
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
+import { describeSource } from '../../src/domain/links';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
@@ -126,11 +127,14 @@ export default function TransactionsScreen() {
               <AppText weight="bold" style={[styles.dateGroup, { color: colors.text3 }]}>{formatDate(group.date)}</AppText>
               {group.items.map((item) => {
                 const tone = transactionTone[item.type];
+                const linked = item.source?.kind === 'holding-entry' || item.source?.kind === 'ef-entry'
+                  ? describeSource(data, item.source)
+                  : null;
                 return (
                   <ListItem
                     key={item.id}
                     title={item.note || item.category}
-                    subtitle={item.category}
+                    subtitle={linked ? `${item.category}\n→ ${linked.label}` : item.category}
                     amount={`${tone.symbol}${formatINR(item.amount)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}

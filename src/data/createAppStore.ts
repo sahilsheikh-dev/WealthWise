@@ -17,6 +17,15 @@ import {
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
+import {
+  addInstrumentTransaction,
+  createMissingTransactions,
+  deleteLinkedTransaction,
+  linkExistingTransaction,
+  updateLinkedTransaction,
+  type InstrumentTransactionInput,
+  type LinkedTransactionPatch,
+} from '../domain/instruments';
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
@@ -35,6 +44,11 @@ export type AppActions = {
   addTransaction: (input: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, patch: Partial<Omit<Transaction, 'id'>>) => void;
   deleteTransaction: (id: string) => void;
+  addInstrumentTransaction: (input: InstrumentTransactionInput) => void;
+  updateLinkedTransaction: (id: string, patch: LinkedTransactionPatch) => void;
+  deleteLinkedTransaction: (id: string) => void;
+  linkExistingTransaction: (transactionId: string, instrumentId: string, note?: string) => void;
+  createMissingTransactions: () => void;
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -150,6 +164,24 @@ export function createAppStore(
         },
         deleteTransaction(id) {
           applyDataAction((data) => deleteTransaction(data, id));
+        },
+        addInstrumentTransaction(input) {
+          applyDataAction((data) => addInstrumentTransaction(data, input, deps.newId, deps.today()));
+        },
+        updateLinkedTransaction(id, patch) {
+          applyDataAction((data) => updateLinkedTransaction(data, id, patch, {
+            newId: deps.newId,
+            today: deps.today(),
+          }));
+        },
+        deleteLinkedTransaction(id) {
+          applyDataAction((data) => deleteLinkedTransaction(data, id));
+        },
+        linkExistingTransaction(transactionId, instrumentId, note) {
+          applyDataAction((data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note));
+        },
+        createMissingTransactions() {
+          applyDataAction((data) => createMissingTransactions(data, deps.newId));
         },
         updateSettings(patch) {
           applyDataAction((data) => updateSettings(data, patch));

@@ -29,6 +29,7 @@ const investmentEntrySchema = z.object({
   amount: moneySchema.positive(),
   note: z.string(),
   kind: z.enum(['Deposit', 'Withdrawal']),
+  snapshotAdjustment: moneySchema.optional(),
 });
 const liabilityPaymentSchema = z.object({
   id: idSchema,
@@ -207,6 +208,11 @@ const amountInputSchema = moneyInputSchema({
 export function makeTransactionFormSchema(
   today: ISODate,
   legacyCategories: Partial<Record<Transaction['type'], readonly string[]>> = {},
+  options: {
+    instruments: { id: string }[];
+    withdrawable: Record<string, number>;
+    mode: 'create' | 'edit-unlinked' | 'edit-linked';
+  } = { instruments: [], withdrawable: {}, mode: 'create' },
 ) {
   return z.object({
     amount: amountInputSchema,
@@ -215,6 +221,7 @@ export function makeTransactionFormSchema(
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
+    instrumentId: z.string().trim().optional().transform((id) => id || undefined),
   }).superRefine((value, context) => {
     const allowedCategories: readonly string[] = TRANSACTION_CATEGORIES[value.type];
     if (
@@ -222,6 +229,45 @@ export function makeTransactionFormSchema(
       !legacyCategories[value.type]?.includes(value.category)
     ) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
+    }
+    const instrumentId = value.instrumentId;
+    const isInstrumentType = value.type === 'invest';
+    const isWithdrawal = value.type === 'income' && value.category === 'Withdrawal';
+    const maySelectInstrument = isInstrumentType || isWithdrawal;
+    const requiredForMode = options.mode !== 'edit-unlinked' && isInstrumentType;
+    const instruments = options.instruments.map((item) => item.id);
+
+    if (instrumentId !== undefined && (!maySelectInstrument || options.mode === 'edit-unlinked' && !isInstrumentType)) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'This transaction cannot be linked to an investment' });
+      return;
+    }
+    if (requiredForMode && isInstrumentType && instrumentId === undefined) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose where this is invested' });
+    } else if (instrumentId !== undefined && isInstrumentType && !instruments.includes(instrumentId)) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose an investment' });
+    }
+
+    if (options.mode !== 'edit-unlinked' && isWithdrawal && instrumentId === undefined) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose what you withdrew from' });
+    } else if (isWithdrawal && instrumentId !== undefined) {
+      const available = options.withdrawable[instrumentId];
+      if (available === undefined) {
+        context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose what you withdrew from' });
+      } else if (value.amount > available) {
+        context.addIssue({
+          code: 'custom',
+          path: ['amount'],
+          message: `Exceeds the current value of ${formatINR(available)}`,
+        });
+      }
+    }
+
+    if (
+      instrumentId !== undefined &&
+      options.mode === 'edit-unlinked' &&
+      !isInstrumentType
+    ) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Only investment transactions can be linked' });
     }
   });
 }

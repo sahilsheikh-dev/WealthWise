@@ -14,7 +14,13 @@ export function addHolding(data: AppData, input: AddHoldingInput, newId: () => s
 export function updateHolding(data: AppData, id: string, patch: HoldingPatch): AppData {
   const current = data.holdings.find((holding) => holding.id === id);
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
-  const updated = { ...current, ...patch };
+  const snapshotChanged =
+    patch.value !== undefined && patch.value !== current.value ||
+    patch.valueAsOf !== undefined && patch.valueAsOf !== current.valueAsOf;
+  const logs = snapshotChanged
+    ? current.logs.map(({ snapshotAdjustment: _snapshotAdjustment, ...entry }) => entry)
+    : current.logs;
+  const updated = { ...current, ...patch, logs };
   return {
     ...data,
     holdings: data.holdings.map((holding) => holding.id === id ? updated : holding),
@@ -37,7 +43,13 @@ export function confirmHoldingValue(data: AppData, id: string, today: ISODate): 
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
   return {
     ...data,
-    holdings: data.holdings.map((holding) => holding.id === id ? { ...current, valueAsOf: today } : holding),
+    holdings: data.holdings.map((holding) => holding.id === id
+      ? {
+        ...current,
+        valueAsOf: today,
+        logs: current.logs.map(({ snapshotAdjustment: _snapshotAdjustment, ...entry }) => entry),
+      }
+      : holding),
   };
 }
 

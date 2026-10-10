@@ -7,6 +7,14 @@ import type { AppData, Holding, InvestmentEntry, ISODate, Transaction } from './
 export type InvestmentEntryInput = Pick<InvestmentEntry, 'date' | 'amount' | 'kind' | 'note'>;
 export type InvestmentEntryPatch = Partial<Pick<InvestmentEntry, 'date' | 'amount' | 'note'>>;
 
+export function snapshotAdjustmentForEntry(
+  holding: Holding,
+  entry: Pick<InvestmentEntry, 'date' | 'amount' | 'kind'>,
+): number | undefined {
+  if (holding.kind !== 'manual' || holding.valueAsOf !== entry.date) return undefined;
+  return entry.kind === 'Deposit' ? entry.amount : -entry.amount;
+}
+
 function getHolding(data: AppData, id: string): Holding {
   const holding = data.holdings.find((item) => item.id === id);
   if (!holding) throw new NotFoundError('Holding', id);
@@ -38,7 +46,12 @@ export function addInvestmentEntry(
   today: ISODate,
 ): AppData {
   const holding = getHolding(data, holdingId);
-  const entry: InvestmentEntry = { ...input, id: newId() };
+  const adjustment = snapshotAdjustmentForEntry(holding, input);
+  const entry: InvestmentEntry = {
+    ...input,
+    id: newId(),
+    ...(adjustment === undefined ? {} : { snapshotAdjustment: adjustment }),
+  };
   if (entry.kind === 'Withdrawal') {
     const currentValue = holdingValue(holding, today);
     if (entry.date > today) throw new Error('Date cannot be in the future');
@@ -52,7 +65,15 @@ export function addInvestmentEntry(
   const transaction = linkedTransaction(holding, entry, newId());
   return {
     ...data,
-    holdings: data.holdings.map((item) => item.id === holdingId ? { ...item, logs: [...item.logs, entry] } : item),
+    holdings: data.holdings.map((item) => item.id === holdingId
+      ? {
+        ...item,
+        ...(item.kind === 'manual' && entry.snapshotAdjustment !== undefined
+          ? { value: item.value + entry.snapshotAdjustment }
+          : {}),
+        logs: [...item.logs, entry],
+      }
+      : item),
     transactions: [...data.transactions, transaction],
   };
 }
@@ -67,10 +88,19 @@ export function updateInvestmentEntry(
   const holding = getHolding(data, holdingId);
   const entry = holding.logs.find((item) => item.id === entryId);
   if (!entry) throw new NotFoundError('Investment entry', entryId);
-  const updatedEntry = { ...entry, ...patch };
+  const { snapshotAdjustment: _snapshotAdjustment, ...entryWithoutAdjustment } = entry;
+  const updatedEntryBase = { ...entryWithoutAdjustment, ...patch };
+  const adjustment = snapshotAdjustmentForEntry(holding, updatedEntryBase);
+  const updatedEntry = {
+    ...updatedEntryBase,
+    ...(adjustment === undefined ? {} : { snapshotAdjustment: adjustment }),
+  };
   if (updatedEntry.kind === 'Withdrawal') {
     const currentValue = holdingValue({
       ...holding,
+      ...(holding.kind === 'manual' && entry.snapshotAdjustment !== undefined
+        ? { value: holding.value - entry.snapshotAdjustment }
+        : {}),
       logs: holding.logs.filter((item) => item.id !== entryId),
     }, today);
     if (updatedEntry.date > today) throw new Error('Date cannot be in the future');
@@ -94,7 +124,13 @@ export function updateInvestmentEntry(
   return {
     ...data,
     holdings: data.holdings.map((item) => item.id === holdingId
-      ? { ...item, logs: item.logs.map((row) => row.id === entryId ? updatedEntry : row) }
+      ? {
+        ...item,
+        ...(item.kind === 'manual' && (entry.snapshotAdjustment !== undefined || adjustment !== undefined)
+          ? { value: item.value - (entry.snapshotAdjustment ?? 0) + (adjustment ?? 0) }
+          : {}),
+        logs: item.logs.map((row) => row.id === entryId ? updatedEntry : row),
+      }
       : item),
     transactions,
   };
@@ -103,10 +139,17 @@ export function updateInvestmentEntry(
 export function deleteInvestmentEntry(data: AppData, holdingId: string, entryId: string): AppData {
   const holding = getHolding(data, holdingId);
   if (!holding.logs.some((item) => item.id === entryId)) throw new NotFoundError('Investment entry', entryId);
+  const removedEntry = holding.logs.find((item) => item.id === entryId)!;
   return {
     ...data,
     holdings: data.holdings.map((item) => item.id === holdingId
-      ? { ...item, logs: item.logs.filter((entry) => entry.id !== entryId) }
+      ? {
+        ...item,
+        ...(item.kind === 'manual' && removedEntry.snapshotAdjustment !== undefined
+          ? { value: item.value - removedEntry.snapshotAdjustment }
+          : {}),
+        logs: item.logs.filter((entry) => entry.id !== entryId),
+      }
       : item),
     transactions: data.transactions.filter((item) =>
       !(item.source?.kind === 'holding-entry' && item.source.parentId === holdingId && item.source.entryId === entryId)),

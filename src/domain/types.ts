@@ -7,7 +7,10 @@ export type Transaction = {
   category: string;
   note: string;
   date: ISODate;
-  source?: { kind: 'holding-entry' | 'liability-payment' | 'ef-entry'; parentId: string; entryId: string };
+  source?:
+    | { kind: 'holding-entry'; parentId: string; entryId: string }
+    | { kind: 'liability-payment'; parentId: string; entryId: string }
+    | { kind: 'ef-entry'; parentId: string; entryId: string };
 };
 
 export type Goal = {
@@ -25,6 +28,7 @@ export type InvestmentEntry = {
   amount: number;
   note: string;
   kind: 'Deposit' | 'Withdrawal';
+  snapshotAdjustment?: number;
 };
 
 export type LiabilityPayment = {

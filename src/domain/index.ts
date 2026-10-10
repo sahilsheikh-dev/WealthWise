@@ -1,6 +1,7 @@
 export * from './dates';
 export * from './ef';
 export * from './goals';
+export * from './instruments';
 export * from './liability';
 export * from './liabilityActions';
 export * from './portfolio';

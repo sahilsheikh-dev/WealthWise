@@ -91,6 +91,41 @@ describe('makeTransactionFormSchema', () => {
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
   });
 
+  it('requires the appropriate instrument for investment and withdrawal transaction modes', () => {
+    const options = {
+      instruments: [{ id: 'ef' }, { id: 'holding-1' }],
+      withdrawable: { ef: 500, 'holding-1': 1_000 },
+      mode: 'create' as const,
+    };
+    const instrumentSchema = makeTransactionFormSchema('2026-10-10', {}, options);
+    const invest = { ...validInput, type: 'invest' as const, category: 'Gold / Silver' };
+    expect(instrumentSchema.safeParse(invest).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
+    expect(instrumentSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
+    const withdrawal = { ...validInput, type: 'income' as const, category: 'Withdrawal', amount: '500' };
+    expect(instrumentSchema.safeParse(withdrawal).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef', amount: '500.01' }).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'holding-1', amount: '1000.01' }).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...validInput, instrumentId: 'ef' }).success).toBe(false);
+
+    const legacyEditSchema = makeTransactionFormSchema('2026-10-10', {}, {
+      ...options, mode: 'edit-unlinked',
+    });
+    expect(legacyEditSchema.safeParse(invest).success).toBe(true);
+    expect(legacyEditSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
+    expect(legacyEditSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
+    expect(legacyEditSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(false);
+
+    const linkedSchema = makeTransactionFormSchema('2026-10-10', {}, {
+      ...options, mode: 'edit-linked',
+    });
+    expect(linkedSchema.safeParse(invest).success).toBe(false);
+    expect(linkedSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
+    expect(linkedSchema.safeParse(withdrawal).success).toBe(false);
+    expect(linkedSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
+  });
+
   const planValues = {
     name: ' Long term ',
     type: 'Mutual fund / SIP',
