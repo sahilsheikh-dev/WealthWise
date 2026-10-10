@@ -61,7 +61,15 @@ export default function HomeScreen() {
                 router.push('/transaction-form');
                 return;
               }
-              // TODO(phase4)
+              if (action.label === 'New SIP') {
+                router.push('/plan-form');
+                return;
+              }
+              if (action.label === 'New loan') {
+                router.push('/loan-form');
+                return;
+              }
+              // TODO(phase5)
             }}
             style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name={action.icon} size={17} color={colors.primary} />

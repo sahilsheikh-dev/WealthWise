@@ -1,4 +1,5 @@
 import { ensureEfGoal } from './goals';
+import { LinkedTransactionError } from './links';
 import type { AppData, ISODate, Settings, Transaction } from './types';
 
 export class NotFoundError extends Error {
@@ -36,6 +37,13 @@ export function updateTransaction(
   if (!data.transactions.some((transaction) => transaction.id === id)) {
     throw new NotFoundError('Transaction', id);
   }
+  const current = data.transactions.find((transaction) => transaction.id === id)!;
+  const linkedFields: (keyof Omit<Transaction, 'id' | 'note'>)[] = ['type', 'amount', 'category', 'date', 'source'];
+  if (current.source && linkedFields.some((field) =>
+    field in patch && !Object.is(current[field], patch[field]),
+  )) {
+    throw new LinkedTransactionError();
+  }
   return {
     ...data,
     transactions: data.transactions.map((transaction) =>
@@ -45,9 +53,11 @@ export function updateTransaction(
 }
 
 export function deleteTransaction(data: AppData, id: string): AppData {
-  if (!data.transactions.some((transaction) => transaction.id === id)) {
+  const transaction = data.transactions.find((item) => item.id === id);
+  if (!transaction) {
     throw new NotFoundError('Transaction', id);
   }
+  if (transaction.source) throw new LinkedTransactionError();
   return { ...data, transactions: data.transactions.filter((transaction) => transaction.id !== id) };
 }
 

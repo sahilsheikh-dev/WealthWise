@@ -47,7 +47,7 @@ export default function EmergencyFundScreen() {
               accessibilityRole="button"
               accessibilityLabel="Log emergency fund entry"
               onPress={() => {
-                // TODO(phase4)
+                // TODO(phase5)
               }}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Log entry</AppText>

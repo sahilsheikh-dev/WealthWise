@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { isValidISO } from './dates';
+import { emiCoversInterest } from './loan';
+import { formatINR } from '../lib/format';
 import type { AppData, ISODate, Transaction } from './types';
 
 export const SCHEMA_VERSION = 1;
@@ -134,14 +136,43 @@ export const TRANSACTION_CATEGORIES = {
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
-const amountInputSchema = z.string()
-  .trim()
-  .transform((value) => value.replaceAll(',', ''))
-  .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), 'Enter an amount like 1500 or 1500.50')
-  .transform((value) => Number(value))
-  .refine((value) => value > 0, 'Amount must be greater than zero')
-  .refine((value) => value <= 100_000_000, 'Amount is too large')
-  .transform((value) => Math.round(value * 100) / 100);
+type MoneyOptions = {
+  minimum?: number;
+  maximum?: number;
+  minimumMessage?: string;
+  maximumMessage?: string;
+};
+
+function requiredMoneyInputSchema(options: MoneyOptions) {
+  return z.string()
+    .trim()
+    .transform((input) => input.replaceAll(',', ''))
+    .refine((input) => /^\d+(\.\d{1,2})?$/.test(input), 'Enter an amount like 1500 or 1500.50')
+    .transform((input) => Math.round(Number(input) * 100) / 100)
+    .refine((amount) => amount >= (options.minimum ?? 0), options.minimumMessage ?? 'Amount must be greater than zero')
+    .refine((amount) => amount <= (options.maximum ?? Number.MAX_SAFE_INTEGER), options.maximumMessage ?? 'Amount is too large');
+}
+
+function optionalMoneyInputSchema(options: MoneyOptions) {
+  return z.union([z.literal('').transform(() => undefined), requiredMoneyInputSchema(options)]).optional();
+}
+
+function moneyInputSchema(options: MoneyOptions & { optional: true }): ReturnType<typeof optionalMoneyInputSchema>;
+function moneyInputSchema(options: MoneyOptions & { optional?: false }): ReturnType<typeof requiredMoneyInputSchema>;
+function moneyInputSchema(options: MoneyOptions & { optional?: boolean }) {
+  return options.optional ? optionalMoneyInputSchema(options) : requiredMoneyInputSchema(options);
+}
+
+function dateInputSchema(message = 'Enter a valid date') {
+  return z.string().refine(isValidISO, message);
+}
+
+const amountInputSchema = moneyInputSchema({
+  minimum: 0.01,
+  maximum: 100_000_000,
+  minimumMessage: 'Amount must be greater than zero',
+  maximumMessage: 'Amount is too large',
+});
 
 export function makeTransactionFormSchema(
   today: ISODate,
@@ -149,8 +180,7 @@ export function makeTransactionFormSchema(
 ) {
   return z.object({
     amount: amountInputSchema,
-    date: z.string()
-      .refine(isValidISO, 'Enter a valid date')
+    date: dateInputSchema()
       .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
@@ -168,3 +198,146 @@ export function makeTransactionFormSchema(
 
 export type TransactionFormInput = z.input<ReturnType<typeof makeTransactionFormSchema>>;
 export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFormSchema>>;
+
+const holdingTypeFormSchema = z.enum([
+  'Mutual fund / SIP',
+  'Stocks / ETF',
+  'Fixed deposit',
+  'Recurring deposit',
+  'EPFO / PF',
+  'Savings account',
+  'Cash',
+  'Gold',
+  'Silver',
+  'Other',
+]);
+const frequencyFormSchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
+const optionalRate = (max: number, message: string, emptyZero = false) => {
+  const rate = z.string().trim()
+    .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), message)
+    .transform((value) => Math.round(Number(value) * 100) / 100)
+    .refine((value) => value >= 0 && value <= max, message);
+  return emptyZero ? z.union([z.literal('').transform(() => 0), rate]) : rate;
+};
+
+export function makePlanFormSchema(
+  today: ISODate,
+  ctx: { otherNames: string[]; earliestLogDate: ISODate | null },
+) {
+  return z.object({
+    name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
+      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
+    type: holdingTypeFormSchema,
+    frequency: frequencyFormSchema,
+    amount: moneyInputSchema({ minimum: 0.01, maximum: 10_000_000, maximumMessage: 'Amount is too large' }),
+    ratePct: optionalRate(30, 'Enter a rate between 0 and 30'),
+    stepUpPct: optionalRate(50, 'Enter a step-up between 0 and 50', true),
+    tenureYears: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole years from 1 to 50')
+      .transform(Number).refine((value) => value >= 1 && value <= 50, 'Enter whole years from 1 to 50'),
+    startDate: dateInputSchema().refine((date) => !isValidISO(date) || date <= addISODate(today, 366), 'Start date is too far ahead'),
+    trackFrom: z.string().trim(),
+    opening: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
+    actualValue: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER, optional: true }),
+    actualValueDate: z.string().trim(),
+  }).transform((value) => ({
+    ...value,
+    trackFrom: value.trackFrom || value.startDate,
+    opening: value.opening ?? 0,
+    actualValue: value.actualValue ?? null,
+    actualValueDate: value.actualValueDate || null,
+  })).superRefine((value, context) => {
+    if (isValidISO(value.trackFrom) && value.trackFrom < value.startDate) {
+      context.addIssue({ code: 'custom', path: ['trackFrom'], message: "Tracking can't start before the plan" });
+    } else if (value.trackFrom && !isValidISO(value.trackFrom)) {
+      context.addIssue({ code: 'custom', path: ['trackFrom'], message: 'Enter a valid date' });
+    }
+    if (value.actualValue !== null && value.actualValueDate === null) {
+      context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Enter the date for this value' });
+    } else if (value.actualValue === null && value.actualValueDate !== null) {
+      context.addIssue({ code: 'custom', path: ['actualValue'], message: 'Enter the value for this date' });
+    }
+    if (value.actualValueDate !== null) {
+      if (!isValidISO(value.actualValueDate)) {
+        context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Enter a valid date' });
+      } else if (value.actualValueDate > today) {
+        context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Date cannot be in the future' });
+      }
+    }
+    if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged installment is dated before this start date' });
+    }
+  });
+}
+
+function addISODate(date: ISODate, days: number): ISODate {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  const result = new Date(Date.UTC(year, month - 1, day + days));
+  return `${result.getUTCFullYear()}-${String(result.getUTCMonth() + 1).padStart(2, '0')}-${String(result.getUTCDate()).padStart(2, '0')}`;
+}
+
+export function makePlanLogFormSchema(today: ISODate, ctx: { startDate: ISODate }) {
+  return z.object({
+    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
+      .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the plan started'),
+    amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+    recordTransaction: z.boolean(),
+  });
+}
+
+export function makeLoanFormSchema(
+  today: ISODate,
+  ctx: { otherNames: string[]; earliestPaymentDate: ISODate | null },
+) {
+  return z.object({
+    name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
+      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
+    principal: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, maximumMessage: 'Amount is too large' }),
+    ratePct: optionalRate(60, 'Enter a rate between 0 and 60'),
+    tenureMonths: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 480')
+      .transform(Number).refine((value) => value >= 1 && value <= 480, 'Enter whole months from 1 to 480'),
+    startDate: dateInputSchema()
+      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
+      .refine((date) => !ctx.earliestPaymentDate || !isValidISO(date) || date <= ctx.earliestPaymentDate, 'A payment is dated before this start date'),
+    emi: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, optional: true }),
+  }).transform((value) => ({ ...value, emi: value.emi ?? null }))
+    .superRefine((value, context) => {
+      if (value.emi !== null && !emiCoversInterest(value.principal, value.ratePct, value.emi)) {
+        const monthlyInterest = formatINR(value.principal * value.ratePct / 1200);
+        context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
+      }
+    });
+}
+
+export function makeLoanPaymentFormSchema(
+  today: ISODate,
+  ctx: { startDate: ISODate; outstandingExcludingThis: number },
+) {
+  return z.object({
+    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
+      .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the loan started'),
+    amount: moneyInputSchema({ minimum: 0.01, maximum: Number.MAX_SAFE_INTEGER }),
+    kind: z.enum(['EMI', 'Prepayment']),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+    recordTransaction: z.boolean(),
+  }).superRefine((value, context) => {
+    if (ctx.outstandingExcludingThis < 1) {
+      context.addIssue({ code: 'custom', path: ['amount'], message: 'This loan is already cleared' });
+    } else if (value.amount > Math.ceil(ctx.outstandingExcludingThis)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['amount'],
+        message: `Exceeds the outstanding balance of ${formatINR(ctx.outstandingExcludingThis)}`,
+      });
+    }
+  });
+}
+
+export type PlanFormInput = z.input<ReturnType<typeof makePlanFormSchema>>;
+export type PlanFormOutput = z.output<ReturnType<typeof makePlanFormSchema>>;
+export type PlanLogFormInput = z.input<ReturnType<typeof makePlanLogFormSchema>>;
+export type PlanLogFormOutput = z.output<ReturnType<typeof makePlanLogFormSchema>>;
+export type LoanFormInput = z.input<ReturnType<typeof makeLoanFormSchema>>;
+export type LoanFormOutput = z.output<ReturnType<typeof makeLoanFormSchema>>;
+export type LoanPaymentFormInput = z.input<ReturnType<typeof makeLoanPaymentFormSchema>>;
+export type LoanPaymentFormOutput = z.output<ReturnType<typeof makeLoanPaymentFormSchema>>;

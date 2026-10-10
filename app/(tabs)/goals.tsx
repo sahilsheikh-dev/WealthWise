@@ -27,7 +27,7 @@ export default function GoalsScreen() {
           accessibilityRole="button"
           accessibilityLabel="New goal"
           onPress={() => {
-            // TODO(phase4)
+            // TODO(phase5)
           }}
           style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
           <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New goal</AppText>

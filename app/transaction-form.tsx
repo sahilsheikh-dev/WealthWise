@@ -11,6 +11,7 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
+import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { useAppActions } from '../src/data/useAppData';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
@@ -37,6 +38,11 @@ export default function TransactionFormScreen() {
   const today = useMemo(() => todayISO(), []);
   const editing = transactionId !== undefined;
   const transaction = editing ? data.transactions.find((row) => row.id === transactionId) : undefined;
+  const linkedParent = transaction?.source?.kind === 'plan-log'
+    ? data.holdings.find((holding) => holding.id === transaction.source?.parentId && holding.kind === 'plan')
+    : transaction?.source?.kind === 'loan-payment'
+      ? data.loans.find((loan) => loan.id === transaction.source?.parentId)
+      : undefined;
   const submitting = useRef(false);
   const legacyCategories = useMemo(() => {
     const categories: readonly string[] = transaction ? TRANSACTION_CATEGORIES[transaction.type] : [];
@@ -86,7 +92,8 @@ export default function TransactionFormScreen() {
 
   const save = async (values: TransactionFormOutput) => {
     const input: Omit<Transaction, 'id'> = values;
-    if (transactionId) actions.updateTransaction(transactionId, input);
+    if (transactionId && transaction?.source) actions.updateTransaction(transactionId, { note: values.note });
+    else if (transactionId) actions.updateTransaction(transactionId, input);
     else actions.addTransaction(input);
 
     const store = useAppStore.getState();
@@ -156,7 +163,7 @@ export default function TransactionFormScreen() {
       onClose={requestClose}
       footer={
         <View style={styles.footerActions}>
-          {transactionId ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
+          {transactionId && !transaction?.source ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
           {submitCount > 0 && errorCount > 0 ? (
             <View style={styles.errorSummary}>
               <AppText style={[typography.meta, { color: colors.err }]}>
@@ -175,62 +182,91 @@ export default function TransactionFormScreen() {
         </View>
       }>
       <>
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <SegmentedControl
-                label="Type"
-                value={field.value}
-                options={typeOptions}
-                error={errors.type?.message}
-                onChange={(type) => {
-                  const category = getValues('category');
-                  field.onChange(type);
-                  if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
-                    setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
+          {transaction?.source ? (
+            <>
+              <ReadOnlyRow
+                label="Linked transaction"
+                value={`Linked to ${linkedParent?.name ?? 'plan or loan'}. Change amount, date or delete it from there.`}
+              />
+              <Button
+                label={transaction.source.kind === 'plan-log' ? 'Open plan logs' : 'Open loan payments'}
+                onPress={() => {
+                  if (transaction.source?.kind === 'plan-log') {
+                    router.push({ pathname: '/plan-logs', params: { id: transaction.source.parentId } });
+                  } else if (transaction.source?.kind === 'loan-payment') {
+                    router.push({ pathname: '/loan-payments', params: { id: transaction.source.parentId } });
                   }
                 }}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="amount"
-            render={({ field }) => (
-              <MoneyField
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.amount?.message}
+            </>
+          ) : null}
+          {transaction?.source ? (
+            <>
+              <ReadOnlyRow label="Type" value={transaction.type} />
+              <ReadOnlyRow label="Amount" value={`₹${transaction.amount.toLocaleString('en-IN')}`} />
+              <ReadOnlyRow label="Category" value={transaction.category} />
+              <ReadOnlyRow label="Date" value={transaction.date} />
+            </>
+          ) : (
+            <>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <SegmentedControl
+                    label="Type"
+                    value={field.value}
+                    options={typeOptions}
+                    error={errors.type?.message}
+                    onChange={(type) => {
+                      const category = getValues('category');
+                      field.onChange(type);
+                      if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
+                        setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
+                      }
+                    }}
+                  />
+                )}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="category"
-            render={({ field }) => (
-              <ChoiceField
-                label="Category"
-                value={field.value}
-                choices={choices}
-                onChange={field.onChange}
-                error={errors.category?.message}
+              <Controller
+                control={control}
+                name="amount"
+                render={({ field }) => (
+                  <MoneyField
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                    error={errors.amount?.message}
+                  />
+                )}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="date"
-            render={({ field }) => (
-              <DateField
-                value={field.value}
-                onChange={field.onChange}
-                maximumDate={today}
-                error={errors.date?.message}
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <ChoiceField
+                    label="Category"
+                    value={field.value}
+                    choices={choices}
+                    onChange={field.onChange}
+                    error={errors.category?.message}
+                  />
+                )}
               />
-            )}
-          />
+              <Controller
+                control={control}
+                name="date"
+                render={({ field }) => (
+                  <DateField
+                    value={field.value}
+                    onChange={field.onChange}
+                    maximumDate={today}
+                    error={errors.date?.message}
+                  />
+                )}
+              />
+            </>
+          )}
           <Controller
             control={control}
             name="note"

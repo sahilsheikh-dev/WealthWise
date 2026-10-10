@@ -2,11 +2,20 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 import { addTransaction, deleteTransaction, emptyAppData, updateSettings, updateTransaction } from '../domain/actions';
+import {
+  addPlan, addPlanLog, deletePlan, deletePlanLog, updatePlan, updatePlanLog,
+  type AddPlanInput, type PlanLogPatch, type PlanPatch,
+} from '../domain/planActions';
+import {
+  addLoan, addLoanPayment, deleteLoan, deleteLoanPayment, updateLoan, updateLoanPayment,
+  type AddLoanInput, type LoanPatch, type LoanPaymentPatch,
+} from '../domain/loanActions';
+import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
-import type { AppData, ISODate, Settings, Transaction } from '../domain/types';
+import type { AppData, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 
@@ -14,6 +23,18 @@ export type AppActions = {
   addTransaction: (input: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, patch: Partial<Omit<Transaction, 'id'>>) => void;
   deleteTransaction: (id: string) => void;
+  addPlan: (input: AddPlanInput) => void;
+  updatePlan: (id: string, patch: PlanPatch) => void;
+  deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
+  addPlanLog: (planId: string, input: Pick<LogEntry, 'date' | 'amount' | 'note'>, options: { recordTransaction: boolean }) => void;
+  updatePlanLog: (planId: string, logId: string, patch: PlanLogPatch) => void;
+  deletePlanLog: (planId: string, logId: string) => void;
+  addLoan: (input: AddLoanInput) => void;
+  updateLoan: (id: string, patch: LoanPatch) => void;
+  deleteLoan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
+  addLoanPayment: (loanId: string, input: Pick<LogEntry, 'date' | 'amount' | 'kind' | 'note'>, options: { recordTransaction: boolean }) => void;
+  updateLoanPayment: (loanId: string, paymentId: string, patch: LoanPaymentPatch) => void;
+  deleteLoanPayment: (loanId: string, paymentId: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   dismissStorageError: () => void;
   resolveRecovery: (action: 'start-fresh') => void;
@@ -53,7 +74,14 @@ export function createAppStore(
   const safeStorage = createSafeStorage(
     storage,
     {
-      onWriteError: (message) => useStore?.setState({ storageError: message }),
+      onWriteError: (message) => {
+        suppressNextWrite = true;
+        try {
+          useStore?.setState({ storageError: message });
+        } finally {
+          suppressNextWrite = false;
+        }
+      },
       onCorrupt: ({ reason }) => {
         corruptionReason = reason === 'newer-version' ? 'newer-version' : 'corrupt';
         useStore?.setState({ status: 'recovery', recoveryReason: corruptionReason });
@@ -68,39 +96,66 @@ export function createAppStore(
       const setError = (error: unknown) => {
         set({ lastError: error instanceof Error ? error.message : 'The requested change could not be completed.' });
       };
-      const clearActionError = () => set({ lastError: null });
+      const applyDataAction = (action: (data: AppData) => AppData) => {
+        try {
+          const data = action(get().data);
+          if (deps.isDev ?? (typeof __DEV__ !== 'undefined' && __DEV__)) {
+            const issues = validateIntegrity(data);
+            if (issues.length > 0) console.warn('AppData integrity issues', issues);
+          }
+          set({ data, lastError: null });
+        } catch (error) {
+          setError(error);
+        }
+      };
       const actions: AppActions = {
         addTransaction(input) {
-          try {
-            set({ data: addTransaction(get().data, input, deps.newId) });
-            clearActionError();
-          } catch (error) {
-            setError(error);
-          }
+          applyDataAction((data) => addTransaction(data, input, deps.newId));
         },
         updateTransaction(id, patch) {
-          try {
-            set({ data: updateTransaction(get().data, id, patch) });
-            clearActionError();
-          } catch (error) {
-            setError(error);
-          }
+          applyDataAction((data) => updateTransaction(data, id, patch));
         },
         deleteTransaction(id) {
-          try {
-            set({ data: deleteTransaction(get().data, id) });
-            clearActionError();
-          } catch (error) {
-            setError(error);
-          }
+          applyDataAction((data) => deleteTransaction(data, id));
         },
         updateSettings(patch) {
-          try {
-            set({ data: updateSettings(get().data, patch) });
-            clearActionError();
-          } catch (error) {
-            setError(error);
-          }
+          applyDataAction((data) => updateSettings(data, patch));
+        },
+        addPlan(input) {
+          applyDataAction((data) => addPlan(data, input, deps.newId));
+        },
+        updatePlan(id, patch) {
+          applyDataAction((data) => updatePlan(data, id, patch));
+        },
+        deletePlan(id, options) {
+          applyDataAction((data) => deletePlan(data, id, options));
+        },
+        addPlanLog(planId, input, options) {
+          applyDataAction((data) => addPlanLog(data, planId, input, { ...options, newId: deps.newId }));
+        },
+        updatePlanLog(planId, logId, patch) {
+          applyDataAction((data) => updatePlanLog(data, planId, logId, patch));
+        },
+        deletePlanLog(planId, logId) {
+          applyDataAction((data) => deletePlanLog(data, planId, logId));
+        },
+        addLoan(input) {
+          applyDataAction((data) => addLoan(data, input, deps.newId));
+        },
+        updateLoan(id, patch) {
+          applyDataAction((data) => updateLoan(data, id, patch));
+        },
+        deleteLoan(id, options) {
+          applyDataAction((data) => deleteLoan(data, id, options));
+        },
+        addLoanPayment(loanId, input, options) {
+          applyDataAction((data) => addLoanPayment(data, loanId, input, { ...options, newId: deps.newId }));
+        },
+        updateLoanPayment(loanId, paymentId, patch) {
+          applyDataAction((data) => updateLoanPayment(data, loanId, paymentId, patch));
+        },
+        deleteLoanPayment(loanId, paymentId) {
+          applyDataAction((data) => deleteLoanPayment(data, loanId, paymentId));
         },
         dismissStorageError() {
           suppressNextWrite = true;

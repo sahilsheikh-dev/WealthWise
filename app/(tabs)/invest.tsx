@@ -1,9 +1,11 @@
-import { View, Pressable, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   ActionRow,
   AppText,
+  Button,
   Card,
   Chip,
   ChipRow,
@@ -15,6 +17,7 @@ import {
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
+import { useAppData } from '../../src/data/useAppData';
 import {
   buildPortfolioRows,
   filterRows,
@@ -24,7 +27,6 @@ import {
 } from '../../src/domain/portfolio';
 import { behindBy, installmentsTracked, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
 import type { Holding, HoldingType } from '../../src/domain/types';
-import { useAppData } from '../../src/data/useAppData';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
@@ -63,9 +65,7 @@ export default function InvestScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="New SIP"
-            onPress={() => {
-              // TODO(phase4)
-            }}
+            onPress={() => router.push('/plan-form')}
             style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New SIP</AppText>
           </Pressable>
@@ -73,7 +73,7 @@ export default function InvestScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add holding"
             onPress={() => {
-              // TODO(phase4)
+              // TODO(phase5)
             }}
             style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>
@@ -122,9 +122,21 @@ export default function InvestScreen() {
             : <HoldingItem key={row.id} row={row} holding={holding} />;
         })}
         {visibleRows.length === 0 ? (
-          <EmptyState title="Nothing in this category yet" subtitle="Your holdings will appear here." />
+          <>
+            <EmptyState title={data.holdings.some((holding) => holding.kind === 'plan') ? 'Nothing in this category yet' : 'No recurring plans yet'} subtitle="Your holdings will appear here." />
+            {!data.holdings.some((holding) => holding.kind === 'plan') ? (
+              <View style={styles.emptyAction}>
+                <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
+              </View>
+            ) : null}
+          </>
         ) : null}
       </View>
+      {!data.holdings.some((holding) => holding.kind === 'plan') && visibleRows.length > 0 ? (
+        <View style={styles.emptyAction}>
+          <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
+        </View>
+      ) : null}
       <AppText style={[typography.meta, styles.note, { color: colors.text3 }]}>
         Plan values are estimates unless an actual value is supplied.
       </AppText>
@@ -193,15 +205,9 @@ function PlanCard({
       ) : null}
       <ActionRow
         actions={[
-          { label: 'Log installment', variant: 'primary', onPress: () => {
-            // TODO(phase4)
-          } },
-          { label: `Logs (${loggedCount(holding)})`, onPress: () => {
-            // TODO(phase4)
-          } },
-          { label: 'Edit', onPress: () => {
-            // TODO(phase4)
-          } },
+          { label: 'Log installment', variant: 'primary', onPress: () => router.push({ pathname: '/plan-log-form', params: { planId: holding.id } }) },
+          { label: `Logs (${loggedCount(holding)})`, onPress: () => router.push({ pathname: '/plan-logs', params: { id: holding.id } }) },
+          { label: 'Edit', onPress: () => router.push({ pathname: '/plan-form', params: { id: holding.id } }) },
         ]}
       />
     </View>
@@ -219,4 +225,5 @@ const styles = StyleSheet.create({
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },
+  emptyAction: { marginHorizontal: 20, marginTop: 10 },
 });
