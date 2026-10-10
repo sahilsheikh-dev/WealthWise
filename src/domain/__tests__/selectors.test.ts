@@ -198,8 +198,10 @@ describe('portfolio selectors', () => {
     stepUpPct: 0,
     tenureYears: 1,
     startDate: '2026-01-01',
+    trackFrom: '2026-01-01',
     opening: 50,
     actualValue: null,
+    actualValueDate: null,
     logs: [{ id: 'log', date: '2026-01-01', amount: 200, note: '' }],
   };
 
@@ -265,7 +267,7 @@ describe('summary selectors', () => {
         {
           id: 'plan', kind: 'plan', name: 'Plan', type: 'Mutual fund / SIP', frequency: 'monthly',
           amount: 1_000, ratePct: 0, stepUpPct: 0, tenureYears: 1, startDate: '2026-01-01',
-          opening: 0, actualValue: 2_000,
+          trackFrom: '2026-01-01', opening: 0, actualValue: 2_000, actualValueDate: '2026-01-01',
           logs: [{ id: 'log', date: '2026-01-01', amount: 1_000, note: '' }],
         },
       ],
