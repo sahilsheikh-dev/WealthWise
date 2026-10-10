@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -16,6 +16,7 @@ import {
   ScreenHeader,
   StatPill,
   StatPillRow,
+  StatusBadge,
 } from '../../src/components/ui';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { valueStaleness } from '../../src/domain/holdingActions';
@@ -26,7 +27,8 @@ import {
   portfolioTotals,
   type PortfolioRow,
 } from '../../src/domain/portfolio';
-import { behindBy, installmentsTracked, loggedCount, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { planSchedule } from '../../src/domain/schedule';
 import type { Holding, HoldingType } from '../../src/domain/types';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -65,17 +67,10 @@ export default function InvestScreen() {
         <View style={styles.headerActions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="New SIP"
-            onPress={() => router.push('/plan-form')}
+            accessibilityLabel="New investment"
+            onPress={() => router.push('/investment-form' as Href)}
             style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
-            <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New SIP</AppText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add Holding"
-            onPress={() => router.push('/holding-form')}
-            style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
-            <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>
+            <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New investment</AppText>
           </Pressable>
         </View>
       )} />
@@ -121,19 +116,12 @@ export default function InvestScreen() {
             : <HoldingItem key={row.id} row={row} holding={holding} asOf={asOf} />;
         })}
         {visibleRows.length === 0 ? (
-          <>
-            <EmptyState title={data.holdings.some((holding) => holding.kind === 'plan') ? 'Nothing in this category yet' : 'No recurring plans yet'} subtitle="Your holdings will appear here." />
-            {!data.holdings.some((holding) => holding.kind === 'plan') ? (
-              <View style={styles.emptyAction}>
-                <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
-              </View>
-            ) : null}
-          </>
+          <EmptyState title={data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'} subtitle="Your holdings will appear here." />
         ) : null}
       </View>
-      {!data.holdings.some((holding) => holding.kind === 'plan') && visibleRows.length > 0 ? (
+      {data.holdings.length === 0 ? (
         <View style={styles.emptyAction}>
-          <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
+          <Button label="Add your first investment" variant="primary" onPress={() => router.push('/investment-form' as Href)} />
         </View>
       ) : null}
       <AppText style={[typography.meta, styles.note, { color: colors.text3 }]}>
@@ -164,7 +152,7 @@ function HoldingItem({
         amountSub={row.gainPct === null ? '—' : `${row.gainPct > 0 ? '+' : ''}${row.gainPct.toFixed(1)}%`}
         tone={row.gain >= 0 ? 'ok' : 'err'}
         icon="briefcase"
-        onPress={() => router.push({ pathname: '/holding-form', params: { id: holding.id } })}
+        onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
       />
       <View style={styles.staleLine}>
         <AppText style={[typography.meta, { color: colors.text3 }]}>
@@ -180,6 +168,11 @@ function HoldingItem({
           />
         ) : null}
       </View>
+      <ActionRow actions={[
+        { label: 'Deposit', variant: 'primary', onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href) },
+        { label: 'Withdraw', onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href) },
+        { label: `Entries (${holding.logs.length})`, onPress: () => router.push(`/investment-entries?id=${encodeURIComponent(holding.id)}` as Href) },
+      ]} />
     </View>
   );
 }
@@ -194,6 +187,7 @@ function PlanCard({
   const { colors } = useTheme();
   const due = installmentsTracked(holding, asOf);
   const overdue = behindBy(holding, asOf);
+  const schedule = planSchedule(holding, asOf);
   const planProjection = projection(holding);
   const currentValue = planValue(holding, asOf);
   const contributionPlan = planProjection.totalContributions;
@@ -217,18 +211,27 @@ function PlanCard({
         </View>
       </View>
       <ProgressBar percent={progress} />
+      {schedule.summary.nextDue ? (
+        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {formatDate(schedule.summary.nextDue.dueDate)}, {formatINR(schedule.summary.nextDue.amount)}
+        </AppText>
+      ) : null}
       <AppText style={[typography.meta, styles.planDescription, { color: colors.text2 }]}>
         Invested {formatINR(planInvested(holding))}. Plan: {formatINRShort(contributionPlan)} in contributions.
         {' '}{loggedTrackedCount(holding)} logged since tracking began, {due} due.
       </AppText>
       {overdue > 0 ? (
-        <AppText style={[typography.meta, { color: colors.err, marginTop: 4 }]}>{overdue} behind</AppText>
+        <View style={styles.overdueLine}>
+          <AppText style={[typography.meta, { color: colors.err }]}>{overdue} behind</AppText>
+          {schedule.summary.nextDue ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" /> : null}
+        </View>
       ) : null}
       <ActionRow
         actions={[
-          { label: 'Log installment', variant: 'primary', onPress: () => router.push({ pathname: '/plan-log-form', params: { planId: holding.id } }) },
-          { label: `Logs (${loggedCount(holding)})`, onPress: () => router.push({ pathname: '/plan-logs', params: { id: holding.id } }) },
-          { label: 'Edit', onPress: () => router.push({ pathname: '/plan-form', params: { id: holding.id } }) },
+          { label: 'Log installment', variant: 'primary', onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href) },
+          { label: 'Withdraw', onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href) },
+          { label: `Logs (${holding.logs.length})`, onPress: () => router.push(`/investment-entries?id=${encodeURIComponent(holding.id)}` as Href) },
+          { label: 'Edit', onPress: () => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href) },
         ]}
       />
     </View>
@@ -245,6 +248,7 @@ const styles = StyleSheet.create({
   planTitle: { flex: 1, minWidth: 0, gap: 3 },
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
+  overdueLine: { marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   manualCard: { marginBottom: 8 },
   staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },

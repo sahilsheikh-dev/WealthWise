@@ -17,9 +17,13 @@ const money = z.number().finite().max(100_000_000_000).min(-100_000_000_000);
 const positiveMoney = money.positive();
 const note = z.string().max(200);
 const name = z.string().max(80);
-const logSchema = z.strictObject({
-  id: idSchema, date: dateSchema, amount: money, note,
-  kind: z.enum(['EMI', 'Prepayment']).optional(),
+const investmentEntrySchema = z.strictObject({
+  id: idSchema, date: dateSchema, amount: positiveMoney, note,
+  kind: z.enum(['Deposit', 'Withdrawal']),
+});
+const liabilityPaymentSchema = z.strictObject({
+  id: idSchema, date: dateSchema, amount: positiveMoney, note,
+  kind: z.enum(['EMI', 'Prepayment', 'Payment']),
 });
 const transactionSchema = z.strictObject({
   id: idSchema,
@@ -29,7 +33,7 @@ const transactionSchema = z.strictObject({
   note,
   date: dateSchema,
   source: z.strictObject({
-    kind: z.enum(['plan-log', 'loan-payment', 'ef-entry']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'ef-entry']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -45,6 +49,7 @@ const holdingType = z.enum([
 const manualHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('manual'), name, type: holdingType,
   invested: money, value: money, valueAsOf: dateSchema.optional(),
+  logs: z.array(investmentEntrySchema).max(100_000),
 });
 const planHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('plan'), name, type: holdingType,
@@ -52,12 +57,24 @@ const planHoldingSchema = z.strictObject({
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
   tenureYears: z.number().int().min(1).max(100), startDate: dateSchema, trackFrom: dateSchema,
   opening: money, actualValue: money.nullable(), actualValueDate: dateSchema.nullable(),
-  logs: z.array(logSchema).max(100_000),
+  logs: z.array(investmentEntrySchema).max(100_000),
 });
-const loanSchema = z.strictObject({
-  id: idSchema, name, principal: money, ratePct: z.number().min(0).max(100),
-  tenureMonths: z.number().int().min(1).max(1200), emi: money, startDate: dateSchema,
-  payments: z.array(logSchema).max(100_000),
+const liabilityCommon = {
+  id: idSchema, name,
+  type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
+  principal: money, ratePct: z.number().min(0).max(100), startDate: dateSchema,
+  payments: z.array(liabilityPaymentSchema).max(100_000),
+};
+const recurringLiabilitySchema = z.strictObject({
+  ...liabilityCommon, kind: z.literal('recurring'),
+  tenureMonths: z.number().int().min(1).max(1200), emi: positiveMoney,
+});
+const oneTimeLiabilitySchema = z.strictObject({
+  ...liabilityCommon, kind: z.literal('one-time'), dueDate: dateSchema.nullable(),
+}).superRefine((liability, context) => {
+  if (liability.dueDate !== null && liability.dueDate < liability.startDate) {
+    context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
+  }
 });
 const efEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: money.refine((amount) => amount !== 0), note,
@@ -67,7 +84,7 @@ export const importDataSchema = z.strictObject({
   transactions: z.array(transactionSchema).max(100_000),
   goals: z.array(goalSchema).max(100_000),
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),
-  loans: z.array(loanSchema).max(100_000),
+  liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   efEntries: z.array(efEntrySchema).max(100_000),
 });
 
@@ -85,7 +102,7 @@ export type BackupSummary = {
   goals: number;
   holdings: number;
   plans: number;
-  loans: number;
+  liabilities: number;
   efEntries: number;
   firstDate: ISODate | null;
   lastDate: ISODate | null;
@@ -183,18 +200,18 @@ export async function parseBackup(
   if (value.formatVersion > BACKUP_FORMAT_VERSION || value.schemaVersion > SCHEMA_VERSION) {
     return { ok: false, reason: 'newer-version', message: 'This backup was made by a newer version of Wealth Wise. Update the app before importing it.' };
   }
-  let migrated: unknown = value.data;
-  try {
-    migrated = migratePersisted(value.data, value.schemaVersion);
-  } catch {
-    return { ok: false, reason: 'unsupported-version', message: 'This backup version cannot be imported by this app.' };
-  }
   if (value.formatVersion !== BACKUP_FORMAT_VERSION) {
     return { ok: false, reason: 'unsupported-version', message: 'This backup format is no longer supported.' };
   }
   const digest = await options.digest(canonicalJson(value.data));
   if (digest !== value.checksum.value) {
     return { ok: false, reason: 'checksum-mismatch', message: "This file was changed after it was exported, so it can't be trusted." };
+  }
+  let migrated: unknown = value.data;
+  try {
+    migrated = migratePersisted(value.data, value.schemaVersion);
+  } catch {
+    return { ok: false, reason: 'unsupported-version', message: 'This backup version cannot be imported by this app.' };
   }
   const validated = validateImportData(migrated);
   if (!validated.ok) {
@@ -222,7 +239,7 @@ export function summarizeData(data: AppData): BackupSummary {
     goals: data.goals.length,
     holdings: data.holdings.length,
     plans: data.holdings.filter((holding) => holding.kind === 'plan').length,
-    loans: data.loans.length,
+    liabilities: data.liabilities.length,
     efEntries: data.efEntries.length,
     firstDate: dates[0] ?? null,
     lastDate: dates.at(-1) ?? null,

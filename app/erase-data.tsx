@@ -64,7 +64,7 @@ export default function EraseDataScreen() {
       <SectionTitle>What will be deleted</SectionTitle>
       <Card>
         <AppText style={[typography.meta, { color: colors.text2, lineHeight: 20 }]}>
-          All transactions, goals, holdings, loans, emergency-fund entries, app preferences, undo data, damaged-data recovery copies, export reminders, and app-lock settings stored on this phone.
+          All transactions, goals, holdings, liabilities, emergency-fund entries, app preferences, undo data, damaged-data recovery copies, export reminders, and app-lock settings stored on this phone.
         </AppText>
         <Button label="Export a backup first" onPress={() => router.push('/backup')} />
       </Card>

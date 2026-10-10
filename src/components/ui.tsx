@@ -123,18 +123,42 @@ export function StatPill({
   label,
   value,
   tone = 'primary',
+  onPress,
+  accessibilityHint,
 }: {
   label: string;
   value: string;
   tone?: Tone;
+  onPress?: () => void;
+  accessibilityHint?: string;
 }) {
   const { colors } = useTheme();
+  const content = (
+    <>
+      <View style={styles.statPillText}>
+        <AppText style={[typography.label, styles.statLabel, { color: colors.text3 }]}>{label}</AppText>
+        <AppText style={[styles.statValue, { color: toneColor(colors, tone) }]} numberOfLines={2}>
+          {value}
+        </AppText>
+      </View>
+      {onPress ? <Feather name="chevron-right" size={16} color={colors.text3} /> : null}
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${value}`}
+        accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
+        onPress={onPress}
+        style={[styles.statPill, styles.statPillPressable, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+        {content}
+      </Pressable>
+    );
+  }
   return (
     <View style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-      <AppText style={[typography.label, styles.statLabel, { color: colors.text3 }]}>{label}</AppText>
-      <AppText style={[styles.statValue, { color: toneColor(colors, tone) }]} numberOfLines={2}>
-        {value}
-      </AppText>
+      {content}
     </View>
   );
 }
@@ -201,6 +225,15 @@ export function ChipRow({ children }: PropsWithChildren) {
       contentContainerStyle={styles.chipRow}>
       {children}
     </ScrollView>
+  );
+}
+
+export function StatusBadge({ label, tone }: { label: string; tone: Tone }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statusBadge, { backgroundColor: toneBackground(colors, tone) }]}>
+      <AppText weight="semibold" style={[typography.label, { color: toneColor(colors, tone) }]}>{label}</AppText>
+    </View>
   );
 }
 
@@ -390,15 +423,15 @@ export function SearchField({
   );
 }
 
-export function DetailTabBar() {
+export function DetailTabBar({ active }: { active: 'Home' | 'More' }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const tabs = [
-    { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: false },
+    { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
     { label: 'Txns', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
     { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
     { label: 'Invest', route: '/(tabs)/invest' as const, icon: 'pie-chart' as const, active: false },
-    { label: 'More', route: '/(tabs)/more' as const, icon: 'grid' as const, active: true },
+    { label: 'More', route: '/(tabs)/more' as const, icon: 'grid' as const, active: active === 'More' },
   ] as const;
   return (
     <View style={[styles.detailTabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -428,12 +461,15 @@ const styles = StyleSheet.create({
   card: { marginHorizontal: 20, marginTop: 14, padding: 18, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.card },
   statRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
   statPill: { flex: 1, minWidth: 0, paddingVertical: 9, paddingHorizontal: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.pill },
+  statPillPressable: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  statPillText: { flex: 1, minWidth: 0 },
   statLabel: { marginBottom: 4 },
   statValue: { fontFamily: 'Montserrat_700Bold', fontSize: 13, lineHeight: 18 },
   track: { height: 5, marginTop: 11, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3, minWidth: 2 },
   chip: { minHeight: 44, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   chipRow: { alignItems: 'center', gap: 6, paddingHorizontal: 20, marginTop: 10 },
+  statusBadge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   listItem: { minHeight: 60, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   listIcon: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   flexText: { flex: 1, minWidth: 0, gap: 3 },

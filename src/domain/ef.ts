@@ -23,11 +23,14 @@ export function monthlyBaseline(
   transactions: Transaction[],
   kind: 'expense' | 'income',
   asOf: ISODate,
+  options: { excludeCategories?: readonly string[] } = {},
 ): number {
   const currentMonth = monthKey(asOf);
   const monthlyTotals = new Map<string, number>();
+  const excluded = new Set(options.excludeCategories ?? []);
   for (const transaction of transactions) {
     if (transaction.type !== kind) continue;
+    if (excluded.has(transaction.category)) continue;
     const key = monthKey(transaction.date);
     monthlyTotals.set(key, (monthlyTotals.get(key) ?? 0) + transaction.amount);
   }

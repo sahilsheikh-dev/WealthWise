@@ -1,0 +1,96 @@
+import { router } from 'expo-router';
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { AppText, Button, EmptyState, ListItem, Screen, ScreenHeader } from '../src/components/ui';
+import { useAppStore } from '../src/data/store';
+import { useAppActions } from '../src/data/useAppData';
+import { findUnlinkedEntries } from '../src/domain/instruments';
+import { confirmAsync } from '../src/lib/confirm';
+import { formatDate, formatINR } from '../src/lib/format';
+import { typography } from '../src/theme/tokens';
+import { useTheme } from '../src/theme/useTheme';
+
+export default function LinkMissingScreen() {
+  const data = useAppStore((state) => state.data);
+  const lastError = useAppStore((state) => state.lastError);
+  const actions = useAppActions();
+  const { colors } = useTheme();
+  const entries = useMemo(() => findUnlinkedEntries(data), [data]);
+  const total = entries.reduce((sum, item) => sum + Math.abs(item.entry.amount), 0);
+
+  const createTransactions = () => {
+    const count = entries.length;
+    if (count === 0) return;
+    void confirmAsync({
+      title: 'Create missing transactions?',
+      message: `This adds ${count} transactions dated in the past and changes past income, investment and expense totals.`,
+      confirmLabel: `Create ${count} transactions`,
+      cancelLabel: 'Cancel',
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      actions.createMissingTransactions();
+      if (!useAppStore.getState().lastError) router.back();
+    });
+  };
+
+  return (
+    <Screen scroll={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScreenHeader title="Link missing transactions" right={<Button label="Back" onPress={() => router.back()} />} />
+        <FormErrorBanner message={lastError} />
+        {entries.length === 0 ? (
+          <EmptyState title="All entries are linked" subtitle="There are no missing transactions to create." />
+        ) : (
+          <>
+            <AppText style={[typography.meta, { color: colors.text2 }]}>
+              This tool creates transactions for existing entries that do not have one yet.
+              These entries are dated in the past and will change past income, invest and expense totals.
+            </AppText>
+            <View style={styles.total}>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
+              <AppText weight="bold">{formatINR(total)}</AppText>
+            </View>
+            <View style={styles.list}>
+              {entries.map((item) => {
+                const name = item.kind === 'ef'
+                  ? 'Emergency fund'
+                  : item.kind === 'holding' ? item.holdingName : item.liabilityName;
+                const kind = item.kind === 'liability'
+                  ? item.entry.kind
+                  : item.entry.amount < 0 || item.kind === 'holding' && item.entry.kind === 'Withdrawal'
+                    ? 'Withdrawal'
+                    : 'Deposit';
+                return (
+                  <ListItem
+                    key={`${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`}
+                    title={name}
+                    subtitle={`${formatDate(item.entry.date)} · ${kind}`}
+                    amount={formatINR(Math.abs(item.entry.amount))}
+                  />
+                );
+              })}
+            </View>
+          </>
+        )}
+      </ScrollView>
+      {entries.length > 0 ? (
+        <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
+          <Button
+            label={`Create ${entries.length} transactions`}
+            variant="primary"
+            onPress={createTransactions}
+          />
+        </View>
+      ) : null}
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { paddingBottom: 100 },
+  total: { marginHorizontal: 20, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between' },
+  list: { marginHorizontal: 20 },
+  footer: { padding: 20, borderTopWidth: StyleSheet.hairlineWidth },
+});

@@ -20,6 +20,7 @@ export function createSafeStorage(
   hooks: SafeStorageHooks,
   options: { blockWrites: () => boolean },
 ): StateStorage {
+  let premigrationRaw: string | null = null;
   return {
     async getItem(name) {
       const raw = await base.getItem(name);
@@ -34,6 +35,13 @@ export function createSafeStorage(
           const envelope = parsed as { state?: unknown; version?: unknown };
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
+          } else if (
+            envelope.version === 1 &&
+            typeof envelope.state === 'object' &&
+            envelope.state !== null &&
+            'data' in envelope.state
+          ) {
+            premigrationRaw = raw;
           } else if (
             typeof envelope.state !== 'object' ||
             envelope.state === null ||
@@ -65,6 +73,12 @@ export function createSafeStorage(
     async setItem(name, value) {
       if (options.blockWrites()) return;
       try {
+        if (name && premigrationRaw !== null) {
+          const premigrationKey = `${name}.premigration.v1`;
+          const existing = await base.getItem(premigrationKey);
+          if (existing === null) await base.setItem(premigrationKey, premigrationRaw);
+          premigrationRaw = null;
+        }
         await base.setItem(name, value);
       } catch {
         hooks.onWriteError('Your last change could not be saved. Free up storage and try again.');

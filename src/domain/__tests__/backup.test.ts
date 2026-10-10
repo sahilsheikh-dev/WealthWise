@@ -9,6 +9,7 @@ import {
   validateImportData,
 } from '../backup';
 import { mockAppData } from '../../mock/data';
+import { makeV1Fixture } from '../../data/testFixtures/v1';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -42,8 +43,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 99;
-    newer.formatVersion = 2;
+    newer.schemaVersion = 3;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     await expect(parseBackup('x'.repeat(MAX_BACKUP_CHARS + 1), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'too-large' });
@@ -56,6 +56,26 @@ describe('backup validation and serialization', () => {
     expect(() => backupFileName('not a date')).toThrow('Invalid export date');
   });
 
+  it('verifies a v1 data checksum before migration and imports the v2 result', async () => {
+    const data = makeV1Fixture();
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: 1,
+      schemaVersion: 1,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
+      data,
+    };
+    const result = await parseBackup(JSON.stringify(envelope), { digest });
+    expect(result).toMatchObject({
+      ok: true,
+      data: { liabilities: [{ kind: 'recurring', type: 'Other' }] },
+    });
+    const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
+    await expect(parseBackup(JSON.stringify(corrupted), { digest }))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
   it('distinguishes invalid values from broken record integrity after recomputing checksum', async () => {
     const raw = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     const invalid = await reChecksum(raw, (envelope) => {
@@ -66,7 +86,7 @@ describe('backup validation and serialization', () => {
 
     const orphan = await reChecksum(raw, (envelope) => {
       const data = envelope.data as typeof mockAppData;
-      data.transactions[0]!.source = { kind: 'plan-log', parentId: 'missing', entryId: 'missing' };
+      data.transactions[0]!.source = { kind: 'holding-entry', parentId: 'missing', entryId: 'missing' };
     });
     await expect(parseBackup(orphan, { digest })).resolves.toMatchObject({ ok: false, reason: 'integrity' });
   });
@@ -92,7 +112,7 @@ describe('backup validation and serialization', () => {
       transactions: [],
       goals: [],
       holdings: [],
-      loans: [],
+      liabilities: [],
       efEntries: [],
     });
     expect(noFinancialHistory).toMatchObject({ ok: true });

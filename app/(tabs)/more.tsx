@@ -1,9 +1,10 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
+import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { choiceAsync } from '../../src/lib/confirm';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -20,16 +21,24 @@ type MenuRowProps = {
 export default function MoreScreen() {
   const { themePreference, toggleTheme } = useTheme();
   const name = useAppStore((state) => state.data.settings.name);
+  const data = useAppStore((state) => state.data);
   const devActions = useAppStore((state) => state.devActions);
+  const missingCount = findUnlinkedEntries(data).length;
   return (
     <Screen>
       <ScreenHeader title="More" />
       <View style={styles.list}>
         <MenuRow label="Your Name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
-        <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
-        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
         <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
         <MenuRow label="Backup and Restore" icon="download" onPress={() => router.push('/backup')} />
+        {missingCount > 0 ? (
+          <MenuRow
+            label="Link missing transactions"
+            icon="link"
+            detail={`${missingCount} entries`}
+            onPress={() => router.push('/link-missing' as Href)}
+          />
+        ) : null}
         <MenuRow label="Security" icon="lock" onPress={() => router.push('/security')} />
         <MenuRow label="Erase all Data" icon="trash-2" danger onPress={() => router.push('/erase-data')} />
       </View>

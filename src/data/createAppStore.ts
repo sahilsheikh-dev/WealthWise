@@ -3,22 +3,35 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 
 import { addTransaction, deleteTransaction, emptyAppData, updateSettings, updateTransaction } from '../domain/actions';
 import {
-  addPlan, addPlanLog, deletePlan, deletePlanLog, updatePlan, updatePlanLog,
-  type AddPlanInput, type PlanLogPatch, type PlanPatch,
+  addPlan, deletePlan, updatePlan,
+  type AddPlanInput, type PlanPatch,
 } from '../domain/planActions';
 import {
-  addLoan, addLoanPayment, deleteLoan, deleteLoanPayment, updateLoan, updateLoanPayment,
-  type AddLoanInput, type LoanPatch, type LoanPaymentPatch,
-} from '../domain/loanActions';
+  addInvestmentEntry, deleteInvestmentEntry, updateInvestmentEntry,
+  type InvestmentEntryInput, type InvestmentEntryPatch,
+} from '../domain/investmentActions';
+import {
+  addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
+  type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
+} from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
+import {
+  addInstrumentTransaction,
+  createMissingTransactions,
+  deleteLinkedTransaction,
+  linkExistingTransaction,
+  updateLinkedTransaction,
+  type InstrumentTransactionInput,
+  type LinkedTransactionPatch,
+} from '../domain/instruments';
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
-import type { AppData, EfEntry, Holding, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
+import type { AppData, EfEntry, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { validateImportData } from '../domain/backup';
@@ -31,26 +44,31 @@ export type AppActions = {
   addTransaction: (input: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, patch: Partial<Omit<Transaction, 'id'>>) => void;
   deleteTransaction: (id: string) => void;
+  addInstrumentTransaction: (input: InstrumentTransactionInput) => void;
+  updateLinkedTransaction: (id: string, patch: LinkedTransactionPatch) => void;
+  deleteLinkedTransaction: (id: string) => void;
+  linkExistingTransaction: (transactionId: string, instrumentId: string, note?: string) => void;
+  createMissingTransactions: () => void;
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
-  addPlanLog: (planId: string, input: Pick<LogEntry, 'date' | 'amount' | 'note'>, options: { recordTransaction: boolean }) => void;
-  updatePlanLog: (planId: string, logId: string, patch: PlanLogPatch) => void;
-  deletePlanLog: (planId: string, logId: string) => void;
-  addLoan: (input: AddLoanInput) => void;
-  updateLoan: (id: string, patch: LoanPatch) => void;
-  deleteLoan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
-  addLoanPayment: (loanId: string, input: Pick<LogEntry, 'date' | 'amount' | 'kind' | 'note'>, options: { recordTransaction: boolean }) => void;
-  updateLoanPayment: (loanId: string, paymentId: string, patch: LoanPaymentPatch) => void;
-  deleteLoanPayment: (loanId: string, paymentId: string) => void;
+  addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
+  updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
+  deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
+  addLiability: (input: AddLiabilityInput) => void;
+  updateLiability: (id: string, patch: LiabilityPatch) => void;
+  deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
+  addLiabilityPayment: (liabilityId: string, input: Pick<LiabilityPayment, 'date' | 'amount' | 'kind' | 'note'>) => void;
+  updateLiabilityPayment: (liabilityId: string, paymentId: string, patch: LiabilityPaymentPatch) => void;
+  deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
   deleteGoal: (id: string) => void;
-  addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf'>) => void;
+  addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
-  deleteHolding: (id: string) => void;
+  deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
-  addEfEntry: (input: Omit<EfEntry, 'id'>, options: { recordTransaction: boolean }) => void;
+  addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
   deleteEfEntry: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -147,6 +165,24 @@ export function createAppStore(
         deleteTransaction(id) {
           applyDataAction((data) => deleteTransaction(data, id));
         },
+        addInstrumentTransaction(input) {
+          applyDataAction((data) => addInstrumentTransaction(data, input, deps.newId, deps.today()));
+        },
+        updateLinkedTransaction(id, patch) {
+          applyDataAction((data) => updateLinkedTransaction(data, id, patch, {
+            newId: deps.newId,
+            today: deps.today(),
+          }));
+        },
+        deleteLinkedTransaction(id) {
+          applyDataAction((data) => deleteLinkedTransaction(data, id));
+        },
+        linkExistingTransaction(transactionId, instrumentId, note) {
+          applyDataAction((data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note));
+        },
+        createMissingTransactions() {
+          applyDataAction((data) => createMissingTransactions(data, deps.newId));
+        },
         updateSettings(patch) {
           applyDataAction((data) => updateSettings(data, patch));
         },
@@ -159,32 +195,32 @@ export function createAppStore(
         deletePlan(id, options) {
           applyDataAction((data) => deletePlan(data, id, options));
         },
-        addPlanLog(planId, input, options) {
-          applyDataAction((data) => addPlanLog(data, planId, input, { ...options, newId: deps.newId }));
+        addInvestmentEntry(holdingId, input) {
+          applyDataAction((data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()));
         },
-        updatePlanLog(planId, logId, patch) {
-          applyDataAction((data) => updatePlanLog(data, planId, logId, patch));
+        updateInvestmentEntry(holdingId, entryId, patch) {
+          applyDataAction((data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()));
         },
-        deletePlanLog(planId, logId) {
-          applyDataAction((data) => deletePlanLog(data, planId, logId));
+        deleteInvestmentEntry(holdingId, entryId) {
+          applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
         },
-        addLoan(input) {
-          applyDataAction((data) => addLoan(data, input, deps.newId));
+        addLiability(input) {
+          applyDataAction((data) => addLiability(data, input, deps.newId));
         },
-        updateLoan(id, patch) {
-          applyDataAction((data) => updateLoan(data, id, patch));
+        updateLiability(id, patch) {
+          applyDataAction((data) => updateLiability(data, id, patch));
         },
-        deleteLoan(id, options) {
-          applyDataAction((data) => deleteLoan(data, id, options));
+        deleteLiability(id, options) {
+          applyDataAction((data) => deleteLiability(data, id, options));
         },
-        addLoanPayment(loanId, input, options) {
-          applyDataAction((data) => addLoanPayment(data, loanId, input, { ...options, newId: deps.newId }));
+        addLiabilityPayment(liabilityId, input) {
+          applyDataAction((data) => addLiabilityPayment(data, liabilityId, input, { newId: deps.newId }));
         },
-        updateLoanPayment(loanId, paymentId, patch) {
-          applyDataAction((data) => updateLoanPayment(data, loanId, paymentId, patch));
+        updateLiabilityPayment(liabilityId, paymentId, patch) {
+          applyDataAction((data) => updateLiabilityPayment(data, liabilityId, paymentId, patch));
         },
-        deleteLoanPayment(loanId, paymentId) {
-          applyDataAction((data) => deleteLoanPayment(data, loanId, paymentId));
+        deleteLiabilityPayment(liabilityId, paymentId) {
+          applyDataAction((data) => deleteLiabilityPayment(data, liabilityId, paymentId));
         },
         addGoal(input) {
           applyDataAction((data) => addGoal(data, input, deps.newId));
@@ -207,14 +243,14 @@ export function createAppStore(
             return updateHolding(data, id, { ...patch, valueAsOf });
           });
         },
-        deleteHolding(id) {
-          applyDataAction((data) => deleteHolding(data, id));
+        deleteHolding(id, options) {
+          applyDataAction((data) => deleteHolding(data, id, options));
         },
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
         },
-        addEfEntry(input, options) {
-          applyDataAction((data) => addEfEntry(data, input, { ...options, newId: deps.newId }));
+        addEfEntry(input) {
+          applyDataAction((data) => addEfEntry(data, input, { newId: deps.newId }));
         },
         updateEfEntry(id, patch) {
           applyDataAction((data) => updateEfEntry(data, id, patch));
@@ -323,6 +359,7 @@ export function createAppStore(
         async eraseAllData() {
           try {
             await storage.removeItem(PERSIST_NAME);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v1`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);

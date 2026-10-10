@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
+import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
@@ -16,11 +17,20 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { describeSource } from '../src/domain/links';
-import { makeTransactionFormSchema, TRANSACTION_CATEGORIES, type TransactionFormInput, type TransactionFormOutput } from '../src/domain/schemas';
+import { efBalance } from '../src/domain/ef';
+import { describeSource, investCategoryFor } from '../src/domain/links';
+import { listInstruments } from '../src/domain/instruments';
+import { holdingValue } from '../src/domain/portfolio';
+import {
+  makeTransactionFormSchema,
+  TRANSACTION_CATEGORIES,
+  type TransactionFormInput,
+  type TransactionFormOutput,
+} from '../src/domain/schemas';
 import type { Transaction } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -29,28 +39,59 @@ const typeOptions = [
   { label: 'Income', value: 'income' },
   { label: 'Invest', value: 'invest' },
 ] as const;
+const createInvestmentChoice = '__create-investment__';
+const noInvestmentChoice = '__no-investment__';
 
 export default function TransactionFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const transactionId = Array.isArray(id) ? id[0] : id;
   const data = useAppStore((state) => state.data);
+  const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const lastCreatedInstrumentId = useUIStore((state) => state.lastCreatedInstrumentId);
+  const setLastCreatedInstrumentId = useUIStore((state) => state.setLastCreatedInstrumentId);
   const { colors } = useTheme();
   const today = useMemo(() => todayISO(), []);
   const editing = transactionId !== undefined;
   const transaction = editing ? data.transactions.find((row) => row.id === transactionId) : undefined;
   const linkedSource = transaction?.source ? describeSource(data, transaction.source) : null;
-  const submitting = useRef(false);
+  const linkedInstrument = transaction?.source?.kind === 'holding-entry' || transaction?.source?.kind === 'ef-entry';
+  const instruments = useMemo(() => listInstruments(data, today), [data, today]);
   const legacyCategories = useMemo(() => {
     const categories: readonly string[] = transaction ? TRANSACTION_CATEGORIES[transaction.type] : [];
     if (!transaction || categories.includes(transaction.category)) return {};
     return { [transaction.type]: [transaction.category] };
   }, [transaction]);
+  const mode = !editing
+    ? 'create'
+    : linkedInstrument ? 'edit-linked' : 'edit-unlinked';
+  const withdrawable = useMemo(() => {
+    const values: Record<string, number> = Object.fromEntries(
+      instruments.map((item) => [item.id, item.valueNow]),
+    );
+    if (transaction?.type === 'income' && transaction.source?.kind === 'holding-entry') {
+      const holding = data.holdings.find((item) => item.id === transaction.source?.parentId);
+      if (holding) {
+        values[holding.id] = holdingValue({
+          ...holding,
+          logs: holding.logs.filter((entry) => entry.id !== transaction.source?.entryId),
+        }, today);
+      }
+    } else if (transaction?.type === 'income' && transaction.source?.kind === 'ef-entry') {
+      values.ef = efBalance(data.efEntries.filter((entry) => entry.id !== transaction.source?.entryId));
+    }
+    return values;
+  }, [data.efEntries, data.holdings, instruments, today, transaction]);
   const schema = useMemo(
-    () => makeTransactionFormSchema(today, legacyCategories),
-    [legacyCategories, today],
+    () => makeTransactionFormSchema(today, legacyCategories, {
+      instruments,
+      withdrawable,
+      mode,
+    }),
+    [instruments, legacyCategories, mode, today, withdrawable],
   );
+  const submitting = useRef(false);
   const {
     control,
     handleSubmit,
@@ -67,15 +108,61 @@ export default function TransactionFormScreen() {
       note: transaction.note,
       type: transaction.type,
       category: transaction.category,
+      instrumentId: transaction.source?.kind === 'holding-entry'
+        ? transaction.source.parentId
+        : transaction.source?.kind === 'ef-entry' ? 'ef' : undefined,
     } : {
       amount: '',
       date: today,
       note: '',
       type: 'expense',
       category: TRANSACTION_CATEGORIES.expense[0],
+      instrumentId: undefined,
     },
   });
   const selectedType = useWatch({ control, name: 'type' });
+  const selectedCategory = useWatch({ control, name: 'category' });
+  const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
+
+  useEffect(() => {
+    if (!lastCreatedInstrumentId) return;
+    setValue('instrumentId', lastCreatedInstrumentId, { shouldDirty: true, shouldValidate: true });
+    if (getValues('type') === 'invest') {
+      const selected = instruments.find((item) => item.id === lastCreatedInstrumentId);
+      if (selected) setValue('category', selected.id === 'ef' ? 'Emergency fund' : investCategoryFor(selected.type as Exclude<typeof selected.type, 'Emergency fund'>), { shouldDirty: true });
+    }
+    setLastCreatedInstrumentId(null);
+  }, [getValues, instruments, lastCreatedInstrumentId, setLastCreatedInstrumentId, setValue]);
+
+  const selectedInstrument = instruments.find((item) => item.id === selectedInstrumentId);
+  const isWithdrawalForm = selectedType === 'income' && selectedCategory === 'Withdrawal';
+  const linkedEditable = linkedInstrument && transaction?.source !== undefined;
+  const choices = [
+    ...TRANSACTION_CATEGORIES[selectedType],
+    ...(transaction?.type === selectedType && !(TRANSACTION_CATEGORIES[selectedType] as readonly string[]).includes(transaction.category)
+      ? [transaction.category]
+      : []),
+  ];
+  const instrumentChoices = [
+    ...instruments.map((item) => item.id),
+    ...(!editing || (transaction?.type === 'invest' && !transaction.source) ? [createInvestmentChoice] : []),
+    ...(transaction?.type === 'invest' && !transaction.source ? [noInvestmentChoice] : []),
+  ];
+  const instrumentLabels = Object.fromEntries([
+    ...instruments.map((item) => [item.id, item.id === 'ef' ? item.name : `${item.name} (${item.type})`]),
+    [createInvestmentChoice, '+ Create new investment'],
+    [noInvestmentChoice, 'Not linked'],
+  ]);
+  const withdrawalChoices = instruments.filter((item) => (withdrawable[item.id] ?? 0) > 0).map((item) => item.id);
+  const withdrawalLabels = Object.fromEntries(instruments.map((item) => [
+    item.id,
+    `${item.name} · ${formatINR(withdrawable[item.id] ?? item.valueNow)}`,
+  ]));
+  const derivedCategory = selectedInstrument
+    ? selectedInstrument.id === 'ef'
+      ? 'Emergency fund'
+      : investCategoryFor(selectedInstrument.type as Exclude<typeof selectedInstrument.type, 'Emergency fund'>)
+    : transaction?.category ?? '';
 
   const requestClose = () => {
     if (!isDirty) {
@@ -89,16 +176,35 @@ export default function TransactionFormScreen() {
   };
 
   const save = async (values: TransactionFormOutput) => {
-    const input: Omit<Transaction, 'id'> = values;
-    if (transactionId && transaction?.source) actions.updateTransaction(transactionId, { note: values.note });
-    else if (transactionId) actions.updateTransaction(transactionId, input);
-    else actions.addTransaction(input);
+    const { instrumentId, ...transactionValues } = values;
+    const input: Omit<Transaction, 'id'> = transactionValues;
+    if (transactionId && linkedEditable) {
+      actions.updateLinkedTransaction(transactionId, {
+        amount: values.amount,
+        date: values.date,
+        note: values.note,
+        ...(instrumentId ? { instrumentId } : {}),
+      });
+    } else if (transactionId && transaction?.source) {
+      actions.updateTransaction(transactionId, { note: values.note });
+    } else if (transactionId && transaction?.type === 'invest' && instrumentId) {
+      actions.linkExistingTransaction(transactionId, instrumentId, values.note);
+    } else if (transactionId) {
+      actions.updateTransaction(transactionId, input);
+    } else if (instrumentId && (values.type === 'invest' || values.type === 'income' && values.category === 'Withdrawal')) {
+      actions.addInstrumentTransaction({
+        kind: values.type === 'invest' ? 'deposit' : 'withdrawal',
+        instrumentId,
+        amount: values.amount,
+        date: values.date,
+        note: values.note,
+      });
+    } else {
+      actions.addTransaction(input);
+    }
 
     const store = useAppStore.getState();
-    if (store.lastError) {
-      void confirmAsync({ title: 'Could not save transaction', message: store.lastError, confirmLabel: 'OK' });
-      return;
-    }
+    if (store.lastError) return;
     const saved = transactionId
       ? store.data.transactions.find((row) => row.id === transactionId)
       : store.data.transactions.at(-1);
@@ -111,30 +217,24 @@ export default function TransactionFormScreen() {
     if (submitting.current) return;
     submitting.current = true;
     void handleSubmit(save)()
-      .catch((error: unknown) => {
-        void confirmAsync({
-          title: 'Could not save transaction',
-          message: error instanceof Error ? error.message : 'Please try again.',
-          confirmLabel: 'OK',
-        });
-      })
-      .finally(() => {
-        submitting.current = false;
-      });
+      .finally(() => { submitting.current = false; });
   };
 
   const remove = () => {
+    if (!transactionId || !transaction) return;
+    const linkedName = linkedSource?.label;
     void confirmAsync({
       title: 'Delete transaction',
-      message: "Delete this transaction? This can't be undone.",
+      message: linkedEditable
+        ? `This also removes the entry from ${linkedName ?? 'the investment'}.`
+        : "Delete this transaction? This can't be undone.",
       confirmLabel: 'Delete',
       destructive: true,
     }).then((confirmed) => {
-      if (!confirmed || !transactionId) return;
-      actions.deleteTransaction(transactionId);
-      const state = useAppStore.getState();
-      if (state.lastError) void confirmAsync({ title: 'Could not delete transaction', message: state.lastError, confirmLabel: 'OK' });
-      else router.back();
+      if (!confirmed) return;
+      if (linkedEditable) actions.deleteLinkedTransaction(transactionId);
+      else actions.deleteTransaction(transactionId);
+      if (!useAppStore.getState().lastError) router.back();
     });
   };
 
@@ -146,14 +246,11 @@ export default function TransactionFormScreen() {
     );
   }
 
-  const choices = [
-    ...TRANSACTION_CATEGORIES[selectedType],
-    ...(transaction?.type === selectedType && !(TRANSACTION_CATEGORIES[selectedType] as readonly string[]).includes(transaction.category)
-      ? [transaction.category]
-      : []),
-  ];
   const errorCount = Object.keys(errors).length;
   const disabled = isSubmitting || (submitCount > 0 && errorCount > 0);
+  const showInstrumentPicker = !transaction && isWithdrawalForm;
+  const effectiveInstrumentChoices = isWithdrawalForm ? withdrawalChoices : instrumentChoices;
+  const effectiveInstrumentLabels = isWithdrawalForm ? withdrawalLabels : instrumentLabels;
 
   return (
     <FormScreen
@@ -161,7 +258,9 @@ export default function TransactionFormScreen() {
       onClose={requestClose}
       footer={
         <View style={styles.footerActions}>
-          {transactionId && !transaction?.source ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
+          {transactionId && (!transaction?.source || linkedEditable)
+            ? <Button label="Delete" variant="danger-text" onPress={remove} />
+            : null}
           {submitCount > 0 && errorCount > 0 ? (
             <View style={styles.errorSummary}>
               <AppText style={[typography.meta, { color: colors.err }]}>
@@ -180,39 +279,43 @@ export default function TransactionFormScreen() {
         </View>
       }>
       <>
-          {transaction?.source ? (
-            <>
-              <ReadOnlyRow
-                label="Linked transaction"
-                value={`Linked to ${linkedSource?.label ?? 'another entry'}. Change amount, date or delete it from there.`}
+        <FormErrorBanner message={lastError} />
+        {transaction?.source ? (
+          <>
+            <ReadOnlyRow
+              label="Linked transaction"
+              value={linkedEditable
+                ? 'Type and category are determined by the linked investment entry.'
+                : `Linked to ${linkedSource?.label ?? 'another entry'}. Change it from there.`}
+            />
+            {linkedSource ? (
+              <Button
+                label={linkedSource.route === '/investment-entries'
+                  ? 'Open investment entries'
+                  : linkedSource.route === '/liability-payments' ? 'Open liability payments' : 'Open emergency fund'}
+                onPress={() => {
+                  if (linkedSource.route === '/investment-entries') {
+                    router.push(`/investment-entries?id=${encodeURIComponent(linkedSource.params.id ?? '')}` as Href);
+                  } else if (linkedSource.route === '/liability-payments') {
+                    router.push({ pathname: '/liability-payments', params: linkedSource.params });
+                  } else {
+                    router.push('/emergency-fund');
+                  }
+                }}
               />
-              {linkedSource ? (
-                <Button
-                  label={linkedSource.route === '/plan-logs'
-                    ? 'Open plan logs'
-                    : linkedSource.route === '/loan-payments' ? 'Open loan payments' : 'Open emergency fund'}
-                  onPress={() => {
-                    if (linkedSource.route === '/plan-logs') {
-                      router.push({ pathname: '/plan-logs', params: linkedSource.params });
-                    } else if (linkedSource.route === '/loan-payments') {
-                      router.push({ pathname: '/loan-payments', params: linkedSource.params });
-                    } else {
-                      router.push('/emergency-fund');
-                    }
-                  }}
-                />
-              ) : null}
-            </>
-          ) : null}
-          {transaction?.source ? (
-            <>
-              <ReadOnlyRow label="Type" value={transaction.type} />
-              <ReadOnlyRow label="Amount" value={`₹${transaction.amount.toLocaleString('en-IN')}`} />
-              <ReadOnlyRow label="Category" value={transaction.category} />
-              <ReadOnlyRow label="Date" value={transaction.date} />
-            </>
-          ) : (
-            <>
+            ) : null}
+          </>
+        ) : null}
+        {transaction?.source && !linkedEditable ? (
+          <>
+            <ReadOnlyRow label="Type" value={transaction.type} />
+            <ReadOnlyRow label="Amount" value={formatINR(transaction.amount)} />
+            <ReadOnlyRow label="Category" value={linkedEditable ? derivedCategory : transaction.category} />
+            <ReadOnlyRow label="Date" value={transaction.date} />
+          </>
+        ) : (
+          <>
+            {!transaction?.source ? (
               <Controller
                 control={control}
                 name="type"
@@ -225,6 +328,7 @@ export default function TransactionFormScreen() {
                     onChange={(type) => {
                       const category = getValues('category');
                       field.onChange(type);
+                      if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
                       if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
                         setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
                       }
@@ -232,18 +336,51 @@ export default function TransactionFormScreen() {
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="amount"
-                render={({ field }) => (
-                  <MoneyField
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.amount?.message}
-                  />
-                )}
-              />
+            ) : (
+              <>
+                <ReadOnlyRow label="Type" value={transaction.type} />
+                <ReadOnlyRow label="Category" value={transaction.category} />
+              </>
+            )}
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+              )}
+            />
+            {!transaction?.source && selectedType === 'invest' ? (
+              <>
+                <Controller
+                  control={control}
+                  name="instrumentId"
+                  render={({ field }) => (
+                    <ChoiceField
+                      label={transaction ? 'Link to an investment (optional)' : 'Invest in'}
+                      value={field.value ?? ''}
+                      choices={effectiveInstrumentChoices}
+                      choiceLabels={effectiveInstrumentLabels}
+                      onChange={(id) => {
+                        if (id === createInvestmentChoice) {
+                          router.push({ pathname: '/investment-form', params: { fromTransaction: '1' } });
+                          return;
+                        }
+                        if (id === noInvestmentChoice) {
+                          field.onChange(undefined);
+                          return;
+                        }
+                        field.onChange(id || undefined);
+                        const item = instruments.find((instrument) => instrument.id === id);
+                        if (item) setValue('category', item.id === 'ef' ? 'Emergency fund' : investCategoryFor(item.type as Exclude<typeof item.type, 'Emergency fund'>), { shouldDirty: true, shouldValidate: true });
+                      }}
+                      error={errors.instrumentId?.message}
+                    />
+                  )}
+                />
+                <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : transaction?.category ?? 'Choose an investment'} />
+              </>
+            ) : null}
+            {!transaction?.source && selectedType !== 'invest' ? (
               <Controller
                 control={control}
                 name="category"
@@ -252,41 +389,62 @@ export default function TransactionFormScreen() {
                     label="Category"
                     value={field.value}
                     choices={choices}
-                    onChange={field.onChange}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                    }}
                     error={errors.category?.message}
                   />
                 )}
               />
+            ) : null}
+            {showInstrumentPicker || linkedEditable ? (
               <Controller
                 control={control}
-                name="date"
+                name="instrumentId"
                 render={({ field }) => (
-                  <DateField
-                    value={field.value}
-                    onChange={field.onChange}
-                    maximumDate={today}
-                    error={errors.date?.message}
+                  <ChoiceField
+                    label={isWithdrawalForm ? 'Withdraw from' : transaction ? 'Move to investment' : 'Invest in'}
+                    value={field.value ?? ''}
+                    choices={effectiveInstrumentChoices}
+                    choiceLabels={effectiveInstrumentLabels}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      const item = instruments.find((candidate) => candidate.id === value);
+                      if (selectedType === 'invest' && item) {
+                        setValue('category', item.id === 'ef' ? 'Emergency fund' : investCategoryFor(item.type as Exclude<typeof item.type, 'Emergency fund'>), { shouldDirty: true, shouldValidate: true });
+                      }
+                    }}
+                    error={errors.instrumentId?.message}
                   />
                 )}
               />
-            </>
+            ) : null}
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => (
+                <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} />
+              )}
+            />
+          </>
+        )}
+        <Controller
+          control={control}
+          name="note"
+          render={({ field }) => (
+            <TextField
+              label="Note (optional)"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="Add a note"
+              accessibilityLabel="Transaction note"
+              maxLength={61}
+              error={errors.note?.message}
+            />
           )}
-          <Controller
-            control={control}
-            name="note"
-            render={({ field }) => (
-              <TextField
-                label="Note (optional)"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                placeholder="Add a note"
-                accessibilityLabel="Transaction note"
-                maxLength={61}
-                error={errors.note?.message}
-              />
-            )}
-          />
+        />
       </>
     </FormScreen>
   );

@@ -44,17 +44,17 @@ describe('Phase 5 store integration', () => {
     };
 
     perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-01', amount: 50_000, note: 'Deposit' }, { recordTransaction: true },
+      { date: '2026-10-01', amount: 50_000, note: 'Deposit' },
     ));
     perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' }, { recordTransaction: false },
+      { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' },
     ));
     expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(30_000);
 
     const original = store.getState().data;
     const beforeRejectedWrites = storage.setItemCalls;
     store.getState().actions.addEfEntry(
-      { date: '2026-10-03', amount: -40_000, note: 'Too much' }, { recordTransaction: false },
+      { date: '2026-10-03', amount: -40_000, note: 'Too much' },
     );
     expect(store.getState().data).toBe(original);
     expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-03');

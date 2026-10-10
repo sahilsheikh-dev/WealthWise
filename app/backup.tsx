@@ -214,7 +214,7 @@ function ImportPreview({
   const counts = [
     `${summary.transactions} transactions`, `${summary.goals} goals`,
     `${summary.holdings} holdings`, `${summary.plans} plans`,
-    `${summary.loans} loans`, `${summary.efEntries} emergency-fund entries`,
+    `${summary.liabilities} liabilities`, `${summary.efEntries} emergency-fund entries`,
   ].join(' · ');
   const range = summary.firstDate && summary.lastDate
     ? `${formatDate(summary.firstDate)} – ${formatDate(summary.lastDate)}`

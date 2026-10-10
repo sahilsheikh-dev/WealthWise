@@ -75,15 +75,15 @@ export function projection(plan: PlanHolding): {
 }
 
 export function loggedTotal(plan: PlanHolding): number {
-  return plan.logs.reduce((total, entry) => total + entry.amount, 0);
+  return plan.logs.reduce((total, entry) => total + (entry.kind === 'Deposit' ? entry.amount : 0), 0);
 }
 
 export function loggedCount(plan: PlanHolding): number {
-  return plan.logs.length;
+  return plan.logs.filter((entry) => entry.kind === 'Deposit').length;
 }
 
 export function loggedTrackedCount(plan: PlanHolding): number {
-  return plan.logs.filter((entry) => entry.date >= plan.trackFrom).length;
+  return plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom).length;
 }
 
 export function behindBy(plan: PlanHolding, asOf: ISODate): number {
@@ -92,14 +92,17 @@ export function behindBy(plan: PlanHolding, asOf: ISODate): number {
 
 export function estimatedValue(plan: PlanHolding, asOf: ISODate): number {
   const factor = 1 + plan.ratePct / 100;
-  return plan.opening + plan.logs.reduce((total, entry) => {
+  return Math.max(0, plan.opening + plan.logs.reduce((total, entry) => {
     const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    return total + entry.amount * factor ** (elapsedDays / 365);
-  }, 0);
+    const amount = entry.amount * factor ** (elapsedDays / 365);
+    return total + (entry.kind === 'Deposit' ? amount : -amount);
+  }, 0));
 }
 
 export function planInvested(plan: PlanHolding): number {
-  return plan.opening + loggedTotal(plan);
+  const ledgerTotal = plan.logs.reduce((total, entry) =>
+    total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
+  return Math.max(0, plan.opening + ledgerTotal);
 }
 
 export function planValue(plan: PlanHolding, asOf: ISODate): number {
@@ -108,11 +111,12 @@ export function planValue(plan: PlanHolding, asOf: ISODate): number {
   if (snapshotDate === null) throw new Error('Plan actual value requires a snapshot date');
   const factor = 1 + plan.ratePct / 100;
   const snapshotElapsed = Math.max(0, daysBetween(snapshotDate, asOf));
-  return plan.actualValue * factor ** (snapshotElapsed / 365) + plan.logs.reduce((total, entry) => {
+  return Math.max(0, plan.actualValue * factor ** (snapshotElapsed / 365) + plan.logs.reduce((total, entry) => {
     if (entry.date <= snapshotDate) return total;
     const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    return total + entry.amount * factor ** (elapsedDays / 365);
-  }, 0);
+    const amount = entry.amount * factor ** (elapsedDays / 365);
+    return total + (entry.kind === 'Deposit' ? amount : -amount);
+  }, 0));
 }
 
 export function planProgressPct(plan: PlanHolding): number {
