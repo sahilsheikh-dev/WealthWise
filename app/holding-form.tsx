@@ -13,6 +13,7 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
+import { todayISO } from '../src/lib/clock';
 import { makeHoldingFormSchema, type HoldingFormInput, type HoldingFormOutput } from '../src/domain/schemas';
 import type { HoldingType, ManualHolding } from '../src/domain/types';
 import { confirmAsync } from '../src/lib/confirm';
@@ -27,6 +28,7 @@ export default function HoldingFormScreen() {
   const holdingId = Array.isArray(id) ? id[0] : id;
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
+  const today = todayISO();
   const actions = useAppActions();
   const holding = holdingId
     ? data.holdings.find((item) => item.id === holdingId && item.kind === 'manual') as ManualHolding | undefined
@@ -106,6 +108,14 @@ export default function HoldingFormScreen() {
       <Controller control={control} name="value" render={({ field }) => (
         <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />
       )} />
+      {holding ? (
+        <Button
+          label="Value is still correct today"
+          variant="soft"
+          disabled={holding.valueAsOf === today}
+          onPress={() => actions.confirmHoldingValue(holding.id)}
+        />
+      ) : null}
       {belowCost ? <HelperText tone="warning">Value is below what you invested</HelperText> : null}
     </FormScreen>
   );

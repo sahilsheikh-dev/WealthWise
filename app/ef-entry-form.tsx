@@ -15,7 +15,7 @@ import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { efBalanceOn } from '../src/domain/efActions';
+import { efEndOfDayBalances } from '../src/domain/efActions';
 import { makeEfEntryFormSchema, type EfEntryFormInput, type EfEntryFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
@@ -35,7 +35,11 @@ export default function EfEntryFormScreen() {
   const entry = entryId ? data.efEntries.find((item) => item.id === entryId) : undefined;
   const linked = entry ? data.transactions.some((transaction) => transaction.source?.kind === 'ef-entry' && transaction.source.entryId === entry.id) : false;
   const schema = useMemo(() => makeEfEntryFormSchema(today, {
-    balanceOn: (date) => efBalanceOn(data.efEntries.filter((item) => item.id !== entryId), date),
+    firstNegativeDate: (candidate) => {
+      const entries = entryId ? data.efEntries.filter((item) => item.id !== entryId) : data.efEntries;
+      const balances = efEndOfDayBalances([...entries, { ...candidate, id: 'candidate', note: '' }]);
+      return balances.find(({ balance }) => balance < 0)?.date ?? null;
+    },
   }), [data.efEntries, entryId, today]);
   const submitting = useRef(false);
   const { control, handleSubmit, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =

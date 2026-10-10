@@ -1,4 +1,5 @@
 import { addTransaction, deleteTransaction, emptyAppData, NotFoundError, updateSettings, updateTransaction } from '../actions';
+import { confirmHoldingValue } from '../holdingActions';
 import type { AppData, Transaction } from '../types';
 
 const input: Omit<Transaction, 'id'> = {
@@ -68,5 +69,18 @@ describe('immutable app actions', () => {
       settings: { name: 'B', theme: 'dark' },
       goals: data.goals,
     });
+  });
+
+  it('confirms a manual holding value without changing the value and rejects other holding ids', () => {
+    const holding = {
+      id: 'fd-1', kind: 'manual' as const, name: 'FD', type: 'Fixed deposit' as const,
+      invested: 100_000, value: 105_000, valueAsOf: '2026-01-01',
+    };
+    const data = { ...base(), holdings: [holding] };
+    expect(confirmHoldingValue(data, holding.id, '2026-10-10').holdings).toEqual([
+      { ...holding, valueAsOf: '2026-10-10' },
+    ]);
+    expect(data.holdings).toEqual([holding]);
+    expect(() => confirmHoldingValue(data, 'missing', '2026-10-10')).toThrow(NotFoundError);
   });
 });
