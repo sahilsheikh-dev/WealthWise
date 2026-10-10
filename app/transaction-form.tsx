@@ -190,12 +190,12 @@ export default function TransactionFormScreen() {
                 <Button
                   label={linkedSource.route === '/plan-logs'
                     ? 'Open plan logs'
-                    : linkedSource.route === '/loan-payments' ? 'Open loan payments' : 'Open emergency fund'}
+                    : linkedSource.route === '/liability-payments' ? 'Open liability payments' : 'Open emergency fund'}
                   onPress={() => {
                     if (linkedSource.route === '/plan-logs') {
                       router.push({ pathname: '/plan-logs', params: linkedSource.params });
-                    } else if (linkedSource.route === '/loan-payments') {
-                      router.push({ pathname: '/loan-payments', params: linkedSource.params });
+                    } else if (linkedSource.route === '/liability-payments') {
+                      router.push({ pathname: '/liability-payments', params: linkedSource.params });
                     } else {
                       router.push('/emergency-fund');
                     }

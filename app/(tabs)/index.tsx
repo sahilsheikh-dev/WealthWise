@@ -28,7 +28,7 @@ import { useTheme } from '../../src/theme/useTheme';
 const actions = [
   { label: 'Add Txn', icon: 'plus-circle' as const },
   { label: 'New SIP', icon: 'repeat' as const },
-  { label: 'New Loan', icon: 'credit-card' as const },
+  { label: 'New liability', icon: 'credit-card' as const },
   { label: 'Log EF', icon: 'shield' as const },
 ];
 const metaStore = createMetaStore(AsyncStorage);
@@ -44,7 +44,7 @@ export default function HomeScreen() {
   }, []);
   const recordCount = data.transactions.length
     + data.goals.filter((goal) => !goal.auto).length
-    + data.holdings.length + data.loans.length + data.efEntries.length;
+    + data.holdings.length + data.liabilities.length + data.efEntries.length;
   const nudge = shouldNudge({
     recordCount,
     lastExportAt: backupMeta.lastExportAt,
@@ -62,11 +62,12 @@ export default function HomeScreen() {
         <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
         <StatPillRow>
           <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
-          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" />
+          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" onPress={() => router.push('/liabilities')} />
           <StatPill
             label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
             tone="primary"
+            onPress={() => router.push('/emergency-fund')}
           />
         </StatPillRow>
       </Card>
@@ -107,8 +108,8 @@ export default function HomeScreen() {
                 router.push('/plan-form');
                 return;
               }
-              if (action.label === 'New Loan') {
-                router.push('/loan-form');
+              if (action.label === 'New liability') {
+                router.push('/liability-form');
                 return;
               }
               router.push('/ef-entry-form');

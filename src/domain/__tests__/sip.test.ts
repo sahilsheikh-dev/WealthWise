@@ -78,8 +78,8 @@ describe('SIP domain calculations', () => {
     const plan = makePlan({
       opening: 500,
       logs: [
-        { id: 'b', date: '2026-01-01', amount: 1_000, note: '' },
-        { id: 'a', date: '2026-02-01', amount: 2_000, note: '' },
+        { id: 'b', date: '2026-01-01', amount: 1_000, note: '', kind: 'Deposit' },
+        { id: 'a', date: '2026-02-01', amount: 2_000, note: '', kind: 'Deposit' },
       ],
     });
     expect(behindBy(plan, '2026-01-01')).toBe(0);
@@ -106,9 +106,9 @@ describe('SIP domain calculations', () => {
       actualValue: 10_000,
       actualValueDate: '2026-01-01',
       logs: [
-        { id: 'before', date: '2025-12-31', amount: 500, note: '' },
-        { id: 'same', date: '2026-01-01', amount: 600, note: '' },
-        { id: 'after', date: '2026-07-02', amount: 1_000, note: '' },
+        { id: 'before', date: '2025-12-31', amount: 500, note: '', kind: 'Deposit' },
+        { id: 'same', date: '2026-01-01', amount: 600, note: '', kind: 'Deposit' },
+        { id: 'after', date: '2026-07-02', amount: 1_000, note: '', kind: 'Deposit' },
       ],
     });
     expect(planValue(actualPlan, '2026-01-01')).toBe(11_000);
@@ -121,9 +121,9 @@ describe('SIP domain calculations', () => {
       actualValue: 118_000,
       actualValueDate: '2026-09-30',
       logs: [
-        { id: 'jul', date: '2026-07-05', amount: 21_200, note: '' },
-        { id: 'aug', date: '2026-08-05', amount: 21_200, note: '' },
-        { id: 'sep', date: '2026-09-05', amount: 21_200, note: '' },
+        { id: 'jul', date: '2026-07-05', amount: 21_200, note: '', kind: 'Deposit' },
+        { id: 'aug', date: '2026-08-05', amount: 21_200, note: '', kind: 'Deposit' },
+        { id: 'sep', date: '2026-09-05', amount: 21_200, note: '', kind: 'Deposit' },
       ],
     });
     expect(behindBy(seedPlan, '2026-10-10')).toBe(1);

@@ -2,14 +2,14 @@ import { z } from 'zod';
 
 import { formatDate, formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
-import { emiCoversInterest } from './loan';
+import { emiCoversInterest } from './liability';
 import type { AppData, ISODate, Transaction } from './types';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
-const moneySchema = z.number().finite();
+const moneySchema = z.number().finite().min(-100_000_000_000).max(100_000_000_000);
 const frequencySchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
 const holdingTypeSchema = z.enum([
   'Mutual fund / SIP',
@@ -23,12 +23,19 @@ const holdingTypeSchema = z.enum([
   'Silver',
   'Other',
 ]);
-const logEntrySchema = z.object({
+const investmentEntrySchema = z.object({
   id: idSchema,
   date: isoDateSchema,
-  amount: moneySchema,
+  amount: moneySchema.positive(),
   note: z.string(),
-  kind: z.enum(['EMI', 'Prepayment']).optional(),
+  kind: z.enum(['Deposit', 'Withdrawal']),
+});
+const liabilityPaymentSchema = z.object({
+  id: idSchema,
+  date: isoDateSchema,
+  amount: moneySchema.positive(),
+  note: z.string(),
+  kind: z.enum(['EMI', 'Prepayment', 'Payment']),
 });
 
 const transactionSchema = z.object({
@@ -39,7 +46,7 @@ const transactionSchema = z.object({
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
-    kind: z.enum(['plan-log', 'loan-payment', 'ef-entry']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'ef-entry']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -62,6 +69,7 @@ const manualHoldingSchema = z.object({
   invested: moneySchema,
   value: moneySchema,
   valueAsOf: isoDateSchema.optional(),
+  logs: z.array(investmentEntrySchema),
 });
 
 const planHoldingSchema = z.object({
@@ -79,7 +87,7 @@ const planHoldingSchema = z.object({
   opening: moneySchema,
   actualValue: moneySchema.nullable(),
   actualValueDate: isoDateSchema.nullable(),
-  logs: z.array(logEntrySchema),
+  logs: z.array(investmentEntrySchema),
 }).superRefine((holding, context) => {
   if ((holding.actualValue === null) !== (holding.actualValueDate === null)) {
     context.addIssue({
@@ -90,15 +98,36 @@ const planHoldingSchema = z.object({
   }
 });
 
-const loanSchema = z.object({
+const liabilityBaseSchema = {
   id: idSchema,
   name: z.string(),
-  principal: moneySchema,
-  ratePct: moneySchema,
-  tenureMonths: moneySchema,
-  emi: moneySchema,
+  type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
+  principal: moneySchema.positive(),
+  ratePct: moneySchema.min(0).max(100),
   startDate: isoDateSchema,
-  payments: z.array(logEntrySchema),
+  payments: z.array(liabilityPaymentSchema),
+};
+const recurringLiabilitySchema = z.object({
+  ...liabilityBaseSchema,
+  kind: z.literal('recurring'),
+  tenureMonths: z.number().int().min(1).max(1200),
+  emi: moneySchema.positive(),
+}).superRefine((liability, context) => {
+  if (liability.payments.some((payment) => payment.kind === 'Payment')) {
+    context.addIssue({ code: 'custom', path: ['payments'], message: 'Recurring liabilities use EMI or prepayment entries' });
+  }
+});
+const oneTimeLiabilitySchema = z.object({
+  ...liabilityBaseSchema,
+  kind: z.literal('one-time'),
+  dueDate: isoDateSchema.nullable(),
+}).superRefine((liability, context) => {
+  if (liability.payments.some((payment) => payment.kind !== 'Payment')) {
+    context.addIssue({ code: 'custom', path: ['payments'], message: 'One-time liabilities use Payment entries' });
+  }
+  if (liability.dueDate !== null && liability.dueDate < liability.startDate) {
+    context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
+  }
 });
 
 const efEntrySchema = z.object({
@@ -118,7 +147,7 @@ export const appDataSchema = z.object({
   transactions: z.array(transactionSchema),
   goals: z.array(goalSchema),
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
-  loans: z.array(loanSchema),
+  liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   efEntries: z.array(efEntrySchema),
 });
 
@@ -133,7 +162,7 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 
 export const TRANSACTION_CATEGORIES = {
   expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Other'],
+  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
@@ -278,32 +307,63 @@ export function makePlanLogFormSchema(today: ISODate, ctx: { startDate: ISODate 
       .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the plan started'),
     amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-    recordTransaction: z.boolean(),
   });
 }
 
-export function makeLoanFormSchema(
+export function makeLiabilityFormSchema(
   today: ISODate,
   ctx: { otherNames: string[]; earliestPaymentDate: ISODate | null },
 ) {
-  return z.object({
+  const common = {
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
-      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A loan with this name already exists'),
+      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A liability with this name already exists'),
+    type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
     principal: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, maximumMessage: 'Amount is too large' }),
-    ratePct: optionalRate(60, 'Enter a rate between 0 and 60'),
+    ratePct: optionalRate(60, 'Enter a rate between 0 and 60', true),
+    startDate: dateInputSchema()
+      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+  };
+  const recurring = z.object({
+    ...common,
+    kind: z.literal('recurring'),
     tenureMonths: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 480')
       .transform(Number).refine((value) => value >= 1 && value <= 480, 'Enter whole months from 1 to 480'),
-    startDate: dateInputSchema()
-      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
-      .refine((date) => !ctx.earliestPaymentDate || !isValidISO(date) || date <= ctx.earliestPaymentDate, 'A payment is dated before this start date'),
     emi: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, optional: true }),
-  }).transform((value) => ({ ...value, emi: value.emi ?? null }))
-    .superRefine((value, context) => {
-      if (value.emi !== null && !emiCoversInterest(value.principal, value.ratePct, value.emi)) {
-        const monthlyInterest = formatINR(value.principal * value.ratePct / 1200);
-        context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
+    dueDate: z.string().optional(),
+  }).superRefine((value, context) => {
+    if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
+    }
+    if (value.emi !== undefined && !emiCoversInterest(value.principal, value.ratePct, value.emi)) {
+      const monthlyInterest = formatINR(value.principal * value.ratePct / 1200);
+      context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
+    }
+  }).transform(({ dueDate: _dueDate, ...value }) => ({
+    ...value,
+    emi: value.emi ?? null,
+  }));
+  const oneTime = z.object({
+    ...common,
+    kind: z.literal('one-time'),
+    tenureMonths: z.string().optional(),
+    emi: z.string().optional(),
+    dueDate: z.string().trim(),
+  }).superRefine((value, context) => {
+    if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
+    }
+    if (value.dueDate) {
+      if (!isValidISO(value.dueDate)) {
+        context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Enter a valid date' });
+      } else if (value.dueDate < value.startDate) {
+        context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
       }
-    });
+    }
+  }).transform(({ tenureMonths: _tenureMonths, emi: _emi, dueDate, ...value }) => ({
+    ...value,
+    dueDate: dueDate || null,
+  }));
+  return z.discriminatedUnion('kind', [recurring, oneTime]);
 }
 
 export function makeGoalFormSchema(
@@ -351,7 +411,6 @@ export function makeEfEntryFormSchema(
     date: dateInputSchema()
       .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-    recordTransaction: z.boolean(),
   }).superRefine((value, context) => {
     const firstNegativeDate = ctx.firstNegativeDate({
       date: value.date,
@@ -364,26 +423,22 @@ export function makeEfEntryFormSchema(
         message: `This would make the balance negative on ${formatDate(firstNegativeDate)}`,
       });
     }
-    if (value.kind === 'Withdrawal' && value.recordTransaction) {
-      context.addIssue({ code: 'custom', path: ['recordTransaction'], message: 'Withdrawals cannot be recorded as transactions' });
-    }
   });
 }
 
-export function makeLoanPaymentFormSchema(
+export function makeLiabilityPaymentFormSchema(
   today: ISODate,
-  ctx: { startDate: ISODate; outstandingExcludingThis: number },
+  ctx: { startDate: ISODate; outstandingExcludingThis: number; oneTime?: boolean },
 ) {
   return z.object({
     date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
-      .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the loan started'),
+      .refine((date) => !isValidISO(date) || date >= ctx.startDate, 'Date is before the liability started'),
     amount: moneyInputSchema({ minimum: 0.01, maximum: Number.MAX_SAFE_INTEGER }),
-    kind: z.enum(['EMI', 'Prepayment']),
+    kind: ctx.oneTime ? z.literal('Payment') : z.enum(['EMI', 'Prepayment']),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-    recordTransaction: z.boolean(),
   }).superRefine((value, context) => {
     if (ctx.outstandingExcludingThis < 1) {
-      context.addIssue({ code: 'custom', path: ['amount'], message: 'This loan is already cleared' });
+      context.addIssue({ code: 'custom', path: ['amount'], message: 'This liability is already cleared' });
     } else if (value.amount > Math.ceil(ctx.outstandingExcludingThis)) {
       context.addIssue({
         code: 'custom',
@@ -398,10 +453,10 @@ export type PlanFormInput = z.input<ReturnType<typeof makePlanFormSchema>>;
 export type PlanFormOutput = z.output<ReturnType<typeof makePlanFormSchema>>;
 export type PlanLogFormInput = z.input<ReturnType<typeof makePlanLogFormSchema>>;
 export type PlanLogFormOutput = z.output<ReturnType<typeof makePlanLogFormSchema>>;
-export type LoanFormInput = z.input<ReturnType<typeof makeLoanFormSchema>>;
-export type LoanFormOutput = z.output<ReturnType<typeof makeLoanFormSchema>>;
-export type LoanPaymentFormInput = z.input<ReturnType<typeof makeLoanPaymentFormSchema>>;
-export type LoanPaymentFormOutput = z.output<ReturnType<typeof makeLoanPaymentFormSchema>>;
+export type LiabilityFormInput = z.input<ReturnType<typeof makeLiabilityFormSchema>>;
+export type LiabilityFormOutput = z.output<ReturnType<typeof makeLiabilityFormSchema>>;
+export type LiabilityPaymentFormInput = z.input<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
+export type LiabilityPaymentFormOutput = z.output<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
 export type GoalFormInput = z.input<ReturnType<typeof makeGoalFormSchema>>;
 export type GoalFormOutput = z.output<ReturnType<typeof makeGoalFormSchema>>;
 export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>;

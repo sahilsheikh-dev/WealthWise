@@ -7,9 +7,9 @@ import {
   type AddPlanInput, type PlanLogPatch, type PlanPatch,
 } from '../domain/planActions';
 import {
-  addLoan, addLoanPayment, deleteLoan, deleteLoanPayment, updateLoan, updateLoanPayment,
-  type AddLoanInput, type LoanPatch, type LoanPaymentPatch,
-} from '../domain/loanActions';
+  addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
+  type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
+} from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
@@ -18,7 +18,7 @@ import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
-import type { AppData, EfEntry, Holding, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
+import type { AppData, EfEntry, Holding, ISODate, InvestmentEntry, LiabilityPayment, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { validateImportData } from '../domain/backup';
@@ -34,23 +34,23 @@ export type AppActions = {
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
-  addPlanLog: (planId: string, input: Pick<LogEntry, 'date' | 'amount' | 'note'>, options: { recordTransaction: boolean }) => void;
+  addPlanLog: (planId: string, input: Pick<InvestmentEntry, 'date' | 'amount' | 'note'>) => void;
   updatePlanLog: (planId: string, logId: string, patch: PlanLogPatch) => void;
   deletePlanLog: (planId: string, logId: string) => void;
-  addLoan: (input: AddLoanInput) => void;
-  updateLoan: (id: string, patch: LoanPatch) => void;
-  deleteLoan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
-  addLoanPayment: (loanId: string, input: Pick<LogEntry, 'date' | 'amount' | 'kind' | 'note'>, options: { recordTransaction: boolean }) => void;
-  updateLoanPayment: (loanId: string, paymentId: string, patch: LoanPaymentPatch) => void;
-  deleteLoanPayment: (loanId: string, paymentId: string) => void;
+  addLiability: (input: AddLiabilityInput) => void;
+  updateLiability: (id: string, patch: LiabilityPatch) => void;
+  deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
+  addLiabilityPayment: (liabilityId: string, input: Pick<LiabilityPayment, 'date' | 'amount' | 'kind' | 'note'>) => void;
+  updateLiabilityPayment: (liabilityId: string, paymentId: string, patch: LiabilityPaymentPatch) => void;
+  deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
   deleteGoal: (id: string) => void;
-  addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf'>) => void;
+  addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string) => void;
   confirmHoldingValue: (id: string) => void;
-  addEfEntry: (input: Omit<EfEntry, 'id'>, options: { recordTransaction: boolean }) => void;
+  addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
   deleteEfEntry: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -159,8 +159,8 @@ export function createAppStore(
         deletePlan(id, options) {
           applyDataAction((data) => deletePlan(data, id, options));
         },
-        addPlanLog(planId, input, options) {
-          applyDataAction((data) => addPlanLog(data, planId, input, { ...options, newId: deps.newId }));
+        addPlanLog(planId, input) {
+          applyDataAction((data) => addPlanLog(data, planId, input, { newId: deps.newId }));
         },
         updatePlanLog(planId, logId, patch) {
           applyDataAction((data) => updatePlanLog(data, planId, logId, patch));
@@ -168,23 +168,23 @@ export function createAppStore(
         deletePlanLog(planId, logId) {
           applyDataAction((data) => deletePlanLog(data, planId, logId));
         },
-        addLoan(input) {
-          applyDataAction((data) => addLoan(data, input, deps.newId));
+        addLiability(input) {
+          applyDataAction((data) => addLiability(data, input, deps.newId));
         },
-        updateLoan(id, patch) {
-          applyDataAction((data) => updateLoan(data, id, patch));
+        updateLiability(id, patch) {
+          applyDataAction((data) => updateLiability(data, id, patch));
         },
-        deleteLoan(id, options) {
-          applyDataAction((data) => deleteLoan(data, id, options));
+        deleteLiability(id, options) {
+          applyDataAction((data) => deleteLiability(data, id, options));
         },
-        addLoanPayment(loanId, input, options) {
-          applyDataAction((data) => addLoanPayment(data, loanId, input, { ...options, newId: deps.newId }));
+        addLiabilityPayment(liabilityId, input) {
+          applyDataAction((data) => addLiabilityPayment(data, liabilityId, input, { newId: deps.newId }));
         },
-        updateLoanPayment(loanId, paymentId, patch) {
-          applyDataAction((data) => updateLoanPayment(data, loanId, paymentId, patch));
+        updateLiabilityPayment(liabilityId, paymentId, patch) {
+          applyDataAction((data) => updateLiabilityPayment(data, liabilityId, paymentId, patch));
         },
-        deleteLoanPayment(loanId, paymentId) {
-          applyDataAction((data) => deleteLoanPayment(data, loanId, paymentId));
+        deleteLiabilityPayment(liabilityId, paymentId) {
+          applyDataAction((data) => deleteLiabilityPayment(data, liabilityId, paymentId));
         },
         addGoal(input) {
           applyDataAction((data) => addGoal(data, input, deps.newId));
@@ -213,8 +213,8 @@ export function createAppStore(
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
         },
-        addEfEntry(input, options) {
-          applyDataAction((data) => addEfEntry(data, input, { ...options, newId: deps.newId }));
+        addEfEntry(input) {
+          applyDataAction((data) => addEfEntry(data, input, { newId: deps.newId }));
         },
         updateEfEntry(id, patch) {
           applyDataAction((data) => updateEfEntry(data, id, patch));
@@ -323,6 +323,7 @@ export function createAppStore(
         async eraseAllData() {
           try {
             await storage.removeItem(PERSIST_NAME);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v1`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);

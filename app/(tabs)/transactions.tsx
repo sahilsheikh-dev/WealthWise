@@ -74,10 +74,15 @@ export default function TransactionsScreen() {
           <StatPill label="Expense" value={formatINR(summary.expense)} tone="err" />
           <StatPill label="Invested" value={formatINR(summary.invest)} tone="primary" />
         </View>
+        {summary.withdrawals > 0 ? (
+          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
+            Includes {formatINR(summary.withdrawals)} withdrawn from investments
+          </AppText>
+        ) : null}
         {summary.income > 0 ? (
           <View style={styles.rates}>
             <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Saved {summary.savedPct!.toFixed(1)}% of income (income minus expenses)
+              Saved {summary.savedPct!.toFixed(1)}% of {summary.withdrawals > 0 ? 'earned income' : 'income'} ({summary.withdrawals > 0 ? 'earned income' : 'income'} minus expenses)
             </AppText>
             <AppText style={[typography.meta, { color: colors.primary }]}>
               Invested {summary.investedPct!.toFixed(1)}%

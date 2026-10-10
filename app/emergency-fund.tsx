@@ -36,7 +36,7 @@ export default function EmergencyFundScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Go back"
-              onPress={() => router.back()}
+              onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
               style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Feather name="arrow-left" size={18} color={colors.text1} />
             </Pressable>
@@ -101,7 +101,7 @@ export default function EmergencyFundScreen() {
           ))}
         </View>
       </Screen>
-      <DetailTabBar />
+      <DetailTabBar active="Home" />
     </>
   );
 }

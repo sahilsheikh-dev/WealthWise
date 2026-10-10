@@ -19,8 +19,8 @@ import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
 const holdingTypes: HoldingType[] = [
-  'Mutual Fund / SIP', 'Stocks / ETF', 'Fixed Deposit', 'Recurring Deposit', 'EPFO / PF',
-  'Savings Account', 'Cash', 'Gold', 'Silver', 'Other',
+  'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
+  'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
 ];
 
 export default function HoldingFormScreen() {

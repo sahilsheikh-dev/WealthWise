@@ -41,9 +41,9 @@ export default function PlanFormScreen() {
   const today = useMemo(() => todayISO(), []);
   const plan = planId ? data.holdings.find((holding) => holding.id === planId && holding.kind === 'plan') as PlanHolding | undefined : undefined;
   const schema = useMemo(() => makePlanFormSchema(today, {
-    otherNames: [...data.holdings.filter((holding) => holding.id !== planId).map((holding) => holding.name), ...data.loans.map((loan) => loan.name)],
+    otherNames: [...data.holdings.filter((holding) => holding.id !== planId).map((holding) => holding.name), ...data.liabilities.map((liability) => liability.name)],
     earliestLogDate: plan?.logs.map((log) => log.date).sort()[0] ?? null,
-  }), [data.holdings, data.loans, plan, planId, today]);
+  }), [data.holdings, data.liabilities, plan, planId, today]);
   const submitting = useRef(false);
   const {
     control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount },
@@ -106,7 +106,7 @@ export default function PlanFormScreen() {
   };
   const remove = () => {
     if (!plan) return;
-    const linkedCount = useAppStore.getState().data.transactions.filter((transaction) => transaction.source?.kind === 'plan-log' && transaction.source.parentId === plan.id).length;
+    const linkedCount = useAppStore.getState().data.transactions.filter((transaction) => transaction.source?.kind === 'holding-entry' && transaction.source.parentId === plan.id).length;
     void choiceAsync({
       title: 'Delete plan?',
       message: `This removes ${plan.logs.length} logs and affects ${linkedCount} linked transactions.`,

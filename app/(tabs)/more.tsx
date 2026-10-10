@@ -26,8 +26,6 @@ export default function MoreScreen() {
       <ScreenHeader title="More" />
       <View style={styles.list}>
         <MenuRow label="Your Name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
-        <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
-        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
         <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
         <MenuRow label="Backup and Restore" icon="download" onPress={() => router.push('/backup')} />
         <MenuRow label="Security" icon="lock" onPress={() => router.push('/security')} />

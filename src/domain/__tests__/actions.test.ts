@@ -28,7 +28,7 @@ describe('immutable app actions', () => {
         auto: 'ef',
       }],
       holdings: [],
-      loans: [],
+      liabilities: [],
       efEntries: [],
     });
   });
@@ -73,7 +73,7 @@ describe('immutable app actions', () => {
 
   it('confirms a manual holding value without changing the value and rejects other holding ids', () => {
     const holding = {
-      id: 'fd-1', kind: 'manual' as const, name: 'FD', type: 'Fixed deposit' as const,
+      id: 'fd-1', kind: 'manual' as const, logs: [], name: 'FD', type: 'Fixed deposit' as const,
       invested: 100_000, value: 105_000, valueAsOf: '2026-01-01',
     };
     const data = { ...base(), holdings: [holding] };

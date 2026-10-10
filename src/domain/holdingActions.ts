@@ -2,11 +2,11 @@ import { NotFoundError } from './actions';
 import { daysBetween } from './dates';
 import type { AppData, ISODate, ManualHolding } from './types';
 
-export type AddHoldingInput = Omit<ManualHolding, 'id' | 'kind'>;
+export type AddHoldingInput = Omit<ManualHolding, 'id' | 'kind' | 'logs'>;
 export type HoldingPatch = Partial<AddHoldingInput>;
 
 export function addHolding(data: AppData, input: AddHoldingInput, newId: () => string): AppData {
-  const holding: ManualHolding = { ...input, id: newId(), kind: 'manual' };
+  const holding: ManualHolding = { ...input, id: newId(), kind: 'manual', logs: [] };
   return { ...data, holdings: [...data.holdings, holding] };
 }
 

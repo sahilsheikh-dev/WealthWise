@@ -39,19 +39,19 @@ function AppContent() {
             contentStyle: { backgroundColor: colors.bg },
           }}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="loans" />
+          <Stack.Screen name="liabilities" />
           <Stack.Screen name="emergency-fund" />
           <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="name-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="plan-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="plan-log-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="loan-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="loan-payment-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="holding-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="plan-logs" />
-          <Stack.Screen name="loan-payments" />
+          <Stack.Screen name="liability-payments" />
           <Stack.Screen name="backup" />
           <Stack.Screen name="security" />
           <Stack.Screen name="erase-data" />

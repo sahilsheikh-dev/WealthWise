@@ -1,9 +1,9 @@
-import type { AppData, HoldingType, Transaction } from './types';
+import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
 
 export class LinkedTransactionError extends Error {
-  constructor(message = 'This transaction is linked to a plan or loan and must be changed there.') {
+  constructor(message = 'This transaction is linked to a holding, liability, or emergency fund entry and must be changed there.') {
     super(message);
     this.name = 'LinkedTransactionError';
   }
@@ -21,17 +21,21 @@ export type DescribedSource = {
   params: Record<string, string>;
 };
 
+function holdingEntries(holding: AppData['holdings'][number]): InvestmentEntry[] {
+  return holding.logs;
+}
+
 export function describeSource(data: AppData, source: TransactionSource): DescribedSource | null {
-  if (source.kind === 'plan-log') {
-    const plan = data.holdings.find((holding) => holding.kind === 'plan' && holding.id === source.parentId);
-    return plan?.kind === 'plan' && plan.logs.some((entry) => entry.id === source.entryId)
-      ? { label: plan.name, route: '/plan-logs', params: { id: plan.id } }
+  if (source.kind === 'holding-entry') {
+    const holding = data.holdings.find((item) => item.id === source.parentId);
+    return holding && holdingEntries(holding).some((entry) => entry.id === source.entryId)
+      ? { label: holding.name, route: '/plan-logs', params: { id: holding.id } }
       : null;
   }
-  if (source.kind === 'loan-payment') {
-    const loan = data.loans.find((entry) => entry.id === source.parentId);
-    return loan?.payments.some((entry) => entry.id === source.entryId)
-      ? { label: loan.name, route: '/loan-payments', params: { id: loan.id } }
+  if (source.kind === 'liability-payment') {
+    const liability = data.liabilities.find((entry) => entry.id === source.parentId);
+    return liability?.payments.some((entry) => entry.id === source.entryId)
+      ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } }
       : null;
   }
   const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
@@ -74,17 +78,15 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     issues.push({ code, message, path });
   };
 
+  const allHoldingEntries = data.holdings.flatMap((holding) => holdingEntries(holding));
   const collections: { name: string; ids: string[] }[] = [
     { name: 'transactions', ids: data.transactions.map(({ id }) => id) },
     { name: 'goals', ids: data.goals.map(({ id }) => id) },
     { name: 'holdings', ids: data.holdings.map(({ id }) => id) },
-    { name: 'loans', ids: data.loans.map(({ id }) => id) },
+    { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
     { name: 'efEntries', ids: data.efEntries.map(({ id }) => id) },
-    {
-      name: 'planLogs',
-      ids: data.holdings.flatMap((holding) => holding.kind === 'plan' ? holding.logs.map(({ id }) => id) : []),
-    },
-    { name: 'loanPayments', ids: data.loans.flatMap((loan) => loan.payments.map(({ id }) => id)) },
+    { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
+    { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
   ];
   for (const collection of collections) {
     const seen = new Set<string>();
@@ -98,45 +100,36 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   for (const [index, transaction] of data.transactions.entries()) {
     const source = transaction.source;
     if (!source) continue;
-    const key = source.entryId;
-    const rows = linked.get(key) ?? [];
+    const rows = linked.get(source.entryId) ?? [];
     rows.push(transaction);
-    linked.set(key, rows);
+    linked.set(source.entryId, rows);
     if (rows.length > 1) {
       add('duplicate-source', 'More than one transaction points at the same source entry.', ['transactions', index, 'source']);
     }
 
-    let valid = false;
-    let linkedEntry: { amount: number; date: string } | undefined;
+    let entry: { amount: number; date: string } | undefined;
     let expectedType: Transaction['type'] | undefined;
-    if (source.kind === 'plan-log') {
-      const plan = data.holdings.find((holding) => holding.id === source.parentId && holding.kind === 'plan');
-      const entry = plan?.kind === 'plan' ? plan.logs.find((item) => item.id === source.entryId) : undefined;
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
-      expectedType = 'invest';
-    } else if (source.kind === 'loan-payment') {
-      const loan = data.loans.find((entry) => entry.id === source.parentId);
-      const entry = loan?.payments.find((item) => item.id === source.entryId);
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
+    if (source.kind === 'holding-entry') {
+      const holding = data.holdings.find((item) => item.id === source.parentId);
+      entry = holding?.logs.find((item) => item.id === source.entryId);
+      if (entry) expectedType = (entry as InvestmentEntry).kind === 'Withdrawal' ? 'income' : 'invest';
+    } else if (source.kind === 'liability-payment') {
+      const liability = data.liabilities.find((item) => item.id === source.parentId);
+      entry = liability?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
     } else {
       const efGoal = data.goals.find((goal) => goal.auto === 'ef');
-      const entry = efGoal?.id === source.parentId
+      entry = efGoal?.id === source.parentId
         ? data.efEntries.find((item) => item.id === source.entryId)
         : undefined;
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
-      expectedType = 'invest';
+      if (entry) expectedType = entry.amount < 0 ? 'income' : 'invest';
     }
-    if (!valid) add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
-    else if (
-      linkedEntry && (
-        transaction.amount !== linkedEntry.amount ||
-        transaction.date !== linkedEntry.date ||
-        transaction.type !== expectedType
-      )
+    if (!entry) {
+      add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
+    } else if (
+      transaction.amount !== Math.abs(entry.amount) ||
+      transaction.date !== entry.date ||
+      transaction.type !== expectedType
     ) {
       add('linked-drift', 'Linked transaction fields differ from the source entry.', ['transactions', index]);
     }
@@ -146,18 +139,20 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   if (efGoals.length !== 1) {
     add('emergency-goal-count', `Expected exactly one emergency fund goal, found ${efGoals.length}.`, ['goals']);
   }
-
   for (const holding of data.holdings) {
-    if (holding.kind !== 'plan') continue;
-    for (const [index, log] of holding.logs.entries()) {
-      const count = linked.get(log.id)?.length ?? 0;
-      if (count > 1) add('duplicate-linked-entry', 'Plan log has more than one linked transaction.', ['holdings', holding.id, 'logs', index]);
+    for (const [index, entry] of holding.logs.entries()) {
+      const count = linked.get(entry.id)?.length ?? 0;
+      if (count > 1) {
+        add('duplicate-linked-entry', 'Holding entry has more than one linked transaction.', ['holdings', holding.id, 'logs', index]);
+      }
     }
   }
-  for (const loan of data.loans) {
-    for (const [index, payment] of loan.payments.entries()) {
+  for (const liability of data.liabilities) {
+    for (const [index, payment] of liability.payments.entries()) {
       const count = linked.get(payment.id)?.length ?? 0;
-      if (count > 1) add('duplicate-linked-entry', 'Loan payment has more than one linked transaction.', ['loans', loan.id, 'payments', index]);
+      if (count > 1) {
+        add('duplicate-linked-entry', 'Liability payment has more than one linked transaction.', ['liabilities', liability.id, 'payments', index]);
+      }
     }
   }
   return issues;

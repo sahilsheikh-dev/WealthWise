@@ -2,7 +2,7 @@ import { NotFoundError } from './actions';
 import type { AppData, EfEntry, ISODate, Transaction } from './types';
 
 export class EfLinkError extends Error {
-  constructor(message = 'Only deposits can be linked to a transaction, and a linked entry cannot change direction.') {
+  constructor(message = 'A linked entry cannot change direction.') {
     super(message);
     this.name = 'EfLinkError';
   }
@@ -35,27 +35,27 @@ function assertNonNegative(entries: EfEntry[]): void {
 export function addEfEntry(
   data: AppData,
   input: Omit<EfEntry, 'id'>,
-  options: { recordTransaction: boolean; newId: () => string },
+  options: { newId: () => string },
 ): AppData {
   const goal = data.goals.find((item) => item.auto === 'ef');
   if (!goal) throw new NotFoundError('Emergency fund Goal', 'auto:ef');
-  if (options.recordTransaction && input.amount <= 0) throw new EfLinkError('Withdrawals cannot be recorded as transactions.');
   const entry: EfEntry = { ...input, id: options.newId() };
   const efEntries = [...data.efEntries, entry];
   assertNonNegative(efEntries);
-  const transaction: Transaction | null = options.recordTransaction ? {
+  const withdrawal = entry.amount < 0;
+  const transaction: Transaction = {
     id: options.newId(),
-    type: 'invest',
-    amount: entry.amount,
+    type: withdrawal ? 'income' : 'invest',
+    amount: Math.abs(entry.amount),
     date: entry.date,
-    category: 'Emergency fund',
-    note: 'Emergency fund Deposit',
+    category: withdrawal ? 'Withdrawal' : 'Emergency fund',
+    note: withdrawal ? 'Emergency fund withdrawal' : 'Emergency fund Deposit',
     source: { kind: 'ef-entry', parentId: goal.id, entryId: entry.id },
-  } : null;
+  };
   return {
     ...data,
     efEntries,
-    transactions: transaction ? [...data.transactions, transaction] : data.transactions,
+    transactions: [...data.transactions, transaction],
   };
 }
 
@@ -74,7 +74,14 @@ export function updateEfEntry(data: AppData, id: string, patch: EfEntryPatch): A
     efEntries,
     transactions: linked
       ? data.transactions.map((transaction) => transaction.id === linked.id
-        ? { ...transaction, amount: updated.amount, date: updated.date }
+        ? {
+          ...transaction,
+          amount: Math.abs(updated.amount),
+          date: updated.date,
+          type: updated.amount < 0 ? 'income' : 'invest',
+          category: updated.amount < 0 ? 'Withdrawal' : 'Emergency fund',
+          note: updated.amount < 0 ? 'Emergency fund withdrawal' : 'Emergency fund Deposit',
+        }
         : transaction)
       : data.transactions,
   };

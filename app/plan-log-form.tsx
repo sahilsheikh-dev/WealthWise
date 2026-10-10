@@ -8,7 +8,6 @@ import { DateField } from '../src/components/form/DateField';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
-import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
@@ -31,14 +30,14 @@ export default function PlanLogFormScreen() {
   const today = useMemo(() => todayISO(), []);
   const plan = data.holdings.find((holding) => holding.id === planId && holding.kind === 'plan') as PlanHolding | undefined;
   const log = plan?.logs.find((entry) => entry.id === logId);
-  const linked = log ? data.transactions.some((transaction) => transaction.source?.kind === 'plan-log' && transaction.source.entryId === log.id) : false;
+  const linked = log ? data.transactions.some((transaction) => transaction.source?.kind === 'holding-entry' && transaction.source.entryId === log.id) : false;
   const schema = useMemo(() => makePlanLogFormSchema(today, { startDate: plan?.startDate ?? today }), [plan?.startDate, today]);
   const submitting = useRef(false);
   const { control, handleSubmit, formState: { isDirty, isSubmitting, errors } } = useForm<PlanLogFormInput, undefined, PlanLogFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: log
-      ? { date: log.date, amount: String(log.amount), note: log.note, recordTransaction: linked }
-      : { date: today, amount: plan ? String(Math.round(currentInstallmentAmount(plan, today) * 100) / 100) : '', note: '', recordTransaction: true },
+      ? { date: log.date, amount: String(log.amount), note: log.note }
+      : { date: today, amount: plan ? String(Math.round(currentInstallmentAmount(plan, today) * 100) / 100) : '', note: '' },
   });
   const close = () => {
     if (!isDirty) return router.back();
@@ -61,11 +60,11 @@ export default function PlanLogFormScreen() {
     submitting.current = true;
     try {
       if (log) actions.updatePlanLog(plan.id, log.id, { date: values.date, amount: values.amount, note: values.note });
-      else actions.addPlanLog(plan.id, { date: values.date, amount: values.amount, note: values.note }, { recordTransaction: values.recordTransaction });
+      else actions.addPlanLog(plan.id, { date: values.date, amount: values.amount, note: values.note });
       const state = useAppStore.getState();
       if (state.lastError) void confirmAsync({ title: 'Could not save log', message: state.lastError, confirmLabel: 'OK' });
       else {
-        if ((log && linked) || (!log && values.recordTransaction)) setTxMonth(monthKey(values.date));
+        if ((log && linked) || !log) setTxMonth(monthKey(values.date));
         router.back();
       }
     } finally {
@@ -97,9 +96,7 @@ export default function PlanLogFormScreen() {
       <Controller control={control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Installment date" />} />
       <Controller control={control} name="amount" render={({ field }) => <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
       <Controller control={control} name="note" render={({ field }) => <TextField label="Note" accessibilityLabel="Installment note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />} />
-      {log ? <ReadOnlyRow label="Linked transaction" value={linked ? 'Yes' : 'No'} /> : (
-        <Controller control={control} name="recordTransaction" render={({ field }) => <SwitchRow label="Also record as a transaction" value={field.value} onValueChange={field.onChange} />} />
-      )}
+      {log ? <ReadOnlyRow label="Linked transaction" value={linked ? 'Yes' : 'No'} /> : null}
     </FormScreen>
   );
 }

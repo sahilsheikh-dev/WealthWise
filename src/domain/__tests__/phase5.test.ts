@@ -4,11 +4,11 @@ import { GoalLockedError, addGoal, deleteGoal, updateGoal } from '../goalActions
 import { addHolding, deleteHolding, updateHolding, valueStaleness } from '../holdingActions';
 import { EfBalanceError, EfLinkError, addEfEntry, deleteEfEntry, efBalanceOn, efEndOfDayBalances, updateEfEntry } from '../efActions';
 import { describeSource, validateIntegrity } from '../links';
-import { updateLoan } from '../loanActions';
+import { updateLiability } from '../liabilityActions';
 import { addPlan, updatePlan } from '../planActions';
 import { loggedTrackedCount, behindBy } from '../sip';
 import { mockAppData } from '../../mock/data';
-import type { AppData, Loan, PlanHolding } from '../types';
+import type { AppData, Liability, PlanHolding } from '../types';
 
 const initial = () => emptyAppData('2026-10-10');
 const planInput = {
@@ -21,8 +21,8 @@ describe('Phase 5 domain actions', () => {
   it('counts only logs on or after tracking begins for behind calculations', () => {
     const plan: PlanHolding = {
       ...planInput, kind: 'plan', id: 'plan', logs: [
-        { id: 'before', date: '2026-02-01', amount: 10, note: '' },
-        { id: 'on', date: '2026-03-01', amount: 10, note: '' },
+        { id: 'before', date: '2026-02-01', amount: 10, note: '', kind: 'Deposit' },
+        { id: 'on', date: '2026-03-01', amount: 10, note: '', kind: 'Deposit' },
       ],
     };
     expect(loggedTrackedCount(plan)).toBe(1);
@@ -37,13 +37,13 @@ describe('Phase 5 domain actions', () => {
       ...data,
       holdings: data.holdings.map((holding) => holding.kind === 'plan' && holding.id === 'plan'
         ? { ...holding, logs: [
-          { id: 'log', date: '2026-03-01', amount: 50, note: '' },
-          { id: 'edited-log', date: '2026-03-02', amount: 40, note: '' },
+          { id: 'log', date: '2026-03-01', amount: 50, note: '', kind: 'Deposit' },
+          { id: 'edited-log', date: '2026-03-02', amount: 40, note: '', kind: 'Deposit' },
         ] }
         : holding),
       transactions: [
-        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP installment', source: { kind: 'plan-log', parentId: 'plan', entryId: 'log' } },
-        { id: 'edited', type: 'invest', amount: 40, date: '2026-03-02', category: 'Mutual fund / SIP', note: 'User note', source: { kind: 'plan-log', parentId: 'plan', entryId: 'edited-log' } },
+        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP installment', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' } },
+        { id: 'edited', type: 'invest', amount: 40, date: '2026-03-02', category: 'Mutual fund / SIP', note: 'User note', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'edited-log' } },
       ],
     };
     data = updatePlan(data, 'plan', { name: 'New SIP', type: 'Gold' });
@@ -51,12 +51,12 @@ describe('Phase 5 domain actions', () => {
     expect(data.transactions[1]).toMatchObject({ note: 'User note', category: 'Gold / Silver' });
     expect(validateIntegrity(data)).toEqual([]);
 
-    const loan: Loan = { id: 'loan', name: 'Old loan', principal: 1000, ratePct: 0, tenureMonths: 1, emi: 1000, startDate: '2026-01-01', payments: [{ id: 'pay', date: '2026-02-01', amount: 100, note: '', kind: 'Prepayment' }] };
-    data = { ...data, loans: [loan], transactions: [...data.transactions, { id: 'loan-tx', type: 'expense', amount: 100, date: '2026-02-01', category: 'EMI', note: 'Old loan prepayment', source: { kind: 'loan-payment', parentId: 'loan', entryId: 'pay' } }] };
-    data = updateLoan(data, 'loan', { name: 'New loan' });
+    const loan: Liability = { id: 'loan', kind: 'recurring', name: 'Old loan', type: 'Other', principal: 1000, ratePct: 0, tenureMonths: 1, emi: 1000, startDate: '2026-01-01', payments: [{ id: 'pay', date: '2026-02-01', amount: 100, note: '', kind: 'Prepayment' }] };
+    data = { ...data, liabilities: [loan], transactions: [...data.transactions, { id: 'loan-tx', type: 'expense', amount: 100, date: '2026-02-01', category: 'EMI', note: 'Old loan prepayment', source: { kind: 'liability-payment', parentId: 'loan', entryId: 'pay' } }] };
+    data = updateLiability(data, 'loan', { name: 'New loan' });
     expect(data.transactions.find(({ id }) => id === 'loan-tx')?.note).toBe('New loan prepayment');
     data = { ...data, transactions: data.transactions.map((transaction) => transaction.id === 'loan-tx' ? { ...transaction, note: 'User changed' } : transaction) };
-    data = updateLoan(data, 'loan', { name: 'Final loan' });
+    data = updateLiability(data, 'loan', { name: 'Final loan' });
     expect(data.transactions.find(({ id }) => id === 'loan-tx')?.note).toBe('User changed');
     expect(validateIntegrity(data)).toEqual([]);
   });
@@ -66,9 +66,9 @@ describe('Phase 5 domain actions', () => {
     data = {
       ...data,
       holdings: data.holdings.map((holding) => holding.kind === 'plan'
-        ? { ...holding, logs: [{ id: 'l', date: '2026-03-01', amount: 50, note: '' }] }
+        ? { ...holding, logs: [{ id: 'l', date: '2026-03-01', amount: 50, note: '', kind: 'Deposit' }] }
         : holding),
-      transactions: [{ id: 't', type: 'expense', amount: 51, date: '2026-03-02', category: '', note: '', source: { kind: 'plan-log', parentId: 'p', entryId: 'l' } }],
+      transactions: [{ id: 't', type: 'expense', amount: 51, date: '2026-03-02', category: '', note: '', source: { kind: 'holding-entry', parentId: 'p', entryId: 'l' } }],
     };
     expect(validateIntegrity(data).map((issue) => issue.code)).toContain('linked-drift');
   });
@@ -115,40 +115,49 @@ describe('Phase 5 domain actions', () => {
   });
 
   it('maintains non-negative end-of-day balances and keeps deposit links synchronized', () => {
+    expect(efEndOfDayBalances([
+      { id: 'same-day-a', date: '2026-01-01', amount: 5, note: '' },
+      { id: 'same-day-b', date: '2026-01-01', amount: 7, note: '' },
+    ])).toEqual([{ date: '2026-01-01', balance: 12 }]);
     let data = initial();
-    data = addEfEntry(data, { date: '2026-01-01', amount: 50_000, note: 'Deposit' }, { recordTransaction: true, newId: () => 'deposit' });
-    data = addEfEntry(data, { date: '2026-01-02', amount: -20_000, note: 'Withdrawal' }, { recordTransaction: false, newId: () => 'withdrawal' });
+    data = addEfEntry(data, { date: '2026-01-01', amount: 50_000, note: 'Deposit' }, { newId: (() => { let i = 0; return () => `deposit-${++i}`; })() });
+    data = addEfEntry(data, { date: '2026-01-02', amount: -20_000, note: 'Withdrawal' }, { newId: (() => { let i = 0; return () => `withdrawal-${++i}`; })() });
     const before = data;
-    expect(() => addEfEntry(data, { date: '2026-01-03', amount: -40_000, note: '' }, { recordTransaction: false, newId: () => 'too-much' })).toThrow(EfBalanceError);
+    expect(() => addEfEntry(data, { date: '2026-01-03', amount: -40_000, note: '' }, { newId: () => 'too-much' })).toThrow(EfBalanceError);
     expect(data).toBe(before);
-    expect(() => deleteEfEntry(data, 'deposit')).toThrow('This would make the balance negative on 2026-01-02');
-    expect(() => updateEfEntry(data, 'withdrawal', { date: '2025-12-31' })).toThrow(EfBalanceError);
-    data = updateEfEntry(data, 'deposit', { amount: 70_000 });
+    expect(() => deleteEfEntry(data, 'deposit-1')).toThrow('This would make the balance negative on 2026-01-02');
+    expect(() => updateEfEntry(data, 'withdrawal-1', { date: '2025-12-31' })).toThrow(EfBalanceError);
+    expect(() => updateEfEntry(data, 'withdrawal-1', { amount: 20_000 })).toThrow(EfLinkError);
+    data = updateEfEntry(data, 'deposit-1', { amount: 70_000 });
     expect(data.transactions[0]).toMatchObject({ amount: 70_000, date: '2026-01-01' });
     expect(efEndOfDayBalances(data.efEntries).at(-1)?.balance).toBe(50_000);
     expect(validateIntegrity(data)).toEqual([]);
-    expect(() => addEfEntry(data, { date: '2026-01-04', amount: -1, note: '' }, { recordTransaction: true, newId: () => 'bad' })).toThrow(EfLinkError);
-    expect(new EfLinkError()).toBeInstanceOf(Error);
+    expect(() => updateEfEntry(data, 'withdrawal-1', { amount: 0 })).toThrow(EfLinkError);
+    data = addEfEntry(data, { date: '2026-01-04', amount: -1, note: '' }, { newId: (() => { let i = 0; return () => `withdraw-${++i}`; })() });
+    expect(data.transactions.at(-1)).toMatchObject({
+      type: 'income', amount: 1, category: 'Withdrawal', note: 'Emergency fund withdrawal',
+    });
     expect(() => updateEfEntry(data, 'missing', { note: 'Missing' })).toThrow('not found');
     expect(() => deleteEfEntry(data, 'missing')).toThrow('not found');
 
     const withoutGoal = { ...initial(), goals: [] };
     expect(() => addEfEntry(withoutGoal, { date: '2026-01-01', amount: 1, note: '' }, {
-      recordTransaction: false, newId: () => 'no-goal',
+      newId: () => 'no-goal',
     })).toThrow('not found');
 
-    const unlinked = addEfEntry(initial(), { date: '2026-01-01', amount: 10, note: '' }, {
-      recordTransaction: false, newId: () => 'unlinked',
-    });
-    const edited = updateEfEntry(unlinked, 'unlinked', { date: '2026-01-02', amount: 5 });
+    const unlinked = {
+      ...initial(),
+      efEntries: [{ id: 'legacy-unlinked', date: '2026-01-01', amount: 10, note: '' }],
+    };
+    const edited = updateEfEntry(unlinked, 'legacy-unlinked', { date: '2026-01-02', amount: 5 });
     expect(edited.efEntries[0]).toMatchObject({ date: '2026-01-02', amount: 5 });
     expect(edited.transactions).toEqual([]);
     expect(efBalanceOn(edited.efEntries, '2026-01-01')).toBe(0);
     expect(efBalanceOn(edited.efEntries, '2026-01-02')).toBe(5);
-    expect(deleteEfEntry(edited, 'unlinked').efEntries).toEqual([]);
+    expect(deleteEfEntry(edited, 'legacy-unlinked').efEntries).toEqual([]);
 
     const depositOnly = addEfEntry(initial(), { date: '2026-01-01', amount: 50, note: '' }, {
-      recordTransaction: true, newId: (() => { let id = 0; return () => `linked-${++id}`; })(),
+      newId: (() => { let id = 0; return () => `linked-${++id}`; })(),
     });
     const withUnrelatedTransaction = {
       ...depositOnly,
@@ -172,41 +181,41 @@ describe('Phase 5 domain actions', () => {
 
     const plan: PlanHolding = {
       ...planInput, id: 'plan', kind: 'plan', name: 'Travel SIP',
-      logs: [{ id: 'plan-log', date: '2026-01-01', amount: 10, note: '' }],
+      logs: [{ id: 'holding-entry', date: '2026-01-01', amount: 10, note: '', kind: 'Deposit' }],
     };
-    const loan: Loan = {
-      id: 'loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
+    const loan: Liability = {
+      id: 'loan', kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
       emi: 100, startDate: '2026-01-01',
-      payments: [{ id: 'loan-payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
+      payments: [{ id: 'liability-payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
     };
-    const withParents = { ...data, holdings: [plan], loans: [loan] };
-    expect(describeSource(withParents, { kind: 'plan-log', parentId: 'plan', entryId: 'plan-log' }))
+    const withParents = { ...data, holdings: [plan], liabilities: [loan] };
+    expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'plan', entryId: 'holding-entry' }))
       .toEqual({ label: 'Travel SIP', route: '/plan-logs', params: { id: 'plan' } });
-    expect(describeSource(withParents, { kind: 'plan-log', parentId: 'plan', entryId: 'missing' })).toBeNull();
-    expect(describeSource(withParents, { kind: 'plan-log', parentId: 'wrong', entryId: 'plan-log' })).toBeNull();
-    expect(describeSource(withParents, { kind: 'loan-payment', parentId: 'loan', entryId: 'loan-payment' }))
-      .toEqual({ label: 'Car loan', route: '/loan-payments', params: { id: 'loan' } });
-    expect(describeSource(withParents, { kind: 'loan-payment', parentId: 'loan', entryId: 'missing' })).toBeNull();
-    expect(describeSource(withParents, { kind: 'loan-payment', parentId: 'wrong', entryId: 'loan-payment' })).toBeNull();
+    expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'plan', entryId: 'missing' })).toBeNull();
+    expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'wrong', entryId: 'holding-entry' })).toBeNull();
+    expect(describeSource(withParents, { kind: 'liability-payment', parentId: 'loan', entryId: 'liability-payment' }))
+      .toEqual({ label: 'Car loan', route: '/liability-payments', params: { id: 'loan' } });
+    expect(describeSource(withParents, { kind: 'liability-payment', parentId: 'loan', entryId: 'missing' })).toBeNull();
+    expect(describeSource(withParents, { kind: 'liability-payment', parentId: 'wrong', entryId: 'liability-payment' })).toBeNull();
   });
 
   it('checks linked loan and emergency transactions and reports duplicate linked payments', () => {
-    const loan: Loan = {
-      id: 'loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
+    const loan: Liability = {
+      id: 'loan', kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
       emi: 100, startDate: '2026-01-01',
       payments: [{ id: 'payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
     };
     const efGoal = initial().goals[0]!;
     const base = {
       ...initial(),
-      loans: [loan],
+      liabilities: [loan],
       efEntries: [{ id: 'ef-entry', date: '2026-01-02', amount: 20, note: '' }],
     };
     const transactions = [
-      { id: 'loan-one', type: 'income' as const, amount: 11, date: '2026-01-03', category: '', note: '', source: { kind: 'loan-payment' as const, parentId: 'loan', entryId: 'payment' } },
-      { id: 'loan-two', type: 'expense' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'loan-payment' as const, parentId: 'loan', entryId: 'payment' } },
+      { id: 'loan-one', type: 'income' as const, amount: 11, date: '2026-01-03', category: '', note: '', source: { kind: 'liability-payment' as const, parentId: 'loan', entryId: 'payment' } },
+      { id: 'loan-two', type: 'expense' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'liability-payment' as const, parentId: 'loan', entryId: 'payment' } },
       { id: 'ef-tx', type: 'expense' as const, amount: 20, date: '2026-01-02', category: '', note: '', source: { kind: 'ef-entry' as const, parentId: efGoal.id, entryId: 'ef-entry' } },
-      { id: 'orphan-plan', type: 'invest' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'plan-log' as const, parentId: 'missing-plan', entryId: 'missing-log' } },
+      { id: 'orphan-plan', type: 'invest' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'holding-entry' as const, parentId: 'missing-plan', entryId: 'missing-log' } },
       { id: 'orphan-ef', type: 'invest' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'ef-entry' as const, parentId: 'wrong-goal', entryId: 'missing-ef' } },
     ];
     const issues = validateIntegrity({ ...base, transactions });
@@ -217,7 +226,7 @@ describe('Phase 5 domain actions', () => {
 
   it('keeps the seeded EMI transaction amount aligned with its loan payments', () => {
     const transaction = mockAppData.transactions.find((item) => item.id === 'tx-emi');
-    const loan = mockAppData.loans[0]!;
+    const loan = mockAppData.liabilities[0]!;
     expect(transaction?.amount).toBe(6_281);
     expect(transaction?.amount).toBe(loan.payments[0]?.amount);
   });
