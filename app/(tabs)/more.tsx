@@ -3,8 +3,8 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
-import { useTheme } from '../../src/theme/useTheme';
 import { typography } from '../../src/theme/tokens';
+import { useTheme } from '../../src/theme/useTheme';
 
 type MenuRowProps = {
   label: string;
@@ -20,8 +20,8 @@ export default function MoreScreen() {
     <Screen>
       <ScreenHeader title="More" />
       <View style={styles.list}>
-        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
         <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
+        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
         <MenuRow label="Export" icon="download" detail="Coming soon" disabled />
         <MenuRow
           label="Switch theme"
@@ -29,7 +29,6 @@ export default function MoreScreen() {
           detail={isDark ? 'Dark' : 'Light'}
           onPress={toggleTheme}
         />
-        <MenuRow label="Reset" icon="rotate-ccw" detail="Coming soon" disabled />
       </View>
     </Screen>
   );

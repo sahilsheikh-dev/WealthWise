@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
+import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { ensureEfGoal, goalProgressPct, goalSaved, goalTotals } from '../../src/domain/goals';
-import { useAppData } from '../../src/data/useAppData';
 import { todayISO } from '../../src/lib/clock';
 import { formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
