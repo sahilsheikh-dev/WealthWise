@@ -1,10 +1,10 @@
 import type { StateStorage } from 'zustand/middleware';
 
-import { createAppStore } from '../createAppStore';
-import { validateIntegrity } from '../../domain/links';
-import { goalSaved } from '../../domain/goals';
 import { efBalance } from '../../domain/ef';
+import { goalSaved } from '../../domain/goals';
 import { valueStaleness } from '../../domain/holdingActions';
+import { validateIntegrity } from '../../domain/links';
+import { createAppStore } from '../createAppStore';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -107,7 +107,7 @@ describe('Phase 5 store integration', () => {
     const originalGoals = store.getState().data.goals;
     store.getState().actions.updateGoal(efGoalId, { name: 'Not allowed' });
     expect(store.getState().data.goals).toBe(originalGoals);
-    expect(store.getState().lastError).toContain('Emergency fund goal');
+    expect(store.getState().lastError).toContain('Emergency fund Goal');
     expect(storage.setItemCalls).toBe(beforeGuard);
     store.getState().actions.deleteGoal(efGoalId);
     expect(store.getState().data.goals).toBe(originalGoals);

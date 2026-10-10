@@ -1,5 +1,5 @@
 import { efBalance } from './ef';
-import { planInvested, planValue, PERIODS_PER_YEAR } from './sip';
+import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {

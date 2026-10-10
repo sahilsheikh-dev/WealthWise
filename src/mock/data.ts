@@ -1,6 +1,6 @@
 import type {
-  EfEntry,
   AppData,
+  EfEntry,
   Goal,
   Holding,
   Loan,

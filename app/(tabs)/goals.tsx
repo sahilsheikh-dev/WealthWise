@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
@@ -40,7 +40,7 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <SectionTitle>Active goals</SectionTitle>
+      <SectionTitle>Active Goals</SectionTitle>
       {goals.map((goal) => {
         const saved = goalSaved(goal, emergencyBalance);
         const goalPercent = goalProgressPct(goal, saved);

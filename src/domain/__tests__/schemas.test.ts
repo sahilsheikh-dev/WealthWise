@@ -1,18 +1,18 @@
+import { mockAppData } from '../../mock/data';
+import { efEndOfDayBalances } from '../efActions';
 import {
   appDataSchema,
-  makeTransactionFormSchema,
-  makePlanFormSchema,
-  makePlanLogFormSchema,
-  makeLoanFormSchema,
-  makeLoanPaymentFormSchema,
+  makeEfEntryFormSchema,
   makeGoalFormSchema,
   makeHoldingFormSchema,
-  makeEfEntryFormSchema,
+  makeLoanFormSchema,
+  makeLoanPaymentFormSchema,
+  makePlanFormSchema,
+  makePlanLogFormSchema,
+  makeTransactionFormSchema,
   SCHEMA_VERSION,
   TRANSACTION_CATEGORIES,
 } from '../schemas';
-import { mockAppData } from '../../mock/data';
-import { efEndOfDayBalances } from '../efActions';
 
 const validInput = {
   amount: '1,500.50',

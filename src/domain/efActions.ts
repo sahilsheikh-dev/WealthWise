@@ -38,7 +38,7 @@ export function addEfEntry(
   options: { recordTransaction: boolean; newId: () => string },
 ): AppData {
   const goal = data.goals.find((item) => item.auto === 'ef');
-  if (!goal) throw new NotFoundError('Emergency fund goal', 'auto:ef');
+  if (!goal) throw new NotFoundError('Emergency fund Goal', 'auto:ef');
   if (options.recordTransaction && input.amount <= 0) throw new EfLinkError('Withdrawals cannot be recorded as transactions.');
   const entry: EfEntry = { ...input, id: options.newId() };
   const efEntries = [...data.efEntries, entry];
@@ -49,7 +49,7 @@ export function addEfEntry(
     amount: entry.amount,
     date: entry.date,
     category: 'Emergency fund',
-    note: 'Emergency fund deposit',
+    note: 'Emergency fund Deposit',
     source: { kind: 'ef-entry', parentId: goal.id, entryId: entry.id },
   } : null;
   return {
@@ -61,7 +61,7 @@ export function addEfEntry(
 
 export function updateEfEntry(data: AppData, id: string, patch: EfEntryPatch): AppData {
   const current = data.efEntries.find((entry) => entry.id === id);
-  if (!current) throw new NotFoundError('Emergency fund entry', id);
+  if (!current) throw new NotFoundError('Emergency fund Entry', id);
   const updated = { ...current, ...patch };
   const linked = data.transactions.find((transaction) =>
     transaction.source?.kind === 'ef-entry' && transaction.source.entryId === id,
@@ -81,7 +81,7 @@ export function updateEfEntry(data: AppData, id: string, patch: EfEntryPatch): A
 }
 
 export function deleteEfEntry(data: AppData, id: string): AppData {
-  if (!data.efEntries.some((entry) => entry.id === id)) throw new NotFoundError('Emergency fund entry', id);
+  if (!data.efEntries.some((entry) => entry.id === id)) throw new NotFoundError('Emergency fund Entry', id);
   const efEntries = data.efEntries.filter((entry) => entry.id !== id);
   assertNonNegative(efEntries);
   return {

@@ -1,34 +1,34 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, View, StyleSheet, Pressable } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import {
   AppText,
-  Card,
   Button,
+  Card,
   ProgressBar,
   Screen,
   SectionTitle,
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
-import { homeSummary } from '../../src/domain/summary';
-import { formatINR, formatINRShort } from '../../src/lib/format';
-import { useAppData } from '../../src/data/useAppData';
-import { currentHour, todayISO } from '../../src/lib/clock';
-import { greetingFor } from '../../src/lib/greeting';
-import { addDays } from '../../src/domain/dates';
-import { shouldNudge } from '../../src/domain/backupNudge';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useAppData } from '../../src/data/useAppData';
+import { shouldNudge } from '../../src/domain/backupNudge';
+import { addDays } from '../../src/domain/dates';
+import { homeSummary } from '../../src/domain/summary';
+import { currentHour, todayISO } from '../../src/lib/clock';
+import { formatINR, formatINRShort } from '../../src/lib/format';
+import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 const actions = [
-  { label: 'Add txn', icon: 'plus-circle' as const },
+  { label: 'Add Txn', icon: 'plus-circle' as const },
   { label: 'New SIP', icon: 'repeat' as const },
-  { label: 'New loan', icon: 'credit-card' as const },
+  { label: 'New Loan', icon: 'credit-card' as const },
   { label: 'Log EF', icon: 'shield' as const },
 ];
 const metaStore = createMetaStore(AsyncStorage);
@@ -58,13 +58,13 @@ export default function HomeScreen() {
         <AppText weight="bold" style={typography.h1}>{data.settings.name || 'Welcome'}</AppText>
       </View>
       <Card>
-        <AppText style={[typography.label, { color: colors.text3 }]}>Net worth</AppText>
+        <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
         <StatPillRow>
           <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
           <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" />
           <StatPill
-            label="Emergency fund"
+            label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
             tone="primary"
           />
@@ -99,7 +99,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={action.label}
             onPress={() => {
-              if (action.label === 'Add txn') {
+              if (action.label === 'Add Txn') {
                 router.push('/transaction-form');
                 return;
               }
@@ -107,7 +107,7 @@ export default function HomeScreen() {
                 router.push('/plan-form');
                 return;
               }
-              if (action.label === 'New loan') {
+              if (action.label === 'New Loan') {
                 router.push('/loan-form');
                 return;
               }
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <SectionTitle>Goal progress</SectionTitle>
+      <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => {
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
         return (

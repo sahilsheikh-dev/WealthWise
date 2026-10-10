@@ -1,24 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import { View } from 'react-native';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { DateField } from '../src/components/form/DateField';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
+import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
+import { monthKey } from '../src/domain/dates';
 import { makePlanLogFormSchema, type PlanLogFormInput, type PlanLogFormOutput } from '../src/domain/schemas';
 import { currentInstallmentAmount } from '../src/domain/sip';
-import { monthKey } from '../src/domain/dates';
 import type { PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
-import { useUIStore } from '../src/data/uiStore';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
 export default function PlanLogFormScreen() {
@@ -89,7 +89,7 @@ export default function PlanLogFormScreen() {
   return (
     <FormScreen title={log ? 'Edit installment log' : 'Log installment'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       {log ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
+      <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
         if (submitting.current) return;
         void handleSubmit((values) => persist(values))();
       }} />

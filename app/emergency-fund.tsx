@@ -11,8 +11,8 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import { useAppData } from '../src/data/useAppData';
+import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
@@ -45,7 +45,7 @@ export default function EmergencyFundScreen() {
           <View style={styles.headerActionRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Log emergency fund entry"
+              accessibilityLabel="Log Emergency fund Entry"
               onPress={() => router.push('/ef-entry-form')}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Log entry</AppText>

@@ -1,26 +1,26 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { View } from 'react-native';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { todayISO } from '../src/lib/clock';
 import { makeHoldingFormSchema, type HoldingFormInput, type HoldingFormOutput } from '../src/domain/schemas';
 import type { HoldingType, ManualHolding } from '../src/domain/types';
+import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
 const holdingTypes: HoldingType[] = [
-  'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
-  'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
+  'Mutual Fund / SIP', 'Stocks / ETF', 'Fixed Deposit', 'Recurring Deposit', 'EPFO / PF',
+  'Savings Account', 'Cash', 'Gold', 'Silver', 'Other',
 ];
 
 export default function HoldingFormScreen() {
@@ -87,10 +87,10 @@ export default function HoldingFormScreen() {
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={holding ? 'Edit holding' : 'Add holding'} onClose={close} footer={(
+    <FormScreen title={holding ? 'Edit Holding' : 'Add Holding'} onClose={close} footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {holding ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>

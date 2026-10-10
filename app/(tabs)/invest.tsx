@@ -18,6 +18,7 @@ import {
   StatPillRow,
 } from '../../src/components/ui';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
+import { valueStaleness } from '../../src/domain/holdingActions';
 import {
   buildPortfolioRows,
   filterRows,
@@ -25,8 +26,7 @@ import {
   portfolioTotals,
   type PortfolioRow,
 } from '../../src/domain/portfolio';
-import { behindBy, installmentsTracked, loggedTrackedCount, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
-import { valueStaleness } from '../../src/domain/holdingActions';
+import { behindBy, installmentsTracked, loggedCount, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
 import type { Holding, HoldingType } from '../../src/domain/types';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -72,7 +72,7 @@ export default function InvestScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Add holding"
+            accessibilityLabel="Add Holding"
             onPress={() => router.push('/holding-form')}
             style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>

@@ -1,28 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, EmptyState } from '../src/components/ui';
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
-import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
-import { useAppActions } from '../src/data/useAppData';
+import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
+import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
 import { describeSource } from '../src/domain/links';
 import { makeTransactionFormSchema, TRANSACTION_CATEGORIES, type TransactionFormInput, type TransactionFormOutput } from '../src/domain/schemas';
 import type { Transaction } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
+import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
-import { confirmAsync } from '../src/lib/confirm';
 
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
@@ -157,7 +157,7 @@ export default function TransactionFormScreen() {
 
   return (
     <FormScreen
-      title={transactionId ? 'Edit transaction' : 'Add transaction'}
+      title={transactionId ? 'Edit Transaction' : 'Add Transaction'}
       onClose={requestClose}
       footer={
         <View style={styles.footerActions}>

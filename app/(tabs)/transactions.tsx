@@ -16,12 +16,12 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
-import { groupByDate, monthSummary, filterTransactions } from '../../src/domain/transactions';
-import type { Transaction } from '../../src/domain/types';
-import { useAppData } from '../../src/data/useAppData';
 import { useUIStore } from '../../src/data/uiStore';
-import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
+import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
+import type { Transaction } from '../../src/domain/types';
+import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -137,7 +137,7 @@ export default function TransactionsScreen() {
           ))}
         </View>
       </ScrollView>
-      <Fab label="Add transaction" onPress={() => router.push('/transaction-form')} />
+      <Fab label="Add Transaction" onPress={() => router.push('/transaction-form')} />
     </Screen>
   );
 }

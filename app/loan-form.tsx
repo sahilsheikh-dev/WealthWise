@@ -1,24 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { View } from 'react-native';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { DateField } from '../src/components/form/DateField';
 import { FormScreen } from '../src/components/form/FormScreen';
+import { HelperText } from '../src/components/form/HelperText';
+import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { PercentField } from '../src/components/form/PercentField';
-import { IntegerField } from '../src/components/form/IntegerField';
-import { HelperText } from '../src/components/form/HelperText';
 import { TextField } from '../src/components/form/TextField';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { emiAuto } from '../src/domain/loan';
 import { makeLoanFormSchema, type LoanFormInput, type LoanFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
-import { formatINR } from '../src/lib/format';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
+import { formatINR } from '../src/lib/format';
 
 export default function LoanFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -95,7 +95,7 @@ export default function LoanFormScreen() {
   return (
     <FormScreen title={loan ? 'Edit loan' : 'New loan'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       {loan ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" disabled={isSubmitting || (submitCount > 0 && Object.keys(errors).length > 0)} onPress={() => {
+      <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || (submitCount > 0 && Object.keys(errors).length > 0)} onPress={() => {
         if (submitting.current) return;
         void handleSubmit(save)();
       }} />

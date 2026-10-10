@@ -4,9 +4,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
+import { choiceAsync } from '../../src/lib/confirm';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
-import { choiceAsync } from '../../src/lib/confirm';
 
 type MenuRowProps = {
   label: string;
@@ -25,34 +25,34 @@ export default function MoreScreen() {
     <Screen>
       <ScreenHeader title="More" />
       <View style={styles.list}>
-        <MenuRow label="Your name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
-        <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
-        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
+        <MenuRow label="Your Name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
         <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
-        <MenuRow label="Backup and restore" icon="download" onPress={() => router.push('/backup')} />
+        <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
+        <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
+        <MenuRow label="Backup and Restore" icon="download" onPress={() => router.push('/backup')} />
         <MenuRow label="Security" icon="lock" onPress={() => router.push('/security')} />
-        <MenuRow label="Erase all data" icon="trash-2" danger onPress={() => router.push('/erase-data')} />
+        <MenuRow label="Erase all Data" icon="trash-2" danger onPress={() => router.push('/erase-data')} />
       </View>
       {__DEV__ && devActions ? (
         <View style={styles.devList}>
           <AppText style={[typography.label, styles.devHeading]}>DEVELOPER TOOLS</AppText>
           <MenuRow
-            label="Load demo data"
+            label="Load Demo Data"
             icon="database"
             onPress={() => {
               void choiceAsync({
-                title: 'Load demo data?',
+                title: 'Load Demo Data?',
                 message: 'Replace local app data with the bundled sample data?',
-                choices: [{ id: 'load', label: 'Load demo data' }],
+                choices: [{ id: 'load', label: 'Load Demo Data' }],
               }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
             }}
           />
           <MenuRow
-            label="Simulate corrupt storage"
+            label="Simulate Corrupt Storage"
             icon="alert-triangle"
             onPress={() => {
               void choiceAsync({
-                title: 'Simulate corrupt storage?',
+                title: 'Simulate Corrupt Storage?',
                 message: 'The app will restart and show its recovery screen.',
                 choices: [{ id: 'continue', label: 'Continue', destructive: true }],
               }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });

@@ -1,10 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { View } from 'react-native';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { DateField } from '../src/components/form/DateField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -13,6 +12,7 @@ import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { efEndOfDayBalances } from '../src/domain/efActions';
@@ -95,16 +95,16 @@ export default function EfEntryFormScreen() {
   };
 
   if (entryId && !entry) return (
-    <FormScreen title="Emergency fund entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Emergency fund Entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Entry not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={entry ? 'Edit fund entry' : 'Log emergency fund entry'} onClose={close} footer={(
+    <FormScreen title={entry ? 'Edit fund entry' : 'Log Emergency fund Entry'} onClose={close} footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {entry ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>
@@ -128,13 +128,13 @@ export default function EfEntryFormScreen() {
         )} />
       )}
       <Controller control={control} name="amount" render={({ field }) => (
-        <MoneyField label="Amount" accessibilityLabel="Emergency fund amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+        <MoneyField label="Amount" accessibilityLabel="Emergency fund Amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
       )} />
       <Controller control={control} name="date" render={({ field }) => (
-        <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Emergency fund entry date" />
+        <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Emergency fund Entry Date" />
       )} />
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField label="Note" accessibilityLabel="Emergency fund entry note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
+        <TextField label="Note" accessibilityLabel="Emergency fund Entry Note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
       )} />
       {!entry && kind === 'Deposit' ? (
         <Controller control={control} name="recordTransaction" render={({ field }) => (
