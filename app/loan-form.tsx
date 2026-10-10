@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { Button, EmptyState } from '../src/components/ui';
@@ -18,6 +18,7 @@ import { emiAuto } from '../src/domain/loan';
 import { makeLoanFormSchema, type LoanFormInput, type LoanFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { formatINR } from '../src/lib/format';
+import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
 export default function LoanFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -53,10 +54,13 @@ export default function LoanFormScreen() {
 
   const close = () => {
     if (!isDirty) return router.back();
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?',
+      message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard',
+      cancelLabel: 'Keep editing',
+      destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
   const save = (values: LoanFormOutput) => {
     if (submitting.current) return;
@@ -65,7 +69,7 @@ export default function LoanFormScreen() {
       if (loanId) actions.updateLoan(loanId, values);
       else actions.addLoan(values);
       const error = useAppStore.getState().lastError;
-      if (error) Alert.alert('Could not save loan', error);
+      if (error) void confirmAsync({ title: 'Could not save loan', message: error, confirmLabel: 'OK' });
       else router.back();
     } finally {
       submitting.current = false;
@@ -74,11 +78,18 @@ export default function LoanFormScreen() {
   const remove = () => {
     if (!loan) return;
     const linkedCount = useAppStore.getState().data.transactions.filter((transaction) => transaction.source?.kind === 'loan-payment' && transaction.source.parentId === loan.id).length;
-    Alert.alert('Delete loan?', `This removes ${loan.payments.length} payments and affects ${linkedCount} linked transactions.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Keep transactions', onPress: () => { actions.deleteLoan(loan.id, { linkedTransactions: 'keep' }); router.back(); } },
-      { text: 'Delete everything', style: 'destructive', onPress: () => { actions.deleteLoan(loan.id, { linkedTransactions: 'delete' }); router.back(); } },
-    ]);
+    void choiceAsync({
+      title: 'Delete loan?',
+      message: `This removes ${loan.payments.length} payments and affects ${linkedCount} linked transactions.`,
+      choices: [
+        { id: 'keep', label: 'Keep transactions' },
+        { id: 'delete', label: 'Delete everything', destructive: true },
+      ],
+    }).then((choice) => {
+      if (!choice) return;
+      actions.deleteLoan(loan.id, { linkedTransactions: choice === 'keep' ? 'keep' : 'delete' });
+      if (!useAppStore.getState().lastError) router.back();
+    });
   };
   if (loanId && !loan) return <FormScreen title="Loan" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Loan not found" /></FormScreen>;
   return (

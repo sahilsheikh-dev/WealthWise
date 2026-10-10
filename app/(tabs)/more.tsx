@@ -1,11 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
+import { choiceAsync } from '../../src/lib/confirm';
 
 type MenuRowProps = {
   label: string;
@@ -36,26 +37,35 @@ export default function MoreScreen() {
           <MenuRow
             label="Load demo data"
             icon="database"
-            onPress={() => Alert.alert('Load demo data?', 'Replace local app data with the bundled sample data?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Load demo data', onPress: devActions.loadDemoData },
-            ])}
+            onPress={() => {
+              void choiceAsync({
+                title: 'Load demo data?',
+                message: 'Replace local app data with the bundled sample data?',
+                choices: [{ id: 'load', label: 'Load demo data' }],
+              }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
+            }}
           />
           <MenuRow
             label="Erase all data"
             icon="trash-2"
-            onPress={() => Alert.alert('Erase all data?', 'This replaces your local data with an empty account.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Erase all data', style: 'destructive', onPress: devActions.eraseAll },
-            ])}
+            onPress={() => {
+              void choiceAsync({
+                title: 'Erase all data?',
+                message: 'This replaces your local data with an empty account.',
+                choices: [{ id: 'erase', label: 'Erase all data', destructive: true }],
+              }).then((choice) => { if (choice === 'erase') devActions.eraseAll(); });
+            }}
           />
           <MenuRow
             label="Simulate corrupt storage"
             icon="alert-triangle"
-            onPress={() => Alert.alert('Simulate corrupt storage?', 'The app will restart and show its recovery screen.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Continue', style: 'destructive', onPress: () => void devActions.simulateCorruption() },
-            ])}
+            onPress={() => {
+              void choiceAsync({
+                title: 'Simulate corrupt storage?',
+                message: 'The app will restart and show its recovery screen.',
+                choices: [{ id: 'continue', label: 'Continue', destructive: true }],
+              }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });
+            }}
           />
         </View>
       ) : null}

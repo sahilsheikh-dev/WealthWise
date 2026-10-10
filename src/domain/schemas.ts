@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { isValidISO } from './dates';
+import { addDays, isValidISO } from './dates';
 import { emiCoversInterest } from './loan';
 import { formatINR } from '../lib/format';
 import type { AppData, ISODate, Transaction } from './types';
@@ -61,6 +61,7 @@ const manualHoldingSchema = z.object({
   type: holdingTypeSchema,
   invested: moneySchema,
   value: moneySchema,
+  valueAsOf: isoDateSchema.optional(),
 });
 
 const planHoldingSchema = z.object({
@@ -234,7 +235,7 @@ export function makePlanFormSchema(
     stepUpPct: optionalRate(50, 'Enter a step-up between 0 and 50', true),
     tenureYears: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole years from 1 to 50')
       .transform(Number).refine((value) => value >= 1 && value <= 50, 'Enter whole years from 1 to 50'),
-    startDate: dateInputSchema().refine((date) => !isValidISO(date) || date <= addISODate(today, 366), 'Start date is too far ahead'),
+    startDate: dateInputSchema().refine((date) => !isValidISO(date) || date <= addDays(today, 366), 'Start date is too far ahead'),
     trackFrom: z.string().trim(),
     opening: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
     actualValue: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER, optional: true }),
@@ -261,18 +262,14 @@ export function makePlanFormSchema(
         context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Enter a valid date' });
       } else if (value.actualValueDate > today) {
         context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Date cannot be in the future' });
+      } else if (value.actualValueDate < value.startDate) {
+        context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Value date is before the plan started' });
       }
     }
     if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged installment is dated before this start date' });
     }
   });
-}
-
-function addISODate(date: ISODate, days: number): ISODate {
-  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
-  const result = new Date(Date.UTC(year, month - 1, day + days));
-  return `${result.getUTCFullYear()}-${String(result.getUTCMonth() + 1).padStart(2, '0')}-${String(result.getUTCDate()).padStart(2, '0')}`;
 }
 
 export function makePlanLogFormSchema(today: ISODate, ctx: { startDate: ISODate }) {
@@ -291,7 +288,7 @@ export function makeLoanFormSchema(
 ) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
-      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
+      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A loan with this name already exists'),
     principal: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, maximumMessage: 'Amount is too large' }),
     ratePct: optionalRate(60, 'Enter a rate between 0 and 60'),
     tenureMonths: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 480')
@@ -307,6 +304,64 @@ export function makeLoanFormSchema(
         context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
       }
     });
+}
+
+export function makeGoalFormSchema(
+  today: ISODate,
+  ctx: { otherNames: string[]; locked: boolean },
+) {
+  const year = Number(today.slice(0, 4));
+  const yearMessage = `Enter a year between ${year} and ${year + 60}`;
+  return z.object({
+    name: z.string().transform((name) => name.trim())
+      .refine((name) => ctx.locked || (name.length >= 1 && name.length <= 40), 'Enter a name up to 40 characters')
+      .refine((name) => ctx.locked || !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A goal with this name already exists'),
+    target: moneyInputSchema({ minimum: 0.01, maximum: 10_000_000_000, maximumMessage: 'Amount is too large' }),
+    saved: ctx.locked
+      ? z.string().transform(() => 0)
+      : moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, maximumMessage: "Saved can't exceed the target" }),
+    year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
+      .transform(Number).refine((value) => value >= year && value <= year + 60, yearMessage),
+  }).superRefine((value, context) => {
+    if (!ctx.locked && value.saved > value.target) {
+      context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
+    }
+  });
+}
+
+export function makeHoldingFormSchema(ctx: { otherNames: string[] }) {
+  return z.object({
+    name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
+      .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
+    type: holdingTypeFormSchema,
+    invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
+    value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
+  });
+}
+
+export function makeEfEntryFormSchema(
+  today: ISODate,
+  ctx: { balanceOn: (date: ISODate) => number },
+) {
+  return z.object({
+    kind: z.enum(['Deposit', 'Withdrawal']),
+    amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
+    date: dateInputSchema()
+      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+    recordTransaction: z.boolean(),
+  }).superRefine((value, context) => {
+    if (value.kind === 'Withdrawal' && value.amount > ctx.balanceOn(value.date)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['amount'],
+        message: `Exceeds the balance of ${formatINR(ctx.balanceOn(value.date))} on that date`,
+      });
+    }
+    if (value.kind === 'Withdrawal' && value.recordTransaction) {
+      context.addIssue({ code: 'custom', path: ['recordTransaction'], message: 'Withdrawals cannot be recorded as transactions' });
+    }
+  });
 }
 
 export function makeLoanPaymentFormSchema(
@@ -341,3 +396,9 @@ export type LoanFormInput = z.input<ReturnType<typeof makeLoanFormSchema>>;
 export type LoanFormOutput = z.output<ReturnType<typeof makeLoanFormSchema>>;
 export type LoanPaymentFormInput = z.input<ReturnType<typeof makeLoanPaymentFormSchema>>;
 export type LoanPaymentFormOutput = z.output<ReturnType<typeof makeLoanPaymentFormSchema>>;
+export type GoalFormInput = z.input<ReturnType<typeof makeGoalFormSchema>>;
+export type GoalFormOutput = z.output<ReturnType<typeof makeGoalFormSchema>>;
+export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>;
+export type HoldingFormOutput = z.output<ReturnType<typeof makeHoldingFormSchema>>;
+export type EfEntryFormInput = z.input<ReturnType<typeof makeEfEntryFormSchema>>;
+export type EfEntryFormOutput = z.output<ReturnType<typeof makeEfEntryFormSchema>>;

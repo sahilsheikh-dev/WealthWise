@@ -28,7 +28,14 @@ export function updateLoan(data: AppData, id: string, patch: LoanPatch): AppData
   const { emi, ...otherPatch } = patch;
   const base = { ...current, ...otherPatch };
   const updated: Loan = { ...base, emi: emi === null ? emiAuto(base.principal, base.ratePct, base.tenureMonths) : (emi ?? current.emi) };
-  return { ...data, loans: data.loans.map((loan) => loan.id === id ? updated : loan) };
+  const transactions = data.transactions.map((transaction) => {
+    if (transaction.source?.kind !== 'loan-payment' || transaction.source.parentId !== id) return transaction;
+    const payment = current.payments.find((entry) => entry.id === transaction.source?.entryId);
+    const expectedOldNote = payment?.kind === 'Prepayment' ? `${current.name} prepayment` : `${current.name} EMI`;
+    if (patch.name === undefined || transaction.note !== expectedOldNote) return transaction;
+    return { ...transaction, note: payment?.kind === 'Prepayment' ? `${updated.name} prepayment` : `${updated.name} EMI` };
+  });
+  return { ...data, loans: data.loans.map((loan) => loan.id === id ? updated : loan), transactions };
 }
 
 export function deleteLoan(

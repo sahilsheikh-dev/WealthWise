@@ -10,12 +10,15 @@ import {
   addLoan, addLoanPayment, deleteLoan, deleteLoanPayment, updateLoan, updateLoanPayment,
   type AddLoanInput, type LoanPatch, type LoanPaymentPatch,
 } from '../domain/loanActions';
+import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { addHolding, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
+import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
-import type { AppData, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
+import type { AppData, EfEntry, Holding, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 
@@ -35,6 +38,15 @@ export type AppActions = {
   addLoanPayment: (loanId: string, input: Pick<LogEntry, 'date' | 'amount' | 'kind' | 'note'>, options: { recordTransaction: boolean }) => void;
   updateLoanPayment: (loanId: string, paymentId: string, patch: LoanPaymentPatch) => void;
   deleteLoanPayment: (loanId: string, paymentId: string) => void;
+  addGoal: (input: AddGoalInput) => void;
+  updateGoal: (id: string, patch: GoalPatch) => void;
+  deleteGoal: (id: string) => void;
+  addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf'>) => void;
+  updateHolding: (id: string, patch: HoldingPatch) => void;
+  deleteHolding: (id: string) => void;
+  addEfEntry: (input: Omit<EfEntry, 'id'>, options: { recordTransaction: boolean }) => void;
+  updateEfEntry: (id: string, patch: EfEntryPatch) => void;
+  deleteEfEntry: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   dismissStorageError: () => void;
   resolveRecovery: (action: 'start-fresh') => void;
@@ -94,7 +106,12 @@ export function createAppStore(
   const store = create<AppStoreState>()(persist(
     (set, get) => {
       const setError = (error: unknown) => {
-        set({ lastError: error instanceof Error ? error.message : 'The requested change could not be completed.' });
+        suppressNextWrite = true;
+        try {
+          set({ lastError: error instanceof Error ? error.message : 'The requested change could not be completed.' });
+        } finally {
+          suppressNextWrite = false;
+        }
       };
       const applyDataAction = (action: (data: AppData) => AppData) => {
         try {
@@ -157,6 +174,39 @@ export function createAppStore(
         deleteLoanPayment(loanId, paymentId) {
           applyDataAction((data) => deleteLoanPayment(data, loanId, paymentId));
         },
+        addGoal(input) {
+          applyDataAction((data) => addGoal(data, input, deps.newId));
+        },
+        updateGoal(id, patch) {
+          applyDataAction((data) => updateGoal(data, id, patch));
+        },
+        deleteGoal(id) {
+          applyDataAction((data) => deleteGoal(data, id));
+        },
+        addHolding(input) {
+          applyDataAction((data) => addHolding(data, { ...input, valueAsOf: deps.today() }, deps.newId));
+        },
+        updateHolding(id, patch) {
+          applyDataAction((data) => {
+            const current = data.holdings.find((holding) => holding.id === id);
+            const valueAsOf = current?.kind === 'manual' && patch.value !== undefined && patch.value !== current.value
+              ? deps.today()
+              : current?.kind === 'manual' ? current.valueAsOf : undefined;
+            return updateHolding(data, id, { ...patch, valueAsOf });
+          });
+        },
+        deleteHolding(id) {
+          applyDataAction((data) => deleteHolding(data, id));
+        },
+        addEfEntry(input, options) {
+          applyDataAction((data) => addEfEntry(data, input, { ...options, newId: deps.newId }));
+        },
+        updateEfEntry(id, patch) {
+          applyDataAction((data) => updateEfEntry(data, id, patch));
+        },
+        deleteEfEntry(id) {
+          applyDataAction((data) => deleteEfEntry(data, id));
+        },
         dismissStorageError() {
           suppressNextWrite = true;
           try {
@@ -167,6 +217,15 @@ export function createAppStore(
         },
         resolveRecovery(action) {
           if (action !== 'start-fresh') return;
+          if (get().recoveryReason === 'newer-version') {
+            suppressNextWrite = true;
+            try {
+              set({ storageError: 'This data was saved by a newer version of the app. Update the app to open it.' });
+            } finally {
+              suppressNextWrite = false;
+            }
+            return;
+          }
           corruptionReason = null;
           set({
             data: emptyAppData(deps.today()),

@@ -45,6 +45,9 @@ function AppContent() {
           <Stack.Screen name="plan-log-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="loan-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="loan-payment-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="holding-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="plan-logs" />
           <Stack.Screen name="loan-payments" />
         </Stack>

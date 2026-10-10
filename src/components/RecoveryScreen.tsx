@@ -1,21 +1,22 @@
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAppActions } from '../data/useAppData';
 import { AppText, Button, Card, Screen } from './ui';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { confirmAsync } from '../lib/confirm';
 
 export function RecoveryScreen({ newerVersion = false }: { newerVersion?: boolean }) {
   const { resolveRecovery } = useAppActions();
   const { colors } = useTheme();
-  const startFresh = () => Alert.alert(
-    'Start fresh?',
-    'This will replace the unreadable saved data with a new empty account. A backup copy will remain on this device.',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Start fresh', style: 'destructive', onPress: () => resolveRecovery('start-fresh') },
-    ],
-  );
+  const startFresh = () => {
+    void confirmAsync({
+      title: 'Start fresh?',
+      message: 'This will replace the unreadable saved data with a new empty account. A backup copy will remain on this device.',
+      confirmLabel: 'Start fresh',
+      destructive: true,
+    }).then((confirmed) => { if (confirmed) resolveRecovery('start-fresh'); });
+  };
 
   return (
     <Screen>

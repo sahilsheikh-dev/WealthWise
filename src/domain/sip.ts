@@ -82,8 +82,12 @@ export function loggedCount(plan: PlanHolding): number {
   return plan.logs.length;
 }
 
+export function loggedTrackedCount(plan: PlanHolding): number {
+  return plan.logs.filter((entry) => entry.date >= plan.trackFrom).length;
+}
+
 export function behindBy(plan: PlanHolding, asOf: ISODate): number {
-  return Math.max(0, installmentsTracked(plan, asOf) - loggedCount(plan));
+  return Math.max(0, installmentsTracked(plan, asOf) - loggedTrackedCount(plan));
 }
 
 export function estimatedValue(plan: PlanHolding, asOf: ISODate): number {

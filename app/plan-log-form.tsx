@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 
 import { Button, EmptyState } from '../src/components/ui';
@@ -19,6 +19,7 @@ import { monthKey } from '../src/domain/dates';
 import type { PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { useUIStore } from '../src/data/uiStore';
+import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
 export default function PlanLogFormScreen() {
   const params = useLocalSearchParams<{ planId?: string; logId?: string }>();
@@ -41,19 +42,20 @@ export default function PlanLogFormScreen() {
   });
   const close = () => {
     if (!isDirty) return router.back();
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
   const persist = (values: PlanLogFormOutput, saveAnyway = false) => {
     if (!plan || submitting.current) return;
     const duplicate = !log && plan.logs.some((entry) => entry.date === values.date && entry.amount === values.amount);
     if (duplicate && !saveAnyway) {
-      Alert.alert('Possible duplicate', 'A log with the same date and amount already exists.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Save anyway', onPress: () => persist(values, true) },
-      ]);
+      void choiceAsync({
+        title: 'Possible duplicate',
+        message: 'A log with the same date and amount already exists.',
+        choices: [{ id: 'save', label: 'Save anyway' }],
+      }).then((choice) => { if (choice === 'save') persist(values, true); });
       return;
     }
     submitting.current = true;
@@ -61,7 +63,7 @@ export default function PlanLogFormScreen() {
       if (log) actions.updatePlanLog(plan.id, log.id, { date: values.date, amount: values.amount, note: values.note });
       else actions.addPlanLog(plan.id, { date: values.date, amount: values.amount, note: values.note }, { recordTransaction: values.recordTransaction });
       const state = useAppStore.getState();
-      if (state.lastError) Alert.alert('Could not save log', state.lastError);
+      if (state.lastError) void confirmAsync({ title: 'Could not save log', message: state.lastError, confirmLabel: 'OK' });
       else {
         if ((log && linked) || (!log && values.recordTransaction)) setTxMonth(monthKey(values.date));
         router.back();
@@ -72,10 +74,16 @@ export default function PlanLogFormScreen() {
   };
   const remove = () => {
     if (!plan || !log) return;
-    Alert.alert('Delete this entry?', 'Its linked transaction will also be removed.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { actions.deletePlanLog(plan.id, log.id); router.back(); } },
-    ]);
+    void confirmAsync({
+      title: 'Delete this entry?',
+      message: 'Its linked transaction will also be removed.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      actions.deletePlanLog(plan.id, log.id);
+      if (!useAppStore.getState().lastError) router.back();
+    });
   };
   if (!plan || (logId && !log)) return <FormScreen title="Plan log" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Plan log not found" /></FormScreen>;
   return (

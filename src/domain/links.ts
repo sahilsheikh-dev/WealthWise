@@ -15,6 +15,31 @@ export type IntegrityIssue = {
   path: (string | number)[];
 };
 
+export type DescribedSource = {
+  label: string;
+  route: string;
+  params: Record<string, string>;
+};
+
+export function describeSource(data: AppData, source: TransactionSource): DescribedSource | null {
+  if (source.kind === 'plan-log') {
+    const plan = data.holdings.find((holding) => holding.kind === 'plan' && holding.id === source.parentId);
+    return plan?.kind === 'plan' && plan.logs.some((entry) => entry.id === source.entryId)
+      ? { label: plan.name, route: '/plan-logs', params: { id: plan.id } }
+      : null;
+  }
+  if (source.kind === 'loan-payment') {
+    const loan = data.loans.find((entry) => entry.id === source.parentId);
+    return loan?.payments.some((entry) => entry.id === source.entryId)
+      ? { label: loan.name, route: '/loan-payments', params: { id: loan.id } }
+      : null;
+  }
+  const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
+  return goal && data.efEntries.some((entry) => entry.id === source.entryId)
+    ? { label: 'Emergency fund', route: '/emergency-fund', params: {} }
+    : null;
+}
+
 export function findLinkedTransaction(
   data: AppData,
   kind: TransactionSource['kind'],
@@ -82,17 +107,39 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     }
 
     let valid = false;
+    let linkedEntry: { amount: number; date: string } | undefined;
+    let expectedType: Transaction['type'] | undefined;
     if (source.kind === 'plan-log') {
       const plan = data.holdings.find((holding) => holding.id === source.parentId && holding.kind === 'plan');
-      valid = Boolean(plan?.kind === 'plan' && plan.logs.some((entry) => entry.id === source.entryId));
+      const entry = plan?.kind === 'plan' ? plan.logs.find((item) => item.id === source.entryId) : undefined;
+      valid = Boolean(entry);
+      if (entry) linkedEntry = entry;
+      expectedType = 'invest';
     } else if (source.kind === 'loan-payment') {
       const loan = data.loans.find((entry) => entry.id === source.parentId);
-      valid = Boolean(loan?.payments.some((entry) => entry.id === source.entryId));
+      const entry = loan?.payments.find((item) => item.id === source.entryId);
+      valid = Boolean(entry);
+      if (entry) linkedEntry = entry;
+      expectedType = 'expense';
     } else {
       const efGoal = data.goals.find((goal) => goal.auto === 'ef');
-      valid = Boolean(efGoal?.id === source.parentId && data.efEntries.some((entry) => entry.id === source.entryId));
+      const entry = efGoal?.id === source.parentId
+        ? data.efEntries.find((item) => item.id === source.entryId)
+        : undefined;
+      valid = Boolean(entry);
+      if (entry) linkedEntry = entry;
+      expectedType = 'invest';
     }
     if (!valid) add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
+    else if (
+      linkedEntry && (
+        transaction.amount !== linkedEntry.amount ||
+        transaction.date !== linkedEntry.date ||
+        transaction.type !== expectedType
+      )
+    ) {
+      add('linked-drift', 'Linked transaction fields differ from the source entry.', ['transactions', index]);
+    }
   }
 
   const efGoals = data.goals.filter((goal) => goal.auto === 'ef');

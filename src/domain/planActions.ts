@@ -29,9 +29,19 @@ export function updatePlan(data: AppData, id: string, patch: PlanPatch): AppData
   const current = getPlan(data, id);
   const updated = { ...current, ...patch };
   assertPlanInvariants(updated);
+  const transactions = data.transactions.map((transaction) => {
+    if (transaction.source?.kind !== 'plan-log' || transaction.source.parentId !== id) return transaction;
+    let next = transaction;
+    if (patch.name !== undefined && transaction.note === `${current.name} installment`) {
+      next = { ...next, note: `${updated.name} installment` };
+    }
+    if (patch.type !== undefined) next = { ...next, category: investCategoryFor(updated.type) };
+    return next;
+  });
   return {
     ...data,
     holdings: data.holdings.map((holding) => holding.id === id ? updated : holding),
+    transactions,
   };
 }
 

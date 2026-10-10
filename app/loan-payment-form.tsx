@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 
 import { Button, EmptyState } from '../src/components/ui';
@@ -19,6 +19,7 @@ import { makeLoanPaymentFormSchema, type LoanPaymentFormInput, type LoanPaymentF
 import { todayISO } from '../src/lib/clock';
 import { monthKey } from '../src/domain/dates';
 import { useUIStore } from '../src/data/uiStore';
+import { confirmAsync } from '../src/lib/confirm';
 
 export default function LoanPaymentFormScreen() {
   const params = useLocalSearchParams<{ loanId?: string; paymentId?: string; mode?: string }>();
@@ -57,10 +58,10 @@ export default function LoanPaymentFormScreen() {
   const submitting = useRef(false);
   const close = () => {
     if (!isDirty) return router.back();
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
   const save = (values: LoanPaymentFormOutput) => {
     if (!loan || submitting.current) return;
@@ -69,7 +70,7 @@ export default function LoanPaymentFormScreen() {
       if (payment) actions.updateLoanPayment(loan.id, payment.id, { date: values.date, amount: values.amount, kind: values.kind, note: values.note });
       else actions.addLoanPayment(loan.id, { date: values.date, amount: values.amount, kind: values.kind, note: values.note }, { recordTransaction: values.recordTransaction });
       const error = useAppStore.getState().lastError;
-      if (error) Alert.alert('Could not save payment', error);
+      if (error) void confirmAsync({ title: 'Could not save payment', message: error, confirmLabel: 'OK' });
       else {
         if ((payment && linked) || (!payment && values.recordTransaction)) setTxMonth(monthKey(values.date));
         router.back();
@@ -80,10 +81,16 @@ export default function LoanPaymentFormScreen() {
   };
   const remove = () => {
     if (!loan || !payment) return;
-    Alert.alert('Delete this entry?', 'Its linked transaction will also be removed.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { actions.deleteLoanPayment(loan.id, payment.id); router.back(); } },
-    ]);
+    void confirmAsync({
+      title: 'Delete this entry?',
+      message: 'Its linked transaction will also be removed.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      actions.deleteLoanPayment(loan.id, payment.id);
+      if (!useAppStore.getState().lastError) router.back();
+    });
   };
   if (!loan || (paymentId && !payment)) return <FormScreen title="Loan payment" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Loan payment not found" /></FormScreen>;
   const initial = payment ?? { date: today, amount: Math.min(loan.emi, Math.ceil(loanState(loan, today).balance)), kind: 'EMI' as const, note: '' };

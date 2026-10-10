@@ -29,9 +29,10 @@ const makeStore = (storage: StateStorage, overrides: {
   newId?: () => string;
   reload?: () => void;
   isDev?: boolean;
+  today?: () => '2026-10-10' | '2026-10-11';
 } = {}) => createAppStore(storage, {
   newId: overrides.newId ?? (() => 'fixed-id'),
-  today: () => '2026-10-10',
+  today: overrides.today ?? (() => '2026-10-10'),
   reload: overrides.reload,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
 });
@@ -93,7 +94,7 @@ describe('createAppStore persistence', () => {
     expect(JSON.parse(storage.values.get('wealthwise.app.v1')!).state.data.transactions).toEqual([]);
   });
 
-  it('keeps newer-version data in recovery rather than allowing fresh-state writes', async () => {
+  it('refuses start-fresh for newer-version data without changing its bytes or recovery status', async () => {
     const storage = new MemoryStorage();
     const raw = JSON.stringify({ state: { data: mockAppData }, version: 99 });
     storage.values.set('wealthwise.app.v1', raw);
@@ -101,7 +102,17 @@ describe('createAppStore persistence', () => {
     await waitForHydration(store);
     expect(store.getState().recoveryReason).toBe('newer-version');
     expect(storage.values.get('wealthwise.app.v1')).toBe(raw);
-    expect(() => store.getState().actions.resolveRecovery('start-fresh')).not.toThrow();
+    const originalData = store.getState().data;
+    const writes = storage.setItemCalls;
+    store.getState().actions.resolveRecovery('start-fresh');
+    expect(store.getState()).toMatchObject({
+      status: 'recovery',
+      recoveryReason: 'newer-version',
+      storageError: 'This data was saved by a newer version of the app. Update the app to open it.',
+    });
+    expect(store.getState().data).toBe(originalData);
+    expect(storage.values.get('wealthwise.app.v1')).toBe(raw);
+    expect(storage.setItemCalls).toBe(writes);
   });
 
   it('persists name and theme settings', async () => {
@@ -377,6 +388,7 @@ describe('createAppStore persistence', () => {
       name: 'Scenario loan', principal: 100_000, ratePct: 12,
       tenureMonths: 12, emi: null, startDate: '2026-01-01',
     });
+
     const loanId = store.getState().data.loans[0]!.id;
     expect(store.getState().data.loans[0]?.emi).toBe(8_885);
     expect(validateIntegrity(store.getState().data)).toEqual([]);

@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
@@ -26,9 +27,7 @@ export default function GoalsScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="New goal"
-          onPress={() => {
-            // TODO(phase5)
-          }}
+          onPress={() => router.push('/goal-form')}
           style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
           <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New goal</AppText>
         </Pressable>
@@ -46,7 +45,12 @@ export default function GoalsScreen() {
         const saved = goalSaved(goal, emergencyBalance);
         const goalPercent = goalProgressPct(goal, saved);
         return (
-          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Pressable
+            key={goal.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${goal.name}`}
+            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
               <View style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
@@ -61,7 +65,7 @@ export default function GoalsScreen() {
               <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
             </View>
-          </View>
+          </Pressable>
         );
       })}
     </Screen>

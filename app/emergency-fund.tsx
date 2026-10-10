@@ -46,9 +46,7 @@ export default function EmergencyFundScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Log emergency fund entry"
-              onPress={() => {
-                // TODO(phase5)
-              }}
+              onPress={() => router.push('/ef-entry-form')}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Log entry</AppText>
             </Pressable>
@@ -86,7 +84,12 @@ export default function EmergencyFundScreen() {
         <SectionTitle>Passbook</SectionTitle>
         <View style={styles.passbook}>
           {entries.map((entry) => (
-            <View key={entry.id} style={[styles.passbookRow, { borderBottomColor: colors.border }]}>
+            <Pressable
+              key={entry.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatINR(Math.abs(entry.amount))} from ${formatDate(entry.date)}`}
+              onPress={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
+              style={[styles.passbookRow, { borderBottomColor: colors.border }]}>
               <View style={styles.entryDetails}>
                 <AppText weight="bold" style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}>
                   {entry.amount < 0 ? '-' : '+'}{formatINR(Math.abs(entry.amount))}
@@ -94,7 +97,7 @@ export default function EmergencyFundScreen() {
                 <AppText style={[typography.meta, { color: colors.text3 }]}>{formatDate(entry.date)} · {entry.note}</AppText>
               </View>
               <AppText weight="bold" style={typography.amount}>{formatINR(entry.balance)}</AppText>
-            </View>
+            </Pressable>
           ))}
         </View>
       </Screen>

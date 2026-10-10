@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -11,6 +11,7 @@ import { useAppActions } from '../src/data/useAppData';
 import { useAppStore } from '../src/data/store';
 import { useTheme } from '../src/theme/useTheme';
 import { typography } from '../src/theme/tokens';
+import { confirmAsync } from '../src/lib/confirm';
 
 const nameSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(40, 'Keep your name under 40 characters'),
@@ -39,17 +40,17 @@ export default function NameFormScreen() {
       router.back();
       return;
     }
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
 
   const save = (value: NameFormOutput) => {
     actions.updateSettings({ name: value.name });
     const state = useAppStore.getState();
     if (state.lastError) {
-      Alert.alert('Could not save your name', state.lastError);
+      void confirmAsync({ title: 'Could not save your name', message: state.lastError, confirmLabel: 'OK' });
       return;
     }
     router.back();

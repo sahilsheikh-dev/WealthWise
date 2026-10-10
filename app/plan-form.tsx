@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { AppText, Button, EmptyState } from '../src/components/ui';
@@ -20,6 +20,7 @@ import { projection } from '../src/domain/sip';
 import type { Frequency, HoldingType, PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatINRShort } from '../src/lib/format';
+import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 import { useTheme } from '../src/theme/useTheme';
 
 const holdingTypes: HoldingType[] = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other'];
@@ -81,10 +82,13 @@ export default function PlanFormScreen() {
 
   const close = () => {
     if (!isDirty) return router.back();
-    Alert.alert('Discard changes?', 'Your changes have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
+    void confirmAsync({
+      title: 'Discard changes?',
+      message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard',
+      cancelLabel: 'Keep editing',
+      destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
   };
   const save = (values: PlanFormOutput) => {
     if (submitting.current) return;
@@ -94,7 +98,7 @@ export default function PlanFormScreen() {
       if (planId) actions.updatePlan(planId, input);
       else actions.addPlan(input);
       const error = useAppStore.getState().lastError;
-      if (error) Alert.alert('Could not save plan', error);
+      if (error) void confirmAsync({ title: 'Could not save plan', message: error, confirmLabel: 'OK' });
       else router.back();
     } finally {
       submitting.current = false;
@@ -103,11 +107,18 @@ export default function PlanFormScreen() {
   const remove = () => {
     if (!plan) return;
     const linkedCount = useAppStore.getState().data.transactions.filter((transaction) => transaction.source?.kind === 'plan-log' && transaction.source.parentId === plan.id).length;
-    Alert.alert('Delete plan?', `This removes ${plan.logs.length} logs and affects ${linkedCount} linked transactions.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Keep transactions', onPress: () => { actions.deletePlan(plan.id, { linkedTransactions: 'keep' }); router.back(); } },
-      { text: 'Delete everything', style: 'destructive', onPress: () => { actions.deletePlan(plan.id, { linkedTransactions: 'delete' }); router.back(); } },
-    ]);
+    void choiceAsync({
+      title: 'Delete plan?',
+      message: `This removes ${plan.logs.length} logs and affects ${linkedCount} linked transactions.`,
+      choices: [
+        { id: 'keep', label: 'Keep transactions' },
+        { id: 'delete', label: 'Delete everything', destructive: true },
+      ],
+    }).then((choice) => {
+      if (!choice) return;
+      actions.deletePlan(plan.id, { linkedTransactions: choice === 'keep' ? 'keep' : 'delete' });
+      if (!useAppStore.getState().lastError) router.back();
+    });
   };
 
   if (planId && !plan) return <FormScreen title="Plan" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Plan not found" /></FormScreen>;

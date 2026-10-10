@@ -5,6 +5,9 @@ import {
   makePlanLogFormSchema,
   makeLoanFormSchema,
   makeLoanPaymentFormSchema,
+  makeGoalFormSchema,
+  makeHoldingFormSchema,
+  makeEfEntryFormSchema,
   SCHEMA_VERSION,
   TRANSACTION_CATEGORIES,
 } from '../schemas';
@@ -143,6 +146,9 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, actualValueDate: '2026-10-10' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, actualValue: '0', actualValueDate: '2026-10-10' }).success).toBe(true);
       expect(schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-11' }).success).toBe(false);
+      const earlySnapshot = schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-09' });
+      expect(earlySnapshot.success).toBe(false);
+      if (!earlySnapshot.success) expect(earlySnapshot.error.issues.some((issue) => issue.message === 'Value date is before the plan started')).toBe(true);
       expect(schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: 'bad-date' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, opening: '' }).success).toBe(true);
       expect(schema.safeParse({ ...planValues, actualValue: '100000000000000000000' }).success).toBe(false);
@@ -167,7 +173,9 @@ describe('makeTransactionFormSchema', () => {
       const schema = makeLoanFormSchema('2026-10-10', { otherNames: ['Other loan'], earliestPaymentDate: '2026-10-01' });
       const valid = { name: 'Car loan', principal: '100000', ratePct: '12', tenureMonths: '12', startDate: '2026-10-01', emi: '' };
       expect(schema.parse(valid)).toMatchObject({ principal: 100_000, ratePct: 12, tenureMonths: 12, emi: null });
-      expect(schema.safeParse({ ...valid, name: ' other loan ' }).success).toBe(false);
+      const duplicateName = schema.safeParse({ ...valid, name: ' other loan ' });
+      expect(duplicateName.success).toBe(false);
+      if (!duplicateName.success) expect(duplicateName.error.issues.some((issue) => issue.message === 'A loan with this name already exists')).toBe(true);
       expect(schema.safeParse({ ...valid, name: '' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, principal: '0' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, principal: '1000000000' }).success).toBe(true);
@@ -201,6 +209,36 @@ describe('makeTransactionFormSchema', () => {
       const cleared = makeLoanPaymentFormSchema('2026-10-10', { startDate: '2026-01-01', outstandingExcludingThis: 0.99 }).safeParse(valid);
       expect(cleared.success).toBe(false);
       if (!cleared.success) expect(cleared.error.issues.some((issue) => issue.message === 'This loan is already cleared')).toBe(true);
+    });
+
+    it('validates goal, holding and emergency-fund entry forms', () => {
+      const goalSchema = makeGoalFormSchema('2026-10-10', { otherNames: ['Vacation'], locked: false });
+      const goal = { name: 'House', target: '100000', saved: '0', year: '2026' };
+      expect(goalSchema.parse(goal)).toMatchObject({ name: 'House', target: 100_000, saved: 0, year: 2026 });
+      const duplicate = goalSchema.safeParse({ ...goal, name: ' vacation ' });
+      expect(duplicate.success).toBe(false);
+      if (!duplicate.success) expect(duplicate.error.issues.some((issue) => issue.message === 'A goal with this name already exists')).toBe(true);
+      expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
+      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(false);
+      expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
+
+      const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
+      const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };
+      expect(holdingSchema.parse(holding)).toMatchObject({ invested: 1000, value: 900 });
+      expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
+      expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
+
+      const efSchema = makeEfEntryFormSchema('2026-10-10', { balanceOn: (date) => date === '2026-10-01' ? 100 : 0 });
+      const deposit = { kind: 'Deposit', amount: '100000000', date: '2026-10-10', note: '', recordTransaction: true };
+      expect(efSchema.parse(deposit).amount).toBe(100_000_000);
+      expect(efSchema.safeParse({ ...deposit, amount: '100000000.01' }).success).toBe(false);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01', recordTransaction: false }).success).toBe(false);
+      const exceeded = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01', recordTransaction: false });
+      expect(exceeded.success).toBe(false);
+      if (!exceeded.success) expect(exceeded.error.issues.some((issue) => issue.message === 'Exceeds the balance of ₹100 on that date')).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '100', date: '2026-10-01', recordTransaction: false }).success).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, date: '2026-10-11' }).success).toBe(false);
+      expect(efSchema.safeParse({ ...deposit, note: 'x'.repeat(61) }).success).toBe(false);
     });
   });
 

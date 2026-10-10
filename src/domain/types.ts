@@ -48,6 +48,7 @@ export type ManualHolding = {
   type: HoldingType;
   invested: number;
   value: number;
+  valueAsOf?: ISODate;
 };
 
 export type PlanHolding = {

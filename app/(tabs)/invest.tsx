@@ -25,7 +25,8 @@ import {
   portfolioTotals,
   type PortfolioRow,
 } from '../../src/domain/portfolio';
-import { behindBy, installmentsTracked, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { behindBy, installmentsTracked, loggedTrackedCount, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { valueStaleness } from '../../src/domain/holdingActions';
 import type { Holding, HoldingType } from '../../src/domain/types';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -72,9 +73,7 @@ export default function InvestScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Add holding"
-            onPress={() => {
-              // TODO(phase5)
-            }}
+            onPress={() => router.push('/holding-form')}
             style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>
           </Pressable>
@@ -119,7 +118,7 @@ export default function InvestScreen() {
           if (!holding) return null;
           return holding.kind === 'plan'
             ? <PlanCard key={row.id} holding={holding} asOf={asOf} />
-            : <HoldingItem key={row.id} row={row} holding={holding} />;
+            : <HoldingItem key={row.id} row={row} holding={holding} asOf={asOf} />;
         })}
         {visibleRows.length === 0 ? (
           <>
@@ -147,19 +146,31 @@ export default function InvestScreen() {
 function HoldingItem({
   row,
   holding,
+  asOf,
 }: {
   row: PortfolioRow;
   holding: Extract<Holding, { kind: 'manual' }>;
+  asOf: ReturnType<typeof todayISO>;
 }) {
+  const { colors } = useTheme();
+  const staleness = valueStaleness(holding.valueAsOf, asOf);
   return (
-    <ListItem
-      title={holding.name}
-      subtitle={`${holding.type}, invested ${formatINR(row.invested)}`}
-      amount={formatINR(row.value)}
-      amountSub={row.gainPct === null ? '—' : `${row.gainPct > 0 ? '+' : ''}${row.gainPct.toFixed(1)}%`}
-      tone={row.gain >= 0 ? 'ok' : 'err'}
-      icon="briefcase"
-    />
+    <View style={styles.manualCard}>
+      <ListItem
+        title={holding.name}
+        subtitle={`${holding.type}, invested ${formatINR(row.invested)}`}
+        amount={formatINR(row.value)}
+        amountSub={row.gainPct === null ? '—' : `${row.gainPct > 0 ? '+' : ''}${row.gainPct.toFixed(1)}%`}
+        tone={row.gain >= 0 ? 'ok' : 'err'}
+        icon="briefcase"
+        onPress={() => router.push({ pathname: '/holding-form', params: { id: holding.id } })}
+      />
+      <AppText style={[typography.meta, styles.staleLine, { color: colors.text3 }]}>
+        {staleness.days === null ? 'Value date unknown' : staleness.stale
+          ? `Value not updated in ${staleness.days} days`
+          : `Updated ${formatDate(holding.valueAsOf!)}`}
+      </AppText>
+    </View>
   );
 }
 
@@ -198,7 +209,7 @@ function PlanCard({
       <ProgressBar percent={progress} />
       <AppText style={[typography.meta, styles.planDescription, { color: colors.text2 }]}>
         Invested {formatINR(planInvested(holding))}. Plan: {formatINRShort(contributionPlan)} in contributions.
-        {' '}{loggedCount(holding)} logged, {due} due since tracking began.
+        {' '}{loggedTrackedCount(holding)} logged since tracking began, {due} due.
       </AppText>
       {overdue > 0 ? (
         <AppText style={[typography.meta, { color: colors.err, marginTop: 4 }]}>{overdue} behind</AppText>
@@ -224,6 +235,8 @@ const styles = StyleSheet.create({
   planTitle: { flex: 1, minWidth: 0, gap: 3 },
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
+  manualCard: { marginBottom: 8 },
+  staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8 },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },
 });

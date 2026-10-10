@@ -69,7 +69,7 @@ export default function HomeScreen() {
                 router.push('/loan-form');
                 return;
               }
-              // TODO(phase5)
+              router.push('/ef-entry-form');
             }}
             style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name={action.icon} size={17} color={colors.primary} />
@@ -80,7 +80,12 @@ export default function HomeScreen() {
 
       <SectionTitle>Goal progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => (
-        <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Pressable
+          key={goal.id}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${goal.name}`}
+          onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+          style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.goalTop}>
             <View style={styles.goalNameBlock}>
               <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
@@ -93,7 +98,7 @@ export default function HomeScreen() {
             <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
             <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
           </View>
-        </View>
+        </Pressable>
       ))}
     </Screen>
   );
