@@ -20,6 +20,8 @@ import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 void SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
@@ -39,6 +41,7 @@ function AppContent() {
             contentStyle: { backgroundColor: colors.bg },
           }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="assets" />
           <Stack.Screen name="liabilities" />
           <Stack.Screen name="emergency-fund" />
           <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />

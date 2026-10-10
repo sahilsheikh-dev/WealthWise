@@ -315,6 +315,19 @@ describe('makeTransactionFormSchema', () => {
       expect(efSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
       expect(efSchema.safeParse({ ...deposit, date: '2026-10-11' }).success).toBe(false);
       expect(efSchema.safeParse({ ...deposit, note: 'x'.repeat(61) }).success).toBe(false);
+
+      const sameDaySchema = makeEfEntryFormSchema('2026-10-10', {
+        firstNegativeDate: (candidate) => efEndOfDayBalances([
+          { id: 'today-deposit', date: '2026-10-10', amount: 10_000, note: '' },
+          { id: 'candidate', ...candidate, note: '' },
+        ]).find(({ balance }) => balance < 0)?.date ?? null,
+      });
+      expect(sameDaySchema.safeParse({
+        kind: 'Withdrawal', amount: '5000', date: '2026-10-10', note: '',
+      }).success).toBe(true);
+      expect(sameDaySchema.safeParse({
+        kind: 'Withdrawal', amount: '10001', date: '2026-10-10', note: '',
+      }).success).toBe(false);
     });
   });
 

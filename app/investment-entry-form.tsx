@@ -21,6 +21,8 @@ import { currentInstallmentAmount } from '../src/domain/sip';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function InvestmentEntryFormScreen() {
   const params = useLocalSearchParams<{ holdingId?: string; entryId?: string; kind?: 'Deposit' | 'Withdrawal'; date?: string; amount?: string }>();
   const holdingId = Array.isArray(params.holdingId) ? params.holdingId[0] : params.holdingId;

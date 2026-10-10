@@ -1,7 +1,6 @@
-import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import {
   ActionRow,
@@ -16,6 +15,7 @@ import {
   StatPillRow,
   StatusBadge,
 } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
 import { useAppData } from '../src/data/useAppData';
 import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitiesOverview } from '../src/domain/summary';
@@ -27,6 +27,8 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const EXTRA_ERROR = 'Enter a whole number between 0 and 10,00,000';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilitiesScreen() {
   const { colors } = useTheme();
@@ -42,27 +44,12 @@ export default function LiabilitiesScreen() {
   return (
     <>
       <Screen bottomPadding={120}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-              style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Feather name="arrow-left" size={18} color={colors.text1} />
-            </Pressable>
-            <AppText weight="bold" style={[typography.h1, styles.title]}>Liabilities</AppText>
-          </View>
-          <View style={styles.headerActionRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Add a liability"
-              onPress={() => router.push('/liability-form')}
-              style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
-              <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Add liability</AppText>
-            </Pressable>
-          </View>
-        </View>
+        <AppHeader
+          title="Liabilities"
+          showBack
+          fallbackHref="/(tabs)"
+          rightActions={[{ icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') }]}
+        />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Total outstanding</AppText>
           <AppText weight="bold" style={[typography.big, styles.total]}>{formatINR(overview.totalOutstanding)}</AppText>
@@ -227,12 +214,6 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 20, paddingTop: 14, gap: 8 },
-  headerTop: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerActionRow: { alignItems: 'flex-end' },
-  back: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center', alignItems: 'center' },
-  title: { flex: 1, minWidth: 0 },
-  headerAction: { minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
   total: { marginTop: 5 },
   whatIfLabel: { marginTop: 16 },
   inputWrap: { minHeight: 48, marginTop: 7, paddingHorizontal: 12, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

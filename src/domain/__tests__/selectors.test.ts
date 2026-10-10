@@ -144,10 +144,10 @@ describe('transaction selectors', () => {
       expense: 27_713,
       invest: 2_000,
       net: 20_287,
-      investedPct: 4,
       overspend: 0,
     });
-    expect(summary.savedPct).toBeCloseTo(44.6, 1);
+    expect(summary.rates?.savedPct).toBeCloseTo(44.6, 1);
+    expect(summary.rates?.investedPct).toBe(4);
     const over = monthSummary([
       tx('i', 'income', 10_000, '2026-10-01'),
       tx('e', 'expense', 9_000, '2026-10-02'),
@@ -156,8 +156,7 @@ describe('transaction selectors', () => {
     expect(over.overspend).toBe(2_000);
     expect(monthSummary([tx('e', 'expense', 5, '2026-10-01')], '2026-10')).toMatchObject({
       income: 0,
-      savedPct: null,
-      investedPct: null,
+      rates: null,
       overspend: 0,
     });
     const includesWithdrawal = monthSummary([
@@ -171,10 +170,18 @@ describe('transaction selectors', () => {
       withdrawals: 10_000,
       earnedIncome: 40_000,
       net: 26_000,
-      savedPct: 50,
-      investedPct: 10,
+      rates: { savedPct: 50, investedPct: 10 },
       overspend: 0,
     });
+  });
+
+  it('returns null rates for exactly zero earned income and preserves expenses-only summaries', () => {
+    expect(monthSummary([
+      tx('withdrawal', 'income', 10_000, '2026-10-02', 'Withdrawal', 'Withdrawal'),
+    ], '2026-10').rates).toBeNull();
+    expect(monthSummary([
+      tx('expense', 'expense', 100, '2026-10-01'),
+    ], '2026-10')).toMatchObject({ income: 0, expense: 100, rates: null });
   });
 
   it('filters by month, type, and case-insensitive query, then groups in order', () => {

@@ -18,6 +18,8 @@ import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function GoalFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const goalId = Array.isArray(id) ? id[0] : id;

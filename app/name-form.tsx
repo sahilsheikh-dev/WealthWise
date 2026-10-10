@@ -20,6 +20,8 @@ const nameSchema = z.object({
 type NameFormInput = z.input<typeof nameSchema>;
 type NameFormOutput = z.output<typeof nameSchema>;
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function NameFormScreen() {
   const currentName = useAppStore((state) => state.data.settings.name);
   const actions = useAppActions();

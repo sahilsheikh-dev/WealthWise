@@ -20,6 +20,8 @@ import { makeLiabilityPaymentFormSchema, type LiabilityPaymentFormInput, type Li
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function LiabilityPaymentFormScreen() {
   const params = useLocalSearchParams<{ liabilityId?: string; paymentId?: string; mode?: string; kind?: 'EMI' | 'Payment'; amount?: string; date?: string }>();
   const liabilityId = Array.isArray(params.liabilityId) ? params.liabilityId[0] : params.liabilityId;

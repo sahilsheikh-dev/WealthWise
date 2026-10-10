@@ -15,5 +15,12 @@ module.exports = defineConfig([
         jest: "readonly",
       },
     },
-  }
+  },
+  {
+    files: ["app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.test.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "error",
+    },
+  },
 ]);
