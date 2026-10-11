@@ -4,6 +4,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 import HomeScreen from '../../../app/(tabs)';
 import { emptyAppData } from '../../domain/actions';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
+import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
@@ -79,5 +80,6 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
+    assertNoVerbText(renderer.root);
   });
 });

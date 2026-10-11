@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
+import { IconButton } from './IconButton';
 import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instrumentCard';
 import { formatINR } from '../lib/format';
 import { typography } from '../theme/tokens';
@@ -14,6 +15,14 @@ export function InstrumentCard({
   onAction: (action: InstrumentCardAction['id']) => void;
 }) {
   const { colors } = useTheme();
+  const actionIcons: Record<InstrumentCardAction['id'], 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle' | 'edit-2'> = {
+    deposit: 'plus',
+    withdraw: 'arrow-down-left',
+    schedule: 'calendar',
+    entries: 'list',
+    edit: 'edit-2',
+    confirm: 'check-circle',
+  };
   return (
     <Card style={styles.card}>
       <View style={styles.heading}>
@@ -25,6 +34,12 @@ export function InstrumentCard({
           <AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>
           <AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>
         </View>
+        <IconButton
+          icon="edit-2"
+          label={`Edit ${model.name}`}
+          onPress={() => onAction(model.headerAction.id)}
+          hint="Edit this asset"
+        />
       </View>
       <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
       {model.progressCaption ? (
@@ -46,6 +61,7 @@ export function InstrumentCard({
             onPress={() => onAction(action.id)}
             disabled={action.disabled}
             accessibilityHint={action.accessibilityHint}
+            icon={actionIcons[action.id]}
             variant={action.id === 'deposit' ? 'primary' : 'soft'}
             style={styles.action}
           />

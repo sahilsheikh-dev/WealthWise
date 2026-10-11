@@ -47,6 +47,10 @@ npx expo config --type public
 Theme preference and transaction data are stored locally on this device.
 Backup and restore are available from the Home menu.
 
+The optional monthly take-home income in onboarding and Profile is used to
+estimate how much of your income goes to EMIs. It is stored locally in the
+existing `monthlySalary` field for backup compatibility.
+
 ## Branding
 
 The primary mark is concept A: a rising geometric W. It is legible at small

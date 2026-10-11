@@ -3,6 +3,9 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import OnboardingScreen from '../../../app/onboarding';
 import ProfileFormScreen from '../../../app/profile-form';
+import { assertNoVerbText } from '../testUtils/assertNoVerbText';
+
+jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 
 const mockCompleteOnboarding = jest.fn();
 const mockUpdateSettings = jest.fn();
@@ -89,9 +92,10 @@ describe('onboarding form', () => {
 
   it('submits a valid name and optional salary', async () => {
     const renderer = renderScreen(<OnboardingScreen />);
+    assertNoVerbText(renderer.root);
     act(() => {
       renderer.root.findByProps({ accessibilityLabel: 'Your name' }).props.onChangeText(' Asha ');
-      renderer.root.findByProps({ accessibilityLabel: 'Monthly take-home salary' }).props.onChangeText('75000');
+      renderer.root.findByProps({ accessibilityLabel: 'Monthly take-home income' }).props.onChangeText('75000');
     });
     const continueButton = renderer.root.findByProps({ accessibilityLabel: 'Continue' });
     await act(async () => { await continueButton.props.onPress(); });
@@ -100,6 +104,7 @@ describe('onboarding form', () => {
 
   it('shows validation for invalid required name and lets the user skip', async () => {
     const renderer = renderScreen(<OnboardingScreen />);
+    assertNoVerbText(renderer.root);
     const continueButton = renderer.root.findByProps({ accessibilityLabel: 'Continue' });
     await act(async () => { await continueButton.props.onPress(); });
     expect(mockCompleteOnboarding).not.toHaveBeenCalled();
@@ -112,8 +117,9 @@ describe('onboarding form', () => {
 describe('profile form', () => {
   it('renders existing profile data and saves a cleared salary', async () => {
     const renderer = renderScreen(<ProfileFormScreen />);
+    assertNoVerbText(renderer.root);
     expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Profile'))).toBe(true);
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'Monthly take-home salary' }).props.onChangeText(''));
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'Monthly take-home income' }).props.onChangeText(''));
     const saveButton = renderer.root.findByProps({ accessibilityLabel: 'Save profile' });
     await act(async () => { await saveButton.props.onPress(); });
     expect(mockUpdateSettings).toHaveBeenCalledWith({ name: 'Demo', monthlySalary: null });

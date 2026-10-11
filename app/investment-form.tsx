@@ -191,9 +191,10 @@ function PlanEditor({
     });
   };
   return (
-    <FormScreen title={plan ? 'Edit Investment' : 'New Investment'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
-      {plan ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || (submitCount > 0 && Object.keys(errors).length > 0)} onPress={() => void handleSubmit(save)()} />
+    <FormScreen title="Investment plan" onClose={close}
+      headerAction={plan ? { label: 'Delete investment plan', onPress: remove } : undefined}
+      footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
+      <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || (submitCount > 0 && Object.keys(errors).length > 0)} onPress={() => void handleSubmit(save)()} />
     </View>}>
       <FormErrorBanner message={lastError} />
       {modeControl}
@@ -268,9 +269,10 @@ function ManualEditor({
     });
   };
   return (
-    <FormScreen title={holding ? 'Edit Investment' : 'New Investment'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      {holding ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => void handleSubmit(save)()} />
+    <FormScreen title="Investment holding" onClose={close}
+      headerAction={holding ? { label: 'Delete investment', onPress: remove } : undefined}
+      footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => void handleSubmit(save)()} />
     </View>}>
       <FormErrorBanner message={lastError} />
       {modeControl}

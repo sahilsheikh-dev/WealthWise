@@ -19,8 +19,8 @@ export function ScreenErrorBoundary({ error, retry }: ScreenErrorBoundaryProps) 
         {__DEV__ ? (
           <AppText selectable style={[typography.meta, { color: colors.text3 }]}>{error.message}</AppText>
         ) : null}
-        <Button label="Try again" variant="primary" onPress={retry} />
-        <Button label="Go to Home" onPress={() => router.replace('/(tabs)')} />
+        <Button label="Try again" icon="refresh-cw" variant="primary" onPress={retry} />
+        <Button label="Go to Home" icon="home" onPress={() => router.replace('/(tabs)')} />
       </Card>
     </Screen>
   );

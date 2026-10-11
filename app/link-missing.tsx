@@ -82,6 +82,7 @@ export default function LinkMissingScreen() {
         <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
           <Button
             label={`Create ${entries.length} transactions`}
+            icon="layers"
             variant="primary"
             onPress={createTransactions}
           />

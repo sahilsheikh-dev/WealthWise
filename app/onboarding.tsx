@@ -1,17 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Feather } from '@expo/vector-icons';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
-import { useEffect } from 'react';
 import type { z } from 'zod';
 
 import { BrandMark } from '../src/components/BrandMark';
-import { TextField } from '../src/components/form/TextField';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, Screen } from '../src/components/ui';
 import { useAppActions } from '../src/data/useAppData';
 import { makeOnboardingFormSchema } from '../src/domain/schemas';
-import { useTheme } from '../src/theme/useTheme';
 import { typography } from '../src/theme/tokens';
+import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -72,11 +73,11 @@ export default function OnboardingScreen() {
             render={({ field }) => (
               <View style={styles.salary}>
                 <MoneyField
-                  label="Monthly take-home salary (₹)"
+                  label="Monthly take-home income (₹)"
                   value={field.value ?? ''}
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
-                  accessibilityLabel="Monthly take-home salary"
+                  accessibilityLabel="Monthly take-home income"
                   error={errors.monthlySalary?.message}
                 />
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
@@ -89,14 +90,17 @@ export default function OnboardingScreen() {
         {submitCount > 0 && Object.keys(errors).length > 0 ? (
           <AppText accessibilityRole="alert" style={{ color: colors.err }}>Please check the highlighted fields.</AppText>
         ) : null}
-        <Button label="Continue" variant="primary" disabled={isSubmitting} onPress={handleSubmit(finish)} />
+        <Button label="Continue" icon="arrow-right" variant="primary" disabled={isSubmitting} onPress={handleSubmit(finish)} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Skip for now"
           onPress={() => actions.completeOnboarding({ name: '', monthlySalary: null })}
           style={styles.skip}
         >
-          <AppText style={[typography.meta, { color: colors.primary }]}>Skip for now</AppText>
+          <View style={styles.skipContent}>
+            <Feather name="skip-forward" size={14} color={colors.primary} />
+            <AppText style={[typography.meta, { color: colors.primary }]}>Skip for now</AppText>
+          </View>
         </Pressable>
       </View>
     </Screen>
@@ -104,9 +108,10 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, justifyContent: 'center', gap: 16, paddingVertical: 30 },
+  content: { flex: 1, justifyContent: 'center', gap: 16, paddingVertical: 30, margin: 20 },
   title: { marginTop: 8 },
   form: { gap: 18, marginVertical: 10 },
   salary: { gap: 7 },
   skip: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  skipContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

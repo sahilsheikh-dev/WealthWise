@@ -5,7 +5,6 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import {
   AppText,
-  Button,
   Card,
   DetailTabBar,
   EmptyState,
@@ -149,9 +148,6 @@ export default function LiabilityPaymentsScreen() {
               ? <AppText style={[typography.meta, { color: colors.err, marginTop: 5 }]}>Balance remains after the final scheduled EMI</AppText>
               : null}
           </Card>
-          <View style={styles.addAction}>
-            <Button label="Add payment" variant="primary" onPress={() => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } })} />
-          </View>
         </>
       ) : (
         <>
@@ -160,9 +156,6 @@ export default function LiabilityPaymentsScreen() {
             <AppText weight="bold" style={[typography.big, styles.balance]}>{formatINR(summary.balance)}</AppText>
             <AppText style={[typography.meta, { color: colors.text3 }]}>Paid {formatINR(summary.paidTotal)} · Interest accrued {formatINR(summary.interestAccrued)}</AppText>
           </Card>
-          <View style={styles.addAction}>
-            <Button label="Add payment" variant="primary" onPress={() => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } })} />
-          </View>
         </>
       )}
     </View>
@@ -230,7 +223,6 @@ const styles = StyleSheet.create({
   segment: { paddingHorizontal: 20, marginTop: 6 },
   summaryLine: { marginTop: 7, fontSize: 12 },
   balance: { marginTop: 5 },
-  addAction: { paddingHorizontal: 20, marginTop: 12 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },

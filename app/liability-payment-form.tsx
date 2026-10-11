@@ -135,9 +135,10 @@ export default function LiabilityPaymentFormScreen() {
     note: '',
   };
   return (
-    <FormScreen title={payment ? 'Edit payment' : params.mode === 'emi' ? 'Pay EMI' : 'Add payment'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      {payment ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
+    <FormScreen title="Liability payment" onClose={close}
+      headerAction={payment ? { label: 'Delete payment', onPress: remove } : undefined}
+      footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
         if (!submitting.current) void handleSubmit(save)();
       }} />
     </View>}>

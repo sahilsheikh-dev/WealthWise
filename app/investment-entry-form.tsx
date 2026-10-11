@@ -111,9 +111,10 @@ export default function InvestmentEntryFormScreen() {
   };
   if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment entry not found" /></FormScreen>;
   return (
-    <FormScreen title={entry ? 'Edit investment entry' : 'Add investment entry'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      {entry ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
+    <FormScreen title="Investment entry" onClose={close}
+      headerAction={entry ? { label: 'Delete investment entry', onPress: remove } : undefined}
+      footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <Button label="Save" icon="save" variant="primary" style={{flex: 1}} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {
         if (submitting.current) return;
         void handleSubmit((values) => persist(values))();
       }} />

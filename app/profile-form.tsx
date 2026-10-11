@@ -8,8 +8,8 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
-import { useAppActions } from '../src/data/useAppData';
 import { useAppStore } from '../src/data/store';
+import { useAppActions } from '../src/data/useAppData';
 import { makeProfileFormSchema } from '../src/domain/schemas';
 import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
@@ -71,6 +71,7 @@ export default function ProfileFormScreen() {
           ) : null}
           <Button
             label="Save"
+            icon="save"
             variant="primary"
             accessibilityLabel="Save profile"
             disabled={isSubmitting}
@@ -102,11 +103,11 @@ export default function ProfileFormScreen() {
         render={({ field }) => (
           <View style={styles.salary}>
             <MoneyField
-              label="Monthly take-home salary (₹)"
+              label="Monthly take-home income (₹)"
               value={field.value ?? ''}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
-              accessibilityLabel="Monthly take-home salary"
+              accessibilityLabel="Monthly take-home income"
               error={errors.monthlySalary?.message}
             />
             <AppText style={[typography.meta, { color: colors.text3 }]}>

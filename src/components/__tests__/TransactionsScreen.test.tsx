@@ -3,6 +3,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
+import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockData = {
   settings: { name: 'Test', theme: 'light' as const, monthlySalary: null, onboarded: true },
@@ -45,9 +46,17 @@ jest.mock('../../theme/useTheme', () => ({
   },
 }));
 jest.mock('../AppHeader', () => ({
-  AppHeader: ({ title }: { title: string }) => {
+  AppHeader: ({ title, rightActions }: {
+    title: string;
+    rightActions?: { label: string; icon: string }[];
+  }) => {
     const ReactModule = jest.requireActual('react') as typeof React;
-    return ReactModule.createElement('text', null, title);
+    return ReactModule.createElement('header', null,
+      ReactModule.createElement('text', null, title),
+      ...(rightActions ?? []).map((action) =>
+        ReactModule.createElement('button', { accessibilityLabel: action.label }, action.icon),
+      ),
+    );
   },
 }));
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
@@ -73,7 +82,6 @@ jest.mock('../ui', () => {
     Chip: node('chip'),
     ChipRow: node('chiprow'),
     EmptyState: ({ title }: { title: string }) => ReactModule.createElement('text', null, title),
-    Fab: node('fab'),
     ListItem: node('listitem'),
     Screen: node('screen'),
     SearchField: node('searchfield'),
@@ -94,5 +102,8 @@ describe('Transactions screen withdrawals-only month', () => {
     const text = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
     expect(text).toContain('No earned income logged this month');
     expect(text).toContain('Includes ₹5,000 withdrawn from investments');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
+    expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
+    assertNoVerbText(renderer.root);
   });
 });

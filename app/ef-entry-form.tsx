@@ -98,10 +98,11 @@ export default function EfEntryFormScreen() {
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={entry ? 'Edit fund entry' : 'Log Emergency fund Entry'} onClose={close} footer={(
+    <FormScreen title="Emergency fund entry" onClose={close}
+      headerAction={entry ? { label: 'Delete emergency fund entry', onPress: remove } : undefined}
+      footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        {entry ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" icon="save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>
