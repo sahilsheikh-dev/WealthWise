@@ -152,9 +152,10 @@ export default function LiabilityFormScreen() {
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={liability ? 'Edit liability' : 'New liability'} onClose={close} footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      {liability ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-      <Button label="Save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || errorsVisible} onPress={() => {
+    <FormScreen title="Liability" onClose={close}
+      headerAction={liability ? { label: 'Delete liability', onPress: remove } : undefined}
+      footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || errorsVisible} onPress={() => {
         if (!submitting.current) void handleSubmit(save)();
       }} />
     </View>}>
@@ -197,7 +198,7 @@ export default function LiabilityFormScreen() {
           )} />
           {calculated !== null ? <View style={{ gap: 6 }}>
             <HelperText>Calculated EMI: {formatINR(calculated)}</HelperText>
-            <Button label="Use this" onPress={() => setValue('emi', String(calculated), { shouldDirty: true, shouldValidate: true })} />
+            <Button label="Use calculated EMI" icon="check" onPress={() => setValue('emi', String(calculated), { shouldDirty: true, shouldValidate: true })} />
           </View> : null}
           {underTenure ? <HelperText tone="warning">This EMI won&apos;t repay the liability within the tenure</HelperText> : null}
         </>

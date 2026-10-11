@@ -1,0 +1,35 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const appRoot = join(process.cwd(), 'app');
+const noDefaultMenuScreens = new Set(['app/erase-data.tsx']);
+
+function routeFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return routeFiles(path);
+    return entry.isFile() && entry.name.endsWith('.tsx') ? [path] : [];
+  });
+}
+
+describe('AppHeader default menu usage', () => {
+  it('keeps the global menu enabled outside the explicit opt-out screen list', () => {
+    const usages = routeFiles(appRoot).flatMap((file) => {
+      const source = readFileSync(file, 'utf8');
+      return [...source.matchAll(/<AppHeader\b([\s\S]*?)\/>/g)].map((match) => ({
+        file: file.replace(`${process.cwd()}/`, ''),
+        props: match[1] ?? '',
+      }));
+    });
+    expect(usages.length).toBeGreaterThan(0);
+    for (const usage of usages) {
+      if (noDefaultMenuScreens.has(usage.file)) {
+        expect(usage.props).toContain('showDefaultMenu={false}');
+      } else {
+        expect(usage.props).not.toContain('showDefaultMenu={false}');
+      }
+    }
+    expect(usages.map(({ file }) => file)).toContain('app/(tabs)/transactions.tsx');
+    expect(usages.map(({ file }) => file)).toContain('app/(tabs)/goals.tsx');
+  });
+});

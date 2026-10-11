@@ -1,5 +1,5 @@
 import { efBalance, monthlyBaseline, monthsCovered } from './ef';
-import { ensureEfGoal, goalProgressPct, goalSaved } from './goals';
+import { ensureEfGoal, goalView } from './goals';
 import {
   liabilitySummary,
   type LiabilitySummary,
@@ -20,23 +20,26 @@ export function netWorth(data: AppData, asOf: ISODate): {
   return { assets, liabilities, netWorth: assets - liabilities };
 }
 
-export function homeSummary(data: AppData, asOf: ISODate): {
+export function homeSummary(data: AppData, asOf: ISODate, expenseBaselineInput?: number): {
   assets: number;
   liabilities: number;
   netWorth: number;
   emergencyMonths: number | null;
-  goals: { goal: AppData['goals'][number]; saved: number; pct: number }[];
+  expenseBaseline: number;
+  goals: ({
+    goal: AppData['goals'][number];
+  } & ReturnType<typeof goalView>)[];
 } {
   const worth = netWorth(data, asOf);
   const emergencyBalance = efBalance(data.efEntries);
-  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
+  const expenseBaseline = expenseBaselineInput ?? monthlyBaseline(data.transactions, 'expense', asOf);
   const goals = ensureEfGoal(data.goals, { expenseBaseline, asOf }).map((goal) => {
-    const saved = goalSaved(goal, emergencyBalance);
-    return { goal, saved, pct: goalProgressPct(goal, saved) };
+    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline }) };
   });
   return {
     ...worth,
     emergencyMonths: monthsCovered(emergencyBalance, expenseBaseline),
+    expenseBaseline,
     goals,
   };
 }

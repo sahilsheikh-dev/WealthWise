@@ -2,10 +2,12 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
+import { IconButton } from '../src/components/IconButton';
 import {
   AppText,
   Card,
   DetailTabBar,
+  ProgressBar,
   Screen,
   SectionTitle,
   StatPill,
@@ -13,6 +15,7 @@ import {
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
+import { ensureEfGoal, goalView } from '../src/domain/goals';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
@@ -29,6 +32,12 @@ export default function EmergencyFundScreen() {
   const covered = monthsCovered(balance, baseline);
   const fundMilestones = milestones(balance, baseline);
   const entries = efPassbook(data.efEntries);
+  const emergencyGoal = ensureEfGoal(data.goals, { expenseBaseline: baseline, asOf })
+    .find((goal) => goal.auto === 'ef');
+  const emergencyGoalView = emergencyGoal ? goalView(emergencyGoal, {
+    emergencyBalance: balance,
+    expenseBaseline: baseline,
+  }) : null;
 
   return (
     <>
@@ -68,6 +77,41 @@ export default function EmergencyFundScreen() {
           ) : null}
         </Card>
 
+        {emergencyGoal && emergencyGoalView ? (
+          <Card>
+            <View style={styles.targetHeader}>
+              <View style={styles.targetTitle}>
+                <AppText style={[typography.label, { color: colors.text3 }]}>Emergency fund target</AppText>
+                <AppText weight="bold" style={[typography.big, styles.targetAmount]}>{formatINR(emergencyGoalView.target)}</AppText>
+              </View>
+              <IconButton
+                icon="edit-2"
+                label="Edit emergency fund target"
+                onPress={() => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } })}
+              />
+            </View>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>
+              Minimum (3 months of expenses): {formatINR(emergencyGoalView.minimum ?? 0)}
+            </AppText>
+            {baseline > 0 ? (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                Based on an average of {formatINR(baseline)} monthly expenses
+              </AppText>
+            ) : (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>
+            )}
+            <ProgressBar percent={emergencyGoalView.pct} />
+            <AppText style={[typography.meta, { color: colors.text2 }]}>
+              {balance >= emergencyGoalView.target
+                ? 'Target reached'
+                : `${formatINR(Math.max(0, emergencyGoalView.target - balance))} to go`}
+            </AppText>
+            {emergencyGoalView.raised ? (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
+            ) : null}
+          </Card>
+        ) : null}
+
         <SectionTitle>Passbook</SectionTitle>
         <View style={styles.passbook}>
           {entries.map((entry) => (
@@ -95,6 +139,9 @@ export default function EmergencyFundScreen() {
 
 const styles = StyleSheet.create({
   balance: { marginTop: 5 },
+  targetHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  targetTitle: { flex: 1, gap: 4 },
+  targetAmount: { marginTop: 2 },
   basedOn: { marginTop: 8 },
   passbook: { marginHorizontal: 20 },
   passbookRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },

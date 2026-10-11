@@ -141,7 +141,7 @@ export default function AssetsScreen() {
       </View>
       {data.holdings.length === 0 ? (
         <View style={styles.emptyAction}>
-          <Button label="Add your first investment" variant="primary" onPress={() => router.push('/investment-form' as Href)} />
+          <Button label="Add your first investment" icon="plus" variant="primary" onPress={() => router.push('/investment-form' as Href)} />
         </View>
       ) : null}
       <AppText style={[typography.meta, styles.note, { color: colors.text3 }]}>

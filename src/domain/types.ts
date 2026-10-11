@@ -132,6 +132,7 @@ export type EfEntry = {
 export type Settings = {
   name: string;
   theme: ThemeId;
+  /** Stored key predates the user-facing "monthly take-home income" wording. */
   monthlySalary: number | null;
   onboarded: boolean;
 };

@@ -76,17 +76,17 @@ describe('Phase 5 domain actions', () => {
   it('locks the automatic emergency goal while supporting regular goal CRUD', () => {
     let data = initial();
     data = addGoal(data, { name: 'Trip', target: 1000, saved: 100, year: 2028 }, () => 'g');
-    data = updateGoal(data, 'g', { name: 'Travel' });
+    data = updateGoal(data, 'g', { name: 'Travel' }, { expenseBaseline: 0 });
     expect(data.goals.find((goal) => goal.id === 'g')?.name).toBe('Travel');
-    expect(() => updateGoal(data, 'g', { auto: 'ef' })).toThrow(GoalLockedError);
+    expect(() => updateGoal(data, 'g', { auto: 'ef' }, { expenseBaseline: 0 })).toThrow(GoalLockedError);
     data = deleteGoal(data, 'g');
     const efGoal = data.goals[0]!;
-    expect(() => updateGoal(data, efGoal.id, { name: 'Renamed' })).toThrow(GoalLockedError);
-    expect(() => updateGoal(data, efGoal.id, { saved: 10 })).toThrow(GoalLockedError);
-    expect(() => updateGoal(data, efGoal.id, { auto: 'ef' })).toThrow(GoalLockedError);
-    expect(updateGoal(data, efGoal.id, { target: 700, year: 2030 }).goals[0]).toMatchObject({ target: 700, year: 2030 });
+    expect(() => updateGoal(data, efGoal.id, { name: 'Renamed' }, { expenseBaseline: 0 })).toThrow(GoalLockedError);
+    expect(() => updateGoal(data, efGoal.id, { saved: 10 }, { expenseBaseline: 0 })).toThrow(GoalLockedError);
+    expect(() => updateGoal(data, efGoal.id, { auto: 'ef' }, { expenseBaseline: 0 })).toThrow(GoalLockedError);
+    expect(updateGoal(data, efGoal.id, { target: 700, year: 2030 }, { expenseBaseline: 0 }).goals[0]).toMatchObject({ target: 700, year: 2030 });
     expect(() => deleteGoal(data, efGoal.id)).toThrow(GoalLockedError);
-    expect(() => updateGoal(data, 'missing', { name: 'Missing' })).toThrow('not found');
+    expect(() => updateGoal(data, 'missing', { name: 'Missing' }, { expenseBaseline: 0 })).toThrow('not found');
     expect(() => deleteGoal(data, 'missing')).toThrow('not found');
     expect(goalSaved(efGoal, 500)).toBe(500);
   });

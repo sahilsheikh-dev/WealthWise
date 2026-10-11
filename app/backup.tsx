@@ -175,19 +175,19 @@ export default function BackupScreen() {
         <AppText style={[typography.meta, { color: colors.text3, marginTop: 10 }]}>
           Last export: {meta.lastExportAt ? formatDate(meta.lastExportAt.slice(0, 10)) : 'never'}
         </AppText>
-        <Button label="Export backup" variant="primary" disabled={busy} onPress={() => void exportBackup()} />
+        <Button label="Export backup" icon="download" variant="primary" disabled={busy} onPress={() => void exportBackup()} />
       </Card>
 
       <SectionTitle>Import</SectionTitle>
       <Card>
-        <Button label="Import from file" disabled={busy} onPress={() => void importFromFile()} />
+        <Button label="Import from file" icon="upload" disabled={busy} onPress={() => void importFromFile()} />
         {preview ? <ImportPreview preview={preview} colors={colors} onReplace={() => void replaceImport()} busy={busy} /> : null}
         {undoSnapshot ? (
           <View style={styles.undo}>
             <AppText style={[typography.meta, { color: colors.text2 }]}>
               Previous data saved on {formatDate(undoSnapshot.savedAt)}
             </AppText>
-            <Button label="Undo import" disabled={busy} onPress={() => void undo()} />
+            <Button label="Undo import" icon="corner-up-left" disabled={busy} onPress={() => void undo()} />
           </View>
         ) : null}
       </Card>
@@ -229,7 +229,7 @@ function ImportPreview({
       <AppText weight="semibold" style={{ color: colors.err, marginTop: 8 }}>
         This will replace ALL data currently on this phone
       </AppText>
-      <Button label="Replace my data" variant="danger-text" disabled={busy} onPress={onReplace} />
+      <Button label="Replace my data" icon="upload" variant="danger-text" disabled={busy} onPress={onReplace} />
     </View>
   );
 }

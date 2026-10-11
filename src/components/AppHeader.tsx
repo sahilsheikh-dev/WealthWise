@@ -7,6 +7,7 @@ import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { HeaderMenu, type HeaderMenuItem } from './HeaderMenu';
 import { AppText } from './ui';
+import { useAppMenu } from './useAppMenu';
 
 export type AppHeaderAction = {
   icon: keyof typeof Feather.glyphMap;
@@ -26,6 +27,7 @@ export function AppHeader({
   fallbackHref = '/',
   rightActions = [],
   menu,
+  showDefaultMenu,
 }: {
   title: string;
   subtitle?: string;
@@ -34,10 +36,15 @@ export function AppHeader({
   fallbackHref?: '/' | '/(tabs)' | '/assets' | '/liabilities' | '/emergency-fund';
   rightActions?: AppHeaderAction[];
   menu?: AppHeaderMenuItem[];
+  showDefaultMenu?: boolean;
 }) {
   const { colors } = useTheme();
+  const globalMenu = useAppMenu();
   const [menuVisible, setMenuVisible] = useState(false);
-  const menuItems = menu?.map((item) => ({
+  const hasExplicitRightContent = rightActions.length > 0 || menu !== undefined;
+  const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false ? globalMenu : undefined;
+  const visibleMenu = menu ?? defaultMenu;
+  const menuItems = visibleMenu?.map((item) => ({
     ...item,
     onPress: item.onPress,
   }));
@@ -86,7 +93,7 @@ export function AppHeader({
               <Feather name={action.icon} size={20} color={action.destructive ? colors.err : colors.primary} />
             </Pressable>
           ))}
-          {menu ? (
+          {visibleMenu ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="More options"

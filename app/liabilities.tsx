@@ -16,6 +16,7 @@ import {
   StatusBadge,
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
+import { IconButton } from '../src/components/IconButton';
 import { useAppData } from '../src/data/useAppData';
 import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitiesOverview } from '../src/domain/summary';
@@ -65,7 +66,7 @@ export default function LiabilitiesScreen() {
             <StatPill label="Of income" value={overview.emiPctOfIncome === null ? '—' : `${overview.emiPctOfIncome.toFixed(1)}%`} />
           </StatPillRow>
           {overview.incomeSource === 'salary' ? (
-            <AppText style={[typography.meta, { color: colors.text3 }]}>based on your stated salary</AppText>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>based on your stated monthly income</AppText>
           ) : null}
           {hasRecurring ? (
             <>
@@ -101,7 +102,7 @@ export default function LiabilitiesScreen() {
           <>
             <EmptyState title="No liabilities yet" subtitle="Add a liability to track its outstanding balance." />
             <View style={styles.emptyAction}>
-              <Button label="Add a liability" variant="primary" onPress={() => router.push('/liability-form')} />
+              <Button label="Add a liability" icon="plus" variant="primary" onPress={() => router.push('/liability-form')} />
             </View>
           </>
         ) : null}
@@ -131,6 +132,11 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
           <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
           <AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>
         </View>
+        <IconButton
+          icon="edit-2"
+          label={`Edit ${liability.name}`}
+          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+        />
       </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
@@ -162,10 +168,10 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         ...(!summary.cleared ? [{
           label: 'Pay EMI',
           variant: 'primary' as const,
+          icon: 'credit-card' as const,
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }),
         }] : []),
-        { label: `Payments (${liability.payments.length})`, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-        { label: 'Edit', onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }) },
+        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
       ]} />
     </View>
   );
@@ -188,6 +194,11 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
         <View style={styles.amountBlock}>
           <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
         </View>
+        <IconButton
+          icon="edit-2"
+          label={`Edit ${liability.name}`}
+          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+        />
       </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
@@ -206,10 +217,10 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
         ...(!summary.cleared ? [{
           label: 'Pay',
           variant: 'primary' as const,
+          icon: 'credit-card' as const,
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }] : []),
-        { label: `Payments (${liability.payments.length})`, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-        { label: 'Edit', onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }) },
+        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
       ]} />
       {overdue ? <AppText style={[typography.meta, { color: colors.err }]}>This liability is overdue.</AppText> : null}
     </View>

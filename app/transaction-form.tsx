@@ -256,13 +256,13 @@ export default function TransactionFormScreen() {
 
   return (
     <FormScreen
-      title={transactionId ? 'Edit Transaction' : 'Add Transaction'}
+      title="Transaction"
       onClose={requestClose}
+      headerAction={transactionId && (!transaction?.source || linkedEditable)
+        ? { label: 'Delete transaction', onPress: remove }
+        : undefined}
       footer={
         <View style={styles.footerActions}>
-          {transactionId && (!transaction?.source || linkedEditable)
-            ? <Button label="Delete" variant="danger-text" onPress={remove} />
-            : null}
           {submitCount > 0 && errorCount > 0 ? (
             <View style={styles.errorSummary}>
               <AppText style={[typography.meta, { color: colors.err }]}>
@@ -272,6 +272,7 @@ export default function TransactionFormScreen() {
           ) : null}
           <Button
             label="Save"
+            icon="save"
             variant="primary"
             disabled={disabled}
             accessibilityLabel="Save transaction"

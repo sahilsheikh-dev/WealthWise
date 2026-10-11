@@ -232,7 +232,9 @@ export function createAppStore(
           applyDataAction((data) => addGoal(data, input, deps.newId));
         },
         updateGoal(id, patch) {
-          applyDataAction((data) => updateGoal(data, id, patch));
+          applyDataAction((data) => updateGoal(data, id, patch, {
+            expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
+          }));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));

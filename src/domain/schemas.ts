@@ -428,7 +428,7 @@ export function makeLiabilityFormSchema(
 
 export function makeGoalFormSchema(
   today: ISODate,
-  ctx: { otherNames: string[]; locked: boolean; existingYear?: number },
+  ctx: { otherNames: string[]; locked: boolean; existingYear?: number; minTarget?: number },
 ) {
   const year = Number(today.slice(0, 4));
   const yearMessage = `Enter a year between ${year} and ${year + 60}`;
@@ -447,6 +447,13 @@ export function makeGoalFormSchema(
   }).superRefine((value, context) => {
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
+    }
+    if (ctx.locked && (ctx.minTarget ?? 0) > 0 && value.target < (ctx.minTarget ?? 0)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: `Emergency fund target must be at least 3 months of expenses (${formatINR(ctx.minTarget ?? 0)})`,
+      });
     }
   });
 }
@@ -532,7 +539,8 @@ function profileFields() {
       moneyInputSchema({
         minimum: 0.01,
         maximum: 1_000_000_000,
-        maximumMessage: 'Salary must be 1,000,000,000 or less',
+        minimumMessage: 'Monthly income must be greater than zero',
+        maximumMessage: 'Monthly income must be 1,000,000,000 or less',
       }),
     ]).optional().transform((salary) => salary ?? null),
   };

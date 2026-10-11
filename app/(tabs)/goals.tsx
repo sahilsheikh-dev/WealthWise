@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
+import { IconButton } from '../../src/components/IconButton';
 import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
-import { ensureEfGoal, goalProgressPct, goalSaved, goalTotals } from '../../src/domain/goals';
+import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { todayISO } from '../../src/lib/clock';
 import { formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
@@ -18,11 +19,12 @@ export default function GoalsScreen() {
   const data = useAppData();
   const asOf = todayISO();
   const emergencyBalance = efBalance(data.efEntries);
+  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const goals = ensureEfGoal(data.goals, {
-    expenseBaseline: monthlyBaseline(data.transactions, 'expense', asOf),
+    expenseBaseline,
     asOf,
   });
-  const totals = goalTotals(goals, emergencyBalance);
+  const totals = goalTotals(goals, emergencyBalance, expenseBaseline);
 
   return (
     <Screen>
@@ -37,34 +39,53 @@ export default function GoalsScreen() {
       </Card>
       <SectionTitle>Active Goals</SectionTitle>
       {goals.map((goal) => {
-        const saved = goalSaved(goal, emergencyBalance);
-        const goalPercent = goalProgressPct(goal, saved);
+        const view = goalView(goal, { emergencyBalance, expenseBaseline });
+        const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         return (
-          <Pressable
-            key={goal.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}`}
-            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
-              <View style={styles.nameBlock}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${goal.name}`}
+                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+                style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  Target {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
+                  Target {formatINRShort(target)} · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
                 </AppText>
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
-              </View>
+              </Pressable>
+              <IconButton
+                icon="edit-2"
+                label={`Edit ${goal.name}`}
+                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+              />
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
             <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
               <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, target - saved))} left</AppText>
             </View>
-          </Pressable>
+            {goal.auto === 'ef' ? (
+              <>
+                <AppText style={[typography.meta, styles.minimum, { color: colors.text3 }]}>
+                  Minimum 3 months of expenses: {formatINRShort(view.minimum ?? 0)}
+                </AppText>
+                {expenseBaseline > 0 ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    Based on an average of {formatINRShort(expenseBaseline)} monthly expenses
+                  </AppText>
+                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>}
+                {view.raised ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
+                ) : null}
+              </>
+            ) : null}
+          </View>
         );
       })}
     </Screen>
@@ -79,4 +100,5 @@ const styles = StyleSheet.create({
   nameBlock: { flex: 1, minWidth: 0, gap: 3 },
   percentage: { fontSize: 12 },
   amounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  minimum: { marginTop: 7 },
 });

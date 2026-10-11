@@ -1,4 +1,4 @@
-export type HomeMenuItem = {
+export type AppMenuItem = {
   label: string;
   description?: string;
   icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit';
@@ -6,7 +6,7 @@ export type HomeMenuItem = {
   disabled?: boolean;
 };
 
-export function buildHomeMenu({
+export function buildAppMenu({
   hasUnlinked,
   isDev,
   themeLabel,
@@ -14,8 +14,8 @@ export function buildHomeMenu({
   hasUnlinked: boolean;
   isDev: boolean;
   themeLabel: string;
-}): HomeMenuItem[] {
-  const items: HomeMenuItem[] = [
+}): AppMenuItem[] {
+  const items: AppMenuItem[] = [
     { label: 'Backup and restore', icon: 'download' },
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },
