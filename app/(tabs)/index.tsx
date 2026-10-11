@@ -29,10 +29,10 @@ import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export const HOME_QUICK_ACTIONS = [
-  { id: 'transaction', label: 'Add transaction', icon: 'plus' },
-  { id: 'investment', label: 'New investment', icon: 'trending-up' },
-  { id: 'liability', label: 'New liability', icon: 'credit-card' },
-  { id: 'emergency-fund', label: 'Log emergency fund', icon: 'shield' },
+  { id: 'transaction', label: 'Add Transaction', icon: 'file-plus' },
+  { id: 'investment', label: 'New Investment', icon: 'trending-up' },
+  { id: 'liability', label: 'New Liability', icon: 'credit-card' },
+  { id: 'emergency-fund', label: 'Log Emergency Fund', icon: 'shield' },
 ] as const;
 const metaStore = createMetaStore(AsyncStorage);
 
@@ -210,12 +210,12 @@ const styles = StyleSheet.create({
   netWorth: { marginTop: 5 },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
-  quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
+  quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   upcomingCard: { gap: 7 },
   dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueRight: { alignItems: 'flex-end', gap: 4 },
-  quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
+  quickAction: { minHeight: 56, flexBasis: '48%', flexGrow: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   goalNameBlock: { flex: 1, minWidth: 0, gap: 3 },

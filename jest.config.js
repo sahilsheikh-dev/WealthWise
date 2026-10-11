@@ -13,6 +13,11 @@ module.exports = {
     'src/lib/authenticate.ts',
     'src/lib/savingsLine.ts',
     'src/lib/appMenu.ts',
+    'src/lib/format.ts',
+    'src/lib/friendlyError.ts',
+    'src/lib/greeting.ts',
+    'src/lib/storageGuard.ts',
+    'src/lib/swipe.ts',
   ],
   coverageThreshold: {
     'src/domain/**/*.ts': {
@@ -28,5 +33,10 @@ module.exports = {
     'src/lib/authenticate.ts': { lines: 90, branches: 90 },
     'src/lib/savingsLine.ts': { lines: 90, branches: 90 },
     'src/lib/appMenu.ts': { lines: 90, branches: 90 },
+    'src/lib/format.ts': { lines: 90, branches: 90 },
+    'src/lib/friendlyError.ts': { lines: 90, branches: 90 },
+    'src/lib/greeting.ts': { lines: 90, branches: 90 },
+    'src/lib/storageGuard.ts': { lines: 90, branches: 90 },
+    'src/lib/swipe.ts': { lines: 90, branches: 90 },
   },
 };

@@ -59,6 +59,7 @@ jest.mock('react-native', () => {
     Alert: { alert: jest.fn() },
     Pressable: node('pressable'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    Text: node('text'),
     View: node('view'),
   };
 });
@@ -104,7 +105,7 @@ describe('three-month emergency target screens', () => {
         await Promise.resolve();
       });
       if (!home) throw new Error('Home did not render.');
-      assertNoVerbText(home.root);
+      assertNoVerbText(home.root, { screen: 'home' });
       const homeText = home.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       const goalsRenderer = (() => {
         let renderer: TestRenderer.ReactTestRenderer | undefined;
