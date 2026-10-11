@@ -54,10 +54,12 @@ describe('ef allocation', () => {
 
   it('normalizes partial and invalid allocations and applies set/reset actions', () => {
     expect(effectiveAllocation(null)).toEqual(SUGGESTED_EF_ALLOCATION);
-    expect(effectiveAllocation(undefined as any)).toEqual(SUGGESTED_EF_ALLOCATION);
+    expect(effectiveAllocation(undefined)).toEqual(SUGGESTED_EF_ALLOCATION);
+    expect(effectiveAllocation({})).toEqual(SUGGESTED_EF_ALLOCATION);
     expect(effectiveAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: 20 })).toMatchObject({ cash: 20, bank: 40 });
     expect(validateAllocation(null, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
-    expect(validateAllocation(undefined as any, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
+    expect(validateAllocation(undefined, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
+    expect(validateAllocation(null)).toBe(false);
     expect(validateAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: Number.NaN }, true)).toMatchObject({ valid: false });
 
     const validationSpy = jest.spyOn(efAllocationModule, 'validateAllocation');
@@ -74,35 +76,37 @@ describe('ef allocation', () => {
     expect(updated.efAllocation).toMatchObject({ cash: 20, bank: 30 });
     expect(resetEfAllocation(updated)).toMatchObject({ efAllocation: null });
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(InvalidAllocationError);
+    expect(() => allocateAmounts(100, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(RangeError);
   });
 
-  it('covers the mismatch rounding branch and partial defaults', () => {
-    const originalAbs = Math.abs;
-    let absCalls = 0;
-    const absSpy = jest.spyOn(Math, 'abs').mockImplementation((value: number) => {
-      absCalls += 1;
-      if (absCalls === 1) return 5.01;
-      return 5.02;
-    });
+  it('distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)', () => {
+    const seed = 0x15a110c;
+    let state = seed;
+    const random = () => {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state;
+    };
 
-    try {
-      const mismatched = allocateAmounts(5, { ...SUGGESTED_EF_ALLOCATION, cash: 10, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 });
-      expect(mismatched.cash).toBeGreaterThan(0);
-      expect(mismatched.bank).toBeGreaterThan(0);
-      expect(effectiveAllocation({} as any)).toEqual(SUGGESTED_EF_ALLOCATION);
-      expect(effectiveAllocation({ cash: 20 } as any)).toMatchObject({
-        cash: 20,
-        bank: 40,
-        'fd-rd': 35,
-        'mutual-funds-bonds': 15,
-        stocks: 0,
-        insurance: 0,
-        other: 0,
+    for (let caseIndex = 0; caseIndex < 20_000; caseIndex += 1) {
+      const balancePaise = random() % 10_000_000_001;
+      const cuts = Array.from({ length: EF_BUCKETS.length - 1 }, () => random() % 1001)
+        .sort((left, right) => left - right);
+      const tenths = [0, ...cuts, 1000].slice(1).map((cut, index, all) =>
+        cut - (index === 0 ? 0 : all[index - 1]),
+      );
+      const allocation = EF_BUCKETS.reduce((result, id, index) => {
+        result[id] = tenths[index] / 10;
+        return result;
+      }, { ...SUGGESTED_EF_ALLOCATION });
+      const result = allocateAmounts(balancePaise / 100, allocation);
+      const resultPaise = EF_BUCKETS.map((id) => Math.round(result[id] * 100));
+
+      expect(resultPaise.reduce((sum, amount) => sum + amount, 0)).toBe(balancePaise);
+      expect(resultPaise.every((amount) => amount >= 0)).toBe(true);
+      EF_BUCKETS.forEach((id, index) => {
+        const exactPaise = balancePaise * tenths[index] / 1000;
+        expect(Math.abs(resultPaise[index] - exactPaise)).toBeLessThanOrEqual(1);
       });
-      expect(allocateAmounts(5, {} as any).cash).toBeGreaterThan(0);
-      expect(allocateAmounts(5, { cash: 10 } as any).cash).toBeGreaterThan(0);
-    } finally {
-      absSpy.mockRestore();
     }
   });
 

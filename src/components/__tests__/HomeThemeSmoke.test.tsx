@@ -66,6 +66,7 @@ jest.mock('react-native', () => {
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: object) => styles },
+    Text: node('text'),
     View: node('view'),
   };
 });
@@ -80,7 +81,17 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
+    const labels = ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'];
+    expect(HOME_QUICK_ACTIONS.map((item) => item.label)).toEqual(labels);
     expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
+    expect(Array.from(new Set(
+      renderer.root.findAll((node) => labels.includes(String(node.props.accessibilityLabel))).map((node) =>
+        node.props.accessibilityLabel,
+      ),
+    ))).toEqual(labels);
+    expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toEqual(
+      expect.arrayContaining(labels),
+    );
     assertNoVerbText(renderer.root);
   });
 });
