@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1791692373715" clover="3.2.0">
-  <project timestamp="1791692373715" name="All files">
-    <metrics statements="1460" coveredstatements="1436" conditionals="1380" coveredconditionals="1303" methods="582" coveredmethods="574" elements="3422" coveredelements="3313" complexity="0" loc="1460" ncloc="1460" packages="3" files="34" classes="34"/>
+<coverage generated="1791731095710" clover="3.2.0">
+  <project timestamp="1791731095710" name="All files">
+    <metrics statements="1502" coveredstatements="1478" conditionals="1441" coveredconditionals="1364" methods="589" coveredmethods="581" elements="3532" coveredelements="3423" complexity="0" loc="1502" ncloc="1502" packages="3" files="39" classes="39"/>
     <package name="data">
       <metrics statements="261" coveredstatements="249" conditionals="196" coveredconditionals="177" methods="107" coveredmethods="105"/>
       <file name="createAppStore.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/data/createAppStore.ts">
@@ -279,11 +279,11 @@
       </file>
     </package>
     <package name="domain">
-      <metrics statements="1150" coveredstatements="1138" conditionals="1131" coveredconditionals="1073" methods="464" coveredmethods="458"/>
+      <metrics statements="1145" coveredstatements="1133" conditionals="1133" coveredconditionals="1075" methods="460" coveredmethods="454"/>
       <file name="actions.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/actions.ts">
         <metrics statements="21" coveredstatements="21" conditionals="14" coveredconditionals="14" methods="13" coveredmethods="13"/>
-        <line num="7" count="30" type="stmt"/>
-        <line num="8" count="30" type="stmt"/>
+        <line num="7" count="31" type="stmt"/>
+        <line num="8" count="31" type="stmt"/>
         <line num="13" count="130" type="stmt"/>
         <line num="29" count="9" type="stmt"/>
         <line num="30" count="8" type="stmt"/>
@@ -390,8 +390,8 @@
       </file>
       <file name="backupNudge.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/backupNudge.ts">
         <metrics statements="6" coveredstatements="6" conditionals="9" coveredconditionals="9" methods="1" coveredmethods="1"/>
-        <line num="10" count="62" type="cond" truecount="5" falsecount="0"/>
-        <line num="11" count="58" type="stmt"/>
+        <line num="10" count="68" type="cond" truecount="5" falsecount="0"/>
+        <line num="11" count="64" type="stmt"/>
         <line num="13" count="4" type="cond" truecount="2" falsecount="0"/>
         <line num="14" count="2" type="stmt"/>
         <line num="15" count="2" type="stmt"/>
@@ -425,7 +425,7 @@
         <line num="50" count="7978" type="stmt"/>
         <line num="54" count="7298" type="stmt"/>
         <line num="58" count="680" type="stmt"/>
-        <line num="62" count="207" type="stmt"/>
+        <line num="62" count="213" type="stmt"/>
         <line num="66" count="3" type="cond" truecount="1" falsecount="1"/>
         <line num="67" count="3" type="stmt"/>
         <line num="68" count="3" type="cond" truecount="4" falsecount="0"/>
@@ -434,28 +434,28 @@
       </file>
       <file name="ef.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/ef.ts">
         <metrics statements="25" coveredstatements="25" conditionals="22" coveredconditionals="22" methods="14" coveredmethods="14"/>
-        <line num="5" count="181" type="stmt"/>
+        <line num="5" count="193" type="stmt"/>
         <line num="11" count="23" type="stmt"/>
         <line num="12" count="23" type="stmt"/>
         <line num="13" count="5" type="stmt"/>
         <line num="14" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="16" count="5" type="stmt"/>
         <line num="17" count="5" type="stmt"/>
-        <line num="28" count="123" type="stmt"/>
-        <line num="29" count="123" type="stmt"/>
-        <line num="30" count="123" type="cond" truecount="2" falsecount="0"/>
-        <line num="31" count="123" type="stmt"/>
+        <line num="28" count="129" type="stmt"/>
+        <line num="29" count="129" type="stmt"/>
+        <line num="30" count="129" type="cond" truecount="2" falsecount="0"/>
+        <line num="31" count="129" type="stmt"/>
         <line num="32" count="98" type="cond" truecount="2" falsecount="0"/>
         <line num="33" count="86" type="cond" truecount="2" falsecount="0"/>
         <line num="34" count="82" type="stmt"/>
         <line num="35" count="82" type="cond" truecount="2" falsecount="0"/>
-        <line num="37" count="123" type="stmt"/>
-        <line num="38" count="123" type="stmt"/>
-        <line num="39" count="123" type="cond" truecount="2" falsecount="0"/>
+        <line num="37" count="129" type="stmt"/>
+        <line num="38" count="129" type="stmt"/>
+        <line num="39" count="129" type="cond" truecount="2" falsecount="0"/>
         <line num="41" count="4" type="stmt"/>
-        <line num="42" count="123" type="cond" truecount="2" falsecount="0"/>
+        <line num="42" count="129" type="cond" truecount="2" falsecount="0"/>
         <line num="43" count="71" type="stmt"/>
-        <line num="47" count="83" type="cond" truecount="2" falsecount="0"/>
+        <line num="47" count="89" type="cond" truecount="2" falsecount="0"/>
         <line num="57" count="24" type="stmt"/>
         <line num="58" count="68" type="cond" truecount="2" falsecount="0"/>
         <line num="61" count="68" type="cond" truecount="2" falsecount="0"/>
@@ -500,75 +500,70 @@
         <line num="104" count="11" type="cond" truecount="2" falsecount="0"/>
       </file>
       <file name="efAllocation.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/efAllocation.ts">
-        <metrics statements="60" coveredstatements="60" conditionals="30" coveredconditionals="28" methods="16" coveredmethods="16"/>
-        <line num="1" count="2" type="stmt"/>
-        <line num="15" count="2" type="stmt"/>
-        <line num="16" count="2" type="stmt"/>
-        <line num="17" count="2" type="stmt"/>
-        <line num="19" count="2" type="stmt"/>
-        <line num="34" count="2" type="stmt"/>
-        <line num="80" count="17" type="cond" truecount="1" falsecount="1"/>
-        <line num="81" count="17" type="stmt"/>
-        <line num="82" count="119" type="cond" truecount="2" falsecount="0"/>
-        <line num="83" count="119" type="stmt"/>
-        <line num="88" count="11" type="cond" truecount="2" falsecount="0"/>
-        <line num="92" count="6" type="stmt"/>
-        <line num="93" count="6" type="stmt"/>
-        <line num="94" count="42" type="stmt"/>
-        <line num="95" count="6" type="stmt"/>
-        <line num="96" count="168" type="stmt"/>
-        <line num="97" count="42" type="stmt"/>
-        <line num="98" count="42" type="stmt"/>
-        <line num="100" count="42" type="stmt"/>
-        <line num="101" count="6" type="stmt"/>
-        <line num="102" count="42" type="stmt"/>
-        <line num="106" count="65" type="stmt"/>
-        <line num="108" count="6" type="stmt"/>
-        <line num="109" count="7" type="stmt"/>
-        <line num="110" count="7" type="stmt"/>
-        <line num="113" count="6" type="stmt"/>
-        <line num="114" count="42" type="stmt"/>
-        <line num="115" count="42" type="stmt"/>
-        <line num="117" count="42" type="stmt"/>
-        <line num="118" count="6" type="stmt"/>
-        <line num="119" count="6" type="stmt"/>
-        <line num="120" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="121" count="1" type="stmt"/>
-        <line num="122" count="1" type="stmt"/>
-        <line num="124" count="6" type="stmt"/>
-        <line num="131" count="13" type="cond" truecount="2" falsecount="0"/>
-        <line num="132" count="3" type="stmt"/>
-        <line num="133" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="136" count="70" type="cond" truecount="2" falsecount="0"/>
-        <line num="137" count="10" type="stmt"/>
-        <line num="138" count="10" type="stmt"/>
-        <line num="139" count="70" type="cond" truecount="6" falsecount="0"/>
-        <line num="140" count="6" type="stmt"/>
-        <line num="144" count="70" type="stmt"/>
-        <line num="145" count="10" type="cond" truecount="2" falsecount="0"/>
-        <line num="146" count="3" type="stmt"/>
-        <line num="149" count="10" type="stmt"/>
-        <line num="150" count="10" type="stmt"/>
-        <line num="151" count="10" type="cond" truecount="2" falsecount="0"/>
-        <line num="155" count="5" type="stmt"/>
-        <line num="156" count="5" type="stmt"/>
-        <line num="157" count="5" type="stmt"/>
-        <line num="158" count="5" type="stmt"/>
-        <line num="159" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="160" count="1" type="stmt"/>
-        <line num="162" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="163" count="1" type="stmt"/>
-        <line num="165" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="166" count="1" type="stmt"/>
-        <line num="168" count="5" type="stmt"/>
+        <metrics statements="55" coveredstatements="55" conditionals="32" coveredconditionals="30" methods="12" coveredmethods="12"/>
+        <line num="1" count="3" type="stmt"/>
+        <line num="15" count="3" type="stmt"/>
+        <line num="16" count="3" type="stmt"/>
+        <line num="17" count="3" type="stmt"/>
+        <line num="19" count="3" type="stmt"/>
+        <line num="34" count="3" type="stmt"/>
+        <line num="80" count="20012" type="cond" truecount="2" falsecount="0"/>
+        <line num="81" count="20012" type="stmt"/>
+        <line num="82" count="140084" type="cond" truecount="1" falsecount="1"/>
+        <line num="83" count="140084" type="stmt"/>
+        <line num="88" count="8" type="stmt"/>
+        <line num="92" count="20004" type="stmt"/>
+        <line num="93" count="20004" type="stmt"/>
+        <line num="94" count="20004" type="cond" truecount="2" falsecount="0"/>
+        <line num="95" count="1" type="stmt"/>
+        <line num="98" count="20003" type="stmt"/>
+        <line num="99" count="140021" type="stmt"/>
+        <line num="100" count="140021" type="stmt"/>
+        <line num="102" count="140021" type="stmt"/>
+        <line num="103" count="20003" type="stmt"/>
+        <line num="104" count="242251" type="cond" truecount="2" falsecount="0"/>
+        <line num="106" count="20003" type="stmt"/>
+        <line num="107" count="81446" type="cond" truecount="2" falsecount="0"/>
+        <line num="108" count="61443" type="stmt"/>
+        <line num="109" count="61443" type="stmt"/>
+        <line num="110" count="61443" type="stmt"/>
+        <line num="113" count="20003" type="stmt"/>
+        <line num="114" count="140021" type="stmt"/>
+        <line num="115" count="140021" type="stmt"/>
+        <line num="117" count="20003" type="stmt"/>
+        <line num="124" count="20015" type="cond" truecount="2" falsecount="0"/>
+        <line num="125" count="1" type="stmt"/>
+        <line num="126" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="129" count="140098" type="cond" truecount="2" falsecount="0"/>
+        <line num="130" count="20014" type="stmt"/>
+        <line num="131" count="20014" type="stmt"/>
+        <line num="132" count="140098" type="cond" truecount="6" falsecount="0"/>
+        <line num="133" count="6" type="stmt"/>
+        <line num="137" count="140098" type="stmt"/>
+        <line num="138" count="20014" type="cond" truecount="2" falsecount="0"/>
+        <line num="139" count="4" type="stmt"/>
+        <line num="142" count="20014" type="stmt"/>
+        <line num="143" count="20014" type="stmt"/>
+        <line num="144" count="20014" type="cond" truecount="2" falsecount="0"/>
+        <line num="148" count="5" type="stmt"/>
+        <line num="149" count="5" type="stmt"/>
+        <line num="150" count="5" type="stmt"/>
+        <line num="151" count="5" type="stmt"/>
+        <line num="152" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="153" count="1" type="stmt"/>
+        <line num="155" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="156" count="1" type="stmt"/>
+        <line num="158" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="159" count="1" type="stmt"/>
+        <line num="161" count="5" type="stmt"/>
       </file>
       <file name="efAllocationActions.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/efAllocationActions.ts">
         <metrics statements="9" coveredstatements="9" conditionals="9" coveredconditionals="9" methods="3" coveredmethods="3"/>
         <line num="6" count="5" type="stmt"/>
         <line num="7" count="5" type="stmt"/>
-        <line num="12" count="6" type="stmt"/>
-        <line num="14" count="6" type="cond" truecount="4" falsecount="0"/>
-        <line num="15" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="12" count="5" type="stmt"/>
+        <line num="14" count="5" type="cond" truecount="4" falsecount="0"/>
+        <line num="15" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="18" count="2" type="cond" truecount="2" falsecount="0"/>
         <line num="19" count="1" type="stmt"/>
         <line num="22" count="1" type="stmt"/>
@@ -576,10 +571,10 @@
       </file>
       <file name="goalActions.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/goalActions.ts">
         <metrics statements="19" coveredstatements="19" conditionals="24" coveredconditionals="24" methods="9" coveredmethods="9"/>
-        <line num="8" count="7" type="stmt"/>
-        <line num="9" count="7" type="stmt"/>
-        <line num="15" count="2" type="stmt"/>
-        <line num="16" count="2" type="stmt"/>
+        <line num="8" count="8" type="stmt"/>
+        <line num="9" count="8" type="stmt"/>
+        <line num="15" count="3" type="stmt"/>
+        <line num="16" count="3" type="stmt"/>
         <line num="24" count="3" type="stmt"/>
         <line num="25" count="3" type="stmt"/>
         <line num="34" count="16" type="stmt"/>
@@ -598,28 +593,28 @@
       </file>
       <file name="goals.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/goals.ts">
         <metrics statements="26" coveredstatements="26" conditionals="18" coveredconditionals="17" methods="17" coveredmethods="17"/>
-        <line num="4" count="17" type="stmt"/>
-        <line num="7" count="163" type="cond" truecount="2" falsecount="0"/>
-        <line num="14" count="148" type="stmt"/>
-        <line num="15" count="148" type="stmt"/>
-        <line num="23" count="157" type="cond" truecount="2" falsecount="0"/>
+        <line num="4" count="18" type="stmt"/>
+        <line num="7" count="169" type="cond" truecount="2" falsecount="0"/>
+        <line num="14" count="154" type="stmt"/>
+        <line num="15" count="154" type="stmt"/>
+        <line num="23" count="163" type="cond" truecount="2" falsecount="0"/>
         <line num="27" count="135" type="cond" truecount="2" falsecount="0"/>
-        <line num="36" count="236" type="stmt"/>
-        <line num="39" count="236" type="cond" truecount="2" falsecount="0"/>
-        <line num="40" count="101" type="stmt"/>
-        <line num="41" count="106" type="stmt"/>
+        <line num="36" count="242" type="stmt"/>
+        <line num="39" count="242" type="cond" truecount="2" falsecount="0"/>
+        <line num="40" count="107" type="stmt"/>
+        <line num="41" count="112" type="stmt"/>
         <line num="43" count="135" type="stmt"/>
         <line num="44" count="135" type="cond" truecount="2" falsecount="0"/>
         <line num="45" count="1" type="stmt"/>
         <line num="46" count="2" type="stmt"/>
         <line num="48" count="134" type="stmt"/>
         <line num="56" count="134" type="stmt"/>
-        <line num="59" count="236" type="stmt"/>
+        <line num="59" count="242" type="stmt"/>
         <line num="63" count="9" type="cond" truecount="2" falsecount="0"/>
-        <line num="72" count="152" type="stmt"/>
-        <line num="73" count="152" type="cond" truecount="2" falsecount="0"/>
-        <line num="74" count="146" type="stmt"/>
-        <line num="75" count="146" type="stmt"/>
+        <line num="72" count="158" type="stmt"/>
+        <line num="73" count="158" type="cond" truecount="2" falsecount="0"/>
+        <line num="74" count="152" type="stmt"/>
+        <line num="75" count="152" type="stmt"/>
         <line num="89" count="24" type="stmt"/>
         <line num="90" count="25" type="stmt"/>
         <line num="91" count="25" type="stmt"/>
@@ -1206,18 +1201,18 @@
         <line num="230" count="7" type="stmt"/>
         <line num="239" count="13" type="cond" truecount="2" falsecount="0"/>
         <line num="244" count="6" type="stmt"/>
-        <line num="252" count="62" type="stmt"/>
-        <line num="253" count="62" type="cond" truecount="2" falsecount="0"/>
-        <line num="254" count="60" type="stmt"/>
-        <line num="255" count="60" type="stmt"/>
+        <line num="252" count="68" type="stmt"/>
+        <line num="253" count="68" type="cond" truecount="2" falsecount="0"/>
+        <line num="254" count="66" type="stmt"/>
+        <line num="255" count="66" type="stmt"/>
         <line num="256" count="8" type="cond" truecount="2" falsecount="0"/>
         <line num="257" count="7" type="stmt"/>
         <line num="258" count="23" type="stmt"/>
-        <line num="261" count="60" type="stmt"/>
+        <line num="261" count="66" type="stmt"/>
         <line num="262" count="3" type="stmt"/>
         <line num="263" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="264" count="2" type="stmt"/>
-        <line num="272" count="60" type="stmt"/>
+        <line num="272" count="66" type="stmt"/>
         <line num="273" count="52" type="cond" truecount="4" falsecount="0"/>
       </file>
       <file name="schemas.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/schemas.ts">
@@ -1449,16 +1444,16 @@
       </file>
       <file name="summary.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/domain/summary.ts">
         <metrics statements="27" coveredstatements="27" conditionals="16" coveredconditionals="16" methods="15" coveredmethods="15"/>
-        <line num="16" count="61" type="stmt"/>
-        <line num="18" count="61" type="stmt"/>
+        <line num="16" count="67" type="stmt"/>
+        <line num="18" count="67" type="stmt"/>
         <line num="19" count="4" type="stmt"/>
-        <line num="20" count="61" type="stmt"/>
-        <line num="33" count="57" type="stmt"/>
-        <line num="34" count="57" type="stmt"/>
-        <line num="35" count="57" type="cond" truecount="2" falsecount="0"/>
-        <line num="36" count="57" type="stmt"/>
-        <line num="37" count="58" type="stmt"/>
-        <line num="39" count="57" type="stmt"/>
+        <line num="20" count="67" type="stmt"/>
+        <line num="33" count="63" type="stmt"/>
+        <line num="34" count="63" type="stmt"/>
+        <line num="35" count="63" type="cond" truecount="2" falsecount="0"/>
+        <line num="36" count="63" type="stmt"/>
+        <line num="37" count="64" type="stmt"/>
+        <line num="39" count="63" type="stmt"/>
         <line num="57" count="6" type="stmt"/>
         <line num="59" count="6" type="stmt"/>
         <line num="60" count="6" type="stmt"/>
@@ -1507,7 +1502,7 @@
       </file>
     </package>
     <package name="lib">
-      <metrics statements="49" coveredstatements="49" conditionals="53" coveredconditionals="53" methods="11" coveredmethods="11"/>
+      <metrics statements="96" coveredstatements="96" conditionals="112" coveredconditionals="112" methods="22" coveredmethods="22"/>
       <file name="appMenu.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/appMenu.ts">
         <metrics statements="6" coveredstatements="6" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
         <line num="18" count="5" type="stmt"/>
@@ -1532,6 +1527,45 @@
         <line num="40" count="4" type="stmt"/>
         <line num="45" count="3" type="stmt"/>
         <line num="48" count="1" type="stmt"/>
+      </file>
+      <file name="format.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/format.ts">
+        <metrics statements="18" coveredstatements="18" conditionals="14" coveredconditionals="14" methods="5" coveredmethods="5"/>
+        <line num="3" count="22" type="stmt"/>
+        <line num="17" count="22" type="stmt"/>
+        <line num="33" count="705" type="cond" truecount="2" falsecount="0"/>
+        <line num="34" count="314" type="stmt"/>
+        <line num="35" count="314" type="stmt"/>
+        <line num="36" count="314" type="stmt"/>
+        <line num="40" count="705" type="stmt"/>
+        <line num="41" count="705" type="cond" truecount="2" falsecount="0"/>
+        <line num="42" count="705" type="stmt"/>
+        <line num="46" count="551" type="stmt"/>
+        <line num="47" count="551" type="cond" truecount="2" falsecount="0"/>
+        <line num="48" count="551" type="cond" truecount="2" falsecount="0"/>
+        <line num="49" count="547" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="455" type="stmt"/>
+        <line num="54" count="18" type="stmt"/>
+        <line num="55" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="59" count="9" type="stmt"/>
+        <line num="60" count="9" type="cond" truecount="2" falsecount="0"/>
+      </file>
+      <file name="friendlyError.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/friendlyError.ts">
+        <metrics statements="9" coveredstatements="9" conditionals="20" coveredconditionals="20" methods="1" coveredmethods="1"/>
+        <line num="6" count="11" type="cond" truecount="2" falsecount="0"/>
+        <line num="7" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="8" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="9" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="10" count="7" type="cond" truecount="6" falsecount="0"/>
+        <line num="11" count="4" type="stmt"/>
+        <line num="12" count="4" type="cond" truecount="4" falsecount="0"/>
+        <line num="13" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="15" count="4" type="stmt"/>
+      </file>
+      <file name="greeting.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/greeting.ts">
+        <metrics statements="3" coveredstatements="3" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
+        <line num="2" count="68" type="cond" truecount="2" falsecount="0"/>
+        <line num="3" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="4" count="2" type="stmt"/>
       </file>
       <file name="lockPolicy.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/lockPolicy.ts">
         <metrics statements="11" coveredstatements="11" conditionals="16" coveredconditionals="16" methods="2" coveredmethods="2"/>
@@ -1571,6 +1605,29 @@
         <line num="46" count="2" type="stmt"/>
         <line num="47" count="2" type="stmt"/>
         <line num="50" count="1" type="stmt"/>
+      </file>
+      <file name="storageGuard.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/storageGuard.ts">
+        <metrics statements="10" coveredstatements="10" conditionals="12" coveredconditionals="12" methods="3" coveredmethods="3"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="5" count="2" type="stmt"/>
+        <line num="9" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="10" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="11" count="1" type="stmt"/>
+        <line num="15" count="7" type="cond" truecount="4" falsecount="0"/>
+        <line num="16" count="7" type="cond" truecount="4" falsecount="0"/>
+        <line num="17" count="7" type="stmt"/>
+        <line num="18" count="7" type="stmt"/>
+      </file>
+      <file name="swipe.ts" path="/Users/sahilaspaksheikh/Workspaces/Rebdek/Clients/Wealth-Wise/WealthWise/src/lib/swipe.ts">
+        <metrics statements="7" coveredstatements="7" conditionals="9" coveredconditionals="9" methods="1" coveredmethods="1"/>
+        <line num="4" count="9" type="stmt"/>
+        <line num="5" count="9" type="stmt"/>
+        <line num="6" count="9" type="stmt"/>
+        <line num="8" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="9" count="6" type="cond" truecount="3" falsecount="0"/>
+        <line num="10" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="11" count="4" type="cond" truecount="2" falsecount="0"/>
       </file>
     </package>
   </project>

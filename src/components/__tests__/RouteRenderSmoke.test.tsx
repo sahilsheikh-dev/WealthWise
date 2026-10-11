@@ -15,6 +15,48 @@ import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
+const mockData = {
+  settings: { name: 'Demo', theme: 'system', monthlySalary: 40000, onboarded: true },
+  transactions: [],
+  goals: [],
+  holdings: [],
+  liabilities: [],
+  efEntries: [],
+};
+
+const mockStoreState = {
+  data: mockData,
+  lastError: null,
+  undoImport: null,
+  actions: {
+    replaceAllData: jest.fn(async () => ({ ok: true })),
+    undoImport: jest.fn(async () => ({ ok: true })),
+    addGoal: jest.fn(),
+    updateGoal: jest.fn(),
+    deleteGoal: jest.fn(),
+    addTransaction: jest.fn(),
+    updateTransaction: jest.fn(),
+    deleteTransaction: jest.fn(),
+    addEfEntry: jest.fn(),
+    updateEfEntry: jest.fn(),
+    deleteEfEntry: jest.fn(),
+    addLiability: jest.fn(),
+    updateLiability: jest.fn(),
+    deleteLiability: jest.fn(),
+    addLiabilityPayment: jest.fn(),
+    updateLiabilityPayment: jest.fn(),
+    deleteLiabilityPayment: jest.fn(),
+    addHolding: jest.fn(),
+    updateHolding: jest.fn(),
+    deleteHolding: jest.fn(),
+    addInvestmentEntry: jest.fn(),
+    updateInvestmentEntry: jest.fn(),
+    deleteInvestmentEntry: jest.fn(),
+    completeOnboarding: jest.fn(),
+    updateSettings: jest.fn(),
+  },
+};
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
