@@ -32,6 +32,8 @@ Schema precondition: `SCHEMA_VERSION = 4` in `src/domain/schemas.ts` (verified b
 - The two prior lint warnings were `mockStoreState` in `src/components/__tests__/RouteRenderSmoke.test.tsx` and `originalAbs` in `src/domain/__tests__/efAllocation.test.ts`. The unused smoke-test mock was removed; the allocation test was replaced by the seeded property test. The final `npx expo lint` run reports no warnings.
 - `jest.setup.js` provides `ExpoModulesCoreJSLogger.addListener` for Expo Modules Core's JS logger bootstrap. Jest does not provide the native Expo logger module; the setup makes the native bridge surface available to the test environment without changing app runtime behavior.
 - The full coverage suite first exposed a real smoke-fixture failure: the `react-native` test mocks omitted `Text`, which made `IconButton` render an undefined element. `Text` was added to the mocks in `HomeThemeSmoke.test.tsx` and `EmergencyGoalScreens.test.tsx`; Home's exact action labels were also corrected to match the existing verb-text policy.
+- Final Part A gates: two consecutive `npm test -- --coverage` runs passed (301 tests / 44 suites); `npx tsc --noEmit`, `npx expo lint`, Android/iOS exports and `npx expo-doctor` all exited 0. Expo lint emitted no warnings. Expo Doctor reported “21/21 checks passed. No issues detected!”
+- Coverage collection now explicitly includes ten pure `src/lib` modules; thresholds are all 90% lines and branches. Formatting/storage helper test cases were added to satisfy measured branch coverage instead of weakening thresholds.
 
 ### Allocation proof
 
@@ -46,7 +48,7 @@ The valid-allocation distribution was changed to largest-remainder arithmetic ov
 
 | Part | Status | Files | Test names / counts / coverage |
 |---|---|---|---|
-| A — Phase 14 audit and allocation proof | Done | `docs/PROGRESS.md`; `src/domain/efAllocation.ts`; `src/domain/__tests__/efAllocation.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx`; `src/components/__tests__/HomeThemeSmoke.test.tsx`; `src/components/__tests__/EmergencyGoalScreens.test.tsx`; `app/(tabs)/index.tsx`; `src/components/IconButton.tsx` | `distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)`; Home theme smoke action assertions; two consecutive full runs: 297/297 tests, 43/43 suites. Coverage: domain 98.95% lines / 95.06% branches; data 95.40% / 90.31%; collected pure lib 100% / 100%. |
+| A — Phase 14 audit and allocation proof | Done | `docs/PROGRESS.md`; `jest.config.js`; `src/domain/efAllocation.ts`; `src/domain/__tests__/efAllocation.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx`; `src/components/__tests__/HomeThemeSmoke.test.tsx`; `src/components/__tests__/EmergencyGoalScreens.test.tsx`; `src/lib/format.ts`; `src/lib/storageGuard.ts`; `src/lib/__tests__/format.test.ts`; `src/lib/__tests__/storageGuard.test.ts`; `src/lib/__tests__/swipe.test.ts`; `src/lib/__tests__/friendlyError.test.ts`; `app/(tabs)/index.tsx`; `src/components/IconButton.tsx` | `distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)`; Home theme smoke action assertions; swipe/storage/friendly-error/format tests; two consecutive full runs: 301/301 tests, 44/44 suites. Coverage: domain 98.95% lines / 95.06% branches; data 95.40% / 90.31%; pure lib 100% / 100%. Commits: `a89fa2a` and Part A gate follow-up. |
 | B — Phase 14 UI refinements | Pending | — | — |
 | C — SIP date clarity and emergency-fund cards | Pending | — | — |
 | D — Schema v5 migration | Pending | — | — |
