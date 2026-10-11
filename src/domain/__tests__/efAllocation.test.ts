@@ -88,7 +88,7 @@ describe('ef allocation', () => {
     };
 
     for (let caseIndex = 0; caseIndex < 20_000; caseIndex += 1) {
-      const balancePaise = random() % 10_000_000_001;
+      const balancePaise = ((random() & 0x1fffff) * 0x1_0000_0000 + random()) % 10_000_000_001;
       const cuts = Array.from({ length: EF_BUCKETS.length - 1 }, () => random() % 1001)
         .sort((left, right) => left - right);
       const tenths = [0, ...cuts, 1000].slice(1).map((cut, index, all) =>
