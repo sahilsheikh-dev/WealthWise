@@ -137,6 +137,20 @@ export type Settings = {
   onboarded: boolean;
 };
 
+export const EF_BUCKETS = [
+  'cash',
+  'bank',
+  'fd-rd',
+  'mutual-funds-bonds',
+  'stocks',
+  'insurance',
+  'other',
+] as const;
+
+export type EfBucketId = (typeof EF_BUCKETS)[number];
+
+export type EfAllocation = Record<EfBucketId, number>;
+
 export type AppData = {
   settings: Settings;
   transactions: Transaction[];
@@ -144,4 +158,5 @@ export type AppData = {
   holdings: Holding[];
   liabilities: Liability[];
   efEntries: EfEntry[];
+  efAllocation?: EfAllocation | null;
 };

@@ -5,7 +5,7 @@ import { addDays, isValidISO } from './dates';
 import { emiCoversInterest } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -145,6 +145,19 @@ const settingsSchema = z.object({
   onboarded: z.boolean(),
 });
 
+const efAllocationSchema = z.object({
+  cash: z.number().min(0).max(100).step(0.1),
+  bank: z.number().min(0).max(100).step(0.1),
+  'fd-rd': z.number().min(0).max(100).step(0.1),
+  'mutual-funds-bonds': z.number().min(0).max(100).step(0.1),
+  stocks: z.number().min(0).max(100).step(0.1),
+  insurance: z.number().min(0).max(100).step(0.1),
+  other: z.number().min(0).max(100).step(0.1),
+}).refine((allocation) => {
+  const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
+  return Math.abs(total - 100) < 0.0001;
+}, { message: 'Percentages must add up to 100%', path: ['total'] }).nullable().optional();
+
 export const appDataSchema = z.object({
   settings: settingsSchema,
   transactions: z.array(transactionSchema),
@@ -152,6 +165,7 @@ export const appDataSchema = z.object({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   efEntries: z.array(efEntrySchema),
+  efAllocation: efAllocationSchema,
 });
 
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;

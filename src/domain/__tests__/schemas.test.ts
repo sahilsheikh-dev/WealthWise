@@ -25,9 +25,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version three', () => {
+  it('accepts the typed mock app data and exports schema version four', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(3);
+    expect(SCHEMA_VERSION).toBe(4);
   });
 
   describe('onboarding and profile schemas', () => {

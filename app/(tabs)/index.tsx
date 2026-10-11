@@ -32,7 +32,7 @@ export const HOME_QUICK_ACTIONS = [
   { id: 'transaction', label: 'Add transaction', icon: 'plus' },
   { id: 'investment', label: 'New investment', icon: 'trending-up' },
   { id: 'liability', label: 'New liability', icon: 'credit-card' },
-  { id: 'emergency-fund', label: 'Log emergency fund entry', icon: 'shield' },
+  { id: 'emergency-fund', label: 'Log emergency fund', icon: 'shield' },
 ] as const;
 const metaStore = createMetaStore(AsyncStorage);
 
@@ -104,6 +104,7 @@ export default function HomeScreen() {
             <IconButton
               icon={action.icon}
               label={action.label}
+              labelPosition="below"
               onPress={() => {
               if (action.id === 'transaction') {
                 router.push('/transaction-form');
@@ -175,11 +176,6 @@ export default function HomeScreen() {
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
               </Pressable>
-              <IconButton
-                icon="edit-2"
-                label={`Edit ${goal.name}`}
-                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-              />
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
             <ProgressBar percent={pct} />

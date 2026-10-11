@@ -40,8 +40,8 @@ describe('createSafeStorage', () => {
   it.each([
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
-    ['invalid-schema', blob({ transactions: [] }, 3), 'corrupt'],
-    ['newer-version', blob(mockAppData, 4), 'newer-version'],
+    ['invalid-schema', blob({ transactions: [] }, 4), 'corrupt'],
+    ['newer-version', blob(mockAppData, 5), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
