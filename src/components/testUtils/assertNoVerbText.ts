@@ -16,8 +16,24 @@ function flattenText(node: ReactTestInstance): string {
   ).join('');
 }
 
-export function assertNoVerbText(tree: ReactTestInstance): void {
-  const allowed = new Set<string>([...TEXT_ACTIONS_ALLOWED, ...EMPTY_STATE_CTA_TEXTS]);
+const HOME_QUICK_ACTIONS = new Set([
+  'Add Transaction',
+  'New Investment',
+  'New Liability',
+  'Log Emergency Fund',
+]);
+
+export function assertNoVerbText(
+  tree: ReactTestInstance,
+  options: { screen?: 'home' } = {},
+): void {
+  const allowed = new Set<string>([
+    ...TEXT_ACTIONS_ALLOWED.filter((text) => !HOME_QUICK_ACTIONS.has(text)),
+    ...EMPTY_STATE_CTA_TEXTS,
+  ]);
+  if (options.screen === 'home') {
+    for (const label of HOME_QUICK_ACTIONS) allowed.add(label);
+  }
   const textNodes = new Set(tree.findAll((node) => node.type === 'text').map(flattenText));
   const forbidden = [...textNodes].filter((text) => {
     const value = text.trim();

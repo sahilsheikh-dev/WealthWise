@@ -105,7 +105,7 @@ describe('three-month emergency target screens', () => {
         await Promise.resolve();
       });
       if (!home) throw new Error('Home did not render.');
-      assertNoVerbText(home.root);
+      assertNoVerbText(home.root, { screen: 'home' });
       const homeText = home.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       const goalsRenderer = (() => {
         let renderer: TestRenderer.ReactTestRenderer | undefined;

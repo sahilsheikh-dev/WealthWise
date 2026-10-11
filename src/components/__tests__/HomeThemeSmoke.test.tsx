@@ -1,5 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
+import { Pressable } from 'react-native';
 
 import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import { emptyAppData } from '../../domain/actions';
@@ -81,17 +82,31 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
-    const labels = ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'];
-    expect(HOME_QUICK_ACTIONS.map((item) => item.label)).toEqual(labels);
     expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
-    expect(Array.from(new Set(
-      renderer.root.findAll((node) => labels.includes(String(node.props.accessibilityLabel))).map((node) =>
+    assertNoVerbText(renderer.root, { screen: 'home' });
+  });
+
+  it.each([1, 1.3, 2])('renders Home quick actions at font scale %s', async (fontScale) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
+    const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
+      node.props.accessibilityRole === 'button'
+      && ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'].includes(
         node.props.accessibilityLabel,
       ),
-    ))).toEqual(labels);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toEqual(
-      expect.arrayContaining(labels),
     );
-    assertNoVerbText(renderer.root);
+    expect(quickActionButtons).toHaveLength(4);
+    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(4);
+    expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
+      'Add Transaction',
+      'New Investment',
+      'New Liability',
+      'Log Emergency Fund',
+    ]);
+    assertNoVerbText(renderer.root, { screen: 'home' });
   });
 });

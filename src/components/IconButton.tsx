@@ -4,11 +4,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 
 export const TEXT_ACTIONS_ALLOWED = [
-  // Intentional visible action labels on Home quick-action tiles only.
-  'Add Transaction',
-  'New Investment',
-  'New Liability',
-  'Log Emergency Fund',
   'Deposit',
   'Withdraw',
   'Pay EMI',
@@ -31,6 +26,11 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Create N transactions',
   'Use calculated EMI',
   'Send test notification',
+  // These visible labels are intentional exceptions on the Home screen only.
+  'Add Transaction',
+  'New Investment',
+  'New Liability',
+  'Log Emergency Fund',
 ] as const;
 
 export function IconButton({

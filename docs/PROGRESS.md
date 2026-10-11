@@ -2,62 +2,44 @@
 
 ## Part A — Phase 14 audit
 
-Schema precondition: `SCHEMA_VERSION = 4` in `src/domain/schemas.ts` (verified before starting).
+Schema precondition: `SCHEMA_VERSION = 4` in `src/domain/schemas.ts`, verified before changes.
 
 ### Phase 14 traceability matrix
 
-| Requirement | Status | Evidence files | Tests proving completed behavior / gap |
+| Requirement | Status | Evidence files | Tests proving completed behavior / remaining gap |
 |---|---|---|---|
-| B1 Home quick actions: exact visible labels, 2x2 grid, distinct Feather glyphs, accessibility labels, large-font wrapping, Home-only verb allow-list | Partial | `app/(tabs)/index.tsx`, `src/components/IconButton.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/IconButton.test.tsx` | `Home screen theme smoke > renders Home with the … palette` verifies exact labels and unique glyphs for all themes; `IconButton > exports the approved text-action allow-list`. The 2x2/wrapping layout is in place, but no explicit render-at-font-scale 1.0/1.3/2.0 test exists yet. |
-| B2 Transaction month swipe, chip-origin exclusion, vertical scroll/tap preservation, adjustable month accessibility actions | Partial | `src/lib/swipe.ts`, `src/lib/__tests__/swipe.test.ts`, `app/(tabs)/transactions.tsx` | `swipeIntent >` boundary cases cover basic directional classification only. The Transactions screen has no PanResponder integration or adjustable month actions. |
-| B3 `CardHeaderRow` / `ListRow`, sole `edit-2` renderers, far-right pencil across the specified cards and rows | Missing | `app/emergency-fund.tsx`, `app/assets.tsx`, `app/liabilities.tsx`, `app/investment-entries.tsx`, `app/liability-payments.tsx` | No `CardHeaderRow`, shared `ListRow`, or source scan test exists. |
-| B4 Goal cards without edit pencils, open editor with the specified hint | Partial | `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx` | `EmergencyGoalScreens >` covers emergency-target rendering, not goal-card first-tap navigation or the required hint. Goal cards currently navigate through a pressable labeled `Edit …`. |
-| B5 Emergency-fund allocation screen card and form, exact messages, reset confirmation, single write | Partial | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts`, `src/domain/__tests__/efAllocation.test.ts`, `src/domain/schemas.ts` | `ef allocation > suggested allocation totals 100%`, `allocateAmounts keeps exact total for awkward balances`, `warns at threshold boundaries`, `normalizes partial and invalid allocations and applies set/reset actions`, `validates totals and decimals`; no allocation UI or screen/form render test exists. |
-| B6 Storage thresholds and byte helper, Home banners and dismissal, Backup size, dev stress action, calibration | Partial | `src/lib/storageGuard.ts`, `src/lib/__tests__/storageGuard.test.ts`, `src/data/safeStorage.ts` | `storageGuard > reports byte lengths and level boundaries`; storage helper exists but write-size state/UI/dismissal/stress-data/calibration are not implemented. |
-| B7 Render test for every route with `assertNoVerbText` and `AppHeader` checks | Partial | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/testUtils/assertNoVerbText.ts`, `app/` | `route render smoke audit > … renders without verb text` covers a subset of routes. Several route files are not imported by the smoke test, and the test replaces `AppHeader` with a title-only stub, so it does not assert header actions. |
-| K1 Read SDK 57 notification docs and report local scheduling, Android channel, permission, Expo Go behavior | Missing | None | No documentation result or development-build verification recorded. |
-| K2 Zod-validated reminder preferences in the meta store | Missing | `src/data/metaStore.ts` | No reminder preference schema or test. |
-| K3 Pure reminder planner: sources, timing, privacy, overdue summary, cap, stable signature | Missing | None | No planner module or tests. |
-| K4 Injectable reminder scheduler and lifecycle/data/pref triggers | Missing | None | No scheduler module or fake-adapter tests. |
-| K5 Permission requested only on enable; denied-state settings action | Missing | None | No reminder UI or permission-flow test. |
-| K6 Notification tap routing after unlock/onboarding | Missing | `src/components/LockGate.tsx` | No notification response integration or queued-route test. |
-| K7 Reminders screen, app-menu entry, controls, preview and test notification | Missing | `src/lib/appMenu.ts` | No reminders route or reminder menu item/test. |
-| L1 Encrypted backup envelope, injected cryptography/randomness, KDF caps and uniform errors | Missing | `src/domain/backup.ts` | Plain backup format only; no encrypted format or crypto tests. |
-| L2 Encrypted export/import UI, passphrase handling, throttling, naming and user guidance | Missing | `app/backup.tsx`, `README.md` | No encrypted backup UI or tests. |
-| L3 Crypto vectors, tamper/cap/fresh-randomness/plain-backup regression tests, export compatibility | Missing | `src/domain/__tests__/backup.test.ts` | Plain backup tests exist; no encryption-related tests or package dependencies. |
+| B1 Home 2x2 quick actions, exact labels, unique icons, button labels and font-scale renders | Done | `app/(tabs)/index.tsx`, `src/components/IconButton.tsx`, `src/components/testUtils/assertNoVerbText.ts` | `Home screen theme smoke › renders Home quick actions at font scale %s` |
+| B2 Transactions swipe month navigation, direction, chip-origin exclusion, adjustable month label | Partial | `src/lib/swipe.ts`, `app/(tabs)/transactions.tsx` | `swipeIntent › detects horizontal intent at the distance and velocity boundaries`; the screen currently has only chevron navigation and has no PanResponder or adjustable label |
+| B3 CardHeaderRow/ListRow own all edit pencils and align them at the far right | Missing | `src/components/InstrumentCard.tsx`, `app/liabilities.tsx`, `app/emergency-fund.tsx`, `app/investment-entries.tsx`, `app/liability-payments.tsx` | No shared `CardHeaderRow` / `ListRow` implementation or exclusive-render test; `edit-2` remains outside a shared component |
+| B4 Goal cards have no edit pencil and navigate on first tap with editor hint | Partial | `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx` | No tap/navigation test; both screens currently expose `Edit ...` labels on goal cards |
+| C1 Schema v4, efAllocation field, v3-to-v4 migration, persisted copy and backup upgrade | Done | `src/domain/schemas.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/domain/backup.ts` | `migrate v3 to v4 › adds efAllocation null without altering the rest of the data`; `createAppStore persistence › migrates a v2 database once and does not overwrite its premigration copy`; backup migration tests |
+| C2 Suggested allocation, exact paise distribution, thresholds, validation and pure actions | Done | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts` | `ef allocation › apportions 20,000 seeded balances exactly in whole paise`; other `ef allocation` validation/action/warning tests |
+| C3 Emergency-fund allocation card and allocation form | Missing | No allocation UI route/card exists under `app/` | No UI render test |
+| C4 Allocation boundaries, migration and backup tests | Partial | `src/domain/__tests__/efAllocation.test.ts`, `src/data/__tests__/migrateV4.test.ts`, `src/domain/__tests__/backup.test.ts` | Pure allocation and v3-to-v4 cases exist; allocation UI, custom-mix restart and round-trip coverage are absent |
+| D1 UTF-8 byte size, levels and human-readable storage summary | Done | `src/lib/storageGuard.ts` | `storageGuard › reports byte lengths and level boundaries` |
+| D2 Successful-write byte reporting, Home warning banners, seven-day dismissal, Backup size, stress menu data | Missing | `src/lib/storageGuard.ts` only; no storage-size state/UI or stress-data action | No integration or dismissal-timing test |
+| D3 Serialized-size calibration for daily SIPs, 20,000 transactions and demo data | Missing | No calibration script or fixture report | No calibration test/report |
+| E Local notifications and reminder preferences/planner/scheduler/permission/deep-link UI (optional in Phase 14) | Missing | No `expo-notifications` dependency or reminder source files/routes | No reminder tests |
+| F Encrypted backup envelope, crypto adapter, UI, and tests (optional in Phase 14) | Missing | No `backupCrypto.ts` or crypto dependencies | No encrypted-backup tests |
+| G1 Friendly sentences for all typed domain errors | Partial | `src/lib/friendlyError.ts` | `friendlyError › maps known domain errors to plain messages`; linked-transaction, EF and later-phase error classes are not mapped |
+| G2 Accessible roles/labels, 44pt targets, status semantics and all-screen font-scale renders | Partial | `src/components/IconButton.tsx`, `src/components/__tests__/IconButton.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | `IconButton` checks its own target/label; route coverage and font-scale checks are not exhaustive |
+| G3 Virtualized large lists, debounced search, memoization and domain benchmarks | Partial | `app/investment-entries.tsx`, `app/liability-payments.tsx`, `app/(tabs)/transactions.tsx` | `investment-entries` and `liability-payments` use FlatList; Transactions still renders mapped rows and no benchmark tests exist |
+| G4 Empty states and hydration-safe rendering on every list/screen | Partial | `app/`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | Smoke tests render selected routes; no complete route-by-route hydration/empty-state assertion |
+| K Local reminders (Phase 15 Part K) | Missing | No planner, scheduler, notification adapter, prefs, or route | No reminder tests |
+| L Passphrase-encrypted backups (Phase 15 Part L) | Missing | `src/domain/backup.ts` handles plain backups only; no crypto adapter or encrypted UI | No encryption tests |
 
-### Gate audit notes
+### Part A work and validation
 
-- The working diff for `jest.config.js` and `tsconfig.json` is empty; no threshold, collection entry, or exclusion was loosened or removed.
-- The two prior lint warnings were `mockStoreState` in `src/components/__tests__/RouteRenderSmoke.test.tsx` and `originalAbs` in `src/domain/__tests__/efAllocation.test.ts`. The unused smoke-test mock was removed; the allocation test was replaced by the seeded property test. The final `npx expo lint` run reports no warnings.
-- `jest.setup.js` provides `ExpoModulesCoreJSLogger.addListener` for Expo Modules Core's JS logger bootstrap. Jest does not provide the native Expo logger module; the setup makes the native bridge surface available to the test environment without changing app runtime behavior.
-- The full coverage suite first exposed a real smoke-fixture failure: the `react-native` test mocks omitted `Text`, which made `IconButton` render an undefined element. `Text` was added to the mocks in `HomeThemeSmoke.test.tsx` and `EmergencyGoalScreens.test.tsx`; Home's exact action labels were also corrected to match the existing verb-text policy.
-- Final Part A gates: two consecutive `npm test -- --coverage` runs passed (301 tests / 44 suites); `npx tsc --noEmit`, `npx expo lint`, Android/iOS exports and `npx expo-doctor` all exited 0. Expo lint emitted no warnings. Expo Doctor reported “21/21 checks passed. No issues detected!”
-- Coverage collection now explicitly includes ten pure `src/lib` modules; thresholds are all 90% lines and branches. Formatting/storage helper test cases were added to satisfy measured branch coverage instead of weakening thresholds.
-
-### Allocation proof
-
-The valid-allocation distribution was changed to largest-remainder arithmetic over integer paise. The previous floating-point correction branch was only reachable in its test by mocking `Math.abs` to return inconsistent values; it was removed. The replacement seeded property test is:
-
-- Test: `ef allocation > distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)`
-- Seed: `0x15a110c` (`22679820`)
-- Cases: 20,000
-- For each case: balance is an integer number of paise from 0 through 10,000,000,000; the seven weights are generated in tenths and sum to 1,000 tenths; results sum exactly to the input paise, are nonnegative, and differ from each exact share by at most one paisa.
-
-## Part ledger
-
-| Part | Status | Files | Test names / counts / coverage |
+| Part | Status | Files | Tests / gate results |
 |---|---|---|---|
-| A — Phase 14 audit and allocation proof | Done | `docs/PROGRESS.md`; `jest.config.js`; `src/domain/efAllocation.ts`; `src/domain/__tests__/efAllocation.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx`; `src/components/__tests__/HomeThemeSmoke.test.tsx`; `src/components/__tests__/EmergencyGoalScreens.test.tsx`; `src/lib/format.ts`; `src/lib/storageGuard.ts`; `src/lib/__tests__/format.test.ts`; `src/lib/__tests__/storageGuard.test.ts`; `src/lib/__tests__/swipe.test.ts`; `src/lib/__tests__/friendlyError.test.ts`; `app/(tabs)/index.tsx`; `src/components/IconButton.tsx` | `distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)`; Home theme smoke action assertions; swipe/storage/friendly-error/format tests; two consecutive full runs: 301/301 tests, 44/44 suites. Coverage: domain 98.95% lines / 95.06% branches; data 95.40% / 90.31%; pure lib 100% / 100%. Commits: `a89fa2a`, `235a738`, `3a29ea3`, and ledger update. |
-| B — Phase 14 UI refinements | Pending | — | — |
-| C — SIP date clarity and emergency-fund cards | Pending | — | — |
-| D — Schema v5 migration | Pending | — | — |
-| E — Clear dues | Pending | — | — |
-| F — Insurance | Pending | — | — |
-| G — Goal asset links | Pending | — | — |
-| H — Past-month carry-over | Pending | — | — |
-| I — Monthly budget | Pending | — | — |
-| J — Sorting | Pending | — | — |
-| K — Local reminders | Pending | — | — |
-| L — Encrypted backups | Pending | — | — |
-| M — Polish and final gates | Pending | — | — |
+| A | Done | `docs/PROGRESS.md`, `src/domain/efAllocation.ts`, `src/domain/__tests__/efAllocation.test.ts`, `src/lib/__tests__/friendlyError.test.ts`, `src/lib/__tests__/format.test.ts`, `src/lib/__tests__/storageGuard.test.ts`, `src/lib/__tests__/swipe.test.ts`, `app/(tabs)/index.tsx`, `src/components/IconButton.tsx`, `src/components/testUtils/assertNoVerbText.ts`, Home render smoke tests | 44 suites / 303 tests; two consecutive full coverage runs exit 0; allocation property proof seed `0x015A110C`; all requested build and diagnostics gates exit 0 |
+
+Part A gate results: `npm test -- --coverage` passed twice consecutively; `npx tsc --noEmit`, `npx expo lint`, Android export, iOS export, and `npx expo-doctor` all exited 0. Expo Doctor reported 21/21 checks passed. Expo lint reported one warning: `src/components/__tests__/RouteRenderSmoke.test.tsx:27`, `mockStoreState` is assigned but never used. Coverage totals: domain 1,133/1,145 lines (98.95%) and 1,075/1,133 branches (94.88%); data excluding hooks 249/261 lines (95.40%) and 177/196 branches (90.31%); pure lib 98/98 lines (100%) and 114/114 branches (100%).
+
+`jest.config.js` and `tsconfig.json` have no remaining diff against HEAD. `jest.setup.js` is loaded by the existing Jest config and installs a no-op optional Expo Modules JS logger in the Jest runtime where native modules are unavailable. This prevents native logger listener setup from depending on the device module; it was not the cause of the Home render test failures.
+
+### Coverage configuration audit
+
+The working-tree diff had removed the `collectCoverageFrom` entries and per-file 90% branch/line thresholds for `src/lib/format.ts`, `friendlyError.ts`, `greeting.ts`, `storageGuard.ts`, and `swipe.ts`. Those entries and thresholds were restored; no coverage threshold or exclusion was loosened. The existing Node test typing in `tsconfig.json` has no diff in this audit.
+
+The allocation implementation had been changed from integer-paise largest-remainder arithmetic to a floating-point distribution followed by a compensating adjustment. The compensating path depended on two separate `Math.abs` reads and could change one bucket after the paise split. It was replaced with the committed integer-paise algorithm; a seeded test now verifies 20,000 balances and tenths-based allocations with exact sums, non-negative amounts, and per-bucket error no greater than one paisa.

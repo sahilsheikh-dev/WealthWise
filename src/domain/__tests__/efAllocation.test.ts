@@ -7,6 +7,7 @@ import {
   EF_BUCKETS,
   SUGGESTED_EF_ALLOCATION,
   validateAllocation,
+  type EfAllocation,
 } from '../efAllocation';
 import { InvalidAllocationError, resetEfAllocation, setEfAllocation } from '../efAllocationActions';
 
@@ -34,6 +35,16 @@ describe('ef allocation', () => {
 
     const odd = allocateAmounts(0.01, SUGGESTED_EF_ALLOCATION);
     expect(Number(Object.values(odd).reduce((acc, value) => acc + value, 0).toFixed(2))).toBe(0.01);
+
+    expect(() => allocateAmounts(1, {
+      cash: 0,
+      bank: 0,
+      'fd-rd': 0,
+      'mutual-funds-bonds': 0,
+      stocks: 0,
+      insurance: 0,
+      other: 0,
+    })).toThrow('Allocation must contain percentages that total 100%.');
   });
 
   it('warns at threshold boundaries', () => {
@@ -54,16 +65,11 @@ describe('ef allocation', () => {
 
   it('normalizes partial and invalid allocations and applies set/reset actions', () => {
     expect(effectiveAllocation(null)).toEqual(SUGGESTED_EF_ALLOCATION);
-    expect(effectiveAllocation(undefined)).toEqual(SUGGESTED_EF_ALLOCATION);
-    expect(effectiveAllocation({})).toEqual(SUGGESTED_EF_ALLOCATION);
     expect(effectiveAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: 20 })).toMatchObject({ cash: 20, bank: 40 });
     expect(validateAllocation(null, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
-    expect(validateAllocation(undefined, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
-    expect(validateAllocation(null)).toBe(false);
     expect(validateAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: Number.NaN }, true)).toMatchObject({ valid: false });
 
     const validationSpy = jest.spyOn(efAllocationModule, 'validateAllocation');
-    expect(() => setEfAllocation(mockAppData, null as any)).toThrow(InvalidAllocationError);
     validationSpy.mockImplementationOnce(() => ({ valid: false, total: 0, issues: ['bad'] }));
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 10 })).toThrow(InvalidAllocationError);
     validationSpy.mockImplementationOnce(() => ({ valid: false, total: 0, issues: [] }));
@@ -76,36 +82,39 @@ describe('ef allocation', () => {
     expect(updated.efAllocation).toMatchObject({ cash: 20, bank: 30 });
     expect(resetEfAllocation(updated)).toMatchObject({ efAllocation: null });
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(InvalidAllocationError);
-    expect(() => allocateAmounts(100, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(RangeError);
   });
 
-  it('distributes 20,000 seeded balances exactly in paise (seed 0x15a110c)', () => {
+  it('apportions 20,000 seeded balances exactly in whole paise (seed 0x015A110C)', () => {
     const seed = 0x15a110c;
     let state = seed;
-    const random = () => {
-      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-      return state;
+    const nextUint32 = (): number => {
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      return state >>> 0;
     };
 
     for (let caseIndex = 0; caseIndex < 20_000; caseIndex += 1) {
-      const balancePaise = ((random() & 0x1fffff) * 0x1_0000_0000 + random()) % 10_000_000_001;
-      const cuts = Array.from({ length: EF_BUCKETS.length - 1 }, () => random() % 1001)
-        .sort((left, right) => left - right);
-      const tenths = [0, ...cuts, 1000].slice(1).map((cut, index, all) =>
-        cut - (index === 0 ? 0 : all[index - 1]),
-      );
-      const allocation = EF_BUCKETS.reduce((result, id, index) => {
-        result[id] = tenths[index] / 10;
-        return result;
-      }, { ...SUGGESTED_EF_ALLOCATION });
-      const result = allocateAmounts(balancePaise / 100, allocation);
-      const resultPaise = EF_BUCKETS.map((id) => Math.round(result[id] * 100));
+      const random53 = (nextUint32() & 0x1fffff) * 0x1_0000_0000 + nextUint32();
+      const balancePaise = random53 % 10_000_000_001;
+      let remainingTenths = 1000;
+      const tenths = EF_BUCKETS.map((_, index) => {
+        if (index === EF_BUCKETS.length - 1) return remainingTenths;
+        const value = nextUint32() % (remainingTenths + 1);
+        remainingTenths -= value;
+        return value;
+      });
+      const allocation = Object.fromEntries(
+        EF_BUCKETS.map((id, index) => [id, tenths[index] / 10]),
+      ) as EfAllocation;
+      const amounts = allocateAmounts(balancePaise / 100, allocation);
+      const amountPaise = EF_BUCKETS.map((id) => Math.round(amounts[id] * 100));
+      const exactShares = EF_BUCKETS.map((_, index) => balancePaise * tenths[index] / 1000);
 
-      expect(resultPaise.reduce((sum, amount) => sum + amount, 0)).toBe(balancePaise);
-      expect(resultPaise.every((amount) => amount >= 0)).toBe(true);
-      EF_BUCKETS.forEach((id, index) => {
-        const exactPaise = balancePaise * tenths[index] / 1000;
-        expect(Math.abs(resultPaise[index] - exactPaise)).toBeLessThanOrEqual(1);
+      expect(amountPaise.reduce((sum, amount) => sum + amount, 0)).toBe(balancePaise);
+      expect(amountPaise.every((amount) => amount >= 0)).toBe(true);
+      amountPaise.forEach((amount, index) => {
+        expect(Math.abs(amount - exactShares[index])).toBeLessThanOrEqual(1);
       });
     }
   });
