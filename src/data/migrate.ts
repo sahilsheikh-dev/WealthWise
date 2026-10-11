@@ -84,7 +84,25 @@ export function migrateV2ToV3(data: unknown): unknown {
       || data.liabilities.length > 0
       || data.efEntries.length > 0,
   };
-  return { ...data, settings };
+  return { ...data, settings, efAllocation: null };
+}
+
+export function migrateV3ToV4(data: unknown): unknown {
+  if (
+    !isRecord(data) ||
+    !isRecord(data.settings) ||
+    !Array.isArray(data.transactions) ||
+    !Array.isArray(data.goals) ||
+    !Array.isArray(data.holdings) ||
+    !Array.isArray(data.liabilities) ||
+    !Array.isArray(data.efEntries)
+  ) {
+    throw new PersistedVersionError(3, 'unknown-version');
+  }
+  return {
+    ...data,
+    efAllocation: null,
+  };
 }
 
 export function migratePersisted(persisted: unknown, fromVersion: number): unknown {
@@ -93,11 +111,12 @@ export function migratePersisted(persisted: unknown, fromVersion: number): unkno
   if (fromVersion < 0 || !Number.isInteger(fromVersion)) {
     throw new PersistedVersionError(fromVersion, 'unknown-version');
   }
-  if (fromVersion !== 1 && fromVersion !== 2) throw new PersistedVersionError(fromVersion, 'unknown-version');
   const migrateData = (data: unknown) => {
     let result = data;
     if (fromVersion === 1) result = migrateV1ToV2(result);
-    return migrateV2ToV3(result);
+    if (fromVersion <= 2) result = migrateV2ToV3(result);
+    if (fromVersion <= 3) result = migrateV3ToV4(result);
+    return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {
     return { ...persisted, data: migrateData(persisted.data) };

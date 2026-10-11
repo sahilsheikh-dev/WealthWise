@@ -17,6 +17,7 @@ export function emptyAppData(asOf: ISODate): AppData {
     holdings: [],
     liabilities: [],
     efEntries: [],
+    efAllocation: null,
   };
 }
 

@@ -30,7 +30,7 @@ describe('schema migration', () => {
     };
     expect(migrateV1ToV2(v1)).toEqual(expected);
     expect(migratePersisted({ data: v1 }, 1)).toEqual({
-      data: { ...expected, settings: { ...expected.settings, monthlySalary: null, onboarded: true } },
+      data: { ...expected, settings: { ...expected.settings, monthlySalary: null, onboarded: true }, efAllocation: null },
     });
   });
 
@@ -39,12 +39,14 @@ describe('schema migration', () => {
     const expected = {
       ...v2,
       settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+      efAllocation: null,
     };
     expect(migrateV2ToV3(v2)).toEqual(expected);
     expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expected });
     const before = validateImportData({
       ...v2,
       settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+      efAllocation: null,
     });
     const after = validateImportData(migrateV2ToV3(v2));
     if (!before.ok || !after.ok) throw new Error('Expected the v2 migration fixture to validate.');
@@ -76,20 +78,22 @@ describe('schema migration', () => {
     })).toMatchObject({ settings: { onboarded: true } });
   });
 
-  it('rejects v2 input passed to the v1 migration and unknown or future versions', () => {
+  it('rejects invalid input and unknown or future versions', () => {
     const v2 = migrateV1ToV2(makeV1Fixture());
     expect(() => migrateV1ToV2(v2)).toThrow(PersistedVersionError);
+    expect(() => migrateV2ToV3({ settings: {}, transactions: 'bad', goals: [], holdings: [], liabilities: [], efEntries: [] } as any)).toThrow(PersistedVersionError);
     expect(() => migratePersisted({}, 0)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
-    expect(() => migratePersisted({}, 4)).toThrow(
+    expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
+    expect(() => migratePersisted({}, 5)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version3: true } };
-    expect(migratePersisted(persisted, 3)).toBe(persisted);
+    const persisted = { data: { version4: true } };
+    expect(migratePersisted(persisted, 4)).toBe(persisted);
   });
 });
