@@ -101,7 +101,7 @@ export default function EmergencyFundScreen() {
               <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>
             )}
             <ProgressBar percent={emergencyGoalView.pct} />
-            <AppText style={[typography.meta, { color: colors.text2 }]}>
+            <AppText style={[typography.meta, { color: colors.text2, marginTop: 5 }]}>
               {balance >= emergencyGoalView.target
                 ? 'Target reached'
                 : `${formatINR(Math.max(0, emergencyGoalView.target - balance))} to go`}

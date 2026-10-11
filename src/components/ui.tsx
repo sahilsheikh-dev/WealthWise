@@ -394,7 +394,7 @@ export function DetailTabBar({ active = 'Home' }: { active?: 'Home' | 'none' }) 
   const insets = useSafeAreaInsets();
   const tabs = [
     { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
-    { label: 'Txns', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
+    { label: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
     { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
   ] as const;
   return (

@@ -24,7 +24,7 @@ an iOS simulator or Android emulator.
 
 ## Structure
 
-- `app/` contains the Expo Router root stack, Home/Txns/Goals tabs, domain
+- `app/` contains the Expo Router root stack, Home/Transactions/Goals tabs, domain
   forms, backup, security, liabilities, onboarding, and Emergency fund screens.
 - `src/theme/` contains the system-aware theme registry and six accessible palettes.
 - `src/components/ui.tsx` contains reusable accessible, themed UI components.
