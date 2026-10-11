@@ -28,12 +28,12 @@ import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
-const actions = [
-  { id: 'transaction', label: 'Add transaction' },
-  { id: 'investment', label: 'New investment' },
-  { id: 'liability', label: 'New liability' },
-  { id: 'emergency-fund', label: 'Log emergency fund entry' },
-];
+export const HOME_QUICK_ACTIONS = [
+  { id: 'transaction', label: 'Add transaction', icon: 'plus' },
+  { id: 'investment', label: 'New investment', icon: 'trending-up' },
+  { id: 'liability', label: 'New liability', icon: 'credit-card' },
+  { id: 'emergency-fund', label: 'Log emergency fund entry', icon: 'shield' },
+] as const;
 const metaStore = createMetaStore(AsyncStorage);
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
@@ -97,12 +97,12 @@ export default function HomeScreen() {
       ) : null}
 
       <View style={styles.quickActions}>
-        {actions.map((action) => (
+        {HOME_QUICK_ACTIONS.map((action) => (
           <View
             key={action.label}
             style={styles.quickAction}>
             <IconButton
-              icon="plus"
+              icon={action.icon}
               label={action.label}
               onPress={() => {
               if (action.id === 'transaction') {

@@ -1,7 +1,7 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
-import HomeScreen from '../../../app/(tabs)';
+import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import { emptyAppData } from '../../domain/actions';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
@@ -80,6 +80,7 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
+    expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
     assertNoVerbText(renderer.root);
   });
 });
