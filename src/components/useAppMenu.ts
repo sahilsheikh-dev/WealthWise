@@ -19,6 +19,8 @@ const themeLabels = {
 } as const;
 
 const destinations: Record<string, string> = {
+  Budget: '/budget',
+  'Budget history': '/budget-history',
   'Backup and restore': '/backup',
   Security: '/security',
   Profile: '/profile-form',

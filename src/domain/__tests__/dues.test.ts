@@ -14,7 +14,7 @@ import { loanState, amortizedBalanceAfter } from '../liability';
 import { validateIntegrity } from '../links';
 import { liabilitySchedule, planSchedule, upcomingDue } from '../schedule';
 import { policySchedule } from '../policySchedule';
-import type { PlanHolding, Policy, RecurringLiability } from '../types';
+import type { OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
 
 const base = () => emptyAppData('2026-01-01');
 
@@ -49,6 +49,19 @@ const liability = (changes: Partial<RecurringLiability> = {}): RecurringLiabilit
   emi: 100,
   payments: [],
   settlement: null,
+  ...changes,
+});
+
+const oneTimeLiability = (changes: Partial<OneTimeLiability> = {}): OneTimeLiability => ({
+  id: 'one-time',
+  kind: 'one-time',
+  name: 'Friend',
+  type: 'Borrowed money',
+  principal: 1_000,
+  ratePct: 0,
+  startDate: '2026-01-01',
+  dueDate: '2026-01-01',
+  payments: [],
   ...changes,
 });
 
@@ -206,6 +219,29 @@ describe('pending dues', () => {
 });
 
 describe('one-tap dues and undo', () => {
+  it('clears a one-time liability due with a linked Payment transaction', () => {
+    const result = clearDue({ ...base(), liabilities: [oneTimeLiability()] }, {
+      kind: 'liability', id: 'one-time',
+    }, {
+      date: '2026-01-01',
+      newId: (() => { let id = 0; return () => `new-${++id}`; })(),
+    });
+    const updated = result.data.liabilities[0];
+    expect(updated?.kind).toBe('one-time');
+    if (updated?.kind !== 'one-time') throw new Error('Expected one-time liability.');
+    expect(updated.payments[0]).toMatchObject({ amount: 1_000, kind: 'Payment', date: '2026-01-01' });
+    expect(result.data.transactions).toHaveLength(1);
+    expect(validateIntegrity(result.data)).toEqual([]);
+  });
+
+  it('skips a one-time liability without a due date when clearing pending dues', () => {
+    const data = { ...base(), liabilities: [oneTimeLiability({ dueDate: null })] };
+    expect(() => clearDue(data, { kind: 'liability', id: 'one-time' }, {
+      date: '2026-01-01', newId: () => 'unused',
+    })).toThrow(NothingToClearError);
+    expect(data.liabilities[0]).toMatchObject({ kind: 'one-time', dueDate: null, payments: [] });
+  });
+
   it('clears a plan installment with FIFO matching and undo restores the original data', () => {
     const original = withPlan(plan({
       logs: [{ id: 'deposit-existing', date: '2026-01-31', amount: 100, note: '', kind: 'Deposit' }],

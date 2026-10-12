@@ -24,6 +24,7 @@ import { shouldNudge } from '../../src/domain/backupNudge';
 import { addDays } from '../../src/domain/dates';
 import { upcomingDue } from '../../src/domain/schedule';
 import { goalProjection } from '../../src/domain/goalLinks';
+import { budgetMonthView } from '../../src/domain/budget';
 import { homeSummary } from '../../src/domain/summary';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   const data = useAppData();
   const today = todayISO();
   const summary = homeSummary(data, today);
+  const monthBudget = budgetMonthView(data, today.slice(0, 7));
   const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
@@ -82,6 +84,22 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open this month's budget" onPress={() => router.push('/budget')}>
+        <Card style={styles.monthBudgetCard}>
+          <AppText weight="semibold">
+            {monthBudget.budget
+              ? `This month: ${formatINRShort(monthBudget.actualSpend)} of ${formatINRShort(monthBudget.plannedSpend)} spent`
+              : 'Plan your month'}
+          </AppText>
+          {monthBudget.budget ? (
+            <ProgressBar percent={monthBudget.plannedSpend > 0
+              ? monthBudget.actualSpend / monthBudget.plannedSpend * 100 : 0} />
+          ) : (
+            <AppText style={[typography.meta, { color: colors.text3 }]}>Set up a monthly spending plan</AppText>
+          )}
+          <AppText style={[typography.meta, { color: colors.primary }]}>Open budget</AppText>
+        </Card>
+      </Pressable>
 
       {nudge.show ? (
         <Card style={styles.backupCard}>
@@ -258,6 +276,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
+  monthBudgetCard: { gap: 8 },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
   storageActions: { gap: 8, marginTop: 8 },
