@@ -31,11 +31,15 @@ import {
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
+import { resetEfAllocation, setEfAllocation } from '../domain/efAllocationActions';
+import type { EfAllocation } from '../domain/efAllocation';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
+import { createStressTransactions } from '../domain/stressData';
 import type { AppData, EfEntry, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
+import { useUIStore } from './uiStore';
 import { validateImportData } from '../domain/backup';
 
 const PERSIST_NAME = 'wealthwise.app.v1';
@@ -73,6 +77,8 @@ export type AppActions = {
   addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
   deleteEfEntry: (id: string) => void;
+  setEfAllocation: (allocation: EfAllocation) => void;
+  resetEfAllocation: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   completeOnboarding: (profile: { name: string; monthlySalary: number | null }) => void;
   dismissStorageError: () => void;
@@ -86,6 +92,7 @@ export type AppActions = {
 
 export type DevActions = {
   loadDemoData: () => void;
+  loadStressData: () => void;
   simulateCorruption: () => Promise<void>;
 };
 
@@ -132,7 +139,12 @@ export function createAppStore(
         useStore?.setState({ status: 'recovery', recoveryReason: corruptionReason });
       },
     },
-    { blockWrites: () => suppressNextWrite || useStore?.getState().status === 'recovery' },
+    {
+      blockWrites: () => suppressNextWrite || useStore?.getState().status === 'recovery',
+      trackedKey: PERSIST_NAME,
+      onReadSuccess: useUIStore.getState().setPersistedBytes,
+      onWriteSuccess: useUIStore.getState().setPersistedBytes,
+    },
   );
   const jsonStorage = createJSONStorage(() => safeStorage);
 
@@ -265,6 +277,12 @@ export function createAppStore(
         },
         deleteEfEntry(id) {
           applyDataAction((data) => deleteEfEntry(data, id));
+        },
+        setEfAllocation(allocation) {
+          applyDataAction((data) => setEfAllocation(data, allocation));
+        },
+        resetEfAllocation() {
+          applyDataAction(resetEfAllocation);
         },
         dismissStorageError() {
           suppressNextWrite = true;
@@ -408,6 +426,10 @@ export function createAppStore(
                   goals: ensureEfGoal(mockAppData.goals, { expenseBaseline, asOf: deps.today() }),
                 },
               });
+            },
+            loadStressData() {
+              const transactions = createStressTransactions(deps.today(), deps.newId);
+              set({ data: { ...get().data, transactions } });
             },
             async simulateCorruption() {
               await storage.setItem('wealthwise.app.v1', '{not json');

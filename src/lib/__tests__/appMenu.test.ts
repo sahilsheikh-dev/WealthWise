@@ -9,7 +9,7 @@ describe('buildAppMenu', () => {
     const devItems = buildAppMenu({ hasUnlinked: false, isDev: true, themeLabel: 'System' });
     expect(devItems.map(({ label }) => label)).toEqual([
       'Backup and restore', 'Security', 'Profile', 'Theme',
-      'Load demo data', 'Simulate corrupt storage', 'Erase all data',
+      'Load demo data', 'Generate stress-test data', 'Simulate corrupt storage', 'Erase all data',
     ]);
     expect(devItems.at(-1)).toMatchObject({ label: 'Erase all data', destructive: true });
     expect(devItems.find(({ label }) => label === 'Simulate corrupt storage'))

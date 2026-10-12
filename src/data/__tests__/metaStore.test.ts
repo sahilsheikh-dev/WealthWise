@@ -41,6 +41,12 @@ describe('backup metadata storage', () => {
       nudgeDismissedUntil: '2026-10-17',
     });
     expect(storage.writes).toBe(2);
+    await expect(meta.updateMeta({ storageWarnDismissedUntil: '2026-10-24' })).resolves.toEqual({
+      lastExportAt: '2026-10-10T10:00:00.000Z',
+      nudgeDismissedUntil: '2026-10-17',
+      storageWarnDismissedUntil: '2026-10-24',
+    });
+    expect(storage.writes).toBe(3);
     await expect(meta.updateMeta({ lastExportAt: 'bad' })).rejects.toThrow('Backup metadata is invalid.');
     storage.failWrite = true;
     await expect(meta.updateMeta({ nudgeDismissedUntil: '2026-10-18' })).rejects.toThrow('write failed');

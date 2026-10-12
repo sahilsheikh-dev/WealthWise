@@ -14,7 +14,7 @@ import {
   StatusBadge,
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
-import { IconButton } from '../src/components/IconButton';
+import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
@@ -209,12 +209,15 @@ export default function InvestmentEntriesScreen() {
             );
           }
           return (
-            <View style={styles.row}>
+            <SharedListRow
+              style={[styles.row, { borderColor: colors.border }]}
+              editLabel="Edit investment entry"
+              onEdit={() => routeEntryForm(item)}
+            >
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
               <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
-              <IconButton icon="edit-2" label="Edit investment entry" onPress={() => routeEntryForm(item)} />
-            </View>
+            </SharedListRow>
           );
         }}
       />

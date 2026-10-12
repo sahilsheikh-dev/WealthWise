@@ -9,6 +9,7 @@ import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
+import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
 import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
@@ -67,6 +68,24 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+    const allocation = { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 };
+
+    store.getState().actions.setEfAllocation(allocation);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.efAllocation).toEqual(allocation);
+    const relaunchedStore = makeStore(storage);
+    await waitForHydration(relaunchedStore);
+    expect(relaunchedStore.getState().data.efAllocation).toEqual(allocation);
+    store.getState().actions.resetEfAllocation();
+    expect(store.getState().data.efAllocation).toBeNull();
+  });
+
   it.each([
     ['same day', '2026-10-10', '2026-10-10', 5_000],
     ['later day', '2026-10-09', '2026-10-10', 5_000],
@@ -542,6 +561,23 @@ describe('createAppStore persistence', () => {
     await dev!.simulateCorruption();
     expect(storage.values.get('wealthwise.app.v1')).toBe('{not json');
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces transactions with 20,000 stress entries using one persisted write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { isDev: true, newId: () => `stress-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().devActions;
+    if (!actions) throw new Error('Developer stress action is unavailable.');
+    const existingGoals = store.getState().data.goals;
+    const writesBefore = storage.setItemCalls;
+
+    actions.loadStressData();
+
+    expect(store.getState().data.transactions).toHaveLength(20_000);
+    expect(store.getState().data.goals).toBe(existingGoals);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
   });
 
   it('reports an unavailable reload when simulating corruption without a reload dependency', async () => {

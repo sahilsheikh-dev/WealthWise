@@ -10,6 +10,7 @@ import {
 } from '../backup';
 import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture } from '../../data/testFixtures/v1';
+import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -35,6 +36,18 @@ describe('backup validation and serialization', () => {
       summary: { transactions: mockAppData.transactions.length },
     });
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
+  });
+
+  it('round-trips a customized emergency-fund allocation', async () => {
+    const customData = {
+      ...mockAppData,
+      efAllocation: { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 },
+    };
+    const text = await createBackup(customData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
+    await expect(parseBackup(text, { digest })).resolves.toMatchObject({
+      ok: true,
+      data: { efAllocation: customData.efAllocation },
+    });
   });
 
   it('reports malformed and untrusted files with distinct reasons', async () => {
