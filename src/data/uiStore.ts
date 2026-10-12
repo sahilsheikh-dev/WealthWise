@@ -10,6 +10,8 @@ type UIStore = {
   setLastCreatedInstrumentId: (id: string | null) => void;
   persistedBytes: number | null;
   setPersistedBytes: (bytes: number) => void;
+  actionToast: { message: string; actionLabel?: string; onAction?: () => void } | null;
+  setActionToast: (toast: UIStore['actionToast']) => void;
 };
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -19,4 +21,6 @@ export const useUIStore = create<UIStore>((set) => ({
   setLastCreatedInstrumentId: (lastCreatedInstrumentId) => set({ lastCreatedInstrumentId }),
   persistedBytes: null,
   setPersistedBytes: (persistedBytes) => set({ persistedBytes }),
+  actionToast: null,
+  setActionToast: (actionToast) => set({ actionToast }),
 }));

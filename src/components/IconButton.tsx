@@ -26,6 +26,9 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Create N transactions',
   'Use calculated EMI',
   'Send test notification',
+  'Clear due',
+  'Clear past dues',
+  'Undo',
   // These visible labels are intentional exceptions on the Home screen only.
   'Add Transaction',
   'New Investment',
