@@ -13,10 +13,12 @@ export function InstrumentCard({
   model,
   onAction,
   dueTarget,
+  goalCount,
 }: {
   model: InstrumentCardModel;
   onAction: (action: InstrumentCardAction['id']) => void;
   dueTarget?: DueTarget;
+  goalCount?: number;
 }) {
   const { colors } = useTheme();
   const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
@@ -36,6 +38,11 @@ export function InstrumentCard({
         editLabel={`Edit ${model.name}`}
         onEdit={() => onAction(model.headerAction.id)}
       />
+      {goalCount ? (
+        <AppText style={[typography.meta, { color: colors.primary }]}>
+          Goals: {goalCount}
+        </AppText>
+      ) : null}
       <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
       {model.progressCaption ? (
         <AppText style={[typography.meta, styles.progressCaption, { color: colors.text3 }]}>{model.progressCaption}</AppText>

@@ -63,7 +63,7 @@ const goalSchema = z.object({
   links: z.array(z.object({
     instrumentId: idSchema,
     share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10), 'Share must use at most one decimal place'),
-  })),
+  })).default([]),
 });
 
 const manualHoldingSchema = z.object({
@@ -189,7 +189,7 @@ const budgetSchema = z.object({
   lines: z.array(z.object({
     category: z.string(),
     planned: moneySchema.min(0).max(1_000_000_000),
-  })),
+  })).default([]),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
   const allowed = new Set<string>(BUDGET_CATEGORIES);
@@ -533,6 +533,13 @@ export function makeGoalFormSchema(
     saved: ctx.locked
       ? z.string().transform(() => 0)
       : moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, maximumMessage: "Saved can't exceed the target" }),
+    links: z.array(z.object({
+      instrumentId: idSchema,
+      share: z.string().trim().regex(/^(?:\d+\.?\d*|\.\d+)$/, 'Enter a valid asset share')
+        .transform(Number)
+        .refine((share) => share >= 0.1 && share <= 100, 'Share must be between 0.1% and 100%')
+        .refine((share) => Math.round(share * 10) === share * 10, 'Share must use at most one decimal place'),
+    })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
       .transform(Number).refine(isAllowedYear, yearMessage),
   }).superRefine((value, context) => {

@@ -23,6 +23,7 @@ import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { addDays } from '../../src/domain/dates';
 import { upcomingDue } from '../../src/domain/schedule';
+import { goalProjection } from '../../src/domain/goalLinks';
 import { homeSummary } from '../../src/domain/summary';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
@@ -191,6 +192,7 @@ export default function HomeScreen() {
 
       <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
+        const projection = goalProjection(goal, data, today);
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
         return (
           <Pressable
@@ -207,6 +209,11 @@ export default function HomeScreen() {
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
+                {goal.links.length > 0 ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
+                  </AppText>
+                ) : null}
               </View>
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
@@ -215,6 +222,17 @@ export default function HomeScreen() {
               <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, target - saved))} left</AppText>
             </View>
+            {goal.auto !== 'ef' ? (
+              <AppText style={[typography.meta, { color: colors.text2 }]}>
+                {projection.projectedDate === 'Already reached'
+                  ? 'Already reached'
+                  : projection.projectedDate
+                    ? `Projected ${formatDate(projection.projectedDate)} · ${projection.status === 'ahead'
+                      ? 'Ahead'
+                      : projection.status === 'on-track' ? 'On track' : 'Behind'}`
+                    : 'Not reachable with current contributions'}
+              </AppText>
+            ) : null}
             {goal.auto === 'ef' ? (
               <>
                 <AppText style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}>

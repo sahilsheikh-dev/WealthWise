@@ -6,8 +6,9 @@ import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/comp
 import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
+import { goalProjection } from '../../src/domain/goalLinks';
 import { todayISO } from '../../src/lib/clock';
-import { formatINRShort } from '../../src/lib/format';
+import { formatDate, formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -23,7 +24,7 @@ export default function GoalsScreen() {
     expenseBaseline,
     asOf,
   });
-  const totals = goalTotals(goals, emergencyBalance, expenseBaseline);
+  const totals = goalTotals(goals, emergencyBalance, expenseBaseline, data, asOf);
 
   return (
     <Screen>
@@ -38,7 +39,8 @@ export default function GoalsScreen() {
       </Card>
       <SectionTitle>Active Goals</SectionTitle>
       {goals.map((goal) => {
-        const view = goalView(goal, { emergencyBalance, expenseBaseline });
+        const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+        const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         return (
@@ -58,6 +60,11 @@ export default function GoalsScreen() {
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
+                    {goal.links.length > 0 ? (
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
+                      </AppText>
+                    ) : null}
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
@@ -66,6 +73,26 @@ export default function GoalsScreen() {
               <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, target - saved))} left</AppText>
             </View>
+            {goal.auto !== 'ef' ? (
+              <View style={styles.projection}>
+                <AppText style={[typography.meta, { color: colors.text2 }]}>
+                  {projection.projectedDate === 'Already reached'
+                    ? 'Already reached'
+                    : projection.projectedDate
+                      ? `Projected completion ${formatDate(projection.projectedDate)}`
+                      : 'Not reachable with current contributions'}
+                </AppText>
+                {projection.status !== 'none' ? (
+                  <AppText style={[typography.meta, { color: projection.status === 'behind' ? colors.err : colors.primary }]}>
+                    {projection.status === 'on-track'
+                      ? 'On track'
+                      : projection.status === 'ahead'
+                        ? 'Ahead'
+                        : 'Behind'}
+                  </AppText>
+                ) : null}
+              </View>
+            ) : null}
             {goal.auto === 'ef' ? (
               <>
                 <AppText style={[typography.meta, styles.minimum, { color: colors.text3 }]}>
@@ -96,5 +123,6 @@ const styles = StyleSheet.create({
   nameBlock: { flex: 1, minWidth: 0, gap: 3 },
   percentage: { fontSize: 12 },
   amounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
 });

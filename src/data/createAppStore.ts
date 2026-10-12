@@ -17,6 +17,7 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { setGoalLinks } from '../domain/goalLinks';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import {
@@ -47,7 +48,7 @@ import {
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
 import { createStressTransactions } from '../domain/stressData';
-import type { AppData, EfEntry, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
+import type { AppData, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -90,6 +91,7 @@ export type AppActions = {
   deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
+  setGoalLinks: (goalId: string, links: GoalLink[]) => void;
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
@@ -312,6 +314,9 @@ export function createAppStore(
           applyDataAction((data) => updateGoal(data, id, patch, {
             expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
           }));
+        },
+        setGoalLinks(goalId, links) {
+          applyDataAction((data) => setGoalLinks(data, goalId, links));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));
