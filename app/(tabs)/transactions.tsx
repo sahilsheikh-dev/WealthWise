@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { AppHeader } from '../../src/components/AppHeader';
+import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -16,20 +18,18 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
-import { AppHeader } from '../../src/components/AppHeader';
-import { SortChip } from '../../src/components/SortChip';
 import { useUIStore } from '../../src/data/uiStore';
-import { useSort } from '../../src/data/useSort';
 import { useAppData } from '../../src/data/useAppData';
+import { useSort } from '../../src/data/useSort';
+import { monthPositionAt, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { describeSource } from '../../src/domain/links';
-import { monthPositionAt, reviewableMonths } from '../../src/domain/cashFlow';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
-import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
-import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { todayISO } from '../../src/lib/clock';
+import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
 import { savingsLine } from '../../src/lib/savingsLine';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -119,31 +119,6 @@ export default function TransactionsScreen() {
           </AppText>
           <AppText weight="semibold">Closing balance {formatINR(position.closing)}</AppText>
         </Card>
-        {review && dismissedReview !== month ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Review this month's cash flow"
-            onPress={() => router.push({ pathname: '/month-review', params: { month } })}
-            style={[styles.reviewBanner, { backgroundColor: colors.errDim, borderColor: colors.err }]}>
-            <View style={styles.reviewCopy}>
-              <AppText weight="semibold">
-                {review.closing < 0
-                  ? `You spent ${formatINR(Math.abs(review.closing))} more than you received in ${formatMonth(month)}. How was it funded?`
-                  : `You had ${formatINR(review.closing)} left over from ${formatMonth(month)}.`}
-              </AppText>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss month review reminder"
-              hitSlop={10}
-              onPress={(event) => {
-                event.stopPropagation();
-                setDismissedReview(month);
-              }}>
-              <AppText weight="bold">×</AppText>
-            </Pressable>
-          </Pressable>
-        ) : null}
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -178,31 +153,7 @@ export default function TransactionsScreen() {
           <StatPill label="Expense" value={formatINR(summary.expense)} tone="err" />
           <StatPill label="Invested" value={formatINR(summary.invest)} tone="primary" />
         </View>
-        {summary.nonEarnedIncome > 0 ? (
-          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
-            Includes {formatINR(summary.nonEarnedIncome)} from withdrawals, borrowing, loan proceeds and own funds
-          </AppText>
-        ) : null}
-        {savings.kind === 'rates' ? (
-          <View style={styles.rates}>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              {savings.basis === 'earned income'
-                ? `Saved ${savings.savedPct.toFixed(1)}% of earned income`
-                : `Saved ${savings.savedPct.toFixed(1)}% of income after expenses`}
-            </AppText>
-            <AppText style={[typography.meta, { color: colors.primary }]}>
-              Invested {savings.investedPct.toFixed(1)}%
-            </AppText>
-          </View>
-        ) : savings.kind === 'no-earned-income' ? (
-          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
-            No earned income logged this month
-          </AppText>
-        ) : (
-          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
-            No income logged this month
-          </AppText>
-        )}
+
         {summary.overspend > 0 ? (
           <WarningBanner>
             Spending plus investing is {formatINR(summary.overspend)} more than income this month
@@ -214,6 +165,7 @@ export default function TransactionsScreen() {
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
           <ChipRow>
+            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
             {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
               <Chip
                 key={item}
@@ -229,7 +181,6 @@ export default function TransactionsScreen() {
                 onPress={() => setCategoryOverride('')}
               />
             ) : null}
-            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
           </ChipRow>
         </View>
         <SearchField

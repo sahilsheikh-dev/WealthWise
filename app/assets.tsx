@@ -2,6 +2,9 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AppHeader } from '../src/components/AppHeader';
+import { InstrumentCard } from '../src/components/InstrumentCard';
+import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -14,20 +17,17 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { AppHeader } from '../src/components/AppHeader';
-import { InstrumentCard } from '../src/components/InstrumentCard';
-import { SortChip } from '../src/components/SortChip';
-import { useSort } from '../src/data/useSort';
 import { useAppActions, useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
-import { planSchedule } from '../src/domain/schedule';
 import {
   buildPortfolioRows,
   filterRows,
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatINR, formatINRShort } from '../src/lib/format';
@@ -121,14 +121,14 @@ export default function AssetsScreen() {
       </Card>
 
       <ChipRow>
-        {filters.map((item) => (
-          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
-        ))}
         <SortChip
           options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
           spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
           onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
         />
+        {filters.map((item) => (
+          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+        ))}
       </ChipRow>
 
       <View style={styles.holdingList}>
