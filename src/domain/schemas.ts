@@ -254,11 +254,11 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 
 export const TRANSACTION_CATEGORIES = {
   expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Own funds', 'Other'],
+  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
-export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Own funds'] as const;
+export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 
 type MoneyOptions = {
   minimum?: number;
@@ -323,6 +323,7 @@ export function makeTransactionFormSchema(
     ) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
     }
+
     const instrumentId = value.instrumentId;
     const isInstrumentType = value.type === 'invest';
     const isWithdrawal = value.type === 'income' && value.category === 'Withdrawal';
@@ -353,6 +354,7 @@ export function makeTransactionFormSchema(
           message: `Exceeds the current value of ${formatINR(available)}`,
         });
       }
+
     }
 
     if (
@@ -365,8 +367,69 @@ export function makeTransactionFormSchema(
   });
 }
 
+export function makeMoneyMovementFormSchema(
+  kind: 'borrowed-in' | 'repay' | 'withdraw' | 'own-funds',
+  today: ISODate,
+  options: { liabilityIds: string[]; instrumentIds: string[] },
+) {
+  return z.object({
+    amount: amountInputSchema,
+    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
+    liabilityId: z.string(),
+    instrumentId: z.string(),
+  }).superRefine((value, context) => {
+    if (kind === 'borrowed-in' && value.lenderName.length === 0) {
+      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
+    }
+    if (kind === 'repay' && !options.liabilityIds.includes(value.liabilityId)) {
+      context.addIssue({ code: 'custom', path: ['liabilityId'], message: 'Choose a liability to repay' });
+    }
+    if (kind === 'withdraw' && !options.instrumentIds.includes(value.instrumentId)) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose where you withdrew the money from' });
+    }
+  });
+}
+
+export function makeMonthAllocationFormSchema(
+  mode: 'shortfall' | 'surplus',
+  options: { liabilityIds: string[]; instrumentIds: string[]; maximumAmount: number },
+) {
+  const kinds = mode === 'shortfall'
+    ? ['borrowed', 'loan-proceeds', 'withdrawal', 'own-funds'] as const
+    : ['invest', 'ef', 'liability'] as const;
+  return z.object({
+    allocationKind: z.enum(kinds),
+    amount: moneyInputSchema({
+      minimum: 0.01,
+      maximum: options.maximumAmount,
+      maximumMessage: 'Amount exceeds the remaining balance',
+    }),
+    targetId: z.string(),
+    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+  }).superRefine((value, context) => {
+    if (value.allocationKind === 'borrowed' && !value.lenderName) {
+      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
+    }
+    if ((value.allocationKind === 'loan-proceeds' || value.allocationKind === 'liability') &&
+      !options.liabilityIds.includes(value.targetId)) {
+      context.addIssue({ code: 'custom', path: ['targetId'], message: 'Choose a liability' });
+    }
+    if ((value.allocationKind === 'withdrawal' || value.allocationKind === 'invest') &&
+      !options.instrumentIds.includes(value.targetId)) {
+      context.addIssue({ code: 'custom', path: ['targetId'], message: 'Choose a savings or investment' });
+    }
+  });
+}
+
 export type TransactionFormInput = z.input<ReturnType<typeof makeTransactionFormSchema>>;
 export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFormSchema>>;
+export type MoneyMovementFormInput = z.input<ReturnType<typeof makeMoneyMovementFormSchema>>;
+export type MoneyMovementFormOutput = z.output<ReturnType<typeof makeMoneyMovementFormSchema>>;
+export type MonthAllocationFormInput = z.input<ReturnType<typeof makeMonthAllocationFormSchema>>;
+export type MonthAllocationFormOutput = z.output<ReturnType<typeof makeMonthAllocationFormSchema>>;
 
 const holdingTypeFormSchema = z.enum([
   'Mutual fund / SIP',
@@ -473,6 +536,7 @@ export function makeLiabilityFormSchema(
     ratePct: optionalRate(60, 'Enter a rate between 0 and 60', true),
     startDate: dateInputSchema()
       .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+    received: z.boolean().default(false),
   };
   const recurring = z.object({
     ...common,

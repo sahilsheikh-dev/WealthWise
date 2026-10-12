@@ -18,6 +18,14 @@ import {
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import { setGoalLinks } from '../domain/goalLinks';
+import {
+  allocateSurplus,
+  fundShortfall,
+  recordMoneyMovement,
+  type MoneyMovement,
+  type ShortfallAllocation,
+  type SurplusAllocation,
+} from '../domain/cashFlow';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import {
@@ -92,6 +100,9 @@ export type AppActions = {
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
   setGoalLinks: (goalId: string, links: GoalLink[]) => void;
+  fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
+  allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
+  recordMoneyMovement: (movement: MoneyMovement) => void;
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
@@ -317,6 +328,15 @@ export function createAppStore(
         },
         setGoalLinks(goalId, links) {
           applyDataAction((data) => setGoalLinks(data, goalId, links));
+        },
+        fundShortfall(month, allocations) {
+          applyDataAction((data) => fundShortfall(data, { month, allocations }, deps.newId));
+        },
+        allocateSurplus(date, allocations) {
+          applyDataAction((data) => allocateSurplus(data, { date, allocations }, deps.newId, deps.today()));
+        },
+        recordMoneyMovement(movement) {
+          applyDataAction((data) => recordMoneyMovement(data, movement, deps.newId, deps.today()));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));

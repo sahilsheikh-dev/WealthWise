@@ -4,6 +4,7 @@ import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 export type TransactionMonthSummary = {
   income: number;
   withdrawals: number;
+  nonEarnedIncome: number;
   earnedIncome: number;
   expense: number;
   invest: number;
@@ -30,6 +31,7 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
   return {
     income,
     withdrawals,
+    nonEarnedIncome: income - earnedIncome,
     earnedIncome,
     expense,
     invest,

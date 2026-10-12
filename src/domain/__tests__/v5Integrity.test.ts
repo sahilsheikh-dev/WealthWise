@@ -68,7 +68,7 @@ describe('schema v5 cross-record integrity', () => {
     if (!recurring) throw new Error('Expected recurring liability.');
     expect(describeSource(data, {
       kind: 'liability-origin', parentId: recurring.id, entryId: recurring.id,
-    })).toBeNull();
+    })).toEqual({ label: recurring.name, route: '/liability-payments', params: { id: recurring.id } });
   });
 
   it('reports multiple transactions linked to one policy payment', () => {

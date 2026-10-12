@@ -24,6 +24,7 @@ const destinations: Record<string, string> = {
   Profile: '/profile-form',
   Theme: '/theme',
   'Link missing transactions': '/link-missing',
+  'Month review': '/month-review',
   'Erase all data': '/erase-data',
 };
 

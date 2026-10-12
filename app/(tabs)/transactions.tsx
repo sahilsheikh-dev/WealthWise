@@ -1,10 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
+  Button,
+  Card,
   Chip,
   ChipRow,
   EmptyState,
@@ -19,9 +21,11 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
 import { describeSource } from '../../src/domain/links';
+import { monthPositionAt, reviewableMonths } from '../../src/domain/cashFlow';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { todayISO } from '../../src/lib/clock';
 import { savingsLine } from '../../src/lib/savingsLine';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
@@ -43,6 +47,9 @@ export default function TransactionsScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [movementSheetOpen, setMovementSheetOpen] = useState(false);
+  const [dismissedReview, setDismissedReview] = useState<string | null>(null);
+  const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
   const monthPanResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
@@ -54,6 +61,11 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const position = useMemo(() => monthPositionAt(data.transactions, month), [data.transactions, month]);
+  const review = useMemo(
+    () => reviewableMonths(data, today).find((item) => item.month === month),
+    [data, month, today],
+  );
   const savings = savingsLine(summary);
   const rows = useMemo(
     () => filterTransactions(data.transactions, { month, type: filter, query }),
@@ -61,6 +73,16 @@ export default function TransactionsScreen() {
   );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
+  const movements = [
+    { label: 'Spent money', route: '/transaction-form' as const, type: 'expense' as const },
+    { label: 'Earned money', route: '/transaction-form' as const, type: 'income' as const },
+    { label: 'Invested money', route: '/transaction-form' as const, type: 'invest' as const },
+    { label: 'Money from friend or family', route: '/money-movement-form' as const, kind: 'borrowed-in' },
+    { label: 'Loan received', route: '/liability-form' as const, received: '1' },
+    { label: 'Repaid a friend or loan', route: '/money-movement-form' as const, kind: 'repay' },
+    { label: 'Took money out of savings or investments', route: '/money-movement-form' as const, kind: 'withdraw' },
+    { label: 'Used my own funds', route: '/money-movement-form' as const, kind: 'own-funds' },
+  ];
 
   return (
     <Screen scroll={false}>
@@ -68,8 +90,41 @@ export default function TransactionsScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
-          rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
+          rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => setMovementSheetOpen(true) }]}
         />
+        <Card style={styles.cashCard}>
+          <AppText weight="semibold">{position.opening < 0 ? 'Shortfall brought forward' : 'Brought forward'}</AppText>
+          <AppText style={{ color: colors.text2 }}>{formatINR(Math.abs(position.opening))}</AppText>
+          <AppText style={typography.meta}>
+            This month’s flow {formatINR(position.closing - position.opening)}
+          </AppText>
+          <AppText weight="semibold">Closing balance {formatINR(position.closing)}</AppText>
+        </Card>
+        {review && dismissedReview !== month ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Review this month's cash flow"
+            onPress={() => router.push({ pathname: '/month-review', params: { month } })}
+            style={[styles.reviewBanner, { backgroundColor: colors.errDim, borderColor: colors.err }]}>
+            <View style={styles.reviewCopy}>
+              <AppText weight="semibold">
+                {review.closing < 0
+                  ? `You spent ${formatINR(Math.abs(review.closing))} more than you received in ${formatMonth(month)}. How was it funded?`
+                  : `You had ${formatINR(review.closing)} left over from ${formatMonth(month)}.`}
+              </AppText>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss month review reminder"
+              hitSlop={10}
+              onPress={(event) => {
+                event.stopPropagation();
+                setDismissedReview(month);
+              }}>
+              <AppText weight="bold">×</AppText>
+            </Pressable>
+          </Pressable>
+        ) : null}
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -104,9 +159,9 @@ export default function TransactionsScreen() {
           <StatPill label="Expense" value={formatINR(summary.expense)} tone="err" />
           <StatPill label="Invested" value={formatINR(summary.invest)} tone="primary" />
         </View>
-        {savings.kind !== 'none' && savings.withdrawals > 0 ? (
+        {summary.nonEarnedIncome > 0 ? (
           <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
-            Includes {formatINR(summary.withdrawals)} withdrawn from investments
+            Includes {formatINR(summary.nonEarnedIncome)} from withdrawals, borrowing, loan proceeds and own funds
           </AppText>
         ) : null}
         {savings.kind === 'rates' ? (
@@ -167,7 +222,7 @@ export default function TransactionsScreen() {
               <AppText weight="bold" style={[styles.dateGroup, { color: colors.text3 }]}>{formatDate(group.date)}</AppText>
               {group.items.map((item) => {
                 const tone = transactionTone[item.type];
-                const linked = item.source?.kind === 'holding-entry' || item.source?.kind === 'ef-entry'
+                const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
                 return (
@@ -187,6 +242,39 @@ export default function TransactionsScreen() {
         </View>
       </ScrollView>
       </View>
+      <Modal
+        visible={movementSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setMovementSheetOpen(false)}>
+        <Pressable style={styles.modalScrim} onPress={() => setMovementSheetOpen(false)}>
+          <Pressable
+            accessibilityViewIsModal
+            onPress={(event) => event.stopPropagation()}
+            style={[styles.movementSheet, { backgroundColor: colors.surface }]}>
+            <AppText weight="bold" style={styles.sheetTitle}>What happened?</AppText>
+            {movements.map((movement) => (
+              <Pressable
+                accessibilityRole="button"
+                key={movement.label}
+                onPress={() => {
+                  setMovementSheetOpen(false);
+                  if ('kind' in movement) {
+                    router.push({ pathname: movement.route, params: { kind: movement.kind } });
+                  } else if ('type' in movement) {
+                    router.push({ pathname: movement.route, params: { type: movement.type } });
+                  } else if ('received' in movement) {
+                    router.push({ pathname: movement.route, params: { received: movement.received } });
+                  }
+                }}
+                style={[styles.movementRow, { borderBottomColor: colors.border }]}>
+                <AppText>{movement.label}</AppText>
+              </Pressable>
+            ))}
+            <Button label="Cancel" onPress={() => setMovementSheetOpen(false)} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
@@ -204,4 +292,11 @@ const styles = StyleSheet.create({
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
+  cashCard: { gap: 5 },
+  reviewBanner: { marginHorizontal: 20, marginTop: 12, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  reviewCopy: { flex: 1 },
+  modalScrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
+  movementSheet: { padding: 20, paddingBottom: 34, borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 6 },
+  sheetTitle: { fontSize: 18, marginBottom: 8 },
+  movementRow: { minHeight: 48, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });
