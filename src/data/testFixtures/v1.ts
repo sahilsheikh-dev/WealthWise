@@ -120,3 +120,19 @@ export function makeV2Fixture() {
     })),
   };
 }
+
+export function makeV3Fixture() {
+  const v2 = makeV2Fixture();
+  return {
+    ...v2,
+    settings: {
+      ...v2.settings,
+      monthlySalary: null,
+      onboarded: true,
+    },
+  };
+}
+
+export function makeV4Fixture() {
+  return { ...makeV3Fixture(), efAllocation: null };
+}

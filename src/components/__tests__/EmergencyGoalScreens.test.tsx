@@ -75,6 +75,7 @@ function fixture(storedTarget: number, expenses: number): AppData {
       saved: 0,
       year: 2028,
       auto: 'ef',
+      links: [],
     }],
     transactions: expenses > 0 ? [{
       id: 'rent',

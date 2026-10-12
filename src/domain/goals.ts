@@ -52,6 +52,7 @@ export function ensureEfGoal(
         saved: 0,
         year: parseISO(options.asOf).y + 2,
         auto: 'ef',
+        links: [],
       };
       remaining = goals.map((goal) => ({ ...goal }));
     }

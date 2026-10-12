@@ -12,6 +12,7 @@ const makeLiability = (changes: Partial<RecurringLiability> = {}): RecurringLiab
   emi: 8_885,
   startDate: '2026-01-01',
   payments: [],
+  settlement: null,
   ...changes,
 });
 
