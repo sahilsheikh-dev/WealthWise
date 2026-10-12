@@ -4,11 +4,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '../../src/components/AppHeader';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
-import { useSort } from '../../src/data/useSort';
 import { useAppData } from '../../src/data/useAppData';
+import { useSort } from '../../src/data/useSort';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
-import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { goalProjection } from '../../src/domain/goalLinks';
+import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINRShort } from '../../src/lib/format';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
@@ -143,5 +143,5 @@ const styles = StyleSheet.create({
   amounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
-  sortRow: { marginHorizontal: 20, marginTop: 8 },
+  sortRow: { marginHorizontal: 20, marginVertical: 8 },
 });
