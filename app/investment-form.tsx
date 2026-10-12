@@ -315,8 +315,26 @@ function PlanFields({
         <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} />} />
       </FormSection>
       <FormSection title="Dates">
-        <Controller control={control} name="startDate" render={({ field }) => <DateField label="Start Date" accessibilityLabel="Plan start date" value={field.value} onChange={field.onChange} maximumDate={maximumDate} error={errors.startDate?.message} />} />
-        <Controller control={control} name="trackFrom" render={({ field }) => <DateField label="Tracking Start Date" accessibilityLabel="Tracking start date" value={field.value || today} onChange={field.onChange} maximumDate={maximumDate} error={errors.trackFrom?.message} />} />
+        <Controller control={control} name="startDate" render={({ field }) => <DateField
+          label="First scheduled contribution"
+          accessibilityLabel="First scheduled contribution date"
+          accessibilityHint="The first date on your recurring investment schedule."
+          value={field.value}
+          onChange={field.onChange}
+          maximumDate={maximumDate}
+          error={errors.startDate?.message}
+        />} />
+        <HelperText>The plan schedule starts on this date.</HelperText>
+        <Controller control={control} name="trackFrom" render={({ field }) => <DateField
+          label="Start tracking installments from"
+          accessibilityLabel="Installment tracking start date"
+          accessibilityHint="Only installments due on or after this date count toward missed contributions."
+          value={field.value || today}
+          onChange={field.onChange}
+          maximumDate={maximumDate}
+          error={errors.trackFrom?.message}
+        />} />
+        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected installments.</HelperText>
       </FormSection>
       <FormSection title="Opening and value">
         <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />
