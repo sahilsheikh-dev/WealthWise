@@ -97,6 +97,15 @@ export default function InvestmentEntriesScreen() {
           onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href),
         }]}
         menu={[
+          ...(holding.kind === 'plan' && (schedule?.summary.overdue ?? 0) + (schedule?.summary.ongoing ?? 0) > 0
+            ? [{
+              label: 'Clear past dues',
+              icon: 'edit' as const,
+              onPress: () => router.push(
+                `/clear-dues?kind=plan&id=${encodeURIComponent(holding.id)}` as Href,
+              ),
+            }]
+            : []),
           {
             label: 'Edit',
             icon: 'edit',

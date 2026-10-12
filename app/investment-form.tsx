@@ -28,6 +28,7 @@ import {
   type PlanFormInput,
   type PlanFormOutput,
 } from '../src/domain/schemas';
+import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
@@ -142,10 +143,34 @@ function PlanEditor({
   const stepUpPct = useWatch({ control, name: 'stepUpPct' });
   const tenureYears = useWatch({ control, name: 'tenureYears' });
   const frequency = useWatch({ control, name: 'frequency' });
+  const startDate = useWatch({ control, name: 'startDate' });
+  const planType = useWatch({ control, name: 'type' });
+  const opening = useWatch({ control, name: 'opening' });
+  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
   const previewValues: [number, number, number, number] = [
     Number(amount), Number(ratePct), Number(stepUpPct || '0'), Number(tenureYears),
   ];
   const [previewAmount, previewRatePct, previewStepUpPct, previewTenureYears] = previewValues;
+  const previewPastDues = !plan && startDate < today
+    && previewValues.every(Number.isFinite) && previewAmount > 0 && previewTenureYears > 0
+    ? pendingDues({
+      id: 'past-dues-preview',
+      kind: 'plan',
+      name: 'Preview',
+      type: planType,
+      frequency,
+      amount: previewAmount,
+      ratePct: previewRatePct,
+      stepUpPct: previewStepUpPct,
+      tenureYears: previewTenureYears,
+      startDate,
+      trackFrom: startDate,
+      opening: Number(opening) || 0,
+      actualValue: null,
+      actualValueDate: null,
+      logs: [],
+    }, today)
+    : null;
   const preview = previewValues.every(Number.isFinite) && previewAmount > 0 && previewTenureYears > 0
     ? projection({
       ...(plan ?? { id: 'preview', kind: 'plan', name: '', type: 'Mutual fund / SIP', startDate: today, trackFrom: today, opening: 0, actualValue: null, actualValueDate: null, logs: [] }),
@@ -161,12 +186,23 @@ function PlanEditor({
     void confirmAsync({ title: 'Discard changes?', message: 'Your changes have not been saved.', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
       .then((discard) => { if (discard) router.back(); });
   };
-  const save = (values: PlanFormOutput) => {
+  const save = async (values: PlanFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
     try {
       if (plan) actions.updatePlan(plan.id, values);
-      else actions.addPlan(values);
+      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
+        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
+          title: 'Record past installments?',
+          message: `This will record ${previewPastDues.count} installments totalling ${formatINRShort(previewPastDues.amount)} on their due dates.`,
+          confirmLabel: `Record ${previewPastDues.count} installments`,
+          cancelLabel: 'Review',
+        });
+        if (!confirmed) return;
+        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);
+      } else if (previewPastDues?.count) {
+        actions.addPlan({ ...values, trackFrom: startDate });
+      } else actions.addPlan(values);
       const state = useAppStore.getState();
       if (!state.lastError) {
         if (!plan && fromTransaction) {
@@ -200,6 +236,25 @@ function PlanEditor({
       {modeControl}
       {plan ? <ReadOnlyInvestmentKind label="Investment type" value="Recurring (SIP, RD...)" /> : null}
       <PlanFields control={control} errors={errors} today={today} onNameChange={onNameChange} maximumDate={plusDays(today, 366)} />
+      {!plan && startDate < today ? (
+        <View style={{ gap: 8 }}>
+          <SegmentedControl
+            label="Past installments"
+            value={pastInstallmentsMode}
+            options={[
+              { label: 'Already paid', value: 'settle' },
+              { label: 'Show as due', value: 'show' },
+              { label: 'Record as paid', value: 'record' },
+            ]}
+            onChange={setPastInstallmentsMode}
+          />
+          {previewPastDues ? (
+            <HelperText>
+              {previewPastDues.count} past installments · {formatINRShort(previewPastDues.amount)}
+            </HelperText>
+          ) : null}
+        </View>
+      ) : null}
       {preview ? <AppText style={[typography.meta, { color: colors.text2 }]}>
         Projected {formatINRShort(preview.futureValue)} from {formatINRShort(preview.totalContributions)} of contributions
       </AppText> : null}

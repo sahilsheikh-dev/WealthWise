@@ -33,6 +33,17 @@ import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { resetEfAllocation, setEfAllocation } from '../domain/efAllocationActions';
 import type { EfAllocation } from '../domain/efAllocation';
+import {
+  addLiabilityWithHistory,
+  addPlanWithHistory,
+  addPolicyWithHistory,
+  clearDue,
+  clearPastDues,
+  undoClearDue,
+  type AddPolicyInput,
+  type DueTarget,
+  type PastDuesMode,
+} from '../domain/dues';
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
 import { createStressTransactions } from '../domain/stressData';
@@ -61,6 +72,16 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
+  clearDue: (target: DueTarget) => string | undefined;
+  clearPastDues: (target: DueTarget, options: {
+    mode: 'settle' | 'record';
+    balance?: number;
+    addSkippedToOpening?: boolean;
+  }) => { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
+  undoClearDue: (target: DueTarget, entryId: string) => void;
+  addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
+  addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
+  addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -221,6 +242,50 @@ export function createAppStore(
         },
         deleteInvestmentEntry(holdingId, entryId) {
           applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
+        },
+        clearDue(target) {
+          let entryId: string | undefined;
+          applyDataAction((data) => {
+            const result = clearDue(data, target, { date: deps.today(), newId: deps.newId });
+            entryId = result.entryId;
+            return result.data;
+          });
+          return entryId;
+        },
+        clearPastDues(target, options) {
+          let summary: { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
+          applyDataAction((data) => {
+            const result = clearPastDues(data, target, options, { asOf: deps.today(), newId: deps.newId });
+            summary = result.summary;
+            return result.data;
+          });
+          return summary;
+        },
+        undoClearDue(target, entryId) {
+          applyDataAction((data) => undoClearDue(data, target, entryId));
+        },
+        addPlanWithHistory(input, mode, addSkippedToOpening = true) {
+          applyDataAction((data) => addPlanWithHistory(data, input, {
+            mode,
+            addSkippedToOpening,
+            asOf: deps.today(),
+            newId: deps.newId,
+          }).data);
+        },
+        addLiabilityWithHistory(input, mode, balance) {
+          applyDataAction((data) => addLiabilityWithHistory(data, input, {
+            mode,
+            balance,
+            asOf: deps.today(),
+            newId: deps.newId,
+          }).data);
+        },
+        addPolicyWithHistory(input, mode) {
+          applyDataAction((data) => addPolicyWithHistory(data, input, {
+            mode,
+            asOf: deps.today(),
+            newId: deps.newId,
+          }).data);
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));

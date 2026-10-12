@@ -30,6 +30,8 @@ export type InstrumentCardModel = {
   nextLine?: string;
   behindLine?: string;
   statuses: InstrumentCardStatus[];
+  pendingDueCount?: number;
+  pendingDueAmount?: number;
   headerAction: InstrumentCardAction;
   actions: InstrumentCardAction[];
 };
@@ -103,6 +105,8 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       } : {}),
       ...(overdue > 0 && schedule.summary.nextDue ? { behindLine: `${overdue} behind` } : {}),
       statuses,
+      pendingDueCount: schedule.summary.overdue + schedule.summary.ongoing,
+      pendingDueAmount: schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0,
       headerAction: { id: 'edit', label: 'Edit' },
       actions: [
         { id: 'deposit', label: 'Log installment' },

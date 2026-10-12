@@ -4,15 +4,19 @@ import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instru
 import { formatINR } from '../lib/format';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import type { DueTarget } from '../domain/dues';
 import { CardHeaderRow } from './CardHeaderRow';
+import { DueActions } from './DueActions';
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
 
 export function InstrumentCard({
   model,
   onAction,
+  dueTarget,
 }: {
   model: InstrumentCardModel;
   onAction: (action: InstrumentCardAction['id']) => void;
+  dueTarget?: DueTarget;
 }) {
   const { colors } = useTheme();
   const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
@@ -38,6 +42,13 @@ export function InstrumentCard({
       ) : null}
       {model.nextLine ? <AppText style={[typography.meta, styles.nextLine, { color: colors.text2 }]}>{model.nextLine}</AppText> : null}
       {model.behindLine ? <AppText style={[typography.meta, styles.nextLine, { color: colors.err }]}>{model.behindLine}</AppText> : null}
+      {dueTarget && model.pendingDueCount !== undefined && model.pendingDueCount > 0 ? (
+        <DueActions
+          target={dueTarget}
+          pendingCount={model.pendingDueCount}
+          nextAmount={model.pendingDueAmount ?? 0}
+        />
+      ) : null}
       <AppText style={[typography.meta, styles.description, { color: colors.text2 }]}>{model.description}</AppText>
       {model.statuses.length ? (
         <View style={styles.statuses}>

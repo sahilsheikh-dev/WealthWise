@@ -1,5 +1,15 @@
 import { addMonths } from './dates';
 import { loanState } from './liability';
+import {
+  classifySlot,
+  generateSlots,
+  matchEntriesFIFO,
+  summarizeSlots,
+  type ScheduleStatus,
+  type SlotRow,
+  type SlotSummary,
+} from './slots';
+import { policySchedule } from './policySchedule';
 import { PERIODS_PER_YEAR, scheduledDate, totalPeriods } from './sip';
 import type {
   AppData,
@@ -9,31 +19,9 @@ import type {
   RecurringLiability,
 } from './types';
 
-export type ScheduleStatus = 'paid' | 'ongoing' | 'overdue' | 'upcoming';
-
-export type ScheduleRow = {
-  id: string;
-  index: number;
-  dueDate: ISODate;
-  amount: number;
-  status: ScheduleStatus;
-  paidOn?: ISODate;
-  paidAmount?: number;
-  entryId?: string;
-  interest?: number;
-  principal?: number;
-  balanceAfter?: number;
-};
-
-export type ScheduleSummary = {
-  paid: number;
-  ongoing: number;
-  overdue: number;
-  upcoming: number;
-  nextDue: ScheduleRow | null;
-  paidAmount: number;
-  remainingPlanned: number;
-};
+export type { ScheduleStatus } from './slots';
+export type ScheduleRow = SlotRow;
+export type ScheduleSummary = SlotSummary;
 
 export type PlanSchedule = {
   rows: ScheduleRow[];
@@ -46,7 +34,7 @@ export type LiabilitySchedule = PlanSchedule & {
 };
 
 export type UpcomingDue = {
-  kind: 'plan' | 'liability';
+  kind: 'plan' | 'liability' | 'policy';
   parentId: string;
   name: string;
   row: ScheduleRow;
@@ -69,65 +57,51 @@ function planAmount(plan: PlanHolding, index: number): number {
   return Math.round(plan.amount * (1 + stepUp) ** Math.floor(index / PERIODS_PER_YEAR[plan.frequency]) * 100) / 100;
 }
 
-function planUnpaidStatus(plan: PlanHolding, index: number, asOf: ISODate): ScheduleStatus {
-  const dueDate = scheduledDate(plan, index);
-  if (dueDate > asOf) return 'upcoming';
-  const nextDue = scheduledDate(plan, index + 1);
-  return asOf < nextDue ? 'ongoing' : 'overdue';
-}
-
-function summarize(rows: ScheduleRow[]): ScheduleSummary {
-  const nextDue = rows.find((row) => row.status !== 'paid') ?? null;
-  return {
-    paid: rows.filter((row) => row.status === 'paid').length,
-    ongoing: rows.filter((row) => row.status === 'ongoing').length,
-    overdue: rows.filter((row) => row.status === 'overdue').length,
-    upcoming: rows.filter((row) => row.status === 'upcoming').length,
-    nextDue,
-    paidAmount: rows.reduce((sum, row) => sum + (row.paidAmount ?? 0), 0),
-    remainingPlanned: rows.reduce((sum, row) => sum + (row.status === 'paid' ? 0 : row.amount), 0),
-  };
-}
-
 function orderedByDate<T extends { date: ISODate; id: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 }
 
-function planRow(
-  plan: PlanHolding,
-  index: number,
-  asOf: ISODate,
-  paidEntry?: PlanHolding['logs'][number],
-): ScheduleRow {
-  const amount = planAmount(plan, index);
-  const dueDate = scheduledDate(plan, index);
-  return paidEntry
-    ? {
-      id: `plan:${index}`,
-      index,
-      dueDate,
-      amount,
-      status: 'paid',
-      paidOn: paidEntry.date,
-      paidAmount: paidEntry.amount,
-      entryId: paidEntry.id,
-    }
-    : {
-      id: `plan:${index}`,
-      index,
-      dueDate,
-      amount,
-      status: planUnpaidStatus(plan, index, asOf),
-    };
+function planSlots(plan: PlanHolding, first: number, count: number) {
+  return generateSlots(
+    count,
+    first,
+    (index) => scheduledDate(plan, index),
+    (index) => planAmount(plan, index),
+    (index) => `plan:${index}`,
+  );
+}
+
+function planRows(plan: PlanHolding, asOf: ISODate): ScheduleRow[] {
+  const first = firstPlanIndex(plan);
+  const slots = planSlots(plan, first, totalPeriods(plan));
+  const deposits = plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom);
+  const matches = matchEntriesFIFO(slots, deposits.filter((entry) => entry.date <= asOf));
+  return slots.map((slot) => {
+    const payment = matches.get(slot.index);
+    return payment
+      ? {
+        id: slot.id,
+        index: slot.index,
+        dueDate: slot.dueDate,
+        amount: slot.amount,
+        status: 'paid',
+        paidOn: payment.date,
+        paidAmount: payment.amount,
+        entryId: payment.id,
+      }
+      : {
+        id: slot.id,
+        index: slot.index,
+        dueDate: slot.dueDate,
+        amount: slot.amount,
+        status: classifySlot(slot.dueDate, slot.nextDueDate, asOf),
+      };
+  });
 }
 
 export function planSchedule(plan: PlanHolding, asOf: ISODate): PlanSchedule {
-  const total = totalPeriods(plan);
-  const first = firstPlanIndex(plan);
-  const deposits = orderedByDate(plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom));
-  const rows = Array.from({ length: Math.max(0, total - first) }, (_, offset) =>
-    planRow(plan, first + offset, asOf, deposits[offset]));
-  return { rows, summary: summarize(rows) };
+  const rows = planRows(plan, asOf);
+  return { rows, summary: summarizeSlots(rows) };
 }
 
 export function planNextRows(plan: PlanHolding, asOf: ISODate, count: number): ScheduleRow[] {
@@ -139,34 +113,39 @@ export function planNextRows(plan: PlanHolding, asOf: ISODate, count: number): S
     count + (entry.kind === 'Deposit' && entry.date >= plan.trackFrom ? 1 : 0), 0);
   const firstUnpaid = Math.min(total, first + depositCount);
   const end = Math.min(total, firstUnpaid + take);
-  const rows: ScheduleRow[] = [];
-  for (let index = firstUnpaid; index < end; index += 1) {
-    rows.push(planRow(plan, index, asOf));
-  }
-  return rows;
+  return planSlots(plan, firstUnpaid, end).map((slot) => ({
+    id: slot.id,
+    index: slot.index,
+    dueDate: slot.dueDate,
+    amount: slot.amount,
+    status: classifySlot(slot.dueDate, slot.nextDueDate, asOf),
+  }));
 }
 
 function liabilityDueDate(liability: RecurringLiability, index: number): ISODate {
   return addMonths(liability.startDate, index);
 }
 
-function statusForDueDate(dueDate: ISODate, nextDueDate: ISODate, asOf: ISODate): ScheduleStatus {
-  if (dueDate > asOf) return 'upcoming';
-  return asOf < nextDueDate ? 'ongoing' : 'overdue';
-}
-
 function recurringLiabilitySchedule(liability: RecurringLiability, asOf: ISODate): LiabilitySchedule {
-  const emiPayments = orderedByDate(liability.payments.filter((payment) => payment.kind === 'EMI' && payment.date <= asOf));
-  const matchedCount = Math.min(liability.tenureMonths, emiPayments.length);
+  const slots = generateSlots(
+    liability.tenureMonths + 1,
+    1,
+    (index) => liabilityDueDate(liability, index),
+    () => liability.emi,
+    (index) => `liability:${index}`,
+  );
+  const emiPayments = liability.payments.filter((payment) => payment.kind === 'EMI' && payment.date <= asOf);
+  const matches = matchEntriesFIFO(slots, emiPayments);
+  const settlement = liability.settlement;
   let balance = loanState(liability, asOf).balance;
   const monthlyRate = liability.ratePct / 1200;
   let neverClears = balance >= 1 && liability.emi <= balance * monthlyRate;
   const rows: ScheduleRow[] = [];
 
-  for (let index = 1; index <= liability.tenureMonths; index += 1) {
-    const dueDate = liabilityDueDate(liability, index);
-    const nextDueDate = liabilityDueDate(liability, index + 1);
-    const payment = index <= matchedCount ? emiPayments[index - 1] : undefined;
+  if (settlement !== null) balance = settlement.balance;
+  for (const slot of slots) {
+    const { index, dueDate, nextDueDate } = slot;
+    const payment = matches.get(index);
     if (payment) {
       rows.push({
         id: `liability:${index}`,
@@ -180,6 +159,18 @@ function recurringLiabilitySchedule(liability: RecurringLiability, asOf: ISODate
       });
       continue;
     }
+    if (settlement !== null && dueDate <= settlement.asOf) {
+      rows.push({
+        id: slot.id,
+        index,
+        dueDate,
+        amount: slot.amount,
+        status: 'paid',
+        paidAmount: slot.amount,
+        assumed: true,
+      });
+      continue;
+    }
     if (balance < 1) break;
     const interest = balance * monthlyRate;
     if (liability.emi <= interest && liability.emi > 0) neverClears = true;
@@ -187,11 +178,11 @@ function recurringLiabilitySchedule(liability: RecurringLiability, asOf: ISODate
     const principal = Math.max(0, amount - interest);
     balance = Math.max(0, balance + interest - amount);
     rows.push({
-      id: `liability:${index}`,
+      id: slot.id,
       index,
       dueDate,
       amount,
-      status: statusForDueDate(dueDate, nextDueDate, asOf),
+      status: classifySlot(dueDate, nextDueDate, asOf),
       interest,
       principal,
       balanceAfter: balance,
@@ -200,7 +191,7 @@ function recurringLiabilitySchedule(liability: RecurringLiability, asOf: ISODate
 
   return {
     rows,
-    summary: summarize(rows),
+    summary: summarizeSlots(rows),
     shortfall: balance >= 1,
     neverClears,
   };
@@ -229,7 +220,7 @@ function oneTimeLiabilitySchedule(liability: Extract<Liability, { kind: 'one-tim
   };
   return {
     rows: [row],
-    summary: summarize([row]),
+    summary: summarizeSlots([row]),
     shortfall: false,
     neverClears: false,
   };
@@ -265,6 +256,17 @@ export function upcomingDue(data: AppData, asOf: ISODate, limit = 5): UpcomingDu
         kind: 'liability',
         parentId: liability.id,
         name: liability.name,
+        row: schedule.summary.nextDue,
+      });
+    }
+  }
+  for (const policy of data.policies) {
+    const schedule = policySchedule(policy, asOf);
+    if (schedule.summary.nextDue) {
+      rows.push({
+        kind: 'policy',
+        parentId: policy.id,
+        name: policy.name,
         row: schedule.summary.nextDue,
       });
     }

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 
@@ -18,6 +18,7 @@ import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { emiAuto } from '../src/domain/liability';
+import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOutput } from '../src/domain/schemas';
 import { LIABILITY_TYPES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
@@ -90,6 +91,8 @@ export default function LiabilityFormScreen() {
   const kind = useWatch({ control, name: 'kind' });
   const principal = useWatch({ control, name: 'principal' });
   const rate = useWatch({ control, name: 'ratePct' });
+  const startDate = useWatch({ control, name: 'startDate' });
+  const liabilityType = useWatch({ control, name: 'type' });
   const tenure = useWatch({ control, name: 'tenureMonths' });
   const emi = useWatch({ control, name: 'emi' });
   const principalValue = Number(principal);
@@ -100,6 +103,25 @@ export default function LiabilityFormScreen() {
     ? emiAuto(principalValue, rateValue, tenureValue)
     : null;
   const underTenure = calculated !== null && Number(emi) > 0 && Number(emi) * tenureValue < principalValue;
+  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
+  const [outstandingBalance, setOutstandingBalance] = useState('');
+  const previewPastDues = !liabilityId && kind === 'recurring' && startDate < today
+    && principalValue > 0 && Number.isFinite(principalValue) && Number.isFinite(rateValue)
+    && Number.isFinite(tenureValue) && tenureValue > 0 && (Number(emi) > 0 || calculated !== null)
+    ? pendingDues({
+      id: 'past-dues-preview',
+      kind: 'recurring',
+      name: 'Preview',
+      type: liabilityType,
+      principal: principalValue,
+      ratePct: rateValue,
+      startDate,
+      tenureMonths: tenureValue,
+      emi: Number(emi) > 0 ? Number(emi) : calculated ?? 0,
+      payments: [],
+      settlement: null,
+    }, today)
+    : null;
 
   const close = () => {
     if (!isDirty) return router.back();
@@ -111,7 +133,7 @@ export default function LiabilityFormScreen() {
       destructive: true,
     }).then((discard) => { if (discard) router.back(); });
   };
-  const save = (values: LiabilityFormOutput) => {
+  const save = async (values: LiabilityFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
     try {
@@ -119,7 +141,20 @@ export default function LiabilityFormScreen() {
         const { kind: _kind, ...patch } = values;
         actions.updateLiability(liabilityId, patch);
       }
-      else actions.addLiability(values);
+      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
+        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
+          title: 'Record past installments?',
+          message: `This will record ${previewPastDues.count} installments totalling ${formatINR(previewPastDues.amount)} on their due dates.`,
+          confirmLabel: `Record ${previewPastDues.count} installments`,
+          cancelLabel: 'Review',
+        });
+        if (!confirmed) return;
+        actions.addLiabilityWithHistory(
+          values,
+          pastInstallmentsMode,
+          outstandingBalance.trim() ? Number(outstandingBalance) : undefined,
+        );
+      } else actions.addLiability(values);
       const error = useAppStore.getState().lastError;
       if (error) void confirmAsync({ title: 'Could not save liability', message: error, confirmLabel: 'OK' });
       else router.back();
@@ -214,6 +249,38 @@ export default function LiabilityFormScreen() {
           />
         )} />
       )}
+      {!liabilityId && kind === 'recurring' && startDate < today ? (
+        <View style={{ gap: 8 }}>
+          <SegmentedControl
+            label="Past installments"
+            value={pastInstallmentsMode}
+            options={[
+              { label: 'Already paid', value: 'settle' },
+              { label: 'Show as due', value: 'show' },
+              { label: 'Record as paid', value: 'record' },
+            ]}
+            onChange={setPastInstallmentsMode}
+          />
+          {previewPastDues ? (
+            <HelperText>
+              {previewPastDues.count} past installments · {formatINR(previewPastDues.amount)}
+            </HelperText>
+          ) : null}
+          {pastInstallmentsMode === 'settle' ? (
+            <>
+              <MoneyField
+                label="Outstanding balance today"
+                accessibilityLabel="Outstanding balance today"
+                value={outstandingBalance}
+                onChangeText={setOutstandingBalance}
+              />
+              <HelperText>
+                If this loan started in the past, enter what you still owe so old EMIs do not show as due.
+              </HelperText>
+            </>
+          ) : null}
+        </View>
+      ) : null}
     </FormScreen>
   );
 }

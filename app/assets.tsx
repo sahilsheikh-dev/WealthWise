@@ -108,6 +108,7 @@ export default function AssetsScreen() {
             <InstrumentCard
               key={row.id}
               model={model}
+              dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {
                   if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Deposit');
