@@ -39,16 +39,16 @@ describe('schema migration', () => {
     const expected = {
       ...v2,
       settings: { ...v2.settings, monthlySalary: null, onboarded: true },
-      efAllocation: null,
     };
     expect(migrateV2ToV3(v2)).toEqual(expected);
-    expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expected });
+    expect(migrateV2ToV3(v2)).not.toHaveProperty('efAllocation');
+    expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: { ...expected, efAllocation: null } });
     const before = validateImportData({
       ...v2,
       settings: { ...v2.settings, monthlySalary: null, onboarded: true },
       efAllocation: null,
     });
-    const after = validateImportData(migrateV2ToV3(v2));
+    const after = validateImportData(migratePersisted(v2, 2));
     if (!before.ok || !after.ok) throw new Error('Expected the v2 migration fixture to validate.');
     expect(netWorth(after.data, '2026-09-03')).toEqual(netWorth(before.data, '2026-09-03'));
     expect(efBalance(after.data.efEntries)).toBe(efBalance(before.data.efEntries));

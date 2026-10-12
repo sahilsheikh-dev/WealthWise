@@ -16,8 +16,9 @@ describe('rupee and date formatters', () => {
   it('uses L and Cr abbreviations at the required thresholds', () => {
     expect(formatINRShort(99_999)).toBe('₹99,999');
     expect(formatINRShort(100_000)).toBe('₹1.00 L');
-    expect(formatINRShort(12_34_56_789)).toBe('₹12.35 Cr');
     expect(formatINRShort(-100_000)).toBe('-₹1.00 L');
+    expect(formatINRShort(12_34_56_789)).toBe('₹12.35 Cr');
+    expect(formatINRShort(-12_34_56_789)).toBe('-₹12.35 Cr');
     expect(formatINRShort(-10_000_000)).toBe('-₹1.00 Cr');
   });
 

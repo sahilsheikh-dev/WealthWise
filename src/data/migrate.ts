@@ -84,7 +84,7 @@ export function migrateV2ToV3(data: unknown): unknown {
       || data.liabilities.length > 0
       || data.efEntries.length > 0,
   };
-  return { ...data, settings, efAllocation: null };
+  return { ...data, settings };
 }
 
 export function migrateV3ToV4(data: unknown): unknown {
@@ -101,7 +101,7 @@ export function migrateV3ToV4(data: unknown): unknown {
   }
   return {
     ...data,
-    efAllocation: null,
+    efAllocation: data.efAllocation ?? null,
   };
 }
 

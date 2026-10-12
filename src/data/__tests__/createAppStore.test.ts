@@ -821,6 +821,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   const secureStore = new Map([['wealthwise.lock.v1', '{"enabled":true}']]);
   storage.values.set('wealthwise.app.v1.premigration.v1', 'original-v1-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v3', 'original-v3-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -840,6 +841,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.preimport',
     'wealthwise.app.v1.premigration.v1',
     'wealthwise.app.v1.premigration.v2',
+    'wealthwise.app.v1.premigration.v3',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',
