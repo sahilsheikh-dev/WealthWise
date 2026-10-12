@@ -13,6 +13,7 @@ import {
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
   SCHEMA_VERSION,
+  NON_EARNED_INCOME_CATEGORIES,
   TRANSACTION_CATEGORIES,
 } from '../schemas';
 
@@ -25,9 +26,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version four', () => {
+  it('accepts the typed mock app data and exports schema version five', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(4);
+    expect(SCHEMA_VERSION).toBe(5);
   });
 
   describe('onboarding and profile schemas', () => {
@@ -75,6 +76,54 @@ describe('appDataSchema', () => {
         holdings: [{ ...plan, actualValue: null, actualValueDate: null }],
       }).success).toBe(true);
     }
+  });
+
+  it('validates goal shares, liability settlements, insurance policy fields and budget lines', () => {
+    const goal = mockAppData.goals.find((item) => item.links.length > 0);
+    const policy = mockAppData.policies[0];
+    const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
+    if (!goal || !policy || !recurring || recurring.kind !== 'recurring') throw new Error('Expected v5 mock records.');
+
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      goals: mockAppData.goals.map((item) => item.id === goal.id
+        ? { ...item, links: [{ instrumentId: 'holding-sip', share: 1.23 }] }
+        : item),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: mockAppData.liabilities.map((item) => item.id === recurring.id
+        ? { ...recurring, settlement: { asOf: '2026-03-31', balance: 100 } }
+        : item),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, premium: 10_000_001 }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, kind: 'term', currentValue: 1 }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      budget: { plannedIncome: 0, lines: [] },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      budget: { plannedIncome: null, lines: [
+        { category: 'Food', planned: 100 },
+        { category: 'Food', planned: 200 },
+      ] },
+    }).success).toBe(false);
+    const oneTime = mockAppData.liabilities.find((item) => item.kind === 'one-time');
+    if (!oneTime) throw new Error('Expected mock one-time liability.');
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{ ...oneTime, settlement: null }],
+    }).success).toBe(false);
+    expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Own funds']);
+    expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
+    expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Own funds']));
   });
 
   it('validates optional metadata and every signed-money / identifier rule', () => {

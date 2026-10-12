@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 export type AddLiabilityInput =
-  | (Omit<RecurringLiability, 'id' | 'payments' | 'emi'> & { emi: number | null })
+  | (Omit<RecurringLiability, 'id' | 'payments' | 'emi' | 'settlement'> & { emi: number | null })
   | Omit<OneTimeLiability, 'id' | 'payments'>;
 export type LiabilityPatch = Partial<
   Pick<RecurringLiability, 'name' | 'type' | 'principal' | 'ratePct' | 'startDate' | 'tenureMonths'>
@@ -46,6 +46,7 @@ export function addLiability(data: AppData, input: AddLiabilityInput, newId: () 
       id: newId(),
       emi: input.emi ?? emiAuto(input.principal, input.ratePct, input.tenureMonths),
       payments: [],
+      settlement: null,
     }
     : { ...input, id: newId(), payments: [] };
   if (liability.kind === 'one-time') assertLiabilityDates(liability);

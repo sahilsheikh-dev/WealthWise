@@ -17,11 +17,11 @@ export class GoalTargetBelowMinimumError extends Error {
   }
 }
 
-export type AddGoalInput = Omit<Goal, 'id' | 'auto'>;
+export type AddGoalInput = Omit<Goal, 'id' | 'auto' | 'links'> & { links?: Goal['links'] };
 export type GoalPatch = Partial<Pick<Goal, 'name' | 'target' | 'saved' | 'year' | 'auto'>>;
 
 export function addGoal(data: AppData, input: AddGoalInput, newId: () => string): AppData {
-  const goal: Goal = { ...input, id: newId() };
+  const goal: Goal = { ...input, links: input.links ?? [], id: newId() };
   return { ...data, goals: [...data.goals, goal] };
 }
 
