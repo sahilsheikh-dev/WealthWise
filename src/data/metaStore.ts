@@ -5,6 +5,7 @@ const META_KEY = 'wealthwise.meta.v1';
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
   nudgeDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  storageWarnDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export type BackupMeta = z.infer<typeof metaSchema>;

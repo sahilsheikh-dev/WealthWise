@@ -3,6 +3,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
 import { createSafeStorage } from '../safeStorage';
+import { utf8ByteLength } from '../../lib/storageGuard';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -108,6 +109,29 @@ describe('createSafeStorage', () => {
     const blocked = createSafeStorage(base, { onWriteError, onCorrupt: jest.fn() }, { blockWrites: () => true });
     await blocked.setItem('blocked', 'value');
     expect(base.values.has('blocked')).toBe(false);
+  });
+
+  it('reports UTF-8 bytes for a valid read and successful writes to the tracked key', async () => {
+    const base = new MemoryStorage();
+    const onWriteSuccess = jest.fn();
+    const safe = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false, trackedKey: 'app', onReadSuccess: onWriteSuccess, onWriteSuccess },
+    );
+    await safe.setItem('other', '₹');
+    expect(onWriteSuccess).not.toHaveBeenCalled();
+    await safe.setItem('app', '₹🙂');
+    expect(onWriteSuccess).toHaveBeenCalledWith(7);
+    onWriteSuccess.mockClear();
+    const validValue = blob(mockAppData, 4);
+    base.values.set('app', validValue);
+    await safe.getItem('app');
+    expect(onWriteSuccess).toHaveBeenCalledWith(utf8ByteLength(validValue));
+    onWriteSuccess.mockClear();
+    base.failWrites = true;
+    await safe.setItem('app', 'failed');
+    expect(onWriteSuccess).not.toHaveBeenCalled();
   });
 
   it.each([1, 2, 3] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {

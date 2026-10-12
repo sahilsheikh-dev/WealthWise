@@ -12,6 +12,7 @@ import {
   StatusBadge,
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
+import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { liabilitySummary } from '../src/domain/liability';
@@ -205,11 +206,17 @@ export default function LiabilityPaymentsScreen() {
             );
           }
           return (
-            <Pressable onPress={() => openPayment(item)} style={[styles.row, { borderColor: colors.border }]}>
+            <SharedListRow
+              style={[styles.row, { borderColor: colors.border }]}
+              onPress={() => openPayment(item)}
+              onEdit={() => openPayment(item)}
+              editLabel="Edit liability payment"
+              accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatINR(item.amount)}`}
+            >
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
               <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
-            </Pressable>
+            </SharedListRow>
           );
         }}
       />

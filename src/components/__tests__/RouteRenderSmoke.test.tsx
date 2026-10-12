@@ -3,17 +3,31 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
+import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfEntryFormScreen from '../../../app/ef-entry-form';
+import EmergencyFundScreen from '../../../app/emergency-fund';
+import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
+import GoalsScreen from '../../../app/(tabs)/goals';
+import HomeScreen from '../../../app/(tabs)';
 import InvestmentEntryFormScreen from '../../../app/investment-entry-form';
+import InvestmentEntriesScreen from '../../../app/investment-entries';
 import InvestmentFormScreen from '../../../app/investment-form';
+import LiabilitiesScreen from '../../../app/liabilities';
 import LiabilityFormScreen from '../../../app/liability-form';
+import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
+import OnboardingScreen from '../../../app/onboarding';
+import ProfileFormScreen from '../../../app/profile-form';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
+import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
+import { shiftMonth } from '../../domain/dates';
+import { useUIStore } from '../../data/uiStore';
+import { formatMonth } from '../../lib/format';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -255,7 +269,11 @@ jest.mock('../../components/form/MoneyField', () => {
 jest.mock('../../components/form/DateField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    DateField: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    DateField: ({ label, accessibilityLabel, accessibilityHint }: {
+      label: string;
+      accessibilityLabel?: string;
+      accessibilityHint?: string;
+    }) => ReactModule.createElement('datefield', { accessibilityLabel, accessibilityHint }, label),
   };
 });
 
@@ -300,8 +318,11 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
+    BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
+    FlatList: node('flatlist'),
     KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Platform: { OS: 'ios' },
+    PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     StyleSheet: { create: (styles: object) => styles },
@@ -325,10 +346,19 @@ function renderScreen(screen: React.ReactElement) {
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
+    ['Home', React.createElement(HomeScreen)],
+    ['Goals', React.createElement(GoalsScreen)],
+    ['Transactions', React.createElement(TransactionsScreen)],
     ['Backup', React.createElement(BackupScreen)],
     ['Assets', React.createElement(AssetsScreen)],
+    ['Emergency fund', React.createElement(EmergencyFundScreen)],
+    ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
+    ['Emergency fund entry form', React.createElement(EfEntryFormScreen)],
+    ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
+    ['Onboarding', React.createElement(OnboardingScreen)],
+    ['Profile form', React.createElement(ProfileFormScreen)],
     ['Goal form create', React.createElement(GoalFormScreen)],
     ['Goal form edit', React.createElement(GoalFormScreen)],
     ['Transaction form create', React.createElement(TransactionFormScreen)],
@@ -337,6 +367,9 @@ describe('route render smoke audit', () => {
     ['Liability form edit', React.createElement(LiabilityFormScreen)],
     ['Liability payment form create', React.createElement(LiabilityPaymentFormScreen)],
     ['Liability payment form edit', React.createElement(LiabilityPaymentFormScreen)],
+    ['Liabilities', React.createElement(LiabilitiesScreen)],
+    ['Liability payments', React.createElement(LiabilityPaymentsScreen)],
+    ['Investment entries', React.createElement(InvestmentEntriesScreen)],
     ['Investment form create', React.createElement(InvestmentFormScreen)],
     ['Investment form edit', React.createElement(InvestmentFormScreen)],
     ['Investment entry form create', React.createElement(InvestmentEntryFormScreen)],
@@ -345,8 +378,53 @@ describe('route render smoke audit', () => {
     ['Emergency fund entry form edit', React.createElement(EfEntryFormScreen)],
   ];
 
-  it.each(screens)('%s renders without verb text', (_name, screen) => {
-    const renderer = renderScreen(screen);
-    assertNoVerbText(renderer.root);
+  it.each(screens)('%s renders without verb text', async (name, screen) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(screen);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Route did not render.');
+    assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
+  });
+
+  it('changes months with horizontal swipes and leaves chip-origin swipes alone', () => {
+    const renderer = renderScreen(React.createElement(TransactionsScreen));
+    const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
+    const previousMonthLabel = monthLabel();
+    const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
+    const chipSurface = renderer.root.findAll((node) => typeof node.props.onTouchStart === 'function')[0];
+    if (!chipSurface) throw new Error('Transaction filter touch surface did not render.');
+    const responder = () => renderer.root.findAll(
+      (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
+    )[0];
+    if (!responder()) throw new Error('Transaction swipe responder did not render.');
+
+    act(() => chipSurface.props.onTouchStart());
+    expect(responder()?.props.onMoveShouldSetPanResponderCapture({}, { dx: -80, dy: 0, vx: -1 })).toBe(false);
+    act(() => chipSurface.props.onTouchEnd());
+
+    const pan = responder();
+    if (!pan) throw new Error('Transaction swipe responder did not render.');
+    expect(pan.props.onMoveShouldSetPanResponderCapture({}, { dx: -80, dy: 0, vx: -1 })).toBe(true);
+    act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
+    expect(monthLabel()).not.toBe(previousMonthLabel);
+    expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
+  });
+
+  it('explains the first SIP installment and installment tracking dates', () => {
+    const renderer = renderScreen(React.createElement(InvestmentFormScreen));
+    const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
+    expect(dates[0]?.props).toMatchObject({
+      accessibilityLabel: 'First scheduled contribution date',
+      accessibilityHint: 'The first date on your recurring investment schedule.',
+    });
+    expect(dates[1]?.props).toMatchObject({
+      accessibilityLabel: 'Installment tracking start date',
+      accessibilityHint: 'Only installments due on or after this date count toward missed contributions.',
+    });
+    const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
+    expect(helperText).toContain('The plan schedule starts on this date.');
+    expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
   });
 });

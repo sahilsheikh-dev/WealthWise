@@ -4,7 +4,7 @@ import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instru
 import { formatINR } from '../lib/format';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
-import { IconButton } from './IconButton';
+import { CardHeaderRow } from './CardHeaderRow';
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
 
 export function InstrumentCard({
@@ -15,32 +15,23 @@ export function InstrumentCard({
   onAction: (action: InstrumentCardAction['id']) => void;
 }) {
   const { colors } = useTheme();
-  const actionIcons: Record<InstrumentCardAction['id'], 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle' | 'edit-2'> = {
+  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
     deposit: 'plus',
     withdraw: 'arrow-down-left',
     schedule: 'calendar',
     entries: 'list',
-    edit: 'edit-2',
     confirm: 'check-circle',
   };
   return (
     <Card style={styles.card}>
-      <View style={styles.heading}>
-        <View style={styles.nameBlock}>
-          <AppText weight="semibold" style={typography.name}>{model.name}</AppText>
-          <AppText style={[typography.meta, { color: colors.text3 }]}>{model.subtitle}</AppText>
-        </View>
-        <View style={styles.valueBlock}>
-          <AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>
-          <AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>
-        </View>
-        <IconButton
-          icon="edit-2"
-          label={`Edit ${model.name}`}
-          onPress={() => onAction(model.headerAction.id)}
-          hint="Edit this asset"
-        />
-      </View>
+      <CardHeaderRow
+        title={<AppText weight="semibold" style={typography.name}>{model.name}</AppText>}
+        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.subtitle}</AppText>}
+        value={<AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>}
+        valueCaption={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>}
+        editLabel={`Edit ${model.name}`}
+        onEdit={() => onAction(model.headerAction.id)}
+      />
       <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
       {model.progressCaption ? (
         <AppText style={[typography.meta, styles.progressCaption, { color: colors.text3 }]}>{model.progressCaption}</AppText>
@@ -54,18 +45,21 @@ export function InstrumentCard({
         </View>
       ) : null}
       <View style={[styles.actions, { borderTopColor: colors.border }]}>
-        {model.actions.map((action) => (
-          <Button
-            key={action.id}
-            label={action.label}
-            onPress={() => onAction(action.id)}
-            disabled={action.disabled}
-            accessibilityHint={action.accessibilityHint}
-            icon={actionIcons[action.id]}
-            variant={action.id === 'deposit' ? 'primary' : 'soft'}
-            style={styles.action}
-          />
-        ))}
+        {model.actions.map((action) => {
+          if (action.id === 'edit') return null;
+          return (
+            <Button
+              key={action.id}
+              label={action.label}
+              onPress={() => onAction(action.id)}
+              disabled={action.disabled}
+              accessibilityHint={action.accessibilityHint}
+              icon={actionIcons[action.id]}
+              variant={action.id === 'deposit' ? 'primary' : 'soft'}
+              style={styles.action}
+            />
+          );
+        })}
       </View>
     </Card>
   );
@@ -73,9 +67,6 @@ export function InstrumentCard({
 
 const styles = StyleSheet.create({
   card: { marginHorizontal: 0, marginTop: 0, marginBottom: 10 },
-  heading: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  nameBlock: { flex: 1, minWidth: 0, gap: 3 },
-  valueBlock: { maxWidth: '42%', alignItems: 'flex-end', gap: 3 },
   progressCaption: { marginTop: 5 },
   nextLine: { marginTop: 5 },
   description: { marginTop: 7, lineHeight: 18 },

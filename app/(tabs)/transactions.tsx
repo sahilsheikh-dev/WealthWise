@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
@@ -23,6 +23,7 @@ import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
 import { savingsLine } from '../../src/lib/savingsLine';
+import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -42,6 +43,16 @@ export default function TransactionsScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [touchingChips, setTouchingChips] = useState(false);
+  const monthPanResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_event, gesture) =>
+      !touchingChips && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderRelease: (_event, gesture) => {
+      const intent = swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx });
+      if (intent) setTxMonth(shiftMonth(month, intent === 'next' ? 1 : -1));
+    },
+  }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
   const savings = savingsLine(summary);
   const rows = useMemo(
@@ -53,6 +64,7 @@ export default function TransactionsScreen() {
 
   return (
     <Screen scroll={false}>
+      <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
@@ -66,7 +78,18 @@ export default function TransactionsScreen() {
             style={[styles.monthButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name="chevron-left" size={18} color={colors.text2} />
           </Pressable>
-          <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+          <Pressable
+            accessible
+            accessibilityRole="adjustable"
+            accessibilityLabel={`Selected month: ${formatMonth(month)}`}
+            accessibilityActions={[{ name: 'decrement', label: 'Previous month' }, { name: 'increment', label: 'Next month' }]}
+            onAccessibilityAction={({ nativeEvent }) => {
+              if (nativeEvent.actionName === 'decrement') setTxMonth(shiftMonth(month, -1));
+              if (nativeEvent.actionName === 'increment') setTxMonth(shiftMonth(month, 1));
+            }}
+            style={styles.monthAdjustable}>
+            <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Next month"
@@ -112,16 +135,21 @@ export default function TransactionsScreen() {
           </WarningBanner>
         ) : null}
 
-        <ChipRow>
-          {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
-            <Chip
-              key={item}
-              label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
-              selected={filter === item}
-              onPress={() => setFilter(item)}
-            />
-          ))}
-        </ChipRow>
+        <View
+          onTouchStart={() => setTouchingChips(true)}
+          onTouchEnd={() => setTouchingChips(false)}
+          onTouchCancel={() => setTouchingChips(false)}>
+          <ChipRow>
+            {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
+              <Chip
+                key={item}
+                label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
+                selected={filter === item}
+                onPress={() => setFilter(item)}
+              />
+            ))}
+          </ChipRow>
+        </View>
         <SearchField
           accessibilityLabel="Search transactions"
           placeholder="Search note or category"
@@ -158,16 +186,19 @@ export default function TransactionsScreen() {
           ))}
         </View>
       </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureSurface: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
   monthRow: { minHeight: 48, marginHorizontal: 20, marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   monthLabel: { fontSize: 14 },
+  monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
   rates: { marginHorizontal: 20, marginTop: 9, gap: 4 },
   savingsLine: { marginHorizontal: 20, marginTop: 9 },

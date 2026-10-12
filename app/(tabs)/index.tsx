@@ -15,8 +15,10 @@ import {
   StatPill,
   StatPillRow,
   StatusBadge,
+  WarningBanner,
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
+import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { addDays } from '../../src/domain/dates';
@@ -25,6 +27,7 @@ import { homeSummary } from '../../src/domain/summary';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
+import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -45,6 +48,7 @@ export default function HomeScreen() {
   const summary = homeSummary(data, today);
   const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
+  const persistedBytes = useUIStore((state) => state.persistedBytes);
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
@@ -57,6 +61,9 @@ export default function HomeScreen() {
     nudgeDismissedUntil: backupMeta.nudgeDismissedUntil,
     today,
   });
+  const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
+  const showStorageWarning = persistedBytes !== null
+    && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
   return (
     <Screen>
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
@@ -92,6 +99,29 @@ export default function HomeScreen() {
                   .catch(() => Alert.alert('Could not save', 'The reminder could not be dismissed. Try again.'));
               }}
             />
+          </View>
+        </Card>
+      ) : null}
+
+      {showStorageWarning && persistedBytes !== null ? (
+        <Card>
+          <WarningBanner>
+            {storageStatus === 'critical'
+              ? `Storage is almost full (${storageSummary(persistedBytes)}). Export a backup and free space before making more changes.`
+              : `Your saved data is growing (${storageSummary(persistedBytes)}). Consider exporting a backup.`}
+          </WarningBanner>
+          <View style={styles.storageActions}>
+            <Button label="Open backup" icon="download" variant="primary" onPress={() => router.push('/backup')} />
+            {storageStatus !== 'critical' ? (
+              <Button
+                label="Dismiss for 7 days"
+                onPress={() => {
+                  void metaStore.updateMeta({ storageWarnDismissedUntil: addDays(today, 7) })
+                    .then(setBackupMeta)
+                    .catch(() => Alert.alert('Could not save', 'The storage reminder could not be dismissed. Try again.'));
+                }}
+              />
+            ) : null}
           </View>
         </Card>
       ) : null}
@@ -163,19 +193,21 @@ export default function HomeScreen() {
       {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
         return (
-          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Pressable
+            key={goal.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${goal.name}, target ${formatINRShort(target)}, ${goal.year}, ${pct.toFixed(1)}% funded`}
+            accessibilityHint="Opens this goal for editing"
+            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalTop}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Edit ${goal.name}`}
-                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-                style={styles.goalNameBlock}>
+              <View style={styles.goalNameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>Target {formatINRShort(target)} · {goal.year}</AppText>
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
-              </Pressable>
+              </View>
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
             <ProgressBar percent={pct} />
@@ -198,7 +230,7 @@ export default function HomeScreen() {
                 ) : null}
               </>
             ) : null}
-          </View>
+          </Pressable>
         );
       })}
     </Screen>
@@ -210,6 +242,7 @@ const styles = StyleSheet.create({
   netWorth: { marginTop: 5 },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
+  storageActions: { gap: 8, marginTop: 8 },
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   upcomingCard: { gap: 7 },
   dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
