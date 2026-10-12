@@ -2,13 +2,16 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
+import { SortChip } from '../../src/components/SortChip';
 import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
+import { useSort } from '../../src/data/useSort';
 import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatINRShort } from '../../src/lib/format';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -17,6 +20,7 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 export default function GoalsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
+  const sorting = useSort('goals');
   const asOf = todayISO();
   const emergencyBalance = efBalance(data.efEntries);
   const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
@@ -25,6 +29,17 @@ export default function GoalsScreen() {
     asOf,
   });
   const totals = goalTotals(goals, emergencyBalance, expenseBaseline, data, asOf);
+  const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
+  const sortedGoals = sorting.sort(goals.map((goal) => {
+    const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+    return {
+      ...goal,
+      targetAmount: view.target,
+      progress: view.pct,
+      remaining: Math.max(0, view.target - view.saved),
+      sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
+    };
+  }));
 
   return (
     <Screen>
@@ -38,7 +53,10 @@ export default function GoalsScreen() {
         <ProgressBar percent={totals.pct} />
       </Card>
       <SectionTitle>Active Goals</SectionTitle>
-      {goals.map((goal) => {
+      <View style={styles.sortRow}>
+        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+      </View>
+      {sortedGoals.map((goal) => {
         const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
@@ -125,4 +143,5 @@ const styles = StyleSheet.create({
   amounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
+  sortRow: { marginHorizontal: 20, marginTop: 8 },
 });

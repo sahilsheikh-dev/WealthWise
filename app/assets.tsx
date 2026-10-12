@@ -16,9 +16,12 @@ import {
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
+import { SortChip } from '../src/components/SortChip';
+import { useSort } from '../src/data/useSort';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
+import { planSchedule } from '../src/domain/schedule';
 import {
   buildPortfolioRows,
   filterRows,
@@ -28,6 +31,7 @@ import {
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatINR, formatINRShort } from '../src/lib/format';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -55,9 +59,32 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
-  const rows = useMemo(() => buildPortfolioRows(data, asOf), [data, asOf]);
+  const assetSorting = useSort('assets');
+  const sipSorting = useSort('sips');
+  const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
+    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
+      return { ...row, nextDue: null, progress: null, status: null };
+    }
+    const schedule = planSchedule(row.holding, asOf);
+    const status = schedule.summary.overdue > 0
+      ? 'overdue'
+      : schedule.summary.ongoing > 0
+        ? 'ongoing'
+        : schedule.summary.nextDue
+          ? 'upcoming'
+          : 'complete';
+    return {
+      ...row,
+      nextDue: schedule.summary.nextDue?.dueDate ?? null,
+      progress: schedule.rows.length === 0 ? null : schedule.summary.paid / schedule.rows.length * 100,
+      status,
+    };
+  }), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const visibleRows = filterRows(rows, filter);
+  const filteredRows = filterRows(rows, filter);
+  const visibleRows = filter === 'Recurring'
+    ? sipSorting.sort(filteredRows)
+    : assetSorting.sort(filteredRows);
   const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
@@ -97,6 +124,11 @@ export default function AssetsScreen() {
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}
+        <SortChip
+          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+        />
       </ChipRow>
 
       <View style={styles.holdingList}>

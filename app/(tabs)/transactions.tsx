@@ -17,7 +17,9 @@ import {
   WarningBanner,
 } from '../../src/components/ui';
 import { AppHeader } from '../../src/components/AppHeader';
+import { SortChip } from '../../src/components/SortChip';
 import { useUIStore } from '../../src/data/uiStore';
+import { useSort } from '../../src/data/useSort';
 import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
 import { describeSource } from '../../src/domain/links';
@@ -25,6 +27,7 @@ import { monthPositionAt, reviewableMonths } from '../../src/domain/cashFlow';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { todayISO } from '../../src/lib/clock';
 import { savingsLine } from '../../src/lib/savingsLine';
 import { swipeIntent } from '../../src/lib/swipe';
@@ -45,6 +48,7 @@ export default function TransactionsScreen() {
   const data = useAppData();
   const month = useUIStore((state) => state.txMonth);
   const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const sorting = useSort('transactions');
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [movementSheetOpen, setMovementSheetOpen] = useState(false);
@@ -67,10 +71,18 @@ export default function TransactionsScreen() {
     [data, month, today],
   );
   const savings = savingsLine(summary);
-  const rows = useMemo(
-    () => filterTransactions(data.transactions, { month, type: filter, query }),
-    [data.transactions, filter, month, query],
+  const creationOrder = useMemo(
+    () => new Map(data.transactions.map((transaction, index) => [transaction.id, index])),
+    [data.transactions],
   );
+  const filteredRows = useMemo(
+    () => filterTransactions(data.transactions, { month, type: filter, query }).map((transaction) => ({
+      ...transaction,
+      sortCreatedIndex: creationOrder.get(transaction.id) ?? 0,
+    })),
+    [creationOrder, data.transactions, filter, month, query],
+  );
+  const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
   const movements = [
@@ -203,6 +215,7 @@ export default function TransactionsScreen() {
                 onPress={() => setFilter(item)}
               />
             ))}
+            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
           </ChipRow>
         </View>
         <SearchField

@@ -2,10 +2,10 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionsScreen from '../../../app/(tabs)/transactions';
-import { THEME_IDS, type ThemeId } from '../../domain/types';
+import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
-const mockData = {
+const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
   settings: { name: 'Test', theme: 'light' as const, monthlySalary: null, onboarded: true },
   transactions: [{
     id: 'withdrawal',
@@ -23,6 +23,9 @@ const mockData = {
 const mockThemeId: { current: ThemeId } = { current: 'light' };
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
+jest.mock('../../data/store', () => ({
+  metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
+}));
 jest.mock('../../data/useAppData', () => ({
   useAppData: () => mockData,
 }));
@@ -107,5 +110,52 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);
+  });
+});
+
+describe('Transactions sorting', () => {
+  it('changes only the order after the active type filter and search', async () => {
+    mockData.transactions = [
+      { id: 'a', type: 'expense', amount: 500, category: 'Food', note: 'Food groceries', date: '2026-10-10' },
+      { id: 'b', type: 'expense', amount: 50, category: 'Food', note: 'Food lunch', date: '2026-10-10' },
+      { id: 'c', type: 'expense', amount: 200, category: 'Living', note: 'Rent', date: '2026-10-10' },
+      { id: 'd', type: 'income', amount: 700, category: 'Food', note: 'Food income', date: '2026-10-10' },
+    ];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionsScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Transactions renderer was not created.');
+
+    const chips = () => renderer?.root.findAll((node) => String(node.type) === 'chip') ?? [];
+    const expenseFilter = chips().find((node) => node.props.label === 'Expense');
+    if (!expenseFilter) throw new Error('Expense filter chip was not rendered.');
+    act(() => expenseFilter.props.onPress());
+    const search = renderer.root.findAll((node) => String(node.type) === 'searchfield')[0];
+    if (!search) throw new Error('Search field was not rendered.');
+    act(() => search.props.onChangeText('Food'));
+    const titles = () => renderer?.root.findAll((node) => String(node.type) === 'listitem').map((node) => node.props.title);
+    expect(titles()).toEqual(['Food lunch', 'Food groceries']);
+
+    const sortChip = chips().find((node) =>
+      typeof node.props.label === 'string' && node.props.label.startsWith('Sort:'),
+    );
+    if (!sortChip) throw new Error('Sort chip was not rendered.');
+    act(() => sortChip.props.onPress());
+    const amountOption = renderer.root.findAll((node) => String(node.type) === 'pressable').find((node) =>
+      node.findAll((child) => String(child.type) === 'text').some((textNode) => textNode.children.join('') === 'Amount'),
+    );
+    if (!amountOption) throw new Error('Amount sort option was not rendered.');
+    act(() => amountOption.props.onPress());
+    expect(titles()).toEqual(['Food groceries', 'Food lunch']);
+    mockData.transactions = [{
+      id: 'withdrawal',
+      type: 'income',
+      amount: 5_000,
+      category: 'Withdrawal',
+      note: 'Emergency fund withdrawal',
+      date: '2026-10-10',
+    }];
   });
 });
