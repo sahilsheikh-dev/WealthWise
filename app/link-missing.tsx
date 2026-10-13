@@ -12,7 +12,9 @@ import { useAppActions } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { findUnlinkedEntries } from '../src/domain/instruments';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatDate, formatINR } from '../src/lib/format';
+import { formatDate } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
+import { AmountText } from '../src/components/AmountText';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -64,7 +66,7 @@ export default function LinkMissingScreen() {
             </AppText>
             <View style={styles.total}>
               <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
-              <AppText weight="bold">{formatINR(total)}</AppText>
+              <AmountText value={total} tier="hero" weight="bold" />
             </View>
             <SectionHeaderRow
               title="Missing transactions"
@@ -85,7 +87,8 @@ export default function LinkMissingScreen() {
                     key={`${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`}
                     title={name}
                     subtitle={`${formatDate(item.entry.date)} · ${kind}`}
-                    amount={formatINR(Math.abs(item.entry.amount))}
+                    amount={<AmountText value={Math.abs(item.entry.amount)} tier="row" />}
+                    accessibilityLabel={`${name}, ${formatDate(item.entry.date)}, ${kind}, ${formatAmount(Math.abs(item.entry.amount), 'exact', 1)}`}
                   />
                 );
               })}

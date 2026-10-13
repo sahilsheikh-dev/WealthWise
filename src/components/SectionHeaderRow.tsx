@@ -14,7 +14,7 @@ export function SectionHeaderRow({
 }: {
   title: string;
   subtitle?: string;
-  right: ReactNode;
+  right?: ReactNode;
 }) {
   const { colors } = useTheme();
   const [containerWidth, setContainerWidth] = useState(0);
@@ -22,9 +22,12 @@ export function SectionHeaderRow({
   const [subtitleWidth, setSubtitleWidth] = useState(0);
   const [rightWidth, setRightWidth] = useState(0);
   const [rightHeight, setRightHeight] = useState(0);
-  const measured = containerWidth > 0 && titleWidth > 0 && rightWidth > 0 && rightHeight > 0;
+  const measured = containerWidth > 0
+    && titleWidth > 0
+    && (!subtitle || subtitleWidth > 0)
+    && (right == null || (rightWidth > 0 && rightHeight > 0));
   const naturalTitleWidth = Math.max(titleWidth, subtitleWidth);
-  const inline = measured && fitsInline(containerWidth, naturalTitleWidth, rightWidth, 12);
+  const inline = measured && right != null && fitsInline(containerWidth, naturalTitleWidth, rightWidth, 12);
   const reportRightLayout = (event: LayoutChangeEvent) => {
     setRightWidth(event.nativeEvent.layout.width);
     setRightHeight(event.nativeEvent.layout.height);
@@ -51,13 +54,15 @@ export function SectionHeaderRow({
           </AppText>
         ) : null}
       </View>
-      <View
-        onLayout={reportRightLayout}
-        accessibilityElementsHidden={!measured}
-        importantForAccessibility={measured ? 'auto' : 'no-hide-descendants'}
-        style={[styles.right, inline && styles.rightInline]}>
-        {right}
-      </View>
+      {right != null ? (
+        <View
+          onLayout={reportRightLayout}
+          accessibilityElementsHidden={!measured}
+          importantForAccessibility={measured ? 'auto' : 'no-hide-descendants'}
+          style={[styles.right, inline && styles.rightInline]}>
+          {right}
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -62,6 +62,22 @@ export function filterTransactions(
 
 export type DateGroup = { date: ISODate; items: Transaction[] };
 
+export type ExpenseCategoryTotal = { category: string; amount: number };
+
+export function expenseCategoryBreakdown(
+  transactions: Transaction[],
+  month: string,
+): ExpenseCategoryTotal[] {
+  const totals = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (transaction.type !== 'expense' || !transaction.date.startsWith(month)) continue;
+    totals.set(transaction.category, (totals.get(transaction.category) ?? 0) + transaction.amount);
+  }
+  return [...totals]
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category));
+}
+
 export function groupByDate(rows: Transaction[]): DateGroup[] {
   const groups = new Map<ISODate, Transaction[]>();
   for (const row of rows) {

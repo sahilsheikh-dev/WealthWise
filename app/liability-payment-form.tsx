@@ -73,13 +73,6 @@ export default function LiabilityPaymentFormScreen() {
   });
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting } } = form;
   const submitting = useRef(false);
-  const close = () => {
-    if (!isDirty) return router.back();
-    void confirmAsync({
-      title: 'Discard changes?', message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = (values: LiabilityPaymentFormOutput) => {
     if (!liability || submitting.current) return;
     submitting.current = true;
@@ -123,7 +116,7 @@ export default function LiabilityPaymentFormScreen() {
     });
   };
   if (!liability || (paymentId && !payment)) return (
-    <FormScreen title="Liability payment" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Liability payment not found" />
     </FormScreen>
   );
@@ -135,7 +128,7 @@ export default function LiabilityPaymentFormScreen() {
     note: '',
   };
   return (
-    <FormScreen title="Liability payment" onClose={close}
+    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={isDirty}
       headerAction={payment ? { label: 'Delete payment', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {

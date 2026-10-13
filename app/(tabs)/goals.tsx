@@ -50,7 +50,9 @@ export default function GoalsScreen() {
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
-        <AppText style={[typography.meta, { color: colors.text3 }]}>
+        <AppText
+          style={[typography.meta, { color: colors.text3 }]}
+          accessibilityLabel={`${formatAmount(totals.saved, 'exact', 1)} saved, ${totals.pct.toFixed(2)}% funded`}>
           <AmountText value={totals.saved} tier="row" /> saved, {totals.pct.toFixed(2)}% funded
         </AppText>
         <ProgressBar percent={totals.pct} />
@@ -68,14 +70,16 @@ export default function GoalsScreen() {
           <Pressable
             key={goal.id}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
+            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
             accessibilityHint="Opens this goal for editing"
             onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
             style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
               <View style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
+                <AppText
+                  style={[typography.meta, { color: colors.text3 }]}
+                  accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
                   Target <AmountText value={target} tier="row" /> · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
                 </AppText>
                 {targetYearPassed ? (
@@ -91,8 +95,16 @@ export default function GoalsScreen() {
             </View>
             <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}><AmountText value={saved} tier="row" /> saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}><AmountText value={Math.max(0, target - saved)} tier="row" /> left</AppText>
+              <AppText
+                style={[typography.meta, { color: colors.ok }]}
+                accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
+                <AmountText value={saved} tier="row" /> saved
+              </AppText>
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
+                <AmountText value={Math.max(0, target - saved)} tier="row" /> left
+              </AppText>
             </View>
             {goal.auto !== 'ef' ? (
               <View style={styles.projection}>
@@ -116,11 +128,15 @@ export default function GoalsScreen() {
             ) : null}
             {goal.auto === 'ef' ? (
               <>
-                <AppText style={[typography.meta, styles.minimum, { color: colors.text3 }]}>
+                <AppText
+                  style={[typography.meta, styles.minimum, { color: colors.text3 }]}
+                  accessibilityLabel={`Minimum 3 months of expenses: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
                   Minimum 3 months of expenses: <AmountText value={view.minimum ?? 0} tier="row" />
                 </AppText>
                 {expenseBaseline > 0 ? (
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                  <AppText
+                    style={[typography.meta, { color: colors.text3 }]}
+                    accessibilityLabel={`Based on an average of ${formatAmount(expenseBaseline, 'exact', 1)} monthly expenses`}>
                     Based on an average of <AmountText value={expenseBaseline} tier="row" /> monthly expenses
                   </AppText>
                 ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>}

@@ -213,7 +213,37 @@ jest.mock('../../data/useAppData', () => {
 jest.mock('../../components/AppHeader', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    AppHeader: ({ title }: { title: string }) => ReactModule.createElement('text', null, title),
+    AppHeader: ({
+      title,
+      rightActions,
+      menu,
+    }: {
+      title: string;
+      rightActions?: { label: string; onPress: () => void }[];
+      menu?: { label: string; onPress: () => void }[];
+    }) => {
+      const [menuOpen, setMenuOpen] = ReactModule.useState(false);
+      return ReactModule.createElement('header', null,
+        ReactModule.createElement('text', null, title),
+        ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
+          key: action.label,
+          accessibilityLabel: action.label,
+          onPress: action.onPress,
+        }, action.label)),
+        ...(menu ? [
+          ReactModule.createElement('button', {
+            key: 'more-options',
+            accessibilityLabel: 'More options',
+            onPress: () => setMenuOpen(true),
+          }, 'More options'),
+          ...(menuOpen ? menu.map((item) => ReactModule.createElement('button', {
+            key: item.label,
+            accessibilityLabel: item.label,
+            onPress: item.onPress,
+          }, item.label)) : []),
+        ] : []),
+      );
+    },
   };
 });
 
@@ -258,8 +288,24 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children }: { title: string; children?: React.ReactNode }) =>
-      ReactModule.createElement('screen', null, ReactModule.createElement('text', null, title), children),
+    FormScreen: ({ title, children, onClose, isDirty }: {
+      title: string;
+      children?: React.ReactNode;
+      onClose: () => void;
+      isDirty?: boolean;
+    }) =>
+      ReactModule.createElement(
+        'screen',
+        null,
+        ReactModule.createElement('button', {
+          accessibilityRole: 'button',
+          accessibilityLabel: 'Close',
+          onPress: onClose,
+          isDirty,
+        }),
+        ReactModule.createElement('text', null, title),
+        children,
+      ),
   };
 });
 
@@ -432,6 +478,145 @@ describe('route render smoke audit', () => {
     assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
   });
 
+  it('announces exact large amounts in screen-level accessibility labels', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const data = {
+      ...emptyAppData(todayISO()),
+      transactions: [
+        { id: 'large-income', type: 'income' as const, amount: 123_456_789, category: 'Salary', note: 'Salary', date: '2026-10-10' },
+        { id: 'large-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-10-11' },
+        { id: 'prior-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-09-11' },
+      ],
+      goals: [{
+        id: 'large-goal',
+        name: 'Large goal',
+        target: 123_456_789,
+        saved: 12_345_678,
+        year: 2030,
+        links: [],
+      }],
+      holdings: [{
+        id: 'large-holding',
+        kind: 'manual' as const,
+        name: 'Large holding',
+        type: 'Savings account' as const,
+        invested: 123_456_789,
+        value: 246_913_578,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }, {
+        id: 'second-large-holding',
+        kind: 'manual' as const,
+        name: 'Second large holding',
+        type: 'Cash' as const,
+        invested: 12_345_678,
+        value: 12_345_678,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      liabilities: [{
+        id: 'large-liability',
+        kind: 'one-time' as const,
+        name: 'Large liability',
+        type: 'Borrowed money' as const,
+        principal: 123_456_789,
+        ratePct: 0,
+        startDate: '2026-09-01',
+        dueDate: '2026-12-01',
+        payments: [],
+      }, {
+        id: 'large-recurring-liability',
+        kind: 'recurring' as const,
+        name: 'Large recurring liability',
+        type: 'Other' as const,
+        principal: 123_456_789,
+        ratePct: 0,
+        startDate: '2026-09-01',
+        tenureMonths: 12,
+        emi: 12_345_678,
+        settlement: null,
+        payments: [],
+      }],
+      budget: {
+        plannedIncome: 123_456_789,
+        lines: [{ category: 'Food', planned: 123_456_789 }],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        templateId: null,
+        templateName: null,
+        customized: false,
+        plannedIncome: 123_456_789,
+        lines: [{ category: 'Food', planned: 123_456_789 }],
+      }],
+      efEntries: [{ id: 'large-ef', date: '2026-10-01', amount: 123_456_789, note: 'Large balance' }],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    const labelsFor = (screen: React.ReactElement): string[] => {
+      const renderer = renderScreen(screen);
+      const labels = renderer.root.findAll((node) => typeof node.props.accessibilityLabel === 'string')
+        .map((node) => node.props.accessibilityLabel)
+        .filter((label): label is string => typeof label === 'string');
+      act(() => renderer.unmount());
+      return labels;
+    };
+    const exactA = '₹12,34,56,789';
+    const exactB = '₹1,23,45,678';
+
+    try {
+      expect(labelsFor(React.createElement(HomeScreen)).some((label) =>
+        label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
+      )).toBe(true);
+      const assetsLabels = labelsFor(React.createElement(AssetsScreen));
+      expect(assetsLabels.some((label) => label.startsWith(`Gain ${exactA}`))).toBe(true);
+      expect(assetsLabels).toContain(`Cash, invested ${exactB}`);
+      expect(labelsFor(React.createElement(LiabilitiesScreen))).toEqual(expect.arrayContaining([
+        exactA,
+        `Monthly EMI, ${exactB}`,
+      ]));
+      expect(labelsFor(React.createElement(EmergencyFundScreen))).toEqual(expect.arrayContaining([
+        exactA,
+        expect.stringContaining(`Based on an average of ${exactB} monthly expenses`),
+      ]));
+      expect(labelsFor(React.createElement(GoalsScreen)).some((label) =>
+        label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
+      )).toBe(true);
+      expect(labelsFor(React.createElement(BudgetScreen)).some((label) =>
+        label.includes(`${exactB} of ${exactA}`),
+      )).toBe(true);
+      expect(labelsFor(React.createElement(TransactionsScreen))).toEqual(expect.arrayContaining([
+        `Income, ${exactA}`,
+        `Expense, ${exactB}`,
+      ]));
+    } finally {
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  const formScreens = screens.filter(([name]) =>
+    /form|month review|money movement invalid|clear past dues/i.test(name),
+  );
+
+  it.each(formScreens)('%s exposes Close and receives its dirty state', async (_name, screen) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(screen);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Form route did not render.');
+    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
+    expect(close.props.accessibilityRole).toBe('button');
+    expect(close.props.onPress).toEqual(expect.any(Function));
+    expect(typeof close.props.isDirty).toBe('boolean');
+    act(() => renderer?.unmount());
+  });
+
   it.each([
     ['Transactions', () => React.createElement(TransactionsScreen)],
     ['Budget spending', () => React.createElement(BudgetScreen)],
@@ -568,5 +753,96 @@ describe('route render smoke audit', () => {
     const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
     expect(helperText).toContain('The plan schedule starts on this date.');
     expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
+  });
+
+  it.each(['Festival', 'Donation', 'Gifts'] as const)(
+    'opens the %s transactions from its budget line',
+    (category) => {
+      const data = jest.requireMock('../../data/useAppData').useAppData() as {
+        transactions: unknown[];
+        monthBudgets?: unknown[];
+      };
+      const previousTransactions = data.transactions;
+      const previousBudgets = data.monthBudgets;
+      const month = todayISO().slice(0, 7);
+      data.transactions = [];
+      data.monthBudgets = [{
+        month,
+        templateId: null,
+        templateName: null,
+        customized: false,
+        plannedIncome: 10_000,
+        lines: ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
+          category: lineCategory,
+          planned: 500,
+        })),
+      }];
+      const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+      routeParams.mockReturnValue({ month });
+      router.push.mockClear();
+
+      try {
+        const renderer = renderScreen(React.createElement(BudgetScreen));
+        const categoryLine = renderer.root.findAll((node) =>
+          node.props.accessibilityRole === 'button'
+          && typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith(`${category}:`),
+        )[0];
+        if (!categoryLine) throw new Error(`${category} budget line did not render.`);
+        act(() => categoryLine.props.onPress());
+        expect(router.push).toHaveBeenCalledWith({
+          pathname: '/(tabs)/transactions',
+          params: { month, category },
+        });
+      } finally {
+        data.transactions = previousTransactions;
+        data.monthBudgets = previousBudgets;
+        routeParams.mockReturnValue({});
+      }
+    },
+  );
+
+  it('opens Budget history and Budget templates from the Budget tab menu', () => {
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    const renderer = renderScreen(React.createElement(BudgetScreen));
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+    const history = renderer.root.findByProps({ accessibilityLabel: 'Budget history' });
+    act(() => history.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-history');
+    const templates = renderer.root.findByProps({ accessibilityLabel: 'Budget templates' });
+    act(() => templates.props.onPress());
+    expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
+  });
+
+  it('returns from Budget history to the tab with the selected month', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as {
+      monthBudgets?: unknown[];
+    };
+    const previousBudgets = data.monthBudgets;
+    const month = '2026-09';
+    data.monthBudgets = [{
+      month,
+      templateId: null,
+      templateName: 'September',
+      customized: false,
+      plannedIncome: 10_000,
+      lines: [{ category: 'Food', planned: 2_000 }],
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      const renderer = renderScreen(React.createElement(BudgetHistoryScreen));
+      const row = renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith(`Open budget for ${formatMonth(month)}, closing balance`),
+      )[0];
+      if (!row) throw new Error('Selected month budget history row was not rendered.');
+      act(() => row.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month } });
+    } finally {
+      data.monthBudgets = previousBudgets;
+    }
   });
 });

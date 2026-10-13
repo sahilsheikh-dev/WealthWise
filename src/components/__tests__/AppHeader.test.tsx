@@ -2,19 +2,38 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import { AppHeader } from '../AppHeader';
+import { ROUTE_KINDS } from '../../lib/routeKinds';
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockCanGoBack = jest.fn(() => false);
 const mockMenuAction = jest.fn();
+let mockPathname = '/';
+let mockHardwareBack: (() => boolean) | undefined;
 jest.mock('expo-router', () => ({
   router: {
     back: (...args: unknown[]) => mockBack(...args),
     canGoBack: () => mockCanGoBack(),
     replace: (...args: unknown[]) => mockReplace(...args),
   },
-  usePathname: () => '/',
+  usePathname: () => mockPathname,
 }));
+jest.mock('react-native', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  const node = (name: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
+    ReactModule.createElement(name, props, children);
+  return {
+    BackHandler: {
+      addEventListener: (_event: string, listener: () => boolean) => {
+        mockHardwareBack = listener;
+        return { remove: jest.fn() };
+      },
+    },
+    Pressable: node('pressable'),
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    View: node('view'),
+  };
+});
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock('../useAppMenu', () => ({
@@ -59,6 +78,8 @@ describe('AppHeader', () => {
     mockReplace.mockClear();
     mockCanGoBack.mockReturnValue(false);
     mockMenuAction.mockClear();
+    mockPathname = '/';
+    mockHardwareBack = undefined;
   });
 
   it('renders back, icon actions, and an explicit menu without adding the default', () => {
@@ -139,5 +160,52 @@ describe('AppHeader', () => {
     act(() => backButton.props.onPress());
     expect(mockBack).toHaveBeenCalledTimes(1);
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('derives the correct left control and 44-point target for every registered route', () => {
+    for (const [route, kind] of Object.entries(ROUTE_KINDS)) {
+      mockPathname = `/${route}`;
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => {
+        renderer = TestRenderer.create(<AppHeader title={route} />);
+      });
+      if (!renderer) throw new Error(`Header did not render for ${route}.`);
+      const expectedLabel = kind === 'form' ? 'Close' : kind === 'stack' ? 'Go back' : undefined;
+      const controls = renderer.root.findAll((node) => String(node.type) === 'pressable')
+        .filter((node) => node.props.accessibilityRole === 'button');
+      if (expectedLabel) {
+        const control = controls.find((node) => node.props.accessibilityLabel === expectedLabel);
+        if (!control) throw new Error(`${route} did not render its ${expectedLabel} control.`);
+        expect(control.props.style).toEqual(expect.arrayContaining([
+          expect.objectContaining({ width: 44, height: 44 }),
+        ]));
+      } else {
+        expect(controls.some((node) =>
+          node.props.accessibilityLabel === 'Close' || node.props.accessibilityLabel === 'Go back',
+        )).toBe(false);
+      }
+      act(() => renderer?.unmount());
+    }
+  });
+
+  it('uses the Home fallback for both the header control and Android hardware back', () => {
+    mockPathname = '/assets';
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<AppHeader title="Assets" />);
+    });
+    if (!renderer) throw new Error('Assets header did not render.');
+    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Go back' }).props.onPress());
+    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(mockBack).not.toHaveBeenCalled();
+
+    mockReplace.mockClear();
+    mockCanGoBack.mockReturnValue(true);
+    act(() => {
+      expect(mockHardwareBack?.()).toBe(true);
+    });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(mockReplace).not.toHaveBeenCalled();
+    act(() => renderer?.unmount());
   });
 });

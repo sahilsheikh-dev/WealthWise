@@ -34,9 +34,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.text3,
         tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingTop: 8,
-          paddingBottom: Math.max(7, insets.bottom),
+          height: 76 + insets.bottom,
+          paddingTop: 4,
+          paddingBottom: Math.max(5, insets.bottom),
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -61,6 +61,6 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, minHeight: 44, marginTop: 10 },
+  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, minHeight: 44 },
   tabLabel: { flexShrink: 1, textAlign: 'center' },
 });
