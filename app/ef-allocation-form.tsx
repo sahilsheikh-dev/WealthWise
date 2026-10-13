@@ -115,7 +115,7 @@ export default function EfAllocationFormScreen() {
           if (!useAppStore.getState().lastError) router.back();
         }}
       />
-      <HelperText>Reset to suggested: clears your custom mix and goes back to the app’s suggestion.</HelperText>
+      <HelperText>Reset to suggested: clears your custom mix and goes back to the app&apos;s suggestion.</HelperText>
     </FormScreen>
   );
 }

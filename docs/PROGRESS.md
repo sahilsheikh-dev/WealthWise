@@ -50,7 +50,7 @@ are called out as such.
 | P15-L | Held | Explicitly deferred; encrypted-backup work not implemented | 2026-10-13 |
 | P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
 | P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
-| FX-BASE | Done | `c0ba0da` plus Round 3 audit: `TransactionsScreen.test.tsx`, `StatPill.test.tsx`; full suite 520 tests, tsc, lint, Android/iOS export and Doctor pass | 2026-10-13 |
+| FX-BASE | Done | `60b8c54`; `TransactionsScreen.test.tsx`, `StatPill.test.tsx`; full suite 520 tests, tsc, lint, Android/iOS export and Doctor pass | 2026-10-13 |
 | FX-U1 | Partial | Compact amount formatter/component exist; comprehensive amount scan and exact accessibility labels remain unverified | 2026-10-13 |
 | FX-U2 | Partial | SectionHeaderRow and fitting helper exist; all-sort-screen scan and font-scale-2 render proof remain | 2026-10-13 |
 | FX-U3 | Partial | Route registry exists; route-specific header/back behavior and 44pt control tests remain | 2026-10-13 |
@@ -62,16 +62,16 @@ are called out as such.
 | FX-T3 | Partial | New categories exist in domain/mock data; add/edit/filter/category-navigation tests remain | 2026-10-13 |
 | FX-T4 | Partial | Expandable balance card exists; requested layout, row, review/dismissal and tone tests remain | 2026-10-13 |
 | FX-E1 | Partial | Amount tiers are partially applied to EF surfaces; exact parent labels and specified screen render tests remain | 2026-10-13 |
-| FX-E2 | Partial | Both suggested-mix actions and hints exist; behavior/result evidence and handler/no-orphaned-string tests remain | 2026-10-13 |
+| FX-E2 | Done | FX-E2 code and `EfAllocationForm.test.tsx` in this commit; `createAppStore.test.ts` verifies one reset write | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
 
 ### Resume point
 
-FX-BASE is verified and committed; next is FX-E2. Round 3 baseline gates pass:
-coverage 520 tests, tsc, Expo lint, Android/iOS exports, and Expo Doctor 21/21.
-FX-U1 through FX-E1 and FX-E2 remain Partial pending their ordered work.
+FX-E2 is the last verified item in this commit; next is FX-T1. Baseline gates
+pass (coverage 520 tests, tsc, lint, Android/iOS exports, Doctor 21/21); the
+FX-E2 focused suites, tsc and lint pass. Full gates will run twice at closeout.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -82,6 +82,15 @@ only check the “Other money in” label. Round 3 restored both visible message
 (the latter when expanded), and tests now assert them alongside `rates: null`
 and no rendered `NaN`. StatPill accepts text, so monetary call sites retain
 compact display while passing an exact accessibility label.
+
+**FX-E2 evidence:** “Use suggested mix” sets the seven React Hook Form values
+to `SUGGESTED_EF_ALLOCATION`; it does not write to the store until “Save
+allocation” calls `setEfAllocation(nextAllocation)`, which stores the explicit
+percentages. “Reset to suggested allocation” immediately calls
+`resetEfAllocation`, whose pure action writes `efAllocation: null`. These
+produce different persisted states, so both controls remain with their
+respective explanatory hints. The store test asserts reset performs exactly
+one persisted write.
 
 **Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
@@ -284,7 +293,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
-| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit follow-up committed with this item | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
@@ -294,12 +303,11 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 8. Known issues and risks
 
-- Checkpoint coverage gate was red (43 failures, 476 passed across 59 suites);
-  the focused FX-BASE suites now pass. The entire coverage gate must be rerun
-  after subsequent items and reach 0 failures.
-- Checkpoint lint initially reported seven imported-module parse errors in
-  `FormScreen`, then the error cleared after rerunning without the stale Expo
-  lint cache. Standard Expo lint now exits 0; revisit if it recurs.
+- The earlier checkpoint had 43 failing tests; current baseline is green
+  (519/519 before the Round 3 additions, 520/520 after FX-BASE). Final full
+  gates must be rerun after all FX items.
+- Checkpoint lint once reported seven stale imported-module parse errors;
+  current standard Expo lint passes.
 - Budget now exists under `(tabs)`; header-menu reachability and exhaustive
   route/link/tab verification remain open under FX-B2.
 - Amount rendering uses direct formatters across app/components; the
@@ -312,17 +320,14 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. Implement FX-U1 through FX-U4 (universal amount, section-header, route and
-   form-close behavior), update this ledger and commit.
-2. Implement FX-B1 and FX-B2 (new categories and Budget tab), update and commit.
-3. Implement FX-T1 through FX-T4, update and commit.
-4. Resolve FX-E2 and verify FX-E1 across all Emergency fund surfaces, update
-   and commit.
-5. Run the full gates twice, update final evidence, and commit the final ledger.
-6. After user confirmation only: P15-F insurance; P15-K local reminders with
+1. Implement FX-T1 through FX-T4 and commit each item in order.
+2. Implement FX-B1 and FX-B2 and commit each item.
+3. Implement FX-U3, FX-U4, FX-U2, then FX-U1 together with FX-E1.
+4. Run the full gates twice, update final evidence, and commit the final ledger.
+5. After user confirmation only: P15-F insurance; P15-K local reminders with
    CR-1; P15-L encrypted backups; P15-M accessibility/performance and final
    gates.
-7. Phase 16 cleanup; Phase 17 QA/release.
+6. Phase 16 cleanup; Phase 17 QA/release.
 
 ## 10. Verification matrix
 
