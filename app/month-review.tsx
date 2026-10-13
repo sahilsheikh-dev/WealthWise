@@ -85,7 +85,7 @@ function MonthReview({ month }: { month: string }) {
     maximumAmount: remaining,
   }), [instruments, investable, liabilities, liabilitiesWithoutOrigin, mode, remaining]);
   const defaultKind = mode === 'shortfall' ? 'borrowed' : 'invest';
-  const { control, handleSubmit, resetField, setValue, formState: { errors, isSubmitting, submitCount } } =
+  const { control, handleSubmit, resetField, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<MonthAllocationFormInput, undefined, MonthAllocationFormOutput>({
       resolver: zodResolver(schema),
       mode: 'onTouched',
@@ -172,6 +172,7 @@ function MonthReview({ month }: { month: string }) {
     <FormScreen
       title="Month review"
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={<View style={{ gap: 8 }}>
         <Button
           label={mode === 'shortfall' ? 'Record funding' : 'Save allocations'}

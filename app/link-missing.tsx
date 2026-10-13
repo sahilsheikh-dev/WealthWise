@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { AppHeader } from '../src/components/AppHeader';
 import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { AppText, Button, EmptyState, ListItem, Screen } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -65,9 +66,10 @@ export default function LinkMissingScreen() {
               <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
               <AppText weight="bold">{formatINR(total)}</AppText>
             </View>
-            <View style={styles.sortRow}>
-              <SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />
-            </View>
+            <SectionHeaderRow
+              title="Missing transactions"
+              right={<SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />}
+            />
             <View style={styles.list}>
               {entries.map((item) => {
                 const name = item.kind === 'ef'

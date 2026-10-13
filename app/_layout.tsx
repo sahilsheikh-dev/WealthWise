@@ -52,7 +52,6 @@ function AppContent() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
                 <Stack.Screen name="liabilities" />
-                <Stack.Screen name="budget" />
                 <Stack.Screen name="budget-templates" />
                 <Stack.Screen name="budget-history" />
                 <Stack.Screen name="emergency-fund" />

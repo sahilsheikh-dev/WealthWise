@@ -1,29 +1,33 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../src/components/AppHeader';
-import { CardHeaderRow } from '../src/components/CardHeaderRow';
-import { DueActions } from '../src/components/DueActions';
-import { SortChip } from '../src/components/SortChip';
-import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../src/components/ui';
-import { useAppStore } from '../src/data/store';
-import { useAppActions, useAppData } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
-import { budgetMonthView } from '../src/domain/budget';
-import { shiftMonth } from '../src/domain/dates';
-import { efBalance } from '../src/domain/ef';
-import type { BudgetCommitment } from '../src/domain/budget';
-import { confirmAsync } from '../src/lib/confirm';
-import { formatDate, formatINR, formatMonth } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
-import { swipeIntent } from '../src/lib/swipe';
-import { todayISO } from '../src/lib/clock';
-import { typography } from '../src/theme/tokens';
-import { useTheme } from '../src/theme/useTheme';
+import { AppHeader } from '../../src/components/AppHeader';
+import { AmountText } from '../../src/components/AmountText';
+import { CardHeaderRow } from '../../src/components/CardHeaderRow';
+import { DueActions } from '../../src/components/DueActions';
+import { SortChip } from '../../src/components/SortChip';
+import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
+import { AppText, Button, Card, Chip, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { useAppStore } from '../../src/data/store';
+import { useAppActions, useAppData } from '../../src/data/useAppData';
+import { useSort } from '../../src/data/useSort';
+import { budgetMonthView } from '../../src/domain/budget';
+import { shiftMonth } from '../../src/domain/dates';
+import { efBalance } from '../../src/domain/ef';
+import type { BudgetCommitment } from '../../src/domain/budget';
+import { confirmAsync } from '../../src/lib/confirm';
+import { formatDate, formatMonth } from '../../src/lib/format';
+import { formatAmount } from '../../src/lib/amountDisplay';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
+import { swipeIntent } from '../../src/lib/swipe';
+import { todayISO } from '../../src/lib/clock';
+import { typography } from '../../src/theme/tokens';
+import { useTheme } from '../../src/theme/useTheme';
 
-export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function BudgetScreen() {
   const params = useLocalSearchParams<{ month?: string }>();
@@ -92,17 +96,17 @@ export default function BudgetScreen() {
 
           <Card>
             <SectionTitle>Cash flow</SectionTitle>
-            <BudgetStat label="Opening balance" value={formatINR(view.position.opening)} />
+            <BudgetStat label="Opening balance" value={<AmountText value={view.position.opening} tier="row" />} />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push({ pathname: '/month-review', params: { month: shiftMonth(month, -1) } })}>
               <BudgetStat
                 label={`Previous month ${view.position.previousClosing < 0 ? 'deficit' : 'surplus'}`}
-                value={formatINR(Math.abs(view.position.previousClosing))}
+                value={<AmountText value={Math.abs(view.position.previousClosing)} tier="row" />}
               />
             </Pressable>
-            <BudgetStat label="This month’s flow" value={formatINR(view.position.flow)} />
-            <BudgetStat label="Closing balance" value={formatINR(view.position.closing)} bold />
+            <BudgetStat label="This month’s flow" value={<AmountText value={view.position.flow} tier="row" />} />
+            <BudgetStat label="Closing balance" value={<AmountText value={view.position.closing} tier="row" />} bold />
           </Card>
 
           {!view.budget ? (
@@ -115,13 +119,13 @@ export default function BudgetScreen() {
               <CardHeaderRow
                 title={<AppText weight="semibold">Plan summary</AppText>}
                 subtitle={view.budget.customized ? <Chip label="Customized" selected /> : null}
-                value={<AppText weight="bold">{view.plannedIncome === null ? '—' : formatINR(view.plannedIncome)}</AppText>}
+                value={view.plannedIncome === null ? <AppText weight="bold">—</AppText> : <AmountText value={view.plannedIncome} tier="tile" weight="bold" />}
                 valueCaption={<AppText style={typography.meta}>planned income</AppText>}
                 editLabel="Customize this month’s budget"
                 onEdit={() => router.push({ pathname: '/budget-month-form', params: { month } })}
               />
-              <BudgetStat label="Planned spending" value={formatINR(view.plannedSpend)} />
-              <BudgetStat label="Planned savings" value={formatINR(view.plannedSave)} />
+              <BudgetStat label="Planned spending" value={<AmountText value={view.plannedSpend} tier="row" />} />
+              <BudgetStat label="Planned savings" value={<AmountText value={view.plannedSave} tier="row" />} />
               <Button label="Apply template" onPress={() => setApplyOpen(true)} />
             </Card>
           )}
@@ -141,10 +145,10 @@ export default function BudgetScreen() {
 
           {view.budget ? (
             <>
-              <SectionTitle>Spending plan</SectionTitle>
-              <ChipRow>
-                <SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />
-              </ChipRow>
+              <SectionHeaderRow
+                title="Spending plan"
+                right={<SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />}
+              />
               {lines.filter((line) => !['EMI', 'Insurance'].includes(line.category)
                 && !['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'].includes(line.category))
                 .map((line) => (
@@ -174,25 +178,25 @@ export default function BudgetScreen() {
                 ))}
               <Pressable accessibilityRole="button" accessibilityLabel="Open Emergency fund" onPress={() => router.push('/emergency-fund')}>
                 <Card>
-                  <BudgetStat label="Emergency fund balance" value={formatINR(efBalance(data.efEntries))} />
+                  <BudgetStat label="Emergency fund balance" value={<AmountText value={efBalance(data.efEntries)} tier="row" />} />
                   <AppText style={typography.meta}>Manage your Emergency fund</AppText>
                 </Card>
               </Pressable>
               <SectionTitle>Debt repayments</SectionTitle>
               <Card>
-                <BudgetStat label="EMIs planned" value={formatINR(view.debt.emiPlanned)} />
-                <BudgetStat label="EMIs paid" value={formatINR(view.debt.emiActual)} />
-                <BudgetStat label="Prepayments" value={formatINR(view.debt.prepaymentsActual)} />
+                <BudgetStat label="EMIs planned" value={<AmountText value={view.debt.emiPlanned} tier="row" />} />
+                <BudgetStat label="EMIs paid" value={<AmountText value={view.debt.emiActual} tier="row" />} />
+                <BudgetStat label="Prepayments" value={<AmountText value={view.debt.prepaymentsActual} tier="row" />} />
               </Card>
               <SectionTitle>Insurance</SectionTitle>
               <Card>
-                <BudgetStat label="Premiums planned" value={formatINR(view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.plannedAmount, 0))} />
-                <BudgetStat label="Premiums paid" value={formatINR(view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.paidAmount, 0))} />
+                <BudgetStat label="Premiums planned" value={<AmountText value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.plannedAmount, 0)} tier="row" />} />
+                <BudgetStat label="Premiums paid" value={<AmountText value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.paidAmount, 0)} tier="row" />} />
               </Card>
               <SectionTitle>Unbudgeted spending</SectionTitle>
-              <Card><BudgetStat label="Unbudgeted" value={formatINR(view.unbudgeted)} /></Card>
+              <Card><BudgetStat label="Unbudgeted" value={<AmountText value={view.unbudgeted} tier="row" />} /></Card>
               <SectionTitle>Outstanding at month end</SectionTitle>
-              <Card><BudgetStat label={`${view.outstanding.count} overdue dues`} value={formatINR(view.outstanding.amount)} /></Card>
+              <Card><BudgetStat label={`${view.outstanding.count} overdue dues`} value={<AmountText value={view.outstanding.amount} tier="row" />} /></Card>
             </>
           ) : null}
         </ScrollView>
@@ -218,7 +222,7 @@ export default function BudgetScreen() {
   );
 }
 
-function BudgetStat({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
+function BudgetStat({ label, value, bold = false }: { label: string; value: ReactNode; bold?: boolean }) {
   return (
     <View style={styles.statRow}>
       <AppText>{label}</AppText>
@@ -242,7 +246,7 @@ function CommitmentCard({ item, rows, today }: { item: BudgetCommitment; rows: B
             <AppText style={[typography.meta, { color: colors.text3 }]}>{item.category} · {formatDate(item.dueDate)}</AppText>
           </View>
           <View style={styles.commitmentStatus}>
-            <AppText weight="semibold">{formatINR(item.plannedAmount)}</AppText>
+            <AmountText value={item.plannedAmount} tier="row" weight="semibold" />
             <StatusBadge label={item.status} tone={item.status === 'overdue' ? 'err' : item.status === 'paid' ? 'ok' : 'neutral'} />
           </View>
         </View>
@@ -266,7 +270,7 @@ function BudgetLineCard({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${category}: ${formatINR(actual)} of ${formatINR(planned)}`}
+      accessibilityLabel={`${category}: ${formatAmount(actual, 'exact', 1)} of ${formatAmount(planned, 'exact', 1)}`}
       onPress={() => router.push({
         pathname: '/(tabs)/transactions',
         params: { month, category },
@@ -274,7 +278,7 @@ function BudgetLineCard({
       style={[styles.lineCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.lineTop}>
         <AppText weight="semibold">{category}</AppText>
-        <AppText style={[typography.meta, { color: tone }]}>{formatINR(actual)} / {formatINR(planned)}</AppText>
+        <AppText style={[typography.meta, { color: tone }]}><AmountText value={actual} tier="row" /> / <AmountText value={planned} tier="row" /></AppText>
       </View>
       <ProgressBar percent={usedPct ?? 0} tone={progressTone} />
     </Pressable>

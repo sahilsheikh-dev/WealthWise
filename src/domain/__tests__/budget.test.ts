@@ -1,4 +1,6 @@
 import { emptyAppData } from '../actions';
+import { filterTransactions } from '../transactions';
+import { appDataSchema, TRANSACTION_CATEGORIES } from '../schemas';
 import {
   applyTemplateToMonth,
   budgetHistory,
@@ -65,9 +67,13 @@ describe('budget templates and monthly views', () => {
 
   it('suggests rounded 50/30/20 allocations and warns when commitments exceed a bucket', () => {
     const ordinary = suggestTemplate({ plannedIncome: 10_000, commitments: [] });
-    expect(ordinary.lines).toHaveLength(15);
+    expect(ordinary.lines).toHaveLength(18);
     expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_500);
-    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(2_100);
+    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(1_100);
+    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(800);
+    expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(500);
+    expect(ordinary.lines.find((line) => line.category === 'Donation')?.planned).toBe(300);
+    expect(ordinary.lines.find((line) => line.category === 'Gifts')?.planned).toBe(500);
     expect(ordinary.lines.find((line) => line.category === 'Emergency fund')?.planned).toBe(1_000);
     expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(400);
     expect(ordinary.warnings).toEqual([]);
@@ -86,6 +92,47 @@ describe('budget templates and monthly views', () => {
     });
     expect(savingsOver.warnings).toHaveLength(1);
     expect(savingsOver.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(3_000);
+  });
+
+  it('accepts Festival, Donation and Gifts in transactions and budget actuals', () => {
+    const categories = ['Festival', 'Donation', 'Gifts'] as const;
+    const transactions = categories.map((category, index) => ({
+      id: `expense-${index}`,
+      date: '2026-03-10',
+      type: 'expense' as const,
+      amount: 25 + index,
+      category,
+      note: category,
+    }));
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      transactions,
+      monthBudgets: [{
+        month: '2026-03',
+        templateId: null,
+        templateName: null,
+        plannedIncome: 1_000,
+        customized: false,
+        lines: categories.map((category) => ({ category, planned: 100 })),
+      }],
+      budgetTemplates: [{
+        id: 'new-categories',
+        name: 'New categories',
+        plannedIncome: 1_000,
+        lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
+      }],
+    };
+    expect(appDataSchema.safeParse(data).success).toBe(true);
+    expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining(categories));
+    const view = budgetMonthView(data, '2026-03');
+    expect(view.lines.map(({ category, actual }) => [category, actual])).toEqual([
+      ['Festival', 25], ['Donation', 26], ['Gifts', 27],
+    ]);
+    for (const category of categories) {
+      expect(filterTransactions(transactions, {
+        month: '2026-03', type: 'all', query: '', category,
+      })).toHaveLength(1);
+    }
   });
 
   it('creates, updates, applies, customizes, clears, saves and deletes templates without changing snapshots', () => {

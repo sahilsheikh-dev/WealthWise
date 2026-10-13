@@ -3,7 +3,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
-import BudgetScreen from '../../../app/budget';
+import BudgetScreen from '../../../app/(tabs)/budget';
 import BudgetHistoryScreen from '../../../app/budget-history';
 import BudgetMonthFormScreen from '../../../app/budget-month-form';
 import BudgetTemplateFormScreen from '../../../app/budget-template-form';
@@ -366,6 +366,7 @@ jest.mock('react-native', () => {
     TextInput: node('textinput'),
     TouchableOpacity: node('touchableopacity'),
     View: node('view'),
+    useWindowDimensions: () => ({ fontScale: 1, width: 390, height: 844, scale: 1, }),
   };
 });
 

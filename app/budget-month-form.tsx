@@ -41,7 +41,7 @@ export default function BudgetMonthFormScreen() {
       }));
     })(),
   }), [defaultTemplate, stored, suggestedIncome]);
-  const { control, handleSubmit, formState: { isSubmitting } } = useForm<MonthForm>({ defaultValues });
+  const { control, handleSubmit, formState: { isDirty, isSubmitting } } = useForm<MonthForm>({ defaultValues });
   const lines = useWatch({ control, name: 'lines' }) ?? [];
   const submitting = useRef(false);
   const save = (values: MonthForm) => {
@@ -71,7 +71,7 @@ export default function BudgetMonthFormScreen() {
     </FormScreen>;
   }
   return (
-    <FormScreen title={`Budget · ${formatMonth(month)}`} onClose={() => router.back()} footer={(
+    <FormScreen title={`Budget · ${formatMonth(month)}`} onClose={() => router.back()} isDirty={isDirty} footer={(
       <Button label="Save budget" icon="save" variant="primary" disabled={isSubmitting} onPress={() => {
         if (!submitting.current) void handleSubmit(save)();
       }} />

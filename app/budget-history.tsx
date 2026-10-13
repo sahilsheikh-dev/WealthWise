@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
 import { SortChip } from '../src/components/SortChip';
-import { AppText, Card, ChipRow, EmptyState, Screen } from '../src/components/ui';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
+import { AppText, Card, EmptyState, Screen } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { budgetHistory } from '../src/domain/budget';
@@ -22,9 +23,10 @@ export default function BudgetHistoryScreen() {
   return (
     <Screen>
       <AppHeader title="Budget history" />
-      <ChipRow>
-        <SortChip options={SORT_OPTIONS.budgetHistory} spec={sorting.spec} onChange={sorting.setSpec} />
-      </ChipRow>
+      <SectionHeaderRow
+        title="Budget history"
+        right={<SortChip options={SORT_OPTIONS.budgetHistory} spec={sorting.spec} onChange={sorting.setSpec} />}
+      />
       {rows.length === 0 ? <EmptyState title="No budget history yet" subtitle="Stored budgets and transactions will appear here." /> : null}
       {rows.map((row) => (
         <Pressable

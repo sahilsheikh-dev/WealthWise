@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 
 import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instrumentCard';
-import { formatINR } from '../lib/format';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import type { DueTarget } from '../domain/dues';
 import { CardHeaderRow } from './CardHeaderRow';
+import { AmountText } from './AmountText';
 import { DueActions } from './DueActions';
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
 
@@ -33,7 +33,7 @@ export function InstrumentCard({
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{model.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.subtitle}</AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>}
+        value={<AmountText value={model.value} tier="tile" weight="bold" style={typography.amount} />}
         valueCaption={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>}
         editLabel={`Edit ${model.name}`}
         onEdit={() => onAction(model.headerAction.id)}

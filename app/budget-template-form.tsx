@@ -59,7 +59,7 @@ export default function BudgetTemplateFormScreen() {
       }),
     };
   }, [incomeBaseline, month, saveAsTemplate, storedMonth, template]);
-  const { control, handleSubmit, setValue, formState: { isSubmitting } } = useForm<TemplateForm>({ defaultValues: defaults });
+  const { control, handleSubmit, setValue, formState: { isDirty, isSubmitting } } = useForm<TemplateForm>({ defaultValues: defaults });
   const watched = useWatch({ control });
   const percentTotal = watched.lines?.reduce((sum, line) =>
     sum + (line?.mode === 'percent' ? Number(line.value) || 0 : 0), 0) ?? 0;
@@ -137,7 +137,7 @@ export default function BudgetTemplateFormScreen() {
 
   return (
     <FormScreen title={saveAsTemplate ? 'Save month as template' : template ? 'Edit template' : 'Set up your budget'}
-      onClose={() => router.back()} footer={(
+      onClose={() => router.back()} isDirty={isDirty} footer={(
         <Button label="Save template" icon="save" variant="primary" disabled={isSubmitting} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />

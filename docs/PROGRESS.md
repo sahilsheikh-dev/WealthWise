@@ -50,6 +50,7 @@ are called out as such.
 | P15-L | Held | Explicitly deferred; encrypted-backup work not implemented | 2026-10-13 |
 | P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
 | P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
+| FX-BASE | Partial | WIP Phase 15 fix-round checkpoint (unverified; hash to be recorded after commit) | 2026-10-13 |
 | FX-U1 | Pending | Planned compact amount formatting and accessible AmountText; no implementation commit/test yet | 2026-10-13 |
 | FX-U2 | Pending | Planned measured inline/stacked SectionHeaderRow; no implementation commit/test yet | 2026-10-13 |
 | FX-U3 | Pending | Planned route-kind registry and consistent back behavior; no implementation commit/test yet | 2026-10-13 |
@@ -65,6 +66,14 @@ are called out as such.
 | CR-1 | Pending | Open; verbatim request is in the change-request register and is assigned to held P15-K | 2026-10-13 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
+
+### Resume point
+
+No FX item has yet been verified and committed in Round 2. The current
+working-tree snapshot is being committed as an explicitly unverified WIP
+checkpoint; after it, run the checkpoint gates, then resolve FX-BASE. Next
+planned verified item is FX-U1. Current gate status at this checkpoint:
+unverified (gate results pending).
 
 **Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
@@ -262,6 +271,8 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-J | 2026-10-12 | Sorting | `1e206ad` | Sorting commit preceded Part I. |
 | P15-I | 2026-10-12 | Monthly budget tracker | `19afe88` | Commit locally verified. Prior assistant misstated an initial test count before fixing it; final commit has 488-test gate evidence in its ledger entry. |
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
+| P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; fix edits from the interrupted session checkpointed as unverified | Interrupted while implementing; no FX item had an item-level verified commit. |
+| P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | In progress; this prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint hash pending | The prior run began broad implementation before verifying item boundaries; this run will checkpoint, inventory, then commit each verified item separately. |
 
 ## 7. Change-request register
 
@@ -345,15 +356,16 @@ evidence for the fixes.
 
 | Item | Status | Planned source evidence | Required tests |
 |---|---|---|---|
-| P15-fix-0 | In progress | `docs/PROGRESS.md`, `docs/prompts/README.md`, `docs/prompts/p15-fix-round-1.md` | `src/lib/__tests__/progressLedger.test.ts` |
-| FX-U1 / FX-E1 | Pending | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, AmountText and money input components | Formatter boundaries, tier/font-scale policy, exact accessibility labels, scan and screen renders |
-| FX-U2 | Pending | `src/lib/sectionLayout.ts`, SectionHeaderRow, all sortable list screens | Layout fit boundaries and inline/stacked renders including font scale 2 |
-| FX-U3 | Pending | `src/lib/routeKinds.ts`, `AppHeader`, app route tree | Enumerate app routes; assert kind/control/label/44pt hit target |
-| FX-U4 | Pending | Form routes and shared close/discard behavior | Enumerate forms; clean/dirty/cancel discard tests |
-| FX-B1 | Pending | `src/domain/schemas.ts`, `src/domain/budget.ts`, transaction/category UI and mock data | New category validation, weighted suggestion, budget/filter/Home actuals and backup import |
-| FX-B2 | Pending | `app/(tabs)/budget.tsx`, tab layout, header menu and links | Four-tab ordering, no old route, navigation and month swipe |
-| FX-T1 | Pending | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx`, header menu | Direct '+' route, menu movement chooser and all three transaction kinds |
-| FX-T2 | Pending | `src/domain/cashFlow.ts` | Current/past month, carry, future filter, negative and no-prior-data cases |
-| FX-T3 | Pending | Transaction add/edit/filter and Budget category navigation | Festival/Donation/Gifts on each surface and filtered route |
-| FX-T4 | Pending | Transactions summary in `app/(tabs)/transactions.tsx` | Collapsed/expanded rows, balance tone, review dismissal and height cap |
-| FX-E2 | Pending | EF allocation form/actions | One assertion per remaining button for label and persisted result |
+| P15-fix-0 | Done | `docs/PROGRESS.md`, `docs/prompts/README.md`, `docs/prompts/p15-fix-round-1.md` | `src/lib/__tests__/progressLedger.test.ts` |
+| FX-BASE | Partial | `app/(tabs)/transactions.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`; checkpoint tests pending, baseline failures not repaired |
+| FX-U1 / FX-E1 | Partial | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, `src/components/AmountText.tsx`, emergency-fund screens | `src/lib/__tests__/amountDisplay.test.ts`, `src/components/__tests__/AmountText.test.tsx`; broad amount replacement, scanner, exact parent labels and screen render proof are missing |
+| FX-U2 | Partial | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, sortable `app/` screens | `src/lib/__tests__/sectionLayout.test.ts`, `src/components/__tests__/SectionHeaderRow.test.tsx`; missing full all-sort-screen and font-scale-2.0 verification |
+| FX-U3 | Partial | `src/lib/routeKinds.ts`, `src/components/AppHeader.tsx`, app route tree | `src/lib/__tests__/routeKinds.test.ts`; route enumeration exists but header route behavior, control labels and target tests incomplete |
+| FX-U4 | Partial | `src/components/form/FormScreen.tsx`, app form routes | `src/components/__tests__/FormScreen.test.tsx`; real isDirty not wired to every form route |
+| FX-B1 | Partial | `src/domain/schemas.ts`, `src/domain/budget.ts`, `src/mock/data.ts` | `src/domain/__tests__/budget.test.ts`; Home category breakdown/icons/colors, backup-import regression and UI filter coverage missing |
+| FX-B2 | Partial | `app/(tabs)/budget.tsx`, tab layout and route registry | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/routeKinds.test.ts`; four-tab ordering and route smoke pass, header menu and complete link/tab tests missing |
+| FX-T1 | Partial | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`; '+' now routes to form but direct-route/menu/save assertions missing |
+| FX-T2 | Partial | `src/domain/cashFlow.ts` | `src/domain/__tests__/cashFlow.test.ts`; carry, future, negative, no-data and past-month cases added; integration and all specified consistency cases not fully checked |
+| FX-T3 | Partial | `src/domain/schemas.ts`, `src/mock/data.ts`, transaction UI | `src/domain/__tests__/budget.test.ts`; add/edit/filter/category navigation assertions missing |
+| FX-T4 | Partial | `app/(tabs)/transactions.tsx` | Existing Transactions screen test only; no collapsed/expanded, review dismissal, tone, or height-cap regression test |
+| FX-E2 | Partial | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/data/__tests__/createAppStore.test.ts`; explanatory hints added but label/stored-result tests and no-orphaned-string check missing |

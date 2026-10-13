@@ -60,7 +60,7 @@ function MoneyMovementForm({ kind }: { kind: MovementKind }) {
     instrumentIds: instruments.map((item) => item.id),
   }), [instruments, kind, liabilities, today]);
   const submitting = useRef(false);
-  const { control, handleSubmit, formState: { errors, isSubmitting, submitCount } } =
+  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<MoneyMovementFormInput, undefined, MoneyMovementFormOutput>({
       resolver: zodResolver(schema),
       mode: 'onTouched',
@@ -122,6 +122,7 @@ function MoneyMovementForm({ kind }: { kind: MovementKind }) {
     <FormScreen
       title={title}
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={<Button
         label="Record movement"
         icon="check"

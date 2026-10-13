@@ -27,7 +27,9 @@ export type BudgetCommitment = {
 const NEED_WEIGHTS: Record<string, number> = {
   Living: 30, Food: 20, Transport: 10, Family: 10, Health: 10, Bills: 10, Education: 10,
 };
-const WANT_WEIGHTS: Record<string, number> = { Shopping: 70, Other: 30 };
+const WANT_WEIGHTS: Record<string, number> = {
+  Shopping: 35, Other: 25, Festival: 15, Donation: 10, Gifts: 15,
+};
 const SAVING_WEIGHTS: Record<string, number> = {
   'Emergency fund': 50, 'Mutual fund / SIP': 20, 'Stocks / ETF': 10,
   'Fixed deposit / RD': 10, 'Gold / Silver': 5, 'Other investments': 5,

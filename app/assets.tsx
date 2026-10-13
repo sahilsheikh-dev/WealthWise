@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
+import { AmountText } from '../src/components/AmountText';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
@@ -30,7 +32,6 @@ import {
 import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
-import { formatINR, formatINRShort } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -108,24 +109,29 @@ export default function AssetsScreen() {
       />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
-        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINR(totals.value)}</AppText>
+        <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
         <AppText style={[typography.meta, { color: gainTone }]}>
-          {totals.gain > 0 ? '+' : ''}{formatINR(totals.gain)}
+          {totals.gain > 0 ? '+' : ''}<AmountText value={totals.gain} tier="row" />
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill label="Invested" value={formatINRShort(totals.invested)} />
-          <StatPill label="Gain" value={formatINRShort(totals.gain)} tone={totals.gain >= 0 ? 'ok' : 'err'} />
-          <StatPill label="Monthly SIP/RD" value={formatINRShort(monthlyCommitment(data.holdings))} tone="primary" />
+          <StatPill label="Invested" value={<AmountText value={totals.invested} tier="tile" />} />
+          <StatPill label="Gain" value={<AmountText value={totals.gain} tier="tile" tone={totals.gain >= 0 ? 'ok' : 'err'} />} tone={totals.gain >= 0 ? 'ok' : 'err'} />
+          <StatPill label="Monthly SIP/RD" value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />} tone="primary" />
         </StatPillRow>
       </Card>
 
+      <SectionHeaderRow
+        title={filter === 'Recurring' ? 'SIPs and plans' : 'Assets'}
+        right={(
+          <SortChip
+            options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+            spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+            onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+          />
+        )}
+      />
       <ChipRow>
-        <SortChip
-          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}

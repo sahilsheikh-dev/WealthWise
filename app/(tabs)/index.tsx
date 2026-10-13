@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AppHeader } from '../../src/components/AppHeader';
+import { AmountText } from '../../src/components/AmountText';
 import { IconButton } from '../../src/components/IconButton';
 import {
   AppText,
@@ -27,7 +28,8 @@ import { goalProjection } from '../../src/domain/goalLinks';
 import { budgetMonthView } from '../../src/domain/budget';
 import { homeSummary } from '../../src/domain/summary';
 import { currentHour, todayISO } from '../../src/lib/clock';
-import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
+import { formatDate } from '../../src/lib/format';
+import { formatAmount } from '../../src/lib/amountDisplay';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
 import { typography } from '../../src/theme/tokens';
@@ -72,10 +74,10 @@ export default function HomeScreen() {
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
-        <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
+        <AmountText value={summary.netWorth} tier="hero" tone={summary.netWorth < 0 ? 'err' : 'primary'} weight="bold" style={[typography.big, styles.netWorth]} />
         <StatPillRow>
-          <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" onPress={() => router.push('/assets' as Href)} />
-          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" onPress={() => router.push('/liabilities')} />
+          <StatPill label="Assets" value={<AmountText value={summary.assets} tier="tile" tone="ok" />} tone="ok" onPress={() => router.push('/assets' as Href)} />
+          <StatPill label="Liabilities" value={<AmountText value={summary.liabilities} tier="tile" tone="err" />} tone="err" onPress={() => router.push('/liabilities')} />
           <StatPill
             label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
@@ -87,9 +89,9 @@ export default function HomeScreen() {
       <Pressable accessibilityRole="button" accessibilityLabel="Open this month's budget" onPress={() => router.push('/budget')}>
         <Card style={styles.monthBudgetCard}>
           <AppText weight="semibold">
-            {monthBudget.budget
-              ? `This month: ${formatINRShort(monthBudget.actualSpend)} of ${formatINRShort(monthBudget.plannedSpend)} spent`
-              : 'Plan your month'}
+            {monthBudget.budget ? (
+              <>This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> of <AmountText value={monthBudget.plannedSpend} tier="tile" /> spent</>
+            ) : 'Plan your month'}
           </AppText>
           {monthBudget.budget ? (
             <ProgressBar percent={monthBudget.plannedSpend > 0
@@ -184,7 +186,7 @@ export default function HomeScreen() {
               <Pressable
                 key={`${item.kind}:${item.parentId}:${item.row.id}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.name}, ${item.row.status}, ${formatINR(item.row.amount)}`}
+                accessibilityLabel={`${item.name}, ${item.row.status}, ${formatAmount(item.row.amount, 'exact', 1)}`}
                 onPress={() => router.push(item.kind === 'plan'
                   ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
                   : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
@@ -196,7 +198,7 @@ export default function HomeScreen() {
                   </AppText>
                 </View>
                 <View style={styles.dueRight}>
-                  <AppText weight="semibold" style={typography.meta}>{formatINR(item.row.amount)}</AppText>
+                  <AmountText value={item.row.amount} tier="row" weight="semibold" style={typography.meta} />
                   <StatusBadge
                     label={item.row.status}
                     tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
@@ -216,14 +218,14 @@ export default function HomeScreen() {
           <Pressable
             key={goal.id}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatINRShort(target)}, ${goal.year}, ${pct.toFixed(1)}% funded`}
+            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, ${goal.year}, ${pct.toFixed(1)}% funded`}
             accessibilityHint="Opens this goal for editing"
             onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
             style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalTop}>
               <View style={styles.goalNameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>Target {formatINRShort(target)} · {goal.year}</AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>Target <AmountText value={target} tier="row" /> · {goal.year}</AppText>
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
@@ -237,8 +239,8 @@ export default function HomeScreen() {
             </View>
             <ProgressBar percent={pct} />
             <View style={styles.goalAmounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, target - saved))} left</AppText>
+              <AppText style={[typography.meta, { color: colors.ok }]}><AmountText value={saved} tier="row" /> saved</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}><AmountText value={Math.max(0, target - saved)} tier="row" /> left</AppText>
             </View>
             {goal.auto !== 'ef' ? (
               <AppText style={[typography.meta, { color: colors.text2 }]}>
@@ -254,12 +256,12 @@ export default function HomeScreen() {
             {goal.auto === 'ef' ? (
               <>
                 <AppText style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}>
-                  Minimum 3 months of expenses: {formatINRShort(minimum ?? 0)}
+                  Minimum 3 months of expenses: <AmountText value={minimum ?? 0} tier="row" />
                 </AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   {summary.expenseBaseline <= 0
                     ? 'Add expenses to calculate your 3-month minimum'
-                    : `Based on an average of ${formatINRShort(summary.expenseBaseline)} monthly expenses`}
+                    : <>Based on an average of <AmountText value={summary.expenseBaseline} tier="row" /> monthly expenses</>}
                 </AppText>
                 {raised ? (
                   <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>

@@ -2,15 +2,18 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
+import { AmountText } from '../../src/components/AmountText';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
+import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
+import { AppText, Card, ProgressBar, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { todayISO } from '../../src/lib/clock';
-import { formatDate, formatINRShort } from '../../src/lib/format';
+import { formatDate } from '../../src/lib/format';
+import { formatAmount } from '../../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -46,16 +49,16 @@ export default function GoalsScreen() {
       <AppHeader title="Goals" rightActions={[{ icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') }]} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
-        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINRShort(totals.target)}</AppText>
+        <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
         <AppText style={[typography.meta, { color: colors.text3 }]}>
-          {formatINRShort(totals.saved)} saved, {totals.pct.toFixed(2)}% funded
+          <AmountText value={totals.saved} tier="row" /> saved, {totals.pct.toFixed(2)}% funded
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <SectionTitle>Active Goals</SectionTitle>
-      <View style={styles.sortRow}>
-        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
-      </View>
+      <SectionHeaderRow
+        title="Active Goals"
+        right={<SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />}
+      />
       {sortedGoals.map((goal) => {
         const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
@@ -65,7 +68,7 @@ export default function GoalsScreen() {
           <Pressable
             key={goal.id}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatINRShort(target)}, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
+            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
             accessibilityHint="Opens this goal for editing"
             onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
             style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -73,7 +76,7 @@ export default function GoalsScreen() {
               <View style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  Target {formatINRShort(target)} · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
+                  Target <AmountText value={target} tier="row" /> · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
                 </AppText>
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
@@ -88,8 +91,8 @@ export default function GoalsScreen() {
             </View>
             <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, target - saved))} left</AppText>
+              <AppText style={[typography.meta, { color: colors.ok }]}><AmountText value={saved} tier="row" /> saved</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}><AmountText value={Math.max(0, target - saved)} tier="row" /> left</AppText>
             </View>
             {goal.auto !== 'ef' ? (
               <View style={styles.projection}>
@@ -114,11 +117,11 @@ export default function GoalsScreen() {
             {goal.auto === 'ef' ? (
               <>
                 <AppText style={[typography.meta, styles.minimum, { color: colors.text3 }]}>
-                  Minimum 3 months of expenses: {formatINRShort(view.minimum ?? 0)}
+                  Minimum 3 months of expenses: <AmountText value={view.minimum ?? 0} tier="row" />
                 </AppText>
                 {expenseBaseline > 0 ? (
                   <AppText style={[typography.meta, { color: colors.text3 }]}>
-                    Based on an average of {formatINRShort(expenseBaseline)} monthly expenses
+                    Based on an average of <AmountText value={expenseBaseline} tier="row" /> monthly expenses
                   </AppText>
                 ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>}
                 {view.raised ? (

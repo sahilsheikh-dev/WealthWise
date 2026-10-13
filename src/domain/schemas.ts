@@ -181,7 +181,10 @@ const policySchema = z.object({
   }
 });
 
-const expenseBudgetCategories = ['Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education', 'EMI', 'Insurance', 'Other'] as const;
+const expenseBudgetCategories = [
+  'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
+  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other',
+] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
   ...expenseBudgetCategories.filter((category) => category !== 'Other'),
@@ -309,7 +312,10 @@ type SchemaMatchesAppData = AppDataSchemaOutput extends AppData
 export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 
 export const TRANSACTION_CATEGORIES = {
-  expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
+  expense: [
+    'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
+    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other',
+  ],
   income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;

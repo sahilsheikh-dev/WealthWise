@@ -1,11 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../ui';
 import { IconButton } from '../IconButton';
+import { confirmAsync } from '../../lib/confirm';
 import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -15,21 +16,35 @@ export function FormScreen({
   children,
   footer,
   headerAction,
+  isDirty = false,
 }: PropsWithChildren<{
   title: string;
   onClose: () => void;
   footer: ReactNode;
   headerAction?: { label: string; onPress: () => void; disabled?: boolean };
+  isDirty?: boolean;
 }>) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const close = useCallback(async () => {
+    if (isDirty) {
+      const discard = await confirmAsync({
+        title: 'Discard changes?',
+        message: 'Your unsaved changes will be lost.',
+        confirmLabel: 'Discard',
+      });
+      if (!discard) return;
+    }
+    onClose();
+  }, [isDirty, onClose]);
+
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
+      void close();
       return true;
     });
     return () => subscription.remove();
-  }, [onClose]);
+  }, [close]);
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.screen, { backgroundColor: colors.bg }]}>
       <KeyboardAvoidingView
@@ -38,8 +53,8 @@ export function FormScreen({
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close form"
-            onPress={onClose}
+            accessibilityLabel="Close"
+            onPress={() => { void close(); }}
             style={styles.close}>
             <Feather name="x" size={22} color={colors.text2} />
           </Pressable>

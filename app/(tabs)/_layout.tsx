@@ -11,12 +11,14 @@ const tabIcons = {
   index: 'home',
   transactions: 'repeat',
   goals: 'target',
+  budget: 'pie-chart',
 } as const;
 
 const tabLabels = {
   index: 'Home',
-  transactions: 'Transactions',
+  transactions: 'Txns',
   goals: 'Goals',
+  budget: 'Budget',
 } as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
@@ -45,7 +47,7 @@ export default function TabsLayout() {
           return (
             <View style={styles.tabContent}>
               <Feather name={name} size={size} color={color} />
-              <AppText style={[typography.navLabel, { color }]}>{label}</AppText>
+              <AppText numberOfLines={1} style={[typography.navLabel, styles.tabLabel, { color }]}>{label}</AppText>
             </View>
           );
         },
@@ -53,10 +55,12 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="transactions" options={{ title: 'Transactions' }} />
       <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
+      <Tabs.Screen name="budget" options={{ title: 'Budget' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, marginTop: 10, },
+  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, minHeight: 44, marginTop: 10 },
+  tabLabel: { flexShrink: 1, textAlign: 'center' },
 });
