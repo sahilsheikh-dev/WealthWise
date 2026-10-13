@@ -2,6 +2,7 @@ import { emptyAppData } from '../actions';
 import { filterTransactions } from '../transactions';
 import { appDataSchema, TRANSACTION_CATEGORIES } from '../schemas';
 import {
+  BUDGET_WANT_WEIGHTS,
   applyTemplateToMonth,
   budgetHistory,
   budgetMonthView,
@@ -92,6 +93,18 @@ describe('budget templates and monthly views', () => {
     });
     expect(savingsOver.warnings).toHaveLength(1);
     expect(savingsOver.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(3_000);
+  });
+
+  it('keeps the wants weights at 100% and rounds each category to the nearest hundred', () => {
+    expect(Object.values(BUDGET_WANT_WEIGHTS).reduce((total, weight) => total + weight, 0)).toBe(100);
+    const { lines } = suggestTemplate({ plannedIncome: 10_001, commitments: [] });
+    expect(lines.filter(({ category }) => category in BUDGET_WANT_WEIGHTS)).toEqual([
+      { category: 'Shopping', planned: 1_100 },
+      { category: 'Other', planned: 800 },
+      { category: 'Festival', planned: 500 },
+      { category: 'Donation', planned: 300 },
+      { category: 'Gifts', planned: 500 },
+    ]);
   });
 
   it('accepts Festival, Donation and Gifts in transactions and budget actuals', () => {

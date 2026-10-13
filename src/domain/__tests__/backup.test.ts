@@ -11,6 +11,7 @@ import {
 import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture } from '../../data/testFixtures/v1';
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
+import { SCHEMA_VERSION } from '../schemas';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -71,6 +72,48 @@ describe('backup validation and serialization', () => {
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
+  });
+
+  it('imports schema-v5 backups containing the new expense categories', async () => {
+    const categories = ['Festival', 'Donation', 'Gifts'] as const;
+    const data = {
+      ...mockAppData,
+      transactions: [
+        ...mockAppData.transactions,
+        ...categories.map((category, index) => ({
+          id: `backup-${category.toLowerCase()}`,
+          type: 'expense' as const,
+          amount: 100 + index,
+          category,
+          note: category,
+          date: '2026-10-12',
+        })),
+      ],
+      budgetTemplates: [{
+        id: 'new-categories',
+        name: 'New categories',
+        plannedIncome: 10_000,
+        lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
+      }],
+      monthBudgets: [{
+        month: '2026-10',
+        templateId: 'new-categories',
+        templateName: 'New categories',
+        customized: false,
+        plannedIncome: 10_000,
+        lines: categories.map((category) => ({ category, planned: 100 })),
+      }],
+    };
+    expect(SCHEMA_VERSION).toBe(5);
+    const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
+    await expect(parseBackup(raw, { digest })).resolves.toMatchObject({
+      ok: true,
+      data: {
+        transactions: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))),
+        budgetTemplates: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
+        monthBudgets: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
+      },
+    });
   });
 
   it('validates v5 policy, settlement, due-date and budget import constraints', () => {

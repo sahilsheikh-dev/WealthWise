@@ -55,12 +55,12 @@ are called out as such.
 | FX-U2 | Partial | SectionHeaderRow and fitting helper exist; all-sort-screen scan and font-scale-2 render proof remain | 2026-10-13 |
 | FX-U3 | Partial | Route registry exists; route-specific header/back behavior and 44pt control tests remain | 2026-10-13 |
 | FX-U4 | Partial | Shared FormScreen close/discard exists; dirty state is not wired/tested across every form route | 2026-10-13 |
-| FX-B1 | Partial | Three category values and budget weights exist; Home breakdown, all category surfaces and v5 backup regression remain | 2026-10-13 |
+| FX-B1 | Done | New current-month Home expense breakdown; 50/30/20 weights, v5 backup, domain paths and rendering tests pass in this commit | 2026-10-13 |
 | FX-B2 | Partial | Budget tab exists; header-menu reachability and complete tab/link/navigation verification remain | 2026-10-13 |
 | FX-T1 | Done | `de94950`; direct plus route, header-menu behavior and all three add-form save paths are tested | 2026-10-13 |
 | FX-T2 | Done | `a3423ec`; `availableBalance` edge cases for carry, current-day boundary, future exclusion, negative/no-history and past close | 2026-10-13 |
 | FX-T3 | Done | `c1df77d`; Festival, Donation and Gifts are exercised through create/edit forms, routed filters and Budget links | 2026-10-13 |
-| FX-T4 | Done | Compact card capped at 64pt; tests cover two collapsed figures, five expanded rows, review routing/dismissal, dot, and negative tone | 2026-10-13 |
+| FX-T4 | Done | `88d5190`; compact card capped at 64pt; two collapsed figures, five expanded rows, review routing/dismissal, dot, and negative tone tests | 2026-10-13 |
 | FX-E1 | Partial | Amount tiers are partially applied to EF surfaces; exact parent labels and specified screen render tests remain | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
@@ -69,12 +69,11 @@ are called out as such.
 
 ### Resume point
 
-FX-T4 is the last verified item; next is FX-B1. The Transactions screen tests
-pass (15 tests) covering two collapsed figures and 64pt cap, the five
-expanded rows, review routing/dismissal and dot, and negative tone; tsc and
-lint pass. FX-T3 is committed as `c1df77d` after 82 focused tests, tsc, and
-lint; FX-T2 is `a3423ec`; FX-T1 is `de94950`. Baseline full gates pass; full
-gates will run twice at closeout.
+FX-B1 is the last verified item; next is FX-B2. The category distribution,
+backup, selector, and Home tests pass (58 tests across four suites), with tsc
+and lint passing. FX-T4 is committed as `88d5190` after 15 Transactions tests,
+tsc, and lint; FX-T3 is `c1df77d`; FX-T2 is `a3423ec`; FX-T1 is `de94950`.
+Baseline full gates pass; full gates will run twice at closeout.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -296,7 +295,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
-| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 tests committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 `88d5190`; FX-B1 tests committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
@@ -315,6 +314,8 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
   route/link/tab verification remain open under FX-B2.
 - Amount rendering uses direct formatters across app/components; the
   scan/allowlist and device accessibility results do not exist yet.
+- The app has no category-specific icon, color, or label-map layer; Festival,
+  Donation, and Gifts use the existing generic expense presentation.
 - No real iOS or Android device/development-build verification has been done
   for this fix round.
 - `docs/prompts/README.md` establishes append-only verbatim prompt capture.
@@ -323,8 +324,8 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. FX-T1 through FX-T4 are verified; continue with FX-B1, then FX-B2, in prompt order.
-2. Implement FX-B1 and FX-B2 and commit each item.
+1. FX-T1 through FX-B1 are verified; continue with FX-B2, then FX-U3, in prompt order.
+2. FX-B2 and all remaining FX items are still required before final gates.
 3. Implement FX-U3, FX-U4, FX-U2, then FX-U1 together with FX-E1.
 4. Run the full gates twice, update final evidence, and commit the final ledger.
 5. After user confirmation only: P15-F insurance; P15-K local reminders with
@@ -378,7 +379,7 @@ evidence for the fixes.
 | FX-U2 | Partial | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, sortable `app/` screens | `src/lib/__tests__/sectionLayout.test.ts`, `src/components/__tests__/SectionHeaderRow.test.tsx`; full SortChip scan and font-scale-2.0 all-surface proof remain |
 | FX-U3 | Partial | `src/lib/routeKinds.ts`, `src/components/AppHeader.tsx`, `app/` route tree | `src/lib/__tests__/routeKinds.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`; route/control-label/44pt/back-fallback coverage remains incomplete |
 | FX-U4 | Partial | `src/components/form/FormScreen.tsx`, `app/*-form.tsx`, modal routes | `src/components/__tests__/FormScreen.test.tsx`; dirty state is not verified across every form and clean/dirty/cancel coverage is incomplete |
-| FX-B1 | Partial | `src/domain/schemas.ts`, `src/domain/budget.ts`, `src/mock/data.ts`, category UI maps in `app/` and `src/` | `src/domain/__tests__/budget.test.ts`, `src/domain/__tests__/schemas.test.ts`; Home breakdown/filter and existing-v5-backup regression remain |
+| FX-B1 | Done | `src/domain/transactions.ts` (`expenseCategoryBreakdown`), `src/domain/budget.ts`, `src/domain/schemas.ts`, `src/mock/data.ts`, `app/(tabs)/index.tsx`; no category-specific icon/color/label-map layer exists to update | `budget.test.ts` — weights total 100 and rounding, template/month validation and actuals; `selectors.test.ts` — category breakdown and filter; `HomeThemeSmoke.test.tsx` — rendered breakdown; `backup.test.ts` — new categories round-trip in schema-v5 backup |
 | FX-B2 | Partial | `app/(tabs)/budget.tsx`, `app/(tabs)/_layout.tsx`, route registry and links | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/routeKinds.test.ts`; header menu and exhaustive links/deep-link/font-scale checks remain |
 | FX-T1 | Done | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx` | `TransactionsScreen.test.tsx` — plus routes directly to form, menu opens movement sheet; `TransactionForm.test.tsx` — Expense, Income and Invest saves |
 | FX-T2 | Done | `src/domain/cashFlow.ts` (`availableBalance`) | `src/domain/__tests__/cashFlow.test.ts` — carries opening across an empty month, counts through today, excludes future-dated current-month entries, preserves negative/no-history values and returns past-month closing |

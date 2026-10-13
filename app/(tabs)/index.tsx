@@ -27,6 +27,7 @@ import { upcomingDue } from '../../src/domain/schedule';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { budgetMonthView } from '../../src/domain/budget';
 import { homeSummary } from '../../src/domain/summary';
+import { expenseCategoryBreakdown } from '../../src/domain/transactions';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -51,6 +52,7 @@ export default function HomeScreen() {
   const today = todayISO();
   const summary = homeSummary(data, today);
   const monthBudget = budgetMonthView(data, today.slice(0, 7));
+  const spendingByCategory = expenseCategoryBreakdown(data.transactions, today.slice(0, 7));
   const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
@@ -114,6 +116,20 @@ export default function HomeScreen() {
           <AppText style={[typography.meta, { color: colors.primary }]}>Open budget</AppText>
         </Card>
       </Pressable>
+
+      {spendingByCategory.length > 0 ? (
+        <>
+          <SectionTitle>Spending by category</SectionTitle>
+          <Card style={styles.categoryBreakdown}>
+            {spendingByCategory.map(({ category, amount }) => (
+              <View key={category} style={[styles.categoryRow, { borderBottomColor: colors.border }]}>
+                <AppText style={{ color: colors.text2 }}>{category}</AppText>
+                <AmountText value={amount} tier="row" weight="semibold" />
+              </View>
+            ))}
+          </Card>
+        </>
+      ) : null}
 
       {nudge.show ? (
         <Card style={styles.backupCard}>
@@ -291,6 +307,8 @@ const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
   monthBudgetCard: { gap: 8 },
+  categoryBreakdown: { gap: 4 },
+  categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
   storageActions: { gap: 8, marginTop: 8 },
