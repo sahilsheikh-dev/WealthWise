@@ -71,11 +71,12 @@ are called out as such.
 
 FX-BASE is the last verified and committed Round 2 item (`c0ba0da`). Next is
 FX-U1. The WIP checkpoint (`6771f37`) is explicitly unverified. Its required
-test gate failed (43 failed, 476 passed across 59 suites), tsc passed, lint
-failed with imported-module parse errors, Android/iOS exports passed and Expo
-Doctor passed 21/21. After the FX-BASE repair, the four focused suites passed
-(58 tests), tsc passed and `npx expo lint` passed. Full coverage and both
-exports/doctor have not yet been rerun after FX-BASE.
+test gate failed (43 failed, 476 passed across 59 suites), tsc failed on
+`StatPill` JSX values, lint failed with imported-module parse errors,
+Android/iOS exports passed and Expo Doctor passed 21/21. After FX-BASE changed
+those values to formatted strings and refreshed the lint cache, the four
+focused suites passed (58 tests), tsc passed and `npx expo lint` passed. Full
+coverage and both exports/doctor have not yet been rerun after FX-BASE.
 
 **FX-BASE root cause:** the seven failing withdrawal-only render assertions
 expected copy from the prior Transactions summary, while the current screen
