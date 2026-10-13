@@ -23,7 +23,7 @@ import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOut
 import { LIABILITY_TYPES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
-import { formatINR } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 
 const kindOptions = [
   { label: 'Recurring (EMI)', value: 'recurring' },
@@ -148,7 +148,7 @@ export default function LiabilityFormScreen() {
       else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
         const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
           title: 'Record past installments?',
-          message: `This will record ${previewPastDues.count} installments totalling ${formatINR(previewPastDues.amount)} on their due dates.`,
+          message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
           confirmLabel: `Record ${previewPastDues.count} installments`,
           cancelLabel: 'Review',
         });
@@ -255,7 +255,7 @@ export default function LiabilityFormScreen() {
             <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
           )} />
           {calculated !== null ? <View style={{ gap: 6 }}>
-            <HelperText>Calculated EMI: {formatINR(calculated)}</HelperText>
+            <HelperText>Calculated EMI: {formatAmount(calculated, 'exact', 1)}</HelperText>
             <Button label="Use calculated EMI" icon="check" onPress={() => setValue('emi', String(calculated), { shouldDirty: true, shouldValidate: true })} />
           </View> : null}
           {underTenure ? <HelperText tone="warning">This EMI won&apos;t repay the liability within the tenure</HelperText> : null}
@@ -286,7 +286,7 @@ export default function LiabilityFormScreen() {
           />
           {previewPastDues ? (
             <HelperText>
-              {previewPastDues.count} past installments · {formatINR(previewPastDues.amount)}
+              {previewPastDues.count} past installments · {formatAmount(previewPastDues.amount, 'exact', 1)}
             </HelperText>
           ) : null}
           {pastInstallmentsMode === 'settle' ? (

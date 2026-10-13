@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
@@ -57,6 +57,7 @@ export default function TransactionsScreen() {
   const params = useLocalSearchParams<{ category?: string; month?: string }>();
   const routeCategory = typeof params.category === 'string' ? params.category : '';
   const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const data = useAppData();
   const month = useUIStore((state) => state.txMonth);
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -133,7 +134,11 @@ export default function TransactionsScreen() {
         <View style={[styles.cashCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}`}
+            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
+              Math.abs(position.broughtForward) > 0
+                ? `, From ${formatMonth(shiftMonth(month, -1)).slice(0, 3)} ${formatAmount(position.broughtForward, 'exact', 1)}`
+                : ''
+            }`}
             onPress={() => setBalanceExpanded((expanded) => !expanded)}
             style={styles.balanceHeading}>
             <View style={styles.balanceTitle}>
@@ -210,19 +215,19 @@ export default function TransactionsScreen() {
         <View style={styles.metrics}>
           <StatPill
             label="Income"
-            value={formatAmount(summary.income, 'tile', 1)}
+            value={<AmountText value={summary.income} tier="tile" />}
             accessibilityLabel={`Income, ${formatAmount(summary.income, 'exact', 1)}`}
             tone="ok"
           />
           <StatPill
             label="Expense"
-            value={formatAmount(summary.expense, 'tile', 1)}
+            value={<AmountText value={summary.expense} tier="tile" />}
             accessibilityLabel={`Expense, ${formatAmount(summary.expense, 'exact', 1)}`}
             tone="err"
           />
           <StatPill
             label="Invested"
-            value={formatAmount(summary.invest, 'tile', 1)}
+            value={<AmountText value={summary.invest} tier="tile" />}
             accessibilityLabel={`Invested, ${formatAmount(summary.invest, 'exact', 1)}`}
             tone="primary"
           />
@@ -291,7 +296,8 @@ export default function TransactionsScreen() {
                     key={item.id}
                     title={item.note || item.category}
                     subtitle={linked ? `${item.category}\n→ ${linked.label}` : item.category}
-                    amount={`${tone.symbol}${formatAmount(item.amount, 'row', 1)}`}
+                    amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
+                    accessibilityLabel={`${item.note || item.category}, ${item.category}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}

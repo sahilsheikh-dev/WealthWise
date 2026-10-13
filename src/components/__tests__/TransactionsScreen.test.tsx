@@ -124,7 +124,10 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
     expect(text).not.toContain('What happened?');
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'Expand Available balance' }).props.onPress());
+    act(() => renderer.root.findAll((node) =>
+      typeof node.props.accessibilityLabel === 'string'
+      && node.props.accessibilityLabel.startsWith('Expand Available balance'),
+    )[0]?.props.onPress());
     const expandedText = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
     expect(expandedText).toContain('Other money in');
     expect(expandedText).toContain('Includes ₹5,000 from withdrawals, borrowing, loan proceeds and own funds');
@@ -198,7 +201,10 @@ describe('Transactions screen withdrawals-only month', () => {
       expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(true);
       expect(collapsedLabels).not.toContain('Brought forward');
 
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Expand Available balance' }).props.onPress());
+      act(() => renderer?.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
+      )[0]?.props.onPress());
       const expandedText = cashCard.findAllByType('text')
         .map((node) => node.children.join(' '))
         .join(' ')
@@ -243,7 +249,12 @@ describe('Transactions screen withdrawals-only month', () => {
         renderer = TestRenderer.create(<TransactionsScreen />);
       });
       if (!renderer) throw new Error('Transactions renderer was not created.');
-      const balanceLabel = renderer.root.findByProps({ accessibilityLabel: 'Expand Available balance' });
+      const balanceLabel = renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
+      )[0];
+      if (!balanceLabel) throw new Error('Available balance control was not rendered.');
+      expect(balanceLabel.props.accessibilityLabel).toContain('-₹130');
       expect(balanceLabel.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
       const amount = renderer.root.findByProps({ accessibilityLabel: '-₹130' });
       expect(amount.props.style).toEqual(expect.arrayContaining([

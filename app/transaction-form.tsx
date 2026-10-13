@@ -30,7 +30,7 @@ import {
 import type { Transaction } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatINR } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -162,7 +162,7 @@ export default function TransactionFormScreen() {
   const withdrawalChoices = instruments.filter((item) => (withdrawable[item.id] ?? 0) > 0).map((item) => item.id);
   const withdrawalLabels = Object.fromEntries(instruments.map((item) => [
     item.id,
-    `${item.name} · ${formatINR(withdrawable[item.id] ?? item.valueNow)}`,
+    `${item.name} · ${formatAmount(withdrawable[item.id] ?? item.valueNow, 'exact', 1)}`,
   ]));
   const derivedCategory = selectedInstrument
     ? selectedInstrument.id === 'ef'
@@ -306,7 +306,7 @@ export default function TransactionFormScreen() {
         {transaction?.source && !linkedEditable ? (
           <>
             <ReadOnlyRow label="Type" value={transaction.type} />
-            <ReadOnlyRow label="Amount" value={formatINR(transaction.amount)} />
+            <ReadOnlyRow label="Amount" value={formatAmount(transaction.amount, 'exact', 1)} />
             <ReadOnlyRow label="Category" value={linkedEditable ? derivedCategory : transaction.category} />
             <ReadOnlyRow label="Date" value={transaction.date} />
           </>

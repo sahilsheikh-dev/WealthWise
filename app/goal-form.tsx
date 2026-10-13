@@ -20,7 +20,7 @@ import { linkableInstruments } from '../src/domain/goalLinks';
 import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatINR } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { useTheme } from '../src/theme/useTheme';
 import { typography } from '../src/theme/tokens';
 
@@ -120,7 +120,7 @@ export default function GoalFormScreen() {
       <FormErrorBanner message={lastError} />
       {locked ? (
         <>
-          <ReadOnlyRow label="Emergency fund" value={`Current balance ${efBalance(data.efEntries).toLocaleString('en-IN')}`} />
+          <ReadOnlyRow label="Emergency fund" value={`Current balance ${formatAmount(efBalance(data.efEntries), 'exact', 1)}`} />
           <ReadOnlyRow label="Saved amount" value="Saved amount follows your Emergency fund balance" />
         </>
       ) : (
@@ -134,7 +134,7 @@ export default function GoalFormScreen() {
           {locked ? (
             <AppText style={{ color: colors.text3 }}>
               {minimumTarget > 0
-                ? `Minimum: ${formatINR(minimumTarget)} (3 months of your average expenses)`
+                ? `Minimum: ${formatAmount(minimumTarget, 'exact', 1)} (3 months of your average expenses)`
                 : 'Add expenses to calculate your 3-month minimum'}
             </AppText>
           ) : null}
@@ -152,7 +152,7 @@ export default function GoalFormScreen() {
                 <View style={styles.linkName}>
                   <AppText weight="medium">{instrument?.name ?? 'Unavailable asset'}</AppText>
                   <AppText style={{ color: colors.text3 }}>
-                    Current value {formatINR(instrument?.value ?? 0)}
+                    Current value {formatAmount(instrument?.value ?? 0, 'exact', 1)}
                   </AppText>
                 </View>
                 <Controller control={control} name={`links.${index}.share`} render={({ field }) => (
@@ -208,7 +208,7 @@ export default function GoalFormScreen() {
                     <Pressable
                       key={instrument.id}
                       accessibilityRole="button"
-                      accessibilityLabel={`Link ${instrument.name}, current value ${formatINR(instrument.value)}, ${freeShare}% available`}
+                      accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}, ${freeShare}% available`}
                       onPress={() => {
                         if (freeShare < 0.1) return;
                         setValue('links', [...links, {
@@ -222,7 +222,7 @@ export default function GoalFormScreen() {
                       <View style={{ flex: 1 }}>
                         <AppText weight="semibold">{instrument.name}</AppText>
                         <AppText style={{ color: colors.text3 }}>
-                          {formatINR(instrument.value)} · {freeShare}% free
+                          {formatAmount(instrument.value, 'exact', 1)} · {freeShare}% free
                         </AppText>
                       </View>
                     </Pressable>

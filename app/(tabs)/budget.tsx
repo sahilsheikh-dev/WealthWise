@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -96,17 +95,17 @@ export default function BudgetScreen() {
 
           <Card>
             <SectionTitle>Cash flow</SectionTitle>
-            <BudgetStat label="Opening balance" value={<AmountText value={view.position.opening} tier="row" />} />
+            <BudgetStat label="Opening balance" value={view.position.opening} />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push({ pathname: '/month-review', params: { month: shiftMonth(month, -1) } })}>
               <BudgetStat
                 label={`Previous month ${view.position.previousClosing < 0 ? 'deficit' : 'surplus'}`}
-                value={<AmountText value={Math.abs(view.position.previousClosing)} tier="row" />}
+                value={Math.abs(view.position.previousClosing)}
               />
             </Pressable>
-            <BudgetStat label="This month’s flow" value={<AmountText value={view.position.flow} tier="row" />} />
-            <BudgetStat label="Closing balance" value={<AmountText value={view.position.closing} tier="row" />} bold />
+            <BudgetStat label="This month’s flow" value={view.position.flow} />
+            <BudgetStat label="Closing balance" value={view.position.closing} bold />
           </Card>
 
           {!view.budget ? (
@@ -124,8 +123,8 @@ export default function BudgetScreen() {
                 editLabel="Customize this month’s budget"
                 onEdit={() => router.push({ pathname: '/budget-month-form', params: { month } })}
               />
-              <BudgetStat label="Planned spending" value={<AmountText value={view.plannedSpend} tier="row" />} />
-              <BudgetStat label="Planned savings" value={<AmountText value={view.plannedSave} tier="row" />} />
+              <BudgetStat label="Planned spending" value={view.plannedSpend} />
+              <BudgetStat label="Planned savings" value={view.plannedSave} />
               <Button label="Apply template" onPress={() => setApplyOpen(true)} />
             </Card>
           )}
@@ -178,25 +177,25 @@ export default function BudgetScreen() {
                 ))}
               <Pressable accessibilityRole="button" accessibilityLabel="Open Emergency fund" onPress={() => router.push('/emergency-fund')}>
                 <Card>
-                  <BudgetStat label="Emergency fund balance" value={<AmountText value={efBalance(data.efEntries)} tier="row" />} />
+                  <BudgetStat label="Emergency fund balance" value={efBalance(data.efEntries)} />
                   <AppText style={typography.meta}>Manage your Emergency fund</AppText>
                 </Card>
               </Pressable>
               <SectionTitle>Debt repayments</SectionTitle>
               <Card>
-                <BudgetStat label="EMIs planned" value={<AmountText value={view.debt.emiPlanned} tier="row" />} />
-                <BudgetStat label="EMIs paid" value={<AmountText value={view.debt.emiActual} tier="row" />} />
-                <BudgetStat label="Prepayments" value={<AmountText value={view.debt.prepaymentsActual} tier="row" />} />
+                <BudgetStat label="EMIs planned" value={view.debt.emiPlanned} />
+                <BudgetStat label="EMIs paid" value={view.debt.emiActual} />
+                <BudgetStat label="Prepayments" value={view.debt.prepaymentsActual} />
               </Card>
               <SectionTitle>Insurance</SectionTitle>
               <Card>
-                <BudgetStat label="Premiums planned" value={<AmountText value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.plannedAmount, 0)} tier="row" />} />
-                <BudgetStat label="Premiums paid" value={<AmountText value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.paidAmount, 0)} tier="row" />} />
+                <BudgetStat label="Premiums planned" value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.plannedAmount, 0)} />
+                <BudgetStat label="Premiums paid" value={view.commitments.filter((row) => row.kind === 'policy').reduce((sum, row) => sum + row.paidAmount, 0)} />
               </Card>
               <SectionTitle>Unbudgeted spending</SectionTitle>
-              <Card><BudgetStat label="Unbudgeted" value={<AmountText value={view.unbudgeted} tier="row" />} /></Card>
+              <Card><BudgetStat label="Unbudgeted" value={view.unbudgeted} /></Card>
               <SectionTitle>Outstanding at month end</SectionTitle>
-              <Card><BudgetStat label={`${view.outstanding.count} overdue dues`} value={<AmountText value={view.outstanding.amount} tier="row" />} /></Card>
+              <Card><BudgetStat label={`${view.outstanding.count} overdue dues`} value={view.outstanding.amount} /></Card>
             </>
           ) : null}
         </ScrollView>
@@ -222,11 +221,15 @@ export default function BudgetScreen() {
   );
 }
 
-function BudgetStat({ label, value, bold = false }: { label: string; value: ReactNode; bold?: boolean }) {
+function BudgetStat({ label, value, bold = false }: { label: string; value: number; bold?: boolean }) {
   return (
     <View style={styles.statRow}>
       <AppText>{label}</AppText>
-      <AppText weight={bold ? 'bold' : 'medium'}>{value}</AppText>
+      <AppText
+        weight={bold ? 'bold' : 'medium'}
+        accessibilityLabel={`${label}, ${formatAmount(value, 'exact', 1)}`}>
+        <AmountText value={value} tier="row" weight={bold ? 'bold' : 'medium'} />
+      </AppText>
     </View>
   );
 }
@@ -239,6 +242,7 @@ function CommitmentCard({ item, rows, today }: { item: BudgetCommitment; rows: B
     <Card>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={`${item.name}, ${item.category}, due ${formatDate(item.dueDate)}, ${formatAmount(item.plannedAmount, 'exact', 1)}, ${item.status}`}
         onPress={() => router.push({ pathname: '/(tabs)/transactions', params: { month: item.dueDate.slice(0, 7), category: item.category } })}>
         <View style={styles.commitmentTop}>
           <View style={{ flex: 1 }}>
@@ -278,7 +282,11 @@ function BudgetLineCard({
       style={[styles.lineCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.lineTop}>
         <AppText weight="semibold">{category}</AppText>
-        <AppText style={[typography.meta, { color: tone }]}><AmountText value={actual} tier="row" /> / <AmountText value={planned} tier="row" /></AppText>
+        <AppText
+          style={[typography.meta, { color: tone }]}
+          accessibilityLabel={`${formatAmount(actual, 'exact', 1)} of ${formatAmount(planned, 'exact', 1)}`}>
+          <AmountText value={actual} tier="row" /> / <AmountText value={planned} tier="row" />
+        </AppText>
       </View>
       <ProgressBar percent={usedPct ?? 0} tone={progressTone} />
     </Pressable>

@@ -1,7 +1,7 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
-import { StatPill } from '../ui';
+import { AppText, StatPill } from '../ui';
 
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
@@ -49,7 +49,7 @@ describe('StatPill accessibility', () => {
       renderer = TestRenderer.create(
         <StatPill
           label="Assets"
-          value="₹12.35 Cr"
+          value={<AppText>₹12.35 Cr</AppText>}
           accessibilityLabel="Assets, ₹12,34,56,789"
           onPress={jest.fn()}
         />,
@@ -59,6 +59,6 @@ describe('StatPill accessibility', () => {
     if (!renderer) throw new Error('StatPill renderer was not created.');
     const pill = renderer.root.findByProps({ accessibilityLabel: 'Assets, ₹12,34,56,789' });
     expect(pill.props.accessibilityLabel).toBe('Assets, ₹12,34,56,789');
-    expect(renderer.root.findAllByType('text')[1].children).toEqual(['₹12.35 Cr']);
+    expect(renderer.root.findAllByType('text').some((text) => text.children.includes('₹12.35 Cr'))).toBe(true);
   });
 });

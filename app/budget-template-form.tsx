@@ -17,7 +17,7 @@ import { BUDGET_CATEGORIES } from '../src/domain/schemas';
 import type { BudgetTemplateLine } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { incomeBaselineFor } from '../src/domain/summary';
-import { formatINR } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 
 type TemplateForm = {
   name: string;
@@ -153,7 +153,7 @@ export default function BudgetTemplateFormScreen() {
       {isWizard && !template ? (
         <>
           <AppText style={{ opacity: 0.8 }}>
-            {incomeBaseline === null ? 'Enter your monthly income to start.' : `Suggested from your income history: ${formatINR(incomeBaseline)}`}
+            {incomeBaseline === null ? 'Enter your monthly income to start.' : `Suggested from your income history: ${formatAmount(incomeBaseline, 'exact', 1)}`}
           </AppText>
           <SegmentedControl
             label="Starting point"

@@ -89,7 +89,9 @@ export default function EmergencyFundScreen() {
             })}
           </StatPillRow>
           {baseline > 0 ? (
-            <AppText style={[typography.meta, styles.basedOn, { color: colors.text3 }]}>
+            <AppText
+              style={[typography.meta, styles.basedOn, { color: colors.text3 }]}
+              accessibilityLabel={`Based on an average of ${formatAmount(baseline, 'exact', 1)} monthly expenses.`}>
               Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses.
             </AppText>
           ) : null}
@@ -131,21 +133,29 @@ export default function EmergencyFundScreen() {
               editLabel="Edit emergency fund target"
               onEdit={() => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } })}
             />
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
+            <AppText
+              style={[typography.meta, { color: colors.text3 }]}
+              accessibilityLabel={`Minimum (3 months of expenses): ${formatAmount(emergencyGoalView.minimum ?? 0, 'exact', 1)}`}>
               Minimum (3 months of expenses): <AmountText value={emergencyGoalView.minimum ?? 0} tier="row" />
             </AppText>
             {baseline > 0 ? (
-              <AppText style={[typography.meta, { color: colors.text3 }]}>
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={`Based on an average of ${formatAmount(baseline, 'exact', 1)} monthly expenses`}>
                 Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses
               </AppText>
             ) : (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>
             )}
             <ProgressBar percent={emergencyGoalView.pct} />
-            <AppText style={[typography.meta, { color: colors.text2, marginTop: 5 }]}>
+            <AppText
+              style={[typography.meta, { color: colors.text2, marginTop: 5 }]}
+              accessibilityLabel={balance >= emergencyGoalView.target
+                ? 'Target reached'
+                : `${formatAmount(Math.max(0, emergencyGoalView.target - balance), 'exact', 1)} to go`}>
               {balance >= emergencyGoalView.target
                 ? 'Target reached'
-                : `${formatAmount(Math.max(0, emergencyGoalView.target - balance), 'row', 1)} to go`}
+                : <><AmountText value={Math.max(0, emergencyGoalView.target - balance)} tier="row" /> to go</>}
             </AppText>
             {emergencyGoalView.raised ? (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
@@ -169,7 +179,10 @@ export default function EmergencyFundScreen() {
             >
               <View style={styles.passbookContents}>
                 <View style={styles.entryDetails}>
-                  <AppText weight="bold" style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}>
+                  <AppText
+                    weight="bold"
+                    style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}
+                    accessibilityLabel={`${entry.amount < 0 ? 'Withdrawal' : 'Deposit'} ${formatAmount(Math.abs(entry.amount), 'exact', 1)}`}>
                     {entry.amount < 0 ? '-' : '+'}<AmountText value={Math.abs(entry.amount)} tier="row" />
                   </AppText>
                   <AppText style={[typography.meta, { color: colors.text3 }]}>{formatDate(entry.date)} · {entry.note}</AppText>
