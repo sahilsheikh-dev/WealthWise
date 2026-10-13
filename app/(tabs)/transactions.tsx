@@ -203,9 +203,9 @@ export default function TransactionsScreen() {
         </View>
 
         <View style={styles.metrics}>
-          <StatPill label="Income" value={<AmountText value={summary.income} tier="tile" tone="ok" />} tone="ok" />
-          <StatPill label="Expense" value={<AmountText value={summary.expense} tier="tile" tone="err" />} tone="err" />
-          <StatPill label="Invested" value={<AmountText value={summary.invest} tier="tile" tone="primary" />} tone="primary" />
+          <StatPill label="Income" value={formatAmount(summary.income, 'tile', 1)} tone="ok" />
+          <StatPill label="Expense" value={formatAmount(summary.expense, 'tile', 1)} tone="err" />
+          <StatPill label="Invested" value={formatAmount(summary.invest, 'tile', 1)} tone="primary" />
         </View>
 
         {summary.overspend > 0 ? (

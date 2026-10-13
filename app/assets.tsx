@@ -32,6 +32,7 @@ import {
 import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -115,9 +116,9 @@ export default function AssetsScreen() {
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill label="Invested" value={<AmountText value={totals.invested} tier="tile" />} />
-          <StatPill label="Gain" value={<AmountText value={totals.gain} tier="tile" tone={totals.gain >= 0 ? 'ok' : 'err'} />} tone={totals.gain >= 0 ? 'ok' : 'err'} />
-          <StatPill label="Monthly SIP/RD" value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />} tone="primary" />
+          <StatPill label="Invested" value={formatAmount(totals.invested, 'tile', 1)} />
+          <StatPill label="Gain" value={formatAmount(totals.gain, 'tile', 1)} tone={totals.gain >= 0 ? 'ok' : 'err'} />
+          <StatPill label="Monthly SIP/RD" value={formatAmount(monthlyCommitment(data.holdings), 'tile', 1)} tone="primary" />
         </StatPillRow>
       </Card>
 

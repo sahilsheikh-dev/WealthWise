@@ -29,6 +29,7 @@ import { liabilitiesOverview } from '../src/domain/summary';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -84,7 +85,7 @@ export default function LiabilitiesScreen() {
                 : `Debt-free by ${formatMonth(overview.debtFreeBy.slice(0, 7))}`}
           </AppText>
           <StatPillRow>
-            <StatPill label="Monthly EMI" value={<AmountText value={overview.monthlyEmi} tier="tile" tone="err" />} tone="err" />
+            <StatPill label="Monthly EMI" value={formatAmount(overview.monthlyEmi, 'tile', 1)} tone="err" />
             <StatPill label="Of income" value={overview.emiPctOfIncome === null ? '—' : `${overview.emiPctOfIncome.toFixed(1)}%`} />
           </StatPillRow>
           {overview.incomeSource === 'salary' ? (
