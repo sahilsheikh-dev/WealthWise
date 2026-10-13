@@ -1,16 +1,15 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SortChip } from '../src/components/SortChip';
-import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
-import { AppText, Card, EmptyState, Screen } from '../src/components/ui';
+import { AppText, Card, ChipRow, EmptyState, Screen } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { budgetHistory } from '../src/domain/budget';
-import { formatMonth } from '../src/lib/format';
 import { formatAmount } from '../src/lib/amountDisplay';
-import { AmountText } from '../src/components/AmountText';
+import { formatMonth } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -25,10 +24,9 @@ export default function BudgetHistoryScreen() {
   return (
     <Screen>
       <AppHeader title="Budget history" />
-      <SectionHeaderRow
-        title="Budget history"
-        right={<SortChip options={SORT_OPTIONS.budgetHistory} spec={sorting.spec} onChange={sorting.setSpec} />}
-      />
+      <ChipRow>
+        <SortChip options={SORT_OPTIONS.budgetHistory} spec={sorting.spec} onChange={sorting.setSpec} />
+      </ChipRow>
       {rows.length === 0 ? <EmptyState title="No budget history yet" subtitle="Stored budgets and transactions will appear here." /> : null}
       {rows.map((row) => (
         <Pressable

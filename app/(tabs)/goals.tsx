@@ -1,19 +1,18 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
+import { AppHeader } from '../../src/components/AppHeader';
 import { SortChip } from '../../src/components/SortChip';
-import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
-import { AppText, Card, ProgressBar, Screen } from '../../src/components/ui';
+import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
+import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { formatAmount } from '../../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -57,10 +56,9 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <SectionHeaderRow
-        title="Active Goals"
-        right={<SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />}
-      />
+      <ChipRow>
+        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+      </ChipRow>
       {sortedGoals.map((goal) => {
         const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
@@ -155,7 +153,7 @@ export default function GoalsScreen() {
 const styles = StyleSheet.create({
   headerButton: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 11 },
   total: { marginTop: 5, marginBottom: 4 },
-  goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
+  goal: { marginHorizontal: 20, marginTop: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   nameBlock: { flex: 1, minWidth: 0, gap: 3 },
   percentage: { fontSize: 12 },

@@ -2,11 +2,11 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { SortChip } from '../src/components/SortChip';
-import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Card,
@@ -23,11 +23,10 @@ import { useSort } from '../src/data/useSort';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
 import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
-import { AmountText } from '../src/components/AmountText';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -179,11 +178,8 @@ export default function InvestmentEntriesScreen() {
               Paid {schedule.summary.paid} of {schedule.rows.length} · {schedule.summary.overdue} overdue
             </AppText>
           </Card>
-          <SectionHeaderRow
-            title="Schedule"
-            right={<SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />}
-          />
           <ChipRow>
+            <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
             {filters.map((item) => {
               const count = item === 'All'
                 ? schedule.rows.length
@@ -213,10 +209,9 @@ export default function InvestmentEntriesScreen() {
               Total withdrawals <AmountText value={holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
             </AppText>
           </Card>
-          <SectionHeaderRow
-            title="Entries"
-            right={<SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />}
-          />
+          <ChipRow>
+            <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
+          </ChipRow>
         </>
       )}
     </View>
