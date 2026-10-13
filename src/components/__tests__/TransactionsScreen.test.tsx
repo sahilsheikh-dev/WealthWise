@@ -154,6 +154,30 @@ describe('Transactions screen withdrawals-only month', () => {
 });
 
 describe('Transactions sorting', () => {
+  it.each(['Festival', 'Donation', 'Gifts'] as const)(
+    'shows only routed %s transactions from a category filter',
+    async (category) => {
+      mockData.transactions = [
+        { id: 'festival', type: 'expense', amount: 100, category: 'Festival', note: 'festival entry', date: '2026-10-02' },
+        { id: 'donation', type: 'expense', amount: 200, category: 'Donation', note: 'donation entry', date: '2026-10-03' },
+        { id: 'gift', type: 'expense', amount: 300, category: 'Gifts', note: 'gift entry', date: '2026-10-04' },
+      ];
+      const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      routeParams.mockReturnValue({ category, month: '2026-10' });
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        renderer = TestRenderer.create(<TransactionsScreen />);
+        await Promise.resolve();
+      });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+
+      expect(renderer.root.findByProps({ label: `Category: ${category} ×` })).toBeDefined();
+      expect(renderer.root.findAll((node) => String(node.type) === 'listitem').map((node) => node.props.title))
+        .toEqual([category === 'Gifts' ? 'gift entry' : `${category.toLowerCase()} entry`]);
+      routeParams.mockReturnValue({});
+    },
+  );
+
   it('applies a routed category filter and can clear it without changing the month', async () => {
     mockData.transactions = [
       { id: 'food', type: 'expense', amount: 50, category: 'Food', note: 'Lunch', date: '2026-10-10' },

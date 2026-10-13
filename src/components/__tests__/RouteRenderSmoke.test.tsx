@@ -569,4 +569,52 @@ describe('route render smoke audit', () => {
     expect(helperText).toContain('The plan schedule starts on this date.');
     expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
   });
+
+  it.each(['Festival', 'Donation', 'Gifts'] as const)(
+    'opens the %s transactions from its budget line',
+    (category) => {
+      const data = jest.requireMock('../../data/useAppData').useAppData() as {
+        transactions: unknown[];
+        monthBudgets?: unknown[];
+      };
+      const previousTransactions = data.transactions;
+      const previousBudgets = data.monthBudgets;
+      const month = todayISO().slice(0, 7);
+      data.transactions = [];
+      data.monthBudgets = [{
+        month,
+        templateId: null,
+        templateName: null,
+        customized: false,
+        plannedIncome: 10_000,
+        lines: ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
+          category: lineCategory,
+          planned: 500,
+        })),
+      }];
+      const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+      routeParams.mockReturnValue({ month });
+      router.push.mockClear();
+
+      try {
+        const renderer = renderScreen(React.createElement(BudgetScreen));
+        const categoryLine = renderer.root.findAll((node) =>
+          node.props.accessibilityRole === 'button'
+          && typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith(`${category}:`),
+        )[0];
+        if (!categoryLine) throw new Error(`${category} budget line did not render.`);
+        act(() => categoryLine.props.onPress());
+        expect(router.push).toHaveBeenCalledWith({
+          pathname: '/(tabs)/transactions',
+          params: { month, category },
+        });
+      } finally {
+        data.transactions = previousTransactions;
+        data.monthBudgets = previousBudgets;
+        routeParams.mockReturnValue({});
+      }
+    },
+  );
 });

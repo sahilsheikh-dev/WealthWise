@@ -7,7 +7,7 @@ import type { Transaction } from '../../domain/types';
 
 const mockData = { ...mockAppData, transactions: [] as Transaction[] };
 const mockState = { data: mockData, lastError: null as string | null };
-let mockParams: { type?: string } = {};
+let mockParams: { id?: string; type?: string } = {};
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 const mockSetTxMonth = jest.fn();
@@ -31,10 +31,16 @@ const mockAddInstrumentTransaction = jest.fn((input: {
     note: input.note,
   });
 });
+const mockUpdateTransaction = jest.fn((id: string, input: Partial<Transaction>) => {
+  const index = mockData.transactions.findIndex((transaction) => transaction.id === id);
+  const transaction = mockData.transactions[index];
+  if (index >= 0 && transaction) mockData.transactions[index] = { ...transaction, ...input };
+});
 const mockActions = {
   addTransaction: (...args: Parameters<typeof mockAddTransaction>) => mockAddTransaction(...args),
   addInstrumentTransaction: (...args: Parameters<typeof mockAddInstrumentTransaction>) =>
     mockAddInstrumentTransaction(...args),
+  updateTransaction: (...args: Parameters<typeof mockUpdateTransaction>) => mockUpdateTransaction(...args),
 };
 const mockUIState = {
   setTxMonth: mockSetTxMonth,
@@ -147,6 +153,7 @@ describe('transaction add form', () => {
     mockSetLastCreatedInstrumentId.mockClear();
     mockAddTransaction.mockClear();
     mockAddInstrumentTransaction.mockClear();
+    mockUpdateTransaction.mockClear();
   });
 
   it.each([
@@ -194,5 +201,62 @@ describe('transaction add form', () => {
     }
     expect(mockData.transactions.at(-1)?.type).toBe(expectedType);
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['Festival', 'Donation', 'Gifts'] as const)('creates an expense in the %s category', async (category) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const categoryField = renderer.root.findAll((node) =>
+      String(node.type) === 'choicefield' && node.props.label === 'Category',
+    )[0];
+    if (!categoryField) throw new Error('Expense category selector was not rendered.');
+    expect(categoryField.props.choices).toContain(category);
+    await act(async () => categoryField.props.onChange(category));
+    const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
+    if (!amount) throw new Error('Amount input was not rendered.');
+    await act(async () => amount.props.onChangeText('700'));
+    await act(async () => {
+      renderer?.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockAddTransaction).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'expense',
+      category,
+      amount: 700,
+    }));
+  });
+
+  it.each(['Festival', 'Donation', 'Gifts'] as const)('edits an expense into the %s category', async (category) => {
+    mockData.transactions.push({
+      id: 'editing',
+      type: 'expense',
+      amount: 200,
+      category: 'Food',
+      note: 'Old value',
+      date: '2026-10-01',
+    });
+    mockParams = { id: 'editing' };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const categoryField = renderer.root.findAll((node) =>
+      String(node.type) === 'choicefield' && node.props.label === 'Category',
+    )[0];
+    if (!categoryField) throw new Error('Expense category selector was not rendered.');
+    expect(categoryField.props.choices).toContain(category);
+    await act(async () => categoryField.props.onChange(category));
+    await act(async () => {
+      renderer?.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockUpdateTransaction).toHaveBeenCalledWith('editing', expect.objectContaining({
+      type: 'expense',
+      category,
+    }));
   });
 });
