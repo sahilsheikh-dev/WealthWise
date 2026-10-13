@@ -49,7 +49,7 @@ are called out as such.
 | P15-K | Held | Explicitly deferred; no reminder planner/preferences/notifications route yet | 2026-10-13 |
 | P15-L | Held | Explicitly deferred; encrypted-backup work not implemented | 2026-10-13 |
 | P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
-| P15-fix-0 | Pending | Baseline recorded; this ledger/prompt/test update is in progress, commit follows its targeted test | 2026-10-13 |
+| P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
 | FX-U1 | Pending | Planned compact amount formatting and accessible AmountText; no implementation commit/test yet | 2026-10-13 |
 | FX-U2 | Pending | Planned measured inline/stacked SectionHeaderRow; no implementation commit/test yet | 2026-10-13 |
 | FX-U3 | Pending | Planned route-kind registry and consistent back behavior; no implementation commit/test yet | 2026-10-13 |
@@ -261,7 +261,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-H | 2026-10-12 | Cash-flow history and money movement | `68d9cd4` | Seeded conservation proof documented in prior ledger. |
 | P15-J | 2026-10-12 | Sorting | `1e206ad` | Sorting commit preceded Part I. |
 | P15-I | 2026-10-12 | Monthly budget tracker | `19afe88` | Commit locally verified. Prior assistant misstated an initial test count before fixing it; final commit has 488-test gate evidence in its ledger entry. |
-| P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | In progress; commit pending | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. No test was weakened. |
+| P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 
 ## 7. Change-request register
 
