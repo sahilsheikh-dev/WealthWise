@@ -76,8 +76,20 @@ export default function HomeScreen() {
         <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AmountText value={summary.netWorth} tier="hero" tone={summary.netWorth < 0 ? 'err' : 'primary'} weight="bold" style={[typography.big, styles.netWorth]} />
         <StatPillRow>
-          <StatPill label="Assets" value={formatAmount(summary.assets, 'tile', 1)} tone="ok" onPress={() => router.push('/assets' as Href)} />
-          <StatPill label="Liabilities" value={formatAmount(summary.liabilities, 'tile', 1)} tone="err" onPress={() => router.push('/liabilities')} />
+          <StatPill
+            label="Assets"
+            value={formatAmount(summary.assets, 'tile', 1)}
+            accessibilityLabel={`Assets, ${formatAmount(summary.assets, 'exact', 1)}`}
+            tone="ok"
+            onPress={() => router.push('/assets' as Href)}
+          />
+          <StatPill
+            label="Liabilities"
+            value={formatAmount(summary.liabilities, 'tile', 1)}
+            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
+            tone="err"
+            onPress={() => router.push('/liabilities')}
+          />
           <StatPill
             label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}

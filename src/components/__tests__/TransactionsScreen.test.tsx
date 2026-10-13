@@ -115,12 +115,14 @@ describe('Transactions screen withdrawals-only month', () => {
       earnedIncome: 0,
       rates: null,
     });
+    expect(text).toContain('No earned income logged this month');
     expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
     expect(text).not.toContain('What happened?');
     act(() => renderer.root.findByProps({ accessibilityLabel: 'Expand Available balance' }).props.onPress());
     const expandedText = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
     expect(expandedText).toContain('Other money in');
+    expect(expandedText).toContain('Includes ₹5,000 from withdrawals, borrowing, loan proceeds and own funds');
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);

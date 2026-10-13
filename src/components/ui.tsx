@@ -102,14 +102,17 @@ export function StatPill({
   tone = 'primary',
   onPress,
   accessibilityHint,
+  accessibilityLabel,
 }: {
   label: string;
   value: string;
   tone?: Tone;
   onPress?: () => void;
   accessibilityHint?: string;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
+  const spokenLabel = accessibilityLabel ?? `${label}, ${value}`;
   const content = (
     <>
       <View style={styles.statPillText}>
@@ -125,7 +128,7 @@ export function StatPill({
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label}, ${value}`}
+        accessibilityLabel={spokenLabel}
         accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
         onPress={onPress}
         style={[styles.statPill, styles.statPillPressable, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
@@ -134,7 +137,10 @@ export function StatPill({
     );
   }
   return (
-    <View style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+    <View
+      accessible
+      accessibilityLabel={spokenLabel}
+      style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
       {content}
     </View>
   );

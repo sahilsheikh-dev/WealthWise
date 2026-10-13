@@ -116,9 +116,23 @@ export default function AssetsScreen() {
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill label="Invested" value={formatAmount(totals.invested, 'tile', 1)} />
-          <StatPill label="Gain" value={formatAmount(totals.gain, 'tile', 1)} tone={totals.gain >= 0 ? 'ok' : 'err'} />
-          <StatPill label="Monthly SIP/RD" value={formatAmount(monthlyCommitment(data.holdings), 'tile', 1)} tone="primary" />
+          <StatPill
+            label="Invested"
+            value={formatAmount(totals.invested, 'tile', 1)}
+            accessibilityLabel={`Invested, ${formatAmount(totals.invested, 'exact', 1)}`}
+          />
+          <StatPill
+            label="Gain"
+            value={formatAmount(totals.gain, 'tile', 1)}
+            accessibilityLabel={`Gain, ${formatAmount(totals.gain, 'exact', 1)}`}
+            tone={totals.gain >= 0 ? 'ok' : 'err'}
+          />
+          <StatPill
+            label="Monthly SIP/RD"
+            value={formatAmount(monthlyCommitment(data.holdings), 'tile', 1)}
+            accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
+            tone="primary"
+          />
         </StatPillRow>
       </Card>
 

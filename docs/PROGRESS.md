@@ -50,7 +50,7 @@ are called out as such.
 | P15-L | Held | Explicitly deferred; encrypted-backup work not implemented | 2026-10-13 |
 | P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
 | P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
-| FX-BASE | Done | `c0ba0da`; `TransactionsScreen`, `EmergencyGoalScreens`, `HomeThemeSmoke`, and `selectors` suites (58 tests); tsc and Expo lint pass | 2026-10-13 |
+| FX-BASE | Done | `c0ba0da` plus Round 3 audit: `TransactionsScreen.test.tsx`, `StatPill.test.tsx`; full suite 520 tests, tsc, lint, Android/iOS export and Doctor pass | 2026-10-13 |
 | FX-U1 | Partial | Compact amount formatter/component exist; comprehensive amount scan and exact accessibility labels remain unverified | 2026-10-13 |
 | FX-U2 | Partial | SectionHeaderRow and fitting helper exist; all-sort-screen scan and font-scale-2 render proof remain | 2026-10-13 |
 | FX-U3 | Partial | Route registry exists; route-specific header/back behavior and 44pt control tests remain | 2026-10-13 |
@@ -69,25 +69,19 @@ are called out as such.
 
 ### Resume point
 
-FX-BASE is the last verified and committed Round 2 item (`c0ba0da`). Next is
-FX-U1. The WIP checkpoint (`6771f37`) is explicitly unverified. Its required
-test gate failed (43 failed, 476 passed across 59 suites), tsc failed on
-`StatPill` JSX values, lint failed with imported-module parse errors,
-Android/iOS exports passed and Expo Doctor passed 21/21. After FX-BASE changed
-those values to formatted strings and refreshed the lint cache, the four
-focused suites passed (58 tests), tsc passed and `npx expo lint` passed. Full
-coverage and both exports/doctor have not yet been rerun after FX-BASE.
+FX-BASE is verified and committed; next is FX-E2. Round 3 baseline gates pass:
+coverage 520 tests, tsc, Expo lint, Android/iOS exports, and Expo Doctor 21/21.
+FX-U1 through FX-E1 and FX-E2 remain Partial pending their ordered work.
 
-**FX-BASE root cause:** the seven failing withdrawal-only render assertions
-expected copy from the prior Transactions summary, while the current screen
-uses the Available balance card. The test's React Native mock also lacked
-`useWindowDimensions`, required by AmountText. The selector already returned
-`rates: null` for zero earned income; the updated regression asserts that
-invariant, checks the card does not render `NaN`, and expands it to verify
-"Other money in". StatPill accepts text rather than React nodes, so explicit
-tile-tier formatting fixed the TypeScript errors without changing the amounts.
-The lint import errors did not reproduce once Expo lint's stale cache was
-cleared; no unrelated FormScreen code change was retained.
+**FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
+`useWindowDimensions`; the selector already returned `rates: null` for zero
+earned income. The Round 2 test changed the old “No earned income logged this
+month” assertion to a summary-data assertion and changed the old “Includes
+₹5,000 from withdrawals, borrowing, loan proceeds and own funds” assertion to
+only check the “Other money in” label. Round 3 restored both visible messages
+(the latter when expanded), and tests now assert them alongside `rates: null`
+and no rendered `NaN`. StatPill accepts text, so monetary call sites retain
+compact display while passing an exact accessibility label.
 
 **Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
@@ -289,7 +283,8 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-I | 2026-10-12 | Monthly budget tracker | `19afe88` | Commit locally verified. Prior assistant misstated an initial test count before fixing it; final commit has 488-test gate evidence in its ledger entry. |
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
-| P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE verified in `c0ba0da`; item inventory recorded below | Prior edits crossed multiple FX scopes before item-level verification. Checkpoint gates exposed mock/type/lint failures; no assertions or thresholds were weakened. The stale Expo lint parse report cleared after rerunning without the stale cache. |
+| P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit follow-up committed with this item | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
@@ -370,7 +365,7 @@ evidence for the fixes.
 | Item | Status | Planned source evidence | Required tests |
 |---|---|---|---|
 | P15-fix-0 | Done | `docs/PROGRESS.md`, `docs/prompts/README.md`, `docs/prompts/p15-fix-round-1.md` | `src/lib/__tests__/progressLedger.test.ts` |
-| FX-BASE | Done | `app/(tabs)/transactions.tsx`, `app/(tabs)/index.tsx`, `app/assets.tsx`, `app/liabilities.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`, `EmergencyGoalScreens.test.tsx`, `HomeThemeSmoke.test.tsx`, `src/domain/__tests__/selectors.test.ts` (58 tests; commit `c0ba0da`) |
+| FX-BASE | Done | `app/(tabs)/transactions.tsx`, `app/(tabs)/index.tsx`, `app/assets.tsx`, `app/liabilities.tsx`, `src/components/ui.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx` (withdrawal-only notice, expanded information, null rates/no NaN), `src/components/__tests__/StatPill.test.tsx` (exact accessible label), plus four prior focused suites; 520 full-suite tests pass |
 | FX-U1 | Partial | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, `src/components/AmountText.tsx`, `src/components/form/MoneyField.tsx`, amount consumers in `app/` | `src/lib/__tests__/amountDisplay.test.ts`, `src/components/__tests__/AmountText.test.tsx`; exhaustive scan, exact parent labels, money-input helper and broad tier coverage remain |
 | FX-U2 | Partial | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, sortable `app/` screens | `src/lib/__tests__/sectionLayout.test.ts`, `src/components/__tests__/SectionHeaderRow.test.tsx`; full SortChip scan and font-scale-2.0 all-surface proof remain |
 | FX-U3 | Partial | `src/lib/routeKinds.ts`, `src/components/AppHeader.tsx`, `app/` route tree | `src/lib/__tests__/routeKinds.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`; route/control-label/44pt/back-fallback coverage remains incomplete |

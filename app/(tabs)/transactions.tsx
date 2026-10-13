@@ -153,6 +153,11 @@ export default function TransactionsScreen() {
               <BalanceLine label="Brought forward" value={position.broughtForward} />
               <BalanceLine label="Income" value={position.income} />
               <BalanceLine label="Other money in" value={position.otherMoneyIn} />
+              {position.otherMoneyIn > 0 ? (
+                <AppText style={typography.meta}>
+                  Includes {formatAmount(position.otherMoneyIn, 'exact', 1)} from withdrawals, borrowing, loan proceeds and own funds
+                </AppText>
+              ) : null}
               <BalanceLine label="Spent" value={position.spent} />
               <BalanceLine label="Invested" value={position.invested} />
               {visibleReview ? (
@@ -203,10 +208,30 @@ export default function TransactionsScreen() {
         </View>
 
         <View style={styles.metrics}>
-          <StatPill label="Income" value={formatAmount(summary.income, 'tile', 1)} tone="ok" />
-          <StatPill label="Expense" value={formatAmount(summary.expense, 'tile', 1)} tone="err" />
-          <StatPill label="Invested" value={formatAmount(summary.invest, 'tile', 1)} tone="primary" />
+          <StatPill
+            label="Income"
+            value={formatAmount(summary.income, 'tile', 1)}
+            accessibilityLabel={`Income, ${formatAmount(summary.income, 'exact', 1)}`}
+            tone="ok"
+          />
+          <StatPill
+            label="Expense"
+            value={formatAmount(summary.expense, 'tile', 1)}
+            accessibilityLabel={`Expense, ${formatAmount(summary.expense, 'exact', 1)}`}
+            tone="err"
+          />
+          <StatPill
+            label="Invested"
+            value={formatAmount(summary.invest, 'tile', 1)}
+            accessibilityLabel={`Invested, ${formatAmount(summary.invest, 'exact', 1)}`}
+            tone="primary"
+          />
         </View>
+        {summary.earnedIncome === 0 ? (
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            No earned income logged this month
+          </AppText>
+        ) : null}
 
         {summary.overspend > 0 ? (
           <WarningBanner>
