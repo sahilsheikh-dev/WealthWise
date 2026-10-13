@@ -208,8 +208,10 @@ preserved once; erase-all removes the archived copies.
 | Screen reader label | exact | Always announce the full exact amount, regardless of visual tier |
 | Large money input helper | exact input + compact helper | Show full input; below it show compact check amount from ₹1 lakh |
 
-These are requirements, not current verified behavior. `formatINRShort` must
-retain its existing output while the new formatter handles K/L/Cr promotion.
+These are requirements; the formatter and AmountText have partial
+implementations, but application-wide integration, scan and accessibility
+proof remain incomplete. `formatINRShort` must retain its existing output
+while the new formatter handles K/L/Cr promotion.
 
 ### Route-kind registry (FX-U3; implementation pending)
 
@@ -220,16 +222,17 @@ retain its existing output while the new formatter handles K/L/Cr promotion.
 | form | `*-form`, clear-dues, month-review and modal pickers | Close X; dirty state asks to discard |
 | special | Onboarding and lock | None |
 
-Current route tree is not yet completely classified. This table is a plan until
-the route enumeration test and registry exist.
+The route-kind registry and route enumeration test exist, but route-specific
+header/back behavior, fallback behavior and control-target assertions remain
+incomplete.
 
 ### Theme, navigation and shared UI
 
 Theme IDs in source: `system`, `light`, `dark`, `sky`, `mint`, `blush`,
-`midnight`. Four intended tabs are Home, Txns, Goals, Budget; the baseline
-repository presently has three tabs and a stack Budget route. Shared UI follows
-the standing text-versus-icon rules in Section 3. Measured header layout,
-route-kind behavior, and close/discard behavior remain pending.
+`midnight`. The current fix-round tree has four tabs (Home, Txns, Goals, Budget)
+with Budget under `(tabs)`. Shared UI follows the standing text-versus-icon
+rules in Section 3. Measured header layout, route-kind behavior, and
+close/discard behavior remain partial.
 
 ## 5. Phase history
 
@@ -258,7 +261,7 @@ do not treat the summaries as independently verified release evidence.
 | 15-F | Held by user; insurance management is not part of this run. |
 | 15-G/H/J/I | Commits `9399e23`, `68d9cd4`, `1e206ad`, `19afe88`. Goal asset links/projection, historical cash flow/movements, list sorting, monthly budgets. |
 | 15-K/L/M | Held by user; reminders (including CR-1), encrypted backups, and final accessibility/performance audit are later work. |
-| 15 fix round | This prompt requests compact amounts, section-header layout, route controls, budget categories/tab, Transactions summary/entry behavior, and EF allocation button clarification. P0 is being recorded before fixes. |
+| 15 fix round | Round 2 requests compact amounts, section-header layout, route controls, budget categories/tab, Transactions summary/entry behavior, and EF allocation button clarification. FX-BASE is verified; remaining FX items are in progress. |
 | 16 | Planned cleanup, dependency/dead-code review, bundle audit and README. |
 | 17 | Planned QA/release, property tests, QA checklist, release engineering and local diagnostics. |
 
@@ -301,8 +304,8 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 - Checkpoint lint initially reported seven imported-module parse errors in
   `FormScreen`, then the error cleared after rerunning without the stale Expo
   lint cache. Standard Expo lint now exits 0; revisit if it recurs.
-- Route tree currently includes a stack `app/budget.tsx`, not the requested
-  fourth tab. The tab-layout requirement remains open under FX-B2.
+- Budget now exists under `(tabs)`; header-menu reachability and exhaustive
+  route/link/tab verification remain open under FX-B2.
 - Amount rendering uses direct formatters across app/components; the
   scan/allowlist and device accessibility results do not exist yet.
 - No real iOS or Android device/development-build verification has been done
