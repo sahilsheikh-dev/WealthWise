@@ -52,8 +52,8 @@ are called out as such.
 | P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
 | FX-BASE | Done | `60b8c54`; `TransactionsScreen.test.tsx`, `StatPill.test.tsx`; full suite 520 tests, tsc, lint, Android/iOS export and Doctor pass | 2026-10-13 |
 | FX-U1 | Partial | Compact amount formatter/component exist; comprehensive amount scan and exact accessibility labels remain unverified | 2026-10-13 |
-| FX-U2 | Partial | SectionHeaderRow and fitting helper exist; all-sort-screen scan and font-scale-2 render proof remain | 2026-10-13 |
-| FX-U3 | Done | Route registry enumeration, each route's left control/label/44pt target, header fallback and Android back paths pass in this commit | 2026-10-13 |
+| FX-U2 | Done | `src/components/SectionHeaderRow.tsx` waits for complete measurements before display; every app SortChip is AST-checked as its child; fit, no-flicker, inline/stacked and simulated font-scale-2 cases pass | 2026-10-13 |
+| FX-U3 | Done | `b205a84`; route registry enumeration, each route's left control/label/44pt target, header fallback and Android back paths pass | 2026-10-13 |
 | FX-U4 | Done | `FormScreen` now owns close/discard handling and each form route passes its real dirty state (or explicit clean state); 87 focused route/close tests pass | 2026-10-13 |
 | FX-B1 | Done | `b8bc4a1`; current-month Home expense breakdown, wants weights, category flow and v5 backup tests pass | 2026-10-13 |
 | FX-B2 | Done | `5e2f78f`; four ordered tabs, menu links, grouped Budget routes and simulated 2.0 font-scale labels verified | 2026-10-13 |
@@ -69,14 +69,15 @@ are called out as such.
 
 ### Resume point
 
-FX-U4 is the last verified item; next is FX-U2. `FormScreen.test.tsx` verifies
-the Close target, clean button/hardware-back behavior, dirty confirmation and
-cancel behavior; `RouteRenderSmoke.test.tsx` verifies Close and explicit dirty
-state wiring across form, clear-dues and month-review routes (87 tests across
-two suites), with tsc and lint passing. FX-U3 is committed as `b205a84`; FX-B2
-as `5e2f78f`; FX-B1 as `b8bc4a1`; FX-T4 as `88d5190`; FX-T3 as `c1df77d`;
-FX-T2 as `a3423ec`; FX-T1 as `de94950`. Baseline full gates pass; full gates
-will run twice at closeout.
+FX-U2 is the last verified item; next is FX-U1 together with FX-E1.
+`SectionHeaderRow.test.tsx` verifies fitting, inline/stacked rendering, hidden
+until subtitle measurement, simulated font-scale-2 stacking and an AST scan
+that rejects every app SortChip outside SectionHeaderRow; `sectionLayout.test.ts`
+checks the fit boundaries (8 tests across two suites), with tsc and lint
+passing. FX-U4 is committed as `862af8a` (87 form-close and route smoke tests);
+FX-U3 as `b205a84`; FX-B2 as `5e2f78f`; FX-B1 as `b8bc4a1`; FX-T4 as
+`88d5190`; FX-T3 as `c1df77d`; FX-T2 as `a3423ec`; FX-T1 as `de94950`.
+Baseline full gates pass; full gates will run twice at closeout.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -328,7 +329,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. FX-T1 through FX-U4 are verified; continue with FX-U2, then FX-U1 together with FX-E1.
+1. FX-T1 through FX-U2 are verified; continue with FX-U1 together with FX-E1.
 2. Run the full gates twice, update final evidence, and commit the final ledger.
 3. After user confirmation only: P15-F insurance; P15-K local reminders with
    CR-1; P15-L encrypted backups; P15-M accessibility/performance and final
@@ -378,7 +379,7 @@ evidence for the fixes.
 | P15-fix-0 | Done | `docs/PROGRESS.md`, `docs/prompts/README.md`, `docs/prompts/p15-fix-round-1.md` | `src/lib/__tests__/progressLedger.test.ts` |
 | FX-BASE | Done | `app/(tabs)/transactions.tsx`, `app/(tabs)/index.tsx`, `app/assets.tsx`, `app/liabilities.tsx`, `src/components/ui.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx` (withdrawal-only notice, expanded information, null rates/no NaN), `src/components/__tests__/StatPill.test.tsx` (exact accessible label), plus four prior focused suites; 520 full-suite tests pass |
 | FX-U1 | Partial | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, `src/components/AmountText.tsx`, `src/components/form/MoneyField.tsx`, amount consumers in `app/` | `src/lib/__tests__/amountDisplay.test.ts`, `src/components/__tests__/AmountText.test.tsx`; exhaustive scan, exact parent labels, money-input helper and broad tier coverage remain |
-| FX-U2 | Partial | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, sortable `app/` screens | `src/lib/__tests__/sectionLayout.test.ts`, `src/components/__tests__/SectionHeaderRow.test.tsx`; full SortChip scan and font-scale-2.0 all-surface proof remain |
+| FX-U2 | Done | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, all `SortChip` routes in `app/` | `sectionLayout.test.ts` — exact fit boundary and configurable gap; `SectionHeaderRow.test.tsx` — inline/stacked thresholds, hidden-until-measured behavior, simulated font-scale-2.0 stacking, and AST scan proving every app `SortChip` is inside `SectionHeaderRow` |
 | FX-U3 | Done | `src/lib/routeKinds.ts`, `src/components/AppHeader.tsx`, all registered `app/` routes | `routeKinds.test.ts` — every app route is registered; `AppHeader.test.tsx` — each route's expected left control, label and 44pt target; router back/fallback and Android hardware-back behavior |
 | FX-U4 | Done | `src/components/form/FormScreen.tsx`; `app/*-form.tsx`, `app/clear-dues.tsx`, `app/month-review.tsx` | `FormScreen.test.tsx` — Close target, clean button and Android-back close, dirty confirmation/cancel and hardware-back behavior; `RouteRenderSmoke.test.tsx` — Close and boolean dirty-state wiring on each form, clear-dues and month-review route |
 | FX-B1 | Done | `src/domain/transactions.ts` (`expenseCategoryBreakdown`), `src/domain/budget.ts`, `src/domain/schemas.ts`, `src/mock/data.ts`, `app/(tabs)/index.tsx`; no category-specific icon/color/label-map layer exists to update | `budget.test.ts` — weights total 100 and rounding, template/month validation and actuals; `selectors.test.ts` — category breakdown and filter; `HomeThemeSmoke.test.tsx` — rendered breakdown; `backup.test.ts` — new categories round-trip in schema-v5 backup |
