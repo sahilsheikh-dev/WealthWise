@@ -51,7 +51,7 @@ are called out as such.
 | P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
 | P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
 | FX-BASE | Done | `60b8c54`; `TransactionsScreen.test.tsx`, `StatPill.test.tsx`; full suite 520 tests, tsc, lint, Android/iOS export and Doctor pass | 2026-10-13 |
-| FX-U1 | Done | Compact formatter and explicit-tier rendering cover app/components; exact parent labels and the seven-screen large-amount matrix pass | 2026-10-13 |
+| FX-U1 | Done | `f805481`; compact formatter and explicit-tier rendering cover app/components; exact parent labels and the seven-screen large-amount matrix pass | 2026-10-13 |
 | FX-U2 | Done | `src/components/SectionHeaderRow.tsx` waits for complete measurements before display; every app SortChip is AST-checked as its child; fit, no-flicker, inline/stacked and simulated font-scale-2 cases pass | 2026-10-13 |
 | FX-U3 | Done | `b205a84`; route registry enumeration, each route's left control/label/44pt target, header fallback and Android back paths pass | 2026-10-13 |
 | FX-U4 | Done | `FormScreen` now owns close/discard handling and each form route passes its real dirty state (or explicit clean state); 87 focused route/close tests pass | 2026-10-13 |
@@ -61,7 +61,7 @@ are called out as such.
 | FX-T2 | Done | `a3423ec`; `availableBalance` edge cases for carry, current-day boundary, future exclusion, negative/no-history and past close | 2026-10-13 |
 | FX-T3 | Done | `c1df77d`; Festival, Donation and Gifts are exercised through create/edit forms, routed filters and Budget links | 2026-10-13 |
 | FX-T4 | Done | `88d5190`; compact card capped at 64pt; two collapsed figures, five expanded rows, review routing/dismissal, dot, and negative tone tests | 2026-10-13 |
-| FX-E1 | Done | Emergency fund balance, targets, allocation rows, passbook and Home/Goals cards use explicit tiers and exact accessible labels; large-amount matrix passes | 2026-10-13 |
+| FX-E1 | Done | `f805481`; emergency fund balance, targets, allocation rows, passbook and Home/Goals cards use explicit tiers and exact accessible labels; large-amount matrix passes | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
@@ -69,9 +69,9 @@ are called out as such.
 
 ### Resume point
 
-FX-U1 with FX-E1 is the last verified item; no FX items remain in this fix
-round. All six final gates passed twice; each coverage run passed 604 tests in
-63 suites, with per-directory line/branch coverage above the required floors.
+FX-U1 with FX-E1 (`f805481`) is the last verified item; no FX items remain in
+this fix round. All six final gates passed twice; each coverage run passed 604
+tests in 63 suites, with per-directory line/branch coverage above the floors.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -293,7 +293,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
-| P15-FIX-R3 | 2026-10-13 | Truthful full gate, FX-BASE audit, and all remaining FX items | Prompt saved at `docs/prompts/p15-fix-round-3.md`; FX-BASE `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 `88d5190`; FX-B1 `b8bc4a1`; FX-B2 `5e2f78f`; FX-U3 `b205a84`; FX-U4 `862af8a`; FX-U2 `6627d03`; FX-U1/FX-E1 verified in this close-out | 604 tests/63 suites and every gate pass twice; full coverage exceeds floors. Chose the formal row cutoff of ₹1 crore over the conflicting example. Round 2's two removed visible messages were restored in FX-BASE. No assertions or thresholds were weakened. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, FX-BASE audit, and all remaining FX items | Prompt saved at `docs/prompts/p15-fix-round-3.md`; FX-BASE `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 `88d5190`; FX-B1 `b8bc4a1`; FX-B2 `5e2f78f`; FX-U3 `b205a84`; FX-U4 `862af8a`; FX-U2 `6627d03`; FX-U1/FX-E1 `f805481` | 604 tests/63 suites and every gate pass twice; full coverage exceeds floors. Chose the formal row cutoff of ₹1 crore over the conflicting example. Round 2's two removed visible messages were restored in FX-BASE. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
