@@ -59,8 +59,8 @@ are called out as such.
 | FX-B2 | Partial | Budget tab exists; header-menu reachability and complete tab/link/navigation verification remain | 2026-10-13 |
 | FX-T1 | Done | `de94950`; direct plus route, header-menu behavior and all three add-form save paths are tested | 2026-10-13 |
 | FX-T2 | Done | `a3423ec`; `availableBalance` edge cases for carry, current-day boundary, future exclusion, negative/no-history and past close | 2026-10-13 |
-| FX-T3 | Done | Festival, Donation and Gifts are exercised through create/edit forms, routed filters and Budget links in this commit | 2026-10-13 |
-| FX-T4 | Partial | Expandable balance card exists; requested layout, row, review/dismissal and tone tests remain | 2026-10-13 |
+| FX-T3 | Done | `c1df77d`; Festival, Donation and Gifts are exercised through create/edit forms, routed filters and Budget links | 2026-10-13 |
+| FX-T4 | Done | Compact card capped at 64pt; tests cover two collapsed figures, five expanded rows, review routing/dismissal, dot, and negative tone | 2026-10-13 |
 | FX-E1 | Partial | Amount tiers are partially applied to EF surfaces; exact parent labels and specified screen render tests remain | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
@@ -69,12 +69,12 @@ are called out as such.
 
 ### Resume point
 
-FX-T3 is the last verified item; next is FX-T4. The category paths pass 82
-tests across `TransactionForm.test.tsx`, `TransactionsScreen.test.tsx`, and
-`RouteRenderSmoke.test.tsx`, with tsc and lint passing. FX-T2 is committed as
-`a3423ec` after all 17 cash-flow tests and tsc; FX-T1 is `de94950` after 13
-focused tests, tsc, and lint. Baseline full gates pass; full gates will run
-twice at closeout.
+FX-T4 is the last verified item; next is FX-B1. The Transactions screen tests
+pass (15 tests) covering two collapsed figures and 64pt cap, the five
+expanded rows, review routing/dismissal and dot, and negative tone; tsc and
+lint pass. FX-T3 is committed as `c1df77d` after 82 focused tests, tsc, and
+lint; FX-T2 is `a3423ec`; FX-T1 is `de94950`. Baseline full gates pass; full
+gates will run twice at closeout.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -296,7 +296,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
-| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 tests committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 tests committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
@@ -323,7 +323,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. FX-T1 through FX-T3 are verified; implement FX-T4 and commit it, then continue in prompt order.
+1. FX-T1 through FX-T4 are verified; continue with FX-B1, then FX-B2, in prompt order.
 2. Implement FX-B1 and FX-B2 and commit each item.
 3. Implement FX-U3, FX-U4, FX-U2, then FX-U1 together with FX-E1.
 4. Run the full gates twice, update final evidence, and commit the final ledger.
@@ -383,6 +383,6 @@ evidence for the fixes.
 | FX-T1 | Done | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx` | `TransactionsScreen.test.tsx` — plus routes directly to form, menu opens movement sheet; `TransactionForm.test.tsx` — Expense, Income and Invest saves |
 | FX-T2 | Done | `src/domain/cashFlow.ts` (`availableBalance`) | `src/domain/__tests__/cashFlow.test.ts` — carries opening across an empty month, counts through today, excludes future-dated current-month entries, preserves negative/no-history values and returns past-month closing |
 | FX-T3 | Done | `src/domain/schemas.ts`, `src/mock/data.ts`, `app/(tabs)/transactions.tsx`, `app/(tabs)/budget.tsx` | `TransactionForm.test.tsx` — Festival/Donation/Gifts create and edit; `TransactionsScreen.test.tsx` — routed filter results; `RouteRenderSmoke.test.tsx` — Budget line navigates with each category filter |
-| FX-T4 | Partial | `app/(tabs)/transactions.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`; collapsed/expanded content, review dismissal, negative tone and height cap are not yet asserted |
+| FX-T4 | Done | `app/(tabs)/transactions.tsx` — collapsed balance card max height 64pt; obsolete review-banner styles removed | `src/components/__tests__/TransactionsScreen.test.tsx` — exactly two collapsed visible amounts, five expanded rows, review link/menu/dot/dismissal and negative danger tone |
 | FX-E1 | Partial | `src/lib/amountDisplay.ts`, `src/components/AmountText.tsx`, `app/emergency-fund.tsx`, `app/ef-allocation-form.tsx`, Home/Goals | `src/lib/__tests__/amountDisplay.test.ts`, `src/components/__tests__/AmountText.test.tsx`, `EmergencyGoalScreens.test.tsx`; exact parent-label matrix and complete EF surface coverage remain |
 | FX-E2 | Partial | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/data/__tests__/createAppStore.test.ts`; both controls/hints exist, but stored-result behavior tests and orphaned-string scan remain |

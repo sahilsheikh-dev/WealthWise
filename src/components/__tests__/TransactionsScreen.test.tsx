@@ -4,6 +4,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { monthSummary } from '../../domain/transactions';
 import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
+import { formatMonth } from '../../lib/format';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
@@ -150,6 +151,107 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(1);
     expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
       .toContain('What happened?');
+  });
+
+  it('keeps the collapsed balance card compact and expands its five rows and review actions', () => {
+    const previousTransactions = mockData.transactions;
+    mockData.transactions = [
+      { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: '2026-09-02' },
+      { id: 'prior-expense', type: 'expense', amount: 400, category: 'Food', note: 'Prior food', date: '2026-09-03' },
+      { id: 'income', type: 'income', amount: 300, category: 'Salary', note: 'Pay', date: '2026-10-01' },
+      { id: 'borrowed', type: 'income', amount: 20, category: 'Borrowed', note: 'Friend', date: '2026-10-02' },
+      { id: 'expense', type: 'expense', amount: 50, category: 'Food', note: 'Meal', date: '2026-10-03' },
+      { id: 'invest', type: 'invest', amount: 40, category: 'Stocks / ETF', note: 'ETF', date: '2026-10-04' },
+    ];
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    routeParams.mockReturnValue({});
+    router.push.mockClear();
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => {
+        renderer = TestRenderer.create(<TransactionsScreen />);
+      });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const hasReviewDot = () => renderer?.root.findAll((node) => {
+        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
+        return styles.some((style) =>
+          style && typeof style === 'object' && style.width === 6 && style.height === 6,
+        );
+      }).length ?? 0;
+      const cashCard = renderer.root.findAll((node) => {
+        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
+        return styles.some((style) => style && typeof style === 'object' && style.maxHeight === 64);
+      })[0];
+      if (!cashCard) throw new Error('The constrained cash-flow card was not rendered.');
+      expect(cashCard.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ minHeight: 60, maxHeight: 64 }),
+      ]));
+      const collapsedFigures = cashCard.findAll((node) =>
+        node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
+      ).map((node) => node.props.accessibilityLabel);
+      expect([...new Set(collapsedFigures)]).toEqual(['₹830', '₹600']);
+      expect(hasReviewDot()).toBeGreaterThan(0);
+      const collapsedLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
+      expect(collapsedLabels.filter((label) => /^-?₹/.test(label))).toEqual(['₹830', '₹600']);
+      expect(collapsedLabels).toContain('Available balance');
+      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(true);
+      expect(collapsedLabels).not.toContain('Brought forward');
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Expand Available balance' }).props.onPress());
+      const expandedText = cashCard.findAllByType('text')
+        .map((node) => node.children.join(' '))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      for (const label of ['Brought forward', 'Income', 'Other money in', 'Spent', 'Invested']) {
+        expect(expandedText).toContain(label);
+      }
+      expect(expandedText).toContain('Includes ₹20 from withdrawals, borrowing, loan proceeds and own funds');
+
+      const reviewLabel = `Review ${formatMonth('2026-09')}`;
+      expect(renderer.root.findByProps({ accessibilityLabel: reviewLabel })).toBeDefined();
+      const reviewButton = renderer.root.findAll((node) => String(node.type) === 'pressable')
+        .find((node) => node.findAllByType('text').some((text) =>
+          text.children.join(' ').replace(/\s+/g, ' ').trim() === reviewLabel,
+        ));
+      if (!reviewButton) throw new Error('Expanded review action was not rendered.');
+      act(() => reviewButton.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: '2026-09' } });
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Dismiss month review reminder' }).props.onPress());
+      expect(cashCard.findAllByType('text')
+        .map((node) => node.children.join(' '))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()).not.toContain(reviewLabel);
+      expect(hasReviewDot()).toBe(0);
+    } finally {
+      mockData.transactions = previousTransactions;
+      routeParams.mockReturnValue({});
+    }
+  });
+
+  it('marks a negative available balance as a shortfall with the danger tone', () => {
+    const previousTransactions = mockData.transactions;
+    mockData.transactions = [
+      { id: 'small-income', type: 'income', amount: 20, category: 'Salary', note: 'Pay', date: '2026-10-01' },
+      { id: 'large-expense', type: 'expense', amount: 150, category: 'Food', note: 'Food', date: '2026-10-02' },
+    ];
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => {
+        renderer = TestRenderer.create(<TransactionsScreen />);
+      });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const balanceLabel = renderer.root.findByProps({ accessibilityLabel: 'Expand Available balance' });
+      expect(balanceLabel.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
+      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹130' });
+      expect(amount.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ color: expect.any(String) }),
+      ]));
+    } finally {
+      mockData.transactions = previousTransactions;
+    }
   });
 });
 
