@@ -76,9 +76,9 @@ export default function BudgetScreen() {
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...panResponder.panHandlers}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader title="Budget" rightActions={[
-            { icon: 'list', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
-            { icon: 'clock', label: 'Budget history', onPress: () => router.push('/budget-history') },
+          <AppHeader title="Budget" menu={[
+            { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
+            { icon: 'calendar', label: 'Budget history', onPress: () => router.push('/budget-history') },
           ]} />
           <View
             onTouchStart={() => setTouchingHeader(true)}

@@ -129,6 +129,19 @@ describe('Home screen theme smoke', () => {
     act(() => renderer?.unmount());
   });
 
+  it('opens the Budget tab from the Home budget card', async () => {
+    jest.clearAllMocks();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    act(() => renderer?.root.findByProps({ accessibilityLabel: "Open this month's budget" }).props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/(tabs)/budget');
+    await act(async () => renderer?.unmount());
+  });
+
   it('shows Festival, Donation and Gifts in the current-month Home spending breakdown', async () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [

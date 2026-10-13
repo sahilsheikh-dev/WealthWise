@@ -19,6 +19,12 @@ describe('route kind registry', () => {
     expect(routeFiles(join(process.cwd(), 'app')).sort()).toEqual(Object.keys(ROUTE_KINDS).sort());
   });
 
+  it('keeps the budget screen only under the tab group', () => {
+    const routes = routeFiles(join(process.cwd(), 'app'));
+    expect(routes).toContain('(tabs)/budget');
+    expect(routes).not.toContain('budget');
+  });
+
   it('normalizes path params and routes tab groups', () => {
     expect(routeKindForPath('/')).toBe('tab');
     expect(routeKindForPath('/(tabs)/transactions')).toBe('tab');

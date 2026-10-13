@@ -100,7 +100,7 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
-      <Pressable accessibilityRole="button" accessibilityLabel="Open this month's budget" onPress={() => router.push('/budget')}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open this month's budget" onPress={() => router.push('/(tabs)/budget')}>
         <Card style={styles.monthBudgetCard}>
           <AppText weight="semibold">
             {monthBudget.budget ? (

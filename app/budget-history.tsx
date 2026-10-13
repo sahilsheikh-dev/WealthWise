@@ -33,7 +33,7 @@ export default function BudgetHistoryScreen() {
           key={row.month}
           accessibilityRole="button"
           accessibilityLabel={`Open budget for ${formatMonth(row.month)}`}
-          onPress={() => router.push({ pathname: '/budget', params: { month: row.month } })}>
+          onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month: row.month } })}>
           <Card style={styles.card}>
             <View style={styles.top}>
               <View style={{ flex: 1 }}>

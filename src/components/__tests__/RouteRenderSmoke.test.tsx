@@ -213,7 +213,37 @@ jest.mock('../../data/useAppData', () => {
 jest.mock('../../components/AppHeader', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    AppHeader: ({ title }: { title: string }) => ReactModule.createElement('text', null, title),
+    AppHeader: ({
+      title,
+      rightActions,
+      menu,
+    }: {
+      title: string;
+      rightActions?: { label: string; onPress: () => void }[];
+      menu?: { label: string; onPress: () => void }[];
+    }) => {
+      const [menuOpen, setMenuOpen] = ReactModule.useState(false);
+      return ReactModule.createElement('header', null,
+        ReactModule.createElement('text', null, title),
+        ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
+          key: action.label,
+          accessibilityLabel: action.label,
+          onPress: action.onPress,
+        }, action.label)),
+        ...(menu ? [
+          ReactModule.createElement('button', {
+            key: 'more-options',
+            accessibilityLabel: 'More options',
+            onPress: () => setMenuOpen(true),
+          }, 'More options'),
+          ...(menuOpen ? menu.map((item) => ReactModule.createElement('button', {
+            key: item.label,
+            accessibilityLabel: item.label,
+            onPress: item.onPress,
+          }, item.label)) : []),
+        ] : []),
+      );
+    },
   };
 });
 
@@ -617,4 +647,43 @@ describe('route render smoke audit', () => {
       }
     },
   );
+
+  it('opens Budget history and Budget templates from the Budget tab menu', () => {
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    const renderer = renderScreen(React.createElement(BudgetScreen));
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+    const history = renderer.root.findByProps({ accessibilityLabel: 'Budget history' });
+    act(() => history.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-history');
+    const templates = renderer.root.findByProps({ accessibilityLabel: 'Budget templates' });
+    act(() => templates.props.onPress());
+    expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
+  });
+
+  it('returns from Budget history to the tab with the selected month', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as {
+      monthBudgets?: unknown[];
+    };
+    const previousBudgets = data.monthBudgets;
+    const month = '2026-09';
+    data.monthBudgets = [{
+      month,
+      templateId: null,
+      templateName: 'September',
+      customized: false,
+      plannedIncome: 10_000,
+      lines: [{ category: 'Food', planned: 2_000 }],
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      const renderer = renderScreen(React.createElement(BudgetHistoryScreen));
+      const row = renderer.root.findByProps({ accessibilityLabel: `Open budget for ${formatMonth(month)}` });
+      act(() => row.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month } });
+    } finally {
+      data.monthBudgets = previousBudgets;
+    }
+  });
 });
