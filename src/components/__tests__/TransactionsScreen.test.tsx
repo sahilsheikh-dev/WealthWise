@@ -53,15 +53,19 @@ jest.mock('../../theme/useTheme', () => ({
   },
 }));
 jest.mock('../AppHeader', () => ({
-  AppHeader: ({ title, rightActions }: {
+  AppHeader: ({ title, rightActions, menu }: {
     title: string;
-    rightActions?: { label: string; icon: string }[];
+    rightActions?: { label: string; icon: string; onPress: () => void }[];
+    menu?: { label: string; icon: string; onPress: () => void }[];
   }) => {
     const ReactModule = jest.requireActual('react') as typeof React;
     return ReactModule.createElement('header', null,
       ReactModule.createElement('text', null, title),
       ...(rightActions ?? []).map((action) =>
-        ReactModule.createElement('button', { accessibilityLabel: action.label }, action.icon),
+        ReactModule.createElement('button', { accessibilityLabel: action.label, onPress: action.onPress }, action.icon),
+      ),
+      ...(menu ?? []).map((item) =>
+        ReactModule.createElement('button', { accessibilityLabel: item.label, onPress: item.onPress }, item.label),
       ),
     );
   },
@@ -126,6 +130,26 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);
+  });
+
+  it('routes plus straight to the transaction form and keeps money movement in the menu', () => {
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<TransactionsScreen />);
+    });
+    if (!renderer) throw new Error('Transactions renderer was not created.');
+
+    expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
+    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Add transaction' }).props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/transaction-form');
+    expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
+
+    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Record money movement' }).props.onPress());
+    expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(1);
+    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      .toContain('What happened?');
   });
 });
 

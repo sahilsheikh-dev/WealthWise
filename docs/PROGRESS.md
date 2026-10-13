@@ -57,21 +57,22 @@ are called out as such.
 | FX-U4 | Partial | Shared FormScreen close/discard exists; dirty state is not wired/tested across every form route | 2026-10-13 |
 | FX-B1 | Partial | Three category values and budget weights exist; Home breakdown, all category surfaces and v5 backup regression remain | 2026-10-13 |
 | FX-B2 | Partial | Budget tab exists; header-menu reachability and complete tab/link/navigation verification remain | 2026-10-13 |
-| FX-T1 | Partial | '+' routes to the form and movement menu remains; direct-route, menu and all-type save tests remain | 2026-10-13 |
+| FX-T1 | Done | '+' routes directly to `/transaction-form`; `Record money movement` remains in the header menu; item-level tests pass in this commit | 2026-10-13 |
 | FX-T2 | Partial | `availableBalance` and initial tests exist; full requested edge-case/integration verification remains | 2026-10-13 |
 | FX-T3 | Partial | New categories exist in domain/mock data; add/edit/filter/category-navigation tests remain | 2026-10-13 |
 | FX-T4 | Partial | Expandable balance card exists; requested layout, row, review/dismissal and tone tests remain | 2026-10-13 |
 | FX-E1 | Partial | Amount tiers are partially applied to EF surfaces; exact parent labels and specified screen render tests remain | 2026-10-13 |
-| FX-E2 | Done | FX-E2 code and `EfAllocationForm.test.tsx` in this commit; `createAppStore.test.ts` verifies one reset write | 2026-10-13 |
+| FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
 
 ### Resume point
 
-FX-E2 is the last verified item in this commit; next is FX-T1. Baseline gates
-pass (coverage 520 tests, tsc, lint, Android/iOS exports, Doctor 21/21); the
-FX-E2 focused suites, tsc and lint pass. Full gates will run twice at closeout.
+FX-T1 is the last verified item; next is FX-T2. The Transactions routing/menu
+tests and all three add-form save paths pass (13 tests across the two focused
+suites), as do tsc and Expo lint. Baseline full gates pass; full gates will run
+twice at closeout.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -293,7 +294,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
-| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
+| P15-FIX-R3 | 2026-10-13 | Truthful full gate, audit FX-BASE, then finish items in revised order | Prompt saved at `docs/prompts/p15-fix-round-3.md`; baseline gates pass; FX-BASE audit `60b8c54`; FX-E2 `5f6f883`; FX-T1 tests and ledger committed in this slice | Round 2 changed two user-visible assertions without preserving their UI behavior; corrected before continuing. No assertions or thresholds were weakened. |
 
 ## 7. Change-request register
 
@@ -320,7 +321,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. Implement FX-T1 through FX-T4 and commit each item in order.
+1. FX-T1 is verified; implement FX-T2 through FX-T4 and commit each item in order.
 2. Implement FX-B1 and FX-B2 and commit each item.
 3. Implement FX-U3, FX-U4, FX-U2, then FX-U1 together with FX-E1.
 4. Run the full gates twice, update final evidence, and commit the final ledger.
@@ -377,7 +378,7 @@ evidence for the fixes.
 | FX-U4 | Partial | `src/components/form/FormScreen.tsx`, `app/*-form.tsx`, modal routes | `src/components/__tests__/FormScreen.test.tsx`; dirty state is not verified across every form and clean/dirty/cancel coverage is incomplete |
 | FX-B1 | Partial | `src/domain/schemas.ts`, `src/domain/budget.ts`, `src/mock/data.ts`, category UI maps in `app/` and `src/` | `src/domain/__tests__/budget.test.ts`, `src/domain/__tests__/schemas.test.ts`; Home breakdown/filter and existing-v5-backup regression remain |
 | FX-B2 | Partial | `app/(tabs)/budget.tsx`, `app/(tabs)/_layout.tsx`, route registry and links | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/routeKinds.test.ts`; header menu and exhaustive links/deep-link/font-scale checks remain |
-| FX-T1 | Partial | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`; '+' routing, menu and all-three-type save assertions remain |
+| FX-T1 | Done | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx` | `TransactionsScreen.test.tsx` — plus routes directly to form, menu opens movement sheet; `TransactionForm.test.tsx` — Expense, Income and Invest saves |
 | FX-T2 | Partial | `src/domain/cashFlow.ts` | `src/domain/__tests__/cashFlow.test.ts`; function and initial tests exist, but complete carry/future/negative/no-data/past-month checks remain |
 | FX-T3 | Partial | `src/domain/schemas.ts`, `src/mock/data.ts`, transaction and budget category screens | `src/domain/__tests__/budget.test.ts`, transaction screen tests; add/edit/filter and budget-to-filtered-list tests remain |
 | FX-T4 | Partial | `app/(tabs)/transactions.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx`; collapsed/expanded content, review dismissal, negative tone and height cap are not yet asserted |
