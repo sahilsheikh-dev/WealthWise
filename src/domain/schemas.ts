@@ -63,7 +63,7 @@ const goalSchema = z.object({
   links: z.array(z.object({
     instrumentId: idSchema,
     share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10), 'Share must use at most one decimal place'),
-  })),
+  })).default([]),
 });
 
 const manualHoldingSchema = z.object({
@@ -181,15 +181,71 @@ const policySchema = z.object({
   }
 });
 
-const expenseBudgetCategories = ['Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education', 'Other'] as const;
-const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'] as const;
-export const BUDGET_CATEGORIES = [...expenseBudgetCategories, ...investmentBudgetCategories] as const;
+const expenseBudgetCategories = [
+  'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
+  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other',
+] as const;
+const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
+export const BUDGET_CATEGORIES = [
+  ...expenseBudgetCategories.filter((category) => category !== 'Other'),
+  'Other',
+  ...investmentBudgetCategories,
+] as const;
+const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
+const budgetTemplateLineSchema = z.object({
+  category: z.string().min(1).max(60),
+  mode: z.enum(['amount', 'percent']),
+  value: moneySchema.min(0).max(1_000_000_000),
+}).superRefine((line, context) => {
+  if (line.mode === 'percent' && line.value > 100) {
+    context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
+  }
+});
+const budgetTemplateSchema = z.object({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  lines: z.array(budgetTemplateLineSchema).max(1000),
+}).superRefine((template, context) => {
+  const seen = new Set<string>();
+  template.lines.forEach((line, index) => {
+    if (!budgetCategorySet.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
+    }
+    if (seen.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
+    }
+    seen.add(line.category);
+  });
+});
+const monthBudgetSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  templateId: idSchema.nullable(),
+  templateName: z.string().min(1).max(40).nullable(),
+  customized: z.boolean(),
+  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  lines: z.array(z.object({
+    category: z.string().min(1).max(60),
+    planned: moneySchema.min(0).max(1_000_000_000),
+  })).max(1000),
+}).superRefine((budget, context) => {
+  const seen = new Set<string>();
+  budget.lines.forEach((line, index) => {
+    if (!budgetCategorySet.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
+    }
+    if (seen.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
+    }
+    seen.add(line.category);
+  });
+});
 const budgetSchema = z.object({
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
   lines: z.array(z.object({
     category: z.string(),
     planned: moneySchema.min(0).max(1_000_000_000),
-  })),
+  })).default([]),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
   const allowed = new Set<string>(BUDGET_CATEGORIES);
@@ -239,6 +295,9 @@ export const appDataSchema = z.object({
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
   budget: budgetSchema.nullable(),
+  budgetTemplates: z.array(budgetTemplateSchema).optional(),
+  defaultBudgetTemplateId: idSchema.nullable().optional(),
+  monthBudgets: z.array(monthBudgetSchema).optional(),
   efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
 });
@@ -253,12 +312,15 @@ type SchemaMatchesAppData = AppDataSchemaOutput extends AppData
 export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 
 export const TRANSACTION_CATEGORIES = {
-  expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Own funds', 'Other'],
+  expense: [
+    'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
+    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other',
+  ],
+  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
-export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Own funds'] as const;
+export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 
 type MoneyOptions = {
   minimum?: number;
@@ -323,6 +385,7 @@ export function makeTransactionFormSchema(
     ) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
     }
+
     const instrumentId = value.instrumentId;
     const isInstrumentType = value.type === 'invest';
     const isWithdrawal = value.type === 'income' && value.category === 'Withdrawal';
@@ -353,6 +416,7 @@ export function makeTransactionFormSchema(
           message: `Exceeds the current value of ${formatINR(available)}`,
         });
       }
+
     }
 
     if (
@@ -365,8 +429,69 @@ export function makeTransactionFormSchema(
   });
 }
 
+export function makeMoneyMovementFormSchema(
+  kind: 'borrowed-in' | 'repay' | 'withdraw' | 'own-funds',
+  today: ISODate,
+  options: { liabilityIds: string[]; instrumentIds: string[] },
+) {
+  return z.object({
+    amount: amountInputSchema,
+    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
+    liabilityId: z.string(),
+    instrumentId: z.string(),
+  }).superRefine((value, context) => {
+    if (kind === 'borrowed-in' && value.lenderName.length === 0) {
+      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
+    }
+    if (kind === 'repay' && !options.liabilityIds.includes(value.liabilityId)) {
+      context.addIssue({ code: 'custom', path: ['liabilityId'], message: 'Choose a liability to repay' });
+    }
+    if (kind === 'withdraw' && !options.instrumentIds.includes(value.instrumentId)) {
+      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose where you withdrew the money from' });
+    }
+  });
+}
+
+export function makeMonthAllocationFormSchema(
+  mode: 'shortfall' | 'surplus',
+  options: { liabilityIds: string[]; instrumentIds: string[]; maximumAmount: number },
+) {
+  const kinds = mode === 'shortfall'
+    ? ['borrowed', 'loan-proceeds', 'withdrawal', 'own-funds'] as const
+    : ['invest', 'ef', 'liability'] as const;
+  return z.object({
+    allocationKind: z.enum(kinds),
+    amount: moneyInputSchema({
+      minimum: 0.01,
+      maximum: options.maximumAmount,
+      maximumMessage: 'Amount exceeds the remaining balance',
+    }),
+    targetId: z.string(),
+    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
+    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
+  }).superRefine((value, context) => {
+    if (value.allocationKind === 'borrowed' && !value.lenderName) {
+      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
+    }
+    if ((value.allocationKind === 'loan-proceeds' || value.allocationKind === 'liability') &&
+      !options.liabilityIds.includes(value.targetId)) {
+      context.addIssue({ code: 'custom', path: ['targetId'], message: 'Choose a liability' });
+    }
+    if ((value.allocationKind === 'withdrawal' || value.allocationKind === 'invest') &&
+      !options.instrumentIds.includes(value.targetId)) {
+      context.addIssue({ code: 'custom', path: ['targetId'], message: 'Choose a savings or investment' });
+    }
+  });
+}
+
 export type TransactionFormInput = z.input<ReturnType<typeof makeTransactionFormSchema>>;
 export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFormSchema>>;
+export type MoneyMovementFormInput = z.input<ReturnType<typeof makeMoneyMovementFormSchema>>;
+export type MoneyMovementFormOutput = z.output<ReturnType<typeof makeMoneyMovementFormSchema>>;
+export type MonthAllocationFormInput = z.input<ReturnType<typeof makeMonthAllocationFormSchema>>;
+export type MonthAllocationFormOutput = z.output<ReturnType<typeof makeMonthAllocationFormSchema>>;
 
 const holdingTypeFormSchema = z.enum([
   'Mutual fund / SIP',
@@ -473,6 +598,7 @@ export function makeLiabilityFormSchema(
     ratePct: optionalRate(60, 'Enter a rate between 0 and 60', true),
     startDate: dateInputSchema()
       .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+    received: z.boolean().default(false),
   };
   const recurring = z.object({
     ...common,
@@ -533,6 +659,13 @@ export function makeGoalFormSchema(
     saved: ctx.locked
       ? z.string().transform(() => 0)
       : moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, maximumMessage: "Saved can't exceed the target" }),
+    links: z.array(z.object({
+      instrumentId: idSchema,
+      share: z.string().trim().regex(/^(?:\d+\.?\d*|\.\d+)$/, 'Enter a valid asset share')
+        .transform(Number)
+        .refine((share) => share >= 0.1 && share <= 100, 'Share must be between 0.1% and 100%')
+        .refine((share) => Math.round(share * 10) === share * 10, 'Share must use at most one decimal place'),
+    })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
       .transform(Number).refine(isAllowedYear, yearMessage),
   }).superRefine((value, context) => {

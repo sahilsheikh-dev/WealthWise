@@ -49,6 +49,9 @@ export default function ClearDuesScreen() {
   const [addSkippedToOpening, setAddSkippedToOpening] = useState(true);
   const [balance, setBalance] = useState(initialBalance === null ? '' : String(initialBalance));
   const [busy, setBusy] = useState(false);
+  const isDirty = mode !== defaultMode
+    || !addSkippedToOpening
+    || balance !== (initialBalance === null ? '' : String(initialBalance));
 
   const save = async () => {
     if (!target || !pending || pending.count === 0 || busy) return;
@@ -113,6 +116,7 @@ export default function ClearDuesScreen() {
     <FormScreen
       title="Clear past dues"
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={<Button label="Confirm" icon="check" variant="primary" disabled={busy} onPress={() => void save()} />}>
       <Card>
         <AppText weight="semibold">{item.name}</AppText>

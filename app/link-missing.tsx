@@ -4,12 +4,16 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { AppHeader } from '../src/components/AppHeader';
+import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { AppText, Button, EmptyState, ListItem, Screen } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { findUnlinkedEntries } from '../src/domain/instruments';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatDate, formatINR } from '../src/lib/format';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -19,8 +23,15 @@ export default function LinkMissingScreen() {
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
+  const sorting = useSort('linkMissing');
   const { colors } = useTheme();
-  const entries = useMemo(() => findUnlinkedEntries(data), [data]);
+  const sort = sorting.sort;
+  const entries = useMemo(() => sort(findUnlinkedEntries(data).map((item) => ({
+    ...item,
+    id: `${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`,
+    date: item.entry.date,
+    amount: Math.abs(item.entry.amount),
+  }))), [data, sort]);
   const total = entries.reduce((sum, item) => sum + Math.abs(item.entry.amount), 0);
 
   const createTransactions = () => {
@@ -55,6 +66,10 @@ export default function LinkMissingScreen() {
               <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
               <AppText weight="bold">{formatINR(total)}</AppText>
             </View>
+            <SectionHeaderRow
+              title="Missing transactions"
+              right={<SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />}
+            />
             <View style={styles.list}>
               {entries.map((item) => {
                 const name = item.kind === 'ef'
@@ -96,5 +111,6 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 100 },
   total: { marginHorizontal: 20, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between' },
   list: { marginHorizontal: 20 },
+  sortRow: { marginHorizontal: 20 },
   footer: { padding: 20, borderTopWidth: StyleSheet.hairlineWidth },
 });

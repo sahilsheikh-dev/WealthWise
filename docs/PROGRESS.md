@@ -1,62 +1,359 @@
-# Phase 15 progress
+# Wealth Wise master progress ledger
 
-## Part A — Phase 14 audit
+## 1. How to use this file
 
-Schema precondition: `SCHEMA_VERSION = 4` in `src/domain/schemas.ts`, verified before changes.
+This is the permanent status, decision, evidence, and verification ledger for
+Wealth Wise. Every future prompt starts by reading this file and ends by
+updating the dashboard, the prompt log, the change-request register, and the
+verification matrix, then committing those updates. Use IDs `P<phase>-<part>`
+for phase prompts, `FX-<id>` for fixes, and `CR-<n>` for change requests.
+Never delete history: supersede an earlier entry with a dated note. When the
+repository and this ledger disagree, the repository wins; correct the ledger
+and record the correction. Do not infer completion from a prior summary or a
+prompt: require a repository commit and named test evidence. Never push.
 
-### Phase 14 traceability matrix
+## 2. Status dashboard
 
-| Requirement | Status | Evidence files | Tests proving completed behavior / remaining gap |
+`Done` requires a verified commit and test. `Held` means explicitly deferred by
+the user. `Pending` means in scope but not yet verified. `Planned` means later
+roadmap work. Hashes are repository evidence; user claims that cannot be proven
+are called out as such.
+
+| ID | Status | Evidence | Last updated |
 |---|---|---|---|
-| B1 Home 2x2 quick actions, exact labels, unique icons, button labels and font-scale renders | Done | `app/(tabs)/index.tsx`, `src/components/IconButton.tsx`, `src/components/testUtils/assertNoVerbText.ts` | `Home screen theme smoke › renders Home quick actions at font scale %s` |
-| B2 Transactions swipe month navigation, direction, chip-origin exclusion, adjustable month label | Done | `src/lib/swipe.ts`, `app/(tabs)/transactions.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | `route render smoke audit › changes months with horizontal swipes and leaves chip-origin swipes alone`; adjustable control also exposes increment/decrement accessibility actions |
-| B3 CardHeaderRow/ListRow own all edit pencils and align them at the far right | Done | `src/components/CardHeaderRow.tsx`, `src/components/ListRow.tsx`, `src/components/InstrumentCard.tsx`, `app/liabilities.tsx`, `app/emergency-fund.tsx`, `app/investment-entries.tsx`, `app/liability-payments.tsx` | `shared edit action ownership › keeps the edit pencil implementation exclusively in shared row components` and shared row action test |
-| B4 Goal cards have no nested edit control and navigate on first tap with editor hint | Done | `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx` | `Home screen theme smoke › opens a goal editor on the first card tap from Home and Goals` |
-| C1 Schema v4, efAllocation field, v3-to-v4 migration, persisted copy and backup upgrade | Done | `src/domain/schemas.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/domain/backup.ts` | `migrate v3 to v4 › adds efAllocation null without altering the rest of the data`; `createAppStore persistence › migrates a v2 database once and does not overwrite its premigration copy`; backup migration tests |
-| C2 Suggested allocation, exact paise distribution, thresholds, validation and pure actions | Done | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts` | `ef allocation › apportions 20,000 seeded balances exactly in whole paise`; other `ef allocation` validation/action/warning tests |
-| C3 Emergency-fund allocation card and allocation form | Done | `app/emergency-fund.tsx`, `app/ef-allocation-form.tsx`, `src/data/createAppStore.ts` | `Emergency fund allocation form renders without verb text`; the form validates the 100% total and persists through one store action |
-| C4 Allocation boundaries, migration and backup tests | Done | `src/domain/__tests__/efAllocation.test.ts`, `src/data/__tests__/migrateV4.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/domain/__tests__/backup.test.ts` | Existing allocation boundary/property tests plus custom-mix restart persistence and backup round-trip |
-| D1 UTF-8 byte size, levels and human-readable storage summary | Done | `src/lib/storageGuard.ts` | `storageGuard › reports byte lengths and level boundaries` |
-| D2 Successful-write byte reporting, Home warning banners, seven-day dismissal, Backup size, stress menu data | Done | `src/data/safeStorage.ts`, `src/data/uiStore.ts`, `src/data/metaStore.ts`, `src/data/createAppStore.ts`, `src/lib/storageGuard.ts`, `app/(tabs)/index.tsx`, `app/backup.tsx`, `src/domain/stressData.ts`, `src/components/useAppMenu.ts` | Safe-storage reports exact UTF-8 bytes only on successful writes and valid hydration; storage warning/dismissal boundaries; Home proves critical warning has no dismiss action; dev action writes 20,000 transactions in one persist |
-| D3 Serialized-size calibration for daily SIPs, 20,000 transactions and demo data | Done | `src/domain/stressData.ts`, `src/domain/__tests__/stressData.test.ts` | `storage calibration data` verifies daily entries and bundled demo data remain below warning threshold and 20,000 stress entries exceed critical threshold |
-| E Local notifications and reminder preferences/planner/scheduler/permission/deep-link UI (optional in Phase 14) | Missing | No `expo-notifications` dependency or reminder source files/routes | No reminder tests |
-| F Encrypted backup envelope, crypto adapter, UI, and tests (optional in Phase 14) | Missing | No `backupCrypto.ts` or crypto dependencies | No encrypted-backup tests |
-| G1 Friendly sentences for all typed domain errors | Partial | `src/lib/friendlyError.ts` | `friendlyError › maps known domain errors to plain messages`; linked-transaction, EF and later-phase error classes are not mapped |
-| G2 Accessible roles/labels, 44pt targets, status semantics and all-screen font-scale renders | Partial | `src/components/IconButton.tsx`, `src/components/__tests__/IconButton.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | `IconButton` checks its own target/label; route coverage and font-scale checks are not exhaustive |
-| G3 Virtualized large lists, debounced search, memoization and domain benchmarks | Partial | `app/investment-entries.tsx`, `app/liability-payments.tsx`, `app/(tabs)/transactions.tsx` | `investment-entries` and `liability-payments` use FlatList; Transactions still renders mapped rows and no benchmark tests exist |
-| G4 Empty states and hydration-safe rendering on every list/screen | Partial | `app/`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | Smoke tests render selected routes; no complete route-by-route hydration/empty-state assertion |
-| K Local reminders (Phase 15 Part K) | Missing | No planner, scheduler, notification adapter, prefs, or route | No reminder tests |
-| L Passphrase-encrypted backups (Phase 15 Part L) | Missing | `src/domain/backup.ts` handles plain backups only; no crypto adapter or encrypted UI | No encryption tests |
+| Phase 1 | Pending | user-reported, unverified; initial HTML prototype/Expo UI history not recoverable from current Git history | 2026-10-13 |
+| Phase 2 | Pending | user-reported, unverified; no phase-tagged commit or original coverage report available | 2026-10-13 |
+| Phase 3 | Pending | user-reported, unverified; current store exists, original schema-v1 commit not identified | 2026-10-13 |
+| Phase 4 | Pending | user-reported, unverified; current implementation exists, original phase evidence unavailable | 2026-10-13 |
+| Phase 5 | Pending | user-reported, unverified; exact original phase commit/test mapping unavailable | 2026-10-13 |
+| Phase 6 | Pending | user-reported, unverified; current plain backup/security features do not prove all original acceptance criteria | 2026-10-13 |
+| Phase 7 | Pending | user-reported, unverified; schema-v2 migration code is present, historical phase commit not identified | 2026-10-13 |
+| Phase 8 | Pending | user-reported, unverified; current investment features do not prove the original phase report | 2026-10-13 |
+| Phase 9 | Pending | user-reported, unverified; current link-management code does not prove the original phase report | 2026-10-13 |
+| Phase 10 | Pending | user-reported, unverified; current schedules and virtualized history do not prove original acceptance | 2026-10-13 |
+| Phase 11 | Pending | user-reported, unverified; exact original crash-fix evidence unavailable | 2026-10-13 |
+| Phase 12 | Pending | user-reported, unverified; schema-v3/theme code is present, original phase report unavailable | 2026-10-13 |
+| Phase 13 | Pending | user-reported, unverified; current UI has related work, no phase-tagged commit/test matrix | 2026-10-13 |
+| Phase 14 A-G | Pending | user-reported, unverified as a phase; audited follow-up evidence is in Phase 15 A/A2 and later parts | 2026-10-13 |
+| P15-A | Done | `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7`; audit/gate evidence in this repository | 2026-10-13 |
+| P15-A2 | Done | `0322c9d`; migration, premigration archive, restored assertions and coverage files | 2026-10-13 |
+| P15-B | Done | `fbeb1d7`; Phase-14 UI follow-up files and screen tests | 2026-10-13 |
+| P15-C | Done | `e155bcd`; date clarity and Home card tests | 2026-10-13 |
+| P15-D | Done | `394d338`; schema v5 migration, policy and goal-link tests | 2026-10-13 |
+| P15-E | Done | `f28657c`; shared due engine and due/store/screen tests | 2026-10-13 |
+| P15-F | Held | Explicitly deferred by current user prompt; no insurance-management screen/action set yet | 2026-10-13 |
+| P15-G | Done | `9399e23`; goal-link, projection, store and route tests | 2026-10-13 |
+| P15-H | Done | `68d9cd4`; cash-flow, seeded conservation, movement and store tests | 2026-10-13 |
+| P15-I | Done | `19afe88`; budget domain, store, backup, category, dues and route tests | 2026-10-13 |
+| P15-J | Done | `1e206ad`; sort comparator, persistence, screen and route tests | 2026-10-13 |
+| P15-K | Held | Explicitly deferred; no reminder planner/preferences/notifications route yet | 2026-10-13 |
+| P15-L | Held | Explicitly deferred; encrypted-backup work not implemented | 2026-10-13 |
+| P15-M | Held | Explicitly deferred; final accessibility/performance audit not implemented | 2026-10-13 |
+| P15-fix-0 | Done | `db967bf`; `src/lib/__tests__/progressLedger.test.ts` passes | 2026-10-13 |
+| FX-U1 | Pending | Planned compact amount formatting and accessible AmountText; no implementation commit/test yet | 2026-10-13 |
+| FX-U2 | Pending | Planned measured inline/stacked SectionHeaderRow; no implementation commit/test yet | 2026-10-13 |
+| FX-U3 | Pending | Planned route-kind registry and consistent back behavior; no implementation commit/test yet | 2026-10-13 |
+| FX-U4 | Pending | Planned close/discard behavior for forms and modal routes; no implementation commit/test yet | 2026-10-13 |
+| FX-B1 | Pending | Planned Festival, Donation and Gifts categories/weights; no implementation commit/test yet | 2026-10-13 |
+| FX-B2 | Pending | Repository currently has three tabs and `/budget` as a stack screen; move to fourth tab | 2026-10-13 |
+| FX-T1 | Pending | Baseline Transactions '+' opens the movement sheet and has seven withdrawal-only theme test failures; restore direct form plus menu entry | 2026-10-13 |
+| FX-T2 | Pending | Planned pure available balance API; no implementation commit/test yet | 2026-10-13 |
+| FX-T3 | Pending | Covered with FX-B1; add/edit/filter/category-navigation assertions still required | 2026-10-13 |
+| FX-T4 | Pending | Planned compact expandable cash-flow summary; baseline UI/test mismatch documented under risks | 2026-10-13 |
+| FX-E1 | Pending | Emergency-fund amount rendering to be checked as part of FX-U1; not yet verified | 2026-10-13 |
+| FX-E2 | Pending | Compare suggested-mix actions; neither path changed or tested in this round yet | 2026-10-13 |
+| CR-1 | Pending | Open; verbatim request is in the change-request register and is assigned to held P15-K | 2026-10-13 |
+| Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
+| Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
 
-### Part ledger and validation
+**Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
-| Part | Status | Files | Tests / gate results |
+- `git log --oneline --decorate -n 100`: HEAD was `5de5a44` (`Minor UI
+  Changes`), preceded by `d1a30d8`, `d8b40da`, `19afe88`, `1e206ad`,
+  `68d9cd4`, `9399e23`, `f28657c`, `d64d298`, `394d338`, `e155bcd`,
+  `fbeb1d7`, `0322c9d`, `9975201`, `bdb146a`, `6ac4ca7`, `e3c8500`,
+  `85a0a52`, `d8dc666`, `f697403`, `3a29ea3`, `235a738`, `a89fa2a`,
+  `8987f22`, `9c0762d`, `beb9711`, `e31782c`, `ca4d70b`, `487759e`,
+  `585656c`, `03813e6`, `a481a0e`, `f3c9daa`, `a514958`, `f272580`.
+  The command requested 100; Git returned the complete available history (34
+  commits), so there were no further entries to print.
+- `git status --short`: clean before the baseline commands. The old
+  `package-lock.json` change mentioned in the prior session summary was absent
+  at this starting point.
+- `SCHEMA_VERSION`: `5` (`src/domain/schemas.ts`); precondition satisfied.
+- Baseline gates, each run once with an explicit exit code: test coverage
+  `exit=1` (52 suites, 7 failed tests / 481 passed); TypeScript `exit=0`; Expo
+  lint `exit=0` with four unused-variable warnings in
+  `app/(tabs)/transactions.tsx` lines 59 and 76; Android export `exit=0`; iOS
+  export `exit=0`; Expo Doctor `exit=0`, 21/21 checks passed.
+- Baseline coverage, summed separately from Istanbul per-file summaries:
+  domain 1,888/1,915 lines (98.59%) and 1,785/1,897 branches (94.10%); data
+  excluding hooks 301/320 lines (94.06%) and 207/228 branches (90.79%); pure
+  lib 101/101 lines (100%) and 120/120 branches (100%). The aggregate Jest
+  coverage was 96.86% statements, 94.07% branches, 97.67% functions and
+  98.03% lines. The test command was red due to seven existing render
+  assertions expecting hidden withdrawal-only summary copy that the current
+  screen no longer renders; no assertion was removed.
+- Baseline coverage aggregation script:
+
+  ```js
+  const { createCoverageMap } = require('istanbul-lib-coverage');
+  const map = createCoverageMap(require('./coverage/coverage-final.json'));
+  for (const [name, match] of Object.entries({
+    domain: f => /\/src\/domain\//.test(f) && !/\/__tests__\//.test(f),
+    data: f => /\/src\/data\//.test(f) && !/\/__tests__\//.test(f) && !/\/hooks?\//.test(f),
+    lib: f => /\/src\/lib\//.test(f) && !/\/__tests__\//.test(f),
+  })) {
+    let lc=0, lt=0, bc=0, bt=0;
+    for (const file of map.files()) if (match(file)) {
+      const s = map.fileCoverageFor(file).toSummary();
+      lc += s.lines.covered; lt += s.lines.total;
+      bc += s.branches.covered; bt += s.branches.total;
+    }
+    console.log(`${name}: lines ${lc}/${lt} (${(100*lc/lt).toFixed(2)}%); branches ${bc}/${bt} (${(100*bc/bt).toFixed(2)}%)`);
+  }
+  ```
+
+## 3. Standing rules
+
+- No cloud or network at runtime. Domain logic is pure: no React/Expo imports,
+  clock reads, or randomness; inject dates, identifiers and other varying
+  values.
+- React Compiler is enabled. Forms use React Hook Form `Controller` and
+  `useWatch` only.
+- A multi-entity operation is one pure domain action, one Zustand `set()`, and
+  one persisted write.
+- Unrequested behavior remains unchanged. Replaced logic is removed; do not
+  leave parallel paths or dead code.
+- No non-null assertions or `as` casts to silence nullable values in `app/` or
+  `src/components/`.
+- Never weaken/delete an existing test assertion to get green. Fix a wrong test
+  and explain the correction. Do not change production logic only to increase
+  coverage or adjust coverage thresholds/exclusions.
+- Every required gate must exit 0. Run as `command; echo "exit=$?"`; report all
+  warnings and the full Expo Doctor result.
+- Coverage totals use per-file Istanbul summaries and independently sum line
+  and branch counts: domain and pure `src/lib` >=90%; `src/data` excluding
+  hooks >=85%.
+- Tabs, in order: Home, Txns, Goals, Budget.
+- Add/Edit/Delete are icon actions. Deposit/Withdraw/Pay EMI/Log
+  installment/Save/Clear due/Clear past dues are text with a small icon.
+  `CardHeaderRow` or `ListRow` alone owns the edit pencil. Goal cards open the
+  editor on tap and have no pencil. Home quick actions uniquely pair icons and
+  text.
+- Commit each part locally, never push, and update this ledger at each part.
+
+## 4. Architecture and decisions
+
+### Storage and purity
+
+The app uses local AsyncStorage through Zustand persistence as one JSON blob.
+Schema migrations are deterministic and versioned. There is no cloud,
+authentication service or runtime network dependency. `src/domain` owns pure
+calculation, validation, integrity and immutable actions. Inject dates and IDs.
+One action that touches linked entities must be atomic and go through one store
+write. UI state/preferences that are not app financial data belong in the
+meta-store.
+
+### Schema history
+
+| Version | Recorded addition |
+|---|---|
+| v1 | Initial persisted app data and transaction records. Exact historical field inventory is user-reported; original schema artifact was not found. |
+| v2 | Loans became recurring/one-time `Liability`; log entries became investment entries and liability payments; transaction source kinds renamed; migration and linked-entry requirements. |
+| v3 | Onboarding state, `monthlySalary`, and `ThemeId`/theme preference. |
+| v4 | Emergency-fund allocation percentages across seven buckets. |
+| v5 | Liability settlement snapshots, goal asset links, policies, budget templates/month snapshots, and additional transaction source/category types. |
+
+Current source of truth: `SCHEMA_VERSION = 5`. This fix round may add accepted
+category strings, but must not change the stored schema version.
+
+### Backups and migrations
+
+Persisted migration functions and backup import remain pure apart from injected
+checksum/digest adapters at their boundary. Legacy backups have their checksum
+verified against the data as written before migration and current-schema
+validation. Newer schema backups are refused. Premigration raw blobs are
+preserved once; erase-all removes the archived copies.
+
+### Amount display policy (FX-U1; design agreed, implementation pending)
+
+| Surface | Tier | Planned rule |
+|---|---|---|
+| Details, inputs, dialogs, confirmations, toasts, backup summaries, month review | exact | Always Indian-grouped full figure |
+| Hero values (>=24pt), tiles, pills, headlines, chart labels | hero/tile | Compact at absolute amount >= ₹1,000 |
+| Rows, chips, captions, secondary values (<=14pt) | row | Exact below ₹1 crore; compact at/above ₹1 crore; compact sooner for font scale >1.3 when exact text exceeds 10 characters |
+| Screen reader label | exact | Always announce the full exact amount, regardless of visual tier |
+| Large money input helper | exact input + compact helper | Show full input; below it show compact check amount from ₹1 lakh |
+
+These are requirements, not current verified behavior. `formatINRShort` must
+retain its existing output while the new formatter handles K/L/Cr promotion.
+
+### Route-kind registry (FX-U3; implementation pending)
+
+| Kind | Planned routes | Left control |
+|---|---|---|
+| tab | Each route in `app/(tabs)/` | None |
+| stack | Read-only/list/detail screens | Back arrow; router back, Home replacement for deep links |
+| form | `*-form`, clear-dues, month-review and modal pickers | Close X; dirty state asks to discard |
+| special | Onboarding and lock | None |
+
+Current route tree is not yet completely classified. This table is a plan until
+the route enumeration test and registry exist.
+
+### Theme, navigation and shared UI
+
+Theme IDs in source: `system`, `light`, `dark`, `sky`, `mint`, `blush`,
+`midnight`. Four intended tabs are Home, Txns, Goals, Budget; the baseline
+repository presently has three tabs and a stack Budget route. Shared UI follows
+the standing text-versus-icon rules in Section 3. Measured header layout,
+route-kind behavior, and close/discard behavior remain pending.
+
+## 5. Phase history
+
+Historical Phases 1-13 below preserve the supplied project seed. Their exact
+original commits/prompts are not identifiable from the current Git history;
+do not treat the summaries as independently verified release evidence.
+
+| Phase | History and reconciliation |
+|---|---|
+| 1 | User-reported: static UI, design system, theme tokens, mock data. Original phase commit not identifiable. |
+| 2 | User-reported: pure SIP/loan/EF/goal/transaction/portfolio domain and Jest coverage. Original phase report unavailable. |
+| 3 | User-reported: Zustand + AsyncStorage, transaction CRUD, schema v1 and corruption recovery. Current store exists; initial commit mapping unverified. |
+| 4 | User-reported: SIP installments, loan payments, linked transactions and atomic writes. Current code contains related functionality; original phase mapping unverified. |
+| 5 | User-reported: goals, manual holdings, EF entries/invariants and typed errors. Original phase mapping unverified. |
+| 6 | User-reported: backup, app lock, screenshot privacy, erase-all and storage metadata. Existing features do not prove full historical acceptance. |
+| 7 | User-reported: schema v2 migration, Liability union, renamed linked sources, withdrawals and Home navigation. Migration implementation is present; original prompt/commit mapping unavailable. |
+| 8 | User-reported: unified investment form and manual ledger. Original phase mapping unverified. |
+| 9 | User-reported: two-direction instrument transaction linking and retargeting. Original phase mapping unverified. |
+| 10 | User-reported: schedules and virtualized entry/payment lists. Current schedules are present; original acceptance report unavailable. |
+| 11 | User-reported: Transactions crash fix, error boundaries, tabs/header, unified cards and icon actions. Repo baseline currently has three tabs; exact release proof unavailable. |
+| 12 | User-reported: schema v3, themes, onboarding and branding. Current source has schema v3-era fields/themes; historical checks unverified. |
+| 13 | User-reported: income wording, EF minimum, quick action and header refinements. Original phase report unavailable. |
+| 14 | User-reported parts A-G: UI, schema v4/EF allocation, storage guard, reminders, encrypted backup and polish. Initial report was deemed unreliable and audited under P15-A; implementation criteria not all proven. |
+| 15-A/A2 | Audit and follow-up. Commits `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7`, `0322c9d`. Restored tests/config, corrected migration and preserved raw premigration data; see dashboard and matrix. |
+| 15-B/C/D/E | Commits `fbeb1d7`, `e155bcd`, `394d338`, `f28657c`. UI follow-up, SIP date clarity, schema v5 and shared due engine. |
+| 15-F | Held by user; insurance management is not part of this run. |
+| 15-G/H/J/I | Commits `9399e23`, `68d9cd4`, `1e206ad`, `19afe88`. Goal asset links/projection, historical cash flow/movements, list sorting, monthly budgets. |
+| 15-K/L/M | Held by user; reminders (including CR-1), encrypted backups, and final accessibility/performance audit are later work. |
+| 15 fix round | This prompt requests compact amounts, section-header layout, route controls, budget categories/tab, Transactions summary/entry behavior, and EF allocation button clarification. P0 is being recorded before fixes. |
+| 16 | Planned cleanup, dependency/dead-code review, bundle audit and README. |
+| 17 | Planned QA/release, property tests, QA checklist, release engineering and local diagnostics. |
+
+## 6. Prompt and session log
+
+Dates below come from verified commits where stated; missing historic prompt
+dates are marked rather than invented. The complete current prompt is saved
+verbatim at `docs/prompts/p15-fix-round-1.md`.
+
+| ID | Date | Purpose | Outcome / commits | Notes |
+|---|---|---|---|---|
+| P01-P06 | Not recoverable | Historical foundational work described in the supplied seed | User-reported, unverified | Original prompts and hashes not available in this checkout. |
+| P07-P13 | Not recoverable | Schema migration, investments, linking, schedules, UI/theme and income wording described in the seed | User-reported, unverified | Current repository is not evidence for every historical acceptance criterion. |
+| P14-A-G | Not recoverable | Prior close-out and EF/storage/reminders/encryption work | User-reported, unverified; audit continuation is P15-A | Prior status report was declared unreliable by user. |
+| P15-A | 2026-10-11 | Audit Phase 14 and restore reliable gates | `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7` | Coverage/review corrections recorded in existing ledger history. |
+| P15-A2 | 2026-10-12 | Follow-up migration, premigration and assertion audit | `0322c9d` | Restored weakened assertions and corrected version-chain behavior. |
+| P15-B | 2026-10-12 | Finish Phase 14 UI leftovers | `fbeb1d7` | Exact original Phase 14 complete scope remains unverified. |
+| P15-C | 2026-10-12 | SIP date clarity and first-tap goal editor | `e155bcd` | Current commit title verifies scope. |
+| P15-D | 2026-10-12 | Schema v5 | `394d338` | Current schema constant verified as 5. |
+| P15-E | 2026-10-12 | Shared due engine | `f28657c` | Plan/liability/policy schedules and clearing added. |
+| P15-G | 2026-10-12 | Goal asset links/projection | `9399e23` | Domain/store/UI/test commit. |
+| P15-H | 2026-10-12 | Cash-flow history and money movement | `68d9cd4` | Seeded conservation proof documented in prior ledger. |
+| P15-J | 2026-10-12 | Sorting | `1e206ad` | Sorting commit preceded Part I. |
+| P15-I | 2026-10-12 | Monthly budget tracker | `19afe88` | Commit locally verified. Prior assistant misstated an initial test count before fixing it; final commit has 488-test gate evidence in its ledger entry. |
+| P15-fix-1 (Part 0) | 2026-10-13 | Rebuild permanent ledger, save prompt and capture baseline | `db967bf` | Baseline test command has 7 withdrawal-only render failures; lint has four unused-state warnings. New ledger test passes (2 tests). No test was weakened. |
+
+## 7. Change-request register
+
+| ID | Request | Status | Owner / evidence |
 |---|---|---|---|
-| A | Done | `docs/PROGRESS.md`, `src/domain/efAllocation.ts`, `src/domain/__tests__/efAllocation.test.ts`, `src/domain/__tests__/schedule.test.ts`, `src/lib/storageGuard.ts`, `src/lib/__tests__/friendlyError.test.ts`, `src/lib/__tests__/format.test.ts`, `src/lib/__tests__/storageGuard.test.ts`, `src/lib/__tests__/swipe.test.ts`, `app/(tabs)/index.tsx`, `src/components/IconButton.tsx`, `src/components/testUtils/assertNoVerbText.ts`, Home render smoke tests | 44 suites / 303 tests; two consecutive full coverage runs exit 0; exact JSON-summary/text Jest command exits 0; allocation property proof seed `0x015A110C`; all requested build and diagnostics gates exit 0 |
-| A2 | Done | `.gitignore`, `docs/PROGRESS.md`, `src/data/createAppStore.ts`, `src/data/migrate.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/data/__tests__/migrate.test.ts`, `src/data/__tests__/migrateV4.test.ts`, `src/data/__tests__/safeStorage.test.ts`, `src/domain/__tests__/efAllocation.test.ts`, `src/lib/__tests__/format.test.ts`, `src/lib/__tests__/friendlyError.test.ts`, `src/lib/__tests__/swipe.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | 44 suites / 308 tests; restored pre-Part-A assertions; v1–v3 premigration archive cases; v2→v3 and v3→v4 migration tests; all gates exit 0; zero lint warnings |
-| B | Done | `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/transactions.tsx`, `app/backup.tsx`, `app/ef-allocation-form.tsx`, `app/emergency-fund.tsx`, `app/investment-entries.tsx`, `app/liabilities.tsx`, `app/liability-payments.tsx`, `src/components/CardHeaderRow.tsx`, `src/components/ListRow.tsx`, `src/components/InstrumentCard.tsx`, `src/components/__tests__/EditActionOwnership.test.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/__tests__/TransactionsScreen.test.tsx`, `src/components/useAppMenu.ts`, `src/data/createAppStore.ts`, `src/data/metaStore.ts`, `src/data/safeStorage.ts`, `src/data/uiStore.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/data/__tests__/metaStore.test.ts`, `src/data/__tests__/safeStorage.test.ts`, `src/domain/stressData.ts`, `src/domain/__tests__/backup.test.ts`, `src/domain/__tests__/stressData.test.ts`, `src/domain/index.ts`, `src/lib/appMenu.ts`, `src/lib/storageGuard.ts`, `src/lib/__tests__/appMenu.test.ts`, `src/lib/__tests__/storageGuard.test.ts`, `docs/PROGRESS.md` | 46 suites / 332 tests; B2–B4, allocation UI/restart/backup, storage warning integration and calibration verified; TypeScript, lint, Android/iOS exports and Expo Doctor exit 0; Expo Doctor 21/21; coverage domain 1,138/1,147 lines (99.22%), 1,085/1,141 branches (95.09%); data excluding hooks 258/270 lines (95.56%), 184/202 branches (91.09%); pure lib 100/100 lines and 118/118 branches (100%) |
-| C | Done | `app/investment-form.tsx`, `src/components/form/DateField.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `docs/PROGRESS.md` | SIP first-scheduled-contribution and installment-tracking dates now have distinct explanatory labels, helper text, and accessibility hints; one-tap Home emergency-fund navigation is asserted. Focused: 3 suites / 67 tests; full coverage: 46 suites / 334 tests. TypeScript, lint, Android/iOS exports, and Expo Doctor exit 0; Expo Doctor 21/21. Coverage: domain 1,138/1,147 lines (99.22%), 1,085/1,141 branches (95.09%); data excluding hooks 258/270 lines (95.56%), 184/202 branches (91.09%); pure lib 100/100 lines and 118/118 branches (100%). |
-| D | Done | `src/domain/types.ts`, `src/domain/schemas.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/data/createAppStore.ts`, `src/domain/actions.ts`, `src/domain/goals.ts`, `src/domain/goalActions.ts`, `src/domain/liabilityActions.ts`, `src/domain/links.ts`, `src/domain/transactions.ts`, `src/domain/summary.ts`, `src/domain/backup.ts`, `src/mock/data.ts`, `src/data/testFixtures/v1.ts`, `src/data/__tests__/migrate.test.ts`, `src/data/__tests__/migrateV4.test.ts`, `src/data/__tests__/safeStorage.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/domain/__tests__/backup.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/domain/__tests__/selectors.test.ts`, `src/domain/__tests__/v5Integrity.test.ts`, updated typed fixtures/tests, `docs/PROGRESS.md` | Schema v5, v4→v5 migration and chain, backup checksum-before-migration, raw v4 premigration archive-once/erase behavior, new persisted shapes and relationship/income integrity verified. Full coverage: 47 suites / 348 tests passed. `npx tsc --noEmit`, `npx expo lint`, Android export, iOS export and Expo Doctor exit 0; Doctor 21/21. Istanbul aggregate coverage: domain 1,238/1,250 lines (99.04%), 1,179/1,238 branches (95.23%); data excluding hooks 266/279 lines (95.34%), 200/220 branches (90.91%); pure lib 100/100 lines, 118/118 branches (100%). |
-| E | Done | `src/domain/slots.ts`, `src/domain/dues.ts`, `src/domain/policySchedule.ts`, `src/domain/schedule.ts`, `src/domain/liability.ts`, `src/data/createAppStore.ts`, `app/clear-dues.tsx`, `app/_layout.tsx`, `app/assets.tsx`, `app/liabilities.tsx`, `app/investment-entries.tsx`, `app/investment-form.tsx`, `app/liability-form.tsx`, `app/liability-payments.tsx`, `src/components/ActionToast.tsx`, `src/components/ActionToastHost.tsx`, `src/components/DueActions.tsx`, `src/components/IconButton.tsx`, `src/data/uiStore.ts`, `src/domain/__tests__/dues.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `package.json`, `package-lock.json`, `docs/PROGRESS.md` | Shared slot generation and FIFO/status handling; settlement-aware liability accounting; clear-one, undo, bulk-settle and bulk-record dues with linked transactions; one-write store actions; history-aware plan/liability creation controls; clear-dues modal, schedule menus and five-second toast; golden schedule grids and due-boundary, record, settlement, history-creation, integrity, atomicity and route-smoke tests. Full coverage: 48 suites / 375 tests. TypeScript, lint (zero warnings), Android/iOS exports and Expo Doctor exit 0; Doctor 21/21. Istanbul per-file-summary totals: domain 1,415/1,427 lines (99.16%), 1,333/1,410 branches (94.54%); data excluding hooks 280/293 lines (95.56%), 201/221 branches (90.95%); pure lib 100/100 lines and 118/118 branches (100%). |
+| CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Build with P15-K after the user confirms this fix run; local notification design and permission behavior still require SDK-57 documentation and tests. |
 
-Part A gate results: `npm test -- --coverage` passed twice consecutively; the exact `npx jest --coverage --coverageReporters=json-summary --coverageReporters=text` command also exits 0. Its initial failure was an instrumented-runtime timing assertion: the 50-year daily schedule assertion expected under 1 second and observed 1,045 ms; the same test took 94 ms without coverage. The performance guard now allows under 2 seconds, still catches severe regressions, and passes with coverage. `npx tsc --noEmit`, `npx expo lint`, Android export, iOS export, and `npx expo-doctor` all exited 0. Expo Doctor reported 21/21 checks passed. Expo lint then reported one warning: `src/components/__tests__/RouteRenderSmoke.test.tsx:27`, `mockStoreState` was assigned but never used. A2 removed that unused duplicate mock; the lint run after A2 changes reported zero warnings. Part A coverage totals, computed independently with Istanbul's per-file coverage summaries: domain 1,133/1,145 lines (98.95%) and 1,075/1,133 branches (94.88%); data excluding hooks 249/261 lines (95.40%) and 177/196 branches (90.31%); pure lib 96/96 lines (100%) and 112/112 branches (100%).
+## 8. Known issues and risks
 
-Part A2 validation: `npm test -- --coverage` passed (44 suites / 308 tests); TypeScript, lint, Android export, iOS export, and Expo Doctor exited 0. Expo Doctor reported 21/21 checks passed; lint reported zero warnings. Coverage: domain 1,133/1,145 lines (98.95%), 1,077/1,133 branches (95.06%); data excluding hooks 250/262 lines (95.42%), 180/198 branches (90.91%); pure lib 96/96 lines (100%), 112/112 branches (100%).
+- Part 0 baseline full test run is red: 7 failures, all in withdrawal-only
+  Transactions theme render checks expecting "No earned income logged this
+  month" and the "Includes ..." note. Current screen instead shows a
+  "What happened?" sheet. FX-T1/T4 are intended to restore the requested
+  behavior; do not edit away assertions.
+- Baseline `npx expo lint` exits 0 but reports four warnings:
+  `dismissedReview`, `setDismissedReview`, `review`, and `savings` are assigned
+  but unused in `app/(tabs)/transactions.tsx`. Report and remove only when
+  implementing the relevant UI.
+- Route tree currently includes a stack `app/budget.tsx`, not the requested
+  fourth tab. The tab-layout requirement remains open under FX-B2.
+- Amount rendering uses direct formatters across app/components; the
+  scan/allowlist and device accessibility results do not exist yet.
+- No real iOS or Android device/development-build verification has been done
+  for this fix round.
+- `docs/prompts/README.md` establishes append-only verbatim prompt capture.
+  This initial prompt is saved in this repository; old historical prompts are
+  not available to reconstruct.
 
-Part C validation: focused `HomeThemeSmoke`, `RouteRenderSmoke`, and `EmergencyGoalScreens` suites passed (67 tests). `npm test -- --coverage` passed (46 suites / 334 tests); `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform android`, `npx expo export --platform ios`, and `npx expo-doctor` all exited 0. Expo Doctor reported 21/21 checks passed. Per-directory coverage was aggregated from Istanbul file summaries, excluding data hooks and retaining pure `src/lib` modules only.
+## 9. Upcoming roadmap
 
-Part D validation: the first full coverage run coincided with all build/diagnostic gates and made the existing 50-year schedule timing test exceed its 2-second limit (2.26 seconds); rerunning the unchanged full coverage command by itself passed in 4.57 seconds (47 suites / 348 tests). The fresh explicit `npx jest --coverage --coverageReporters=json-summary --coverageReporters=text` run also passed (47 suites / 348 tests). No assertion or threshold was changed. `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform android`, `npx expo export --platform ios`, and `npx expo-doctor` each exited 0; Expo Doctor reported 21/21 checks passed. Coverage totals were aggregated by summing the fresh Istanbul per-file summaries separately by directory, excluding data hooks: domain 1,238/1,250 lines (99.04%) and 1,179/1,238 branches (95.23%); data 266/279 lines (95.34%) and 200/220 branches (90.91%); pure lib 100/100 lines and 118/118 branches (100%).
+1. Complete and commit Part 0 ledger/prompt evidence.
+2. Implement FX-U1 through FX-U4 (universal amount, section-header, route and
+   form-close behavior), update this ledger and commit.
+3. Implement FX-B1 and FX-B2 (new categories and Budget tab), update and commit.
+4. Implement FX-T1 through FX-T4, update and commit.
+5. Resolve FX-E2 and verify FX-E1 across all Emergency fund surfaces, update
+   and commit.
+6. Run the full gates twice, update final evidence, and commit the final ledger.
+7. After user confirmation only: P15-F insurance; P15-K local reminders with
+   CR-1; P15-L encrypted backups; P15-M accessibility/performance and final
+   gates.
+8. Phase 16 cleanup; Phase 17 QA/release.
 
-Part E validation: focused due/schedule/store/route-smoke suites passed (106 tests); full `npm test -- --coverage` passed (48 suites / 375 tests), with no coverage thresholds, exclusions, or assertions weakened. `npx tsc --noEmit`, `npx expo lint`, Android and iOS exports, and Expo Doctor exited 0; lint had zero warnings and Doctor reported 21/21. Expo Doctor initially identified seven SDK 57 patch mismatches; `npx expo install --fix` aligned the compatible package versions before the final passing diagnostics and exports. Coverage totals were aggregated independently from Istanbul per-file summaries: domain 1,415/1,427 lines (99.16%) and 1,333/1,410 branches (94.54%); data excluding hooks 280/293 lines (95.56%) and 201/221 branches (90.95%); pure lib 100/100 lines and 118/118 branches (100%).
+## 10. Verification matrix
 
-A2 restored every pre-Part-A allocation, swipe, formatting, and friendly-error assertion while retaining the seeded allocation proof. `migrateV2ToV3` now only performs the v2-to-v3 settings conversion; `migrateV3ToV4` adds `efAllocation` only when absent, preserving a stored value. The v1, v2 and v3 premigration archive test cases use matching legacy-shaped fixture data, verify exact raw bytes, confirm a second launch does not recopy, and protect an existing archive from overwrite. Erase-all now removes the v3 archive key too. Coverage and dist outputs are ignored; `dist/` was already in `.gitignore`, and no dist files were tracked. `coverage/` was removed from Git's index in A2.
+An item is `Done` only when its named source and test evidence are available.
+Paths below are repository-relative. Baseline results are not completion
+evidence for the fixes.
 
-A2.6 audit: the working tree was clean before A2 began; these files were already committed in `bdb146a` and `9975201`. The README and DetailTabBar changes replace the stale visible term “Txns” with “Transactions”; the tab layout change updates the tab label and widens its content to fit. Those changes are intentional. The route smoke diff added an unused duplicate mock state; A2 removed that dead test-only setup. No exploratory UI changes remained.
+### Phase 14 items
 
-`jest.config.js` and `tsconfig.json` have no remaining diff against HEAD. `jest.setup.js` is loaded by the existing Jest config and installs a no-op optional Expo Modules JS logger in the Jest runtime where native modules are unavailable. This prevents native logger listener setup from depending on the device module; it was not the cause of the Home render test failures.
+| Item | Status | Source evidence | Test evidence / gap |
+|---|---|---|---|
+| P14-A close-out/UI | Pending, user-reported | `app/`, `src/components/` | Phase 14-specific test mapping unavailable; Part 15 A/B/C evidence is not full P14 acceptance. |
+| P14-B refinements | Pending, user-reported | `app/`, `src/components/` | Original acceptance/test names unavailable. |
+| P14-C schema v4 / EF allocation | Pending as P14; follow-up verified in P15-A/A2 | `src/domain/efAllocation.ts`, `src/domain/schemas.ts`, `src/data/migrate.ts` | `src/domain/__tests__/efAllocation.test.ts`; `src/data/__tests__/migrateV4.test.ts`; does not prove all P14 criteria. |
+| P14-D storage guard | Pending, user-reported | `src/lib/storageGuard.ts`, `src/data/safeStorage.ts` | `src/lib/__tests__/storageGuard.test.ts`; P14 phase acceptance not established. |
+| P14-E reminders | Pending / held follow-up | No verified reminder planner or route | No reminder tests; P15-K held. |
+| P14-F encrypted backup | Pending / held follow-up | Plain backup only: `src/domain/backup.ts` | `src/domain/__tests__/backup.test.ts` only covers plain backup; P15-L held. |
+| P14-G polish | Pending, user-reported | `app/`, `src/components/` | Original test matrix unavailable. |
 
-### Coverage configuration audit
+### Phase 15 items
 
-The working-tree diff had removed the `collectCoverageFrom` entries and per-file 90% branch/line thresholds for `src/lib/format.ts`, `friendlyError.ts`, `greeting.ts`, `storageGuard.ts`, and `swipe.ts`. Those entries and thresholds were restored; no coverage threshold or exclusion was loosened. The existing Node test typing in `tsconfig.json` has no diff in this audit.
+| Item | Status | Source evidence | Test evidence |
+|---|---|---|---|
+| P15-A/A2 audit and repairs | Done | `src/domain/efAllocation.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `jest.config.js` | `src/domain/__tests__/efAllocation.test.ts`, `src/data/__tests__/migrate.test.ts`, `src/data/__tests__/safeStorage.test.ts`; historical gate evidence in commit ledger. |
+| P15-B UI leftovers | Done | `app/(tabs)/index.tsx`, `app/(tabs)/transactions.tsx`, `src/components/` | `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/TransactionsScreen.test.tsx` |
+| P15-C SIP date clarity | Done | `app/investment-form.tsx`, `app/(tabs)/index.tsx` | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx` |
+| P15-D schema v5 | Done | `src/domain/schemas.ts`, `src/domain/types.ts`, `src/data/migrate.ts`, `src/domain/backup.ts` | `src/data/__tests__/migrateV4.test.ts`, `src/domain/__tests__/backup.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/domain/__tests__/v5Integrity.test.ts` |
+| P15-E clearing dues | Done | `src/domain/dues.ts`, `src/domain/schedule.ts`, `src/data/createAppStore.ts`, `app/clear-dues.tsx` | `src/domain/__tests__/dues.test.ts`, `src/domain/__tests__/schedule.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
+| P15-F insurance | Held | No policy CRUD action/screen set | No policy-action/UI tests |
+| P15-G goal links | Done | `src/domain/goalLinks.ts`, `src/domain/goals.ts`, `app/goal-form.tsx` | `src/domain/__tests__/goalLinks.test.ts`, store and route smoke suites |
+| P15-H cash flow/movements | Done | `src/domain/cashFlow.ts`, `app/month-review.tsx`, `app/money-movement-form.tsx` | `src/domain/__tests__/cashFlow.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
+| P15-I budgets | Done | `src/domain/budget.ts`, `app/budget.tsx`, `app/budget-template-form.tsx`, `app/budget-history.tsx` | `src/domain/__tests__/budget.test.ts`, `src/data/__tests__/createAppStore.test.ts`, route and Transactions screen suites |
+| P15-J sorting | Done | `src/lib/sorting.ts`, `src/data/useSort.ts`, `src/components/SortChip.tsx`, sortable `app/` lists | `src/lib/__tests__/sorting.test.ts`, `src/data/__tests__/metaStore.test.ts`, screen and route smoke suites |
+| P15-K reminders / CR-1 | Held | No verified planner, prefs, notification adapter or screen | No reminder tests |
+| P15-L encrypted backup | Held | `src/domain/backup.ts` is unencrypted | No encryption tests |
+| P15-M accessibility/performance | Held | No final audit artifact | No comprehensive device/accessibility suite |
 
-The allocation implementation had been changed from integer-paise largest-remainder arithmetic to a floating-point distribution followed by a compensating adjustment. The compensating path depended on two separate `Math.abs` reads and could change one bucket after the paise split. It was replaced with the committed integer-paise algorithm; a seeded test now verifies 20,000 balances and tenths-based allocations with exact sums, non-negative amounts, and per-bucket error no greater than one paisa. A redundant working-tree `storageSummary` branch whose alternatives returned the same display text was reverted; no production logic was edited only to improve coverage, and the byte-summary output tests remain.
+### Fix round
+
+| Item | Status | Planned source evidence | Required tests |
+|---|---|---|---|
+| P15-fix-0 | In progress | `docs/PROGRESS.md`, `docs/prompts/README.md`, `docs/prompts/p15-fix-round-1.md` | `src/lib/__tests__/progressLedger.test.ts` |
+| FX-U1 / FX-E1 | Pending | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, AmountText and money input components | Formatter boundaries, tier/font-scale policy, exact accessibility labels, scan and screen renders |
+| FX-U2 | Pending | `src/lib/sectionLayout.ts`, SectionHeaderRow, all sortable list screens | Layout fit boundaries and inline/stacked renders including font scale 2 |
+| FX-U3 | Pending | `src/lib/routeKinds.ts`, `AppHeader`, app route tree | Enumerate app routes; assert kind/control/label/44pt hit target |
+| FX-U4 | Pending | Form routes and shared close/discard behavior | Enumerate forms; clean/dirty/cancel discard tests |
+| FX-B1 | Pending | `src/domain/schemas.ts`, `src/domain/budget.ts`, transaction/category UI and mock data | New category validation, weighted suggestion, budget/filter/Home actuals and backup import |
+| FX-B2 | Pending | `app/(tabs)/budget.tsx`, tab layout, header menu and links | Four-tab ordering, no old route, navigation and month swipe |
+| FX-T1 | Pending | `app/(tabs)/transactions.tsx`, `app/transaction-form.tsx`, header menu | Direct '+' route, menu movement chooser and all three transaction kinds |
+| FX-T2 | Pending | `src/domain/cashFlow.ts` | Current/past month, carry, future filter, negative and no-prior-data cases |
+| FX-T3 | Pending | Transaction add/edit/filter and Budget category navigation | Festival/Donation/Gifts on each surface and filtered route |
+| FX-T4 | Pending | Transactions summary in `app/(tabs)/transactions.tsx` | Collapsed/expanded rows, balance tone, review dismissal and height cap |
+| FX-E2 | Pending | EF allocation form/actions | One assertion per remaining button for label and persisted result |

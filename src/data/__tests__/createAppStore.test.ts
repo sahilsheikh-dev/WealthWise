@@ -68,6 +68,144 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('stores a budget template and month snapshot with one write per action', async () => {
+    const storage = new MemoryStorage();
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: emptyAppData('2026-03-01') }, version: 5,
+    }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `budget-${++nextId}`,
+      today: () => '2026-10-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+
+    let writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplate({
+      name: 'Monthly', plannedIncome: 20_000,
+      lines: [{ category: 'Food', mode: 'percent', value: 20 }],
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.setDefaultBudgetTemplate('budget-1');
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.applyTemplateToMonth({ month: '2026-03', templateId: 'budget-1' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplateAndApply({
+      name: 'Atomic', plannedIncome: 10_000, lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
+    }, '2026-04');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets).toHaveLength(2);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('applies the default template after hydration and persists the current-month snapshot once', async () => {
+    const storage = new MemoryStorage();
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetTemplates: [{
+        id: 'default', name: 'Default', plannedIncome: 20_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 5_000 }],
+      }],
+      defaultBudgetTemplateId: 'default',
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 5 }));
+    const store = createAppStore(storage, {
+      newId: () => 'unused', today: () => '2026-03-15', isDev: false,
+    });
+    await waitForHydration(store);
+    expect(store.getState().data.monthBudgets?.[0]?.month).toBe('2026-03');
+    expect(storage.setItemCalls).toBe(1);
+  });
+
+  it('records a shortfall allocation atomically with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      transactions: [
+        { id: 'income', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-01-01' },
+        { id: 'expense', type: 'expense' as const, amount: 300, category: 'Living', note: '', date: '2026-01-02' },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `movement-${++nextId}`,
+      today: () => '2026-02-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'borrowed', amount: 50, lenderName: 'Friend' },
+    ]);
+
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.liabilities).toHaveLength(1);
+    expect(store.getState().data.transactions).toHaveLength(3);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const movementWrites = storage.setItemCalls;
+    store.getState().actions.recordMoneyMovement({
+      kind: 'borrowed-in', lenderName: 'Aunt', amount: 30, date: '2026-01-15',
+    });
+    expect(storage.setItemCalls - movementWrites).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const referenceBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'own-funds', amount: 500, note: 'Too much' },
+    ]);
+    expect(store.getState().data).toBe(referenceBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
+  it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-01'),
+      holdings: [{
+        id: 'asset',
+        kind: 'manual' as const,
+        name: 'Savings',
+        type: 'Savings account' as const,
+        invested: 500,
+        value: 1_000,
+        valueAsOf: '2026-10-01',
+        logs: [],
+      }],
+      goals: [
+        ...emptyAppData('2026-10-01').goals,
+        { id: 'goal', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    actions.setGoalLinks('goal', [{ instrumentId: 'asset', share: 75 }]);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
+      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const dataBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    actions.setGoalLinks('missing-goal', [{ instrumentId: 'asset', share: 25 }]);
+    expect(store.getState().data).toBe(dataBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
   it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);

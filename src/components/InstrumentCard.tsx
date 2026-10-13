@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 
 import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instrumentCard';
-import { formatINR } from '../lib/format';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import type { DueTarget } from '../domain/dues';
 import { CardHeaderRow } from './CardHeaderRow';
+import { AmountText } from './AmountText';
 import { DueActions } from './DueActions';
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
 
@@ -13,10 +13,12 @@ export function InstrumentCard({
   model,
   onAction,
   dueTarget,
+  goalCount,
 }: {
   model: InstrumentCardModel;
   onAction: (action: InstrumentCardAction['id']) => void;
   dueTarget?: DueTarget;
+  goalCount?: number;
 }) {
   const { colors } = useTheme();
   const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
@@ -31,11 +33,16 @@ export function InstrumentCard({
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{model.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.subtitle}</AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>}
+        value={<AmountText value={model.value} tier="tile" weight="bold" style={typography.amount} />}
         valueCaption={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>}
         editLabel={`Edit ${model.name}`}
         onEdit={() => onAction(model.headerAction.id)}
       />
+      {goalCount ? (
+        <AppText style={[typography.meta, { color: colors.primary }]}>
+          Goals: {goalCount}
+        </AppText>
+      ) : null}
       <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
       {model.progressCaption ? (
         <AppText style={[typography.meta, styles.progressCaption, { color: colors.text3 }]}>{model.progressCaption}</AppText>

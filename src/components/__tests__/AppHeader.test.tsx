@@ -13,6 +13,7 @@ jest.mock('expo-router', () => ({
     canGoBack: () => mockCanGoBack(),
     replace: (...args: unknown[]) => mockReplace(...args),
   },
+  usePathname: () => '/',
 }));
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));

@@ -35,6 +35,9 @@ describe('immutable app actions', () => {
       liabilities: [],
       policies: [],
       budget: null,
+      budgetTemplates: [],
+      defaultBudgetTemplateId: null,
+      monthBudgets: [],
       efEntries: [],
       efAllocation: null,
     });

@@ -2,8 +2,11 @@ import { router, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
+import { AmountText } from '../src/components/AmountText';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
@@ -11,11 +14,11 @@ import {
   DetailTabBar,
   ProgressBar,
   Screen,
-  SectionTitle,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import {
   allocateAmounts,
   allocationWarnings,
@@ -26,7 +29,9 @@ import {
 import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import { ensureEfGoal, goalView } from '../src/domain/goals';
 import { todayISO } from '../src/lib/clock';
-import { formatDate, formatINR } from '../src/lib/format';
+import { formatDate } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -35,12 +40,13 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 export default function EmergencyFundScreen() {
   const { colors } = useTheme();
   const data = useAppData();
+  const sorting = useSort('emergencyFund');
   const asOf = todayISO();
   const balance = efBalance(data.efEntries);
   const baseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const covered = monthsCovered(balance, baseline);
   const fundMilestones = milestones(balance, baseline);
-  const entries = efPassbook(data.efEntries);
+  const entries = sorting.sort(efPassbook(data.efEntries));
   const allocation = effectiveAllocation(data.efAllocation);
   const allocationAmounts = allocateAmounts(balance, allocation);
   const allocationAlerts = allocationWarnings(allocation);
@@ -62,7 +68,7 @@ export default function EmergencyFundScreen() {
         />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Current balance</AppText>
-          <AppText weight="bold" style={[typography.big, styles.balance]}>{formatINR(balance)}</AppText>
+          <AmountText value={balance} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.balance]} />
           {baseline > 0 && covered !== null ? (
             <AppText style={[typography.meta, { color: colors.primary }]}>
               {covered.toFixed(1)} months of expenses covered
@@ -84,7 +90,7 @@ export default function EmergencyFundScreen() {
           </StatPillRow>
           {baseline > 0 ? (
             <AppText style={[typography.meta, styles.basedOn, { color: colors.text3 }]}>
-              Based on an average of {formatINR(baseline)} monthly expenses.
+              Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses.
             </AppText>
           ) : null}
         </Card>
@@ -107,7 +113,7 @@ export default function EmergencyFundScreen() {
             <View key={id} style={[styles.allocationRow, { borderBottomColor: colors.border }]}>
               <AppText style={[typography.meta, styles.allocationLabel]}>{EF_BUCKET_META[id].label}</AppText>
               <AppText style={typography.meta}>{allocation[id]}%</AppText>
-              <AppText style={[typography.meta, styles.allocationAmount]}>{formatINR(allocationAmounts[id])}</AppText>
+              <AmountText value={allocationAmounts[id]} tier="row" style={[typography.meta, styles.allocationAmount]} />
             </View>
           ))}
           {allocationAlerts.map((warning) => (
@@ -121,16 +127,16 @@ export default function EmergencyFundScreen() {
           <Card>
             <CardHeaderRow
               title={<AppText style={[typography.label, { color: colors.text3 }]}>Emergency fund target</AppText>}
-              value={<AppText weight="bold" style={[typography.big, styles.targetAmount]}>{formatINR(emergencyGoalView.target)}</AppText>}
+              value={<AmountText value={emergencyGoalView.target} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.targetAmount]} />}
               editLabel="Edit emergency fund target"
               onEdit={() => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } })}
             />
             <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Minimum (3 months of expenses): {formatINR(emergencyGoalView.minimum ?? 0)}
+              Minimum (3 months of expenses): <AmountText value={emergencyGoalView.minimum ?? 0} tier="row" />
             </AppText>
             {baseline > 0 ? (
               <AppText style={[typography.meta, { color: colors.text3 }]}>
-                Based on an average of {formatINR(baseline)} monthly expenses
+                Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses
               </AppText>
             ) : (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>
@@ -139,7 +145,7 @@ export default function EmergencyFundScreen() {
             <AppText style={[typography.meta, { color: colors.text2, marginTop: 5 }]}>
               {balance >= emergencyGoalView.target
                 ? 'Target reached'
-                : `${formatINR(Math.max(0, emergencyGoalView.target - balance))} to go`}
+                : `${formatAmount(Math.max(0, emergencyGoalView.target - balance), 'row', 1)} to go`}
             </AppText>
             {emergencyGoalView.raised ? (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
@@ -147,7 +153,10 @@ export default function EmergencyFundScreen() {
           </Card>
         ) : null}
 
-        <SectionTitle>Passbook</SectionTitle>
+        <SectionHeaderRow
+          title="Passbook"
+          right={<SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />}
+        />
         <View style={styles.passbook}>
           {entries.map((entry) => (
             <SharedListRow
@@ -156,16 +165,16 @@ export default function EmergencyFundScreen() {
               onPress={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
               onEdit={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
               editLabel={`Edit emergency fund entry from ${formatDate(entry.date)}`}
-              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatINR(Math.abs(entry.amount))} from ${formatDate(entry.date)}`}
+              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatAmount(Math.abs(entry.amount), 'exact', 1)} from ${formatDate(entry.date)}`}
             >
               <View style={styles.passbookContents}>
                 <View style={styles.entryDetails}>
                   <AppText weight="bold" style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}>
-                    {entry.amount < 0 ? '-' : '+'}{formatINR(Math.abs(entry.amount))}
+                    {entry.amount < 0 ? '-' : '+'}<AmountText value={Math.abs(entry.amount)} tier="row" />
                   </AppText>
                   <AppText style={[typography.meta, { color: colors.text3 }]}>{formatDate(entry.date)} · {entry.note}</AppText>
                 </View>
-                <AppText weight="bold" style={typography.amount}>{formatINR(entry.balance)}</AppText>
+                <AmountText value={entry.balance} tier="row" weight="bold" style={typography.amount} />
               </View>
             </SharedListRow>
           ))}
@@ -185,6 +194,7 @@ const styles = StyleSheet.create({
   allocationLabel: { flex: 1 },
   allocationAmount: { minWidth: 100, textAlign: 'right' },
   basedOn: { marginTop: 8 },
+  sortRow: { marginHorizontal: 20, marginTop: 8 },
   passbook: { marginHorizontal: 20 },
   passbookRow: { minHeight: 66, borderBottomWidth: StyleSheet.hairlineWidth },
   passbookContents: { flexDirection: 'row', alignItems: 'center', gap: 8 },

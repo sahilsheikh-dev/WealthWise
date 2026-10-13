@@ -2,7 +2,11 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { AppHeader } from '../src/components/AppHeader';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
+import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Card,
@@ -13,16 +17,16 @@ import {
   Screen,
   StatusBadge,
 } from '../src/components/ui';
-import { AppHeader } from '../src/components/AppHeader';
-import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
 import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
-import { formatDate, formatINR } from '../src/lib/format';
 import { choiceAsync } from '../src/lib/confirm';
+import { formatDate, formatINR } from '../src/lib/format';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -46,8 +50,11 @@ export default function InvestmentEntriesScreen() {
   const holdingId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
+  const scheduleSorting = useSort('schedules');
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
+  const entrySortList = holding?.kind === 'plan' ? 'logs' : 'entries';
+  const entrySorting = useSort(entrySortList);
   const [tab, setTab] = useState<Tab>('Schedule');
   const [filter, setFilter] = useState<Filter>('All');
   const schedule = useMemo(
@@ -55,7 +62,11 @@ export default function InvestmentEntriesScreen() {
     [holding, today],
   );
   const entries = useMemo(
-    () => holding ? [...holding.logs].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)) : [],
+    () => holding
+      ? holding.logs
+        .map((entry, sortCreatedIndex) => ({ ...entry, sortCreatedIndex }))
+        .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+      : [],
     [holding],
   );
   const effectiveTab: Tab = holding?.kind === 'manual' ? 'Entries' : tab;
@@ -65,7 +76,9 @@ export default function InvestmentEntriesScreen() {
       ? schedule.rows
       : schedule.rows.filter((row) => row.status === filter.toLowerCase());
   }, [filter, schedule]);
-  const listRows: ListRow[] = effectiveTab === 'Schedule' ? filteredSchedule : entries;
+  const listRows: ListRow[] = effectiveTab === 'Schedule'
+    ? scheduleSorting.sort(filteredSchedule)
+    : entrySorting.sort(entries);
 
   if (!holding) {
     return <Screen><AppHeader title="Investment entries" showBack fallbackHref="/assets" /><EmptyState title="Holding not found" /></Screen>;
@@ -161,6 +174,10 @@ export default function InvestmentEntriesScreen() {
               Paid {schedule.summary.paid} of {schedule.rows.length} · {schedule.summary.overdue} overdue
             </AppText>
           </Card>
+          <SectionHeaderRow
+            title="Schedule"
+            right={<SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />}
+          />
           <ChipRow>
             {filters.map((item) => {
               const count = item === 'All'
@@ -179,6 +196,10 @@ export default function InvestmentEntriesScreen() {
             <AppText style={styles.summaryLine}>Total deposits {formatINR(holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
             <AppText style={styles.summaryLine}>Total withdrawals {formatINR(holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
           </Card>
+          <SectionHeaderRow
+            title="Entries"
+            right={<SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />}
+          />
         </>
       )}
     </View>

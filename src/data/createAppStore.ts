@@ -17,6 +17,15 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { setGoalLinks } from '../domain/goalLinks';
+import {
+  allocateSurplus,
+  fundShortfall,
+  recordMoneyMovement,
+  type MoneyMovement,
+  type ShortfallAllocation,
+  type SurplusAllocation,
+} from '../domain/cashFlow';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import {
@@ -32,6 +41,18 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import { resetEfAllocation, setEfAllocation } from '../domain/efAllocationActions';
+import {
+  applyTemplateToMonth,
+  clearMonthBudget,
+  createBudgetTemplate,
+  createBudgetTemplateAndApply,
+  customizeMonthBudget,
+  deleteBudgetTemplate,
+  ensureMonthBudget,
+  saveMonthAsTemplate,
+  setDefaultBudgetTemplate,
+  updateBudgetTemplate,
+} from '../domain/budget';
 import type { EfAllocation } from '../domain/efAllocation';
 import {
   addLiabilityWithHistory,
@@ -47,7 +68,9 @@ import {
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
 import { createStressTransactions } from '../domain/stressData';
-import type { AppData, EfEntry, Holding, ISODate, LiabilityPayment, Settings, Transaction } from '../domain/types';
+import type {
+  AppData, BudgetLine, BudgetTemplate, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
+} from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -90,6 +113,20 @@ export type AppActions = {
   deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
+  setGoalLinks: (goalId: string, links: GoalLink[]) => void;
+  fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
+  allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
+  recordMoneyMovement: (movement: MoneyMovement) => void;
+  createBudgetTemplate: (input: Omit<BudgetTemplate, 'id'>) => void;
+  createBudgetTemplateAndApply: (input: Omit<BudgetTemplate, 'id'>, month: string) => void;
+  updateBudgetTemplate: (id: string, patch: Partial<Omit<BudgetTemplate, 'id'>>) => void;
+  deleteBudgetTemplate: (id: string) => void;
+  setDefaultBudgetTemplate: (id: string | null) => void;
+  applyTemplateToMonth: (input: { month: string; templateId: string; plannedIncome?: number | null }) => void;
+  customizeMonthBudget: (month: string, input: { plannedIncome: number | null; lines?: BudgetLine[] }) => void;
+  clearMonthBudget: (month: string) => void;
+  saveMonthAsTemplate: (month: string, name: string) => void;
+  ensureMonthBudget: (month: string, today: ISODate) => void;
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
@@ -312,6 +349,48 @@ export function createAppStore(
           applyDataAction((data) => updateGoal(data, id, patch, {
             expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
           }));
+        },
+        setGoalLinks(goalId, links) {
+          applyDataAction((data) => setGoalLinks(data, goalId, links));
+        },
+        fundShortfall(month, allocations) {
+          applyDataAction((data) => fundShortfall(data, { month, allocations }, deps.newId));
+        },
+        allocateSurplus(date, allocations) {
+          applyDataAction((data) => allocateSurplus(data, { date, allocations }, deps.newId, deps.today()));
+        },
+        recordMoneyMovement(movement) {
+          applyDataAction((data) => recordMoneyMovement(data, movement, deps.newId, deps.today()));
+        },
+        createBudgetTemplate(input) {
+          applyDataAction((data) => createBudgetTemplate(data, input, deps.newId));
+        },
+        createBudgetTemplateAndApply(input, month) {
+          applyDataAction((data) => createBudgetTemplateAndApply(data, input, month, deps.newId));
+        },
+        updateBudgetTemplate(id, patch) {
+          applyDataAction((data) => updateBudgetTemplate(data, id, patch));
+        },
+        deleteBudgetTemplate(id) {
+          applyDataAction((data) => deleteBudgetTemplate(data, id));
+        },
+        setDefaultBudgetTemplate(id) {
+          applyDataAction((data) => setDefaultBudgetTemplate(data, id));
+        },
+        applyTemplateToMonth(input) {
+          applyDataAction((data) => applyTemplateToMonth(data, input));
+        },
+        customizeMonthBudget(month, input) {
+          applyDataAction((data) => customizeMonthBudget(data, month, input));
+        },
+        clearMonthBudget(month) {
+          applyDataAction((data) => clearMonthBudget(data, month));
+        },
+        saveMonthAsTemplate(month, name) {
+          applyDataAction((data) => saveMonthAsTemplate(data, month, name, deps.newId));
+        },
+        ensureMonthBudget(month, today) {
+          applyDataAction((data) => ensureMonthBudget(data, month, today));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));
@@ -542,6 +621,11 @@ export function createAppStore(
             goals: ensureEfGoal(data.goals, { expenseBaseline, asOf: deps.today() }),
           };
         }
+        const today = deps.today();
+        const month = today.slice(0, 7);
+        const beforeEnsure = data;
+        data = ensureMonthBudget(data, month, today);
+        const budgetWasEnsured = data !== beforeEnsure;
         let undoImport: { savedAt: ISODate } | null = null;
         try {
           const rawSnapshot = await storage.getItem(PREIMPORT_KEY);
@@ -563,6 +647,7 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
+        if (budgetWasEnsured) storeApi.getState().actions.ensureMonthBudget(month, today);
       },
     },
   ));

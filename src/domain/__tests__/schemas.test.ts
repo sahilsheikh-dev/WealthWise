@@ -12,6 +12,8 @@ import {
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
+  makeMoneyMovementFormSchema,
+  makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
   TRANSACTION_CATEGORIES,
@@ -29,6 +31,36 @@ describe('appDataSchema', () => {
   it('accepts the typed mock app data and exports schema version five', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
     expect(SCHEMA_VERSION).toBe(5);
+  });
+
+  it('validates budget templates and stored month snapshots', () => {
+    const budgeted = {
+      ...mockAppData,
+      budgetTemplates: [{
+        id: 'template', name: 'Monthly', plannedIncome: 50_000,
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 20 }],
+      }],
+      defaultBudgetTemplateId: 'template',
+      monthBudgets: [{
+        month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
+        plannedIncome: 50_000, lines: [{ category: 'Food', planned: 10_000 }],
+      }],
+    };
+    expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetTemplates: [{
+        ...budgeted.budgetTemplates[0],
+        lines: [{ category: 'Food', mode: 'percent', value: 101 }],
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      monthBudgets: [{
+        ...budgeted.monthBudgets[0],
+        lines: [{ category: 'Not a category', planned: 10 }],
+      }],
+    }).success).toBe(false);
   });
 
   describe('onboarding and profile schemas', () => {
@@ -121,9 +153,9 @@ describe('appDataSchema', () => {
       ...mockAppData,
       liabilities: [{ ...oneTime, settlement: null }],
     }).success).toBe(false);
-    expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Own funds']);
+    expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
-    expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Own funds']));
+    expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
   });
 
   it('validates optional metadata and every signed-money / identifier rule', () => {
@@ -439,5 +471,48 @@ describe('makeTransactionFormSchema', () => {
     expect(category.success).toBe(false);
     if (!category.success) expect(category.error.issues[0]).toMatchObject({ path: ['category'], message: 'Choose a category' });
     expect(TRANSACTION_CATEGORIES.invest).toContain('Emergency fund');
+  });
+});
+
+describe('cash-flow form schemas', () => {
+  it('requires movement targets and a lender for the selected movement', () => {
+    const borrowed = makeMoneyMovementFormSchema('borrowed-in', '2026-10-10', {
+      liabilityIds: ['liability'], instrumentIds: ['asset'],
+    });
+    const base = {
+      amount: '50',
+      date: '2026-10-10',
+      note: '',
+      lenderName: '',
+      liabilityId: '',
+      instrumentId: '',
+    };
+    expect(borrowed.safeParse(base).success).toBe(false);
+    expect(borrowed.safeParse({ ...base, lenderName: 'A friend' }).success).toBe(true);
+    expect(makeMoneyMovementFormSchema('repay', '2026-10-10', {
+      liabilityIds: ['liability'], instrumentIds: [],
+    }).safeParse({ ...base, liabilityId: 'liability' }).success).toBe(true);
+    expect(makeMoneyMovementFormSchema('withdraw', '2026-10-10', {
+      liabilityIds: [], instrumentIds: ['asset'],
+    }).safeParse({ ...base, instrumentId: 'asset' }).success).toBe(true);
+  });
+
+  it('validates shortfall/surplus allocation kinds, targets and remaining amounts', () => {
+    const schema = makeMonthAllocationFormSchema('shortfall', {
+      liabilityIds: ['liability'], instrumentIds: ['asset'], maximumAmount: 100,
+    });
+    const input = {
+      allocationKind: 'loan-proceeds',
+      amount: '80',
+      targetId: 'liability',
+      lenderName: '',
+      note: '',
+    };
+    expect(schema.safeParse(input).success).toBe(true);
+    expect(schema.safeParse({ ...input, amount: '101' }).success).toBe(false);
+    expect(schema.safeParse({ ...input, targetId: 'missing' }).success).toBe(false);
+    expect(makeMonthAllocationFormSchema('surplus', {
+      liabilityIds: ['liability'], instrumentIds: ['asset'], maximumAmount: 100,
+    }).safeParse({ ...input, allocationKind: 'invest', targetId: 'asset' }).success).toBe(true);
   });
 });

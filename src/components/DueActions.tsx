@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import { useAppStore } from '../data/store';
 import { useAppActions } from '../data/useAppData';
 import type { DueTarget } from '../domain/dues';
-import { formatINR } from '../lib/format';
+import { formatAmount } from '../lib/amountDisplay';
 import { confirmAsync } from '../lib/confirm';
 import { ActionToast } from './ActionToast';
 import { Button } from './ui';
@@ -86,7 +86,7 @@ export function DueActions({
       ) : null}
       {cleared ? (
         <ActionToast
-          message={`Marked ${formatINR(cleared.amount)} as paid`}
+          message={`Marked ${formatAmount(cleared.amount, 'exact', 1)} as paid`}
           actionLabel="Undo"
           onAction={undo}
           onDismiss={() => setCleared(null)}

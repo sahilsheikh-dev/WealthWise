@@ -2,6 +2,11 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AppHeader } from '../src/components/AppHeader';
+import { AmountText } from '../src/components/AmountText';
+import { InstrumentCard } from '../src/components/InstrumentCard';
+import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
@@ -14,9 +19,8 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { AppHeader } from '../src/components/AppHeader';
-import { InstrumentCard } from '../src/components/InstrumentCard';
 import { useAppActions, useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
@@ -25,9 +29,10 @@ import {
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
-import { formatINR, formatINRShort } from '../src/lib/format';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -55,9 +60,32 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
-  const rows = useMemo(() => buildPortfolioRows(data, asOf), [data, asOf]);
+  const assetSorting = useSort('assets');
+  const sipSorting = useSort('sips');
+  const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
+    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
+      return { ...row, nextDue: null, progress: null, status: null };
+    }
+    const schedule = planSchedule(row.holding, asOf);
+    const status = schedule.summary.overdue > 0
+      ? 'overdue'
+      : schedule.summary.ongoing > 0
+        ? 'ongoing'
+        : schedule.summary.nextDue
+          ? 'upcoming'
+          : 'complete';
+    return {
+      ...row,
+      nextDue: schedule.summary.nextDue?.dueDate ?? null,
+      progress: schedule.rows.length === 0 ? null : schedule.summary.paid / schedule.rows.length * 100,
+      status,
+    };
+  }), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const visibleRows = filterRows(rows, filter);
+  const filteredRows = filterRows(rows, filter);
+  const visibleRows = filter === 'Recurring'
+    ? sipSorting.sort(filteredRows)
+    : assetSorting.sort(filteredRows);
   const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
@@ -81,18 +109,28 @@ export default function AssetsScreen() {
       />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
-        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINR(totals.value)}</AppText>
+        <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
         <AppText style={[typography.meta, { color: gainTone }]}>
-          {totals.gain > 0 ? '+' : ''}{formatINR(totals.gain)}
+          {totals.gain > 0 ? '+' : ''}<AmountText value={totals.gain} tier="row" />
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill label="Invested" value={formatINRShort(totals.invested)} />
-          <StatPill label="Gain" value={formatINRShort(totals.gain)} tone={totals.gain >= 0 ? 'ok' : 'err'} />
-          <StatPill label="Monthly SIP/RD" value={formatINRShort(monthlyCommitment(data.holdings))} tone="primary" />
+          <StatPill label="Invested" value={<AmountText value={totals.invested} tier="tile" />} />
+          <StatPill label="Gain" value={<AmountText value={totals.gain} tier="tile" tone={totals.gain >= 0 ? 'ok' : 'err'} />} tone={totals.gain >= 0 ? 'ok' : 'err'} />
+          <StatPill label="Monthly SIP/RD" value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />} tone="primary" />
         </StatPillRow>
       </Card>
 
+      <SectionHeaderRow
+        title={filter === 'Recurring' ? 'SIPs and plans' : 'Assets'}
+        right={(
+          <SortChip
+            options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+            spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+            onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+          />
+        )}
+      />
       <ChipRow>
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
@@ -108,6 +146,8 @@ export default function AssetsScreen() {
             <InstrumentCard
               key={row.id}
               model={model}
+              goalCount={data.goals.filter((goal) =>
+                goal.links.some((link) => link.instrumentId === row.id)).length}
               dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {
