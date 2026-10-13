@@ -288,8 +288,24 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children }: { title: string; children?: React.ReactNode }) =>
-      ReactModule.createElement('screen', null, ReactModule.createElement('text', null, title), children),
+    FormScreen: ({ title, children, onClose, isDirty }: {
+      title: string;
+      children?: React.ReactNode;
+      onClose: () => void;
+      isDirty?: boolean;
+    }) =>
+      ReactModule.createElement(
+        'screen',
+        null,
+        ReactModule.createElement('button', {
+          accessibilityRole: 'button',
+          accessibilityLabel: 'Close',
+          onPress: onClose,
+          isDirty,
+        }),
+        ReactModule.createElement('text', null, title),
+        children,
+      ),
   };
 });
 
@@ -460,6 +476,24 @@ describe('route render smoke audit', () => {
     });
     if (!renderer) throw new Error('Route did not render.');
     assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
+  });
+
+  const formScreens = screens.filter(([name]) =>
+    /form|month review|money movement invalid|clear past dues/i.test(name),
+  );
+
+  it.each(formScreens)('%s exposes Close and receives its dirty state', async (_name, screen) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(screen);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Form route did not render.');
+    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
+    expect(close.props.accessibilityRole).toBe('button');
+    expect(close.props.onPress).toEqual(expect.any(Function));
+    expect(typeof close.props.isDirty).toBe('boolean');
+    act(() => renderer?.unmount());
   });
 
   it.each([

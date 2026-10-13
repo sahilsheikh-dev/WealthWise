@@ -38,16 +38,6 @@ export default function ProfileFormScreen() {
       monthlySalary: settings.monthlySalary === null ? '' : String(settings.monthlySalary),
     },
   });
-  const close = () => {
-    if (!isDirty) {
-      router.back();
-      return;
-    }
-    void confirmAsync({
-      title: 'Discard changes?', message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = (value: ProfileOutput) => {
     actions.updateSettings({ name: value.name, monthlySalary: value.monthlySalary });
     const error = useAppStore.getState().lastError;
@@ -61,7 +51,8 @@ export default function ProfileFormScreen() {
   return (
     <FormScreen
       title="Profile"
-      onClose={close}
+      onClose={() => router.back()}
+      isDirty={isDirty}
       footer={
         <View style={styles.footer}>
           {submitCount > 0 && Object.keys(errors).length > 0 ? (

@@ -130,7 +130,7 @@ export default function BudgetTemplateFormScreen() {
     }
   };
   if (templateId && !template) {
-    return <FormScreen title="Budget template" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    return <FormScreen title="Budget template" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <FormErrorBanner message="Budget template not found." />
     </FormScreen>;
   }

@@ -96,14 +96,14 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
   }
   if (pending.count === 0) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Done" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Done" onPress={() => router.back()} />}>
         <EmptyState title="No past dues" subtitle="There are no unpaid installments up to today." />
       </FormScreen>
     );

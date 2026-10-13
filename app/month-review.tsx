@@ -43,7 +43,7 @@ export default function MonthReviewScreen() {
   const selected = reviews.find((item) => item.month === paramMonth) ?? reviews[0];
   if (!selected) {
     return (
-      <FormScreen title="Month review" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Month review" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="No month needs review" subtitle="Closed months with a logged cash balance will appear here." />
       </FormScreen>
     );

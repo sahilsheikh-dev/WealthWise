@@ -40,7 +40,7 @@ export default function MoneyMovementFormScreen() {
   const value = Array.isArray(params.kind) ? params.kind[0] : params.kind;
   return isMovementKind(value)
     ? <MoneyMovementForm kind={value} />
-    : <FormScreen title="Money movement" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    : <FormScreen title="Money movement" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Choose a money movement" />
     </FormScreen>;
 }

@@ -170,17 +170,6 @@ export default function TransactionFormScreen() {
       : investCategoryFor(selectedInstrument.type as Exclude<typeof selectedInstrument.type, 'Emergency fund'>)
     : transaction?.category ?? '';
 
-  const requestClose = () => {
-    if (!isDirty) {
-      router.back();
-      return;
-    }
-    void confirmAsync({
-      title: 'Discard changes?', message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
-
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, ...transactionValues } = values;
     const input: Omit<Transaction, 'id'> = transactionValues;
@@ -246,7 +235,7 @@ export default function TransactionFormScreen() {
 
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );
@@ -261,7 +250,8 @@ export default function TransactionFormScreen() {
   return (
     <FormScreen
       title="Transaction"
-      onClose={requestClose}
+      onClose={() => router.back()}
+      isDirty={isDirty}
       headerAction={transactionId && (!transaction?.source || linkedEditable)
         ? { label: 'Delete transaction', onPress: remove }
         : undefined}

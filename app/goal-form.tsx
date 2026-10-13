@@ -67,13 +67,6 @@ export default function GoalFormScreen() {
   const links = useWatch({ control, name: 'links' }) ?? [];
   const instruments = useMemo(() => linkableInstruments(data, today), [data, today]);
 
-  const close = () => {
-    if (!isDirty) return router.back();
-    void confirmAsync({
-      title: 'Discard changes?', message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = (values: GoalFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
@@ -109,13 +102,13 @@ export default function GoalFormScreen() {
   };
 
   if (goalId && !goal) return (
-    <FormScreen title="Goal" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Goal not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title="Goal" onClose={close}
+    <FormScreen title="Goal" onClose={() => router.back()} isDirty={isDirty}
       headerAction={goal && !locked ? { label: 'Delete goal', onPress: remove } : undefined}
       footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

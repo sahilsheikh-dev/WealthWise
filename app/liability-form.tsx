@@ -128,16 +128,6 @@ export default function LiabilityFormScreen() {
     }, today)
     : null;
 
-  const close = () => {
-    if (!isDirty) return router.back();
-    void confirmAsync({
-      title: 'Discard changes?',
-      message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard',
-      cancelLabel: 'Keep editing',
-      destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = async (values: LiabilityFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
@@ -199,13 +189,13 @@ export default function LiabilityFormScreen() {
     });
   };
   if (liabilityId && !liability) return (
-    <FormScreen title="Liability" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Liability" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Liability not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title="Liability" onClose={close}
+    <FormScreen title="Liability" onClose={() => router.back()} isDirty={isDirty}
       headerAction={liability ? { label: 'Delete liability', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || errorsVisible} onPress={() => {
