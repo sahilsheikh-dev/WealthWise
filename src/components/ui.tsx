@@ -449,7 +449,9 @@ export function BottomTabBar({
           <AppText
             testID={`bottom-tab-label-${tab.key}`}
             allowFontScaling
-            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
             style={[typography.navLabel, styles.bottomTabLabel, { color }]}>
             {tab.label}
           </AppText>
