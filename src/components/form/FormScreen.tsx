@@ -15,12 +15,14 @@ export function FormScreen({
   onClose,
   children,
   footer,
+  bottomNavigation,
   headerAction,
   isDirty = false,
 }: PropsWithChildren<{
   title: string;
   onClose: () => void;
   footer: ReactNode;
+  bottomNavigation?: ReactNode;
   headerAction?: { label: string; onPress: () => void; disabled?: boolean };
   isDirty?: boolean;
 }>) {
@@ -77,10 +79,11 @@ export function FormScreen({
         </ScrollView>
         <View style={[
           styles.footer,
-          { backgroundColor: colors.bg, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) },
+          { backgroundColor: colors.bg, borderTopColor: colors.border, paddingBottom: bottomNavigation ? 12 : Math.max(insets.bottom, 12) },
         ]}>
           {footer}
         </View>
+        {bottomNavigation}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

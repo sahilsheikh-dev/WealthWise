@@ -1,14 +1,13 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { CardHeaderRow } from '../../src/components/CardHeaderRow';
 import { DueActions } from '../../src/components/DueActions';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { AppText, Button, Card, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
@@ -38,11 +37,13 @@ export default function BudgetScreen() {
   const data = useAppData();
   const actions = useAppActions();
   const { colors } = useTheme();
+  const { fontScale, width } = useWindowDimensions();
   const sorting = useSort('budgetSpending');
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
   const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const templates = data.budgetTemplates ?? [];
+  const stackMetrics = width < 360 || fontScale >= 1.8;
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
       !touchingHeader && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
@@ -92,44 +93,77 @@ export default function BudgetScreen() {
               <Feather name="chevron-right" size={22} color={colors.text2} />
             </Pressable>
           </View>
-          <View testID="budget-quick-actions" style={styles.quickActions}>
-            <Button
+          <View testID="budget-quick-actions" style={[styles.quickActions, stackMetrics ? styles.quickActionsStacked : undefined]}>
+            <BudgetQuickAction
               label="History"
               icon="calendar"
-              style={styles.quickActionButton}
+              stacked={stackMetrics}
+              testID="budget-history-action"
               onPress={() => router.push('/budget-history')}
             />
-            <Pressable
+            <BudgetQuickAction
               testID="budget-month-review-action"
-              accessibilityRole="button"
+              label="Month review"
               accessibilityLabel={reviewableMonth
                 ? `Month review, ${formatMonth(reviewableMonth.month)} needs review`
                 : 'Month review'}
+              icon="calendar"
+              stacked={stackMetrics}
+              showIndicator={Boolean(reviewableMonth)}
               onPress={() => router.push(reviewableMonth
                 ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
                 : '/month-review')}
-              style={[styles.quickReviewAction, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-              <Feather name="calendar" size={14} color={colors.text2} />
-              <AppText weight="semibold" style={styles.quickReviewLabel}>Month review</AppText>
-              {reviewableMonth ? (
-                <View testID="budget-month-review-dot" style={[styles.quickReviewDot, { backgroundColor: colors.primary }]} />
-              ) : null}
-            </Pressable>
+            />
           </View>
 
           <Card>
-            <SectionTitle>Cash flow</SectionTitle>
-            <BudgetStat label="Opening balance" value={view.position.opening} />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push({ pathname: '/month-review', params: { month: shiftMonth(month, -1) } })}>
-              <BudgetStat
-                label={`Previous month ${view.position.previousClosing < 0 ? 'deficit' : 'surplus'}`}
-                value={Math.abs(view.position.previousClosing)}
+            <AppText weight="bold" style={[typography.name, styles.cashFlowTitle]}>Cash flow</AppText>
+            <View style={[styles.cashFlowMetrics, stackMetrics && styles.cashFlowMetricsStacked]}>
+              <CashFlowMetric label="Opening balance" value={view.position.opening} />
+              <CashFlowMetric
+                label="This month’s flow"
+                value={view.position.flow}
+                negativeStatus="Net outflow"
+                positiveStatus="Net inflow"
               />
-            </Pressable>
-            <BudgetStat label="This month’s flow" value={view.position.flow} />
-            <BudgetStat label="Closing balance" value={view.position.closing} bold />
+            </View>
+            <View style={[styles.previousPosition, stackMetrics && styles.previousPositionStacked, { borderTopColor: colors.border }]}>
+              <View style={styles.previousPositionText}>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>
+                  Previous month {view.position.previousClosing < 0
+                    ? 'deficit'
+                    : view.position.previousClosing > 0 ? 'surplus' : 'balanced'}
+                </AppText>
+                <AmountText
+                  value={Math.abs(view.position.previousClosing)}
+                  tier="row"
+                  weight="semibold"
+                  tone={view.position.previousClosing < 0 ? 'err' : 'neutral'}
+                />
+              </View>
+              <Button
+                label="Review"
+                icon="arrow-right"
+                accessibilityHint="Opens the previous month review"
+                onPress={() => router.push({ pathname: '/month-review', params: { month: shiftMonth(month, -1) } })}
+                style={[styles.reviewButton, stackMetrics && styles.reviewButtonStacked]}
+              />
+            </View>
+            <View style={[styles.closingPosition, stackMetrics && styles.closingPositionStacked, { borderTopColor: colors.border }]}>
+              <View style={styles.closingPositionLabel}>
+                <AppText weight="semibold">Closing balance</AppText>
+                {view.position.closing < 0 ? (
+                  <AppText style={[typography.meta, { color: colors.err }]}>Deficit</AppText>
+                ) : null}
+              </View>
+              <AmountText
+                value={view.position.closing}
+                tier="tile"
+                weight="bold"
+                tone={view.position.closing < 0 ? 'err' : 'primary'}
+                style={styles.closingAmount}
+              />
+            </View>
           </Card>
 
           {!view.budget ? (
@@ -139,16 +173,24 @@ export default function BudgetScreen() {
             </Card>
           ) : (
             <Card>
-              <CardHeaderRow
-                title={<AppText weight="semibold">Plan summary</AppText>}
-                subtitle={view.budget.customized ? <Chip label="Customized" selected /> : null}
-                value={view.plannedIncome === null ? <AppText weight="bold">—</AppText> : <AmountText value={view.plannedIncome} tier="tile" weight="bold" />}
-                valueCaption={<AppText style={typography.meta}>planned income</AppText>}
-                editLabel="Customize this month’s budget"
-                onEdit={() => router.push({ pathname: '/budget-month-form', params: { month } })}
-              />
-              <BudgetStat label="Planned spending" value={view.plannedSpend} />
-              <BudgetStat label="Planned savings" value={view.plannedSave} />
+              <Pressable
+                testID="budget-plan-summary-edit"
+                accessibilityRole="button"
+                accessibilityLabel={`Edit budget plan for ${formatMonth(month)}. Planned income ${view.plannedIncome === null ? 'unavailable' : formatAmount(view.plannedIncome, 'exact', 1)}, planned spending ${formatAmount(view.plannedSpend, 'exact', 1)}, planned savings ${formatAmount(view.plannedSave, 'exact', 1)}, unallocated ${view.unallocated === null ? 'unavailable' : formatAmount(view.unallocated, 'exact', 1)}`}
+                accessibilityHint="Opens the selected month’s budget editor"
+                onPress={() => router.push({ pathname: '/budget-month-form', params: { month } })}
+                style={styles.planSummaryAction}>
+                <View style={styles.planSummaryHeader}>
+                  <AppText weight="semibold">Plan summary</AppText>
+                  {view.budget.customized ? <StatusBadge label="Customized" tone="primary" /> : null}
+                </View>
+                <View style={[styles.planMetrics, stackMetrics && styles.planMetricsStacked]}>
+                  <PlanMetric label="Planned income" value={view.plannedIncome} />
+                  <PlanMetric label="Planned spending" value={view.plannedSpend} />
+                  <PlanMetric label="Planned savings" value={view.plannedSave} />
+                  <PlanMetric label="Unallocated" value={view.unallocated} />
+                </View>
+              </Pressable>
               <Button label="Apply template" onPress={() => setApplyOpen(true)} />
             </Card>
           )}
@@ -244,6 +286,77 @@ export default function BudgetScreen() {
   );
 }
 
+function BudgetQuickAction({
+  label,
+  icon,
+  onPress,
+  stacked,
+  showIndicator = false,
+  testID,
+  accessibilityLabel,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  onPress: () => void;
+  stacked: boolean;
+  showIndicator?: boolean;
+  testID?: string;
+  accessibilityLabel?: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      style={[styles.quickActionButton, stacked ? styles.quickActionButtonStacked : undefined, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+      <Feather name={icon} size={14} color={colors.text2} />
+      <AppText weight="semibold" style={[typography.chip, styles.quickActionLabel, { color: colors.text2 }]}>{label}</AppText>
+      <View style={styles.quickActionIndicatorSlot}>
+        {showIndicator ? (
+          <View testID="budget-month-review-dot" style={[styles.quickReviewDot, { backgroundColor: colors.primary }]} />
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+function CashFlowMetric({
+  label,
+  value,
+  negativeStatus = 'Deficit',
+  positiveStatus,
+}: {
+  label: string;
+  value: number;
+  negativeStatus?: string;
+  positiveStatus?: string;
+}) {
+  const { colors } = useTheme();
+  const status = value < 0 ? negativeStatus : value > 0 ? positiveStatus : undefined;
+  return (
+    <View style={styles.cashFlowMetric}>
+      <AppText style={[typography.meta, { color: colors.text3 }]}>{label}</AppText>
+      <AmountText value={value} tier="tile" weight="semibold" tone={value < 0 ? 'err' : 'neutral'} />
+      {status ? (
+        <AppText style={[typography.meta, { color: value < 0 ? colors.err : colors.text3 }]}>{status}</AppText>
+      ) : null}
+    </View>
+  );
+}
+
+function PlanMetric({ label, value }: { label: string; value: number | null }) {
+  return (
+    <View style={styles.planMetric}>
+      <AppText style={typography.meta}>{label}</AppText>
+      {value === null
+        ? <AppText weight="semibold">—</AppText>
+        : <AmountText value={value} tier="row" weight="semibold" />}
+    </View>
+  );
+}
+
 function BudgetStat({ label, value, bold = false }: { label: string; value: number; bold?: boolean }) {
   return (
     <View style={styles.statRow}>
@@ -320,11 +433,31 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 10 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
-  quickActions: { marginHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  quickActionButton: { flexGrow: 1, flexBasis: '42%' },
-  quickReviewAction: { minHeight: 44, minWidth: 0, flexGrow: 1, flexBasis: '42%', flexWrap: 'wrap', paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 },
-  quickReviewLabel: { flexShrink: 1, fontSize: 12 },
+  quickActions: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  quickActionsStacked: { flexDirection: 'column', alignItems: 'stretch' },
+  quickActionButton: { minWidth: 0, minHeight: 44, flex: 1, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 },
+  quickActionButtonStacked: { flex: 0, width: '100%' },
+  quickActionLabel: { flexShrink: 1, textAlign: 'center' },
+  quickActionIndicatorSlot: { width: 8, height: 8, alignItems: 'center', justifyContent: 'center' },
   quickReviewDot: { width: 6, height: 6, borderRadius: 3 },
+  cashFlowTitle: { marginBottom: 10 },
+  cashFlowMetrics: { flexDirection: 'row', gap: 14 },
+  cashFlowMetricsStacked: { flexDirection: 'column' },
+  cashFlowMetric: { flex: 1, minWidth: 0, gap: 4 },
+  previousPosition: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  previousPositionStacked: { alignItems: 'stretch', flexDirection: 'column' },
+  previousPositionText: { flex: 1, minWidth: 0, gap: 3 },
+  reviewButton: { flexGrow: 0, minWidth: 82 },
+  reviewButtonStacked: { alignSelf: 'stretch' },
+  closingPosition: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  closingPositionLabel: { flex: 1, minWidth: 0, gap: 3 },
+  closingPositionStacked: { flexDirection: 'column', alignItems: 'flex-start' },
+  closingAmount: { fontSize: 18 },
+  planSummaryAction: { gap: 12, marginBottom: 16 },
+  planSummaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  planMetrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  planMetricsStacked: { flexDirection: 'column' },
+  planMetric: { flexBasis: '45%', flexGrow: 1, minWidth: 0, gap: 4 },
   statRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   commitmentTop: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   commitmentStatus: { alignItems: 'flex-end', gap: 4 },
