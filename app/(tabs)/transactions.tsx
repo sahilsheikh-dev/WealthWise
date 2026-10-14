@@ -42,7 +42,7 @@ const transactionTone = {
 
 function BalanceLine({ label, value }: { label: string; value: number }) {
   return (
-    <View style={styles.balanceLine}>
+    <View testID="available-balance-line" style={styles.balanceLine}>
       <AppText style={typography.meta}>{label}</AppText>
       <AmountText value={value} tier="row" />
     </View>
@@ -116,7 +116,7 @@ export default function TransactionsScreen() {
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="transactions-content-scroll" style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
@@ -129,7 +129,13 @@ export default function TransactionsScreen() {
             }] : []),
           ]}
         />
-        <View style={[styles.cashCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          testID="available-balance-card"
+          style={[
+            styles.cashCard,
+            !balanceExpanded ? styles.cashCardCollapsed : null,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
@@ -181,7 +187,7 @@ export default function TransactionsScreen() {
             </View>
           ) : null}
         </View>
-        <View style={styles.monthRow}>
+        <View testID="transactions-month-row" style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Previous month"
@@ -278,7 +284,7 @@ export default function TransactionsScreen() {
           onChangeText={setQuery}
         />
 
-        <View style={styles.list}>
+        <View testID="transactions-list" style={styles.list}>
           {!hasMonthTransactions ? (
             <EmptyState title="No transactions this month" subtitle="Try another month to see your activity." />
           ) : groups.length === 0 ? (
@@ -362,7 +368,8 @@ const styles = StyleSheet.create({
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
-  cashCard: { marginHorizontal: 20, minHeight: 60, maxHeight: 64, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
+  cashCard: { marginHorizontal: 20, minHeight: 60, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
+  cashCardCollapsed: { maxHeight: 64 },
   balanceHeading: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5 },

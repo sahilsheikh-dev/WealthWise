@@ -107,6 +107,25 @@ jest.mock('../ui', () => {
   };
 });
 
+function flattenStyles(style: unknown): Record<string, unknown>[] {
+  const values = Array.isArray(style) ? style.flat(Infinity) : [style];
+  return values.filter((value): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null,
+  );
+}
+
+function hasAncestor(
+  node: TestRenderer.ReactTestInstance,
+  ancestor: TestRenderer.ReactTestInstance,
+): boolean {
+  let current: TestRenderer.ReactTestInstance | null = node;
+  while (current) {
+    if (current === ancestor) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
 describe('Transactions screen withdrawals-only month', () => {
   it('keeps the sort chip beside the filter scroller, including at font scale 2.0', () => {
     mockFontScale = 2;
@@ -227,13 +246,11 @@ describe('Transactions screen withdrawals-only month', () => {
           style && typeof style === 'object' && style.width === 6 && style.height === 6,
         );
       }).length ?? 0;
-      const cashCard = renderer.root.findAll((node) => {
-        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
-        return styles.some((style) => style && typeof style === 'object' && style.maxHeight === 64);
-      })[0];
-      if (!cashCard) throw new Error('The constrained cash-flow card was not rendered.');
-      expect(cashCard.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 60, maxHeight: 64 }),
+      const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
+      const collapsedStyles = flattenStyles(cashCard.props.style);
+      expect(collapsedStyles).toEqual(expect.arrayContaining([
+        expect.objectContaining({ minHeight: 60 }),
+        expect.objectContaining({ maxHeight: 64 }),
       ]));
       const collapsedFigures = cashCard.findAll((node) =>
         node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
@@ -250,6 +267,11 @@ describe('Transactions screen withdrawals-only month', () => {
         typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Expand Available balance'),
       )[0]?.props.onPress());
+      const expandedStyles = flattenStyles(cashCard.props.style);
+      expect(expandedStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(cashCard.findAll((node) =>
+        flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
+      )).toHaveLength(0);
       const expandedText = cashCard.findAllByType('text')
         .map((node) => node.children.join(' '))
         .join(' ')
@@ -279,6 +301,40 @@ describe('Transactions screen withdrawals-only month', () => {
     } finally {
       mockData.transactions = previousTransactions;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('lets the expanded balance card and its rows grow at font scale 2.0', () => {
+    mockFontScale = 2;
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const currentRenderer = renderer;
+      const cashCard = currentRenderer.root.findByProps({ testID: 'available-balance-card' });
+      act(() => currentRenderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
+      )[0]?.props.onPress());
+
+      const cardStyles = flattenStyles(cashCard.props.style);
+      expect(cardStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(cashCard.findAll((node) =>
+        flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
+      )).toHaveLength(0);
+      const balanceRows = cashCard.findAllByProps({ testID: 'available-balance-line' });
+      expect(balanceRows.length).toBeGreaterThanOrEqual(5);
+      expect(balanceRows.every((row) =>
+        flattenStyles(row.props.style).every((style) => !('height' in style)),
+      )).toBe(true);
+      const contentScroll = currentRenderer.root.findByProps({ testID: 'transactions-content-scroll' });
+      for (const testID of ['transactions-month-row', 'transaction-filter-row', 'transactions-list']) {
+        const section = currentRenderer.root.findByProps({ testID });
+        expect(hasAncestor(section, contentScroll)).toBe(true);
+        expect(flattenStyles(section.props.style).some((style) => style.position === 'absolute')).toBe(false);
+      }
+    } finally {
+      mockFontScale = 1;
     }
   });
 
