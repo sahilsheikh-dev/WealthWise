@@ -24,7 +24,6 @@ import LiabilityFormScreen from '../../../app/liability-form';
 import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
-import MoneyMovementFormScreen from '../../../app/money-movement-form';
 import MonthReviewScreen from '../../../app/month-review';
 import OnboardingScreen from '../../../app/onboarding';
 import ProfileFormScreen from '../../../app/profile-form';
@@ -485,7 +484,6 @@ describe('route render smoke audit', () => {
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
     ['Month review empty state', React.createElement(MonthReviewScreen)],
-    ['Money movement invalid state', React.createElement(MoneyMovementFormScreen)],
     ['Backup', React.createElement(BackupScreen)],
     ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
@@ -780,14 +778,6 @@ describe('route render smoke audit', () => {
     act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
     expect(monthLabel()).not.toBe(previousMonthLabel);
     expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
-  });
-
-  it.each(['borrowed-in', 'repay', 'withdraw', 'own-funds'])('renders the %s movement form', (kind) => {
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue({ kind });
-    const renderer = renderScreen(React.createElement(MoneyMovementFormScreen));
-    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
-    routeParams.mockReturnValue({});
   });
 
   it.each([

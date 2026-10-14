@@ -12,7 +12,6 @@ import {
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
-  makeMoneyMovementFormSchema,
   makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
@@ -475,28 +474,6 @@ describe('makeTransactionFormSchema', () => {
 });
 
 describe('cash-flow form schemas', () => {
-  it('requires movement targets and a lender for the selected movement', () => {
-    const borrowed = makeMoneyMovementFormSchema('borrowed-in', '2026-10-10', {
-      liabilityIds: ['liability'], instrumentIds: ['asset'],
-    });
-    const base = {
-      amount: '50',
-      date: '2026-10-10',
-      note: '',
-      lenderName: '',
-      liabilityId: '',
-      instrumentId: '',
-    };
-    expect(borrowed.safeParse(base).success).toBe(false);
-    expect(borrowed.safeParse({ ...base, lenderName: 'A friend' }).success).toBe(true);
-    expect(makeMoneyMovementFormSchema('repay', '2026-10-10', {
-      liabilityIds: ['liability'], instrumentIds: [],
-    }).safeParse({ ...base, liabilityId: 'liability' }).success).toBe(true);
-    expect(makeMoneyMovementFormSchema('withdraw', '2026-10-10', {
-      liabilityIds: [], instrumentIds: ['asset'],
-    }).safeParse({ ...base, instrumentId: 'asset' }).success).toBe(true);
-  });
-
   it('validates shortfall/surplus allocation kinds, targets and remaining amounts', () => {
     const schema = makeMonthAllocationFormSchema('shortfall', {
       liabilityIds: ['liability'], instrumentIds: ['asset'], maximumAmount: 100,

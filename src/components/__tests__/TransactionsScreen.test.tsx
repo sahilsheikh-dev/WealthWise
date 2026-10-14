@@ -189,7 +189,6 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(text).toContain('No earned income logged this month');
     expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
-    expect(text).not.toContain('What happened?');
     act(() => renderer.root.findAll((node) =>
       typeof node.props.accessibilityLabel === 'string'
       && node.props.accessibilityLabel.startsWith('Expand Available balance'),
@@ -202,7 +201,7 @@ describe('Transactions screen withdrawals-only month', () => {
     assertNoVerbText(renderer.root);
   });
 
-  it('routes plus straight to the transaction form and keeps money movement in the menu', () => {
+  it('routes plus straight to the transaction form and has no money-movement menu action', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
     let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -212,14 +211,10 @@ describe('Transactions screen withdrawals-only month', () => {
     if (!renderer) throw new Error('Transactions renderer was not created.');
 
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Record money movement' })).toHaveLength(0);
     act(() => renderer?.root.findByProps({ accessibilityLabel: 'Add transaction' }).props.onPress());
     expect(router.push).toHaveBeenCalledWith('/transaction-form');
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
-
-    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Record money movement' }).props.onPress());
-    expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(1);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('What happened?');
   });
 
   it('shows and routes the unlinked-entry notice and header action at font scale 2.0', () => {

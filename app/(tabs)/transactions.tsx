@@ -1,14 +1,13 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
-  Button,
   Chip,
   EmptyState,
   ListItem,
@@ -65,7 +64,6 @@ export default function TransactionsScreen() {
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
-  const [movementSheetOpen, setMovementSheetOpen] = useState(false);
   const [dismissedReview, setDismissedReview] = useState<string | null>(null);
   const [balanceExpanded, setBalanceExpanded] = useState(false);
   const today = useMemo(() => todayISO(), []);
@@ -104,17 +102,6 @@ export default function TransactionsScreen() {
   const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
-  const movements = [
-    { label: 'Spent money', route: '/transaction-form' as const, type: 'expense' as const },
-    { label: 'Earned money', route: '/transaction-form' as const, type: 'income' as const },
-    { label: 'Invested money', route: '/transaction-form' as const, type: 'invest' as const },
-    { label: 'Money from friend or family', route: '/money-movement-form' as const, kind: 'borrowed-in' },
-    { label: 'Loan received', route: '/liability-form' as const, received: '1' },
-    { label: 'Repaid a friend or loan', route: '/money-movement-form' as const, kind: 'repay' },
-    { label: 'Took money out of savings or investments', route: '/money-movement-form' as const, kind: 'withdraw' },
-    { label: 'Used my own funds', route: '/money-movement-form' as const, kind: 'own-funds' },
-  ];
-
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
@@ -124,7 +111,6 @@ export default function TransactionsScreen() {
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
           menu={[
             { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
-            { label: 'Record money movement', icon: 'link', onPress: () => setMovementSheetOpen(true) },
             ...(visibleReview ? [{
               label: `Review ${formatMonth(visibleReview.month)}`,
               icon: 'calendar' as const,
@@ -328,39 +314,6 @@ export default function TransactionsScreen() {
         </View>
       </ScrollView>
       </View>
-      <Modal
-        visible={movementSheetOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMovementSheetOpen(false)}>
-        <Pressable style={styles.modalScrim} onPress={() => setMovementSheetOpen(false)}>
-          <Pressable
-            accessibilityViewIsModal
-            onPress={(event) => event.stopPropagation()}
-            style={[styles.movementSheet, { backgroundColor: colors.surface }]}>
-            <AppText weight="bold" style={styles.sheetTitle}>What happened?</AppText>
-            {movements.map((movement) => (
-              <Pressable
-                accessibilityRole="button"
-                key={movement.label}
-                onPress={() => {
-                  setMovementSheetOpen(false);
-                  if ('kind' in movement) {
-                    router.push({ pathname: movement.route, params: { kind: movement.kind } });
-                  } else if ('type' in movement) {
-                    router.push({ pathname: movement.route, params: { type: movement.type } });
-                  } else if ('received' in movement) {
-                    router.push({ pathname: movement.route, params: { received: movement.received } });
-                  }
-                }}
-                style={[styles.movementRow, { borderBottomColor: colors.border }]}>
-                <AppText>{movement.label}</AppText>
-              </Pressable>
-            ))}
-            <Button label="Cancel" onPress={() => setMovementSheetOpen(false)} />
-          </Pressable>
-        </Pressable>
-      </Modal>
     </Screen>
   );
 }
@@ -391,8 +344,4 @@ const styles = StyleSheet.create({
   balanceLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
   reviewDot: { width: 6, height: 6, borderRadius: 3 },
-  modalScrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
-  movementSheet: { padding: 20, paddingBottom: 34, borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 6 },
-  sheetTitle: { fontSize: 18, marginBottom: 8 },
-  movementRow: { minHeight: 48, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });

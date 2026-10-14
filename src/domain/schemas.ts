@@ -429,31 +429,6 @@ export function makeTransactionFormSchema(
   });
 }
 
-export function makeMoneyMovementFormSchema(
-  kind: 'borrowed-in' | 'repay' | 'withdraw' | 'own-funds',
-  today: ISODate,
-  options: { liabilityIds: string[]; instrumentIds: string[] },
-) {
-  return z.object({
-    amount: amountInputSchema,
-    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
-    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
-    liabilityId: z.string(),
-    instrumentId: z.string(),
-  }).superRefine((value, context) => {
-    if (kind === 'borrowed-in' && value.lenderName.length === 0) {
-      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
-    }
-    if (kind === 'repay' && !options.liabilityIds.includes(value.liabilityId)) {
-      context.addIssue({ code: 'custom', path: ['liabilityId'], message: 'Choose a liability to repay' });
-    }
-    if (kind === 'withdraw' && !options.instrumentIds.includes(value.instrumentId)) {
-      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose where you withdrew the money from' });
-    }
-  });
-}
-
 export function makeMonthAllocationFormSchema(
   mode: 'shortfall' | 'surplus',
   options: { liabilityIds: string[]; instrumentIds: string[]; maximumAmount: number },
@@ -488,8 +463,6 @@ export function makeMonthAllocationFormSchema(
 
 export type TransactionFormInput = z.input<ReturnType<typeof makeTransactionFormSchema>>;
 export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFormSchema>>;
-export type MoneyMovementFormInput = z.input<ReturnType<typeof makeMoneyMovementFormSchema>>;
-export type MoneyMovementFormOutput = z.output<ReturnType<typeof makeMoneyMovementFormSchema>>;
 export type MonthAllocationFormInput = z.input<ReturnType<typeof makeMonthAllocationFormSchema>>;
 export type MonthAllocationFormOutput = z.output<ReturnType<typeof makeMonthAllocationFormSchema>>;
 
