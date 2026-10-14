@@ -35,10 +35,11 @@ user-reported, unverified. Never push.
 
 ## 2. Status dashboard
 
-`Done` requires a verified commit and test. `Held` means explicitly deferred by
-the user. `Pending` means in scope but not yet verified. `Planned` means later
-roadmap work. Hashes are repository evidence; user claims that cannot be proven
-are called out as such.
+Repository-backed `Done` requires a verified commit and test; app completion
+confirmed by the user is explicitly marked with its confirmation date. `Held`
+means explicitly deferred by the user. `Pending` means in scope but not yet
+verified. `Planned` means later roadmap work. Hashes are repository evidence;
+user claims that cannot be proven are called out as such.
 
 Progress bars use the percentage rounded to the nearest whole number and a
 10-character bar with `round(10 × done / total)` filled blocks. A part is done
@@ -742,10 +743,12 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
   files recoverable through the Git commit paths in Section 6. P15-SEED has
   no prompt or matching commit in available inputs and remains unknown.
 - Phase 1–14 original commit hashes/dates are not identifiable in the
-  available Git history. Their reported outcomes remain user-reported,
-  unverified. P15 per-part hashes/dates in this ledger were checked against
-  Git; where export summaries conflict with Git, Git wins. No unverified
-  export-only commit hash or date is recorded as repository evidence.
+  available Git history. The user confirmed their in-app completion on
+  2026-10-15 (see the dated confirmation above); original commit/test
+  provenance and real-device checks remain unavailable. P15 per-part
+  hashes/dates in this ledger were checked against Git; where export summaries
+  conflict with Git, Git wins. No unverified export-only commit hash or date is
+  recorded as repository evidence.
 - **Export/Git date conflict:** the Session 2 export metadata and prior ledger
   date P15-FIX-R4 as 2026-10-13; its first corresponding Git commit
   `0df1952` is dated 2026-10-14. This ledger uses the Git date.
@@ -843,7 +846,7 @@ evidence for the fixes.
 
 | Step | Status | Files / source evidence | Test / verification evidence |
 |---|---|---|---|
-| STEP 1 — Transactions tab label | Done | `src/components/ui.tsx`; `src/components/__tests__/BottomTabBar.test.tsx`; `src/components/__tests__/TabsLayout.test.tsx`; `src/lib/__tests__/noTxnsLabel.test.ts`; commit `0304acd` | Three focused suites; single-line fit contract, minimum font scale, accessibility label and 44pt target checked at 1.0, 1.3 and 2.0. |
+| STEP 1 — Transactions tab label | Done | `src/components/ui.tsx`; `src/components/__tests__/BottomTabBar.test.tsx`; `src/components/__tests__/TabsLayout.test.tsx`; `src/lib/__tests__/noTxnsLabel.test.ts`; commit `0304acd` | Four focused suites / 18 tests; single-line fit contract, minimum font scale, accessibility label and 44pt target checked at 1.0, 1.3 and 2.0. |
 | STEP 2 — Phase tree | Done | `docs/PROGRESS.md`; `src/lib/__tests__/progressLedger.test.ts` | Ten-section heading order; new IDs are unique in dashboard/log; legacy IDs occur once in dashboard mapping column; FX/CH/CR identifiers retained. |
 | STEP 3 — Progress bars | Done | `docs/PROGRESS.md`; `src/lib/__tests__/progressLedger.test.ts` | Test recomputes each 10-character bar, percentage, and done/total from dashboard status. |
 | STEP 4 — Confirmations and CRs | Done | `docs/PROGRESS.md` | Dated user-confirmation line; CR-4 Done and CR-5–CR-8 Planned, mapped to P19-A–D. |
