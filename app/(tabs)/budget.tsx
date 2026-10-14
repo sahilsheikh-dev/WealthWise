@@ -7,9 +7,8 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { CardHeaderRow } from '../../src/components/CardHeaderRow';
 import { DueActions } from '../../src/components/DueActions';
-import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, Chip, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
@@ -169,10 +168,9 @@ export default function BudgetScreen() {
 
           {view.budget ? (
             <>
-              <SectionHeaderRow
-                title="Spending"
-                right={<SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />}
-              />
+              <ChipRow>
+                <SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />
+              </ChipRow>
               {lines.filter((line) => !['EMI', 'Insurance'].includes(line.category)
                 && !['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'].includes(line.category))
                 .map((line) => (
