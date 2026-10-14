@@ -98,6 +98,7 @@ are called out as such.
 | CR-3 | Open | `profile-form.tsx` and `transaction-form.tsx`: validation summaries share the horizontal footer row with Save, so Save is not full width while the summary is shown | 2026-10-14 |
 | P15-SEED | Unknown | No seed-backup prompt or matching commit was found in the available exports or Git history | unknown |
 | P15-LEDGER | Done | This commit merges both session records and checkpoints, records recovery `5aeefb9`, verifies form labels/save widths, removes the prompt archive, and tests ledger invariants | 2026-10-14 |
+| P15-FIX-R5 | Pending (implementation and focused tests verified; full gates blocked) | Shared bottom navigation and three Budget UI fixes; detailed source/test evidence is in Section 10. No commit created. | 2026-10-15 |
 | CR-2 | Done | This ledger commit merges the session histories/checkpoints and closes the backfill; unavailable raw transcripts remain disclosed in Section 8 | 2026-10-14 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
@@ -374,6 +375,7 @@ evidence present in exports/checkpoints.
 | P15-FIX-R2 | 2 | 2026-10-13 | Recover interrupted work and fix baseline. | Superseded by R3 audit/repair. | `6771f37`, `c0ba0da` | Two visible-message assertions were replaced with weaker checks; R3 restored them. | verbatim in git at `5aeefb9` |
 | P15-FIX-R3 | 2 | 2026-10-13 | Audit FX-BASE and complete fixes with truthful gates. | Done; gates reported green twice. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Restored UI messages/assertions; followed formal ₹1 crore cutoff over a conflicting example. | verbatim in git at `5aeefb9` |
 | P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
+| P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Implemented; five focused suites pass (158 tests). Full suite has two unchanged SortChip-layout failures; Expo Doctor reports five SDK patch mismatches. No commit. | none | No SortChip implementation, sorting logic, placement, or existing sorting assertions changed. Android/iOS device spacing is unverified. | verbatim current request |
 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer. | Unknown; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | This commit; no code changes beyond ledger test. | this commit | Earlier ledger task had already removed archive; form audit opened CR-3. | verbatim in current request |
 
@@ -407,6 +409,19 @@ evidence present in exports/checkpoints.
   656/656 tests each run; TypeScript; Expo lint; Android and iOS exports; and
   Expo Doctor (21/21 checks). Simulated font-scale tests are not device
   verification.
+- **P15-FIX-R5 verification (2026-10-15):** focused tests pass (5 suites,
+  158 tests); TypeScript, Expo lint, and Android/iOS exports exit 0. The full
+  `npm test -- --coverage` run is red (63 suites pass, 2 fail; 667/669 tests
+  pass) on unchanged SortChip layout expectations in
+  `SectionHeaderRow.test.tsx` and `TransactionsScreen.test.tsx`. Neither test
+  file nor the Transactions screen was changed; the SortChip in Budget was
+  not moved or restyled. Altering these protected placements/assertions to
+  satisfy the contradictory expectations is out of scope. Measured coverage
+  is still above the requested floors: domain 98.47% lines / 93.68% branches,
+  data 92.45% / 90.87%, pure lib 100% / 100%. Expo Doctor exits 1 (20/21)
+  because five Expo SDK packages are one patch behind; dependency manifests
+  were not changed. Layout/font-scale behavior was simulated; device
+  verification remains outstanding.
 - Final per-directory coverage: domain 2,120/2,153 lines (98.47%) and
   1,986/2,120 branches (93.68%); data excluding hooks 306/331 lines (92.45%)
   and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches
@@ -573,3 +588,7 @@ evidence for the fixes.
 | FX-E1 | Done | `src/lib/amountDisplay.ts`, `src/components/AmountText.tsx`, `app/emergency-fund.tsx`, Home/Goals emergency cards and passbook | `src/components/__tests__/RouteRenderSmoke.test.tsx` — exact labels for large balance/baseline figures; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — three-month target behavior; `AmountText.test.tsx` — exact accessibility |
 | FX-E2 | Done | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/components/__tests__/EfAllocationForm.test.tsx` — each remaining control's label, hint and stored result plus orphaned-string scan; `src/data/__tests__/createAppStore.test.ts` — reset persisted state and one write |
 | CH-1 | Done | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/domain/links.ts`, `src/domain/holdingActions.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/data/createAppStore.ts`, `app/ef-allocation-form.tsx`, `app/emergency-fund.tsx` — custom buckets, metadata-based warning/allocation, link cascade and one-write plan save; v5→v6 migration/archive and v6 backups | `src/domain/__tests__/efAllocationCustom.test.ts` — action validation, moveTo, integrity, warning metadata and seeded 20,000-case paise proof; `src/data/__tests__/migrateV4.test.ts` — v5 defaults/deep preservation; `src/data/__tests__/createAppStore.test.ts` — v6 hydration/archive/erase and one-write save; `src/domain/__tests__/backup.test.ts` — v6 round-trip and v7 refusal; `src/domain/__tests__/schemas.test.ts` — custom bounds; `src/components/__tests__/EfAllocationForm.test.tsx` — custom option, totals, picker and single save; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — linked rows and values; `src/components/__tests__/RouteRenderSmoke.test.tsx` — routes use v6 state |
+| P15-FIX-R5-1 Bottom navigation | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/_layout.tsx`, `src/components/ui.tsx`, `app/budget-history.tsx`, `app/month-review.tsx`, `src/components/form/FormScreen.tsx` | `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `RouteRenderSmoke.test.tsx` — shared tabs/order/labels/icons/selection/safe-area structure, touch target and simulated font scales. Android/iOS device spacing not verified. |
+| P15-FIX-R5-2 Budget actions | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — shared History/Month review action styling, selected-month review routing and review dot | `RouteRenderSmoke.test.tsx` — matched action style/minimum target and distinct routes under simulated font scale. |
+| P15-FIX-R5-3 Cash flow | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — opening, previous position, monthly flow and closing hierarchy; `budgetMonthView` calculations unchanged | `RouteRenderSmoke.test.tsx` — values/labels, positive/negative statuses, review navigation and normal-flow responsive layout. Device rendering not verified. |
+| P15-FIX-R5-4 Budget plan summary | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — summary card opens selected-month editor, template action remains independent, pencil removed, exact values preserved | `RouteRenderSmoke.test.tsx`, `EditActionOwnership.test.tsx` — edit/apply ownership, template modal, month route, populated/no-budget state and accessible financial values. |
