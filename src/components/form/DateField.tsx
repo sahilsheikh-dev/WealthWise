@@ -2,10 +2,10 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText } from '../ui';
 import { formatDate } from '../../lib/format';
 import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { AppText } from '../ui';
 import { FieldError } from './FieldError';
 
 function dateFromISO(value: string): Date {
@@ -18,17 +18,21 @@ function dateToISO(value: Date): string {
 }
 
 export function DateField({
+  label = 'Date',
   value,
   onChange,
   maximumDate,
   error,
   accessibilityLabel = 'Transaction date',
+  accessibilityHint,
 }: {
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   maximumDate: string;
   error?: string;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
@@ -48,11 +52,11 @@ export function DateField({
 
   return (
     <View style={styles.field}>
-      <AppText style={[typography.meta, { color: colors.text2 }]}>Date</AppText>
+      <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint={error ? `Error: ${error}` : undefined}
+        accessibilityHint={error ? `Error: ${error}` : accessibilityHint}
         onPress={() => {
           setSelected(dateFromISO(value));
           setVisible(true);

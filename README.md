@@ -24,9 +24,9 @@ an iOS simulator or Android emulator.
 
 ## Structure
 
-- `app/` contains the Expo Router root stack, five tabs, domain forms, backup,
-  security, erase-data, Loans, and Emergency fund screens.
-- `src/theme/` contains dark/light tokens and the in-memory system-aware theme.
+- `app/` contains the Expo Router root stack, Home/Transactions/Goals tabs, domain
+  forms, backup, security, liabilities, onboarding, and Emergency fund screens.
+- `src/theme/` contains the system-aware theme registry and six accessible palettes.
 - `src/components/ui.tsx` contains reusable accessible, themed UI components.
 - `src/domain/` contains the data schema, pure financial logic, and backup
   validation.
@@ -44,8 +44,31 @@ npx tsc --noEmit
 npx expo config --type public
 ```
 
-Theme preference is in-memory. Transaction and domain data are stored locally
-on this device; backup and restore are available from More.
+Theme preference and transaction data are stored locally on this device.
+Backup and restore are available from the Home menu.
+
+The optional monthly take-home income in onboarding and Profile is used to
+estimate how much of your income goes to EMIs. It is stored locally in the
+existing `monthlySalary` field for backup compatibility.
+
+## Branding
+
+The primary mark is concept A: a rising geometric W. It is legible at small
+sizes, works as a one-color adaptive icon, and remains recognizable on both
+light and dark backgrounds.
+
+To regenerate the app icon, Android adaptive assets, favicon, splash marks, and
+in-app BrandMark images, run:
+
+```bash
+npm run build:branding
+npm run check:assets
+```
+
+To choose another SVG direction, change `BRAND_CONCEPT` at the top of
+`scripts/build-branding.mjs` to `a`, `b`, or `c`, then rebuild. Update the
+brand-level colors in `assets/branding/brand.json` when changing the separate
+launcher/splash identity; in-app theme colors remain independent.
 
 ## Data and privacy
 

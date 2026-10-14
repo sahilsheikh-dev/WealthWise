@@ -1,5 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../../lib/sorting';
 import { createMetaStore } from '../metaStore';
 
 class MetaStorage implements StateStorage {
@@ -41,8 +42,71 @@ describe('backup metadata storage', () => {
       nudgeDismissedUntil: '2026-10-17',
     });
     expect(storage.writes).toBe(2);
+    await expect(meta.updateMeta({ storageWarnDismissedUntil: '2026-10-24' })).resolves.toEqual({
+      lastExportAt: '2026-10-10T10:00:00.000Z',
+      nudgeDismissedUntil: '2026-10-17',
+      storageWarnDismissedUntil: '2026-10-24',
+    });
+    expect(storage.writes).toBe(3);
     await expect(meta.updateMeta({ lastExportAt: 'bad' })).rejects.toThrow('Backup metadata is invalid.');
     storage.failWrite = true;
     await expect(meta.updateMeta({ nudgeDismissedUntil: '2026-10-18' })).rejects.toThrow('write failed');
+  });
+
+  it('persists validated sort choices and falls back for an unknown stored key', async () => {
+    const storage = new MetaStorage();
+    const meta = createMetaStore(storage);
+    await meta.updateMeta({ lastExportAt: '2026-10-10T10:00:00.000Z' });
+    await meta.updateSortSpec('transactions', { key: 'amount', dir: 'asc' }, SORT_OPTIONS.transactions);
+    expect(storage.writes).toBe(2);
+    await expect(meta.getSortSpec(
+      'transactions',
+      SORT_OPTIONS.transactions,
+      DEFAULT_SORTS.transactions,
+    )).resolves.toEqual({ key: 'amount', dir: 'asc' });
+    expect(await meta.getMeta()).toMatchObject({
+      lastExportAt: '2026-10-10T10:00:00.000Z',
+      sortSpecs: { transactions: { key: 'amount', dir: 'asc' } },
+    });
+
+    storage.values.set('wealthwise.meta.v1', JSON.stringify({
+      sortSpecs: { transactions: { key: 'unknown', dir: 'desc' } },
+    }));
+    await expect(meta.getSortSpec(
+      'transactions',
+      SORT_OPTIONS.transactions,
+      DEFAULT_SORTS.transactions,
+    )).resolves.toEqual(DEFAULT_SORTS.transactions);
+  });
+
+  it('rejects a sort key that is not registered for the selected list', async () => {
+    const meta = createMetaStore(new MetaStorage());
+    await expect(meta.updateSortSpec(
+      'transactions',
+      { key: 'status', dir: 'asc' },
+      SORT_OPTIONS.transactions,
+    )).rejects.toThrow('Sort preference is invalid.');
+  });
+
+  it('persists Budget history sort choices and falls back to month for an invalid stored key', async () => {
+    const storage = new MetaStorage();
+    const meta = createMetaStore(storage);
+    const selected = { key: 'actualSpend', dir: 'asc' as const };
+    await meta.updateSortSpec('budgetHistory', selected, SORT_OPTIONS.budgetHistory);
+    expect(storage.writes).toBe(1);
+    await expect(meta.getSortSpec(
+      'budgetHistory',
+      SORT_OPTIONS.budgetHistory,
+      DEFAULT_SORTS.budgetHistory,
+    )).resolves.toEqual(selected);
+
+    storage.values.set('wealthwise.meta.v1', JSON.stringify({
+      sortSpecs: { budgetHistory: { key: 'not-registered', dir: 'asc' } },
+    }));
+    await expect(meta.getSortSpec(
+      'budgetHistory',
+      SORT_OPTIONS.budgetHistory,
+      DEFAULT_SORTS.budgetHistory,
+    )).resolves.toEqual({ key: 'month', dir: 'desc' });
   });
 });

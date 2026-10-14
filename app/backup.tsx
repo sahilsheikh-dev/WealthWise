@@ -5,16 +5,19 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
 
-import { AppText, Button, Card, Screen, ScreenHeader, SectionTitle } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../src/data/metaStore';
 import { useAppStore } from '../src/data/store';
 import { backupFileName, createBackup, parseBackup, type ParseBackupResult } from '../src/domain/backup';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
+import { storageSummary, utf8ByteLength } from '../src/lib/storageGuard';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 const metaStore = createMetaStore(AsyncStorage);
 const digest = (text: string) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text);
@@ -163,7 +166,7 @@ export default function BackupScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Backup and restore" right={<Button label="Back" onPress={() => router.back()} />} />
+      <AppHeader title="Backup and restore" showBack />
       <SectionTitle>Export</SectionTitle>
       <Card>
         <AppText style={[typography.meta, { color: colors.text2, lineHeight: 19 }]}>
@@ -173,19 +176,22 @@ export default function BackupScreen() {
         <AppText style={[typography.meta, { color: colors.text3, marginTop: 10 }]}>
           Last export: {meta.lastExportAt ? formatDate(meta.lastExportAt.slice(0, 10)) : 'never'}
         </AppText>
-        <Button label="Export backup" variant="primary" disabled={busy} onPress={() => void exportBackup()} />
+        <AppText style={[typography.meta, { color: colors.text3 }]}>
+          Approximate data size: {storageSummary(utf8ByteLength(JSON.stringify(data)))}
+        </AppText>
+        <Button label="Export backup" icon="download" variant="primary" disabled={busy} onPress={() => void exportBackup()} />
       </Card>
 
       <SectionTitle>Import</SectionTitle>
       <Card>
-        <Button label="Import from file" disabled={busy} onPress={() => void importFromFile()} />
+        <Button label="Import from file" icon="upload" disabled={busy} onPress={() => void importFromFile()} />
         {preview ? <ImportPreview preview={preview} colors={colors} onReplace={() => void replaceImport()} busy={busy} /> : null}
         {undoSnapshot ? (
           <View style={styles.undo}>
             <AppText style={[typography.meta, { color: colors.text2 }]}>
               Previous data saved on {formatDate(undoSnapshot.savedAt)}
             </AppText>
-            <Button label="Undo import" disabled={busy} onPress={() => void undo()} />
+            <Button label="Undo import" icon="corner-up-left" disabled={busy} onPress={() => void undo()} />
           </View>
         ) : null}
       </Card>
@@ -214,7 +220,7 @@ function ImportPreview({
   const counts = [
     `${summary.transactions} transactions`, `${summary.goals} goals`,
     `${summary.holdings} holdings`, `${summary.plans} plans`,
-    `${summary.loans} loans`, `${summary.efEntries} emergency-fund entries`,
+    `${summary.liabilities} liabilities`, `${summary.efEntries} emergency-fund entries`,
   ].join(' · ');
   const range = summary.firstDate && summary.lastDate
     ? `${formatDate(summary.firstDate)} – ${formatDate(summary.lastDate)}`
@@ -227,7 +233,7 @@ function ImportPreview({
       <AppText weight="semibold" style={{ color: colors.err, marginTop: 8 }}>
         This will replace ALL data currently on this phone
       </AppText>
-      <Button label="Replace my data" variant="danger-text" disabled={busy} onPress={onReplace} />
+      <Button label="Replace my data" icon="upload" variant="danger-text" disabled={busy} onPress={onReplace} />
     </View>
   );
 }

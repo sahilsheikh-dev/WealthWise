@@ -1,7 +1,9 @@
 import type { StateStorage } from 'zustand/middleware';
 
 import { mockAppData } from '../../mock/data';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture } from '../testFixtures/v1';
 import { createSafeStorage } from '../safeStorage';
+import { utf8ByteLength } from '../../lib/storageGuard';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -23,7 +25,19 @@ class MemoryStorage implements StateStorage {
   }
 }
 
-const blob = (data: unknown = mockAppData, version = 1) => JSON.stringify({ state: { data }, version });
+const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
+
+function makeLegacyData(version: 1 | 2 | 3 | 4 | 5): unknown {
+  if (version === 1) return makeV1Fixture();
+  if (version === 4) return makeV4Fixture();
+  if (version === 5) return makeV5Fixture();
+  const v2 = makeV2Fixture();
+  if (version === 2) return v2;
+  return {
+    ...v2,
+    settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+  };
+}
 
 describe('createSafeStorage', () => {
   it('returns valid serialized data without creating a backup', async () => {
@@ -40,8 +54,8 @@ describe('createSafeStorage', () => {
   it.each([
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
-    ['invalid-schema', blob({ transactions: [] }), 'corrupt'],
-    ['newer-version', blob(mockAppData, 2), 'newer-version'],
+    ['invalid-schema', blob({ transactions: [] }, 6), 'corrupt'],
+    ['newer-version', blob(mockAppData, 7), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
@@ -97,5 +111,70 @@ describe('createSafeStorage', () => {
     const blocked = createSafeStorage(base, { onWriteError, onCorrupt: jest.fn() }, { blockWrites: () => true });
     await blocked.setItem('blocked', 'value');
     expect(base.values.has('blocked')).toBe(false);
+  });
+
+  it('reports UTF-8 bytes for a valid read and successful writes to the tracked key', async () => {
+    const base = new MemoryStorage();
+    const onWriteSuccess = jest.fn();
+    const safe = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false, trackedKey: 'app', onReadSuccess: onWriteSuccess, onWriteSuccess },
+    );
+    await safe.setItem('other', '₹');
+    expect(onWriteSuccess).not.toHaveBeenCalled();
+    await safe.setItem('app', '₹🙂');
+    expect(onWriteSuccess).toHaveBeenCalledWith(7);
+    onWriteSuccess.mockClear();
+    const validValue = blob(mockAppData, 4);
+    base.values.set('app', validValue);
+    await safe.getItem('app');
+    expect(onWriteSuccess).toHaveBeenCalledWith(utf8ByteLength(validValue));
+    onWriteSuccess.mockClear();
+    base.failWrites = true;
+    await safe.setItem('app', 'failed');
+    expect(onWriteSuccess).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 2, 3, 4, 5] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
+    const name = 'wealthwise.app.v1';
+    const base = new MemoryStorage();
+    const raw = blob(makeLegacyData(version), version);
+    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 6 });
+    const premigrationKey = `${name}.premigration.v${version}`;
+    base.values.set(name, raw);
+    const safe = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await safe.getItem(name);
+    await safe.setItem(name, migrated);
+    expect(base.values.get(premigrationKey)).toBe(raw);
+    expect(base.setCalls.filter((key) => key === premigrationKey)).toHaveLength(1);
+
+    const nextLaunch = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await nextLaunch.getItem(name);
+    await nextLaunch.setItem(name, migrated);
+    expect(base.setCalls.filter((key) => key === premigrationKey)).toHaveLength(1);
+    expect(base.values.get(premigrationKey)).toBe(raw);
+
+    const existingArchive = 'previously archived bytes';
+    const alreadyArchived = new MemoryStorage();
+    alreadyArchived.values.set(name, raw);
+    alreadyArchived.values.set(premigrationKey, existingArchive);
+    const safeWithArchive = createSafeStorage(
+      alreadyArchived,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await safeWithArchive.getItem(name);
+    await safeWithArchive.setItem(name, migrated);
+    expect(alreadyArchived.values.get(premigrationKey)).toBe(existingArchive);
+    expect(alreadyArchived.setCalls.filter((key) => key === premigrationKey)).toHaveLength(0);
   });
 });

@@ -71,11 +71,11 @@ export function RecoveryScreen({ reason }: { reason: RecoveryReason }) {
                 ? "Your saved data couldn't be read right now. It has not been changed."
                 : 'Your saved data could not be read. A copy of the damaged data is kept on this device.'}
           </AppText>
-          {readError ? <Button label="Try again" variant="primary" disabled={busy} onPress={retryHydration} /> : null}
+          {readError ? <Button label="Try again" icon="refresh-cw" variant="primary" disabled={busy} onPress={retryHydration} /> : null}
           {reason === 'corrupt' ? (
             <>
-              <Button label="Share damaged data file" disabled={busy} onPress={() => void shareDamagedData()} />
-              <Button label="Start fresh" variant="danger-text" disabled={busy} onPress={startFresh} />
+              <Button label="Share damaged data file" icon="share" disabled={busy} onPress={() => void shareDamagedData()} />
+              <Button label="Start fresh" icon="refresh-cw" variant="danger-text" disabled={busy} onPress={startFresh} />
             </>
           ) : null}
           {message ? <AppText accessibilityRole="alert" style={[typography.meta, { color: colors.err }]}>{message}</AppText> : null}

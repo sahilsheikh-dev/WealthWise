@@ -1,12 +1,18 @@
 import type { StateStorage } from 'zustand/middleware';
 
-import { mockAppData } from '../../mock/data';
-import { createAppStore } from '../createAppStore';
-import { behindBy } from '../../domain/sip';
-import { validateIntegrity } from '../../domain/links';
-import { loanState } from '../../domain/loan';
-import { makeLoanPaymentFormSchema } from '../../domain/schemas';
 import { createBackup, parseBackup } from '../../domain/backup';
+import { validateIntegrity } from '../../domain/links';
+import { loanState } from '../../domain/liability';
+import { efBalance } from '../../domain/ef';
+import { netWorth } from '../../domain/summary';
+import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
+import { behindBy } from '../../domain/sip';
+import { holdingValue } from '../../domain/portfolio';
+import { mockAppData } from '../../mock/data';
+import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
+import { createAppStore } from '../createAppStore';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture } from '../testFixtures/v1';
+import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -62,6 +68,635 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('stores a budget template and month snapshot with one write per action', async () => {
+    const storage = new MemoryStorage();
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: emptyAppData('2026-03-01') }, version: 6,
+    }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `budget-${++nextId}`,
+      today: () => '2026-10-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+
+    let writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplate({
+      name: 'Monthly', plannedIncome: 20_000,
+      lines: [{ category: 'Food', mode: 'percent', value: 20 }],
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.setDefaultBudgetTemplate('budget-1');
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.applyTemplateToMonth({ month: '2026-03', templateId: 'budget-1' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplateAndApply({
+      name: 'Atomic', plannedIncome: 10_000, lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
+    }, '2026-04');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets).toHaveLength(2);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('applies the default template after hydration and persists the current-month snapshot once', async () => {
+    const storage = new MemoryStorage();
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetTemplates: [{
+        id: 'default', name: 'Default', plannedIncome: 20_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 5_000 }],
+      }],
+      defaultBudgetTemplateId: 'default',
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 6 }));
+    const store = createAppStore(storage, {
+      newId: () => 'unused', today: () => '2026-03-15', isDev: false,
+    });
+    await waitForHydration(store);
+    expect(store.getState().data.monthBudgets?.[0]?.month).toBe('2026-03');
+    expect(storage.setItemCalls).toBe(1);
+  });
+
+  it('records a shortfall allocation atomically with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      transactions: [
+        { id: 'income', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-01-01' },
+        { id: 'expense', type: 'expense' as const, amount: 300, category: 'Living', note: '', date: '2026-01-02' },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `movement-${++nextId}`,
+      today: () => '2026-02-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'borrowed', amount: 50, lenderName: 'Friend' },
+    ]);
+
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.liabilities).toHaveLength(1);
+    expect(store.getState().data.transactions).toHaveLength(3);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const movementWrites = storage.setItemCalls;
+    store.getState().actions.recordMoneyMovement({
+      kind: 'borrowed-in', lenderName: 'Aunt', amount: 30, date: '2026-01-15',
+    });
+    expect(storage.setItemCalls - movementWrites).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const referenceBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'own-funds', amount: 500, note: 'Too much' },
+    ]);
+    expect(store.getState().data).toBe(referenceBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
+  it.each(['recurring', 'one-time'] as const)(
+    'records received %s liability proceeds with one persisted write',
+    async (kind) => {
+      const storage = new MemoryStorage();
+      let nextId = 0;
+      const store = makeStore(storage, { newId: () => `received-${++nextId}` });
+      await waitForHydration(store);
+      const liability = kind === 'recurring'
+        ? {
+          kind,
+          type: 'Personal loan' as const,
+          name: 'Personal loan',
+          principal: 20_000,
+          ratePct: 8,
+          tenureMonths: 12,
+          emi: null,
+          startDate: '2026-10-01',
+        }
+        : {
+          kind,
+          type: 'Borrowed money' as const,
+          name: 'Friend',
+          principal: 20_000,
+          ratePct: 0,
+          dueDate: '2027-01-01',
+          startDate: '2026-10-01',
+        };
+      const writesBefore = storage.setItemCalls;
+
+      store.getState().actions.recordMoneyMovement({
+        kind: 'loan-received',
+        amount: 20_000,
+        date: '2026-10-01',
+        liability,
+      });
+
+      const result = store.getState();
+      expect(storage.setItemCalls - writesBefore).toBe(1);
+      expect(result.data.liabilities).toHaveLength(1);
+      expect(result.data.transactions.at(-1)).toMatchObject({
+        type: 'income',
+        amount: 20_000,
+        date: '2026-10-01',
+        category: kind === 'recurring' ? 'Loan proceeds' : 'Borrowed',
+        source: {
+          kind: 'liability-origin',
+          parentId: result.data.liabilities[0]?.id,
+        },
+      });
+      expect(validateIntegrity(result.data)).toEqual([]);
+    },
+  );
+
+  it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-01'),
+      holdings: [{
+        id: 'asset',
+        kind: 'manual' as const,
+        name: 'Savings',
+        type: 'Savings account' as const,
+        invested: 500,
+        value: 1_000,
+        valueAsOf: '2026-10-01',
+        logs: [],
+      }],
+      goals: [
+        ...emptyAppData('2026-10-01').goals,
+        { id: 'goal', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    actions.setGoalLinks('goal', [{ instrumentId: 'asset', share: 75 }]);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
+      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const dataBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    actions.setGoalLinks('missing-goal', [{ instrumentId: 'asset', share: 25 }]);
+    expect(store.getState().data).toBe(dataBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
+  it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+    const allocation = { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 };
+
+    store.getState().actions.setEfAllocation(allocation);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.efAllocation).toEqual(allocation);
+    const relaunchedStore = makeStore(storage);
+    await waitForHydration(relaunchedStore);
+    expect(relaunchedStore.getState().data.efAllocation).toEqual(allocation);
+    const writesBeforeReset = storage.setItemCalls;
+    store.getState().actions.resetEfAllocation();
+    expect(storage.setItemCalls - writesBeforeReset).toBe(1);
+    expect(store.getState().data.efAllocation).toBeNull();
+  });
+
+  it('saves custom buckets, percentages, and investment links in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    let nextId = 0;
+    const store = makeStore(storage, { newId: () => `ef-plan-${++nextId}` });
+    await waitForHydration(store);
+    store.getState().actions.addHolding({
+      name: 'Savings', type: 'Savings account', invested: 1_000, value: 1_000,
+    });
+    const holding = store.getState().data.holdings[0];
+    if (!holding) throw new Error('Expected the added holding.');
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.saveEfPlan({
+      customBuckets: [{ id: 'draft-1', name: 'Safe box', access: 'instant', marketLinked: false }],
+      allocation: {
+        cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
+        stocks: 0, insurance: 0, other: 0, 'draft-1': 10,
+      },
+      links: { 'draft-1': [holding.id] },
+    });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.efCustomBuckets).toEqual([{
+      id: 'ef-plan-2', name: 'Safe box', access: 'instant', marketLinked: false,
+    }]);
+    expect(store.getState().data.efCustomBuckets[0]?.id).toBe('ef-plan-2');
+    expect(store.getState().data.efBucketLinks).toEqual({ 'ef-plan-2': [holding.id] });
+    expect(store.getState().data.efAllocation?.['ef-plan-2']).toBe(10);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const writesBeforeDelete = storage.setItemCalls;
+    store.getState().actions.deleteHolding(holding.id);
+    expect(storage.setItemCalls - writesBeforeDelete).toBe(1);
+    expect(store.getState().data.efBucketLinks).toEqual({ 'ef-plan-2': [] });
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      holdings: [{
+        id: 'past-plan',
+        kind: 'plan' as const,
+        name: 'Past plan',
+        type: 'Mutual fund / SIP' as const,
+        frequency: 'monthly' as const,
+        amount: 100,
+        ratePct: 0,
+        stepUpPct: 0,
+        tenureYears: 1,
+        startDate: '2026-08-01',
+        trackFrom: '2026-08-01',
+        opening: 0,
+        actualValue: null,
+        actualValueDate: null,
+        logs: [],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `due-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+
+    let writesBefore = storage.setItemCalls;
+    const entryId = actions.clearDue({ kind: 'plan', id: 'past-plan' });
+    expect(entryId).toBe('due-1');
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    writesBefore = storage.setItemCalls;
+    const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
+      mode: 'settle',
+      addSkippedToOpening: true,
+    });
+    expect(summary?.count).toBeGreaterThan(0);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('persists clear undo and each add-with-history action in exactly one write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `history-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const assertOneWrite = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+
+    assertOneWrite(() => actions.addPlan({
+      name: 'Today plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-10-10',
+      trackFrom: '2026-10-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }));
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan || plan.kind !== 'plan') throw new Error('Test plan was not created.');
+    let entryId: string | undefined;
+    const beforeClear = storage.setItemCalls;
+    entryId = actions.clearDue({ kind: 'plan', id: plan.id });
+    expect(storage.setItemCalls - beforeClear).toBe(1);
+    expect(entryId).toBeDefined();
+    assertOneWrite(() => actions.undoClearDue({ kind: 'plan', id: plan.id }, entryId ?? ''));
+
+    assertOneWrite(() => actions.addPlanWithHistory({
+      name: 'Past plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-08-10',
+      trackFrom: '2026-08-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }, 'settle'));
+    assertOneWrite(() => actions.addLiabilityWithHistory({
+      kind: 'recurring',
+      name: 'Past liability',
+      type: 'Personal loan',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-08-10',
+      tenureMonths: 12,
+      emi: 100,
+    }, 'settle'));
+    assertOneWrite(() => actions.addPolicyWithHistory({
+      name: 'Past policy',
+      insurer: '',
+      kind: 'health',
+      premium: 50,
+      frequency: 'monthly',
+      startDate: '2026-08-10',
+      premiumYears: 1,
+      trackFrom: '2026-08-10',
+      coverAmount: null,
+      currentValue: null,
+      valueAsOf: null,
+      maturityDate: null,
+    }, 'settle'));
+  });
+
+  it.each([
+    ['same day', '2026-10-10', '2026-10-10', 5_000],
+    ['later day', '2026-10-09', '2026-10-10', 5_000],
+    ['whole balance', '2026-10-10', '2026-10-10', 10_000],
+  ])('accepts an emergency fund deposit and %s withdrawal from an empty store', async (_label, depositDate, withdrawalDate, withdrawal) => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `ef-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addEfEntry({ date: depositDate, amount: 10_000, note: 'Deposit' });
+    actions.addEfEntry({ date: withdrawalDate, amount: -withdrawal, note: 'Withdrawal' });
+
+    const state = store.getState();
+    expect(state.lastError).toBeNull();
+    expect(efBalance(state.data.efEntries)).toBe(10_000 - withdrawal);
+    expect(state.data.transactions).toHaveLength(2);
+    expect(state.data.transactions[1]).toMatchObject({
+      type: 'income',
+      amount: withdrawal,
+      category: 'Withdrawal',
+      note: 'Emergency fund withdrawal',
+    });
+    expect(validateIntegrity(state.data)).toEqual([]);
+  });
+
+  it('rejects an overdraw without mutating emergency fund data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    store.getState().actions.addEfEntry({ date: '2026-10-10', amount: 10_000, note: '' });
+    const before = store.getState().data;
+    store.getState().actions.addEfEntry({ date: '2026-10-10', amount: -10_001, note: '' });
+    expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-10');
+    expect(store.getState().data).toBe(before);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it.each(['manual', 'plan', 'emergency fund'] as const)('links and guards a withdrawal from a %s instrument', async (kind) => {
+    const storage = new MemoryStorage();
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 3 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `withdrawal-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    if (kind === 'manual' || kind === 'plan') {
+      const holding = store.getState().data.holdings.find((item) => item.kind === kind);
+      if (!holding) throw new Error(`Missing ${kind} holding fixture.`);
+      actions.addInvestmentEntry(holding.id, {
+        date: '2026-10-10',
+        amount: 1,
+        kind: 'Withdrawal',
+        note: 'Test withdrawal',
+      });
+    } else {
+      actions.addEfEntry({ date: '2026-10-10', amount: -1, note: 'Test withdrawal' });
+    }
+
+    const result = store.getState();
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(result.lastError).toBeNull();
+    expect(result.data.transactions.at(-1)).toMatchObject({
+      type: 'income',
+      category: 'Withdrawal',
+      amount: 1,
+    });
+    expect(validateIntegrity(result.data)).toEqual([]);
+
+    const beforeRejectedWithdrawal = result.data;
+    if (kind === 'manual' || kind === 'plan') {
+      const holding = beforeRejectedWithdrawal.holdings.find((item) => item.kind === kind);
+      if (!holding) throw new Error(`Missing ${kind} holding after withdrawal.`);
+      actions.addInvestmentEntry(holding.id, {
+        date: '2026-10-10',
+        amount: 1_000_000_000,
+        kind: 'Withdrawal',
+        note: 'Too large',
+      });
+    } else {
+      actions.addEfEntry({ date: '2026-10-10', amount: -1_000_000, note: 'Too large' });
+    }
+    expect(store.getState().lastError).toBeTruthy();
+    expect(store.getState().data).toBe(beforeRejectedWithdrawal);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('persists each instrument transaction action once', async () => {
+    const storage = new MemoryStorage();
+    const seed = emptyAppData('2026-10-10');
+    seed.holdings.push({
+      id: 'seed-holding',
+      kind: 'manual',
+      name: 'Seed holding',
+      type: 'Gold',
+      invested: 100,
+      value: 100,
+      valueAsOf: '2026-10-10',
+      logs: [{ id: 'old-entry', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }],
+    });
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 3 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `instrument-${++id}` });
+    await waitForHydration(store);
+    const perform = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+
+    perform(() => store.getState().actions.createMissingTransactions());
+    const seededTransaction = store.getState().data.transactions[0]!;
+    perform(() => store.getState().actions.updateLinkedTransaction(seededTransaction.id, { amount: 60 }));
+    perform(() => store.getState().actions.deleteLinkedTransaction(seededTransaction.id));
+
+    store.getState().actions.addTransaction({
+      type: 'invest', amount: 75, date: '2026-10-02', category: 'Other', note: 'Legacy',
+    });
+    const legacy = store.getState().data.transactions.at(-1)!;
+    perform(() => store.getState().actions.linkExistingTransaction(legacy.id, 'seed-holding', 'Linked legacy'));
+    const linkedLegacy = store.getState().data.transactions.find((item) => item.id === legacy.id)!;
+    expect(linkedLegacy).toMatchObject({ note: 'Linked legacy', source: { kind: 'holding-entry' } });
+
+    perform(() => store.getState().actions.addInstrumentTransaction({
+      kind: 'deposit', instrumentId: 'seed-holding', amount: 30, date: '2026-10-03', note: 'New deposit',
+    }));
+    const created = store.getState().data.transactions.at(-1)!;
+    perform(() => store.getState().actions.updateLinkedTransaction(created.id, { instrumentId: 'ef' }));
+    perform(() => store.getState().actions.deleteLinkedTransaction(created.id));
+  });
+
+  it('persists each manual ledger action once with its linked transaction', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `ledger-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const performOnce = (action: () => void) => {
+      const writes = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - writes).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+    performOnce(() => actions.addHolding({
+      name: 'Ledger manual', type: 'Gold', invested: 10_000, value: 10_000,
+    }));
+    const holding = store.getState().data.holdings.find((item) => item.name === 'Ledger manual')!;
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2026-10-02', amount: 5_000, kind: 'Deposit', note: '',
+    }));
+    const deposit = store.getState().data.holdings.find((item) => item.id === holding.id)!.logs[0]!;
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2026-10-03', amount: 2_000, kind: 'Withdrawal', note: '',
+    }));
+    const withdrawal = store.getState().data.holdings.find((item) => item.id === holding.id)!.logs[1]!;
+    performOnce(() => actions.updateInvestmentEntry(holding.id, withdrawal.id, { amount: 1_500 }));
+    performOnce(() => actions.updateHolding(holding.id, { name: 'Renamed manual' }));
+    expect(store.getState().data.transactions.find((tx) => tx.source?.entryId === deposit.id)?.note).toBe('Renamed manual deposit');
+    performOnce(() => actions.deleteInvestmentEntry(holding.id, deposit.id));
+    expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
+  });
+
+  it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
+    const storage = new MemoryStorage();
+    const v1 = makeV1Fixture();
+    const raw = JSON.stringify({ state: { data: v1 }, version: 1 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.liabilities).toHaveLength(1);
+    expect(first.getState().data.liabilities[0]).toMatchObject({ kind: 'recurring', type: 'Other' });
+    expect(first.getState().data.holdings[0]).toMatchObject({ kind: 'manual', logs: [] });
+    expect(storage.values.get('wealthwise.app.v1.premigration.v1')).toBe(raw);
+    expect(efBalance(first.getState().data.efEntries)).toBe(500);
+    const migratedTotals = netWorth(first.getState().data, '2026-09-03');
+    const legacyPlan = v1.holdings.find((holding) => holding.kind === 'plan');
+    if (!legacyPlan || legacyPlan.kind !== 'plan') throw new Error('Expected v1 plan fixture');
+    const planValueBeforeMigration = holdingValue({
+      ...legacyPlan,
+      logs: legacyPlan.logs.map((log) => ({ ...log, kind: 'Deposit' as const })),
+    }, '2026-09-03');
+    expect(migratedTotals.liabilities).toBe(8_000);
+    expect(migratedTotals.assets).toBe(1_500 + planValueBeforeMigration);
+    expect(migratedTotals.netWorth).toBe(migratedTotals.assets - 8_000);
+    const copyWrites = storage.setItemCalls;
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.values.get('wealthwise.app.v1.premigration.v1')).toBe(raw);
+    expect(storage.setItemCalls).toBe(copyWrites);
+  });
+
+  it('migrates a v2 database once and does not overwrite its premigration copy', async () => {
+    const storage = new MemoryStorage();
+    const v2 = makeV2Fixture();
+    const raw = JSON.stringify({ state: { data: v2 }, version: 2 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    expect(store.getState().data.settings).toEqual({
+      ...v2.settings,
+      monthlySalary: null,
+      onboarded: true,
+    });
+    expect(storage.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
+    const writesAfterMigration = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2').length;
+    const restored = makeStore(storage);
+    await waitForHydration(restored);
+    expect(restored.getState().data).toEqual(store.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2'))
+      .toHaveLength(writesAfterMigration);
+  });
+
+  it('hydrates v4 into v6, archives the original bytes once, and removes that archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const v4 = makeV4Fixture();
+    const raw = JSON.stringify({ state: { data: v4 }, version: 4 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.goals.every((goal) => goal.links.length === 0)).toBe(true);
+    expect(first.getState().data.liabilities.find((entry) => entry.kind === 'recurring')?.settlement).toBeNull();
+    expect(first.getState().data.policies).toEqual([]);
+    expect(first.getState().data.budget).toBeNull();
+    expect(storage.values.get('wealthwise.app.v1.premigration.v4')).toBe(raw);
+    const archivedWrites = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4').length;
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4'))
+      .toHaveLength(archivedWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has('wealthwise.app.v1.premigration.v4')).toBe(false);
+  });
+
+  it('hydrates v5 into v6, archives exact bytes once, and removes the archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const v5 = makeV5Fixture();
+    const raw = JSON.stringify({ state: { data: v5 }, version: 5 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.efCustomBuckets).toEqual([]);
+    expect(first.getState().data.efBucketLinks).toEqual({});
+    expect(first.getState().data.liabilities).toEqual(v5.liabilities);
+    expect(storage.values.get('wealthwise.app.v1.premigration.v5')).toBe(raw);
+    const archiveWrites = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v5');
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v5')).toHaveLength(archiveWrites.length);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has('wealthwise.app.v1.premigration.v5')).toBe(false);
+  });
+
   it('starts empty with an emergency fund goal and rehydrates transactions across instances', async () => {
     const storage = new MemoryStorage();
     const first = makeStore(storage);
@@ -136,7 +771,7 @@ describe('createAppStore persistence', () => {
       }
     }
     const storage = new RetryReadStorage();
-    const raw = JSON.stringify({ state: { data: mockAppData }, version: 1 });
+    const raw = JSON.stringify({ state: { data: makeV1Fixture() }, version: 1 });
     storage.values.set('wealthwise.app.v1', raw);
     const store = makeStore(storage);
     await waitForHydration(store);
@@ -157,16 +792,18 @@ describe('createAppStore persistence', () => {
 
     store.getState().actions.retryHydration();
     await new Promise<void>((resolve) => {
+      if (store.getState().status === 'ready') return resolve();
       const unsubscribe = store.subscribe((state) => {
-        if (state.status === 'ready' && state.hydrated) {
+        if (state.status === 'ready') {
           unsubscribe();
           resolve();
         }
       });
     });
     expect(store.getState().status).toBe('ready');
-    expect(store.getState().data).toEqual(mockAppData);
-    expect(storage.values.get('wealthwise.app.v1')).toBe(raw);
+    expect(store.getState().data.liabilities[0]).toMatchObject({ kind: 'recurring', type: 'Other' });
+    expect(storage.values.get('wealthwise.app.v1.premigration.v1')).toBe(raw);
+    expect(storage.values.get('wealthwise.app.v1')).not.toBe(raw);
   });
 
     it('confirms a holding valuation through one persisted write without changing its value', async () => {
@@ -263,10 +900,27 @@ describe('createAppStore persistence', () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
     await waitForHydration(store);
+    const themeWrites = storage.setItemCalls;
+    store.getState().actions.updateSettings({ theme: 'midnight' });
+    expect(storage.setItemCalls - themeWrites).toBe(1);
     store.getState().actions.updateSettings({ name: 'Asha', theme: 'dark' });
     const restored = makeStore(storage);
     await waitForHydration(restored);
-    expect(restored.getState().data.settings).toEqual({ name: 'Asha', theme: 'dark' });
+    expect(restored.getState().data.settings).toEqual({
+      name: 'Asha', theme: 'dark', monthlySalary: null, onboarded: false,
+    });
+  });
+
+  it('completes onboarding in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+    store.getState().actions.completeOnboarding({ name: 'Asha', monthlySalary: 75_000 });
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.settings).toMatchObject({
+      name: 'Asha', monthlySalary: 75_000, onboarded: true,
+    });
   });
 
   it('materializes the emergency fund goal after hydrating legacy valid data', async () => {
@@ -302,6 +956,23 @@ describe('createAppStore persistence', () => {
     await dev!.simulateCorruption();
     expect(storage.values.get('wealthwise.app.v1')).toBe('{not json');
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces transactions with 20,000 stress entries using one persisted write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { isDev: true, newId: () => `stress-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().devActions;
+    if (!actions) throw new Error('Developer stress action is unavailable.');
+    const existingGoals = store.getState().data.goals;
+    const writesBefore = storage.setItemCalls;
+
+    actions.loadStressData();
+
+    expect(store.getState().data.transactions).toHaveLength(20_000);
+    expect(store.getState().data.goals).toBe(existingGoals);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
   });
 
   it('reports an unavailable reload when simulating corruption without a reload dependency', async () => {
@@ -382,7 +1053,7 @@ describe('createAppStore persistence', () => {
     const planId = store.getState().data.holdings[0]!.id;
     for (const date of ['2026-07-05', '2026-08-05', '2026-09-05']) {
       const before = storage.setItemCalls;
-      store.getState().actions.addPlanLog(planId, { date, amount: 10_000, note: '' }, { recordTransaction: true });
+      store.getState().actions.addInvestmentEntry(planId, { date, amount: 10_000, note: '', kind: 'Deposit' });
       expect(storage.setItemCalls - before).toBe(1);
       expect(store.getState().lastError).toBeNull();
       expect(validateIntegrity(store.getState().data)).toEqual([]);
@@ -402,11 +1073,11 @@ describe('createAppStore persistence', () => {
     if (planAfterRestore.kind !== 'plan') throw new Error('Expected a plan after restore');
     const august = planAfterRestore.logs.find((log) => log.date === '2026-08-05')!;
     const augustTransaction = restored.getState().data.transactions.find((row) => row.source?.entryId === august.id)!;
-    restored.getState().actions.updatePlanLog(planId, august.id, { amount: 11_000 });
+    restored.getState().actions.updateInvestmentEntry(planId, august.id, { amount: 11_000 });
     expect(restored.getState().data.transactions.find((row) => row.id === augustTransaction.id)?.amount).toBe(11_000);
     expect(validateIntegrity(restored.getState().data)).toEqual([]);
     const september = planAfterRestore.logs.find((log) => log.date === '2026-09-05')!;
-    restored.getState().actions.deletePlanLog(planId, september.id);
+    restored.getState().actions.deleteInvestmentEntry(planId, september.id);
     expect(restored.getState().data.transactions.some((row) => row.source?.entryId === september.id)).toBe(false);
     expect(validateIntegrity(restored.getState().data)).toEqual([]);
     restored.getState().actions.deletePlan(planId, { linkedTransactions: 'keep' });
@@ -426,27 +1097,58 @@ describe('createAppStore persistence', () => {
     };
     store.getState().actions.addPlan(planInput);
     const keepPlanId = store.getState().data.holdings[0]!.id;
-    store.getState().actions.addPlanLog(keepPlanId, { date: '2026-01-02', amount: 100, note: '' }, { recordTransaction: true });
+    store.getState().actions.addInvestmentEntry(keepPlanId, { date: '2026-01-02', amount: 100, note: '', kind: 'Deposit' });
     store.getState().actions.deletePlan(keepPlanId, { linkedTransactions: 'keep' });
     expect(store.getState().data.transactions[0]?.source).toBeUndefined();
 
     store.getState().actions.addPlan(planInput);
     const deletePlanId = store.getState().data.holdings[0]!.id;
-    store.getState().actions.addPlanLog(deletePlanId, { date: '2026-01-02', amount: 100, note: '' }, { recordTransaction: true });
+    store.getState().actions.addInvestmentEntry(deletePlanId, { date: '2026-01-02', amount: 100, note: '', kind: 'Deposit' });
     store.getState().actions.deletePlan(deletePlanId, { linkedTransactions: 'delete' });
     expect(store.getState().data.transactions).toHaveLength(1);
     expect(store.getState().data.transactions[0]?.source).toBeUndefined();
 
-    store.getState().actions.addLoan({
-      name: 'Bank loan', principal: 100_000, ratePct: 12, tenureMonths: 12, emi: null, startDate: '2026-01-01',
+    store.getState().actions.addLiability({
+      kind: 'recurring', type: 'Other', name: 'Bank loan', principal: 100_000, ratePct: 12, tenureMonths: 12, emi: null, startDate: '2026-01-01',
     });
-    const loanId = store.getState().data.loans[0]!.id;
+    const loanId = store.getState().data.liabilities[0]!.id;
     const before = storage.setItemCalls;
-    store.getState().actions.addLoanPayment(loanId, { date: '2026-02-01', amount: 8_885, kind: 'EMI', note: '' }, { recordTransaction: true });
+    store.getState().actions.addLiabilityPayment(loanId, { date: '2026-02-01', amount: 8_885, kind: 'EMI', note: '' });
     expect(storage.setItemCalls - before).toBe(1);
-    const linked = store.getState().data.transactions.find((transaction) => transaction.source?.kind === 'loan-payment');
-    expect(linked?.source).toMatchObject({ kind: 'loan-payment', parentId: loanId });
+    const linked = store.getState().data.transactions.find((transaction) => transaction.source?.kind === 'liability-payment');
+    expect(linked?.source).toMatchObject({ kind: 'liability-payment', parentId: loanId });
     expect(linked).toMatchObject({ type: 'expense', category: 'EMI', note: 'Bank loan EMI' });
+  });
+
+  it('persists each one-time liability action once and preserves integrity', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `one-time-${++id}` });
+    await waitForHydration(store);
+    const perform = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+    perform(() => store.getState().actions.addLiability({
+      kind: 'one-time', name: 'Friend', type: 'Borrowed money', principal: 20_000,
+      ratePct: 0, startDate: '2026-10-01', dueDate: '2026-10-20',
+    }));
+    const liabilityId = store.getState().data.liabilities[0]!.id;
+    perform(() => store.getState().actions.updateLiability(liabilityId, { name: 'Friend loan' }));
+    perform(() => store.getState().actions.addLiabilityPayment(liabilityId, {
+      date: '2026-10-05', amount: 5_000, kind: 'Payment', note: '',
+    }));
+    const paymentId = store.getState().data.liabilities[0]!.payments[0]!.id;
+    perform(() => store.getState().actions.updateLiabilityPayment(liabilityId, paymentId, { amount: 4_000 }));
+    perform(() => store.getState().actions.deleteLiabilityPayment(liabilityId, paymentId));
+    perform(() => store.getState().actions.addLiabilityPayment(liabilityId, {
+      date: '2026-10-06', amount: 1_000, kind: 'Payment', note: '',
+    }));
+    perform(() => store.getState().actions.deleteLiability(liabilityId, { linkedTransactions: 'keep' }));
+    expect(store.getState().data.transactions[0]?.source).toBeUndefined();
   });
 
   it('exercises every plan and loan store wrapper and captures linked/not-found errors', async () => {
@@ -462,31 +1164,31 @@ describe('createAppStore persistence', () => {
     });
     const planId = store.getState().data.holdings[0]!.id;
     actions.updatePlan(planId, { amount: 600 });
-    actions.addPlanLog(planId, { date: '2026-02-01', amount: 600, note: '' }, { recordTransaction: true });
+    actions.addInvestmentEntry(planId, { date: '2026-02-01', amount: 600, note: '', kind: 'Deposit' });
     const plan = store.getState().data.holdings[0]!;
     if (plan.kind !== 'plan') throw new Error('Expected plan');
     const logId = plan.logs[0]!.id;
     const txId = store.getState().data.transactions[0]!.id;
-    actions.updatePlanLog(planId, logId, { note: 'Updated' });
+    actions.updateInvestmentEntry(planId, logId, { note: 'Updated' });
     actions.updateTransaction(txId, { amount: 100 });
     expect(store.getState().lastError).toContain('linked');
     actions.deleteTransaction(txId);
     expect(store.getState().lastError).toContain('linked');
-    actions.deletePlanLog(planId, logId);
+    actions.deleteInvestmentEntry(planId, logId);
     actions.deletePlan(planId, { linkedTransactions: 'delete' });
 
-    actions.addLoan({ name: 'Wrapper loan', principal: 10_000, ratePct: 0, tenureMonths: 10, emi: 1000, startDate: '2026-01-01' });
-    const loanId = store.getState().data.loans[0]!.id;
-    actions.updateLoan(loanId, { emi: null });
-    actions.addLoanPayment(loanId, { date: '2026-02-01', amount: 1000, kind: 'EMI', note: '' }, { recordTransaction: true });
-    const paymentId = store.getState().data.loans[0]!.payments[0]!.id;
-    actions.updateLoanPayment(loanId, paymentId, { amount: 1100 });
-    actions.deleteLoanPayment(loanId, paymentId);
-    actions.deleteLoan(loanId, { linkedTransactions: 'delete' });
+    actions.addLiability({ kind: 'recurring', type: 'Other', name: 'Wrapper loan', principal: 10_000, ratePct: 0, tenureMonths: 10, emi: 1000, startDate: '2026-01-01' });
+    const loanId = store.getState().data.liabilities[0]!.id;
+    actions.updateLiability(loanId, { emi: null });
+    actions.addLiabilityPayment(loanId, { date: '2026-02-01', amount: 1000, kind: 'EMI', note: '' });
+    const paymentId = store.getState().data.liabilities[0]!.payments[0]!.id;
+    actions.updateLiabilityPayment(loanId, paymentId, { amount: 1100 });
+    actions.deleteLiabilityPayment(loanId, paymentId);
+    actions.deleteLiability(loanId, { linkedTransactions: 'delete' });
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     actions.updatePlan('missing', { amount: 1 });
     expect(store.getState().lastError).toContain('not found');
-    actions.updateLoanPayment('missing', 'missing', { amount: 1 });
+    actions.updateLiabilityPayment('missing', 'missing', { amount: 1 });
     expect(store.getState().lastError).toContain('not found');
   });
 
@@ -514,31 +1216,32 @@ describe('createAppStore persistence', () => {
     let id = 0;
     const store = makeStore(storage, { newId: () => `loan-scenario-${++id}` });
     await waitForHydration(store);
-    store.getState().actions.addLoan({
-      name: 'Scenario loan', principal: 100_000, ratePct: 12,
+    store.getState().actions.addLiability({
+      kind: 'recurring', type: 'Other', name: 'Scenario loan', principal: 100_000, ratePct: 12,
       tenureMonths: 12, emi: null, startDate: '2026-01-01',
     });
 
-    const loanId = store.getState().data.loans[0]!.id;
-    expect(store.getState().data.loans[0]?.emi).toBe(8_885);
+    const loanId = store.getState().data.liabilities[0]!.id;
+    const scenarioLiability = store.getState().data.liabilities[0]!;
+    expect(scenarioLiability.kind === 'recurring' ? scenarioLiability.emi : null).toBe(8_885);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     for (const date of ['2026-02-01', '2026-03-01', '2026-04-01']) {
-      store.getState().actions.addLoanPayment(loanId, {
+      store.getState().actions.addLiabilityPayment(loanId, {
         date, amount: 8_885, kind: 'EMI', note: '',
-      }, { recordTransaction: true });
+      });
       expect(validateIntegrity(store.getState().data)).toEqual([]);
     }
-    const loan = store.getState().data.loans[0]!;
+    const loan = store.getState().data.liabilities[0]!;
     expect(loanState(loan, '2026-04-02').balance).toBeLessThan(100_000);
     const outstanding = loanState(loan, '2026-04-02').balance;
-    expect(makeLoanPaymentFormSchema('2026-04-02', {
+    expect(makeLiabilityPaymentFormSchema('2026-04-02', {
       startDate: loan.startDate, outstandingExcludingThis: outstanding,
     }).safeParse({
       date: '2026-04-02', amount: String(Math.ceil(outstanding) + 1),
-      kind: 'Prepayment', note: '', recordTransaction: true,
+      kind: 'Prepayment', note: '',
     }).success).toBe(false);
-    store.getState().actions.deleteLoan(loanId, { linkedTransactions: 'delete' });
-    expect(store.getState().data.loans).toEqual([]);
+    store.getState().actions.deleteLiability(loanId, { linkedTransactions: 'delete' });
+    expect(store.getState().data.liabilities).toEqual([]);
     expect(store.getState().data.transactions).toEqual([]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
@@ -547,6 +1250,11 @@ describe('createAppStore persistence', () => {
 it('erases all supported storage keys and hydrates to empty data', async () => {
   const storage = new MemoryStorage();
   const secureStore = new Map([['wealthwise.lock.v1', '{"enabled":true}']]);
+  storage.values.set('wealthwise.app.v1.premigration.v1', 'original-v1-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v3', 'original-v3-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v4', 'original-v4-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v5', 'original-v5-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -564,6 +1272,11 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   expect(JSON.parse(storage.values.get('wealthwise.app.v1')!).state.data.transactions).toEqual([]);
   for (const key of [
     'wealthwise.app.v1.preimport',
+    'wealthwise.app.v1.premigration.v1',
+    'wealthwise.app.v1.premigration.v2',
+    'wealthwise.app.v1.premigration.v3',
+    'wealthwise.app.v1.premigration.v4',
+    'wealthwise.app.v1.premigration.v5',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',
@@ -589,19 +1302,16 @@ it('round-trips linked plans, loan payments, emergency-fund deposits, goals and 
     trackFrom: '2026-01-01', opening: 0, actualValue: null, actualValueDate: null,
   });
   const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan')!;
-  actions.addPlanLog(plan.id, { date: '2026-02-01', amount: 2_000, note: '' }, { recordTransaction: true });
-  actions.addLoan({
-    name: 'Round trip loan', principal: 50_000, ratePct: 8, tenureMonths: 12,
+  actions.addInvestmentEntry(plan.id, { date: '2026-02-01', amount: 2_000, note: '', kind: 'Deposit' });
+  actions.addLiability({
+  kind: 'recurring', type: 'Other', name: 'Round trip loan', principal: 50_000, ratePct: 8, tenureMonths: 12,
     emi: null, startDate: '2026-01-01',
   });
-  const loan = store.getState().data.loans[0]!;
-  actions.addLoanPayment(loan.id, {
+  const loan = store.getState().data.liabilities[0]!;
+  actions.addLiabilityPayment(loan.id, {
     date: '2026-02-01', amount: 4_350, kind: 'EMI', note: '',
-  }, { recordTransaction: true });
-  actions.addEfEntry(
-    { date: '2026-02-02', amount: 3_000, note: 'Funding' },
-    { recordTransaction: true },
-  );
+  });
+  actions.addEfEntry({ date: '2026-02-02', amount: 3_000, note: 'Funding' });
   actions.addGoal({ name: 'Travel', target: 30_000, saved: 2_000, year: 2028 });
   actions.addHolding({ name: 'Round trip FD', type: 'Fixed deposit', invested: 10_000, value: 10_200 });
   const original = store.getState().data;

@@ -11,17 +11,17 @@ const tabIcons = {
   index: 'home',
   transactions: 'repeat',
   goals: 'target',
-  invest: 'pie-chart',
-  more: 'grid',
+  budget: 'pie-chart',
 } as const;
 
 const tabLabels = {
   index: 'Home',
-  transactions: 'Txns',
+  transactions: 'Transactions',
   goals: 'Goals',
-  invest: 'Invest',
-  more: 'More',
+  budget: 'Budget',
 } as const;
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -34,9 +34,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.text3,
         tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingTop: 8,
-          paddingBottom: Math.max(7, insets.bottom),
+          height: 76 + insets.bottom,
+          paddingTop: Math.min(20, insets.bottom),
+          paddingBottom: Math.max(10, insets.bottom),
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -47,20 +47,20 @@ export default function TabsLayout() {
           return (
             <View style={styles.tabContent}>
               <Feather name={name} size={size} color={color} />
-              <AppText style={[typography.navLabel, { color }]}>{label}</AppText>
+              <AppText numberOfLines={1} style={[typography.navLabel, styles.tabLabel, { color }]}>{label}</AppText>
             </View>
           );
         },
       })}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="transactions" options={{ title: 'Txns' }} />
+      <Tabs.Screen name="transactions" options={{ title: 'Transactions' }} />
       <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
-      <Tabs.Screen name="invest" options={{ title: 'Invest' }} />
-      <Tabs.Screen name="more" options={{ title: 'More' }} />
+      <Tabs.Screen name="budget" options={{ title: 'Budget' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 60, marginTop: 10 },
+  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, minHeight: 44 },
+  tabLabel: { flexShrink: 1, textAlign: 'center' },
 });

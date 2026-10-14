@@ -50,6 +50,17 @@ export function formatINRShort(amount: number): string {
   return formatINR(amount);
 }
 
+export function formatINRCompact(amount: number): string {
+  const absolute = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (absolute < 1_000) return formatINR(amount);
+  const kilo = Number((absolute / 1_000).toFixed(2));
+  if (kilo < 100) return `${sign}₹${kilo.toFixed(2)} K`;
+  const lakh = Number((absolute / 100_000).toFixed(2));
+  if (lakh < 100) return `${sign}₹${lakh.toFixed(2)} L`;
+  return `${sign}₹${(absolute / 10_000_000).toFixed(2)} Cr`;
+}
+
 export function formatDate(date: ISODate): string {
   const [year, month, day] = date.split('-').map(Number);
   return `${day} ${shortMonthNames[(month ?? 1) - 1]} ${year}`;

@@ -9,53 +9,76 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RecoveryScreen } from '../src/components/RecoveryScreen';
 import { LockGate } from '../src/components/LockGate';
+import { ActionToastHost } from '../src/components/ActionToastHost';
+import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
+import { todayISO } from '../src/lib/clock';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 void SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
-  const { colors, isDark } = useTheme();
+  const { colors, statusBar } = useTheme();
   const status = useAppStore((state) => state.status);
   const recoveryReason = useAppStore((state) => state.recoveryReason);
+  const onboarded = useAppStore((state) => state.data.settings.onboarded);
+  if (status === 'loading') return null;
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      {status === 'ready' ? <StorageErrorBanner /> : null}
+      <StatusBar style={statusBar} />
       {status === 'recovery' ? (
         <RecoveryScreen reason={recoveryReason ?? 'corrupt'} />
-      ) : status === 'loading' ? null : (
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="loans" />
-          <Stack.Screen name="emergency-fund" />
-          <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="name-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="plan-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="plan-log-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="loan-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="loan-payment-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="holding-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="plan-logs" />
-          <Stack.Screen name="loan-payments" />
-          <Stack.Screen name="backup" />
-          <Stack.Screen name="security" />
-          <Stack.Screen name="erase-data" />
-        </Stack>
+      ) : (
+        <>
+          <StorageErrorBanner />
+          <LockGate>
+            {onboarded ? (
+              <>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.bg },
+                }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="assets" />
+                <Stack.Screen name="liabilities" />
+                <Stack.Screen name="budget-templates" />
+                <Stack.Screen name="budget-history" />
+                <Stack.Screen name="emergency-fund" />
+                <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="link-missing" />
+                <Stack.Screen name="profile-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="theme" />
+                <Stack.Screen name="investment-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="investment-entry-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-month-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-template-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="investment-entries" />
+                <Stack.Screen name="liability-payments" />
+                <Stack.Screen name="backup" />
+                <Stack.Screen name="security" />
+                <Stack.Screen name="erase-data" />
+                <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
+              </Stack>
+              <ActionToastHost />
+              </>
+            ) : <OnboardingScreen />}
+          </LockGate>
+        </>
       )}
     </View>
   );
@@ -71,6 +94,15 @@ export default function RootLayout() {
   const hydrated = useAppStore((state) => state.hydrated);
 
   useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const today = todayISO();
+      useAppStore.getState().actions.ensureMonthBudget(today.slice(0, 7), today);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
     if ((loaded || error) && hydrated) {
       void SplashScreen.hideAsync();
     }
@@ -83,9 +115,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <SecurityProvider>
-          <LockGate>
-            <AppContent />
-          </LockGate>
+          <AppContent />
         </SecurityProvider>
       </ThemeProvider>
     </SafeAreaProvider>

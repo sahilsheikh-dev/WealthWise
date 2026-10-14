@@ -1,9 +1,11 @@
-import type { AppData, HoldingType, Transaction } from './types';
+import { BUDGET_CATEGORIES } from './schemas';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
+import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
 
 export class LinkedTransactionError extends Error {
-  constructor(message = 'This transaction is linked to a plan or loan and must be changed there.') {
+  constructor(message = 'This transaction is linked to a holding, liability, or emergency fund entry and must be changed there.') {
     super(message);
     this.name = 'LinkedTransactionError';
   }
@@ -21,18 +23,32 @@ export type DescribedSource = {
   params: Record<string, string>;
 };
 
+function holdingEntries(holding: AppData['holdings'][number]): InvestmentEntry[] {
+  return holding.logs;
+}
+
 export function describeSource(data: AppData, source: TransactionSource): DescribedSource | null {
-  if (source.kind === 'plan-log') {
-    const plan = data.holdings.find((holding) => holding.kind === 'plan' && holding.id === source.parentId);
-    return plan?.kind === 'plan' && plan.logs.some((entry) => entry.id === source.entryId)
-      ? { label: plan.name, route: '/plan-logs', params: { id: plan.id } }
+  if (source.kind === 'holding-entry') {
+    const holding = data.holdings.find((item) => item.id === source.parentId);
+    return holding && holdingEntries(holding).some((entry) => entry.id === source.entryId)
+      ? { label: holding.name, route: '/investment-entries', params: { id: holding.id } }
       : null;
   }
-  if (source.kind === 'loan-payment') {
-    const loan = data.loans.find((entry) => entry.id === source.parentId);
-    return loan?.payments.some((entry) => entry.id === source.entryId)
-      ? { label: loan.name, route: '/loan-payments', params: { id: loan.id } }
+  if (source.kind === 'liability-payment') {
+    const liability = data.liabilities.find((entry) => entry.id === source.parentId);
+    return liability?.payments.some((entry) => entry.id === source.entryId)
+      ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } }
       : null;
+  }
+  if (source.kind === 'policy-payment') {
+    const policy = data.policies.find((entry) => entry.id === source.parentId);
+    return policy?.payments.some((entry) => entry.id === source.entryId)
+      ? { label: policy.name, route: '/policy-payments', params: { id: policy.id } }
+      : null;
+  }
+  if (source.kind === 'liability-origin') {
+    const liability = data.liabilities.find((entry) => entry.id === source.parentId && entry.id === source.entryId);
+    return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
   }
   const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
   return goal && data.efEntries.some((entry) => entry.id === source.entryId)
@@ -74,17 +90,18 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     issues.push({ code, message, path });
   };
 
+  const allHoldingEntries = data.holdings.flatMap((holding) => holdingEntries(holding));
   const collections: { name: string; ids: string[] }[] = [
     { name: 'transactions', ids: data.transactions.map(({ id }) => id) },
     { name: 'goals', ids: data.goals.map(({ id }) => id) },
     { name: 'holdings', ids: data.holdings.map(({ id }) => id) },
-    { name: 'loans', ids: data.loans.map(({ id }) => id) },
+    { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
+    { name: 'policies', ids: data.policies.map(({ id }) => id) },
     { name: 'efEntries', ids: data.efEntries.map(({ id }) => id) },
-    {
-      name: 'planLogs',
-      ids: data.holdings.flatMap((holding) => holding.kind === 'plan' ? holding.logs.map(({ id }) => id) : []),
-    },
-    { name: 'loanPayments', ids: data.loans.flatMap((loan) => loan.payments.map(({ id }) => id)) },
+    { name: 'efCustomBuckets', ids: data.efCustomBuckets.map(({ id }) => id) },
+    { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
+    { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
+    { name: 'policyPayments', ids: data.policies.flatMap((item) => item.payments.map(({ id }) => id)) },
   ];
   for (const collection of collections) {
     const seen = new Set<string>();
@@ -98,45 +115,55 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   for (const [index, transaction] of data.transactions.entries()) {
     const source = transaction.source;
     if (!source) continue;
-    const key = source.entryId;
-    const rows = linked.get(key) ?? [];
+    const rows = linked.get(source.entryId) ?? [];
     rows.push(transaction);
-    linked.set(key, rows);
+    linked.set(source.entryId, rows);
     if (rows.length > 1) {
       add('duplicate-source', 'More than one transaction points at the same source entry.', ['transactions', index, 'source']);
     }
 
-    let valid = false;
-    let linkedEntry: { amount: number; date: string } | undefined;
+    let entry: { amount: number; date: string } | undefined;
     let expectedType: Transaction['type'] | undefined;
-    if (source.kind === 'plan-log') {
-      const plan = data.holdings.find((holding) => holding.id === source.parentId && holding.kind === 'plan');
-      const entry = plan?.kind === 'plan' ? plan.logs.find((item) => item.id === source.entryId) : undefined;
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
-      expectedType = 'invest';
-    } else if (source.kind === 'loan-payment') {
-      const loan = data.loans.find((entry) => entry.id === source.parentId);
-      const entry = loan?.payments.find((item) => item.id === source.entryId);
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
+    let expectedCategory: string | undefined;
+    let validLiabilityOrigin = true;
+    if (source.kind === 'holding-entry') {
+      const holding = data.holdings.find((item) => item.id === source.parentId);
+      entry = holding?.logs.find((item) => item.id === source.entryId);
+      if (entry) expectedType = holding?.logs.find((item) => item.id === source.entryId)?.kind === 'Withdrawal' ? 'income' : 'invest';
+    } else if (source.kind === 'liability-payment') {
+      const liability = data.liabilities.find((item) => item.id === source.parentId);
+      entry = liability?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
+    } else if (source.kind === 'policy-payment') {
+      const policy = data.policies.find((item) => item.id === source.parentId);
+      entry = policy?.payments.find((item) => item.id === source.entryId);
+      expectedType = 'expense';
+      expectedCategory = 'Insurance';
+    } else if (source.kind === 'liability-origin') {
+      const liability = data.liabilities.find((item) =>
+        item.id === source.parentId && item.id === source.entryId);
+      entry = liability ? { amount: transaction.amount, date: transaction.date } : undefined;
+      expectedType = 'income';
+      validLiabilityOrigin = liability !== undefined &&
+        transaction.amount <= liability.principal &&
+        (transaction.category === 'Borrowed'
+          ? transaction.amount === liability.principal && transaction.date === liability.startDate
+          : transaction.category === 'Loan proceeds' && transaction.date >= liability.startDate);
     } else {
       const efGoal = data.goals.find((goal) => goal.auto === 'ef');
-      const entry = efGoal?.id === source.parentId
+      entry = efGoal?.id === source.parentId
         ? data.efEntries.find((item) => item.id === source.entryId)
         : undefined;
-      valid = Boolean(entry);
-      if (entry) linkedEntry = entry;
-      expectedType = 'invest';
+      if (entry) expectedType = entry.amount < 0 ? 'income' : 'invest';
     }
-    if (!valid) add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
-    else if (
-      linkedEntry && (
-        transaction.amount !== linkedEntry.amount ||
-        transaction.date !== linkedEntry.date ||
-        transaction.type !== expectedType
-      )
+    if (!entry) {
+      add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
+    } else if (
+      transaction.amount !== Math.abs(entry.amount) ||
+      transaction.date !== entry.date ||
+      transaction.type !== expectedType ||
+      (expectedCategory !== undefined && transaction.category !== expectedCategory) ||
+      !validLiabilityOrigin
     ) {
       add('linked-drift', 'Linked transaction fields differ from the source entry.', ['transactions', index]);
     }
@@ -146,19 +173,138 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   if (efGoals.length !== 1) {
     add('emergency-goal-count', `Expected exactly one emergency fund goal, found ${efGoals.length}.`, ['goals']);
   }
-
-  for (const holding of data.holdings) {
-    if (holding.kind !== 'plan') continue;
-    for (const [index, log] of holding.logs.entries()) {
-      const count = linked.get(log.id)?.length ?? 0;
-      if (count > 1) add('duplicate-linked-entry', 'Plan log has more than one linked transaction.', ['holdings', holding.id, 'logs', index]);
+  if (data.efCustomBuckets.length > 8) {
+    add('too-many-ef-custom-buckets', 'Emergency fund supports up to 8 custom options.', ['efCustomBuckets']);
+  }
+  const efBucketIds = new Set<string>([...EF_BUCKETS, ...data.efCustomBuckets.map(({ id }) => id)]);
+  const efBucketNames = new Set(EF_BUCKETS.map((id) => EF_BUCKET_META[id].label.trim().toLowerCase()));
+  for (const [index, bucket] of data.efCustomBuckets.entries()) {
+    const name = bucket.name.trim();
+    const normalizedName = name.toLowerCase();
+    if (name.length < 1 || name.length > 24 || name !== bucket.name) {
+      add('invalid-ef-bucket-name', 'Custom emergency fund option names must be 1 to 24 characters.', ['efCustomBuckets', index, 'name']);
+    }
+    if (efBucketNames.has(normalizedName)) {
+      add('duplicate-ef-bucket-name', 'Custom emergency fund option names must be unique and differ from fixed options.', ['efCustomBuckets', index, 'name']);
+    }
+    if (EF_BUCKETS.some((fixedId) => fixedId === bucket.id)) {
+      add('duplicate-ef-bucket-id', 'Custom emergency fund option IDs must differ from fixed options.', ['efCustomBuckets', index, 'id']);
+    }
+    efBucketNames.add(normalizedName);
+  }
+  if (data.efAllocation) {
+    for (const bucketId of Object.keys(data.efAllocation)) {
+      if (!efBucketIds.has(bucketId)) {
+        add('missing-ef-allocation-bucket', 'Emergency fund allocation references an unknown option.', ['efAllocation', bucketId]);
+      }
     }
   }
-  for (const loan of data.loans) {
-    for (const [index, payment] of loan.payments.entries()) {
-      const count = linked.get(payment.id)?.length ?? 0;
-      if (count > 1) add('duplicate-linked-entry', 'Loan payment has more than one linked transaction.', ['loans', loan.id, 'payments', index]);
+  for (const [bucketId, holdingIds] of Object.entries(data.efBucketLinks)) {
+    if (!efBucketIds.has(bucketId)) {
+      add('missing-ef-bucket-link-target', 'Emergency fund investment links reference an unknown option.', ['efBucketLinks', bucketId]);
     }
+    if (holdingIds.length > 10) {
+      add('too-many-ef-bucket-links', 'Link up to 10 investments per emergency fund option.', ['efBucketLinks', bucketId]);
+    }
+    const seenHoldingIds = new Set<string>();
+    holdingIds.forEach((holdingId, index) => {
+      if (!data.holdings.some((holding) => holding.id === holdingId)) {
+        add('missing-ef-linked-holding', 'Emergency fund link does not point at an existing holding.', ['efBucketLinks', bucketId, index]);
+      }
+      if (seenHoldingIds.has(holdingId)) {
+        add('duplicate-ef-linked-holding', 'An investment can only be linked once to an option.', ['efBucketLinks', bucketId, index]);
+      }
+      seenHoldingIds.add(holdingId);
+    });
+  }
+  for (const holding of data.holdings) {
+    for (const [index, entry] of holding.logs.entries()) {
+      const count = linked.get(entry.id)?.length ?? 0;
+      if (count > 1) {
+        add('duplicate-linked-entry', 'Holding entry has more than one linked transaction.', ['holdings', holding.id, 'logs', index]);
+      }
+    }
+  }
+  for (const liability of data.liabilities) {
+    if (liability.kind === 'recurring' && liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
+      add('settlement-before-start', 'Settlement cannot predate the liability start date.', ['liabilities', liability.id, 'settlement', 'asOf']);
+    }
+    for (const [index, payment] of liability.payments.entries()) {
+      const count = linked.get(payment.id)?.length ?? 0;
+      if (count > 1) {
+        add('duplicate-linked-entry', 'Liability payment has more than one linked transaction.', ['liabilities', liability.id, 'payments', index]);
+      }
+    }
+  }
+  const savingsPolicies = new Set(data.policies
+    .filter((policy) => policy.kind === 'life-savings' || policy.kind === 'ulip')
+    .map((policy) => policy.id));
+  const allocatedShares = new Map<string, number>();
+  for (const [goalIndex, goal] of data.goals.entries()) {
+    const seen = new Set<string>();
+    for (const [linkIndex, link] of goal.links.entries()) {
+      const exists = data.holdings.some((holding) => holding.id === link.instrumentId)
+        || savingsPolicies.has(link.instrumentId);
+      if (!exists) add('missing-goal-link-target', 'Goal link does not point at an eligible asset.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
+      if (seen.has(link.instrumentId)) {
+        add('duplicate-goal-link', 'A goal cannot link the same asset more than once.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
+      }
+      seen.add(link.instrumentId);
+      const total = (allocatedShares.get(link.instrumentId) ?? 0) + link.share;
+      allocatedShares.set(link.instrumentId, total);
+      if (total > 100) add('goal-link-overallocated', 'Shares across goals cannot exceed 100% of an asset.', ['goals', goalIndex, 'links', linkIndex, 'share']);
+    }
+  }
+  if (data.budget) {
+    const seen = new Set<string>();
+    const allowed = new Set<string>(BUDGET_CATEGORIES);
+    for (const [index, line] of data.budget.lines.entries()) {
+      if (!allowed.has(line.category)) add('invalid-budget-category', 'Budget category is not allowed.', ['budget', 'lines', index, 'category']);
+      if (seen.has(line.category)) add('duplicate-budget-category', 'Budget categories must be unique.', ['budget', 'lines', index, 'category']);
+      seen.add(line.category);
+    }
+  }
+  const budgetTemplateIds = new Set((data.budgetTemplates ?? []).map(({ id }) => id));
+  if (data.defaultBudgetTemplateId && !budgetTemplateIds.has(data.defaultBudgetTemplateId)) {
+    add('missing-default-budget-template', 'Default budget template does not exist.', ['defaultBudgetTemplateId']);
+  }
+  for (const [templateIndex, template] of (data.budgetTemplates ?? []).entries()) {
+    const seen = new Set<string>();
+    for (const [lineIndex, line] of template.lines.entries()) {
+      if (!allowedBudgetCategory(line.category)) {
+        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
+      }
+      if (seen.has(line.category)) {
+        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
+      }
+      seen.add(line.category);
+    }
+  }
+  for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
+    if (budget.templateId !== null && !budgetTemplateIds.has(budget.templateId)) {
+      add('missing-budget-template', 'Month budget template does not exist.', ['monthBudgets', monthIndex, 'templateId']);
+    }
+    const seen = new Set<string>();
+    for (const [lineIndex, line] of budget.lines.entries()) {
+      if (!allowedBudgetCategory(line.category)) {
+        add('invalid-budget-category', 'Budget category is not allowed.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
+      }
+      if (seen.has(line.category)) {
+        add('duplicate-budget-category', 'Budget categories must be unique.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
+      }
+      seen.add(line.category);
+    }
+  }
+  for (const policy of data.policies) {
+    for (const [index, payment] of policy.payments.entries()) {
+      const count = linked.get(payment.id)?.length ?? 0;
+      if (count > 1) add('duplicate-linked-entry', 'Policy payment has more than one linked transaction.', ['policies', policy.id, 'payments', index]);
+    }
+
   }
   return issues;
+}
+
+function allowedBudgetCategory(category: string): boolean {
+  return (BUDGET_CATEGORIES as readonly string[]).includes(category);
 }

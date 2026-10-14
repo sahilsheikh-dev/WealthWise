@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
     'src/domain/**/*.ts',
     '!src/domain/types.ts',
@@ -10,6 +11,13 @@ module.exports = {
     'src/lib/lockPolicy.ts',
     'src/lib/securitySettings.ts',
     'src/lib/authenticate.ts',
+    'src/lib/savingsLine.ts',
+    'src/lib/appMenu.ts',
+    'src/lib/format.ts',
+    'src/lib/friendlyError.ts',
+    'src/lib/greeting.ts',
+    'src/lib/storageGuard.ts',
+    'src/lib/swipe.ts',
   ],
   coverageThreshold: {
     'src/domain/**/*.ts': {
@@ -23,5 +31,12 @@ module.exports = {
     'src/lib/lockPolicy.ts': { lines: 90, branches: 90 },
     'src/lib/securitySettings.ts': { lines: 90, branches: 90 },
     'src/lib/authenticate.ts': { lines: 90, branches: 90 },
+    'src/lib/savingsLine.ts': { lines: 90, branches: 90 },
+    'src/lib/appMenu.ts': { lines: 90, branches: 90 },
+    'src/lib/format.ts': { lines: 90, branches: 90 },
+    'src/lib/friendlyError.ts': { lines: 90, branches: 90 },
+    'src/lib/greeting.ts': { lines: 90, branches: 90 },
+    'src/lib/storageGuard.ts': { lines: 90, branches: 90 },
+    'src/lib/swipe.ts': { lines: 90, branches: 90 },
   },
 };

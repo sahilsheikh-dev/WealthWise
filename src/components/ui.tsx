@@ -87,29 +87,6 @@ export function Screen({
   );
 }
 
-export function ScreenHeader({
-  title,
-  right,
-  subtitle,
-}: {
-  title: string;
-  right?: ReactNode;
-  subtitle?: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerTitle}>
-        <AppText style={typography.h1} numberOfLines={2}>
-          {title}
-        </AppText>
-        {subtitle ? <AppText style={[styles.subtitle, { color: colors.text3 }]}>{subtitle}</AppText> : null}
-      </View>
-      {right ? <View style={styles.headerRight}>{right}</View> : null}
-    </View>
-  );
-}
-
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
   const { colors } = useTheme();
   return (
@@ -123,18 +100,48 @@ export function StatPill({
   label,
   value,
   tone = 'primary',
+  onPress,
+  accessibilityHint,
+  accessibilityLabel,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: Tone;
+  onPress?: () => void;
+  accessibilityHint?: string;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
+  const spokenLabel = accessibilityLabel ?? `${label}${typeof value === 'string' ? `, ${value}` : ''}`;
+  const content = (
+    <>
+      <View style={styles.statPillText}>
+        <AppText style={[typography.label, styles.statLabel, { color: colors.text3 }]}>{label}</AppText>
+        <AppText style={[styles.statValue, { color: toneColor(colors, tone) }]} numberOfLines={2}>
+          {value}
+        </AppText>
+      </View>
+      {onPress ? <Feather name="chevron-right" size={16} color={colors.text3} /> : null}
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={spokenLabel}
+        accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
+        onPress={onPress}
+        style={[styles.statPill, styles.statPillPressable, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+        {content}
+      </Pressable>
+    );
+  }
   return (
-    <View style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-      <AppText style={[typography.label, styles.statLabel, { color: colors.text3 }]}>{label}</AppText>
-      <AppText style={[styles.statValue, { color: toneColor(colors, tone) }]} numberOfLines={2}>
-        {value}
-      </AppText>
+    <View
+      accessible
+      accessibilityLabel={spokenLabel}
+      style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+      {content}
     </View>
   );
 }
@@ -204,6 +211,15 @@ export function ChipRow({ children }: PropsWithChildren) {
   );
 }
 
+export function StatusBadge({ label, tone }: { label: string; tone: Tone }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statusBadge, { backgroundColor: toneBackground(colors, tone) }]}>
+      <AppText weight="semibold" style={[typography.label, { color: toneColor(colors, tone) }]}>{label}</AppText>
+    </View>
+  );
+}
+
 export function ListItem({
   title,
   subtitle,
@@ -212,16 +228,19 @@ export function ListItem({
   tone = 'neutral',
   icon,
   onPress,
+  accessibilityLabel,
 }: {
   title: string;
   subtitle?: string;
-  amount?: string;
-  amountSub?: string;
+  amount?: ReactNode;
+  amountSub?: ReactNode;
   tone?: Tone;
   icon?: keyof typeof Feather.glyphMap;
   onPress?: () => void;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
+  const readableAmount = typeof amount === 'string' ? amount : '';
   const contents = (
     <>
       {icon ? (
@@ -235,7 +254,14 @@ export function ListItem({
       </View>
       {amount || amountSub ? (
         <View style={styles.amountColumn}>
-          {amount ? <AppText weight="bold" style={[typography.amount, { color: toneColor(colors, tone) }]}>{amount}</AppText> : null}
+          {amount ? (
+            <AppText
+              accessibilityLabel={accessibilityLabel ?? (readableAmount || undefined)}
+              weight="bold"
+              style={[typography.amount, { color: toneColor(colors, tone) }]}>
+              {amount}
+            </AppText>
+          ) : null}
           {amountSub ? <AppText style={[typography.meta, { color: colors.text3 }, styles.rightText]}>{amountSub}</AppText> : null}
         </View>
       ) : null}
@@ -246,7 +272,7 @@ export function ListItem({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}${amount ? `, ${amount}` : ''}`}
+      accessibilityLabel={accessibilityLabel ?? `${title}${subtitle ? `, ${subtitle}` : ''}${readableAmount ? `, ${readableAmount}` : ''}`}
       onPress={onPress}
       style={[styles.listItem, { borderBottomColor: colors.border }]}>
       {contents}
@@ -279,7 +305,7 @@ export function Button({
   disabled?: boolean;
   icon?: keyof typeof Feather.glyphMap;
   style?: StyleProp<ViewStyle>;
-} & Pick<PressableProps, 'accessibilityLabel'>) {
+} & Pick<PressableProps, 'accessibilityHint' | 'accessibilityLabel'>) {
   const { colors } = useTheme();
   const backgroundColor = variant === 'primary' ? colors.primaryDim : colors.surface2;
   const foregroundColor = variant === 'primary' ? colors.primary : variant === 'danger-text' ? colors.err : colors.text2;
@@ -300,19 +326,6 @@ export function Button({
       ]}>
       {icon ? <Feather name={icon} size={14} color={foregroundColor} /> : null}
       <AppText weight="semibold" style={[typography.chip, { color: foregroundColor }]}>{label}</AppText>
-    </Pressable>
-  );
-}
-
-export function Fab({ label, onPress }: { label: string; onPress?: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={[styles.fab, { backgroundColor: colors.primary }]}>
-      <Feather name="plus" size={22} color={colors.surface} />
     </Pressable>
   );
 }
@@ -342,6 +355,7 @@ export type ActionItem = {
   onPress?: () => void;
   variant?: 'primary' | 'soft' | 'danger-text';
   disabled?: boolean;
+  icon?: keyof typeof Feather.glyphMap;
 };
 
 export function ActionRow({ actions }: { actions: ActionItem[] }) {
@@ -355,6 +369,7 @@ export function ActionRow({ actions }: { actions: ActionItem[] }) {
           onPress={action.onPress}
           variant={action.variant ?? 'soft'}
           disabled={action.disabled}
+          icon={action.icon}
           style={styles.actionButton}
         />
       ))}
@@ -390,15 +405,14 @@ export function SearchField({
   );
 }
 
-export function DetailTabBar() {
+export function DetailTabBar({ active = 'Home' }: { active?: 'Home' | 'none' }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const tabs = [
-    { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: false },
-    { label: 'Txns', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
+    { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
+    { label: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
     { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
-    { label: 'Invest', route: '/(tabs)/invest' as const, icon: 'pie-chart' as const, active: false },
-    { label: 'More', route: '/(tabs)/more' as const, icon: 'grid' as const, active: true },
+    { label: 'Budget', route: '/(tabs)/budget' as const, icon: 'pie-chart' as const, active: false },
   ] as const;
   return (
     <View style={[styles.detailTabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -421,19 +435,18 @@ export function DetailTabBar() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   scrollContent: { paddingBottom: 26 },
-  header: { minHeight: 56, paddingHorizontal: 20, paddingTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  headerTitle: { flex: 1, minWidth: 0 },
-  headerRight: { flexShrink: 0, alignItems: 'flex-end' },
-  subtitle: { ...typography.meta, marginTop: 3 },
   card: { marginHorizontal: 20, marginTop: 14, padding: 18, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.card },
   statRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
   statPill: { flex: 1, minWidth: 0, paddingVertical: 9, paddingHorizontal: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.pill },
+  statPillPressable: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  statPillText: { flex: 1, minWidth: 0 },
   statLabel: { marginBottom: 4 },
   statValue: { fontFamily: 'Montserrat_700Bold', fontSize: 13, lineHeight: 18 },
   track: { height: 5, marginTop: 11, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3, minWidth: 2 },
   chip: { minHeight: 44, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   chipRow: { alignItems: 'center', gap: 6, paddingHorizontal: 20, marginTop: 10 },
+  statusBadge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   listItem: { minHeight: 60, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   listIcon: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   flexText: { flex: 1, minWidth: 0, gap: 3 },
@@ -444,7 +457,6 @@ const styles = StyleSheet.create({
   button: { minHeight: 44, paddingHorizontal: 11, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.76 },
-  fab: { position: 'absolute', right: 20, bottom: 24, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', elevation: 5 },
   warning: { marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   warningText: { flex: 1, lineHeight: 17 },
   empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 6 },
