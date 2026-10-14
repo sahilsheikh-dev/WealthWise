@@ -61,7 +61,8 @@ are called out as such.
 | FX-T2 | Done | `a3423ec`; `availableBalance` edge cases for carry, current-day boundary, future exclusion, negative/no-history and past close | 2026-10-13 |
 | FX-T3 | Done | `c1df77d`; Festival, Donation and Gifts are exercised through create/edit forms, routed filters and Budget links | 2026-10-13 |
 | FX-T4 | Done | `88d5190`; compact card capped at 64pt; two collapsed figures, five expanded rows, review routing/dismissal, dot, and negative tone tests | 2026-10-13 |
-| FX-S1 | Done | Verified filter/sort row layout and swipe suppression; commit hash to be recorded in the next ledger update because it cannot be known before this item commit | 2026-10-13 |
+| FX-S1 | Done | `0df1952`; filter/sort row layout, strict SortChip placement scan, and swipe suppression verified | 2026-10-13 |
+| FX-S2 | Done | Budget history sort registry, both comparator directions, month-id tie breaks, persistence/fallback, and SortChip labels verified; commit hash to be recorded in the next ledger update | 2026-10-13 |
 | FX-E1 | Done | `f805481`; emergency fund balance, targets, allocation rows, passbook and Home/Goals cards use explicit tiers and exact accessible labels; large-amount matrix passes | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
@@ -70,11 +71,12 @@ are called out as such.
 
 ### Resume point
 
-FX-S1 is the latest verified Round 4 item; FX-S2 is next. Transactions filters
+FX-S2 is the latest verified Round 4 item; FX-T5 is next. Transactions filters
 scroll independently while the sort chip stays alongside them, and chip-origin
-swipes do not change the month. The strict sort-placement scan continues to
-cover every other route. Simulated font-scale 2.0 passed; physical device layout
-is not verified. Full Round 4 gates have not yet been run.
+swipes do not change the month. Budget history now sorts on all registered
+metrics in either direction, keeping null savings rates last. Simulated
+font-scale 2.0 passed for the Transactions row; physical device layout is not
+verified. Full Round 4 gates have not yet been run.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -297,7 +299,7 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
 | P15-FIX-R3 | 2026-10-13 | Truthful full gate, FX-BASE audit, and all remaining FX items | Prompt saved at `docs/prompts/p15-fix-round-3.md`; FX-BASE `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 `88d5190`; FX-B1 `b8bc4a1`; FX-B2 `5e2f78f`; FX-U3 `b205a84`; FX-U4 `862af8a`; FX-U2 `6627d03`; FX-U1/FX-E1 `f805481` | 604 tests/63 suites and every gate pass twice; full coverage exceeds floors. Chose the formal row cutoff of ₹1 crore over the conflicting example. Round 2's two removed visible messages were restored in FX-BASE. No assertions or thresholds were weakened. |
-| P15-FIX-R4 | 2026-10-13 | Transactions filter-row sort placement and Round 4 follow-up items | Prompt saved at `docs/prompts/p15-fix-round-4.md`; FX-S1 item commit hash to be added in next item ledger update | FX-S1 verified by focused Transactions, SectionHeaderRow AST scan, swipe-suppression and TypeScript checks. An initial broad Jest run exhausted Node heap after a failed assertion; targeted reruns passed after correcting the assertion. |
+| P15-FIX-R4 | 2026-10-13 | Transactions filter-row sort placement and Round 4 follow-up items | Prompt saved at `docs/prompts/p15-fix-round-4.md`; FX-S1 `0df1952`; FX-S2 item hash to be added in next item ledger update | FX-S1 verified by focused Transactions, SectionHeaderRow AST scan, swipe-suppression and TypeScript checks; an initial broad Jest run exhausted Node heap after a failed assertion, then targeted reruns passed. FX-S2 tests verified the entire history sort registry, both comparator directions, persistence/fallback and rendered option labels. Corrected the expected tie order for the `customized` comparator to reflect ascending month-id tie breaks. |
 
 ## 7. Change-request register
 
@@ -387,5 +389,6 @@ evidence for the fixes.
 | FX-T3 | Done | `src/domain/schemas.ts`, `src/mock/data.ts`, `app/(tabs)/transactions.tsx`, `app/(tabs)/budget.tsx` | `TransactionForm.test.tsx` — Festival/Donation/Gifts create and edit; `TransactionsScreen.test.tsx` — routed filter results; `RouteRenderSmoke.test.tsx` — Budget line navigates with each category filter |
 | FX-T4 | Done | `app/(tabs)/transactions.tsx` — collapsed balance card max height 64pt; obsolete review-banner styles removed | `src/components/__tests__/TransactionsScreen.test.tsx` — exactly two collapsed visible amounts, five expanded rows, review link/menu/dot/dismissal and negative danger tone |
 | FX-S1 | Done | `app/(tabs)/transactions.tsx`, `app/(tabs)/budget.tsx`, `app/(tabs)/goals.tsx`, `app/assets.tsx`, `app/budget-history.tsx`, `app/emergency-fund.tsx`, `app/investment-entries.tsx`, `app/liabilities.tsx`, `app/liability-payments.tsx`, `app/link-missing.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx` — filter/sort row layout, chips, styles at simulated font scale 2.0; existing filter/search/category/sort tests; `src/components/__tests__/RouteRenderSmoke.test.tsx` — chip-origin swipe suppression; `src/components/__tests__/SectionHeaderRow.test.tsx` — only the Transactions filter-row SortChip is exempt from SectionHeaderRow placement |
+| FX-S2 | Done | `src/lib/sorting.ts`, `app/budget-history.tsx` | `src/lib/__tests__/sorting.test.ts` — all Budget history comparators ascending/descending, null savings-rate last, month-id tie breaks, default month-first registry; `src/data/__tests__/metaStore.test.ts` — persistence and invalid-key fallback; `src/components/__tests__/RouteRenderSmoke.test.tsx` — rendered SortChip lists all ten keys |
 | FX-E1 | Done | `src/lib/amountDisplay.ts`, `src/components/AmountText.tsx`, `app/emergency-fund.tsx`, Home/Goals emergency cards and passbook | `src/components/__tests__/RouteRenderSmoke.test.tsx` — exact labels for large balance/baseline figures; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — three-month target behavior; `AmountText.test.tsx` — exact accessibility |
 | FX-E2 | Done | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/components/__tests__/EfAllocationForm.test.tsx` — each remaining control's label, hint and stored result plus orphaned-string scan; `src/data/__tests__/createAppStore.test.ts` — reset persisted state and one write |

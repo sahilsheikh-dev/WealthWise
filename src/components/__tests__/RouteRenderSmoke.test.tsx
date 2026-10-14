@@ -682,6 +682,35 @@ describe('route render smoke audit', () => {
     routeParams.mockReturnValue({});
   });
 
+  it('lists every Budget history sort key in the SortChip menu', () => {
+    const renderer = renderScreen(React.createElement(BudgetHistoryScreen));
+    const sortButton = renderer.root.find((node) =>
+      typeof node.props.accessibilityLabel === 'string'
+      && node.props.accessibilityLabel.startsWith('Sort:'),
+    );
+    act(() => sortButton.props.onPress());
+
+    const menu = renderer.root.find((node) => String(node.type) === 'modal' && node.props.visible === true);
+    const options = menu.findAll((node) => node.props.accessibilityState?.selected !== undefined)
+      .map((node) => node.findAll((child) => String(child.type) === 'text')
+        .map((text) => text.children.join(''))
+        .join(''));
+    for (const label of [
+      'Month',
+      'Planned spend',
+      'Actual spend',
+      'Planned saving',
+      'Actual invested',
+      'Savings rate',
+      'Closing balance',
+      'Outstanding amount',
+      'Template name',
+      'Customized',
+    ]) {
+      expect(options.some((option) => option.includes(label))).toBe(true);
+    }
+  });
+
   it('changes months with horizontal swipes and leaves chip-origin swipes alone', () => {
     const renderer = renderScreen(React.createElement(TransactionsScreen));
     const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
