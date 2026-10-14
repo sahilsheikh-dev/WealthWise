@@ -407,7 +407,7 @@ export function SearchField({
 
 const bottomTabs = [
   { key: 'index', label: 'Home', accessibleLabel: 'Home', route: '/(tabs)' as const, icon: 'home' as const },
-  { key: 'transactions', label: 'Transactions', accessibleLabel: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const },
+  { key: 'transactions', label: 'Txns', accessibleLabel: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const },
   { key: 'goals', label: 'Goals', accessibleLabel: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const },
   { key: 'budget', label: 'Budget', accessibleLabel: 'Budget', route: '/(tabs)/budget' as const, icon: 'pie-chart' as const },
 ] as const;
