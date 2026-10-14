@@ -16,10 +16,15 @@
 ## 1. How to use this file
 
 This is the permanent status, decision, evidence, and verification ledger for
-Wealth Wise. Prompts are not saved in this repository; the user keeps their
-prompt text. Every future prompt starts by reading this file and ends by
-updating the dashboard, prompt log, change-request register, and verification
-matrix with the prompt ID, purpose, and outcome, then committing the updates.
+Wealth Wise. Prompt text is not stored in the repo. Every prompt is logged in
+the Prompt log (ID, purpose, outcome, commits, agent mistakes). Verbatim
+texts of P15-FIX-R1 to R4 and earlier archived files are recoverable from git:
+`git show <RECOVERY>:docs/prompts/<file>`. For this ledger, RECOVERY is
+`5aeefb96e70df7c388e5eb39454285204adb5707`, the last commit containing the
+archive; current HEAD already removed the directory. Every future prompt
+starts by reading this file and ends by updating the dashboard, prompt log,
+change-request register, and verification matrix with the prompt ID, purpose,
+and outcome, then committing the updates.
 Use IDs `P<phase>-<part>` for phase prompts, `FX-<id>` for fixes, and `CR-<n>`
 for change requests. Never delete history: supersede an earlier entry with a
 dated note. When the repository and this ledger disagree, Git and current
@@ -90,15 +95,16 @@ are called out as such.
 | FX-E1 | Done | `f805481`; emergency fund balance, targets, allocation rows, passbook and Home/Goals cards use explicit tiers and exact accessible labels; large-amount matrix passes | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
+| CR-3 | Open | `profile-form.tsx` and `transaction-form.tsx`: validation summaries share the horizontal footer row with Save, so Save is not full width while the summary is shown | 2026-10-14 |
 | P15-SEED | Unknown | No seed-backup prompt or matching commit was found in the available exports or Git history | unknown |
-| P15-LEDGER | Done | Ledger consolidation, prompt archive removal, restored existing sort-header/Transactions-row acceptance, four progress-ledger assertions; `d11af45` | 2026-10-14 |
-| CR-2 | Closed | P15-LEDGER consolidates the available session exports into this file; unavailable seed inputs and reconstructed history are disclosed in Section 8 | 2026-10-14 |
+| P15-LEDGER | Done | This commit merges both session records and checkpoints, records recovery `5aeefb9`, verifies form labels/save widths, removes the prompt archive, and tests ledger invariants | 2026-10-14 |
+| CR-2 | Done | This ledger commit merges the session histories/checkpoints and closes the backfill; unavailable raw transcripts remain disclosed in Section 8 | 2026-10-14 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
 
 ### Resume point
 
-CH-1 is implemented as the sole schema v6 bump (`c831fe6`). Custom EF options support metadata-driven allocation/warnings, holding links, link integrity and holding-delete cleanup; saving the allocation plan persists the complete plan in one store write. The v5 migration adds only the two empty custom fields and safe storage archives the original v5 bytes once. `solveLoan` covers all recurring solve directions; received-funds defaults on for new liabilities and records origin inflows through one action. Both complete gate passes are green: 64 suites/656 tests, TypeScript, lint, Android/iOS exports and Expo Doctor. Per-directory coverage clears all floors. No real-device verification. FX-L1 `ef7c5b0` and FX-L2 `2bc35f0` are recorded. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category.
+CH-1 is implemented as the sole schema v6 bump (`c831fe6`). Custom EF options support metadata-driven allocation/warnings, holding links, link integrity and holding-delete cleanup; saving the allocation plan persists the complete plan in one store write. The v5 migration adds only the two empty custom fields and safe storage archives the original v5 bytes once. `solveLoan` covers all recurring solve directions; received-funds defaults on for new liabilities and records origin inflows through one action. Both complete gate passes are green: 64 suites/656 tests, TypeScript, lint, Android/iOS exports and Expo Doctor. Per-directory coverage clears all floors. No real-device verification. FX-L1 `ef7c5b0` and FX-L2 `2bc35f0` are recorded. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category. P15-LEDGER closes CR-2 in this commit; CR-3 remains open for the two Save-width cases in Section 8.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -267,6 +273,9 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 - EF allocations use fixed plus custom bucket IDs and largest-remainder
   rounding exact in paise. Links are explanatory and do not move money or
   change net worth.
+- Budget-history sorting covers month, planned/actual spend, planned saving,
+  actual invested, savings rate (null last), closing balance, outstanding
+  amount, template name, and customized; each direction uses ID tie-breaks.
 - Amounts use explicit visual tiers while accessibility labels preserve exact
   Indian-grouped values. The formal row cutoff is ₹1 crore; screen-reader
   output remains exact. `formatINRShort` retains its existing behavior.
@@ -286,6 +295,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 |---|---|
 | Phase 1 static-only/no-persistence boundary | Later phases added persistence, domain actions, forms, and routes. |
 | Five tabs including Invest and More | FX-B2 established Home, Txns, Goals, Budget. |
+| P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Txns, Goals, Budget rule. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
 | Schema v1, then v2, v3, v4, or v5 as current | Successive migrations; current schema is v6. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |
@@ -301,76 +311,79 @@ criterion.
 
 | Phase / prompt | Purpose and agent-reported delivery | Review findings / user corrections | Outcome; Git commits | Source quality |
 |---|---|---|---|---|
-| 1 | Expo/Router mobile foundation, theme/components, mock data and static screens; later checkpoint reported UI and bundling complete. | Visible user scope specified five tabs and no-op future actions; remainder of prompt and later corrections/review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 2 | Pure financial domain calculations/selectors with explicit dates, tests, mock seam, and screen wiring; later checkpoint reported done. | User corrections are unknown. Early checkpoint recorded a self-import, unnecessary extras, missing tests/config, and unwired screens; later resolution is reported but not independently evidenced. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 3 | Validated local persistence, Zustand/AsyncStorage, transaction CRUD/forms, recovery and settings. | User corrections/review are unknown; native force-quit persistence was not device-verified. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 4 | Plan/loan flows, linked transactions, schemas, atomic store actions and forms. | User rules included schema stability, injected dates/IDs and one store write. A checkpoint noted a linked-transaction patch awaiting revalidation; later report said phase completed. Exact review/corrections are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 5 | Goals, manual holdings, EF ledger/invariants, typed errors and UI. | Exact user corrections are unavailable; an intermediate checkpoint left coverage/browser/device checks outstanding. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 6 | Backup/import/undo, lock/privacy, erase-all, reminder and configuration. | No user review/correction record is preserved. Agent reported tests, typecheck, lint and platform exports; device/APK, biometric/privacy and several export/import UX checks remain unverified. | Done (user-reported, unverified); none identified. | Verbatim prompt archived in session export |
-| 7 | Schema v2; Loans→Liabilities, typed holding/liability entries, migration, source kinds and link integrity. | The visible initial request is truncated; historical corrections and review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 8 | Unified investment flows and manual holding ledger. | Original request details, tests, user corrections and review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 9 | Two-way instrument transaction linking, missing-link handling and retargeting. | Original request details, tests, user corrections and review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 10 | Investment/liability schedules, dues, entry/payment lists and virtualization. | Original request details, tests, user corrections and review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 11 | Transactions/navigation refinements, crash/error handling, headers and shared cards. | Original test/review evidence and corrections are unknown; later FX-BASE restored two user-visible messages after tests had been weakened. The later four-tab rule superseded the reported earlier tab arrangement. | Done (user-reported, unverified); follow-up `60b8c54`. | Reconstructed |
-| 12 | Schema v3 onboarding, salary/theme fields, palettes, contrast tests and branding. | Original request details, user corrections, review and gate evidence are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 13 | Income wording, EF minimum target, transaction/goal/menu refinements. | Repeated checkpoints exist; exact prompt sequence, user corrections and review are unknown. | Done (user-reported, unverified); none identified. | Reconstructed |
-| 14 | Parts A–G: UI, v4 EF allocation, storage guard, reminders, encrypted backup and polish. | User later judged the close-out report unreliable (wrong coverage arithmetic, skipped work and weakened tests) and required a re-audit; exact original omissions/corrections are unavailable. Audited in P15-A. | Done (user-reported, unverified); follow-up commits are listed under Phase 15. | Reconstructed |
-| 15 | A/A2 audit and migration/assertion repair; B/C UI and date clarity; D schema v5; E dues; G goal links; H cash flow; I budgets; J sorting. | User required trustworthy coverage/counts and restoration of assertions. Coverage/test-count reporting was corrected; assertions were restored. P15-F and K/L/M were held. | A `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7`; A2 `0322c9d`; B `fbeb1d7`; C `e155bcd`; D `394d338`; E `f28657c`; G `9399e23`; H `68d9cd4`; I `19afe88`; J `1e206ad`. | Reconstructed |
-| P15-FIX-R1 | Rebuilt ledger/baseline and began fixes. | Baseline had seven withdrawal-only render failures and lint warnings; later work was interrupted and left unverified. No assertion was weakened per report. | Part 0 `db967bf`, `6562de1`; unverified checkpoint `6771f37`. | Verbatim prompt archived |
-| P15-FIX-R2 | Recover interrupted work, repair baseline and inventory FX items. | FX-BASE initially committed; R3 found two visible messages had been replaced by weaker assertions and restored them. | WIP `6771f37`; initial FX-BASE `c0ba0da`; superseded by R3 repair. | Verbatim prompt archived |
-| P15-FIX-R3 | Audit FX-BASE and complete baseline FX items with truthful gates. | Restored messages and assertions; followed the formal ₹1 crore row cutoff over a conflicting example; no thresholds/assertions weakened. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481`. | Verbatim prompt archived |
-| P15-FIX-R4 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1 v5→v6. | Fixed route-render fixture, v6 defaults, market-linked label and test import issues without weakening assertions. Full gates were reported green twice; simulated layout is not device evidence. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748`. | Verbatim prompt archived |
+| 1 | Expo Router static mobile MVP, theme/components, mock data and screens. | Partial prompt specified five tabs and no-op future actions; remainder and review unknown. Checkpoint reports static routes/UI and Expo/browser checks. | Done (user-reported, unverified); no commit identified. | Reconstructed (partial visible prompt) |
+| 2 | Pure deterministic domain calculations, selectors, tests and screen wiring. | Early checkpoint found self-import, unnecessary summary extras, missing tests/config and unwired screens; later checkpoints report fixes/done, but exact correction record is absent. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 3 | Validated local persistence, Zustand/AsyncStorage, transaction CRUD/forms and settings. | Checkpoint reports schemas, recovery and 11 suites/76 tests; force-quit persistence was not device-verified. User review/corrections unknown. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 4 | Pure plan/loan actions, schemas, linked transactions, forms and routes. | Later checkpoint reports 12 suites/93 tests and browser checks; final linked-transaction validation edit awaited recheck at checkpoint. Exact user correction/review unavailable. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 5 | Goals, holdings, EF ledger/invariants, typed errors and UI. | Checkpoint reports implementation and 5 focused suites/50 tests; coverage/browser/device work still pending at that checkpoint. User review unavailable. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 6 | Recovery fixes, plain backup/import/undo, lock/privacy, erase, reminders/configuration. | Checkpoint reports 20 suites/132 tests, typecheck/lint/platform exports; requested full changed-source output was omitted. Device/APK, biometric, share/import UX and privacy checks remain unverified. | Done (user-reported, unverified); no commit identified. | Verbatim (session export only) |
+| P06-FIX-R1 | Visible date labels and full-width Save buttons across forms (2026-10-10). | Patch partially failed after `DateField` label support; not validated before export. Current repository was explicitly rechecked below, rather than trusting old checkpoint. | Held / unverified at export; now audited as CR-3. | Verbatim (session export only) |
+| 7 | Schema v2 migration; Loans→Liabilities and typed entries/source links. | Initial prompt truncated; history reports completion but exact code/test/review mapping and user corrections unknown. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 8 | Unified recurring/one-time investment flows and manual holding ledger. | Checkpoint records implementation; original tests, review, corrections and final counts unavailable. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 9 | Instrument transaction linking both directions, missing-link creation and retargeting. | Checkpoints document instrument transaction work; exact prompt, test map and user review unknown. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 10 | Schedules, upcoming dues, entries/payments lists and virtualization. | Checkpoint documents schedules and screens; exact acceptance/test mapping and user corrections unknown. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 11 | Transaction/navigation behavior, error boundaries and shared headers/cards. | Later R3 audit found two user-visible assertions weakened/removed in intermediate work and restored them. Three-tab direction was superseded by four tabs. | Done (user-reported, unverified); FX-BASE follow-up `60b8c54`. | Reconstructed |
+| 12 | Schema v3 onboarding, monthly salary/theme fields, palettes and branding. | Checkpoints report completion; exact version provenance, tests and user corrections unavailable. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 13 | Income wording, EF minimum target and transaction/goal/menu refinements. | Multiple checkpoints report work; exact prompt sequence, review, user corrections and final test map unknown. | Done (user-reported, unverified); no commit identified. | Reconstructed |
+| 14 | A–G close-out: UI, v4 EF allocation, storage guard, reminders, encrypted backup and polish. | Initial completion report was challenged by user for wrong coverage arithmetic, skipped work and weakened tests; P15-A re-audited. Exact omissions unknown. | Done (user-reported, unverified); P15 follow-up commits below. | Reconstructed |
+| 15 | Audit/fixes A/A2; B/C; schema v5 D; due engine E; G–J. | User required correct counts and restored assertions; P15-F/K/L/M held. P15-I count was corrected; CH/R4 mistakes and repairs recorded below. | A `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7`; A2 `0322c9d`; B `fbeb1d7`; C `e155bcd`; D `394d338`; E `f28657c`; G `9399e23`; H `68d9cd4`; I `19afe88`; J `1e206ad`. | Reconstructed |
+| P15-FIX-R1 | Rebuilt ledger/baseline and began fixes. | Baseline had seven withdrawal-only render failures; the work was interrupted and remained unverified. No assertion was weakened per report. | Part 0 `db967bf`, `6562de1`; checkpoint `6771f37`. | Verbatim in Git at `5aeefb9` |
+| P15-FIX-R2 | Recover interrupted work, repair baseline and inventory FX items. | R3 found two visible messages had been replaced by weaker assertions and restored them. | WIP `6771f37`; initial FX-BASE `c0ba0da`; superseded by R3 repair. | Verbatim in Git at `5aeefb9` |
+| P15-FIX-R3 | Audit FX-BASE and complete baseline FX items with truthful gates. | Restored messages/assertions; applied formal ₹1 crore cutoff over a conflicting example; no thresholds/assertions weakened. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481`. | Verbatim in Git at `5aeefb9` |
+| P15-FIX-R4 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1 v5→v6. | Fixed route-render v6 defaults, market-linked label/test import issues; no assertions weakened. Gates reported green twice; simulated layout is not device evidence. Export called date 2026-10-13; Git commit date is 2026-10-14. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748`. | Verbatim in Git at `5aeefb9` |
 | P15-SEED | Seed backup tool prompt/work. | No corresponding prompt, output, or commit was found in available Git history or export files; scope and outcome are unknown. | Unknown; none identified. | Unknown |
-| P15-LEDGER | Consolidate available session exports into this file, remove the prompt archive, and test ledger invariants. | Seed zip inputs were absent; prior session-state exports were used. Initial full suite exposed 26 failures across five suites from an existing UI refactor; restored required SortChip placement, Transactions scroller/sort sibling, `Txns` tab label, and missing `ChipRow` test mocks without weakening assertions. Final full gates pass. | `d11af45`. | Verbatim current request; not archived |
+| P15-LEDGER | Merge both exports and local checkpoints, audit form labels/save widths, remove prompt archive and test ledger invariants. | Current repository already contained the earlier P15-LEDGER removal; recovery commit found as `5aeefb9`. Current form audit found CR-3; no application code changed. | This commit. | Verbatim current request |
 
 ## 6. Prompt and session log
 
-No full prompt text is duplicated here. Historical dates are `unknown` unless
-verified by Git commit dates. For the archived fix prompts the exact text is
-recoverable from the first Git commit that added each file. “None identified”
-means no matching commit was found, not proof that no historical work occurred.
+Prompt text is not duplicated here. RECOVERY is the last Git commit with the
+prompt archive. The repository was already at `b92e145`, whose parent
+`d11af45` removed that archive; `5aeefb9` is the last commit containing it.
+Unknown dates/outcomes are not inferred. “Agent mistakes” records only
+evidence present in exports/checkpoints.
 
-| ID | Date | One-line purpose | Outcome | Commits (Git only) | Source quality / notes |
-|---|---|---|---|---|---|
-| P01 | unknown | Project setup, design system and static screens. | Done (user-reported, unverified). | none identified | Reconstructed from partial prompt/checkpoints. |
-| P02 | unknown | Pure domain logic and computed screens. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P03 | unknown | Validated local persistence and transaction forms. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P04 | unknown | Plan and loan flows with linked transactions. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P05 | unknown | Goals, holdings and Emergency Fund flows. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P06 | unknown | Review fixes, backup, lock/privacy and erase. | Done (user-reported, unverified); device/APK checks not evidenced. | none identified | Verbatim prompt in session export; raw transcript unavailable. |
-| P06-FIX-R1 | unknown | Date labels and full-width form save buttons. | Incomplete/unverified in available history. | none identified | Verbatim prompt in session export; raw transcript unavailable. |
-| P07 | unknown | Schema v2 and Liability migration. | Done (user-reported, unverified). | none identified | Reconstructed; opening prompt fragment is truncated. |
-| P08 | unknown | Unified investment ledger and manual holdings. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P09 | unknown | Instrument transaction linking/retargeting. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P10 | unknown | Schedules and virtualized lists. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P11 | unknown | Transactions and navigation refinements. | Done (user-reported, unverified); later FX-BASE audit restored visible messages/assertions. | none identified for original phase | Reconstructed. |
-| P12 | unknown | Schema v3, themes, onboarding and branding. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P13 | unknown | Income wording, EF minimum and UI refinements. | Done (user-reported, unverified). | none identified | Reconstructed. |
-| P14 | unknown | Parts A–G close-out and features. | User-reported done; later audit found report unreliable. | none identified for original phase | Reconstructed; exact skipped deliverables unknown. |
-| P15-A | 2026-10-11 | Audit Phase 14 and restore reliable gates. | Done; coverage/test follow-ups recorded. | `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7` | Reconstructed; source prompt absent. |
-| P15-A2 | 2026-10-12 | Migration/premigration and assertion audit. | Done; restored assertions and version chain. | `0322c9d` | Reconstructed. |
-| P15-B | 2026-10-12 | Phase 14 UI leftovers. | Done. | `fbeb1d7` | Reconstructed. |
-| P15-C | 2026-10-12 | SIP date clarity and goal-card behavior. | Done. | `e155bcd` | Reconstructed. |
-| P15-D | 2026-10-12 | Schema v5. | Done. | `394d338` | Reconstructed. |
-| P15-E | 2026-10-12 | Shared schedule/due engine. | Done. | `f28657c` | Reconstructed. |
-| P15-F | unknown | Insurance feature. | Held; no prompt/implementation evidence in the available exports. | none identified | Unknown prompt text. |
-| P15-G | 2026-10-12 | Goal asset links/projection. | Done. | `9399e23` | Reconstructed. |
-| P15-H | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | Reconstructed. |
-| P15-I | 2026-10-12 | Monthly budget tracker. | Done; earlier test-count misstatement was corrected. | `19afe88` | Reconstructed. |
-| P15-J | 2026-10-12 | Sorting infrastructure/integrations. | Done. | `1e206ad` | Reconstructed. |
-| P15-FIX-R1 | 2026-10-13 | Ledger/baseline and initial fix work. | Part 0 done; subsequent FX work left unverified/interrupted. | `db967bf`, `6562de1`, `6771f37` | Verbatim prompt archived. verbatim text: `git show db967bf:docs/prompts/p15-fix-round-1.md`. |
-| P15-FIX-R2 | 2026-10-13 | Recover work, repair baseline and inventory FX items. | Superseded by Round 3 audit/repair. | `6771f37`, `c0ba0da` | Verbatim prompt archived. verbatim text: `git show 6771f37:docs/prompts/p15-fix-round-2.md`. |
-| P15-FIX-R3 | 2026-10-13 | Audit baseline and complete remaining FX work. | Done; gates reported green twice; restored two visible messages/assertions. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Verbatim prompt archived. verbatim text: `git show 60b8c54:docs/prompts/p15-fix-round-3.md`. |
-| P15-FIX-R4 | 2026-10-14 | Complete FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2 and CH-1 last. | Done; all gates reported green twice; device layout remains unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Verbatim prompt archived. verbatim text: `git show 0df1952:docs/prompts/p15-fix-round-4.md`. |
-| P15-SEED | unknown | Seed backup tool prompt/work. | Unknown; no matching prompt or commit found. | none identified | Unknown. No seed zip was available in this checkout. |
-| P15-LEDGER | 2026-10-14 | Fold available session exports into this ledger; remove the prompt archive. | Done; seed archives absent, so available session-state exports were used and gaps recorded. Initial failing test run was repaired without weakening assertions; final gates all exit 0. | `d11af45` | Verbatim current request; not archived. |
+| ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
+|---|---:|---|---|---|---|---|---|
+| P01 | 1 | unknown | Mobile foundation, design system and static screens. | Done (user-reported, unverified). | none identified | Partial prompt and later review unavailable. | reconstructed |
+| P02 | 1 | unknown | Pure domain logic and computed screens. | Done (user-reported, unverified). | none identified | Early self-import, unnecessary extras, missing tests/config and unwired screens; later resolution reported only. | reconstructed |
+| P03 | 1 | unknown | Validated local persistence and transaction forms. | Done (user-reported, unverified). | none identified | Native force-quit persistence not verified. | reconstructed |
+| P04 | 1 | unknown | Plan/loan flows and linked transactions. | Done (user-reported, unverified). | none identified | Final linked-transaction edit awaited revalidation at checkpoint. | reconstructed |
+| P05 | 1 | unknown | Goals, holdings and Emergency Fund flows. | Done (user-reported, unverified). | none identified | Coverage/browser/device checks remained pending at checkpoint. | reconstructed |
+| P06 | 1 | unknown | Review fixes, backup, lock/privacy and erase. | Done (user-reported, unverified); device/APK acceptance unverified. | none identified | Required full source contents were omitted from response. | verbatim in session export |
+| P06-FIX-R1 | 1 | 2026-10-10 | Visible form labels and full-width Save buttons. | Held / unverified at export; current state audited as CR-3. | none identified | Multi-file patch failed partway and was not validated. | verbatim in session export |
+| P07 | 2 | unknown | Schema v2 and Loans-to-Liabilities migration. | Done (user-reported, unverified). | none identified | Initial prompt truncated; exact review/tests unavailable. | reconstructed |
+| P08 | 2 | unknown | Unified investment ledger and manual holdings. | Done (user-reported, unverified). | none identified | Original request/review/test mapping unavailable. | reconstructed |
+| P09 | 2 | unknown | Instrument transaction linking/retargeting. | Done (user-reported, unverified). | none identified | Exact acceptance evidence unavailable. | reconstructed |
+| P10 | 2 | unknown | Schedules, dues, entry/payment lists and virtualization. | Done (user-reported, unverified). | none identified | Original test map and corrections unavailable. | reconstructed |
+| P11 | 2 | unknown | Transactions/navigation and crash/error handling. | Done (user-reported, unverified); later audited in FX-BASE. | none identified for P11 | R3 found two visible-message assertions weakened/removed in intermediate work; restored. | reconstructed |
+| P12 | 2 | unknown | Schema v3 onboarding, themes and branding. | Done (user-reported, unverified). | none identified | Exact schema-version provenance and review unavailable. | reconstructed |
+| P13 | 2 | unknown | Income wording, EF minimum and UI refinements. | Done (user-reported, unverified). | none identified | Prompt sequence and full review unavailable. | reconstructed |
+| P14 | 2 | unknown | Close-out/features A–G. | Done (user-reported, unverified); audited in P15-A. | none identified for original phase | User later reported wrong coverage arithmetic, skipped work and weakened tests. | reconstructed |
+| P15-A | 2 | 2026-10-11 | Audit Phase 14 and restore reliable gates. | Done (audit work). | `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7` | Coverage-summary command failed; follow-up addressed coverage/test issues. | reconstructed |
+| P15-A2 | 2 | 2026-10-12 | Migration/premigration and assertion audit. | Done. | `0322c9d` | Restored assertions/version-chain behavior; exact prior assertion details unavailable. | reconstructed |
+| P15-B | 2 | 2026-10-12 | Phase 14 UI leftovers. | Done. | `fbeb1d7` | Exact scope unavailable. | reconstructed |
+| P15-C | 2 | 2026-10-12 | SIP date clarity and goal-card behavior. | Done. | `e155bcd` | Exact review unavailable. | reconstructed |
+| P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
+| P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
+| P15-F | 2 | unknown | Insurance management. | Held; no delivery claimed. | none identified | Prompt details unknown. | unknown |
+| P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
+| P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
+| P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
+| P15-J | 2 | 2026-10-12 | Sorting infrastructure and integrations. | Done. | `1e206ad` | Exact prompt unavailable. | reconstructed |
+| P15-FIX-R1 | 2 | 2026-10-13 | Ledger/baseline and initial FX fixes. | Part 0 done; remaining FX work interrupted/unverified. | `db967bf`, `6562de1`, `6771f37` | Baseline had seven withdrawal-only render failures; work was left unverified. | verbatim in git at `5aeefb9` |
+| P15-FIX-R2 | 2 | 2026-10-13 | Recover interrupted work and fix baseline. | Superseded by R3 audit/repair. | `6771f37`, `c0ba0da` | Two visible-message assertions were replaced with weaker checks; R3 restored them. | verbatim in git at `5aeefb9` |
+| P15-FIX-R3 | 2 | 2026-10-13 | Audit FX-BASE and complete fixes with truthful gates. | Done; gates reported green twice. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Restored UI messages/assertions; followed formal ₹1 crore cutoff over a conflicting example. | verbatim in git at `5aeefb9` |
+| P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
+| P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer. | Unknown; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
+| P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | This commit; no code changes beyond ledger test. | this commit | Earlier ledger task had already removed archive; form audit opened CR-3. | verbatim in current request |
 
 ## 7. Change-request register
 
 | ID | Request | Status | Owner / evidence |
 |---|---|---|---|
 | CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Held for P15-K; notification design, permission behavior, and tests remain outstanding. |
-| CR-2 | LEDGER-BACKFILL: merge the two available session exports into the permanent project record, reconcile commits against Git, and remove prompt archives from the repository. | Closed | P15-LEDGER completed this reconciliation. The expected seed zip inputs were unavailable; exports from session state were used and source gaps are recorded in Section 8. |
+| CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
+| CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 
 ## 8. Known issues and risks
 
@@ -428,20 +441,67 @@ means no matching commit was found, not proof that no historical work occurred.
   coverage 97.76% lines and 93.72% branches.
 - **P15-LEDGER gates:** `npx tsc --noEmit`, `npx expo lint`, Android and iOS
   exports all exited 0; Expo Doctor exited 0 with 21/21 checks passed.
+- **Checkpoint-informed ledger update gates:** the focused progress-ledger Jest
+  run passed 5/5 tests; `npm test -- --coverage` passed 64 suites / 659 tests
+  (96.55% statements, 93.72% branches, 97.76% lines); TypeScript and Expo
+  lint exited 0. Expo exports and Doctor were not rerun because this update
+  changes only documentation and the ledger test.
 - `seed/export-session-1.zip` and `seed/export-session-2.zip` were missing in
-  this checkout. Prior session-state export directories supplied the
-  available prompt/history/decision summaries; these are not a replacement
-  for absent raw transcripts or seed archives.
-- Assumed: the two available session-state export directories are the
-  intended Phase 1–6 and Phase 7 onward export contents; no absent prompt or
-  transcript text has been fabricated as verbatim.
+  this checkout. The specified session-state exports and checkpoints were
+  available and used; raw `/mnt/transcripts/` were not available.
+- Phase 6 real-device/emulator items remain unverified: share-sheet backup and
+  import, document picker, biometric/passcode behavior, foreground/background
+  lock grace, app-switcher/screenshot privacy, erase UX, force-quit persistence,
+  and `allowBackup: false` in a built APK. Phase 6 web execution is unknown.
+- P14 review details and exact skipped deliverables remain unknown beyond
+  the user's report of incorrect coverage arithmetic, skipped work and
+  weakened tests. Original prompt and commit mapping for Phases 1–14 remain
+  incomplete as identified in the Prompt log.
+- **Resolved source conflicts:** (1) Session 1's export said several form
+  routes were absent and the October 10 patch was incomplete; current Git
+  contains 11 `app/*-form.tsx` routes, so their present code was audited and
+  supersedes that older checkout snapshot. (2) Session 2's open-items export
+  still called CR-2 planned, while Git HEAD `b92e145` already included the
+  P15-LEDGER close-out and removed the prompt folder; this task adds checkpoint
+  evidence and marks CR-2 Done in this commit. (3) Session 2 dates P15-FIX-R4
+  2026-10-13; its first implementation commit `0df1952` is dated
+  2026-10-14, so Git wins. (4) Session 2 decisions mark exact P12 schema
+  provenance unclear; current `schemas.ts` and `migrate.ts` establish the
+  v1→v6 migration chain, and this ledger records v3 onboarding/theme fields
+  based on repository/history evidence. No prompt wording or test count was
+  invented.
+- Prompt log source counts (32 rows): 7 verbatim (2 session-export texts,
+  4 Git-archived fix prompts, and this current request), 23 reconstructed,
+  and 2 unknown (P15-F and P15-SEED). No phase 1–15 has exclusively unknown
+  delivery evidence; Phase 15-F's prompt/scope is unknown and its status is
+  explicitly Held. Phase 1–14 original hashes remain unidentifiable.
+- **Current form audit (2026-10-14):** every field has a visible label;
+  `DateField` and `MoneyField` supply visible defaults (`Date`, `Amount`)
+  where a route omits an explicit label. Two Save buttons become narrower
+  when validation summaries are present; these are recorded as CR-3. No form
+  source was changed for this audit.
+
+| Form route | Visible field labels | Save full width |
+|---|---|---|
+| `budget-month-form.tsx` | Yes | Yes; footer column stretches the Save button. |
+| `budget-template-form.tsx` | Yes | Yes; footer column stretches the Save button. |
+| `ef-allocation-form.tsx` | Yes | Yes; footer column stretches the Save button. |
+| `ef-entry-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `goal-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `investment-entry-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `investment-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `liability-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `liability-payment-form.tsx` | Yes | Yes; Save flexes across its footer row. |
+| `profile-form.tsx` | Yes | **No when validation summary is present**; both summary and Save are `flex: 1` siblings. |
+| `transaction-form.tsx` | Yes | **No when validation summary is present**; both summary and Save are `flex: 1` siblings. |
 
 ## 9. Upcoming roadmap
 
-1. P15-F insurance; P15-K local reminders with CR-1; P15-L encrypted backups;
-   P15-M accessibility/performance and final gates remain held.
-2. P15-SEED seed backup tool remains planned/unknown; no prompt, artifact, or
-   commit was found in the available inputs.
+1. P15-F insurance (held); P15-K local reminders including CR-1 (held);
+   P15-L encrypted backups (held); P15-M final accessibility/performance
+   gates (held).
+2. Optional P15-SEED importer for the user's spreadsheet backup; scope and
+   status remain unknown.
 3. Phase 16 cleanup, unused-dependency/dead-code review, bundle audit, and
    README.
 4. Phase 17 QA/release: property tests, QA checklist, release engineering,
@@ -488,7 +548,8 @@ evidence for the fixes.
 | Item | Status | Planned source evidence | Required tests |
 |---|---|---|---|
 | P15-fix-0 | Done | `docs/PROGRESS.md` | `src/lib/__tests__/progressLedger.test.ts` |
-| P15-LEDGER | Done | `docs/PROGRESS.md`; archived prompt directory removed | `src/lib/__tests__/progressLedger.test.ts` — ten headings in order; every prompt ID logged exactly once; all FX/CH/CR IDs accounted for; deleted archive directory asserted absent |
+| P15-LEDGER | Done | `docs/PROGRESS.md`; prompt archive absent at current HEAD; recovery `5aeefb9` | `src/lib/__tests__/progressLedger.test.ts` — ten headings, all FX IDs unique in dashboard, every prompt row unique and required IDs present, CR-3/current work and archive absence asserted |
+| CR-3 form follow-up | Open | `app/profile-form.tsx`, `app/transaction-form.tsx` | Current code has visible field labels; Save shares footer width with a validation summary in these two routes. No source fix made. |
 | FX-BASE | Done | `app/(tabs)/transactions.tsx`, `app/(tabs)/index.tsx`, `app/assets.tsx`, `app/liabilities.tsx`, `src/components/ui.tsx` | `src/components/__tests__/TransactionsScreen.test.tsx` (withdrawal-only notice, expanded information, null rates/no NaN), `src/components/__tests__/StatPill.test.tsx` (exact accessible label), plus four prior focused suites; 520 full-suite tests pass |
 | FX-U1 | Done | `src/lib/amountDisplay.ts`, `src/lib/format.ts`, `src/components/AmountText.tsx`, `src/components/form/MoneyField.tsx`, amount consumers in `app/`, `src/components/InstrumentCard.tsx` | `src/lib/__tests__/amountDisplay.test.ts` — thresholds and rounding promotion; `src/components/__tests__/AmountText.test.tsx` — live font scale, exact labels and formatter scan; `src/components/__tests__/RouteRenderSmoke.test.tsx` — exact-label matrix across Home, Assets, Liabilities, Emergency fund, Goals, Budget and Transactions |
 | FX-U2 | Done | `src/lib/sectionLayout.ts`, `src/components/SectionHeaderRow.tsx`, all `SortChip` routes in `app/` | `sectionLayout.test.ts` — exact fit boundary and configurable gap; `SectionHeaderRow.test.tsx` — inline/stacked thresholds, hidden-until-measured behavior, simulated font-scale-2.0 stacking, and AST scan proving every app `SortChip` is inside `SectionHeaderRow` |
