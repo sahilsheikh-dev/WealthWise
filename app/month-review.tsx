@@ -5,8 +5,8 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { ChoiceField } from '../src/components/form/ChoiceField';
-import { FormScreen } from '../src/components/form/FormScreen';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, Card, EmptyState } from '../src/components/ui';
@@ -21,16 +21,16 @@ import {
   type ShortfallAllocation,
   type SurplusAllocation,
 } from '../src/domain/cashFlow';
-import { loanState } from '../src/domain/liability';
 import { listInstruments } from '../src/domain/instruments';
+import { loanState } from '../src/domain/liability';
 import {
   makeMonthAllocationFormSchema,
   type MonthAllocationFormInput,
   type MonthAllocationFormOutput,
 } from '../src/domain/schemas';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatMonth } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';

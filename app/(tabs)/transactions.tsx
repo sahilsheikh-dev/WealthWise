@@ -9,6 +9,7 @@ import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
   Chip,
+  ChipRow,
   EmptyState,
   ListItem,
   Screen,
@@ -249,32 +250,27 @@ export default function TransactionsScreen() {
 
         <View
           testID="transaction-filter-row"
-          style={styles.filterRow}
           onTouchStart={() => setTouchingChips(true)}
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroller}
-            contentContainerStyle={styles.filterChips}>
-            {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
-              <Chip
-                key={item}
-                label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
-                selected={filter === item}
-                onPress={() => setFilter(item)}
-              />
-            ))}
-            {categoryFilter ? (
-              <Chip
-                label={`Category: ${categoryFilter} ×`}
-                selected
-                onPress={() => setCategoryOverride('')}
-              />
-            ) : null}
-          </ScrollView>
-          <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+            <ChipRow>
+              <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+              {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
+                <Chip
+                  key={item}
+                  label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
+                  selected={filter === item}
+                  onPress={() => setFilter(item)}
+                />
+              ))}
+              {categoryFilter ? (
+                <Chip
+                  label={`Category: ${categoryFilter} ×`}
+                  selected
+                  onPress={() => setCategoryOverride('')}
+                />
+              ) : null}  
+          </ChipRow>       
         </View>
         <SearchField
           accessibilityLabel="Search transactions"

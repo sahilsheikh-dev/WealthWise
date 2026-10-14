@@ -412,6 +412,7 @@ export function DetailTabBar({ active = 'Home' }: { active?: 'Home' | 'none' }) 
     { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
     { label: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
     { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
+    { label: 'Budget', route: '/(tabs)/budget' as const, icon: 'pie-chart' as const, active: false },
   ] as const;
   return (
     <View style={[styles.detailTabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
