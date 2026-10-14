@@ -195,7 +195,7 @@ one persisted write.
 - Coverage totals use per-file Istanbul summaries and independently sum line
   and branch counts: domain and pure `src/lib` >=90%; `src/data` excluding
   hooks >=85%.
-- Tabs, in order: Home, Txns, Goals, Budget.
+- Tabs, in order: Home, Transactions, Goals, Budget.
 - Add/Edit/Delete are icon actions. Deposit/Withdraw/Pay EMI/Log
   installment/Save/Clear due/Clear past dues are text with a small icon.
   `CardHeaderRow` or `ListRow` alone owns the edit pencil. Goal cards open the
@@ -236,7 +236,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 - Phase 1 uses Expo/React Native, TypeScript, Expo Router, bundled Montserrat
   and Feather, typed theme/components, and mobile-first screens; the initial
   static-only/no-persistence scope was superseded by later phases. The original
-  five-tab design (Home, Txns, Goals, Invest, More) was superseded by the
+  five-tab design (Home, Transactions, Goals, Invest, More) was superseded by the
   current four tabs.
 - Domain date calculations use UTC and explicit as-of dates. SIP schedules
   anchor to the plan start, not chained dates. Liability balance is a daily
@@ -281,7 +281,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   Indian-grouped values. The formal row cutoff is ₹1 crore; screen-reader
   output remains exact. `formatINRShort` retains its existing behavior.
 - Theme IDs are `system`, `light`, `dark`, `sky`, `mint`, `blush`, and
-  `midnight`. Tabs are Home, Txns, Goals, Budget.
+  `midnight`. Tabs are Home, Transactions, Goals, Budget.
 - Route kinds enumerate every route; form routes have close/discard handling,
   and stack routes have back/fallback behavior. Shared UI follows Section 3's
   text-versus-icon rules.
@@ -295,8 +295,8 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 | Earlier decision | Superseded by |
 |---|---|
 | Phase 1 static-only/no-persistence boundary | Later phases added persistence, domain actions, forms, and routes. |
-| Five tabs including Invest and More | FX-B2 established Home, Txns, Goals, Budget. |
-| P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Txns, Goals, Budget rule. |
+| Five tabs including Invest and More | FX-B2 established Home, Transactions, Goals, Budget. |
+| P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Transactions, Goals, Budget rule. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
 | Schema v1, then v2, v3, v4, or v5 as current | Successive migrations; current schema is v6. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |

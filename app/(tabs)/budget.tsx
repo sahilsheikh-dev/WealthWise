@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   closingPositionLabel: { flex: 1, minWidth: 0, gap: 3 },
   closingPositionStacked: { flexDirection: 'column', alignItems: 'flex-start' },
   closingAmount: { fontSize: 18 },
-  planSummaryAction: { gap: 12 },
+  planSummaryAction: { gap: 12, marginBottom: 16 },
   planSummaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   planMetrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   planMetricsStacked: { flexDirection: 'column' },

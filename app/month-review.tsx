@@ -192,7 +192,7 @@ function MonthReview({ month }: { month: string }) {
       </View>}>
       <FormErrorBanner message={lastError} />
       <AppText weight="bold">{formatMonth(month)}</AppText>
-      <Card style={{ gap: 8 }}>
+      <Card style={{ gap: 8, marginHorizontal: 0 }}>
         <AppText>Opening balance · {formatAmount(position.opening, 'exact', 1)}</AppText>
         <AppText>Earned income · {formatAmount(position.earnedIncome, 'exact', 1)}</AppText>
         <AppText>Withdrawals · {formatAmount(position.withdrawals, 'exact', 1)}</AppText>
