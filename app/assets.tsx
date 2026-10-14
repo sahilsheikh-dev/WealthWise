@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
@@ -137,12 +138,15 @@ export default function AssetsScreen() {
         </StatPillRow>
       </Card>
 
-      <ChipRow>
-        <SortChip
+      <SectionHeaderRow
+        title={filter === 'Recurring' ? 'Recurring investments' : 'Investments'}
+        right={<SortChip
           options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
           spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
           onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />
+        />}
+      />
+      <ChipRow>
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}

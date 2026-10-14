@@ -9,7 +9,6 @@ import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
   Chip,
-  ChipRow,
   EmptyState,
   ListItem,
   Screen,
@@ -250,11 +249,15 @@ export default function TransactionsScreen() {
 
         <View
           testID="transaction-filter-row"
+          style={styles.filterRow}
           onTouchStart={() => setTouchingChips(true)}
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
-            <ChipRow>
-              <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroller}
+            contentContainerStyle={styles.filterChips}>
               {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
                 <Chip
                   key={item}
@@ -270,7 +273,8 @@ export default function TransactionsScreen() {
                   onPress={() => setCategoryOverride('')}
                 />
               ) : null}  
-          </ChipRow>       
+          </ScrollView>
+          <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
         </View>
         <SearchField
           accessibilityLabel="Search transactions"

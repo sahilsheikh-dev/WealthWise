@@ -6,13 +6,13 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { DueActions } from '../src/components/DueActions';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   ActionRow,
   AppText,
   Button,
   Card,
-  ChipRow,
   DetailTabBar,
   EmptyState,
   ProgressBar,
@@ -123,9 +123,10 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        <ChipRow>
-          <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
-        </ChipRow>
+        <SectionHeaderRow
+          title="Liabilities"
+          right={<SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />}
+        />
 
         {sortedLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />

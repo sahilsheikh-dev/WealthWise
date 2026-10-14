@@ -16,7 +16,7 @@ const tabIcons = {
 
 const tabLabels = {
   index: 'Home',
-  transactions: 'Transactions',
+  transactions: 'Txns',
   goals: 'Goals',
   budget: 'Budget',
 } as const;
