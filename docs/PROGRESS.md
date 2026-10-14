@@ -91,7 +91,7 @@ are called out as such.
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
 | P15-SEED | Unknown | No seed-backup prompt or matching commit was found in the available exports or Git history | unknown |
-| P15-LEDGER | Done | Ledger consolidation, prompt archive removal, restored existing sort-header/Transactions-row acceptance, four progress-ledger assertions; commit recorded below | 2026-10-14 |
+| P15-LEDGER | Done | Ledger consolidation, prompt archive removal, restored existing sort-header/Transactions-row acceptance, four progress-ledger assertions; `d11af45` | 2026-10-14 |
 | CR-2 | Closed | P15-LEDGER consolidates the available session exports into this file; unavailable seed inputs and reconstructed history are disclosed in Section 8 | 2026-10-14 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
@@ -321,7 +321,7 @@ criterion.
 | P15-FIX-R3 | Audit FX-BASE and complete baseline FX items with truthful gates. | Restored messages and assertions; followed the formal ₹1 crore row cutoff over a conflicting example; no thresholds/assertions weakened. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481`. | Verbatim prompt archived |
 | P15-FIX-R4 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1 v5→v6. | Fixed route-render fixture, v6 defaults, market-linked label and test import issues without weakening assertions. Full gates were reported green twice; simulated layout is not device evidence. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748`. | Verbatim prompt archived |
 | P15-SEED | Seed backup tool prompt/work. | No corresponding prompt, output, or commit was found in available Git history or export files; scope and outcome are unknown. | Unknown; none identified. | Unknown |
-| P15-LEDGER | Consolidate available session exports into this file, remove the prompt archive, and test ledger invariants. | Seed zip inputs were absent; prior session-state exports were used. Initial full suite exposed 26 failures across five suites from an existing UI refactor; restored required SortChip placement, Transactions scroller/sort sibling, `Txns` tab label, and missing `ChipRow` test mocks without weakening assertions. Final full gates pass. | Current ledger commit is recorded in Section 6 when available. | Verbatim current request; not archived |
+| P15-LEDGER | Consolidate available session exports into this file, remove the prompt archive, and test ledger invariants. | Seed zip inputs were absent; prior session-state exports were used. Initial full suite exposed 26 failures across five suites from an existing UI refactor; restored required SortChip placement, Transactions scroller/sort sibling, `Txns` tab label, and missing `ChipRow` test mocks without weakening assertions. Final full gates pass. | `d11af45`. | Verbatim current request; not archived |
 
 ## 6. Prompt and session log
 
@@ -363,7 +363,7 @@ means no matching commit was found, not proof that no historical work occurred.
 | P15-FIX-R3 | 2026-10-13 | Audit baseline and complete remaining FX work. | Done; gates reported green twice; restored two visible messages/assertions. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Verbatim prompt archived. verbatim text: `git show 60b8c54:docs/prompts/p15-fix-round-3.md`. |
 | P15-FIX-R4 | 2026-10-14 | Complete FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2 and CH-1 last. | Done; all gates reported green twice; device layout remains unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Verbatim prompt archived. verbatim text: `git show 0df1952:docs/prompts/p15-fix-round-4.md`. |
 | P15-SEED | unknown | Seed backup tool prompt/work. | Unknown; no matching prompt or commit found. | none identified | Unknown. No seed zip was available in this checkout. |
-| P15-LEDGER | 2026-10-14 | Fold available session exports into this ledger; remove the prompt archive. | Done; seed archives absent, so available session-state exports were used and gaps recorded. Initial failing test run was repaired without weakening assertions; final gates all exit 0. | Recorded in the ledger-closing commit. | Verbatim current request; not archived. |
+| P15-LEDGER | 2026-10-14 | Fold available session exports into this ledger; remove the prompt archive. | Done; seed archives absent, so available session-state exports were used and gaps recorded. Initial failing test run was repaired without weakening assertions; final gates all exit 0. | `d11af45` | Verbatim current request; not archived. |
 
 ## 7. Change-request register
 
