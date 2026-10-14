@@ -36,6 +36,8 @@ describe('useAppMenu', () => {
     if (!renderer) throw new Error('Menu hook did not render.');
     expect(menuRef.current.map(({ label }) => label)).toContain('Backup and restore');
     expect(menuRef.current.map(({ label }) => label)).not.toContain('Link missing transactions');
+    expect(menuRef.current.map(({ label }) => label)).not.toContain('Budget history');
+    expect(menuRef.current.map(({ label }) => label)).not.toContain('Month review');
     act(() => menuRef.current.find(({ label }) => label === 'Backup and restore')?.onPress());
     expect(mockRouterPush).toHaveBeenCalledWith('/backup');
     mockPathname.current = '/backup';

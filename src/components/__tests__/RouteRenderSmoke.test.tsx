@@ -35,11 +35,13 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { emptyAppData } from '../../domain/actions';
-import type { ManualHolding, OneTimeLiability, PlanHolding } from '../../domain/types';
+import type { ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
+
+let mockFontScale = 1;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -437,7 +439,7 @@ jest.mock('react-native', () => {
     TextInput: node('textinput'),
     TouchableOpacity: node('touchableopacity'),
     View: node('view'),
-    useWindowDimensions: () => ({ fontScale: 1, width: 390, height: 844, scale: 1, }),
+    useWindowDimensions: () => ({ fontScale: mockFontScale, width: 390, height: 844, scale: 1, }),
   };
 });
 
@@ -915,13 +917,14 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('prefills today as the actual value date when the user enters an actual value', () => {
+  it('prefills today as the actual value date when the user enters an actual value', async () => {
     const renderer = renderScreen(React.createElement(InvestmentFormScreen));
     try {
-      const valueDate = renderer.root.findByProps({ accessibilityLabel: 'Actual value date' });
-      act(() => valueDate.props.onChange(''));
-      act(() => renderer.root.findByProps({ accessibilityLabel: 'Latest actual value' }).props.onChangeText('1100'));
-      expect(valueDate.props.value).toBe(todayISO());
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Latest actual value' }).props.onChangeText('1100');
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      });
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Actual value date' }).props.value).toBe(todayISO());
     } finally {
       act(() => renderer.unmount());
     }
@@ -975,17 +978,68 @@ describe('route render smoke audit', () => {
     },
   );
 
-  it('opens Budget history and Budget templates from the Budget tab menu', () => {
+  it('shows History and Month review quick actions and keeps only templates in the Budget menu', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
-    const renderer = renderScreen(React.createElement(BudgetScreen));
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
-    const history = renderer.root.findByProps({ accessibilityLabel: 'Budget history' });
-    act(() => history.props.onPress());
-    expect(router.push).toHaveBeenCalledWith('/budget-history');
-    const templates = renderer.root.findByProps({ accessibilityLabel: 'Budget templates' });
-    act(() => templates.props.onPress());
-    expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
+    mockFontScale = 2;
+    try {
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      const quickActions = renderer.root.findByProps({ testID: 'budget-quick-actions' });
+      const quickStyles = Array.isArray(quickActions.props.style) ? quickActions.props.style : [quickActions.props.style];
+      expect(quickStyles).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flexDirection: 'row', flexWrap: 'wrap' }),
+      ]));
+      expect(quickStyles.every((style) =>
+        !('height' in style) && !('maxHeight' in style),
+      )).toBe(true);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'History' }).props.icon).toBe('calendar');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Month review' })).toBeDefined();
+      expect(renderer.root.findAllByProps({ testID: 'budget-month-review-dot' })).toHaveLength(0);
+
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'History' }).props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/budget-history');
+      act(() => renderer.root.findByProps({ testID: 'budget-month-review-action' }).props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/month-review');
+
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+      const header = renderer.root.findByType('header');
+      const menuLabels = header.findAllByProps({ accessibilityLabel: 'Budget templates' });
+      expect(menuLabels).toHaveLength(1);
+      expect(header.findAllByProps({ accessibilityLabel: 'Budget history' })).toHaveLength(0);
+      expect(header.findAllByProps({ accessibilityLabel: 'Month review' })).toHaveLength(0);
+      act(() => menuLabels[0]?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
+    } finally {
+      mockFontScale = 1;
+    }
+  });
+
+  it('marks and opens the most recent reviewable month from the Budget quick action', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as {
+      transactions: Transaction[];
+    };
+    const previousTransactions = data.transactions;
+    const reviewMonth = shiftMonth(monthKey(todayISO()), -1);
+    data.transactions = [{
+      id: 'budget-review-transaction',
+      type: 'income',
+      amount: 100,
+      category: 'Salary',
+      note: 'Pay',
+      date: `${reviewMonth}-10`,
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      expect(renderer.root.findByProps({ testID: 'budget-month-review-dot' })).toBeDefined();
+      const action = renderer.root.findByProps({ testID: 'budget-month-review-action' });
+      expect(action.props.accessibilityLabel).toBe(`Month review, ${formatMonth(reviewMonth)} needs review`);
+      act(() => action.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: reviewMonth } });
+    } finally {
+      data.transactions = previousTransactions;
+    }
   });
 
   it('returns from Budget history to the tab with the selected month', () => {

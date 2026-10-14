@@ -241,7 +241,7 @@ function PlanEditor({
         onNameChange={onNameChange}
         onActualValueEntered={() => {
           if (!getValues('actualValueDate')) {
-            setValue('actualValueDate', today, { shouldDirty: true, shouldValidate: true });
+            setValue('actualValueDate', today, { shouldDirty: true });
           }
         }}
         maximumDate={plusDays(today, 366)}
