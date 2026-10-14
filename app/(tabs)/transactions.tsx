@@ -3,10 +3,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
-import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
+import { AppHeader } from '../../src/components/AppHeader';
 import { SortChip } from '../../src/components/SortChip';
-import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
@@ -27,9 +26,9 @@ import { shiftMonth } from '../../src/domain/dates';
 import { describeSource } from '../../src/domain/links';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
+import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { formatAmount } from '../../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
@@ -248,12 +247,8 @@ export default function TransactionsScreen() {
           onTouchStart={() => setTouchingChips(true)}
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
-          <SectionHeaderRow
-            title="Transactions"
-            subtitle={formatMonth(month)}
-            right={<SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />}
-          />
           <ChipRow>
+            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
             {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
               <Chip
                 key={item}

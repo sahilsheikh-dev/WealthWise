@@ -3,26 +3,25 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
+import { AppHeader } from '../../src/components/AppHeader';
 import { CardHeaderRow } from '../../src/components/CardHeaderRow';
 import { DueActions } from '../../src/components/DueActions';
 import { SortChip } from '../../src/components/SortChip';
-import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
-import { AppText, Button, Card, Chip, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
+import type { BudgetCommitment } from '../../src/domain/budget';
 import { budgetMonthView } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { efBalance } from '../../src/domain/ef';
-import type { BudgetCommitment } from '../../src/domain/budget';
+import { formatAmount } from '../../src/lib/amountDisplay';
+import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { formatAmount } from '../../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
-import { todayISO } from '../../src/lib/clock';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -144,10 +143,9 @@ export default function BudgetScreen() {
 
           {view.budget ? (
             <>
-              <SectionHeaderRow
-                title="Spending plan"
-                right={<SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />}
-              />
+              <ChipRow>
+                <SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />
+              </ChipRow>
               {lines.filter((line) => !['EMI', 'Insurance'].includes(line.category)
                 && !['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'].includes(line.category))
                 .map((line) => (

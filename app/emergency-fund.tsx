@@ -1,16 +1,16 @@
 import { router, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../src/components/AppHeader';
 import { AmountText } from '../src/components/AmountText';
+import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { SortChip } from '../src/components/SortChip';
-import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
   Card,
+  ChipRow,
   DetailTabBar,
   ProgressBar,
   Screen,
@@ -19,18 +19,18 @@ import {
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import {
+  EF_BUCKETS,
+  EF_BUCKET_META,
   allocateAmounts,
   allocationWarnings,
   effectiveAllocation,
-  EF_BUCKETS,
-  EF_BUCKET_META,
 } from '../src/domain/efAllocation';
-import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import { ensureEfGoal, goalView } from '../src/domain/goals';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -163,12 +163,13 @@ export default function EmergencyFundScreen() {
           </Card>
         ) : null}
 
-        <SectionHeaderRow
-          title="Passbook"
-          right={<SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />}
-        />
+        <ChipRow>
+          <SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />
+        </ChipRow>
+
         <View style={styles.passbook}>
           {entries.map((entry) => (
+            <Card>
             <SharedListRow
               key={entry.id}
               style={[styles.passbookRow, { borderBottomColor: colors.border }]}
@@ -190,6 +191,7 @@ export default function EmergencyFundScreen() {
                 <AmountText value={entry.balance} tier="row" weight="bold" style={typography.amount} />
               </View>
             </SharedListRow>
+            </Card>
           ))}
         </View>
       </Screen>
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
   allocationAmount: { minWidth: 100, textAlign: 'right' },
   basedOn: { marginTop: 8 },
   sortRow: { marginHorizontal: 20, marginTop: 8 },
-  passbook: { marginHorizontal: 20 },
+  passbook: {  },
   passbookRow: { minHeight: 66, borderBottomWidth: StyleSheet.hairlineWidth },
   passbookContents: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   entryDetails: { flex: 1, minWidth: 0, gap: 3 },
