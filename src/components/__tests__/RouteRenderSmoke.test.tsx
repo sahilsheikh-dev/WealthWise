@@ -35,7 +35,7 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { emptyAppData } from '../../domain/actions';
-import type { ManualHolding, OneTimeLiability } from '../../domain/types';
+import type { ManualHolding, OneTimeLiability, PlanHolding } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatMonth } from '../../lib/format';
@@ -127,6 +127,10 @@ jest.mock('../../data/store', () => {
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
       recordMoneyMovement: jest.fn(),
+      addPlan: jest.fn(),
+      addPlanWithHistory: jest.fn(),
+      updatePlan: jest.fn(),
+      deletePlan: jest.fn(),
       fundShortfall: jest.fn(),
       allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
@@ -149,8 +153,12 @@ jest.mock('../../data/store', () => {
     },
   };
 
+  const useAppStore = Object.assign(
+    (selector: (state: typeof mockState) => unknown) => selector(mockState),
+    { getState: () => mockState },
+  );
   return {
-    useAppStore: (selector: (state: typeof mockState) => unknown) => selector(mockState),
+    useAppStore,
     metaStore: {
       getMeta: async () => ({}),
       updateSortSpec: async () => ({}),
@@ -182,6 +190,10 @@ jest.mock('../../data/useAppData', () => {
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
       recordMoneyMovement: jest.fn(),
+      addPlan: jest.fn(),
+      addPlanWithHistory: jest.fn(),
+      updatePlan: jest.fn(),
+      deletePlan: jest.fn(),
       fundShortfall: jest.fn(),
       allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
@@ -288,9 +300,10 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children, onClose, isDirty }: {
+    FormScreen: ({ title, children, footer, onClose, isDirty }: {
       title: string;
       children?: React.ReactNode;
+      footer?: React.ReactNode;
       onClose: () => void;
       isDirty?: boolean;
     }) =>
@@ -305,6 +318,7 @@ jest.mock('../../components/form/FormScreen', () => {
         }),
         ReactModule.createElement('text', null, title),
         children,
+        footer,
       ),
   };
 });
@@ -327,32 +341,43 @@ jest.mock('../../components/form/SwitchRow', () => {
 jest.mock('../../components/form/TextField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    TextField: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    TextField: ({ label, ...props }: { label: string; [key: string]: unknown }) =>
+      ReactModule.createElement('textfield', { ...props, label }, label),
   };
 });
 
 jest.mock('../../components/form/MoneyField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    MoneyField: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    MoneyField: ({ label = 'Amount', accessibilityLabel, ...props }: {
+      label?: string;
+      accessibilityLabel?: string;
+      [key: string]: unknown;
+    }) => ReactModule.createElement('moneyfield', {
+      ...props,
+      label,
+      accessibilityLabel: accessibilityLabel ?? `${label} in rupees`,
+    }, label),
   };
 });
 
 jest.mock('../../components/form/DateField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    DateField: ({ label, accessibilityLabel, accessibilityHint }: {
+    DateField: ({ label, accessibilityLabel, accessibilityHint, ...props }: {
       label: string;
       accessibilityLabel?: string;
       accessibilityHint?: string;
-    }) => ReactModule.createElement('datefield', { accessibilityLabel, accessibilityHint }, label),
+      [key: string]: unknown;
+    }) => ReactModule.createElement('datefield', { ...props, accessibilityLabel, accessibilityHint }, label),
   };
 });
 
 jest.mock('../../components/form/SegmentedControl', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    SegmentedControl: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    SegmentedControl: ({ label, ...props }: { label: string; [key: string]: unknown }) =>
+      ReactModule.createElement('segmentedcontrol', { ...props, label }, label),
   };
 });
 
@@ -423,6 +448,27 @@ function renderScreen(screen: React.ReactElement) {
   });
   if (!renderer) throw new Error('Route did not render.');
   return renderer;
+}
+
+function makeInvestmentTestPlan(): PlanHolding {
+  const today = todayISO();
+  return {
+    id: 'investment-plan-test',
+    kind: 'plan',
+    name: 'Test plan',
+    type: 'Mutual fund / SIP',
+    frequency: 'monthly',
+    amount: 1_000,
+    ratePct: 12,
+    stepUpPct: 0,
+    tenureYears: 10,
+    startDate: today,
+    trackFrom: today,
+    opening: 0,
+    actualValue: null,
+    actualValueDate: null,
+    logs: [],
+  };
 }
 
 describe('route render smoke audit', () => {
@@ -781,6 +827,104 @@ describe('route render smoke audit', () => {
     const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
     expect(helperText).toContain('The plan schedule starts on this date.');
     expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
+  });
+
+  it('keeps one-time and manual holding forms free of plan-only value fields', () => {
+    const renderer = renderScreen(React.createElement(InvestmentFormScreen));
+    const storeState = useAppStore((state) => state) as {
+      data: { holdings: (ManualHolding | PlanHolding)[] };
+    };
+    const previousHoldings = storeState.data.holdings;
+    const holding: ManualHolding = {
+      id: 'manual-investment-test',
+      kind: 'manual',
+      name: 'Manual investment',
+      type: 'Gold',
+      invested: 10_000,
+      value: 11_000,
+      valueAsOf: todayISO(),
+      logs: [],
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    let editRenderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      act(() => renderer.root.findByProps({ label: 'Investment type' }).props.onChange('one-time'));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Opening balance' })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Latest actual value' })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Actual value date' })).toHaveLength(0);
+
+      storeState.data.holdings = [holding];
+      routeParams.mockReturnValue({ id: holding.id });
+      editRenderer = renderScreen(React.createElement(InvestmentFormScreen));
+      expect(editRenderer.root.findAllByProps({ accessibilityLabel: 'Opening balance' })).toHaveLength(0);
+      expect(editRenderer.root.findAllByProps({ accessibilityLabel: 'Latest actual value' })).toHaveLength(0);
+      expect(editRenderer.root.findAllByProps({ accessibilityLabel: 'Actual value date' })).toHaveLength(0);
+    } finally {
+      act(() => renderer.unmount());
+      if (editRenderer) act(() => editRenderer?.unmount());
+      storeState.data.holdings = previousHoldings;
+      routeParams.mockReturnValue({});
+    }
+  });
+
+  it.each(['create', 'edit'] as const)('explains investment value fields in recurring %s mode', (mode) => {
+    const storeState = useAppStore((state) => state) as {
+      data: { holdings: (ManualHolding | PlanHolding)[] };
+    };
+    const previousHoldings = storeState.data.holdings;
+    const plan = makeInvestmentTestPlan();
+    storeState.data.holdings = mode === 'edit' ? [plan] : [];
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    routeParams.mockReturnValue(mode === 'edit' ? { id: plan.id } : {});
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      renderer = renderScreen(React.createElement(InvestmentFormScreen));
+      const helpers = [
+        'Money you had already put in before you started tracking here. It counts towards your invested amount.',
+        "Today's value from your statement or investment app. Leave it blank and we will use our estimate.",
+        "The date you checked that value. We fill in today's date when you enter a value.",
+      ];
+      for (const helperText of helpers) {
+        const helper = renderer.root.findAllByType('text').find((node) => node.children.join('') === helperText);
+        expect(helper?.props.accessibilityHint).toBe(helperText);
+      }
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Opening balance' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Latest actual value' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Actual value date' }).props.accessibilityHint)
+        .toBe(helpers[2]);
+
+      const information = renderer.root.findByProps({ accessibilityLabel: 'Investment value example' });
+      act(() => information.props.onPress());
+      const sheet = renderer.root.find((node) => String(node.type) === 'modal' && node.props.visible === true);
+      const sheetText = sheet.findAllByType('text');
+      expect(sheetText.map((node) => node.children.join('')).join(' '))
+        .toContain('For example, you had');
+      expect(sheetText.map((node) => node.children.join('')).join(' '))
+        .toContain('₹10,000');
+      expect(sheetText.map((node) => node.children.join('')).join(' '))
+        .toContain('₹11,000');
+      expect(sheetText.find((node) => node.props.accessibilityLabel)?.props.accessibilityLabel)
+        .toContain('₹10,000');
+      act(() => sheet.props.onRequestClose());
+      expect(renderer.root.find((node) => String(node.type) === 'modal').props.visible).toBe(false);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      storeState.data.holdings = previousHoldings;
+      routeParams.mockReturnValue({});
+    }
+  });
+
+  it('prefills today as the actual value date when the user enters an actual value', () => {
+    const renderer = renderScreen(React.createElement(InvestmentFormScreen));
+    try {
+      const valueDate = renderer.root.findByProps({ accessibilityLabel: 'Actual value date' });
+      act(() => valueDate.props.onChange(''));
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'Latest actual value' }).props.onChangeText('1100'));
+      expect(valueDate.props.value).toBe(todayISO());
+    } finally {
+      act(() => renderer.unmount());
+    }
   });
 
   it.each(['Festival', 'Donation', 'Gifts'] as const)(
