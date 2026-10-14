@@ -25,7 +25,6 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   'liability-payment-form': 'form',
   'liability-payments': 'stack',
   'link-missing': 'stack',
-  'money-movement-form': 'form',
   'month-review': 'form',
   onboarding: 'special',
   'profile-form': 'form',

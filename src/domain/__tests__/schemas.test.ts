@@ -1,4 +1,5 @@
 import { mockAppData } from '../../mock/data';
+import { validateImportData } from '../backup';
 import { efEndOfDayBalances } from '../efActions';
 import {
   appDataSchema,
@@ -12,7 +13,6 @@ import {
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
-  makeMoneyMovementFormSchema,
   makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
@@ -28,9 +28,27 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version five', () => {
+  it('accepts the typed mock app data and exports schema version six', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(5);
+    expect(SCHEMA_VERSION).toBe(6);
+  });
+
+  it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
+    const buckets = [
+      { id: 'first', name: 'Safe reserve', access: 'instant' as const, marketLinked: false },
+      { id: 'second', name: 'safe reserve', access: 'days' as const, marketLinked: true },
+    ];
+    expect(appDataSchema.safeParse({ ...mockAppData, efCustomBuckets: buckets }).success).toBe(false);
+    expect(validateImportData({ ...mockAppData, efCustomBuckets: buckets }))
+      .toMatchObject({ ok: false, reason: 'invalid-data' });
+    const tooMany = Array.from({ length: 9 }, (_, index) => ({
+      id: `option-${index}`, name: `Option ${index}`, access: 'slow' as const, marketLinked: false,
+    }));
+    expect(appDataSchema.safeParse({ ...mockAppData, efCustomBuckets: tooMany }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      efCustomBuckets: [{ id: 'fixed-cash', name: 'Cash', access: 'instant', marketLinked: false }],
+    }).success).toBe(false);
   });
 
   it('validates budget templates and stored month snapshots', () => {
@@ -308,10 +326,10 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, note: 'x'.repeat(61) }).success).toBe(false);
     });
 
-    it('validates liabilities, interest-covering EMI and payment history boundaries', () => {
+    it('validates liability solver inputs and payment history boundaries', () => {
       const schema = makeLiabilityFormSchema('2026-10-10', { otherNames: ['Other loan'], earliestPaymentDate: '2026-10-01' });
       const valid = { kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: '100000', ratePct: '12', tenureMonths: '12', startDate: '2026-10-01', emi: '' };
-      expect(schema.parse(valid)).toMatchObject({ principal: 100_000, ratePct: 12, tenureMonths: 12, emi: null });
+      expect(schema.parse(valid)).toMatchObject({ principal: 100_000, ratePct: 12, tenureMonths: 12, emi: 8_884.88 });
       const duplicateName = schema.safeParse({ ...valid, name: ' other loan ' });
       expect(duplicateName.success).toBe(false);
       if (!duplicateName.success) expect(duplicateName.error.issues.some((issue) => issue.message === 'A liability with this name already exists')).toBe(true);
@@ -320,18 +338,66 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, principal: '1000000000' }).success).toBe(true);
       expect(schema.safeParse({ ...valid, principal: '1000000000.01' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, principal: '10.123' }).success).toBe(false);
-      expect(schema.safeParse({ ...valid, ratePct: '60' }).success).toBe(true);
-      expect(schema.safeParse({ ...valid, ratePct: '60.01' }).success).toBe(false);
+      expect(schema.safeParse({ ...valid, ratePct: '100' }).success).toBe(true);
+      expect(schema.safeParse({ ...valid, ratePct: '100.01' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, ratePct: '1.111' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, tenureMonths: '1' }).success).toBe(true);
-      expect(schema.safeParse({ ...valid, tenureMonths: '480' }).success).toBe(true);
-      expect(schema.safeParse({ ...valid, tenureMonths: '481' }).success).toBe(false);
+      expect(schema.safeParse({ ...valid, tenureMonths: '600' }).success).toBe(true);
+      expect(schema.safeParse({ ...valid, tenureMonths: '601' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, tenureMonths: '2.5' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-02' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-11' }).success).toBe(false);
-      expect(schema.safeParse({ ...valid, emi: '1000' }).success).toBe(false);
+      const missingPrincipal = schema.safeParse({ ...valid, principal: '' });
+      expect(missingPrincipal.success).toBe(false);
+      if (!missingPrincipal.success) {
+        expect(missingPrincipal.error.issues.some((issue) =>
+          issue.message === 'Enter an amount like 1500 or 1500.50',
+        )).toBe(true);
+      }
+      const missingStartDate = schema.safeParse({ ...valid, startDate: '' });
+      expect(missingStartDate.success).toBe(false);
+      if (!missingStartDate.success) {
+        expect(missingStartDate.error.issues.some((issue) => issue.message === 'Enter a valid date')).toBe(true);
+      }
+      expect(schema.safeParse({ ...valid, emi: '1000' }).success).toBe(true);
       expect(schema.safeParse({ ...valid, emi: '1001' }).success).toBe(true);
       expect(schema.safeParse({ ...valid, emi: '1000.123' }).success).toBe(false);
+    });
+
+    it('requires two solver values and fills each omitted recurring value', () => {
+      const schema = makeLiabilityFormSchema('2026-10-10', { otherNames: [], earliestPaymentDate: null });
+      const base = {
+        kind: 'recurring',
+        type: 'Car loan',
+        name: 'Car loan',
+        principal: '1000000',
+        ratePct: '',
+        tenureMonths: '',
+        startDate: '2026-10-01',
+        emi: '',
+      };
+      const insufficient = schema.safeParse(base);
+      expect(insufficient.success).toBe(false);
+      if (!insufficient.success) {
+        expect(insufficient.error.issues.some((issue) =>
+          issue.message === 'Add one more of tenure, interest rate or EMI so we can work out the rest',
+        )).toBe(true);
+      }
+      expect(schema.parse({ ...base, ratePct: '10', tenureMonths: '12' })).toMatchObject({
+        ratePct: 10,
+        tenureMonths: 12,
+        emi: 87_915.89,
+      });
+      expect(schema.parse({ ...base, tenureMonths: '12', emi: '87915.89' })).toMatchObject({
+        ratePct: 10,
+        tenureMonths: 12,
+        emi: 87_915.89,
+      });
+      expect(schema.parse({ ...base, ratePct: '10', emi: '87915.89' })).toMatchObject({
+        ratePct: 10,
+        tenureMonths: 12,
+        emi: 87_915.89,
+      });
     });
 
     it('validates one-time liabilities and optional due-date boundaries', () => {
@@ -341,6 +407,7 @@ describe('makeTransactionFormSchema', () => {
         ratePct: '0', startDate: '2026-10-01', dueDate: '',
       };
       expect(schema.parse(valid)).toMatchObject({ kind: 'one-time', principal: 20_000, dueDate: null });
+      expect(schema.parse({ ...valid, dueDate: '2026-10-15' })).toMatchObject({ dueDate: '2026-10-15' });
       expect(schema.safeParse({ ...valid, dueDate: 'bad-date' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, dueDate: '2026-09-30' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-02' }).success).toBe(false);
@@ -363,6 +430,13 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, date: '2026-10-11' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, date: '2026-02-30' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, kind: 'cash' }).success).toBe(false);
+      const oneTimeSchema = makeLiabilityPaymentFormSchema('2026-10-10', {
+        startDate: '2026-01-01',
+        outstandingExcludingThis: 100.1,
+        oneTime: true,
+      });
+      expect(oneTimeSchema.parse({ ...valid, amount: '100', kind: 'Payment' }).amount).toBe(100);
+      expect(oneTimeSchema.safeParse({ ...valid, kind: 'EMI' }).success).toBe(false);
       const cleared = makeLiabilityPaymentFormSchema('2026-10-10', { startDate: '2026-01-01', outstandingExcludingThis: 0.99 }).safeParse(valid);
       expect(cleared.success).toBe(false);
       if (!cleared.success) expect(cleared.error.issues.some((issue) => issue.message === 'This liability is already cleared')).toBe(true);
@@ -475,28 +549,6 @@ describe('makeTransactionFormSchema', () => {
 });
 
 describe('cash-flow form schemas', () => {
-  it('requires movement targets and a lender for the selected movement', () => {
-    const borrowed = makeMoneyMovementFormSchema('borrowed-in', '2026-10-10', {
-      liabilityIds: ['liability'], instrumentIds: ['asset'],
-    });
-    const base = {
-      amount: '50',
-      date: '2026-10-10',
-      note: '',
-      lenderName: '',
-      liabilityId: '',
-      instrumentId: '',
-    };
-    expect(borrowed.safeParse(base).success).toBe(false);
-    expect(borrowed.safeParse({ ...base, lenderName: 'A friend' }).success).toBe(true);
-    expect(makeMoneyMovementFormSchema('repay', '2026-10-10', {
-      liabilityIds: ['liability'], instrumentIds: [],
-    }).safeParse({ ...base, liabilityId: 'liability' }).success).toBe(true);
-    expect(makeMoneyMovementFormSchema('withdraw', '2026-10-10', {
-      liabilityIds: [], instrumentIds: ['asset'],
-    }).safeParse({ ...base, instrumentId: 'asset' }).success).toBe(true);
-  });
-
   it('validates shortfall/surplus allocation kinds, targets and remaining amounts', () => {
     const schema = makeMonthAllocationFormSchema('shortfall', {
       liabilityIds: ['liability'], instrumentIds: ['asset'], maximumAmount: 100,

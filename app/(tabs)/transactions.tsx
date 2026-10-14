@@ -1,16 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
-  Button,
   Chip,
-  ChipRow,
   EmptyState,
   ListItem,
   Screen,
@@ -23,6 +21,7 @@ import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
+import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
@@ -43,7 +42,7 @@ const transactionTone = {
 
 function BalanceLine({ label, value }: { label: string; value: number }) {
   return (
-    <View style={styles.balanceLine}>
+    <View testID="available-balance-line" style={styles.balanceLine}>
       <AppText style={typography.meta}>{label}</AppText>
       <AmountText value={value} tier="row" />
     </View>
@@ -65,7 +64,6 @@ export default function TransactionsScreen() {
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
-  const [movementSheetOpen, setMovementSheetOpen] = useState(false);
   const [dismissedReview, setDismissedReview] = useState<string | null>(null);
   const [balanceExpanded, setBalanceExpanded] = useState(false);
   const today = useMemo(() => todayISO(), []);
@@ -83,6 +81,7 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const unlinkedCount = useMemo(() => findUnlinkedEntries(data).length, [data]);
   const position = useMemo(
     () => availableBalance(data.transactions, month, today),
     [data.transactions, month, today],
@@ -103,26 +102,15 @@ export default function TransactionsScreen() {
   const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
-  const movements = [
-    { label: 'Spent money', route: '/transaction-form' as const, type: 'expense' as const },
-    { label: 'Earned money', route: '/transaction-form' as const, type: 'income' as const },
-    { label: 'Invested money', route: '/transaction-form' as const, type: 'invest' as const },
-    { label: 'Money from friend or family', route: '/money-movement-form' as const, kind: 'borrowed-in' },
-    { label: 'Loan received', route: '/liability-form' as const, received: '1' },
-    { label: 'Repaid a friend or loan', route: '/money-movement-form' as const, kind: 'repay' },
-    { label: 'Took money out of savings or investments', route: '/money-movement-form' as const, kind: 'withdraw' },
-    { label: 'Used my own funds', route: '/money-movement-form' as const, kind: 'own-funds' },
-  ];
-
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="transactions-content-scroll" style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
           menu={[
-            { label: 'Record money movement', icon: 'link', onPress: () => setMovementSheetOpen(true) },
+            { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
             ...(visibleReview ? [{
               label: `Review ${formatMonth(visibleReview.month)}`,
               icon: 'calendar' as const,
@@ -130,7 +118,13 @@ export default function TransactionsScreen() {
             }] : []),
           ]}
         />
-        <View style={[styles.cashCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          testID="available-balance-card"
+          style={[
+            styles.cashCard,
+            !balanceExpanded ? styles.cashCardCollapsed : null,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
@@ -182,7 +176,17 @@ export default function TransactionsScreen() {
             </View>
           ) : null}
         </View>
-        <View style={styles.monthRow}>
+        {unlinkedCount > 0 ? (
+          <Pressable
+            testID="unlinked-entry-notice"
+            accessibilityRole="button"
+            accessibilityLabel={`${unlinkedCount} entries have no transaction. Link missing transactions`}
+            onPress={() => router.push('/link-missing')}
+            style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <AppText>{unlinkedCount} entries have no transaction. <AppText weight="semibold" style={{ color: colors.primary }}>Link</AppText></AppText>
+          </Pressable>
+        ) : null}
+        <View testID="transactions-month-row" style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Previous month"
@@ -244,11 +248,16 @@ export default function TransactionsScreen() {
         ) : null}
 
         <View
+          testID="transaction-filter-row"
+          style={styles.filterRow}
           onTouchStart={() => setTouchingChips(true)}
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroller}
+            contentContainerStyle={styles.filterChips}>
             {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
               <Chip
                 key={item}
@@ -264,7 +273,8 @@ export default function TransactionsScreen() {
                 onPress={() => setCategoryOverride('')}
               />
             ) : null}
-          </ChipRow>
+          </ScrollView>
+          <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
         </View>
         <SearchField
           accessibilityLabel="Search transactions"
@@ -273,7 +283,7 @@ export default function TransactionsScreen() {
           onChangeText={setQuery}
         />
 
-        <View style={styles.list}>
+        <View testID="transactions-list" style={styles.list}>
           {!hasMonthTransactions ? (
             <EmptyState title="No transactions this month" subtitle="Try another month to see your activity." />
           ) : groups.length === 0 ? (
@@ -304,39 +314,6 @@ export default function TransactionsScreen() {
         </View>
       </ScrollView>
       </View>
-      <Modal
-        visible={movementSheetOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMovementSheetOpen(false)}>
-        <Pressable style={styles.modalScrim} onPress={() => setMovementSheetOpen(false)}>
-          <Pressable
-            accessibilityViewIsModal
-            onPress={(event) => event.stopPropagation()}
-            style={[styles.movementSheet, { backgroundColor: colors.surface }]}>
-            <AppText weight="bold" style={styles.sheetTitle}>What happened?</AppText>
-            {movements.map((movement) => (
-              <Pressable
-                accessibilityRole="button"
-                key={movement.label}
-                onPress={() => {
-                  setMovementSheetOpen(false);
-                  if ('kind' in movement) {
-                    router.push({ pathname: movement.route, params: { kind: movement.kind } });
-                  } else if ('type' in movement) {
-                    router.push({ pathname: movement.route, params: { type: movement.type } });
-                  } else if ('received' in movement) {
-                    router.push({ pathname: movement.route, params: { received: movement.received } });
-                  }
-                }}
-                style={[styles.movementRow, { borderBottomColor: colors.border }]}>
-                <AppText>{movement.label}</AppText>
-              </Pressable>
-            ))}
-            <Button label="Cancel" onPress={() => setMovementSheetOpen(false)} />
-          </Pressable>
-        </Pressable>
-      </Modal>
     </Screen>
   );
 }
@@ -350,11 +327,16 @@ const styles = StyleSheet.create({
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
+  filterRow: { minHeight: 44, marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  filterScroller: { flex: 1, minWidth: 0 },
+  filterChips: { alignItems: 'center', gap: 6 },
   rates: { marginHorizontal: 20, marginTop: 9, gap: 4 },
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
-  cashCard: { marginHorizontal: 20, minHeight: 60, maxHeight: 64, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
+  cashCard: { marginHorizontal: 20, minHeight: 60, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
+  cashCardCollapsed: { maxHeight: 64 },
+  unlinkedNotice: { minHeight: 44, marginHorizontal: 20, marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   balanceHeading: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5 },
@@ -362,8 +344,4 @@ const styles = StyleSheet.create({
   balanceLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
   reviewDot: { width: 6, height: 6, borderRadius: 3 },
-  modalScrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
-  movementSheet: { padding: 20, paddingBottom: 34, borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 6 },
-  sheetTitle: { fontSize: 18, marginBottom: 8 },
-  movementRow: { minHeight: 48, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });

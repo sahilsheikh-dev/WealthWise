@@ -40,7 +40,17 @@ import {
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
-import { resetEfAllocation, setEfAllocation } from '../domain/efAllocationActions';
+import {
+  addEfCustomBucket,
+  deleteEfCustomBucket,
+  renameEfCustomBucket,
+  resetEfAllocation,
+  saveEfPlan,
+  setEfAllocation,
+  setEfBucketLinks,
+  setEfCustomBucketAccess,
+  type EfPlanDraft,
+} from '../domain/efAllocationActions';
 import {
   applyTemplateToMonth,
   clearMonthBudget,
@@ -69,7 +79,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetLine, BudgetTemplate, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
+  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
 } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
@@ -137,6 +147,12 @@ export type AppActions = {
   deleteEfEntry: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
   resetEfAllocation: () => void;
+  addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
+  renameEfCustomBucket: (bucketId: string, name: string) => void;
+  setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
+  deleteEfCustomBucket: (bucketId: string, options?: { moveTo?: string }) => void;
+  setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
+  saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   completeOnboarding: (profile: { name: string; monthlySalary: number | null }) => void;
   dismissStorageError: () => void;
@@ -428,6 +444,24 @@ export function createAppStore(
         resetEfAllocation() {
           applyDataAction(resetEfAllocation);
         },
+        addEfCustomBucket(input) {
+          applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
+        },
+        renameEfCustomBucket(bucketId, name) {
+          applyDataAction((data) => renameEfCustomBucket(data, bucketId, name));
+        },
+        setEfCustomBucketAccess(bucketId, access) {
+          applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
+        },
+        deleteEfCustomBucket(bucketId, options) {
+          applyDataAction((data) => deleteEfCustomBucket(data, bucketId, options));
+        },
+        setEfBucketLinks(bucketId, holdingIds) {
+          applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
+        },
+        saveEfPlan(plan) {
+          applyDataAction((data) => saveEfPlan(data, plan, deps.newId));
+        },
         dismissStorageError() {
           suppressNextWrite = true;
           try {
@@ -533,6 +567,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v2`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v3`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v4`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);

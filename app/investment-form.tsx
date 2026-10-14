@@ -2,8 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch, type Control, type FieldErrors } from 'react-hook-form';
-import { View } from 'react-native';
+import { Modal, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
@@ -42,6 +43,9 @@ const holdingTypes: HoldingType[] = [
   'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
 ];
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
+const openingBalanceHint = 'Money you had already put in before you started tracking here. It counts towards your invested amount.';
+const actualValueHint = "Today's value from your statement or investment app. Leave it blank and we will use our estimate.";
+const actualValueDateHint = "The date you checked that value. We fill in today's date when you enter a value.";
 
 function plusDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00Z`);
@@ -124,7 +128,7 @@ function PlanEditor({
     earliestLogDate: plan?.logs.map((entry) => entry.date).sort()[0] ?? null,
   }), [data.holdings, data.liabilities, plan, today]);
   const submitting = useRef(false);
-  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
+  const { control, handleSubmit, getValues, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<PlanFormInput, undefined, PlanFormOutput>({
       resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
       defaultValues: plan ? {
@@ -230,7 +234,18 @@ function PlanEditor({
       <FormErrorBanner message={lastError} />
       {modeControl}
       {plan ? <ReadOnlyInvestmentKind label="Investment type" value="Recurring (SIP, RD...)" /> : null}
-      <PlanFields control={control} errors={errors} today={today} onNameChange={onNameChange} maximumDate={plusDays(today, 366)} />
+      <PlanFields
+        control={control}
+        errors={errors}
+        today={today}
+        onNameChange={onNameChange}
+        onActualValueEntered={() => {
+          if (!getValues('actualValueDate')) {
+            setValue('actualValueDate', today, { shouldDirty: true });
+          }
+        }}
+        maximumDate={plusDays(today, 366)}
+      />
       {!plan && startDate < today ? (
         <View style={{ gap: 8 }}>
           <SegmentedControl
@@ -339,13 +354,17 @@ function PlanFields({
   today,
   maximumDate,
   onNameChange,
+  onActualValueEntered,
 }: {
   control: Control<PlanFormInput, undefined, PlanFormOutput>;
   errors: FieldErrors<PlanFormInput>;
   today: string;
   maximumDate: string;
   onNameChange: (name: string) => void;
+  onActualValueEntered: () => void;
 }) {
+  const [infoOpen, setInfoOpen] = useState(false);
+  const { colors } = useTheme();
   return (
     <>
       <FormSection title="Basics">
@@ -371,7 +390,7 @@ function PlanFields({
         />} />
         <HelperText>The plan schedule starts on this date.</HelperText>
         <Controller control={control} name="trackFrom" render={({ field }) => <DateField
-          label="Start tracking installments from"
+          label="Count installments from"
           accessibilityLabel="Installment tracking start date"
           accessibilityHint="Only installments due on or after this date count toward missed contributions."
           value={field.value || today}
@@ -383,8 +402,53 @@ function PlanFields({
       </FormSection>
       <FormSection title="Opening and value">
         <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />
-        <Controller control={control} name="actualValue" render={({ field }) => <MoneyField label="Latest actual value" accessibilityLabel="Latest actual value" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.actualValue?.message} />} />
-        <Controller control={control} name="actualValueDate" render={({ field }) => <DateField label="Actual Value Date" accessibilityLabel="Actual value date" value={field.value || today} onChange={field.onChange} maximumDate={today} error={errors.actualValueDate?.message} />} />
+        <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
+        <Controller control={control} name="actualValue" render={({ field }) => <MoneyField
+          label="Latest actual value"
+          accessibilityLabel="Latest actual value"
+          value={field.value ?? ''}
+          onChangeText={(value) => {
+            field.onChange(value);
+            if (value.trim()) onActualValueEntered();
+          }}
+          onBlur={field.onBlur}
+          error={errors.actualValue?.message}
+        />} />
+        <HelperText accessibilityHint={actualValueHint}>{actualValueHint}</HelperText>
+        <Controller control={control} name="actualValueDate" render={({ field }) => <DateField
+          label="Actual value date"
+          accessibilityLabel="Actual value date"
+          accessibilityHint={actualValueDateHint}
+          value={field.value || today}
+          onChange={field.onChange}
+          maximumDate={today}
+          error={errors.actualValueDate?.message}
+        />} />
+        <HelperText accessibilityHint={actualValueDateHint}>{actualValueDateHint}</HelperText>
+        <Button
+          label="Investment value example"
+          icon="info"
+          accessibilityHint="Opens a worked example for the investment value fields."
+          onPress={() => setInfoOpen(true)}
+        />
+        <Modal visible={infoOpen} transparent animationType="slide" onRequestClose={() => setInfoOpen(false)}>
+          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' }}>
+            <View
+              accessibilityViewIsModal
+              style={{ padding: 20, paddingBottom: 34, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: colors.surface }}>
+              <AppText weight="bold">Investment value example</AppText>
+              <AppText
+                accessibilityLabel={`For example, you had ${formatAmount(10_000, 'exact', 1)} put in before tracking. This counts toward invested amount. Your statement now shows ${formatAmount(11_000, 'exact', 1)} on the date you checked it.`}>
+                For example, you had <AmountText value={10_000} tier="row" /> put in before tracking. This counts toward invested amount. Your statement now shows <AmountText value={11_000} tier="row" /> on the date you checked it.
+              </AppText>
+              <Button
+                label="Close investment value example"
+                icon="x"
+                onPress={() => setInfoOpen(false)}
+              />
+            </View>
+          </View>
+        </Modal>
       </FormSection>
     </>
   );

@@ -1,16 +1,7 @@
-export const EF_BUCKETS = [
-  'cash',
-  'bank',
-  'fd-rd',
-  'mutual-funds-bonds',
-  'stocks',
-  'insurance',
-  'other',
-] as const;
+import { EF_BUCKETS, type EfAllocation, type EfBucketId, type EfCustomBucket } from './types';
 
-export type EfBucketId = (typeof EF_BUCKETS)[number];
-
-export type EfAllocation = Record<EfBucketId, number>;
+export { EF_BUCKETS };
+export type { EfAllocation, EfBucketId };
 
 export const LOW_INSTANT_ACCESS_THRESHOLD = 50;
 export const HIGH_MARKET_EXPOSURE_THRESHOLD = 20;
@@ -76,26 +67,61 @@ export const EF_BUCKET_META: Record<EfBucketId, {
   },
 };
 
-function normalizeAllocation(allocation: Partial<EfAllocation> | null | undefined): EfAllocation {
+export type EfBucketMetadata = {
+  id: string;
+  label: string;
+  access: 'instant' | 'days' | 'slow';
+  marketLinked: boolean;
+  description: string;
+};
+
+export function efBucketMetadata(customBuckets: readonly EfCustomBucket[] = []): EfBucketMetadata[] {
+  const fixed = EF_BUCKETS.map((id) => ({ id, ...EF_BUCKET_META[id] }));
+  const custom = customBuckets.map((bucket) => ({
+    id: bucket.id,
+    label: bucket.name,
+    access: bucket.access,
+    marketLinked: bucket.marketLinked,
+    description: '',
+  }));
+  return [...fixed, ...custom];
+}
+
+function normalizeAllocation(
+  allocation: Partial<EfAllocation> | null | undefined,
+  customBuckets: readonly EfCustomBucket[] = [],
+): EfAllocation {
   const source = allocation ?? SUGGESTED_EF_ALLOCATION;
-  return EF_BUCKETS.reduce((acc, id) => {
-    acc[id] = Number(source[id] ?? SUGGESTED_EF_ALLOCATION[id]);
-    return acc;
-  }, {} as EfAllocation);
+  const normalized: EfAllocation = {};
+  for (const id of EF_BUCKETS) {
+    normalized[id] = Number(source[id] ?? SUGGESTED_EF_ALLOCATION[id]);
+  }
+  for (const bucket of customBuckets) {
+    normalized[bucket.id] = Number(source[bucket.id] ?? 0);
+  }
+  return normalized;
 }
 
-export function effectiveAllocation(allocation: Partial<EfAllocation> | null | undefined): EfAllocation {
-  return normalizeAllocation(allocation);
+export function effectiveAllocation(
+  allocation: Partial<EfAllocation> | null | undefined,
+  customBuckets: readonly EfCustomBucket[] = [],
+): EfAllocation {
+  return normalizeAllocation(allocation, customBuckets);
 }
 
-export function allocateAmounts(balance: number, allocation: EfAllocation): Record<EfBucketId, number> {
-  const balancePaise = Math.max(0, Math.round(Math.abs(balance) * 100));
-  const totals = normalizeAllocation(allocation);
-  if (!validateAllocation(totals)) {
+export function allocateAmounts(
+  balance: number,
+  allocation: EfAllocation,
+  customBuckets: readonly EfCustomBucket[] = [],
+): Record<string, number> {
+  const bucketIds = efBucketMetadata(customBuckets).map(({ id }) => id);
+  if (!validateAllocation(allocation, undefined, customBuckets)) {
     throw new RangeError('Allocation must contain percentages that total 100%.');
   }
+  const totals = normalizeAllocation(allocation, customBuckets);
 
-  const shares = EF_BUCKETS.map((id, index) => {
+  const balancePaise = Math.max(0, Math.round(Math.abs(balance) * 100));
+  const shares = bucketIds.map((id, index) => {
     const numerator = balancePaise * Math.round(totals[id] * 10);
     return { id, index, amount: Math.floor(numerator / 1000), remainder: numerator % 1000 };
   });
@@ -110,24 +136,27 @@ export function allocateAmounts(balance: number, allocation: EfAllocation): Reco
     unallocatedPaise -= 1;
   }
 
-  const result = shares.reduce((acc, share) => {
-    acc[share.id] = share.amount / 100;
-    return acc;
-  }, {} as Record<EfBucketId, number>);
+  const result: Record<string, number> = {};
+  for (const share of shares) result[share.id] = share.amount / 100;
   return result;
 }
 
 export function validateAllocation(
   allocation: Partial<EfAllocation> | null | undefined,
   details?: true,
+  customBuckets: readonly EfCustomBucket[] = [],
 ): boolean | { valid: boolean; total: number; issues: string[] } {
   if (!allocation) {
     const result = { valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] };
     return details ? result : false;
   }
 
-  const values = EF_BUCKETS.map((id) => ({ id, value: Number(allocation[id] ?? 0) }));
+  const allowedIds = efBucketMetadata(customBuckets).map(({ id }) => id);
+  const values = allowedIds.map((id) => ({ id, value: Number(allocation[id] ?? 0) }));
   const issues: string[] = [];
+  for (const id of Object.keys(allocation)) {
+    if (!allowedIds.includes(id)) issues.push(`${id}: Unknown allocation bucket`);
+  }
   for (const { id, value } of values) {
     if (!Number.isFinite(value) || value < 0 || value > 100 || !/^\d+(?:\.\d)?$/.test(String(value).replace(/\.0$/, ''))) {
       issues.push(`${id}: Enter a percentage between 0 and 100`);
@@ -144,11 +173,19 @@ export function validateAllocation(
   return details ? result : valid;
 }
 
-export function allocationWarnings(allocation: EfAllocation | null | undefined): { id: string; message: string }[] {
-  const current = effectiveAllocation(allocation);
+export function allocationWarnings(
+  allocation: EfAllocation | null | undefined,
+  customBuckets: readonly EfCustomBucket[] = [],
+): { id: string; message: string }[] {
+  const current = effectiveAllocation(allocation, customBuckets);
+  const metadata = efBucketMetadata(customBuckets);
+  const instant = metadata
+    .filter(({ access }) => access === 'instant')
+    .reduce((sum, { id }) => sum + current[id], 0);
+  const market = metadata
+    .filter(({ marketLinked }) => marketLinked)
+    .reduce((sum, { id }) => sum + current[id], 0);
   const warnings: { id: string; message: string }[] = [];
-  const instant = current.cash + current.bank;
-  const market = current['mutual-funds-bonds'] + current.stocks;
   if (instant < LOW_INSTANT_ACCESS_THRESHOLD) {
     warnings.push({ id: 'low-instant-access', message: 'Less than half of your emergency fund is available instantly' });
   }

@@ -23,6 +23,7 @@ const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
   efEntries: [],
 };
 const mockThemeId: { current: ThemeId } = { current: 'light' };
+let mockFontScale = 1;
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
@@ -84,7 +85,7 @@ jest.mock('react-native', () => {
     Modal: ({ visible, children, ...props }: { visible: boolean; children?: React.ReactNode; [key: string]: unknown }) =>
       visible ? ReactModule.createElement('modal', props, children) : null,
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
-    useWindowDimensions: () => ({ fontScale: 1 }),
+    useWindowDimensions: () => ({ fontScale: mockFontScale }),
   };
 });
 jest.mock('../ui', () => {
@@ -106,7 +107,72 @@ jest.mock('../ui', () => {
   };
 });
 
+function flattenStyles(style: unknown): Record<string, unknown>[] {
+  const values = Array.isArray(style) ? style.flat(Infinity) : [style];
+  return values.filter((value): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null,
+  );
+}
+
+function hasAncestor(
+  node: TestRenderer.ReactTestInstance,
+  ancestor: TestRenderer.ReactTestInstance,
+): boolean {
+  let current: TestRenderer.ReactTestInstance | null = node;
+  while (current) {
+    if (current === ancestor) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
 describe('Transactions screen withdrawals-only month', () => {
+  it('keeps the sort chip beside the filter scroller, including at font scale 2.0', () => {
+    mockFontScale = 2;
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+
+      const row = renderer.root.findByProps({ testID: 'transaction-filter-row' });
+      const scroller = row.findAll((node) => String(node.type) === 'scrollview')[0];
+      if (!scroller) throw new Error('Transactions filter scroller did not render.');
+      const rowStyle = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
+      const scrollerStyle = Array.isArray(scroller.props.style) ? scroller.props.style : [scroller.props.style];
+      expect(rowStyle).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flexDirection: 'row', minHeight: 44 }),
+      ]));
+      expect(scroller.props.horizontal).toBe(true);
+      expect(scrollerStyle).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      ]));
+      const chips = renderer.root.findAll((node) => String(node.type) === 'chip');
+      const sortChip = chips.find((node) => node.props.label === 'Sort: Date ↓');
+      if (!sortChip) throw new Error('Transactions sort chip did not render.');
+      const ancestors = (node: TestRenderer.ReactTestInstance) => {
+        const result: TestRenderer.ReactTestInstance[] = [];
+        let current: TestRenderer.ReactTestInstance | null = node;
+        while (current) {
+          result.push(current);
+          current = current.parent;
+        }
+        return result;
+      };
+      expect(ancestors(sortChip).some((node) => node === row)).toBe(true);
+      expect(ancestors(sortChip).some((node) => node === scroller)).toBe(false);
+      expect(ancestors(scroller).some((node) => node === row)).toBe(true);
+      expect(chips.map((node) => node.props.label))
+        .toEqual(expect.arrayContaining(['All', 'Income', 'Expense', 'Invested', 'Sort: Date ↓']));
+      expect(renderer.root.findAllByType('text').filter((node) =>
+        node.children.join('') === 'Transactions',
+      )).toHaveLength(1);
+      expect(renderer.root.findAllByProps({ testID: 'unlinked-entry-notice' })).toHaveLength(0);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Link missing transactions' })).toBeDefined();
+    } finally {
+      mockFontScale = 1;
+    }
+  });
+
   it.each(THEME_IDS)('renders the withdrawals-only state under the %s theme', (id) => {
     mockThemeId.current = id;
     const rendererRef: { current?: TestRenderer.ReactTestRenderer } = {};
@@ -123,7 +189,6 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(text).toContain('No earned income logged this month');
     expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
-    expect(text).not.toContain('What happened?');
     act(() => renderer.root.findAll((node) =>
       typeof node.props.accessibilityLabel === 'string'
       && node.props.accessibilityLabel.startsWith('Expand Available balance'),
@@ -136,7 +201,7 @@ describe('Transactions screen withdrawals-only month', () => {
     assertNoVerbText(renderer.root);
   });
 
-  it('routes plus straight to the transaction form and keeps money movement in the menu', () => {
+  it('routes plus straight to the transaction form and has no money-movement menu action', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
     let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -146,14 +211,66 @@ describe('Transactions screen withdrawals-only month', () => {
     if (!renderer) throw new Error('Transactions renderer was not created.');
 
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Record money movement' })).toHaveLength(0);
     act(() => renderer?.root.findByProps({ accessibilityLabel: 'Add transaction' }).props.onPress());
     expect(router.push).toHaveBeenCalledWith('/transaction-form');
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(0);
+  });
 
-    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Record money movement' }).props.onPress());
-    expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(1);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('What happened?');
+  it('shows and routes the unlinked-entry notice and header action at font scale 2.0', () => {
+    const previousHoldings = mockData.holdings;
+    mockData.holdings = [{
+      id: 'unlinked-manual',
+      kind: 'manual',
+      name: 'Unlinked manual',
+      type: 'Gold',
+      invested: 100,
+      value: 120,
+      valueAsOf: '2026-10-10',
+      logs: [
+        { id: 'unlinked-one', date: '2026-10-08', amount: 10, note: 'First', kind: 'Deposit' },
+        { id: 'unlinked-two', date: '2026-10-09', amount: 20, note: 'Second', kind: 'Deposit' },
+      ],
+    }];
+    mockFontScale = 2;
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const currentRenderer = renderer;
+
+      const notice = currentRenderer.root.findByProps({ testID: 'unlinked-entry-notice' });
+      expect(notice.props.accessibilityLabel).toBe('2 entries have no transaction. Link missing transactions');
+      expect(notice.findAllByType('text')
+        .flatMap((node) => node.children.filter((child): child is string => typeof child === 'string'))
+        .join(''))
+        .toBe('2 entries have no transaction. Link');
+      expect(flattenStyles(notice.props.style)).toEqual(expect.arrayContaining([
+        expect.objectContaining({ minHeight: 44, flexWrap: 'wrap', flexDirection: 'row' }),
+      ]));
+      expect(flattenStyles(notice.props.style).every((style) =>
+        !('height' in style) && !('maxHeight' in style),
+      )).toBe(true);
+      const orderedIds = currentRenderer.root.findAll((node) =>
+        ['available-balance-card', 'unlinked-entry-notice', 'transaction-filter-row'].includes(String(node.props.testID)),
+      ).map((node) => node.props.testID).filter((id, index, ids) => ids.indexOf(id) === index);
+      expect(orderedIds).toEqual([
+        'available-balance-card',
+        'unlinked-entry-notice',
+        'transaction-filter-row',
+      ]);
+
+      act(() => notice.props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/link-missing');
+      router.push.mockClear();
+      act(() => currentRenderer.root.findByProps({ accessibilityLabel: 'Link missing transactions' }).props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/link-missing');
+    } finally {
+      mockData.holdings = previousHoldings;
+      mockFontScale = 1;
+    }
   });
 
   it('keeps the collapsed balance card compact and expands its five rows and review actions', () => {
@@ -182,13 +299,11 @@ describe('Transactions screen withdrawals-only month', () => {
           style && typeof style === 'object' && style.width === 6 && style.height === 6,
         );
       }).length ?? 0;
-      const cashCard = renderer.root.findAll((node) => {
-        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
-        return styles.some((style) => style && typeof style === 'object' && style.maxHeight === 64);
-      })[0];
-      if (!cashCard) throw new Error('The constrained cash-flow card was not rendered.');
-      expect(cashCard.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 60, maxHeight: 64 }),
+      const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
+      const collapsedStyles = flattenStyles(cashCard.props.style);
+      expect(collapsedStyles).toEqual(expect.arrayContaining([
+        expect.objectContaining({ minHeight: 60 }),
+        expect.objectContaining({ maxHeight: 64 }),
       ]));
       const collapsedFigures = cashCard.findAll((node) =>
         node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
@@ -205,6 +320,11 @@ describe('Transactions screen withdrawals-only month', () => {
         typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Expand Available balance'),
       )[0]?.props.onPress());
+      const expandedStyles = flattenStyles(cashCard.props.style);
+      expect(expandedStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(cashCard.findAll((node) =>
+        flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
+      )).toHaveLength(0);
       const expandedText = cashCard.findAllByType('text')
         .map((node) => node.children.join(' '))
         .join(' ')
@@ -234,6 +354,40 @@ describe('Transactions screen withdrawals-only month', () => {
     } finally {
       mockData.transactions = previousTransactions;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('lets the expanded balance card and its rows grow at font scale 2.0', () => {
+    mockFontScale = 2;
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const currentRenderer = renderer;
+      const cashCard = currentRenderer.root.findByProps({ testID: 'available-balance-card' });
+      act(() => currentRenderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
+      )[0]?.props.onPress());
+
+      const cardStyles = flattenStyles(cashCard.props.style);
+      expect(cardStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(cashCard.findAll((node) =>
+        flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
+      )).toHaveLength(0);
+      const balanceRows = cashCard.findAllByProps({ testID: 'available-balance-line' });
+      expect(balanceRows.length).toBeGreaterThanOrEqual(5);
+      expect(balanceRows.every((row) =>
+        flattenStyles(row.props.style).every((style) => !('height' in style)),
+      )).toBe(true);
+      const contentScroll = currentRenderer.root.findByProps({ testID: 'transactions-content-scroll' });
+      for (const testID of ['transactions-month-row', 'transaction-filter-row', 'transactions-list']) {
+        const section = currentRenderer.root.findByProps({ testID });
+        expect(hasAncestor(section, contentScroll)).toBe(true);
+        expect(flattenStyles(section.props.style).some((style) => style.position === 'absolute')).toBe(false);
+      }
+    } finally {
+      mockFontScale = 1;
     }
   });
 

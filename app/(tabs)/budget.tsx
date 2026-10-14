@@ -7,13 +7,15 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { CardHeaderRow } from '../../src/components/CardHeaderRow';
 import { DueActions } from '../../src/components/DueActions';
+import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { AppText, Button, Card, Chip, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import type { BudgetCommitment } from '../../src/domain/budget';
 import { budgetMonthView } from '../../src/domain/budget';
+import { reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { efBalance } from '../../src/domain/ef';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -40,6 +42,7 @@ export default function BudgetScreen() {
   const sorting = useSort('budgetSpending');
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
+  const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const templates = data.budgetTemplates ?? [];
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
@@ -76,7 +79,6 @@ export default function BudgetScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <AppHeader title="Budget" menu={[
             { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
-            { icon: 'calendar', label: 'Budget history', onPress: () => router.push('/budget-history') },
           ]} />
           <View
             onTouchStart={() => setTouchingHeader(true)}
@@ -89,6 +91,30 @@ export default function BudgetScreen() {
             <AppText weight="semibold" style={typography.name}>{formatMonth(month)}</AppText>
             <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => setMonth(shiftMonth(month, 1))}>
               <Feather name="chevron-right" size={22} color={colors.text2} />
+            </Pressable>
+          </View>
+          <View testID="budget-quick-actions" style={styles.quickActions}>
+            <Button
+              label="History"
+              icon="calendar"
+              style={styles.quickActionButton}
+              onPress={() => router.push('/budget-history')}
+            />
+            <Pressable
+              testID="budget-month-review-action"
+              accessibilityRole="button"
+              accessibilityLabel={reviewableMonth
+                ? `Month review, ${formatMonth(reviewableMonth.month)} needs review`
+                : 'Month review'}
+              onPress={() => router.push(reviewableMonth
+                ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
+                : '/month-review')}
+              style={[styles.quickReviewAction, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+              <Feather name="calendar" size={14} color={colors.text2} />
+              <AppText weight="semibold" style={styles.quickReviewLabel}>Month review</AppText>
+              {reviewableMonth ? (
+                <View testID="budget-month-review-dot" style={[styles.quickReviewDot, { backgroundColor: colors.primary }]} />
+              ) : null}
             </Pressable>
           </View>
 
@@ -143,9 +169,10 @@ export default function BudgetScreen() {
 
           {view.budget ? (
             <>
-              <ChipRow>
-                <SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />
-              </ChipRow>
+              <SectionHeaderRow
+                title="Spending"
+                right={<SortChip options={SORT_OPTIONS.budgetSpending} spec={sorting.spec} onChange={sorting.setSpec} />}
+              />
               {lines.filter((line) => !['EMI', 'Insurance'].includes(line.category)
                 && !['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'].includes(line.category))
                 .map((line) => (
@@ -295,6 +322,11 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 10 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
+  quickActions: { marginHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  quickActionButton: { flexGrow: 1, flexBasis: '42%' },
+  quickReviewAction: { minHeight: 44, minWidth: 0, flexGrow: 1, flexBasis: '42%', flexWrap: 'wrap', paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 },
+  quickReviewLabel: { flexShrink: 1, fontSize: 12 },
+  quickReviewDot: { width: 6, height: 6, borderRadius: 3 },
   statRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   commitmentTop: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   commitmentStatus: { alignItems: 'flex-end', gap: 4 },

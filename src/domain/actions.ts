@@ -23,6 +23,8 @@ export function emptyAppData(asOf: ISODate): AppData {
     monthBudgets: [],
     efEntries: [],
     efAllocation: null,
+    efCustomBuckets: [],
+    efBucketLinks: {},
   };
 }
 

@@ -9,7 +9,7 @@ import {
   validateImportData,
 } from '../backup';
 import { mockAppData } from '../../mock/data';
-import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture } from '../../data/testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixture } from '../../data/testFixtures/v1';
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
 
@@ -31,7 +31,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 5 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 6 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -74,7 +74,7 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
-  it('imports schema-v5 backups containing the new expense categories', async () => {
+  it('imports schema-v6 backups containing the new expense categories', async () => {
     const categories = ['Festival', 'Donation', 'Gifts'] as const;
     const data = {
       ...mockAppData,
@@ -104,7 +104,7 @@ describe('backup validation and serialization', () => {
         lines: categories.map((category) => ({ category, planned: 100 })),
       }],
     };
-    expect(SCHEMA_VERSION).toBe(5);
+    expect(SCHEMA_VERSION).toBe(6);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({
       ok: true,
@@ -116,7 +116,51 @@ describe('backup validation and serialization', () => {
     });
   });
 
-  it('validates v5 policy, settlement, due-date and budget import constraints', () => {
+  it('round trips custom emergency-fund options and refuses schema version seven', async () => {
+    const data = {
+      ...mockAppData,
+      efCustomBuckets: [{ id: 'home-safe', name: 'Home safe', access: 'instant' as const, marketLinked: false }],
+      efBucketLinks: { 'home-safe': ['holding-pf'] },
+      efAllocation: {
+        cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
+        stocks: 0, insurance: 0, other: 0, 'home-safe': 10,
+      },
+    };
+    const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
+    const imported = await parseBackup(raw, { digest });
+    expect(imported).toMatchObject({
+      ok: true,
+      data: {
+        efCustomBuckets: data.efCustomBuckets,
+        efBucketLinks: data.efBucketLinks,
+        efAllocation: data.efAllocation,
+      },
+    });
+    const future = JSON.parse(raw) as { schemaVersion: number };
+    future.schemaVersion = 7;
+    await expect(parseBackup(JSON.stringify(future), { digest }))
+      .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
+  });
+
+  it('rejects hand-broken custom bucket links and allocation keys as integrity failures', () => {
+    const bucket = { id: 'custom-safe', name: 'Safe reserve', access: 'days' as const, marketLinked: false };
+    const brokenLink = validateImportData({
+      ...mockAppData,
+      efCustomBuckets: [bucket],
+      efBucketLinks: { 'custom-safe': ['missing-holding'] },
+    });
+    expect(brokenLink).toMatchObject({ ok: false, reason: 'integrity' });
+    if (!brokenLink.ok) expect(brokenLink.issues.join(' ')).toContain('existing holding');
+
+    const brokenAllocation = validateImportData({
+      ...mockAppData,
+      efAllocation: { ...SUGGESTED_EF_ALLOCATION, missing: 0 },
+    });
+    expect(brokenAllocation).toMatchObject({ ok: false, reason: 'integrity' });
+    if (!brokenAllocation.ok) expect(brokenAllocation.issues.join(' ')).toContain('unknown option');
+  });
+
+  it('validates v6 policy, settlement, due-date and budget import constraints', () => {
     const policy = mockAppData.policies[0];
     const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
     const oneTime = mockAppData.liabilities.find((item) => item.kind === 'one-time');
@@ -206,7 +250,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 6;
+    newer.schemaVersion = 7;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
@@ -283,6 +327,7 @@ describe('backup validation and serialization', () => {
   it.each([
     [3, makeV3Fixture],
     [4, makeV4Fixture],
+    [5, makeV5Fixture],
   ] as const)('verifies the v%s checksum before migrating its data', async (schemaVersion, makeFixture) => {
     const data = makeFixture();
     const envelope = {

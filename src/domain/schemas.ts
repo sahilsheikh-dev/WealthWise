@@ -2,10 +2,11 @@ import { z } from 'zod';
 
 import { formatDate, formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
-import { emiCoversInterest } from './liability';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
+import { solveLoan } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -274,18 +275,40 @@ const settingsSchema = z.object({
   onboarded: z.boolean(),
 });
 
-const efAllocationSchema = z.object({
-  cash: z.number().min(0).max(100).step(0.1),
-  bank: z.number().min(0).max(100).step(0.1),
-  'fd-rd': z.number().min(0).max(100).step(0.1),
-  'mutual-funds-bonds': z.number().min(0).max(100).step(0.1),
-  stocks: z.number().min(0).max(100).step(0.1),
-  insurance: z.number().min(0).max(100).step(0.1),
-  other: z.number().min(0).max(100).step(0.1),
-}).refine((allocation) => {
+export const efAllocationSchema = z.record(
+  idSchema,
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
+).refine((allocation) => {
   const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
   return Math.abs(total - 100) < 0.0001;
 }, { message: 'Percentages must add up to 100%', path: ['total'] }).nullable().optional();
+
+export const efCustomBucketSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(24).refine((name) => name === name.trim()),
+  access: z.enum(['instant', 'days', 'slow']),
+  marketLinked: z.boolean(),
+});
+
+export const efCustomBucketsSchema = z.array(efCustomBucketSchema).max(8).superRefine((buckets, context) => {
+  const names = new Set(EF_BUCKETS.map((id) => EF_BUCKET_META[id].label.trim().toLowerCase()));
+  const ids = new Set<string>(EF_BUCKETS);
+  buckets.forEach((bucket, index) => {
+    const normalizedName = bucket.name.trim().toLowerCase();
+    if (normalizedName.length === 0) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Name must not be empty' });
+    }
+    if (names.has(normalizedName)) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Custom option names must be unique and differ from fixed options' });
+    }
+    if (ids.has(bucket.id)) {
+      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Bucket IDs must be unique' });
+    }
+    names.add(normalizedName);
+    ids.add(bucket.id);
+  });
+});
+export const efBucketLinksSchema = z.record(idSchema, z.array(idSchema).max(10));
 
 export const appDataSchema = z.object({
   settings: settingsSchema,
@@ -300,6 +323,8 @@ export const appDataSchema = z.object({
   monthBudgets: z.array(monthBudgetSchema).optional(),
   efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
+  efCustomBuckets: efCustomBucketsSchema,
+  efBucketLinks: efBucketLinksSchema,
 });
 
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;
@@ -429,31 +454,6 @@ export function makeTransactionFormSchema(
   });
 }
 
-export function makeMoneyMovementFormSchema(
-  kind: 'borrowed-in' | 'repay' | 'withdraw' | 'own-funds',
-  today: ISODate,
-  options: { liabilityIds: string[]; instrumentIds: string[] },
-) {
-  return z.object({
-    amount: amountInputSchema,
-    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
-    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-    lenderName: z.string().trim().max(40, 'Keep the lender name under 40 characters'),
-    liabilityId: z.string(),
-    instrumentId: z.string(),
-  }).superRefine((value, context) => {
-    if (kind === 'borrowed-in' && value.lenderName.length === 0) {
-      context.addIssue({ code: 'custom', path: ['lenderName'], message: 'Enter who lent you the money' });
-    }
-    if (kind === 'repay' && !options.liabilityIds.includes(value.liabilityId)) {
-      context.addIssue({ code: 'custom', path: ['liabilityId'], message: 'Choose a liability to repay' });
-    }
-    if (kind === 'withdraw' && !options.instrumentIds.includes(value.instrumentId)) {
-      context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Choose where you withdrew the money from' });
-    }
-  });
-}
-
 export function makeMonthAllocationFormSchema(
   mode: 'shortfall' | 'surplus',
   options: { liabilityIds: string[]; instrumentIds: string[]; maximumAmount: number },
@@ -488,8 +488,6 @@ export function makeMonthAllocationFormSchema(
 
 export type TransactionFormInput = z.input<ReturnType<typeof makeTransactionFormSchema>>;
 export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFormSchema>>;
-export type MoneyMovementFormInput = z.input<ReturnType<typeof makeMoneyMovementFormSchema>>;
-export type MoneyMovementFormOutput = z.output<ReturnType<typeof makeMoneyMovementFormSchema>>;
 export type MonthAllocationFormInput = z.input<ReturnType<typeof makeMonthAllocationFormSchema>>;
 export type MonthAllocationFormOutput = z.output<ReturnType<typeof makeMonthAllocationFormSchema>>;
 
@@ -603,22 +601,63 @@ export function makeLiabilityFormSchema(
   const recurring = z.object({
     ...common,
     kind: z.literal('recurring'),
-    tenureMonths: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 480')
-      .transform(Number).refine((value) => value >= 1 && value <= 480, 'Enter whole months from 1 to 480'),
+    ratePct: z.union([
+      z.literal('').transform(() => null),
+      optionalRate(100, 'Enter a rate between 0 and 100'),
+    ]),
+    tenureMonths: z.union([
+      z.literal('').transform(() => null),
+      z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 600')
+        .transform(Number).refine((value) => value >= 1 && value <= 600, 'Enter whole months from 1 to 600'),
+    ]),
     emi: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, optional: true }),
     dueDate: z.string().optional(),
   }).superRefine((value, context) => {
     if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
     }
-    if (value.emi !== undefined && !emiCoversInterest(value.principal, value.ratePct, value.emi)) {
-      const monthlyInterest = formatINR(value.principal * value.ratePct / 1200);
-      context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
+    const knownCount = [value.ratePct, value.tenureMonths, value.emi]
+      .filter((field) => field !== null && field !== undefined).length;
+    if (knownCount < 2) {
+      context.addIssue({
+        code: 'custom',
+        path: ['tenureMonths'],
+        message: 'Add one more of tenure, interest rate or EMI so we can work out the rest',
+      });
+    } else {
+      try {
+        solveLoan({
+          principal: value.principal,
+          ...(value.ratePct === null ? {} : { ratePct: value.ratePct }),
+          ...(value.tenureMonths === null ? {} : { tenureMonths: value.tenureMonths }),
+          ...(value.emi === undefined ? {} : { emi: value.emi }),
+        });
+      } catch (error) {
+        if (!(error instanceof Error)) throw error;
+        context.addIssue({
+          code: 'custom',
+          path: value.tenureMonths === null ? ['tenureMonths'] : ['emi'],
+          message: error.message,
+        });
+      }
     }
-  }).transform(({ dueDate: _dueDate, ...value }) => ({
-    ...value,
-    emi: value.emi ?? null,
-  }));
+  }).transform(({ dueDate: _dueDate, ...value }) => {
+    const solved = solveLoan({
+      principal: value.principal,
+      ...(value.ratePct === null ? {} : { ratePct: value.ratePct }),
+      ...(value.tenureMonths === null ? {} : { tenureMonths: value.tenureMonths }),
+      ...(value.emi === undefined ? {} : { emi: value.emi }),
+    });
+    if (solved.ratePct === null || solved.tenureMonths === null || solved.emi === null) {
+      throw new Error('Add one more of tenure, interest rate or EMI so we can work out the rest');
+    }
+    return {
+      ...value,
+      ratePct: solved.ratePct,
+      tenureMonths: solved.tenureMonths,
+      emi: solved.emi,
+    };
+  });
   const oneTime = z.object({
     ...common,
     kind: z.literal('one-time'),

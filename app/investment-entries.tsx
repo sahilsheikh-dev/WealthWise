@@ -6,6 +6,7 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
@@ -178,8 +179,11 @@ export default function InvestmentEntriesScreen() {
               Paid {schedule.summary.paid} of {schedule.rows.length} · {schedule.summary.overdue} overdue
             </AppText>
           </Card>
+          <SectionHeaderRow
+            title="Installments"
+            right={<SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />}
+          />
           <ChipRow>
-            <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
             {filters.map((item) => {
               const count = item === 'All'
                 ? schedule.rows.length
@@ -209,9 +213,10 @@ export default function InvestmentEntriesScreen() {
               Total withdrawals <AmountText value={holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
             </AppText>
           </Card>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
-          </ChipRow>
+          <SectionHeaderRow
+            title="Investment entries"
+            right={<SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />}
+          />
         </>
       )}
     </View>

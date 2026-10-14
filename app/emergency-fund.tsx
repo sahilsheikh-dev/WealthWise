@@ -5,12 +5,12 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
   Card,
-  ChipRow,
   DetailTabBar,
   ProgressBar,
   Screen,
@@ -22,15 +22,16 @@ import { useSort } from '../src/data/useSort';
 import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import {
   EF_BUCKETS,
-  EF_BUCKET_META,
   allocateAmounts,
   allocationWarnings,
   effectiveAllocation,
+  efBucketMetadata,
 } from '../src/domain/efAllocation';
 import { ensureEfGoal, goalView } from '../src/domain/goals';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
+import { holdingValue } from '../src/domain/portfolio';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -47,9 +48,21 @@ export default function EmergencyFundScreen() {
   const covered = monthsCovered(balance, baseline);
   const fundMilestones = milestones(balance, baseline);
   const entries = sorting.sort(efPassbook(data.efEntries));
-  const allocation = effectiveAllocation(data.efAllocation);
-  const allocationAmounts = allocateAmounts(balance, allocation);
-  const allocationAlerts = allocationWarnings(allocation);
+  const allocation = effectiveAllocation(data.efAllocation, data.efCustomBuckets);
+  const allocationAmounts = allocateAmounts(balance, allocation, data.efCustomBuckets);
+  const allocationAlerts = allocationWarnings(allocation, data.efCustomBuckets);
+  const allocationRows = efBucketMetadata(data.efCustomBuckets).map((bucket) => {
+    const linkedHoldings = (data.efBucketLinks[bucket.id] ?? [])
+      .map((holdingId) => data.holdings.find((holding) => holding.id === holdingId))
+      .filter((holding) => holding !== undefined);
+    return {
+      bucket,
+      isCustom: !EF_BUCKETS.some((fixedId) => fixedId === bucket.id),
+      linkedHoldings,
+      linkedValue: linkedHoldings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0),
+      planned: allocationAmounts[bucket.id] ?? 0,
+    };
+  });
   const emergencyGoal = ensureEfGoal(data.goals, { expenseBaseline: baseline, asOf })
     .find((goal) => goal.auto === 'ef');
   const emergencyGoalView = emergencyGoal ? goalView(emergencyGoal, {
@@ -111,13 +124,49 @@ export default function EmergencyFundScreen() {
               onPress={() => router.push('/ef-allocation-form' as Href)}
             />
           </View>
-          {EF_BUCKETS.map((id) => (
-            <View key={id} style={[styles.allocationRow, { borderBottomColor: colors.border }]}>
-              <AppText style={[typography.meta, styles.allocationLabel]}>{EF_BUCKET_META[id].label}</AppText>
-              <AppText style={typography.meta}>{allocation[id]}%</AppText>
-              <AmountText value={allocationAmounts[id]} tier="row" style={[typography.meta, styles.allocationAmount]} />
+          {allocationRows.map(({ bucket, isCustom, linkedHoldings, linkedValue, planned }) => (
+            <View
+              key={bucket.id}
+              style={[
+                isCustom ? styles.customAllocationRow : styles.fixedAllocationContainer,
+                { borderBottomColor: colors.border },
+              ]}>
+              <View style={styles.allocationRow}>
+                <AppText style={[typography.meta, styles.allocationLabel]}>{bucket.label}</AppText>
+                <AppText style={typography.meta}>{allocation[bucket.id] ?? 0}%</AppText>
+                <AmountText value={planned} tier="row" style={[typography.meta, styles.allocationAmount]} />
+              </View>
+              {isCustom || linkedHoldings.length > 0 ? (
+                <>
+                  <View style={styles.linkedInvestmentChips}>
+                    {linkedHoldings.map((holding) => {
+                      const value = holdingValue(holding, asOf);
+                      return (
+                        <View
+                          key={holding.id}
+                          accessible
+                          accessibilityLabel={`${holding.name}: ${formatAmount(value, 'exact', 1)}`}
+                          style={[styles.linkedInvestmentChip, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+                          <AppText style={typography.chip}>{holding.name}</AppText>
+                          <AmountText value={value} tier="row" style={typography.chip} />
+                        </View>
+                      );
+                    })}
+                  </View>
+                  <AppText
+                    style={[typography.meta, { color: colors.text3 }]}
+                    accessibilityLabel={`Linked ${formatAmount(linkedValue, 'exact', 1)} of ${formatAmount(planned, 'exact', 1)} planned`}>
+                    Linked <AmountText value={linkedValue} tier="row" /> of <AmountText value={planned} tier="row" /> planned
+                  </AppText>
+                </>
+              ) : null}
             </View>
           ))}
+          {data.efCustomBuckets.length > 0 || Object.values(data.efBucketLinks).some((holdingIds) => holdingIds.length > 0) ? (
+            <AppText style={[typography.meta, { color: colors.text3, marginTop: 8 }]}>
+              Linking does not move money or change your net worth. Do not record the same money as both an emergency fund balance and an investment.
+            </AppText>
+          ) : null}
           {allocationAlerts.map((warning) => (
             <AppText key={warning.id} style={[typography.meta, { color: colors.err, marginTop: 6 }]}>
               {warning.message}
@@ -163,13 +212,14 @@ export default function EmergencyFundScreen() {
           </Card>
         ) : null}
 
-        <ChipRow>
-          <SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />
-        </ChipRow>
+        <SectionHeaderRow
+          title="Emergency fund entries"
+          right={<SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />}
+        />
 
         <View style={styles.passbook}>
           {entries.map((entry) => (
-            <Card>
+            <Card key={entry.id}>
             <SharedListRow
               key={entry.id}
               style={[styles.passbookRow, { borderBottomColor: colors.border }]}
@@ -205,9 +255,13 @@ const styles = StyleSheet.create({
   targetAmount: { marginTop: 2 },
   allocationHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   allocationTitle: { flex: 1, minWidth: 0, gap: 3 },
-  allocationRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
+  allocationRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center' },
+  fixedAllocationContainer: { borderBottomWidth: StyleSheet.hairlineWidth },
+  customAllocationRow: { gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   allocationLabel: { flex: 1 },
   allocationAmount: { minWidth: 100, textAlign: 'right' },
+  linkedInvestmentChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  linkedInvestmentChip: { minHeight: 34, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
   basedOn: { marginTop: 8 },
   sortRow: { marginHorizontal: 20, marginTop: 8 },
   passbook: {  },

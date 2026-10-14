@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { ensureEfGoal } from './goals';
 import { validateIntegrity } from './links';
 import { migratePersisted } from '../data/migrate';
-import { appDataSchema, BUDGET_CATEGORIES, SCHEMA_VERSION } from './schemas';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
+import {
+  appDataSchema,
+  BUDGET_CATEGORIES,
+  SCHEMA_VERSION,
+} from './schemas';
 import { THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
@@ -91,16 +96,32 @@ const oneTimeLiabilitySchema = z.strictObject({
 const efEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: money.refine((amount) => amount !== 0), note,
 });
-const efAllocationSchema = z.strictObject({
-  cash: z.number().finite().min(0).max(100),
-  bank: z.number().finite().min(0).max(100),
-  'fd-rd': z.number().finite().min(0).max(100),
-  'mutual-funds-bonds': z.number().finite().min(0).max(100),
-  stocks: z.number().finite().min(0).max(100),
-  insurance: z.number().finite().min(0).max(100),
-  other: z.number().finite().min(0).max(100),
-}).refine((allocation) => Math.abs(Object.values(allocation).reduce((sum, value) => sum + value, 0) - 100) < 0.0001)
-  .nullable();
+const importEfAllocationSchema = z.record(
+  idSchema,
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
+).refine((allocation) => Math.abs(Object.values(allocation).reduce((sum, value) => sum + value, 0) - 100) < 0.0001)
+  .nullable().optional();
+const importEfCustomBucketsSchema = z.array(z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(24).refine((value) => value === value.trim()),
+  access: z.enum(['instant', 'days', 'slow']),
+  marketLinked: z.boolean(),
+})).max(8).superRefine((buckets, context) => {
+  const names = new Set(EF_BUCKETS.map((id) => EF_BUCKET_META[id].label.trim().toLowerCase()));
+  const ids = new Set<string>(EF_BUCKETS);
+  buckets.forEach((bucket, index) => {
+    const normalizedName = bucket.name.trim().toLowerCase();
+    if (names.has(normalizedName)) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Custom option names must be unique and differ from fixed options' });
+    }
+    if (ids.has(bucket.id)) {
+      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Bucket IDs must be unique' });
+    }
+    names.add(normalizedName);
+    ids.add(bucket.id);
+  });
+});
+const importEfBucketLinksSchema = z.record(idSchema, z.array(idSchema).max(10));
 const policySchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(40),
@@ -214,7 +235,9 @@ export const importDataSchema = z.strictObject({
   defaultBudgetTemplateId: idSchema.nullable().optional(),
   monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
   efEntries: z.array(efEntrySchema).max(100_000),
-  efAllocation: efAllocationSchema,
+  efAllocation: importEfAllocationSchema,
+  efCustomBuckets: importEfCustomBucketsSchema,
+  efBucketLinks: importEfBucketLinksSchema,
 });
 
 const envelopeSchema = z.strictObject({

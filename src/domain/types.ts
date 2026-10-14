@@ -230,7 +230,14 @@ export const EF_BUCKETS = [
 
 export type EfBucketId = (typeof EF_BUCKETS)[number];
 
-export type EfAllocation = Record<EfBucketId, number>;
+export type EfAllocation = Record<string, number>;
+
+export type EfCustomBucket = {
+  id: string;
+  name: string;
+  access: 'instant' | 'days' | 'slow';
+  marketLinked: boolean;
+};
 
 export type AppData = {
   settings: Settings;
@@ -245,4 +252,6 @@ export type AppData = {
   monthBudgets?: MonthBudget[];
   efEntries: EfEntry[];
   efAllocation?: EfAllocation | null;
+  efCustomBuckets: EfCustomBucket[];
+  efBucketLinks: Record<string, string[]>;
 };

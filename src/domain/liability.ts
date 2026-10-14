@@ -8,6 +8,154 @@ export function emiAuto(principal: number, ratePct: number, tenureMonths: number
   return Math.round(principal * monthlyRate * factor / (factor - 1));
 }
 
+export type LoanSolverWarning = {
+  kind: 'emi-mismatch';
+  calculatedEmi: number;
+};
+
+export type LoanSolverResult = {
+  ratePct: number | null;
+  tenureMonths: number | null;
+  emi: number | null;
+  solved: 'emi' | 'rate' | 'tenure' | 'none';
+  totalInterest: number | null;
+  lastPayment: number | null;
+  warnings: LoanSolverWarning[];
+};
+
+export function solveLoan(input: {
+  principal: number;
+  ratePct?: number;
+  tenureMonths?: number;
+  emi?: number;
+}): LoanSolverResult {
+  const { principal } = input;
+  const ratePct = input.ratePct;
+  const tenureMonths = input.tenureMonths;
+  const emi = input.emi;
+  if (!Number.isFinite(principal) || principal <= 0) {
+    throw new Error('Principal must be greater than zero');
+  }
+  if (ratePct !== undefined && (!Number.isFinite(ratePct) || ratePct < 0 || ratePct > 100)) {
+    throw new Error('Interest rate must be between 0 and 100%');
+  }
+  if (tenureMonths !== undefined &&
+    (!Number.isInteger(tenureMonths) || tenureMonths < 1 || tenureMonths > 600)) {
+    throw new Error('Tenure must be between 1 and 600 whole months');
+  }
+  if (emi !== undefined && (!Number.isFinite(emi) || emi <= 0)) {
+    throw new Error('EMI must be greater than zero');
+  }
+
+  const knownCount = [ratePct, tenureMonths, emi].filter((value) => value !== undefined).length;
+  if (knownCount < 2) {
+    return {
+      ratePct: ratePct ?? null,
+      tenureMonths: tenureMonths ?? null,
+      emi: emi ?? null,
+      solved: 'none',
+      totalInterest: null,
+      lastPayment: null,
+      warnings: [],
+    };
+  }
+
+  const roundMoney = (amount: number) => Math.round((amount + Number.EPSILON) * 100) / 100;
+  const paymentAtRate = (annualRatePct: number, months: number) => {
+    const monthlyRate = annualRatePct / 1200;
+    if (monthlyRate === 0) return principal / months;
+    const factor = (1 + monthlyRate) ** months;
+    return principal * monthlyRate * factor / (factor - 1);
+  };
+
+  if (ratePct !== undefined && tenureMonths !== undefined) {
+    const calculatedEmi = roundMoney(paymentAtRate(ratePct, tenureMonths));
+    const warnings = emi !== undefined
+      && Math.abs(emi - calculatedEmi) > Math.max(1, calculatedEmi * 0.01)
+      ? [{ kind: 'emi-mismatch' as const, calculatedEmi }]
+      : [];
+    const amountPaid = (emi ?? calculatedEmi) * tenureMonths;
+    return {
+      ratePct,
+      tenureMonths,
+      emi: emi ?? calculatedEmi,
+      solved: emi === undefined ? 'emi' : 'none',
+      totalInterest: roundMoney(amountPaid - principal),
+      lastPayment: null,
+      warnings,
+    };
+  }
+
+  if (tenureMonths !== undefined && emi !== undefined) {
+    if (emi * tenureMonths < principal - 0.01) {
+      throw new Error('EMI is too low to repay this loan in that time');
+    }
+    let solvedRate = 0;
+    if (Math.abs(emi * tenureMonths - principal) > 0.01) {
+      const maximumRatePayment = paymentAtRate(100, tenureMonths);
+      if (emi > maximumRatePayment) {
+        throw new Error('Interest rate must be between 0 and 100% to match this EMI');
+      }
+      let low = 0;
+      let high = 100;
+      for (let iteration = 0; iteration < 80; iteration += 1) {
+        const middle = (low + high) / 2;
+        if (paymentAtRate(middle, tenureMonths) < emi) low = middle;
+        else high = middle;
+      }
+      solvedRate = roundMoney((low + high) / 2);
+    }
+    return {
+      ratePct: solvedRate,
+      tenureMonths,
+      emi,
+      solved: 'rate',
+      totalInterest: roundMoney(emi * tenureMonths - principal),
+      lastPayment: null,
+      warnings: [],
+    };
+  }
+
+  if (ratePct !== undefined && emi !== undefined) {
+    const monthlyRate = ratePct / 1200;
+    if (emi <= principal * monthlyRate) {
+      throw new Error('EMI does not even cover the monthly interest');
+    }
+    const exactMonths = monthlyRate === 0
+      ? principal / emi
+      : -Math.log(1 - principal * monthlyRate / emi) / Math.log(1 + monthlyRate);
+    const solvedTenure = Math.ceil(exactMonths);
+    if (solvedTenure > 600) throw new Error('Calculated tenure exceeds 600 months');
+    const balanceBeforeFinalPayment = monthlyRate === 0
+      ? Math.max(0, principal - emi * (solvedTenure - 1))
+      : Math.max(
+        0,
+        principal * (1 + monthlyRate) ** (solvedTenure - 1)
+          - emi * (((1 + monthlyRate) ** (solvedTenure - 1) - 1) / monthlyRate),
+      );
+    const lastPayment = roundMoney(balanceBeforeFinalPayment * (1 + monthlyRate));
+    return {
+      ratePct,
+      tenureMonths: solvedTenure,
+      emi,
+      solved: 'tenure',
+      totalInterest: roundMoney(emi * (solvedTenure - 1) + lastPayment - principal),
+      lastPayment,
+      warnings: [],
+    };
+  }
+
+  return {
+    ratePct: ratePct ?? null,
+    tenureMonths: tenureMonths ?? null,
+    emi: emi ?? null,
+    solved: 'none',
+    totalInterest: null,
+    lastPayment: null,
+    warnings: [],
+  };
+}
+
 export type LiabilityState = {
   balance: number;
   paidTotal: number;

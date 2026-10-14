@@ -4,13 +4,13 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Card,
-  ChipRow,
   DetailTabBar,
   EmptyState,
   Screen,
@@ -153,11 +153,12 @@ export default function LiabilityPaymentsScreen() {
           onChange={setTab}
         />
       </View>
-      <ChipRow>
-        {tab === 'Schedule'
+      <SectionHeaderRow
+        title={tab === 'Schedule' ? 'Installments' : 'Payments'}
+        right={tab === 'Schedule'
           ? <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
           : <SortChip options={SORT_OPTIONS.payments} spec={paymentSorting.spec} onChange={paymentSorting.setSpec} />}
-      </ChipRow>
+      />
       {tab === 'Schedule' ? (
         <>
           <Card>
