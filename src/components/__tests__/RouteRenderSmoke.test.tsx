@@ -687,8 +687,7 @@ describe('route render smoke audit', () => {
     const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
     const previousMonthLabel = monthLabel();
     const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
-    const chipSurface = renderer.root.findAll((node) => typeof node.props.onTouchStart === 'function')[0];
-    if (!chipSurface) throw new Error('Transaction filter touch surface did not render.');
+    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-row' });
     const responder = () => renderer.root.findAll(
       (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
     )[0];

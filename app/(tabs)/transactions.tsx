@@ -10,7 +10,6 @@ import {
   AppText,
   Button,
   Chip,
-  ChipRow,
   EmptyState,
   ListItem,
   Screen,
@@ -244,11 +243,16 @@ export default function TransactionsScreen() {
         ) : null}
 
         <View
+          testID="transaction-filter-row"
+          style={styles.filterRow}
           onTouchStart={() => setTouchingChips(true)}
           onTouchEnd={() => setTouchingChips(false)}
           onTouchCancel={() => setTouchingChips(false)}>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroller}
+            contentContainerStyle={styles.filterChips}>
             {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
               <Chip
                 key={item}
@@ -264,7 +268,8 @@ export default function TransactionsScreen() {
                 onPress={() => setCategoryOverride('')}
               />
             ) : null}
-          </ChipRow>
+          </ScrollView>
+          <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
         </View>
         <SearchField
           accessibilityLabel="Search transactions"
@@ -350,6 +355,9 @@ const styles = StyleSheet.create({
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
+  filterRow: { minHeight: 44, marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  filterScroller: { flex: 1, minWidth: 0 },
+  filterChips: { alignItems: 'center', gap: 6 },
   rates: { marginHorizontal: 20, marginTop: 9, gap: 4 },
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },

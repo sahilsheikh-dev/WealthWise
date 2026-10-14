@@ -23,6 +23,7 @@ const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
   efEntries: [],
 };
 const mockThemeId: { current: ThemeId } = { current: 'light' };
+let mockFontScale = 1;
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
@@ -84,7 +85,7 @@ jest.mock('react-native', () => {
     Modal: ({ visible, children, ...props }: { visible: boolean; children?: React.ReactNode; [key: string]: unknown }) =>
       visible ? ReactModule.createElement('modal', props, children) : null,
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
-    useWindowDimensions: () => ({ fontScale: 1 }),
+    useWindowDimensions: () => ({ fontScale: mockFontScale }),
   };
 });
 jest.mock('../ui', () => {
@@ -107,6 +108,50 @@ jest.mock('../ui', () => {
 });
 
 describe('Transactions screen withdrawals-only month', () => {
+  it('keeps the sort chip beside the filter scroller, including at font scale 2.0', () => {
+    mockFontScale = 2;
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+
+      const row = renderer.root.findByProps({ testID: 'transaction-filter-row' });
+      const scroller = row.findAll((node) => String(node.type) === 'scrollview')[0];
+      if (!scroller) throw new Error('Transactions filter scroller did not render.');
+      const rowStyle = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
+      const scrollerStyle = Array.isArray(scroller.props.style) ? scroller.props.style : [scroller.props.style];
+      expect(rowStyle).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flexDirection: 'row', minHeight: 44 }),
+      ]));
+      expect(scroller.props.horizontal).toBe(true);
+      expect(scrollerStyle).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      ]));
+      const chips = renderer.root.findAll((node) => String(node.type) === 'chip');
+      const sortChip = chips.find((node) => node.props.label === 'Sort: Date ↓');
+      if (!sortChip) throw new Error('Transactions sort chip did not render.');
+      const ancestors = (node: TestRenderer.ReactTestInstance) => {
+        const result: TestRenderer.ReactTestInstance[] = [];
+        let current: TestRenderer.ReactTestInstance | null = node;
+        while (current) {
+          result.push(current);
+          current = current.parent;
+        }
+        return result;
+      };
+      expect(ancestors(sortChip).some((node) => node === row)).toBe(true);
+      expect(ancestors(sortChip).some((node) => node === scroller)).toBe(false);
+      expect(ancestors(scroller).some((node) => node === row)).toBe(true);
+      expect(chips.map((node) => node.props.label))
+        .toEqual(expect.arrayContaining(['All', 'Income', 'Expense', 'Invested', 'Sort: Date ↓']));
+      expect(renderer.root.findAllByType('text').filter((node) =>
+        node.children.join('') === 'Transactions',
+      )).toHaveLength(1);
+    } finally {
+      mockFontScale = 1;
+    }
+  });
+
   it.each(THEME_IDS)('renders the withdrawals-only state under the %s theme', (id) => {
     mockThemeId.current = id;
     const rendererRef: { current?: TestRenderer.ReactTestRenderer } = {};
