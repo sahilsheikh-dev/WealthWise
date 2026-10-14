@@ -2,7 +2,6 @@ import { router, usePathname, type Href } from 'expo-router';
 import { useMemo } from 'react';
 
 import { useAppStore } from '../data/store';
-import { findUnlinkedEntries } from '../domain/instruments';
 import { buildAppMenu } from '../lib/appMenu';
 import { choiceAsync } from '../lib/confirm';
 import { useTheme } from '../theme/useTheme';
@@ -24,21 +23,17 @@ const destinations: Record<string, string> = {
   Security: '/security',
   Profile: '/profile-form',
   Theme: '/theme',
-  'Link missing transactions': '/link-missing',
   'Month review': '/month-review',
   'Erase all data': '/erase-data',
 };
 
 export function useAppMenu(): HeaderMenuItem[] {
-  const data = useAppStore((state) => state.data);
   const devActions = useAppStore((state) => state.devActions);
   const pathname = usePathname();
   const { themeId } = useTheme();
-  const hasUnlinked = findUnlinkedEntries(data).length > 0;
   const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
 
   return useMemo(() => buildAppMenu({
-    hasUnlinked,
     isDev,
     themeLabel: themeLabels[themeId],
   }).map((item) => ({
@@ -67,5 +62,5 @@ export function useAppMenu(): HeaderMenuItem[] {
         }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });
       }
     },
-  })), [devActions, hasUnlinked, isDev, pathname, themeId]);
+  })), [devActions, isDev, pathname, themeId]);
 }

@@ -7,11 +7,9 @@ export type AppMenuItem = {
 };
 
 export function buildAppMenu({
-  hasUnlinked,
   isDev,
   themeLabel,
 }: {
-  hasUnlinked: boolean;
   isDev: boolean;
   themeLabel: string;
 }): AppMenuItem[] {
@@ -22,7 +20,6 @@ export function buildAppMenu({
     { label: 'Profile', icon: 'user' },
     { label: 'Theme', description: `Current theme: ${themeLabel}`, icon: 'sliders' },
   ];
-  if (hasUnlinked) items.push({ label: 'Link missing transactions', icon: 'link' });
   if (isDev) {
     items.push(
       { label: 'Load demo data', icon: 'database' },

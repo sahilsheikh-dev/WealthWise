@@ -22,6 +22,7 @@ import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
+import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
@@ -82,6 +83,7 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const unlinkedCount = useMemo(() => findUnlinkedEntries(data).length, [data]);
   const position = useMemo(
     () => availableBalance(data.transactions, month, today),
     [data.transactions, month, today],
@@ -121,6 +123,7 @@ export default function TransactionsScreen() {
           title="Transactions"
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
           menu={[
+            { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
             { label: 'Record money movement', icon: 'link', onPress: () => setMovementSheetOpen(true) },
             ...(visibleReview ? [{
               label: `Review ${formatMonth(visibleReview.month)}`,
@@ -187,6 +190,16 @@ export default function TransactionsScreen() {
             </View>
           ) : null}
         </View>
+        {unlinkedCount > 0 ? (
+          <Pressable
+            testID="unlinked-entry-notice"
+            accessibilityRole="button"
+            accessibilityLabel={`${unlinkedCount} entries have no transaction. Link missing transactions`}
+            onPress={() => router.push('/link-missing')}
+            style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <AppText>{unlinkedCount} entries have no transaction. <AppText weight="semibold" style={{ color: colors.primary }}>Link</AppText></AppText>
+          </Pressable>
+        ) : null}
         <View testID="transactions-month-row" style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -370,6 +383,7 @@ const styles = StyleSheet.create({
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
   cashCard: { marginHorizontal: 20, minHeight: 60, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
   cashCardCollapsed: { maxHeight: 64 },
+  unlinkedNotice: { minHeight: 44, marginHorizontal: 20, marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   balanceHeading: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5 },

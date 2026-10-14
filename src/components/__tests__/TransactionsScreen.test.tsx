@@ -166,6 +166,8 @@ describe('Transactions screen withdrawals-only month', () => {
       expect(renderer.root.findAllByType('text').filter((node) =>
         node.children.join('') === 'Transactions',
       )).toHaveLength(1);
+      expect(renderer.root.findAllByProps({ testID: 'unlinked-entry-notice' })).toHaveLength(0);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Link missing transactions' })).toBeDefined();
     } finally {
       mockFontScale = 1;
     }
@@ -218,6 +220,62 @@ describe('Transactions screen withdrawals-only month', () => {
     expect(renderer.root.findAll((node) => String(node.type) === 'modal')).toHaveLength(1);
     expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
       .toContain('What happened?');
+  });
+
+  it('shows and routes the unlinked-entry notice and header action at font scale 2.0', () => {
+    const previousHoldings = mockData.holdings;
+    mockData.holdings = [{
+      id: 'unlinked-manual',
+      kind: 'manual',
+      name: 'Unlinked manual',
+      type: 'Gold',
+      invested: 100,
+      value: 120,
+      valueAsOf: '2026-10-10',
+      logs: [
+        { id: 'unlinked-one', date: '2026-10-08', amount: 10, note: 'First', kind: 'Deposit' },
+        { id: 'unlinked-two', date: '2026-10-09', amount: 20, note: 'Second', kind: 'Deposit' },
+      ],
+    }];
+    mockFontScale = 2;
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const currentRenderer = renderer;
+
+      const notice = currentRenderer.root.findByProps({ testID: 'unlinked-entry-notice' });
+      expect(notice.props.accessibilityLabel).toBe('2 entries have no transaction. Link missing transactions');
+      expect(notice.findAllByType('text')
+        .flatMap((node) => node.children.filter((child): child is string => typeof child === 'string'))
+        .join(''))
+        .toBe('2 entries have no transaction. Link');
+      expect(flattenStyles(notice.props.style)).toEqual(expect.arrayContaining([
+        expect.objectContaining({ minHeight: 44, flexWrap: 'wrap', flexDirection: 'row' }),
+      ]));
+      expect(flattenStyles(notice.props.style).every((style) =>
+        !('height' in style) && !('maxHeight' in style),
+      )).toBe(true);
+      const orderedIds = currentRenderer.root.findAll((node) =>
+        ['available-balance-card', 'unlinked-entry-notice', 'transaction-filter-row'].includes(String(node.props.testID)),
+      ).map((node) => node.props.testID).filter((id, index, ids) => ids.indexOf(id) === index);
+      expect(orderedIds).toEqual([
+        'available-balance-card',
+        'unlinked-entry-notice',
+        'transaction-filter-row',
+      ]);
+
+      act(() => notice.props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/link-missing');
+      router.push.mockClear();
+      act(() => currentRenderer.root.findByProps({ accessibilityLabel: 'Link missing transactions' }).props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/link-missing');
+    } finally {
+      mockData.holdings = previousHoldings;
+      mockFontScale = 1;
+    }
   });
 
   it('keeps the collapsed balance card compact and expands its five rows and review actions', () => {
