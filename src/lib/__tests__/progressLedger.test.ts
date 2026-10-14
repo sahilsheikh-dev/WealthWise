@@ -58,10 +58,12 @@ describe('permanent progress ledger', () => {
     const promptIds = [
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
-      'P15-A', 'P15-A2', 'P15-B', 'P15-C', 'P15-D', 'P15-E',
-      'P15-F', 'P15-G', 'P15-H', 'P15-I', 'P15-J',
-      'P15-FIX-R1', 'P15-FIX-R2', 'P15-FIX-R3', 'P15-FIX-R4',
-      'P15-SEED', 'P15-LEDGER',
+      'P15-A', 'P15-A2', 'P15-B', 'P15-C',
+      'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
+      'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
+      'P18-R6', 'P18-LEDGER', 'P18-R7',
+      'P19-A', 'P19-B', 'P19-C', 'P19-D', 'P19-E',
+      'P20-A', 'P21-A', 'P22-A', 'P23-A', 'P24-A', 'P25-A',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -75,13 +77,95 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('records CR-3 and the current P15-LEDGER work', () => {
+  it('logs every remapped/new part exactly once in the dashboard and prompt log', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const newPartIds = [
+      'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
+      'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
+      'P18-R6', 'P18-LEDGER', 'P18-R7',
+      'P19-A', 'P19-B', 'P19-C', 'P19-D', 'P19-E',
+      'P20-A', 'P21-A', 'P22-A', 'P23-A', 'P24-A', 'P25-A',
+    ];
+
+    for (const id of newPartIds) {
+      expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
+      expect(promptLog.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
+    }
+  });
+
+  it('maps every legacy ID exactly once in the dashboard Legacy ID column', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const legacyIds = [
+      'P15-D', 'P15-E', 'P15-G', 'P15-H', 'P15-I', 'P15-J',
+      'P15-fix-0', 'P15-FIX-R1', 'P15-FIX-R2', 'P15-FIX-R3',
+      'P15-FIX-R4', 'P15-FIX-R5', 'P15-FIX-R6', 'P15-LEDGER',
+      'P15-SEED', 'P15-F', 'P15-K', 'P15-L', 'P15-M',
+    ];
+
+    for (const id of legacyIds) {
+      const rows = dashboard.split('\n').filter((line) => line.startsWith('|') && line.split('|')[2]?.trim() === id);
+      expect(rows).toHaveLength(1);
+    }
+  });
+
+  it('keeps progress bars, percentages and counts consistent with dashboard statuses', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const progressBlock = dashboard.match(/```text\n([\s\S]*?)\n```/)?.[1] ?? '';
+    const rows = dashboard.split('\n').filter((line) =>
+      /^\| (?:Phase \d+|P\d+-[A-Z0-9-]+) \|/.test(line),
+    );
+    const counts = new Map<number, { done: number; total: number }>();
+
+    for (const row of rows) {
+      const cells = row.split('|').map((cell) => cell.trim());
+      const id = cells[1];
+      const status = cells[3];
+      if (!id || !status) continue;
+      const phaseMatch = id.match(/^Phase (\d+)$/) ?? id.match(/^P(\d+)-/);
+      if (!phaseMatch) continue;
+      const phase = Number(phaseMatch[1]);
+      const count = counts.get(phase) ?? { done: 0, total: 0 };
+      count.total += 1;
+      if (status.startsWith('Done')) count.done += 1;
+      counts.set(phase, count);
+    }
+
+    const total = [...counts.values()].reduce((sum, count) => sum + count.total, 0);
+    const done = [...counts.values()].reduce((sum, count) => sum + count.done, 0);
+    const expected: [string, number, number][] = [
+      ['Overall progress', done, total],
+      ...Array.from({ length: 25 }, (_, index): [string, number, number] => {
+        const phase = index + 1;
+        const count = counts.get(phase) ?? { done: 0, total: 0 };
+        return [`Phase ${phase}`, count.done, count.total];
+      }),
+    ];
+    const lines = progressBlock.split('\n');
+    expect(lines).toHaveLength(expected.length);
+
+    expected.forEach(([name, completed, partCount], index) => {
+      const match = lines[index]?.match(/^(Overall progress|Phase \d+)\s+([█░]{10})\s+(\d+)%\s+\((\d+)\/(\d+)\)$/);
+      expect(match?.[1]).toBe(name);
+      const percentage = partCount === 0 ? 0 : Math.round((completed / partCount) * 100);
+      const filled = partCount === 0 ? 0 : Math.round((completed / partCount) * 10);
+      expect(match?.[2]).toBe(`${'█'.repeat(filled)}${'░'.repeat(10 - filled)}`);
+      expect(Number(match?.[3])).toBe(percentage);
+      expect(Number(match?.[4])).toBe(completed);
+      expect(Number(match?.[5])).toBe(partCount);
+    });
+  });
+
+  it('records the unchanged FX/CH IDs, CR-4 through CR-8 and the current P18-LEDGER work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
 
     expect(`${dashboard}\n${register}`).toContain('CR-3');
-    expect(promptLog).toContain('| P15-LEDGER |');
+    for (const id of ['FX-BASE', 'CH-1', 'CH-2', 'CH-3', 'CH-4', 'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8']) {
+      expect(`${dashboard}\n${register}`).toContain(id);
+    }
+    expect(promptLog).toContain('| P18-LEDGER |');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 });
