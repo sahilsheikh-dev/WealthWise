@@ -385,7 +385,8 @@ jest.mock('../../components/form/SegmentedControl', () => {
 jest.mock('../../components/form/ReadOnlyRow', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    ReadOnlyRow: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    ReadOnlyRow: ({ label, value }: { label: string; value: string }) =>
+      ReactModule.createElement('text', null, `${label}: ${value}`),
   };
 });
 
@@ -661,6 +662,109 @@ describe('route render smoke audit', () => {
     expect(close.props.onPress).toEqual(expect.any(Function));
     expect(typeof close.props.isDirty).toBe('boolean');
     act(() => renderer?.unmount());
+  });
+
+  it.each([
+    {
+      direction: 'EMI from rate and tenure',
+      fields: { 'Annual interest rate': '10', 'Liability tenure in months': '12' },
+      calculated: 'Calculated EMI: ₹87,916',
+      saved: { ratePct: 10, tenureMonths: 12, emi: 87_915.89 },
+    },
+    {
+      direction: 'rate from EMI and tenure',
+      fields: { 'Liability tenure in months': '12', 'Liability EMI': '87915.89' },
+      calculated: 'Calculated annual interest rate: 10.00%',
+      saved: { ratePct: 10, tenureMonths: 12, emi: 87_915.89 },
+    },
+    {
+      direction: 'tenure from rate and EMI',
+      fields: { 'Annual interest rate': '10', 'Liability EMI': '87915.89' },
+      calculated: 'Calculated tenure: 12 months',
+      saved: { ratePct: 10, tenureMonths: 12, emi: 87_915.89 },
+    },
+  ])('shows and saves calculated liability values for $direction', async ({ fields, calculated, saved }) => {
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      addLiability: jest.Mock;
+    };
+    actions.addLiability.mockClear();
+    const renderer = renderScreen(React.createElement(LiabilityFormScreen));
+    try {
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Liability name' }).props.onChangeText('Test loan');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability principal' }).props.onChangeText('1000000');
+        for (const [label, value] of Object.entries(fields)) {
+          renderer.root.findByProps({ accessibilityLabel: label }).props.onChangeText(value);
+        }
+        await Promise.resolve();
+      });
+      const textContent = renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String));
+      expect(textContent).toContain(calculated);
+      const save = renderer.root.findByProps({ accessibilityLabel: 'Save' });
+      await act(async () => {
+        save.props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.addLiability).toHaveBeenCalledWith(expect.objectContaining(saved));
+    } finally {
+      act(() => renderer.unmount());
+    }
+  });
+
+  it('sets zero interest from the chip and calculates the EMI', async () => {
+    const renderer = renderScreen(React.createElement(LiabilityFormScreen));
+    try {
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Liability principal' }).props.onChangeText('12000');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability tenure in months' }).props.onChangeText('12');
+        renderer.root.findByProps({ accessibilityLabel: 'No interest' }).props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Annual interest rate' }).props.value).toBe('0');
+      expect(renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String))).toContain('Calculated EMI: ₹1,000');
+    } finally {
+      act(() => renderer.unmount());
+    }
+  });
+
+  it('shows the non-blocking EMI mismatch and applies its calculated value', async () => {
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      addLiability: jest.Mock;
+    };
+    actions.addLiability.mockClear();
+    const renderer = renderScreen(React.createElement(LiabilityFormScreen));
+    try {
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Liability name' }).props.onChangeText('Test loan');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability principal' }).props.onChangeText('1000000');
+        renderer.root.findByProps({ accessibilityLabel: 'Annual interest rate' }).props.onChangeText('10');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability tenure in months' }).props.onChangeText('12');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability EMI' }).props.onChangeText('90000');
+        await Promise.resolve();
+      });
+      const warningText = renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String));
+      expect(warningText).toContain('These do not match: the EMI for this rate and tenure would be ');
+      expect(warningText).toContain('₹87,916');
+      const save = renderer.root.findByProps({ accessibilityLabel: 'Save' });
+      await act(async () => {
+        save.props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.addLiability).toHaveBeenCalledWith(expect.objectContaining({ emi: 90_000 }));
+      actions.addLiability.mockClear();
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'Use calculated EMI' }).props.onPress());
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Liability EMI' }).props.value).toBe('87915.89');
+      await act(async () => {
+        save.props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.addLiability).toHaveBeenCalledWith(expect.objectContaining({ emi: 87_915.89 }));
+    } finally {
+      act(() => renderer.unmount());
+    }
   });
 
   it.each([

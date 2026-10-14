@@ -14,10 +14,10 @@ import { PercentField } from '../src/components/form/PercentField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, EmptyState } from '../src/components/ui';
+import { AppText, Button, Chip, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { emiAuto } from '../src/domain/liability';
+import { solveLoan } from '../src/domain/liability';
 import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOutput } from '../src/domain/schemas';
 import { LIABILITY_TYPES } from '../src/domain/types';
@@ -97,32 +97,51 @@ export default function LiabilityFormScreen() {
   const rate = useWatch({ control, name: 'ratePct' });
   const startDate = useWatch({ control, name: 'startDate' });
   const liabilityType = useWatch({ control, name: 'type' });
-  const tenure = useWatch({ control, name: 'tenureMonths' });
-  const emi = useWatch({ control, name: 'emi' });
+  const tenure = useWatch({ control, name: 'tenureMonths' }) ?? '';
+  const emi = useWatch({ control, name: 'emi' }) ?? '';
   const received = useWatch({ control, name: 'received' });
   const principalValue = Number(principal);
-  const rateValue = Number(rate);
-  const tenureValue = Number(tenure);
-  const calculated = kind === 'recurring' && principalValue > 0 && rateValue >= 0 && tenureValue > 0
-    && [principalValue, rateValue, tenureValue].every(Number.isFinite)
-    ? emiAuto(principalValue, rateValue, tenureValue)
-    : null;
-  const underTenure = calculated !== null && Number(emi) > 0 && Number(emi) * tenureValue < principalValue;
+  const solverInputCount = [rate.trim(), tenure.trim(), emi.trim()].filter(Boolean).length;
+  const solver = useMemo(() => {
+    if (kind !== 'recurring' || !Number.isFinite(principalValue) || principalValue <= 0) {
+      return { result: null, error: null };
+    }
+    try {
+      return {
+        result: solveLoan({
+          principal: principalValue,
+          ...(rate.trim() ? { ratePct: Number(rate) } : {}),
+          ...(tenure.trim() ? { tenureMonths: Number(tenure) } : {}),
+          ...(emi.trim() ? { emi: Number(emi) } : {}),
+        }),
+        error: null,
+      };
+    } catch (error) {
+      if (!(error instanceof Error)) throw error;
+      return { result: null, error: error.message };
+    }
+  }, [emi, kind, principalValue, rate, tenure]);
+  const calculated = solver.result;
+  const underTenure = calculated?.solved === 'none' && calculated.emi !== null
+    && calculated.tenureMonths !== null && calculated.emi * calculated.tenureMonths < principalValue;
+  const calculatedEmi = calculated?.solved === 'emi' ? calculated.emi : null;
+  const calculatedRate = calculated?.solved === 'rate' ? calculated.ratePct : null;
+  const calculatedTenure = calculated?.solved === 'tenure' ? calculated.tenureMonths : null;
   const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
   const [outstandingBalance, setOutstandingBalance] = useState('');
   const previewPastDues = !liabilityId && kind === 'recurring' && startDate < today
-    && principalValue > 0 && Number.isFinite(principalValue) && Number.isFinite(rateValue)
-    && Number.isFinite(tenureValue) && tenureValue > 0 && (Number(emi) > 0 || calculated !== null)
+    && calculated?.ratePct !== null && calculated?.ratePct !== undefined
+    && calculated.tenureMonths !== null && calculated.emi !== null
     ? pendingDues({
       id: 'past-dues-preview',
       kind: 'recurring',
       name: 'Preview',
       type: liabilityType,
       principal: principalValue,
-      ratePct: rateValue,
+      ratePct: calculated.ratePct,
       startDate,
-      tenureMonths: tenureValue,
-      emi: Number(emi) > 0 ? Number(emi) : calculated ?? 0,
+      tenureMonths: calculated.tenureMonths,
+      emi: calculated.emi,
       payments: [],
       settlement: null,
     }, today)
@@ -241,8 +260,15 @@ export default function LiabilityFormScreen() {
         <MoneyField label={kind === 'one-time' ? 'Amount borrowed' : 'Principal'} accessibilityLabel={kind === 'one-time' ? 'Amount borrowed' : 'Liability principal'} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.principal?.message} />
       )} />
       <Controller control={control} name="ratePct" render={({ field }) => (
-        <PercentField label="Annual interest rate" accessibilityLabel="Annual interest rate" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+        <PercentField label="Annual interest rate" accessibilityLabel="Annual interest rate" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
       )} />
+      {kind === 'recurring' ? (
+        <Chip
+          label="No interest"
+          selected={rate.trim() === '0'}
+          onPress={() => setValue('ratePct', '0', { shouldDirty: true, shouldValidate: true })}
+        />
+      ) : null}
       <Controller control={control} name="startDate" render={({ field }) => (
         <DateField label="Start date" value={field.value} onChange={field.onChange} maximumDate={today} error={errors.startDate?.message} accessibilityLabel="Liability start date" />
       )} />
@@ -254,10 +280,36 @@ export default function LiabilityFormScreen() {
           <Controller control={control} name="emi" render={({ field }) => (
             <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
           )} />
-          {calculated !== null ? <View style={{ gap: 6 }}>
-            <HelperText>Calculated EMI: {formatAmount(calculated, 'exact', 1)}</HelperText>
-            <Button label="Use calculated EMI" icon="check" onPress={() => setValue('emi', String(calculated), { shouldDirty: true, shouldValidate: true })} />
-          </View> : null}
+          {solverInputCount < 2 ? (
+            <HelperText>Add one more of tenure, interest rate or EMI so we can work out the rest</HelperText>
+          ) : null}
+          {solver.error ? <HelperText tone="warning">{solver.error}</HelperText> : null}
+          {calculatedEmi !== null ? (
+            <ReadOnlyRow label="Calculated EMI" value={formatAmount(calculatedEmi, 'exact', 1)} />
+          ) : null}
+          {calculatedRate !== null ? (
+            <ReadOnlyRow label="Calculated annual interest rate" value={`${calculatedRate.toFixed(2)}%`} />
+          ) : null}
+          {calculatedTenure !== null ? (
+            <View style={{ gap: 6 }}>
+              <ReadOnlyRow label="Calculated tenure" value={`${calculatedTenure} months`} />
+              {calculated?.lastPayment !== null && calculated?.lastPayment !== undefined ? (
+                <HelperText>Final payment: {formatAmount(calculated.lastPayment, 'exact', 1)}</HelperText>
+              ) : null}
+            </View>
+          ) : null}
+          {calculated?.warnings.map((warning) => (
+            <View key={warning.kind} style={{ gap: 6 }}>
+              <HelperText tone="warning">
+                These do not match: the EMI for this rate and tenure would be {formatAmount(warning.calculatedEmi, 'exact', 1)}
+              </HelperText>
+              <Button
+                label="Use calculated EMI"
+                icon="check"
+                onPress={() => setValue('emi', String(warning.calculatedEmi), { shouldDirty: true, shouldValidate: true })}
+              />
+            </View>
+          ))}
           {underTenure ? <HelperText tone="warning">This EMI won&apos;t repay the liability within the tenure</HelperText> : null}
         </>
       ) : (

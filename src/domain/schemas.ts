@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { formatDate, formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
-import { emiCoversInterest } from './liability';
+import { solveLoan } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
 export const SCHEMA_VERSION = 5;
@@ -576,22 +576,63 @@ export function makeLiabilityFormSchema(
   const recurring = z.object({
     ...common,
     kind: z.literal('recurring'),
-    tenureMonths: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 480')
-      .transform(Number).refine((value) => value >= 1 && value <= 480, 'Enter whole months from 1 to 480'),
+    ratePct: z.union([
+      z.literal('').transform(() => null),
+      optionalRate(100, 'Enter a rate between 0 and 100'),
+    ]),
+    tenureMonths: z.union([
+      z.literal('').transform(() => null),
+      z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole months from 1 to 600')
+        .transform(Number).refine((value) => value >= 1 && value <= 600, 'Enter whole months from 1 to 600'),
+    ]),
     emi: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, optional: true }),
     dueDate: z.string().optional(),
   }).superRefine((value, context) => {
     if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
     }
-    if (value.emi !== undefined && !emiCoversInterest(value.principal, value.ratePct, value.emi)) {
-      const monthlyInterest = formatINR(value.principal * value.ratePct / 1200);
-      context.addIssue({ code: 'custom', path: ['emi'], message: `EMI must be more than the monthly interest of ${monthlyInterest}` });
+    const knownCount = [value.ratePct, value.tenureMonths, value.emi]
+      .filter((field) => field !== null && field !== undefined).length;
+    if (knownCount < 2) {
+      context.addIssue({
+        code: 'custom',
+        path: ['tenureMonths'],
+        message: 'Add one more of tenure, interest rate or EMI so we can work out the rest',
+      });
+    } else {
+      try {
+        solveLoan({
+          principal: value.principal,
+          ...(value.ratePct === null ? {} : { ratePct: value.ratePct }),
+          ...(value.tenureMonths === null ? {} : { tenureMonths: value.tenureMonths }),
+          ...(value.emi === undefined ? {} : { emi: value.emi }),
+        });
+      } catch (error) {
+        if (!(error instanceof Error)) throw error;
+        context.addIssue({
+          code: 'custom',
+          path: value.tenureMonths === null ? ['tenureMonths'] : ['emi'],
+          message: error.message,
+        });
+      }
     }
-  }).transform(({ dueDate: _dueDate, ...value }) => ({
-    ...value,
-    emi: value.emi ?? null,
-  }));
+  }).transform(({ dueDate: _dueDate, ...value }) => {
+    const solved = solveLoan({
+      principal: value.principal,
+      ...(value.ratePct === null ? {} : { ratePct: value.ratePct }),
+      ...(value.tenureMonths === null ? {} : { tenureMonths: value.tenureMonths }),
+      ...(value.emi === undefined ? {} : { emi: value.emi }),
+    });
+    if (solved.ratePct === null || solved.tenureMonths === null || solved.emi === null) {
+      throw new Error('Add one more of tenure, interest rate or EMI so we can work out the rest');
+    }
+    return {
+      ...value,
+      ratePct: solved.ratePct,
+      tenureMonths: solved.tenureMonths,
+      emi: solved.emi,
+    };
+  });
   const oneTime = z.object({
     ...common,
     kind: z.literal('one-time'),
