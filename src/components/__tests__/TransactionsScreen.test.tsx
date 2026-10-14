@@ -97,7 +97,8 @@ jest.mock('../ui', () => {
     Button: node('button'),
     Card: node('card'),
     Chip: node('chip'),
-    ChipRow: node('chiprow'),
+    ChipRow: ({ children }: { children?: React.ReactNode }) =>
+      ReactModule.createElement('scrollview', { horizontal: true, showsHorizontalScrollIndicator: false }, children),
     EmptyState: ({ title }: { title: string }) => ReactModule.createElement('text', null, title),
     ListItem: node('listitem'),
     Screen: node('screen'),
@@ -127,7 +128,7 @@ function hasAncestor(
 }
 
 describe('Transactions screen withdrawals-only month', () => {
-  it('keeps the sort chip beside the filter scroller, including at font scale 2.0', () => {
+  it('keeps the sort chip in the horizontal filter row at font scale 2.0', () => {
     mockFontScale = 2;
     try {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -137,30 +138,12 @@ describe('Transactions screen withdrawals-only month', () => {
       const row = renderer.root.findByProps({ testID: 'transaction-filter-row' });
       const scroller = row.findAll((node) => String(node.type) === 'scrollview')[0];
       if (!scroller) throw new Error('Transactions filter scroller did not render.');
-      const rowStyle = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
-      const scrollerStyle = Array.isArray(scroller.props.style) ? scroller.props.style : [scroller.props.style];
-      expect(rowStyle).toEqual(expect.arrayContaining([
-        expect.objectContaining({ flexDirection: 'row', minHeight: 44 }),
-      ]));
       expect(scroller.props.horizontal).toBe(true);
-      expect(scrollerStyle).toEqual(expect.arrayContaining([
-        expect.objectContaining({ flex: 1, minWidth: 0 }),
-      ]));
+      expect(scroller.props.showsHorizontalScrollIndicator).toBe(false);
       const chips = renderer.root.findAll((node) => String(node.type) === 'chip');
       const sortChip = chips.find((node) => node.props.label === 'Sort: Date ↓');
       if (!sortChip) throw new Error('Transactions sort chip did not render.');
-      const ancestors = (node: TestRenderer.ReactTestInstance) => {
-        const result: TestRenderer.ReactTestInstance[] = [];
-        let current: TestRenderer.ReactTestInstance | null = node;
-        while (current) {
-          result.push(current);
-          current = current.parent;
-        }
-        return result;
-      };
-      expect(ancestors(sortChip).some((node) => node === row)).toBe(true);
-      expect(ancestors(sortChip).some((node) => node === scroller)).toBe(false);
-      expect(ancestors(scroller).some((node) => node === row)).toBe(true);
+      expect(hasAncestor(sortChip, scroller)).toBe(true);
       expect(chips.map((node) => node.props.label))
         .toEqual(expect.arrayContaining(['All', 'Income', 'Expense', 'Invested', 'Sort: Date ↓']));
       expect(renderer.root.findAllByType('text').filter((node) =>

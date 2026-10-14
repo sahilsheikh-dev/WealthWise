@@ -65,7 +65,7 @@ describe('shared bottom tab bar', () => {
     ]);
     const labels = ['index', 'transactions', 'goals', 'budget']
       .map((key) => root.findByProps({ testID: `bottom-tab-label-${key}` }));
-    expect(labels.map((label) => label.props.children)).toEqual(['Home', 'Transactions', 'Goals', 'Budget']);
+    expect(labels.map((label) => label.props.children)).toEqual(['Home', 'Txns', 'Goals', 'Budget']);
 
     act(() => tabs[1]?.props.onPress());
     expect(onSelect).toHaveBeenCalledWith('transactions');
