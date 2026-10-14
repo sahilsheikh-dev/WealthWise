@@ -115,6 +115,9 @@ jest.mock('../../data/store', () => {
       liabilities: [],
       policies: [],
       efEntries: [],
+      efAllocation: null,
+      efCustomBuckets: [],
+      efBucketLinks: {},
     },
     lastError: null,
     undoImport: null,
@@ -176,6 +179,9 @@ jest.mock('../../data/useAppData', () => {
     liabilities: [],
     policies: [],
     efEntries: [],
+    efAllocation: null,
+    efCustomBuckets: [],
+    efBucketLinks: {},
   };
   const mockStoreState = {
     data: mockData,

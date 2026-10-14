@@ -1,5 +1,5 @@
-import { migratePersisted, migrateV1ToV2, migrateV2ToV3, PersistedVersionError } from '../migrate';
-import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
+import { migratePersisted, migrateV1ToV2, migrateV2ToV3, migrateV5ToV6, PersistedVersionError } from '../migrate';
+import { makeV1Fixture, makeV2Fixture, makeV5Fixture } from '../testFixtures/v1';
 import { validateImportData } from '../../domain/backup';
 import { efBalance } from '../../domain/ef';
 import { netWorth } from '../../domain/summary';
@@ -38,6 +38,8 @@ describe('schema migration', () => {
         policies: [],
         budget: null,
         efAllocation: null,
+        efCustomBuckets: [],
+        efBucketLinks: {},
       },
     });
   });
@@ -57,6 +59,8 @@ describe('schema migration', () => {
       policies: [],
       budget: null,
       efAllocation: null,
+      efCustomBuckets: [],
+      efBucketLinks: {},
     };
     expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expectedV5 });
     const before = validateImportData({
@@ -100,14 +104,21 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 6)).toThrow(
+    expect(() => migratePersisted({}, 7)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version5: true } };
-    expect(migratePersisted(persisted, 5)).toBe(persisted);
+    const persisted = { data: { version6: true } };
+    expect(migratePersisted(persisted, 6)).toBe(persisted);
+  });
+
+  it('adds only empty custom emergency-fund fields when migrating v5 to v6', () => {
+    const v5 = makeV5Fixture();
+    expect(migrateV5ToV6(v5)).toEqual({ ...v5, efCustomBuckets: [], efBucketLinks: {} });
+    expect(migratePersisted({ data: v5 }, 5))
+      .toEqual({ data: { ...v5, efCustomBuckets: [], efBucketLinks: {} } });
   });
 });

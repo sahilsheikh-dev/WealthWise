@@ -2,10 +2,11 @@ import { z } from 'zod';
 
 import { formatDate, formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -274,18 +275,40 @@ const settingsSchema = z.object({
   onboarded: z.boolean(),
 });
 
-const efAllocationSchema = z.object({
-  cash: z.number().min(0).max(100).step(0.1),
-  bank: z.number().min(0).max(100).step(0.1),
-  'fd-rd': z.number().min(0).max(100).step(0.1),
-  'mutual-funds-bonds': z.number().min(0).max(100).step(0.1),
-  stocks: z.number().min(0).max(100).step(0.1),
-  insurance: z.number().min(0).max(100).step(0.1),
-  other: z.number().min(0).max(100).step(0.1),
-}).refine((allocation) => {
+export const efAllocationSchema = z.record(
+  idSchema,
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
+).refine((allocation) => {
   const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
   return Math.abs(total - 100) < 0.0001;
 }, { message: 'Percentages must add up to 100%', path: ['total'] }).nullable().optional();
+
+export const efCustomBucketSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(24).refine((name) => name === name.trim()),
+  access: z.enum(['instant', 'days', 'slow']),
+  marketLinked: z.boolean(),
+});
+
+export const efCustomBucketsSchema = z.array(efCustomBucketSchema).max(8).superRefine((buckets, context) => {
+  const names = new Set(EF_BUCKETS.map((id) => EF_BUCKET_META[id].label.trim().toLowerCase()));
+  const ids = new Set<string>(EF_BUCKETS);
+  buckets.forEach((bucket, index) => {
+    const normalizedName = bucket.name.trim().toLowerCase();
+    if (normalizedName.length === 0) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Name must not be empty' });
+    }
+    if (names.has(normalizedName)) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Custom option names must be unique and differ from fixed options' });
+    }
+    if (ids.has(bucket.id)) {
+      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Bucket IDs must be unique' });
+    }
+    names.add(normalizedName);
+    ids.add(bucket.id);
+  });
+});
+export const efBucketLinksSchema = z.record(idSchema, z.array(idSchema).max(10));
 
 export const appDataSchema = z.object({
   settings: settingsSchema,
@@ -300,6 +323,8 @@ export const appDataSchema = z.object({
   monthBudgets: z.array(monthBudgetSchema).optional(),
   efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
+  efCustomBuckets: efCustomBucketsSchema,
+  efBucketLinks: efBucketLinksSchema,
 });
 
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;

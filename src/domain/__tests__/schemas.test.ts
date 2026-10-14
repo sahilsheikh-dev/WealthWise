@@ -1,4 +1,5 @@
 import { mockAppData } from '../../mock/data';
+import { validateImportData } from '../backup';
 import { efEndOfDayBalances } from '../efActions';
 import {
   appDataSchema,
@@ -27,9 +28,27 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version five', () => {
+  it('accepts the typed mock app data and exports schema version six', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(5);
+    expect(SCHEMA_VERSION).toBe(6);
+  });
+
+  it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
+    const buckets = [
+      { id: 'first', name: 'Safe reserve', access: 'instant' as const, marketLinked: false },
+      { id: 'second', name: 'safe reserve', access: 'days' as const, marketLinked: true },
+    ];
+    expect(appDataSchema.safeParse({ ...mockAppData, efCustomBuckets: buckets }).success).toBe(false);
+    expect(validateImportData({ ...mockAppData, efCustomBuckets: buckets }))
+      .toMatchObject({ ok: false, reason: 'invalid-data' });
+    const tooMany = Array.from({ length: 9 }, (_, index) => ({
+      id: `option-${index}`, name: `Option ${index}`, access: 'slow' as const, marketLinked: false,
+    }));
+    expect(appDataSchema.safeParse({ ...mockAppData, efCustomBuckets: tooMany }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      efCustomBuckets: [{ id: 'fixed-cash', name: 'Cash', access: 'instant', marketLinked: false }],
+    }).success).toBe(false);
   });
 
   it('validates budget templates and stored month snapshots', () => {
@@ -388,6 +407,7 @@ describe('makeTransactionFormSchema', () => {
         ratePct: '0', startDate: '2026-10-01', dueDate: '',
       };
       expect(schema.parse(valid)).toMatchObject({ kind: 'one-time', principal: 20_000, dueDate: null });
+      expect(schema.parse({ ...valid, dueDate: '2026-10-15' })).toMatchObject({ dueDate: '2026-10-15' });
       expect(schema.safeParse({ ...valid, dueDate: 'bad-date' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, dueDate: '2026-09-30' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-02' }).success).toBe(false);
@@ -410,6 +430,13 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, date: '2026-10-11' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, date: '2026-02-30' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, kind: 'cash' }).success).toBe(false);
+      const oneTimeSchema = makeLiabilityPaymentFormSchema('2026-10-10', {
+        startDate: '2026-01-01',
+        outstandingExcludingThis: 100.1,
+        oneTime: true,
+      });
+      expect(oneTimeSchema.parse({ ...valid, amount: '100', kind: 'Payment' }).amount).toBe(100);
+      expect(oneTimeSchema.safeParse({ ...valid, kind: 'EMI' }).success).toBe(false);
       const cleared = makeLiabilityPaymentFormSchema('2026-10-10', { startDate: '2026-01-01', outstandingExcludingThis: 0.99 }).safeParse(valid);
       expect(cleared.success).toBe(false);
       if (!cleared.success) expect(cleared.error.issues.some((issue) => issue.message === 'This liability is already cleared')).toBe(true);

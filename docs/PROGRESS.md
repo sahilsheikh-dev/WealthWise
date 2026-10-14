@@ -21,20 +21,20 @@ are called out as such.
 
 | ID | Status | Evidence | Last updated |
 |---|---|---|---|
-| Phase 1 | Pending | user-reported, unverified; initial HTML prototype/Expo UI history not recoverable from current Git history | 2026-10-13 |
-| Phase 2 | Pending | user-reported, unverified; no phase-tagged commit or original coverage report available | 2026-10-13 |
-| Phase 3 | Pending | user-reported, unverified; current store exists, original schema-v1 commit not identified | 2026-10-13 |
-| Phase 4 | Pending | user-reported, unverified; current implementation exists, original phase evidence unavailable | 2026-10-13 |
-| Phase 5 | Pending | user-reported, unverified; exact original phase commit/test mapping unavailable | 2026-10-13 |
-| Phase 6 | Pending | user-reported, unverified; current plain backup/security features do not prove all original acceptance criteria | 2026-10-13 |
-| Phase 7 | Pending | user-reported, unverified; schema-v2 migration code is present, historical phase commit not identified | 2026-10-13 |
-| Phase 8 | Pending | user-reported, unverified; current investment features do not prove the original phase report | 2026-10-13 |
-| Phase 9 | Pending | user-reported, unverified; current link-management code does not prove the original phase report | 2026-10-13 |
-| Phase 10 | Pending | user-reported, unverified; current schedules and virtualized history do not prove original acceptance | 2026-10-13 |
-| Phase 11 | Pending | user-reported, unverified; exact original crash-fix evidence unavailable | 2026-10-13 |
-| Phase 12 | Pending | user-reported, unverified; schema-v3/theme code is present, original phase report unavailable | 2026-10-13 |
-| Phase 13 | Pending | user-reported, unverified; current UI has related work, no phase-tagged commit/test matrix | 2026-10-13 |
-| Phase 14 A-G | Pending | user-reported, unverified as a phase; audited follow-up evidence is in Phase 15 A/A2 and later parts | 2026-10-13 |
+| Phase 1 | Done (user-reported, unverified) | user-reported; initial HTML prototype/Expo UI history not recoverable from current Git history | 2026-10-13 |
+| Phase 2 | Done (user-reported, unverified) | user-reported; no phase-tagged commit or original coverage report available | 2026-10-13 |
+| Phase 3 | Done (user-reported, unverified) | user-reported; current store exists, original schema-v1 commit not identified | 2026-10-13 |
+| Phase 4 | Done (user-reported, unverified) | user-reported; current implementation exists, original phase evidence unavailable | 2026-10-13 |
+| Phase 5 | Done (user-reported, unverified) | user-reported; exact original phase commit/test mapping unavailable | 2026-10-13 |
+| Phase 6 | Done (user-reported, unverified) | user-reported; current plain backup/security features do not prove all original acceptance criteria | 2026-10-13 |
+| Phase 7 | Done (user-reported, unverified) | user-reported; schema-v2 migration code is present, historical phase commit not identified | 2026-10-13 |
+| Phase 8 | Done (user-reported, unverified) | user-reported; current investment features do not prove the original phase report | 2026-10-13 |
+| Phase 9 | Done (user-reported, unverified) | user-reported; current link-management code does not prove the original phase report | 2026-10-13 |
+| Phase 10 | Done (user-reported, unverified) | user-reported; current schedules and virtualized history do not prove original acceptance | 2026-10-13 |
+| Phase 11 | Done (user-reported, unverified) | user-reported; exact original crash-fix evidence unavailable | 2026-10-13 |
+| Phase 12 | Done (user-reported, unverified) | user-reported; schema-v3/theme code is present, original phase report unavailable | 2026-10-13 |
+| Phase 13 | Done (user-reported, unverified) | user-reported; current UI has related work, no phase-tagged commit/test matrix | 2026-10-13 |
+| Phase 14 A-G | Done (user-reported, unverified) | user-reported as a phase; audited follow-up evidence is in Phase 15 A/A2 and later parts | 2026-10-13 |
 | P15-A | Done | `d8dc666`, `85a0a52`, `e3c8500`, `6ac4ca7`; audit/gate evidence in this repository | 2026-10-13 |
 | P15-A2 | Done | `0322c9d`; migration, premigration archive, restored assertions and coverage files | 2026-10-13 |
 | P15-B | Done | `fbeb1d7`; Phase-14 UI follow-up files and screen tests | 2026-10-13 |
@@ -69,16 +69,18 @@ are called out as such.
 | CH-2 | Done | Budget tab now owns History and Month review actions; reviewable months are indicated and routed directly | 2026-10-13 |
 | CH-4 | Done | `1321e29`; removed the Transactions movement sheet and route, while preserving the shared liability-origin action still used by the liability form | 2026-10-13 |
 | FX-L1 | Done | `ef7c5b0`; recurring liability solver and calculated form outputs are implemented | 2026-10-13 |
-| FX-L2 | Done | Hash to be backfilled with CH-1 ledger update; received-funds default and atomic liability-origin transactions are implemented | 2026-10-13 |
+| FX-L2 | Done | `2bc35f0`; received-funds default and atomic liability-origin transactions are implemented | 2026-10-13 |
+| CH-1 | Done | `pending`; custom EF buckets, holding links, atomic plan-save, and v5→v6 migration; final ledger commit will backfill this hash | 2026-10-13 |
 | FX-E1 | Done | `f805481`; emergency fund balance, targets, allocation rows, passbook and Home/Goals cards use explicit tiers and exact accessible labels; large-amount matrix passes | 2026-10-13 |
 | FX-E2 | Done | `5f6f883`; allocation control/hint tests and one-write reset assertion pass | 2026-10-13 |
 | CR-1 | Open | Deferred to held P15-K; verbatim request is in the change-request register | 2026-10-13 |
+| CR-2 | Planned | LEDGER-BACKFILL after P15-M and before Phase 16; details in change-request register | 2026-10-13 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
 
 ### Resume point
 
-FX-L2 is complete; CH-1 is next and remains the only schema bump. `solveLoan` covers all recurring solve directions and the received-funds switch defaults on, auto-disables for historical starts until touched, and records the correct origin category through one persisted action. Focused tests, tsc and lint pass; no real-device verification or full Round 4 gates yet. FX-L1 commit `ef7c5b0` is recorded; FX-L2 hash is to be backfilled in the CH-1 ledger update. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category.
+CH-1 is implemented as the sole schema v6 bump. Custom EF options support metadata-driven allocation/warnings, holding links, link integrity and holding-delete cleanup; saving the allocation plan persists the complete plan in one store write. The v5 migration adds only the two empty custom fields and safe storage archives the original v5 bytes once. `solveLoan` covers all recurring solve directions; received-funds defaults on for new liabilities and records origin inflows through one action. Focused CH-1 suites and the first full test/coverage run pass (656 tests); final gates and ledger commit are next. No real-device verification. FX-L1 `ef7c5b0` and FX-L2 `2bc35f0` are recorded. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -197,9 +199,10 @@ meta-store.
 | v3 | Onboarding state, `monthlySalary`, and `ThemeId`/theme preference. |
 | v4 | Emergency-fund allocation percentages across seven buckets. |
 | v5 | Liability settlement snapshots, goal asset links, policies, budget templates/month snapshots, and additional transaction source/category types. |
+| v6 | Custom emergency-fund allocation buckets and holding links; v5→v6 migration preserves all earlier fields. |
 
-Current source of truth: `SCHEMA_VERSION = 5`. This fix round may add accepted
-category strings, but must not change the stored schema version.
+Current source of truth: `SCHEMA_VERSION = 6`. CH-1 is the sole schema-version
+bump in P15-FIX-R4; all other Round 4 items retained the schema version.
 
 ### Backups and migrations
 
@@ -301,19 +304,21 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 | P15-FIX-R1 | 2026-10-13 | Start Phase 15 fix round Parts 1-4 | Part 0 committed; interrupted fix edits were checkpointed in `6771f37` as unverified | Parts 1-4 remained unverified when the session ended. |
 | P15-FIX-R2 | 2026-10-13 | Recover the interrupted work, repair baseline, inventory and finish FX items | Prompt archived at `docs/prompts/p15-fix-round-2.md`; WIP checkpoint `6771f37`; FX-BASE initially committed in `c0ba0da` | Prior edits crossed multiple FX scopes before item-level verification. Round 3 audited and restored the two missing visible messages; full baseline is now green. |
 | P15-FIX-R3 | 2026-10-13 | Truthful full gate, FX-BASE audit, and all remaining FX items | Prompt saved at `docs/prompts/p15-fix-round-3.md`; FX-BASE `60b8c54`; FX-E2 `5f6f883`; FX-T1 `de94950`; FX-T2 `a3423ec`; FX-T3 `c1df77d`; FX-T4 `88d5190`; FX-B1 `b8bc4a1`; FX-B2 `5e2f78f`; FX-U3 `b205a84`; FX-U4 `862af8a`; FX-U2 `6627d03`; FX-U1/FX-E1 `f805481` | 604 tests/63 suites and every gate pass twice; full coverage exceeds floors. Chose the formal row cutoff of ₹1 crore over the conflicting example. Round 2's two removed visible messages were restored in FX-BASE. No assertions or thresholds were weakened. |
-| P15-FIX-R4 | 2026-10-13 | Transactions filter-row sort placement and Round 4 follow-up items | Prompt saved at `docs/prompts/p15-fix-round-4.md`; FX-S1 `0df1952`; FX-S2 `8364053`; FX-T5 `03c67aa`; FX-I1 `172b24e`; CH-3 `cac7cc0`; CH-2 `e8b1d26`; CH-4 `1321e29`; FX-L1 `ef7c5b0`; FX-L2 hash to be backfilled in the CH-1 ledger update | FX-S1 verified by focused Transactions, SectionHeaderRow AST scan, swipe-suppression and TypeScript checks; an initial broad Jest run exhausted Node heap after a failed assertion, then targeted reruns passed. FX-S2 tests verified the entire history sort registry, both comparator directions, persistence/fallback and rendered option labels. Corrected the expected tie order for the `customized` comparator to reflect ascending month-id tie breaks. FX-T5 root cause: `styles.cashCard` applied `maxHeight: 64` even while expanded. Expanded card has no height/maxHeight; styles, normal-flow ordering and scale 2.0 were simulated, but no real device was used. FX-I1 adds visible value helpers, accessibility hints, a worked example and date prefill; focused render tests, tsc and lint pass. Assumed: one-time/manual holdings remain without plan-specific value fields because their models have distinct invested/current-value fields and no matching editable actual-value date. The prefill test now awaits the RHF update, and the known async-act warning is gone from the full RouteRenderSmoke run. CH-3 removes link-missing from the app menu and exposes it in the Transactions header and conditional count notice; 20 focused tests, tsc and lint pass. CH-2 relocates History and Month review to the Budget tab, retains only templates in its header menu and selects/dots the latest reviewable month; full RouteRenderSmoke (91 tests), AppHeader/menu tests, tsc and lint pass. Both new rows were style-checked at simulated font scale 2.0; no device was used. CH-4 deletes the movement sheet/form/route and form-only schema/types, with an explicit source scan for orphaned UI strings; 193 tests across six related suites passed, including cash-flow and store behavior. Kept `recordMoneyMovement`/`MoneyMovement` after grep proved the liability form still needs received-proceeds behavior; month review allocation actions are unchanged. FX-L1 adds a pure three-direction loan solver and recurring-form calculated values; 127 tests in the solver/schema/route suites, tsc and lint pass. Assumed mismatch tolerance is `max(₹1, 1% of calculated EMI)`. FX-L2 defaults received funds on for new liabilities and auto-disables for past-month starts until touched; full-principal one-time origins use Borrowed, recurring origins use Loan proceeds, and 193 focused tests across five suites verify the screen behavior and one-write persistence. Assumed: partial one-time `loan-received` calls retain their prior Loan proceeds category; no device verification. |
+| P15-FIX-R4 | 2026-10-13 | Transactions filter-row sort placement and Round 4 follow-up items | Prompt saved at `docs/prompts/p15-fix-round-4.md`; FX-S1 `0df1952`; FX-S2 `8364053`; FX-T5 `03c67aa`; FX-I1 `172b24e`; CH-3 `cac7cc0`; CH-2 `e8b1d26`; CH-4 `1321e29`; FX-L1 `ef7c5b0`; FX-L2 `2bc35f0`; CH-1 hash to be backfilled in the final ledger commit | FX-S1 verified by focused Transactions, SectionHeaderRow AST scan, swipe-suppression and TypeScript checks; an initial broad Jest run exhausted Node heap after a failed assertion, then targeted reruns passed. FX-S2 tests verified the entire history sort registry, both comparator directions, persistence/fallback and rendered option labels. Corrected the expected tie order for the `customized` comparator to reflect ascending month-id tie breaks. FX-T5 root cause: `styles.cashCard` applied `maxHeight: 64` even while expanded. Expanded card has no height/maxHeight; styles, normal-flow ordering and scale 2.0 were simulated, but no real device was used. FX-I1 adds visible value helpers, accessibility hints, a worked example and date prefill; focused render tests, tsc and lint pass. Assumed: one-time/manual holdings remain without plan-specific value fields because their models have distinct invested/current-value fields and no matching editable actual-value date. The prefill test now awaits the RHF update, and the known async-act warning is gone from the full RouteRenderSmoke run. CH-3 removes link-missing from the app menu and exposes it in the Transactions header and conditional count notice; 20 focused tests, tsc and lint pass. CH-2 relocates History and Month review to the Budget tab, retains only templates in its header menu and selects/dots the latest reviewable month; full RouteRenderSmoke (91 tests), AppHeader/menu tests, tsc and lint pass. Both new rows were style-checked at simulated font scale 2.0; no device was used. CH-4 deletes the movement sheet/form/route and form-only schema/types, with an explicit source scan for orphaned UI strings; 193 tests across six related suites passed, including cash-flow and store behavior. Kept `recordMoneyMovement`/`MoneyMovement` after grep proved the liability form still needs received-proceeds behavior; month review allocation actions are unchanged. FX-L1 adds a pure three-direction loan solver and recurring-form calculated values; 127 tests in the solver/schema/route suites, tsc and lint pass. Assumed mismatch tolerance is `max(₹1, 1% of calculated EMI)`. FX-L2 defaults received funds on for new liabilities and auto-disables for past-month starts until touched; full-principal one-time origins use Borrowed, recurring origins use Loan proceeds, and focused tests verify the switch and one-write persistence. Assumed: partial one-time `loan-received` calls retain their prior Loan proceeds category; no device verification. CH-1 adds v5→v6 custom EF bucket persistence and migration, metadata-driven warnings, holding links/cascade, integrity validation, backup v6 export/import/refusal of v7, UI and one-write store save. Focused tests plus full coverage run pass (64 suites, 656 tests). Corrected the route-render fixtures for required v6 fields and changed the switch label from “New option is market-linked” to “Market-linked” after the existing verb-text scan rejected the initial wording; no assertions or thresholds were weakened. An initial test edit referenced an unimported error class; imported it and reran the suite successfully. Expo gates are being repeated after this ledger update; no real-device verification. |
 
 ## 7. Change-request register
 
 | ID | Request | Status | Owner / evidence |
 |---|---|---|---|
 | CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Build with P15-K after the user confirms this fix run; local notification design and permission behavior still require SDK-57 documentation and tests. |
+| CR-2 | Planned for the end: LEDGER-BACKFILL. The user will run an export command in both Claude sessions (session 1 = Phases 1 to 6, session 2 = Phase 7 onward) that produces docs/prompts files (every prompt verbatim) and history files; a later agent prompt merges them into docs/prompts and docs/PROGRESS.md. | Open | Deferred until after P15-M and before Phase 16. |
 
 ## 8. Known issues and risks
 
 - The earlier checkpoint had 43 failing tests; current baseline is green
   (519/519 before the Round 3 additions, 520/520 after FX-BASE). Round 3
-  close-out is green at 604/604 tests, with all six gates passing twice.
+  close-out was green at 604/604; Round 4 currently passes 656/656 tests
+  across 64 suites and meets all measured coverage floors.
 - Checkpoint lint once reported seven stale imported-module parse errors;
   current standard Expo lint passes.
 - Budget now lives only under `(tabs)`; the identified Home/history links and
@@ -332,10 +337,11 @@ verbatim at `docs/prompts/p15-fix-round-1.md`.
 
 ## 9. Upcoming roadmap
 
-1. FX-BASE and FX-E2 through FX-U4, including FX-U1/FX-E1, are verified.
-2. After user confirmation only: P15-F insurance; P15-K local reminders with
-   CR-1; P15-L encrypted backups; P15-M accessibility/performance and final
-   gates.
+1. P15-F insurance; P15-K local reminders with CR-1; P15-L encrypted backups;
+   P15-M accessibility/performance and final gates remain held as directed.
+2. CR-2 LEDGER-BACKFILL is planned for the end, after P15-M and before Phase
+   16; it will reconcile verbatim prompts and session histories from both
+   Claude sessions.
 3. Phase 16 cleanup; Phase 17 QA/release.
 
 ## 10. Verification matrix
@@ -401,3 +407,4 @@ evidence for the fixes.
 | FX-L2 | Done | `app/liability-form.tsx` — received switch defaults on, auto-off for historical starts until user touch, and explanation; `src/domain/cashFlow.ts` — Borrowed category for full one-time origin inflow | `src/components/__tests__/RouteRenderSmoke.test.tsx` — default state, historical auto-off, touched override and form receipt action; `src/data/__tests__/createAppStore.test.ts` — recurring/one-time origin records and one persisted write; `src/domain/__tests__/cashFlow.test.ts` — legacy partial and linked movement behavior |
 | FX-E1 | Done | `src/lib/amountDisplay.ts`, `src/components/AmountText.tsx`, `app/emergency-fund.tsx`, Home/Goals emergency cards and passbook | `src/components/__tests__/RouteRenderSmoke.test.tsx` — exact labels for large balance/baseline figures; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — three-month target behavior; `AmountText.test.tsx` — exact accessibility |
 | FX-E2 | Done | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/components/__tests__/EfAllocationForm.test.tsx` — each remaining control's label, hint and stored result plus orphaned-string scan; `src/data/__tests__/createAppStore.test.ts` — reset persisted state and one write |
+| CH-1 | Done | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/domain/links.ts`, `src/domain/holdingActions.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/data/createAppStore.ts`, `app/ef-allocation-form.tsx`, `app/emergency-fund.tsx` — custom buckets, metadata-based warning/allocation, link cascade and one-write plan save; v5→v6 migration/archive and v6 backups | `src/domain/__tests__/efAllocationCustom.test.ts` — action validation, moveTo, integrity, warning metadata and seeded 20,000-case paise proof; `src/data/__tests__/migrateV4.test.ts` — v5 defaults/deep preservation; `src/data/__tests__/createAppStore.test.ts` — v6 hydration/archive/erase and one-write save; `src/domain/__tests__/backup.test.ts` — v6 round-trip and v7 refusal; `src/domain/__tests__/schemas.test.ts` — custom bounds; `src/components/__tests__/EfAllocationForm.test.tsx` — custom option, totals, picker and single save; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — linked rows and values; `src/components/__tests__/RouteRenderSmoke.test.tsx` — routes use v6 state |
