@@ -167,6 +167,59 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls).toBe(writesBeforeFailure);
   });
 
+  it.each(['recurring', 'one-time'] as const)(
+    'records received %s liability proceeds with one persisted write',
+    async (kind) => {
+      const storage = new MemoryStorage();
+      let nextId = 0;
+      const store = makeStore(storage, { newId: () => `received-${++nextId}` });
+      await waitForHydration(store);
+      const liability = kind === 'recurring'
+        ? {
+          kind,
+          type: 'Personal loan' as const,
+          name: 'Personal loan',
+          principal: 20_000,
+          ratePct: 8,
+          tenureMonths: 12,
+          emi: null,
+          startDate: '2026-10-01',
+        }
+        : {
+          kind,
+          type: 'Borrowed money' as const,
+          name: 'Friend',
+          principal: 20_000,
+          ratePct: 0,
+          dueDate: '2027-01-01',
+          startDate: '2026-10-01',
+        };
+      const writesBefore = storage.setItemCalls;
+
+      store.getState().actions.recordMoneyMovement({
+        kind: 'loan-received',
+        amount: 20_000,
+        date: '2026-10-01',
+        liability,
+      });
+
+      const result = store.getState();
+      expect(storage.setItemCalls - writesBefore).toBe(1);
+      expect(result.data.liabilities).toHaveLength(1);
+      expect(result.data.transactions.at(-1)).toMatchObject({
+        type: 'income',
+        amount: 20_000,
+        date: '2026-10-01',
+        category: kind === 'recurring' ? 'Loan proceeds' : 'Borrowed',
+        source: {
+          kind: 'liability-origin',
+          parentId: result.data.liabilities[0]?.id,
+        },
+      });
+      expect(validateIntegrity(result.data)).toEqual([]);
+    },
+  );
+
   it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
     const storage = new MemoryStorage();
     const initial = {

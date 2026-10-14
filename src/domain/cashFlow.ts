@@ -306,7 +306,11 @@ export function recordMoneyMovement(
       const created = addLiability(data, input, newId);
       const liability = created.liabilities.find((item) => !data.liabilities.some((previous) => previous.id === item.id));
       if (!liability) throw new Error('The new liability could not be created.');
-      return appendOriginTransaction(created, liability, movement.amount, 'Loan proceeds', newId, movement.date);
+      const fullOneTimeReceipt = liability.kind === 'one-time'
+        && movement.amount === liability.principal
+        && movement.date === liability.startDate;
+      const category = fullOneTimeReceipt ? 'Borrowed' : 'Loan proceeds';
+      return appendOriginTransaction(created, liability, movement.amount, category, newId, movement.date);
     }
     if (!movement.liabilityId) throw new Error('Choose a liability for the loan proceeds.');
     const liability = data.liabilities.find((item) => item.id === movement.liabilityId);

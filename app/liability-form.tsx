@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Switch, View } from 'react-native';
 
@@ -33,9 +33,8 @@ const kindOptions = [
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilityFormScreen() {
-  const { id, received: receivedParam } = useLocalSearchParams<{ id?: string; received?: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const liabilityId = Array.isArray(id) ? id[0] : id;
-  const openedForReceipt = (Array.isArray(receivedParam) ? receivedParam[0] : receivedParam) === '1';
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -48,6 +47,7 @@ export default function LiabilityFormScreen() {
     earliestPaymentDate: liability?.payments.map((payment) => payment.date).sort()[0] ?? null,
   }), [data.holdings, data.liabilities, liability?.payments, liabilityId, today]);
   const submitting = useRef(false);
+  const receivedTouched = useRef(false);
   const { control, handleSubmit, setValue, formState: { isDirty, isSubmitting, errors, submitCount } } =
     useForm<LiabilityFormInput, undefined, LiabilityFormOutput>({
       resolver: zodResolver(schema),
@@ -89,7 +89,7 @@ export default function LiabilityFormScreen() {
           startDate: today,
           emi: '',
           dueDate: '',
-          received: openedForReceipt,
+          received: true,
         },
     });
   const kind = useWatch({ control, name: 'kind' });
@@ -100,6 +100,13 @@ export default function LiabilityFormScreen() {
   const tenure = useWatch({ control, name: 'tenureMonths' }) ?? '';
   const emi = useWatch({ control, name: 'emi' }) ?? '';
   const received = useWatch({ control, name: 'received' });
+  const startsBeforeCurrentMonth = startDate.length === 10
+    && startDate.slice(0, 7) < today.slice(0, 7);
+  useEffect(() => {
+    if (!liabilityId && !receivedTouched.current) {
+      setValue('received', !startsBeforeCurrentMonth);
+    }
+  }, [liabilityId, setValue, startsBeforeCurrentMonth]);
   const principalValue = Number(principal);
   const solverInputCount = [rate.trim(), tenure.trim(), emi.trim()].filter(Boolean).length;
   const solver = useMemo(() => {
@@ -246,12 +253,22 @@ export default function LiabilityFormScreen() {
           <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <AppText weight="semibold">I received this money in my account</AppText>
-              <HelperText>Also record the loan proceeds as money received.</HelperText>
+              <HelperText>
+                {kind === 'recurring'
+                  ? 'Also record the loan proceeds as money received.'
+                  : 'Also record the borrowed amount as money received.'}
+              </HelperText>
+              {!receivedTouched.current && startsBeforeCurrentMonth ? (
+                <HelperText>This loan started before this month, so we left this off to avoid changing that month&apos;s balance</HelperText>
+              ) : null}
             </View>
             <Switch
               accessibilityLabel="I received this money in my account"
               value={field.value}
-              onValueChange={field.onChange}
+              onValueChange={(next) => {
+                receivedTouched.current = true;
+                field.onChange(next);
+              }}
             />
           </View>
         )} />

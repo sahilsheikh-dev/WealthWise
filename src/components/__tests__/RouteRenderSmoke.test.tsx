@@ -701,6 +701,9 @@ describe('route render smoke audit', () => {
       const textContent = renderer.root.findAllByType('text')
         .flatMap((node) => node.children.map(String));
       expect(textContent).toContain(calculated);
+      act(() => renderer.root.findByProps({
+        accessibilityLabel: 'I received this money in my account',
+      }).props.onValueChange(false));
       const save = renderer.root.findByProps({ accessibilityLabel: 'Save' });
       await act(async () => {
         save.props.onPress();
@@ -729,6 +732,73 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it('defaults received funds on and auto-disables historical starts until the switch is touched', async () => {
+    const renderer = renderScreen(React.createElement(LiabilityFormScreen));
+    try {
+      const receivedSwitch = () => renderer.root.findByProps({
+        accessibilityLabel: 'I received this money in my account',
+      });
+      const historicalStart = `${shiftMonth(monthKey(todayISO()), -1)}-01`;
+      expect(receivedSwitch().props.value).toBe(true);
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Liability start date' }).props.onChange(historicalStart);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(receivedSwitch().props.value).toBe(false);
+      expect(renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String))).toContain(
+        "This loan started before this month, so we left this off to avoid changing that month's balance",
+      );
+      act(() => receivedSwitch().props.onValueChange(true));
+      expect(receivedSwitch().props.value).toBe(true);
+      expect(renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String))).not.toContain(
+        "This loan started before this month, so we left this off to avoid changing that month's balance",
+      );
+    } finally {
+      act(() => renderer.unmount());
+    }
+  });
+
+  it('saves a new received liability through the shared origin-transaction action', async () => {
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      recordMoneyMovement: jest.Mock;
+      addLiability: jest.Mock;
+    };
+    actions.recordMoneyMovement.mockClear();
+    actions.addLiability.mockClear();
+    const renderer = renderScreen(React.createElement(LiabilityFormScreen));
+    try {
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: 'Liability name' }).props.onChangeText('Received loan');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability principal' }).props.onChangeText('1000000');
+        renderer.root.findByProps({ accessibilityLabel: 'Annual interest rate' }).props.onChangeText('10');
+        renderer.root.findByProps({ accessibilityLabel: 'Liability tenure in months' }).props.onChangeText('12');
+        await Promise.resolve();
+      });
+      const save = renderer.root.findByProps({ accessibilityLabel: 'Save' });
+      await act(async () => {
+        save.props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.recordMoneyMovement).toHaveBeenCalledWith(expect.objectContaining({
+        kind: 'loan-received',
+        amount: 1_000_000,
+        date: todayISO(),
+        liability: expect.objectContaining({
+          kind: 'recurring',
+          principal: 1_000_000,
+          ratePct: 10,
+          tenureMonths: 12,
+          emi: 87_915.89,
+        }),
+      }));
+      expect(actions.addLiability).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer.unmount());
+    }
+  });
+
   it('shows the non-blocking EMI mismatch and applies its calculated value', async () => {
     const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
       addLiability: jest.Mock;
@@ -748,6 +818,9 @@ describe('route render smoke audit', () => {
         .flatMap((node) => node.children.map(String));
       expect(warningText).toContain('These do not match: the EMI for this rate and tenure would be ');
       expect(warningText).toContain('₹87,916');
+      act(() => renderer.root.findByProps({
+        accessibilityLabel: 'I received this money in my account',
+      }).props.onValueChange(false));
       const save = renderer.root.findByProps({ accessibilityLabel: 'Save' });
       await act(async () => {
         save.props.onPress();
