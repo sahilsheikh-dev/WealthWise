@@ -17,13 +17,13 @@ import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, Chip, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { solveLoan } from '../src/domain/liability';
 import { pendingDues, type PastDuesMode } from '../src/domain/dues';
+import { solveLoan } from '../src/domain/liability';
 import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOutput } from '../src/domain/schemas';
 import { LIABILITY_TYPES } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
 
 const kindOptions = [
   { label: 'Recurring (EMI)', value: 'recurring' },
@@ -231,7 +231,6 @@ export default function LiabilityFormScreen() {
       {liability ? <ReadOnlyRow label="Liability kind" value={liability.kind === 'recurring' ? 'Recurring (EMI)' : 'One-time'} /> : (
         <Controller control={control} name="kind" render={({ field }) => (
           <SegmentedControl
-            label="Liability kind"
             options={kindOptions}
             value={field.value}
             onChange={(next) => {
@@ -292,7 +291,7 @@ export default function LiabilityFormScreen() {
       {kind === 'recurring' ? (
         <>
           <Controller control={control} name="tenureMonths" render={({ field }) => (
-            <IntegerField label="Tenure (months)" accessibilityLabel="Liability tenure in months" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureMonths?.message} />
+            <IntegerField label="Tenure (months)" accessibilityLabel="Liability tenure in months" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureMonths?.message} icon="calendar-outline"/>
           )} />
           <Controller control={control} name="emi" render={({ field }) => (
             <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
@@ -343,8 +342,8 @@ export default function LiabilityFormScreen() {
       )}
       {!liabilityId && !received && kind === 'recurring' && startDate < today ? (
         <View style={{ gap: 8 }}>
+          <AppText weight="semibold">Past installments</AppText>
           <SegmentedControl
-            label="Past installments"
             value={pastInstallmentsMode}
             options={[
               { label: 'Already paid', value: 'settle' },

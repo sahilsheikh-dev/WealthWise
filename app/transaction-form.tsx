@@ -18,21 +18,21 @@ import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
 import { efBalance } from '../src/domain/ef';
-import { describeSource, investCategoryFor } from '../src/domain/links';
-import { transactionCategoryLabel } from '../src/domain/transactions';
 import { listInstruments } from '../src/domain/instruments';
+import { describeSource, investCategoryFor } from '../src/domain/links';
 import { holdingValue } from '../src/domain/portfolio';
 import {
-  makeTransactionFormSchema,
   INVESTMENT_FORM_CATEGORIES,
+  makeTransactionFormSchema,
   TRANSACTION_CATEGORIES,
   type TransactionFormInput,
   type TransactionFormOutput,
 } from '../src/domain/schemas';
+import { transactionCategoryLabel } from '../src/domain/transactions';
 import type { Transaction } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -323,7 +323,6 @@ export default function TransactionFormScreen() {
                 name="type"
                 render={({ field }) => (
                   <SegmentedControl
-                    label="Type"
                     value={field.value}
                     options={typeOptions}
                     error={errors.type?.message}

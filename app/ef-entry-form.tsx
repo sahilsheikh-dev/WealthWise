@@ -107,7 +107,6 @@ export default function EfEntryFormScreen() {
       ) : (
         <Controller control={control} name="kind" render={({ field }) => (
           <SegmentedControl
-            label="Entry type"
             value={field.value}
             options={kindOptions}
             onChange={field.onChange}

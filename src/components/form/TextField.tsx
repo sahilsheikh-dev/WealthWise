@@ -1,7 +1,5 @@
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import { AppText } from '../ui';
-import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { FieldError } from './FieldError';
 
@@ -29,11 +27,10 @@ export function TextField({
   const { colors } = useTheme();
   return (
     <View style={styles.field}>
-      <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
       <TextInput
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={error ? `Error: ${error}` : undefined}
-        placeholder={placeholder}
+        placeholder={placeholder ?? label}
         placeholderTextColor={colors.text3}
         value={value}
         onChangeText={onChangeText}
