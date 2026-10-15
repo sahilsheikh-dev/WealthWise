@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 76% (37/49)
+Overall progress ████████░░ 78% (38/49)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ███░░░░░░░ 33% (1/3)
+Phase 20         ███████░░░ 67% (2/3)
 Phase 21         ░░░░░░░░░░ 0% (0/2)
 Phase 22         ░░░░░░░░░░ 0% (0/2)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -118,7 +118,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P19-B | — | Done | Invest category and earned-income sync, reconciliation, Month review sources, and History/Month review/Templates actions with no Budget header menu; commit `221d2ed` and the Phase 19 gate record. | 2026-10-15 |
 | P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the Phase 19-C gate record. | 2026-10-15 |
 | P20-A | — | Done | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
-| P20-B | — | Planned | Home due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-15 |
+| P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Planned | Restrict bottom tabs to Home, Transactions, Goals and Budget (CR-11). | 2026-10-15 |
 | P21-A | — | Planned | Emergency-fund goal links and entries/net-worth model; schema v7 (CR-8, CR-13; former P19-D split). | 2026-10-15 |
 | P21-B | — | Planned | Months-of-cover, salary fallback, minimal allocation editing and linked-assets table (CR-14, CR-15). | 2026-10-15 |
@@ -164,10 +164,10 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
 | CR-5 | Done | Five-group categories, suggestions, compact inputs, subtotals and recurring-items summary; P19-A gates pass. | P19-A |
 | CR-6 | Done | Applied budgets and all recurring assets/liabilities, past and future, appear as pending Transactions with Pay and Clear due. | P20-A |
-| CR-7 | Planned | Home upcoming/due rows offer Pay and Clear due and update Transactions. | P20-B |
+| CR-7 | Done | Home upcoming/due rows offer Pay and Clear due and update Transactions. | P20-B |
 | CR-8 | Planned | Emergency fund goals link assets like other goals; EF is not listed as an asset. | P21-A |
 | CR-9 | Done | Investment categories remain distinct; every earned-income source appears in budget review and month review, with non-earned inflows separated. | P19-B |
-| CR-10 | Planned | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
+| CR-10 | Done | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
 | CR-11 | Planned | Bottom tabs appear only on Home, Transactions, Goals and Budget. | P20-C |
 | CR-12 | Planned | Four months of demo data linked throughout; feature changes extend demo data and tests. | P22-A |
 | CR-13 | Planned | Emergency-fund entries are removed; EF is not added to net worth; schema v7. | P21-A |
@@ -181,7 +181,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 
 ### Resume point
 
-P19-A, P19-B and P19-C passed their gates and are complete; P20-A passed its gates and is complete; next is P20-B. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. Schema remains v6 through P20; Phase 21's CR-13 explicitly calls for schema v7.
+P19-A, P19-B and P19-C passed their gates and are complete; P20-A and P20-B passed their gates and are complete; next is P20-C. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema remains v6 through P20; Phase 21's CR-13 explicitly calls for schema v7.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -520,8 +520,8 @@ expanded scope verified here. Next planned work is P20-A.
 
 ### Phase 20 — Pending items, Home and navigation
 
-In progress: P20-A [former P19-B; CR-6] is complete; P20-B [former P19-C; CR-7, CR-10] and
-P20-C [CR-11].
+In progress: P20-A [former P19-B; CR-6] and P20-B [former P19-C; CR-7,
+CR-10] are complete; P20-C [CR-11] remains.
 
 ### Phase 21 — Emergency fund as a goal-linked model
 
@@ -707,8 +707,8 @@ evidence present in exports/checkpoints.
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
 | P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | this commit | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
-| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | this commit | No new assumptions. | current request |
-| P20-B | Phase 20 | — | — | planned | Home upcoming/due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | Planned; no implementation claimed. | none | Renumbered roadmap item. | planned |
+| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
+| P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route suites pass; full gates recorded at final close-out. | this commit | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | planned | Bottom tabs only on Home, Transactions, Goals and Budget (CR-11). | Planned; no implementation claimed. | none | DEC-TABS supersedes P18-R5 detail-bar behavior. | planned |
 | P21-A | Phase 21 | — | — | planned | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
 | P21-B | Phase 21 | — | — | planned | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
@@ -923,8 +923,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **Phase 20 — Pending items, Home and navigation** (In progress): P20-A pending
-   Transactions with Pay/Clear due (CR-6) is Done; P20-B Home due actions and
-   collapsed spending plan (CR-7, CR-10); P20-C main-screen-only tabs (CR-11).
+   Transactions with Pay/Clear due (CR-6) and P20-B Home due actions and
+   collapsed spending plan (CR-7, CR-10) are Done; P20-C main-screen-only tabs
+   (CR-11) remains.
 3. **Phase 21 — Emergency fund as a goal-linked model** (Planned): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
    allocation editing and linked-asset table (CR-14, CR-15).
@@ -990,7 +991,7 @@ evidence for the fixes.
 | P16-A schema v5 | Done | `src/domain/schemas.ts`, `src/domain/types.ts`, `src/data/migrate.ts`, `src/domain/backup.ts` | `src/data/__tests__/migrateV4.test.ts`, `src/domain/__tests__/backup.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/domain/__tests__/v5Integrity.test.ts` |
 | P16-B clearing dues | Done | `src/domain/dues.ts`, `src/domain/schedule.ts`, `src/data/createAppStore.ts`, `app/clear-dues.tsx` | `src/domain/__tests__/dues.test.ts`, `src/domain/__tests__/schedule.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
 | P20-A pending Transactions | Done | `src/domain/pending.ts`, `src/domain/dues.ts`, `src/components/PendingItemRow.tsx`, `src/components/PendingItemActions.tsx`, `app/(tabs)/transactions.tsx`, budget forms and mock data | Focused pending/store/form tests; full test suite and all configured gates pass. |
-| P20-B Home actions and spending plan | Planned | Home due rows/category collapse/Apply budget not implemented | Home interaction tests pending |
+| P20-B Home actions and spending plan | Done | `app/(tabs)/index.tsx`, `src/components/PendingItemActionSheet.tsx`, `src/components/PendingItemActions.tsx`, `src/components/PendingItemRow.tsx` | `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/__tests__/PendingItemActions.test.tsx`; Home/route focused suites pass. |
 | P20-C main-screen tab visibility | Planned | Detail-route bottom-tab gating not implemented | Route/tab visibility tests pending |
 | P21-A emergency-fund linked model [schema v7] | Planned | No EF entry removal/link migration implementation | Migration/net-worth tests pending |
 | P21-B emergency-fund cover/allocation | Planned | No months-of-cover, fallback or allocation edit UI | Domain/UI tests pending |
