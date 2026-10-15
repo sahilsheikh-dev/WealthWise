@@ -353,7 +353,7 @@ export function outstandingAt(data: AppData, asOf: ISODate): OutstandingSummary 
   };
 }
 
-function lineActual(data: AppData, month: string, category: string): number {
+export function budgetLineActual(data: AppData, month: string, category: string): number {
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
     && budgetCategoryForTransaction(row) === category
@@ -404,7 +404,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
   }
   const lines = [...planned].map(([category, amount]) => {
-    const actual = lineActual(data, key, category);
+    const actual = budgetLineActual(data, key, category);
     const usedPct = amount === 0 ? (actual === 0 ? 0 : null) : actual / amount * 100;
     return {
       category, planned: amount, actual, remaining: amount - actual, usedPct,

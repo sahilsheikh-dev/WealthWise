@@ -14,8 +14,10 @@ import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
+import { useUIStore } from '../src/data/uiStore';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, suggestTemplate } from '../src/domain/budget';
+import { pendingItems } from '../src/domain/pending';
 import { incomeBaselineFor } from '../src/domain/summary';
 import { transactionCategoryLabel } from '../src/domain/transactions';
 import type { BudgetTemplateLine } from '../src/domain/types';
@@ -39,6 +41,8 @@ export default function BudgetTemplateFormScreen() {
   const saveAsTemplate = params.saveAsTemplate === '1';
   const data = useAppData();
   const actions = useAppActions();
+  const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   const today = todayISO();
   const template = data.budgetTemplates?.find((item) => item.id === templateId);
   const storedMonth = data.monthBudgets?.find((row) => row.month === month);
@@ -130,7 +134,21 @@ export default function BudgetTemplateFormScreen() {
       }
       const error = useAppStore.getState().lastError;
       if (error) Alert.alert('Could not save template', error);
-      else router.back();
+      else {
+        if (!saveAsTemplate && !template && values.applyToMonth) {
+          const plannedCount = pendingItems(useAppStore.getState().data, month, today)
+            .filter((item) => item.kind === 'budget').length;
+          setActionToast({
+            message: `Budget applied: ${plannedCount} planned items are in Transactions as pending`,
+            actionLabel: 'View',
+            onAction: () => {
+              setTxMonth(month);
+              router.push({ pathname: '/(tabs)/transactions', params: { month } });
+            },
+          });
+        }
+        router.back();
+      }
     } finally {
       submitting.current = false;
     }

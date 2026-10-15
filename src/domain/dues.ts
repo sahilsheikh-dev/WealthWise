@@ -45,24 +45,30 @@ export class TooManyDuesError extends Error {
   }
 }
 
-function pendingRowsFor(data: AppData, target: DueTarget, asOf: string): ScheduleRow[] {
+function pendingRowsFor(data: AppData, target: DueTarget, asOf: string, rowId?: string): ScheduleRow[] {
+  const unpaid = (rows: ScheduleRow[]) => {
+    const pending = rows.filter((row) => row.status !== 'paid');
+    if (rowId !== undefined) {
+      const first = pending[0];
+      return first?.id === rowId ? [first] : [];
+    }
+    return pending.filter((row) =>
+      row.dueDate <= asOf && (row.status === 'overdue' || row.status === 'ongoing'));
+  };
   if (target.kind === 'plan') {
     const holding = data.holdings.find((item) => item.id === target.id);
     if (!holding || holding.kind !== 'plan') throw new NotFoundError('Plan', target.id);
-    return planSchedule(holding, asOf).rows.filter((row) =>
-      row.dueDate <= asOf && (row.status === 'overdue' || row.status === 'ongoing'));
+    return unpaid(planSchedule(holding, asOf).rows);
   }
   if (target.kind === 'liability') {
     const liability = data.liabilities.find((item) => item.id === target.id);
     if (!liability) throw new NotFoundError('Liability', target.id);
     if (liability.kind === 'one-time' && liability.dueDate === null) return [];
-    return liabilitySchedule(liability, asOf).rows.filter((row) =>
-      row.dueDate <= asOf && (row.status === 'overdue' || row.status === 'ongoing'));
+    return unpaid(liabilitySchedule(liability, asOf).rows);
   }
   const policy = data.policies.find((item) => item.id === target.id);
   if (!policy) throw new NotFoundError('Policy', target.id);
-  return policySchedule(policy, asOf).rows.filter((row) =>
-    row.dueDate <= asOf && (row.status === 'overdue' || row.status === 'ongoing'));
+  return unpaid(policySchedule(policy, asOf).rows);
 }
 
 function summarizePending(rows: ScheduleRow[]): PendingDues {
@@ -128,9 +134,9 @@ function createPolicyPayment(
 export function clearDue(
   data: AppData,
   target: DueTarget,
-  options: { date: string; newId: () => string },
+  options: { date: string; newId: () => string; rowId?: string },
 ): { data: AppData; entryId: string } {
-  const [row] = pendingRowsFor(data, target, options.date);
+  const [row] = pendingRowsFor(data, target, options.date, options.rowId);
   if (!row) throw new NothingToClearError();
   if (target.kind === 'plan') {
     let entryId: string | undefined;

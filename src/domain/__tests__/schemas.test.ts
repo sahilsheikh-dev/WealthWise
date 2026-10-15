@@ -223,6 +223,11 @@ describe('makeTransactionFormSchema', () => {
     expect(instrumentSchema.safeParse(invest).success).toBe(false);
     expect(instrumentSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
     expect(instrumentSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
+    const pendingBudgetSchema = makeTransactionFormSchema('2026-10-10', {}, {
+      ...options, allowUnlinkedInvestment: true,
+    });
+    expect(pendingBudgetSchema.safeParse(invest).success).toBe(true);
+    expect(pendingBudgetSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
     const withdrawal = { ...validInput, type: 'income' as const, category: 'Withdrawal', amount: '500' };
     expect(instrumentSchema.safeParse(withdrawal).success).toBe(false);
     expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);

@@ -8,6 +8,7 @@ import { netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
+import { pendingItems } from '../../domain/pending';
 import { mockAppData } from '../../mock/data';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
@@ -94,6 +95,10 @@ describe('createAppStore persistence', () => {
     store.getState().actions.applyTemplateToMonth({ month: '2026-03', templateId: 'budget-1' });
     expect(storage.setItemCalls - writes).toBe(1);
     expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
+    expect(pendingItems(store.getState().data, '2026-03', '2026-10-10'))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ kind: 'budget', title: 'Food', amount: 4_000, status: 'planned' }),
+      ]));
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     writes = storage.setItemCalls;
     store.getState().actions.createBudgetTemplateAndApply({
@@ -345,7 +350,13 @@ describe('createAppStore persistence', () => {
     const actions = store.getState().actions;
 
     let writesBefore = storage.setItemCalls;
-    const entryId = actions.clearDue({ kind: 'plan', id: 'past-plan' });
+    const firstPending = pendingItems(store.getState().data, '2026-08', '2026-10-10')
+      .find((item) => item.source.kind === 'plan');
+    if (!firstPending || firstPending.source.kind !== 'plan') throw new Error('Expected a plan due.');
+    const entryId = actions.clearDue(
+      { kind: 'plan', id: 'past-plan' },
+      firstPending.source.slotId,
+    );
     expect(entryId).toBe('due-1');
     expect(storage.setItemCalls - writesBefore).toBe(1);
     expect(validateIntegrity(store.getState().data)).toEqual([]);

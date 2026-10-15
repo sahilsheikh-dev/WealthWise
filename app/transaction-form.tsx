@@ -47,12 +47,26 @@ const noInvestmentChoice = '__no-investment__';
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function TransactionFormScreen() {
-  const { id, type: initialTypeParam } = useLocalSearchParams<{ id?: string; type?: string }>();
+  const params = useLocalSearchParams<{
+    id?: string;
+    type?: string;
+    category?: string;
+    amount?: string;
+    date?: string;
+    pending?: string;
+  }>();
+  const { id } = params;
   const transactionId = Array.isArray(id) ? id[0] : id;
+  const initialTypeParam = params.type;
   const initialTypeValue = Array.isArray(initialTypeParam) ? initialTypeParam[0] : initialTypeParam;
   const initialType: Transaction['type'] = initialTypeValue === 'income' || initialTypeValue === 'invest'
     ? initialTypeValue
     : 'expense';
+  const requestedCategoryParam = Array.isArray(params.category) ? params.category[0] : params.category;
+  const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
+  const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
+  const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
+  const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -96,8 +110,9 @@ export default function TransactionFormScreen() {
       instruments,
       withdrawable,
       mode,
+      allowUnlinkedInvestment: pendingMode && !editing,
     }),
-    [instruments, legacyCategories, mode, today, withdrawable],
+    [editing, instruments, legacyCategories, mode, pendingMode, today, withdrawable],
   );
   const submitting = useRef(false);
   const {
@@ -120,11 +135,18 @@ export default function TransactionFormScreen() {
         ? transaction.source.parentId
         : transaction.source?.kind === 'ef-entry' ? 'ef' : undefined,
     } : {
-      amount: '',
-      date: today,
+      amount: requestedAmount ?? '',
+      date: requestedDate ?? today,
       note: '',
       type: initialType,
-      category: TRANSACTION_CATEGORIES[initialType][0],
+      category: (() => {
+        const categories = initialType === 'invest'
+          ? INVESTMENT_FORM_CATEGORIES
+          : TRANSACTION_CATEGORIES[initialType];
+        return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
+          ? requestedCategoryParam
+          : categories[0] ?? '';
+      })(),
       instrumentId: undefined,
     },
   });
@@ -157,7 +179,7 @@ export default function TransactionFormScreen() {
   const instrumentChoices = [
     ...instruments.map((item) => item.id),
     ...(!editing || (transaction?.type === 'invest' && !transaction.source) ? [createInvestmentChoice] : []),
-    ...(transaction?.type === 'invest' && !transaction.source ? [noInvestmentChoice] : []),
+    ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
     ...instruments.map((item) => [item.id, item.id === 'ef' ? item.name : `${item.name} (${item.type})`]),
@@ -331,7 +353,7 @@ export default function TransactionFormScreen() {
                       field.onChange(type);
                       if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
                       const categories = type === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES[type];
-                      if (!(categories as readonly string[]).includes(category)) {
+                      if (!categories.some((value) => value === category)) {
                         setValue('category', categories[0], { shouldDirty: true, shouldValidate: true });
                       }
                     }}
@@ -379,7 +401,7 @@ export default function TransactionFormScreen() {
                     />
                   )}
                 />
-                <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : transaction?.category ?? 'Choose an investment'} />
+                <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
               </>
             ) : null}
             {!transaction?.source && selectedType !== 'invest' ? (
