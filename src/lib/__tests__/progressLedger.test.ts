@@ -33,7 +33,9 @@ describe('permanent progress ledger', () => {
       'FX-S1', 'FX-S2', 'FX-I1', 'FX-L1', 'FX-L2',
       'FX-E1', 'FX-E2',
       'CH-1', 'CH-2', 'CH-3', 'CH-4',
-      'CR-1', 'CR-2', 'CR-3',
+      'CR-1', 'CR-2', 'CR-3', 'CR-4', 'CR-5', 'CR-6', 'CR-7',
+      'CR-8', 'CR-9', 'CR-10', 'CR-11', 'CR-12', 'CR-13', 'CR-14',
+      'CR-15', 'CR-16',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -62,8 +64,9 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P19-C', 'P19-D', 'P19-E',
-      'P20-A', 'P21-A', 'P22-A', 'P23-A', 'P24-A', 'P25-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P21-A', 'P21-B',
+      'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
+      'P28-A',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -84,8 +87,9 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P19-C', 'P19-D', 'P19-E',
-      'P20-A', 'P21-A', 'P22-A', 'P23-A', 'P24-A', 'P25-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P21-A', 'P21-B',
+      'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
+      'P28-A',
     ];
 
     for (const id of newPartIds) {
@@ -127,7 +131,7 @@ describe('permanent progress ledger', () => {
       const phase = Number(phaseMatch[1]);
       const count = counts.get(phase) ?? { done: 0, total: 0 };
       count.total += 1;
-      if (status.startsWith('Done')) count.done += 1;
+      if (status.startsWith('Done') || status.startsWith('Superseded')) count.done += 1;
       counts.set(phase, count);
     }
 
@@ -135,7 +139,7 @@ describe('permanent progress ledger', () => {
     const done = [...counts.values()].reduce((sum, count) => sum + count.done, 0);
     const expected: [string, number, number][] = [
       ['Overall progress', done, total],
-      ...Array.from({ length: 25 }, (_, index): [string, number, number] => {
+      ...Array.from({ length: 28 }, (_, index): [string, number, number] => {
         const phase = index + 1;
         const count = counts.get(phase) ?? { done: 0, total: 0 };
         return [`Phase ${phase}`, count.done, count.total];
@@ -156,13 +160,17 @@ describe('permanent progress ledger', () => {
     });
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-8 and the current P18-LEDGER work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-16 and the current P18-LEDGER work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
 
     expect(`${dashboard}\n${register}`).toContain('CR-3');
-    for (const id of ['FX-BASE', 'CH-1', 'CH-2', 'CH-3', 'CH-4', 'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8']) {
+    for (const id of [
+      'FX-BASE', 'CH-1', 'CH-2', 'CH-3', 'CH-4',
+      'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8', 'CR-9', 'CR-10',
+      'CR-11', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-16',
+    ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
     expect(promptLog).toContain('| P18-LEDGER |');
