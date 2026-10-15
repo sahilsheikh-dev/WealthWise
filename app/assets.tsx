@@ -12,7 +12,6 @@ import {
   Card,
   Chip,
   ChipRow,
-  DetailTabBar,
   EmptyState,
   Screen,
   StatPill,
@@ -99,7 +98,6 @@ export default function AssetsScreen() {
   const gainTone = totals.gain >= 0 ? colors.ok : colors.err;
 
   return (
-    <>
     <Screen bottomPadding={120}>
       <AppHeader
         title="Assets"
@@ -200,8 +198,6 @@ export default function AssetsScreen() {
         Plan values are estimates unless an actual value is supplied.
       </AppText>
     </Screen>
-    <DetailTabBar active="Home" />
-    </>
   );
 }
 

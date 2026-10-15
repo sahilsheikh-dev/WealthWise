@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SortChip } from '../src/components/SortChip';
-import { AppText, Card, ChipRow, DetailTabBar, EmptyState, Screen } from '../src/components/ui';
+import { AppText, Card, ChipRow, EmptyState, Screen } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { budgetHistory } from '../src/domain/budget';
@@ -60,7 +60,6 @@ export default function BudgetHistoryScreen() {
           </Pressable>
         ))}
       </ScrollView>
-      <DetailTabBar active="Budget" placement="flow" />
     </Screen>
   );
 }

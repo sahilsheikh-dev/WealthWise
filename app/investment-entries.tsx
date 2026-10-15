@@ -12,7 +12,6 @@ import {
   Card,
   Chip,
   ChipRow,
-  DetailTabBar,
   EmptyState,
   Screen,
   StatusBadge,
@@ -217,7 +216,6 @@ export default function InvestmentEntriesScreen() {
   );
 
   return (
-    <>
     <Screen scroll={false}>
       <FlatList<ListRow>
         data={listRows}
@@ -265,8 +263,6 @@ export default function InvestmentEntriesScreen() {
         }}
       />
     </Screen>
-    <DetailTabBar active="none" />
-    </>
   );
 }
 

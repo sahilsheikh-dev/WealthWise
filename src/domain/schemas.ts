@@ -397,6 +397,7 @@ export function makeTransactionFormSchema(
     instruments: { id: string }[];
     withdrawable: Record<string, number>;
     mode: 'create' | 'edit-unlinked' | 'edit-linked';
+    allowUnlinkedInvestment?: boolean;
   } = { instruments: [], withdrawable: {}, mode: 'create' },
 ) {
   return z.object({
@@ -420,7 +421,9 @@ export function makeTransactionFormSchema(
     const isInstrumentType = value.type === 'invest';
     const isWithdrawal = value.type === 'income' && value.category === 'Withdrawal';
     const maySelectInstrument = isInstrumentType || isWithdrawal;
-    const requiredForMode = options.mode !== 'edit-unlinked' && isInstrumentType;
+    const requiredForMode = options.mode !== 'edit-unlinked'
+      && !options.allowUnlinkedInvestment
+      && isInstrumentType;
     const instruments = options.instruments.map((item) => item.id);
 
     if (instrumentId !== undefined && (!maySelectInstrument || options.mode === 'edit-unlinked' && !isInstrumentType)) {

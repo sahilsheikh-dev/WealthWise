@@ -13,7 +13,10 @@ import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  useIsFocused: () => true,
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
 jest.mock('../../data/store', () => ({
@@ -138,7 +141,7 @@ describe('Home screen theme smoke', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    act(() => renderer?.root.findByProps({ accessibilityLabel: "Open this month's budget" }).props.onPress());
+    act(() => renderer?.root.findByProps({ label: 'Open budget' }).props.onPress());
     expect(router.push).toHaveBeenCalledWith('/(tabs)/budget');
     await act(async () => renderer?.unmount());
   });
@@ -159,6 +162,9 @@ describe('Home screen theme smoke', () => {
         await Promise.resolve();
       });
       if (!renderer) throw new Error('Home did not render.');
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
+        .toEqual({ expanded: false });
+      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
       expect(renderer.root.findAll((node) => String(node.type) === 'section')
         .map((node) => node.children.join(' '))).toContain('Spending by category');

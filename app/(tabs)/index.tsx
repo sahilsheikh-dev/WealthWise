@@ -1,4 +1,6 @@
 import { router, type Href } from 'expo-router';
+import { useIsFocused } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,9 +17,10 @@ import {
   SectionTitle,
   StatPill,
   StatPillRow,
-  StatusBadge,
   WarningBanner,
 } from '../../src/components/ui';
+import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
@@ -25,7 +28,7 @@ import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
 import { goalProjection } from '../../src/domain/goalLinks';
-import { upcomingDue } from '../../src/domain/schedule';
+import { pendingItems, type PendingItem } from '../../src/domain/pending';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -48,12 +51,22 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const isFocused = useIsFocused();
   const data = useAppData();
   const today = todayISO();
+  const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const monthBudget = budgetMonthView(data, today.slice(0, 7));
-  const spendingByCategory = expenseCategoryBreakdown(data.transactions, today.slice(0, 7));
-  const dueItems = upcomingDue(data, today, 5);
+  const monthBudget = budgetMonthView(data, month);
+  const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
+  const dueItems = pendingItems(data, month, today)
+    .filter((item) => item.kind === 'due')
+    .slice(0, 5);
+  const [spendingState, setSpendingState] = useState({ focused: isFocused, expanded: false });
+  if (spendingState.focused !== isFocused) {
+    setSpendingState({ focused: isFocused, expanded: false });
+  }
+  const spendingExpanded = spendingState.expanded;
+  const [selectedDue, setSelectedDue] = useState<PendingItem | null>(null);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
   useEffect(() => {
@@ -130,45 +143,46 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={monthBudget.budget
-          ? `Open this month's budget. This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)} spent`
-          : "Open this month's budget"}
-        onPress={() => router.push('/(tabs)/budget')}>
-        <Card style={styles.monthBudgetCard}>
-          <AppText
-            weight="semibold"
-            accessibilityLabel={monthBudget.budget
-              ? `This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)} spent`
-              : 'Plan your month'}>
-            {monthBudget.budget ? (
-              <>This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> of <AmountText value={monthBudget.plannedSpend} tier="tile" /> spent</>
-            ) : 'Plan your month'}
+      <SectionTitle>Spending by category</SectionTitle>
+      <Card style={styles.categoryBreakdown}>
+        <AppText
+          weight="semibold"
+          accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
+          This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
+        </AppText>
+        <View style={styles.spendingActions}>
+          <Button label="Open budget" icon="pie-chart" onPress={() => router.push('/(tabs)/budget')} />
+          {!monthBudget.budget ? (
+            <Button
+              label="Apply budget"
+              icon="layers"
+              onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } })}
+            />
+          ) : null}
+        </View>
+        <Pressable
+          testID="home-spending-toggle"
+          accessibilityRole="button"
+          accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+          accessibilityState={{ expanded: spendingExpanded }}
+          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}
+          style={[styles.spendingToggle, { borderTopColor: colors.border }]}>
+          <AppText style={{ color: colors.primary }}>
+            {spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
           </AppText>
-          {monthBudget.budget ? (
-            <ProgressBar percent={monthBudget.plannedSpend > 0
-              ? monthBudget.actualSpend / monthBudget.plannedSpend * 100 : 0} />
-          ) : (
-            <AppText style={[typography.meta, { color: colors.text3 }]}>Set up a monthly spending plan</AppText>
-          )}
-          <AppText style={[typography.meta, { color: colors.primary }]}>Open budget</AppText>
-        </Card>
-      </Pressable>
-
-      {spendingByCategory.length > 0 ? (
-        <>
-          <SectionTitle>Spending by category</SectionTitle>
-          <Card style={styles.categoryBreakdown}>
+          <Feather name={spendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+        </Pressable>
+        {spendingExpanded ? spendingByCategory.length > 0 ? (
+          <View testID="home-spending-details" style={styles.categoryRows}>
             {spendingByCategory.map(({ category, amount }) => (
               <View key={category} style={[styles.categoryRow, { borderBottomColor: colors.border }]}>
                 <AppText style={{ color: colors.text2 }}>{transactionCategoryLabel(category)}</AppText>
                 <AmountText value={amount} tier="row" weight="semibold" />
               </View>
             ))}
-          </Card>
-        </>
-      ) : null}
+          </View>
+        ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
+      </Card>
 
       {nudge.show ? (
         <Card style={styles.backupCard}>
@@ -218,37 +232,29 @@ export default function HomeScreen() {
         <>
           <SectionTitle>Upcoming and due</SectionTitle>
           <Card style={styles.upcomingCard}>
-            {dueItems.map((item) => {
-              const noDueDate = item.kind === 'liability'
-                && data.liabilities.some((liability) => liability.id === item.parentId && liability.kind === 'one-time' && liability.dueDate === null);
-              return (
-                <Pressable
-                  key={`${item.kind}:${item.parentId}:${item.row.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.name}, ${item.row.status}, ${formatAmount(item.row.amount, 'exact', 1)}`}
-                  onPress={() => router.push(item.kind === 'plan'
-                    ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
-                    : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
-                  style={[styles.dueRow, { borderBottomColor: colors.border }]}>
-                  <View style={styles.dueTitle}>
-                    <AppText weight="semibold" style={typography.name} numberOfLines={1}>{item.name}</AppText>
-                    <AppText style={[typography.meta, { color: colors.text3 }]}>
-                      {noDueDate ? 'No due date' : formatDate(item.row.dueDate)}
-                    </AppText>
-                  </View>
-                  <View style={styles.dueRight}>
-                    <AmountText value={item.row.amount} tier="row" weight="semibold" style={typography.meta} />
-                    <StatusBadge
-                      label={item.row.status}
-                      tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
-                    />
-                  </View>
-                </Pressable>
-              );
-            })}
+            {dueItems.map((item) => (
+              <PendingItemRow
+                key={item.id}
+                item={item}
+                onPress={() => setSelectedDue(item)}
+              />
+            ))}
           </Card>
         </>
       ) : null}
+      <PendingItemActionSheet
+        item={selectedDue}
+        today={today}
+        onClose={() => setSelectedDue(null)}
+        onViewSchedule={(item) => {
+          setSelectedDue(null);
+          if (item.source.kind === 'plan') {
+            router.push(`/investment-entries?id=${encodeURIComponent(item.source.parentId)}` as Href);
+          } else if (item.source.kind === 'liability') {
+            router.push({ pathname: '/liability-payments', params: { id: item.source.parentId } });
+          }
+        }}
+      />
 
       <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
@@ -336,8 +342,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
-  monthBudgetCard: { gap: 8 },
-  categoryBreakdown: { gap: 4 },
+  categoryBreakdown: { gap: 10 },
+  categoryRows: { gap: 4 },
+  spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  spendingToggle: { minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },

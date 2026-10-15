@@ -105,7 +105,7 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: DueTarget) => string | undefined;
+  clearDue: (target: DueTarget, rowId?: string) => string | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
@@ -296,10 +296,14 @@ export function createAppStore(
         deleteInvestmentEntry(holdingId, entryId) {
           applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
         },
-        clearDue(target) {
+        clearDue(target, rowId) {
           let entryId: string | undefined;
           applyDataAction((data) => {
-            const result = clearDue(data, target, { date: deps.today(), newId: deps.newId });
+            const result = clearDue(data, target, {
+              date: deps.today(),
+              newId: deps.newId,
+              ...(rowId ? { rowId } : {}),
+            });
             entryId = result.entryId;
             return result.data;
           });

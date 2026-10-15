@@ -5,6 +5,8 @@ import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensi
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { PendingItemActions } from '../../src/components/PendingItemActions';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
@@ -23,9 +25,9 @@ import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
-import { pendingDues } from '../../src/domain/dues';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
+import { pendingItems, pendingTransactionType } from '../../src/domain/pending';
 import { filterTransactions, groupByDate, monthSummary, transactionCategoryLabel } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -75,22 +77,23 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const monthPendingItems = useMemo(() => pendingItems(data, month, today), [data, month, today]);
+  const pendingAmount = useMemo(
+    () => monthPendingItems.reduce((total, item) => total + item.amount, 0),
+    [monthPendingItems],
+  );
+  const visiblePendingItems = useMemo(() => monthPendingItems.filter((item) => {
+    const type = pendingTransactionType(item);
+    return (filter === 'all' || type === filter)
+      && (!categoryFilter || item.category === categoryFilter)
+      && (!query || `${item.title} ${item.category}`.toLowerCase().includes(query.trim().toLowerCase()));
+  }), [categoryFilter, filter, monthPendingItems, query]);
+  const [pendingExpanded, setPendingExpanded] = useState(false);
   const unlinkedCount = useMemo(() => findUnlinkedEntries(data).length, [data]);
   const position = useMemo(
     () => availableBalance(data.transactions, month, today),
     [data.transactions, month, today],
   );
-  const pendingAmount = useMemo(() => {
-    let amount = 0;
-    for (const holding of data.holdings) {
-      if (holding.kind === 'plan') amount += pendingDues(holding, today).amount;
-    }
-    for (const liability of data.liabilities) {
-      if (liability.kind === 'recurring') amount += pendingDues(liability, today).amount;
-    }
-    for (const policy of data.policies) amount += pendingDues(policy, today).amount;
-    return amount;
-  }, [data.holdings, data.liabilities, data.policies, today]);
   const review = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const visibleReview = review?.month === dismissedReview ? undefined : review;
   const creationOrder = useMemo(
@@ -182,7 +185,11 @@ export default function TransactionsScreen() {
                 </View>
                 {pendingAmount > 0 ? (
                   <View testID="balance-pending-caption" style={styles.balanceCaptionItem}>
-                    <AppText style={[styles.balanceCaptionText, { color: colors.text3 }]}>Pending</AppText>
+                    <AppText
+                      accessibilityLabel={`Pending this month ${formatAmount(pendingAmount, 'exact', 1)}`}
+                      style={[styles.balanceCaptionText, { color: colors.text3 }]}>
+                      Pending
+                    </AppText>
                     <AmountText value={pendingAmount} tier="row" />
                   </View>
                 ) : null}
@@ -309,6 +316,37 @@ export default function TransactionsScreen() {
           onChangeText={setQuery}
         />
 
+        <View testID="pending-items-section" style={styles.pendingSection}>
+          <Pressable
+            testID="pending-items-toggle"
+            accessibilityRole="button"
+            accessibilityLabel={`Pending, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
+            accessibilityState={{ expanded: pendingExpanded }}
+            onPress={() => setPendingExpanded((expanded) => !expanded)}
+            style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
+            <AppText weight="semibold">Pending ({visiblePendingItems.length})</AppText>
+            <AmountText
+              value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)}
+              tier="row"
+              weight="semibold"
+            />
+            <Feather name={pendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
+          </Pressable>
+          {pendingExpanded ? visiblePendingItems.length > 0 ? (
+            <View testID="pending-items-list" style={styles.pendingList}>
+              {visiblePendingItems.map((item) => (
+                <PendingItemRow
+                  key={item.id}
+                  item={item}
+                  actions={<PendingItemActions item={item} today={today} />}
+                />
+              ))}
+            </View>
+          ) : (
+            <EmptyState title="No pending items this month" />
+          ) : null}
+        </View>
+
         <View testID="transactions-list" style={styles.list}>
           {!hasMonthTransactions ? (
             <EmptyState title="No transactions this month" subtitle="Try another month to see your activity." />
@@ -360,6 +398,9 @@ const styles = StyleSheet.create({
   rates: { marginHorizontal: 20, marginTop: 9, gap: 4 },
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
+  pendingSection: { marginHorizontal: 20, marginTop: 8 },
+  pendingHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  pendingList: { paddingTop: 4, gap: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
   cashCard: { marginHorizontal: 20, marginTop: 0, minHeight: 56, padding: 3, justifyContent: 'center', gap: 2 },
   cashCardCollapsed: { maxHeight: 64 },
