@@ -366,6 +366,9 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 - **Assumed:** CR-16's “no header menu on Budget” removes the entire Budget
   header menu and its right-side actions; the title stays, and the action row
   contains History, Month review and Templates.
+- **Assumed:** percentage values entered per budget category in the month
+  editor are converted to fixed planned rupee amounts on save, preserving the
+  existing `MonthBudget` schema and actual-amount semantics.
 - DEC-TABS: the bottom tab bar appears only on Home, Transactions, Goals and
   Budget; this supersedes P18-R5 detail-tab-bar behavior, effective P20-C.
 - Route kinds enumerate every route; form routes have close/discard handling,
