@@ -524,6 +524,62 @@ describe('route render smoke audit', () => {
     ['Emergency fund entry form edit', React.createElement(EfEntryFormScreen)],
   ];
 
+  it.each([1, 1.3, 2])('groups compact budget inputs with accessible touch targets at font scale %s', (fontScale) => {
+    mockFontScale = fontScale;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    try {
+      routeParams.mockReturnValue({ wizard: '1' });
+      const templateForm = renderScreen(React.createElement(BudgetTemplateFormScreen));
+      expect(templateForm.root.findAll((node) => node.type === 'text' && node.props.children === 'Set up your budget inputs'))
+        .toHaveLength(1);
+
+      const groups = [
+        ['survival', 'Survival (Needs)', true],
+        ['savings-investments', 'Savings and Investments', false],
+        ['wants', 'Wants', false],
+        ['festival-donations-culture', 'Festival, Donations, Culture', false],
+        ['unexpected-extras', 'Unexpected Extras', false],
+      ] as const;
+      for (const [id, name, expanded] of groups) {
+        const header = templateForm.root.findByProps({ testID: `budget-category-group-${id}` });
+        expect(header.props.accessibilityRole).toBe('button');
+        expect(header.props.accessibilityState).toEqual({ expanded });
+        expect(header.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
+        expect('height' in header.props.style).toBe(false);
+        expect('maxHeight' in header.props.style).toBe(false);
+        const title = templateForm.root.findAllByProps({ children: name })[0];
+        if (!title) throw new Error(`${id} group title did not render.`);
+        expect(title.props.style).toEqual(expect.objectContaining({ flex: 1, flexShrink: 1 }));
+      }
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Food planned amount' })).toHaveLength(2);
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Health planned amount' })).toHaveLength(0);
+      expect(templateForm.root.findAllByProps({ children: 'Allocation method' }))
+        .toHaveLength(8);
+      expect(templateForm.root.findAllByProps({ children: 'Line type' }))
+        .toHaveLength(0);
+
+      const unexpectedHeader = templateForm.root.findByProps({ testID: 'budget-category-group-unexpected-extras' });
+      act(() => unexpectedHeader.props.onPress());
+      expect(templateForm.root.findByProps({ testID: 'budget-category-group-unexpected-extras' }).props.accessibilityState)
+        .toEqual({ expanded: true });
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Health planned amount' })).toHaveLength(2);
+
+      act(() => templateForm.unmount());
+      routeParams.mockReturnValue({ month: '2026-10' });
+      const monthForm = renderScreen(React.createElement(BudgetMonthFormScreen));
+      const survivalHeader = monthForm.root.findByProps({ testID: 'budget-category-group-survival' });
+      expect(survivalHeader.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Food planned amount' })).toHaveLength(2);
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(0);
+      act(() => monthForm.root.findByProps({ testID: 'budget-category-group-savings-investments' }).props.onPress());
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(2);
+      act(() => monthForm.unmount());
+    } finally {
+      routeParams.mockReturnValue({});
+      mockFontScale = 1;
+    }
+  });
+
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {

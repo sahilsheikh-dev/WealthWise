@@ -192,6 +192,39 @@ export const BUDGET_CATEGORIES = [
   'Other',
   ...investmentBudgetCategories,
 ] as const;
+export const BUDGET_CATEGORY_GROUPS = [
+  {
+    id: 'survival',
+    name: 'Survival (Needs)',
+    description: 'Essentials such as living, food, transport, family, bills, education, EMI, and insurance.',
+    categories: ['Living', 'Food', 'Transport', 'Family', 'Bills', 'Education', 'EMI', 'Insurance'],
+  },
+  {
+    id: 'savings-investments',
+    name: 'Savings and Investments',
+    description: 'Emergency savings, investment plans, stocks, deposits, precious metals, and other investments.',
+    categories: investmentBudgetCategories,
+  },
+  {
+    id: 'wants',
+    name: 'Wants',
+    description: 'Non-essential or lifestyle spending such as eating out, online shopping, entertainment, and fashion.',
+    categories: ['Shopping', 'Other'],
+  },
+  {
+    id: 'festival-donations-culture',
+    name: 'Festival, Donations, Culture',
+    description: 'Festival, donation, and culture-related spending.',
+    categories: ['Festival', 'Donation'],
+  },
+  {
+    id: 'unexpected-extras',
+    name: 'Unexpected Extras',
+    description: 'Surprises and emergencies such as medical bills, home or vehicle repairs, and sudden gifts.',
+    categories: ['Health', 'Gifts'],
+  },
+] as const;
+export type BudgetCategoryGroup = (typeof BUDGET_CATEGORY_GROUPS)[number];
 const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
 const budgetTemplateLineSchema = z.object({
   category: z.string().min(1).max(60),

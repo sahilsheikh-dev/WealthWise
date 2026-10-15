@@ -1,6 +1,12 @@
 import { emptyAppData } from '../actions';
 import { filterTransactions } from '../transactions';
-import { appDataSchema, TRANSACTION_CATEGORIES } from '../schemas';
+import {
+  appDataSchema,
+  BUDGET_CATEGORIES,
+  BUDGET_CATEGORY_GROUPS,
+  TRANSACTION_CATEGORIES,
+} from '../schemas';
+import { mockAppData } from '../../mock/data';
 import {
   BUDGET_WANT_WEIGHTS,
   applyTemplateToMonth,
@@ -52,6 +58,28 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget templates and monthly views', () => {
+  it('groups every existing budget category and demonstrates each group in mock budget data', () => {
+    expect(BUDGET_CATEGORY_GROUPS.map(({ name, categories }) => [name, categories])).toEqual([
+      ['Survival (Needs)', ['Living', 'Food', 'Transport', 'Family', 'Bills', 'Education', 'EMI', 'Insurance']],
+      ['Savings and Investments', ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments']],
+      ['Wants', ['Shopping', 'Other']],
+      ['Festival, Donations, Culture', ['Festival', 'Donation']],
+      ['Unexpected Extras', ['Health', 'Gifts']],
+    ]);
+    const groupedCategories = BUDGET_CATEGORY_GROUPS.flatMap(({ categories }) => categories);
+    expect([...groupedCategories].sort()).toEqual([...BUDGET_CATEGORIES].sort());
+    expect(new Set(groupedCategories).size).toBe(BUDGET_CATEGORIES.length);
+    expect(BUDGET_CATEGORY_GROUPS.find(({ id }) => id === 'unexpected-extras')?.categories)
+      .toEqual(['Health', 'Gifts']);
+    expect(appDataSchema.safeParse(mockAppData).success).toBe(true);
+    const demoBudget = mockAppData.budget;
+    if (!demoBudget) throw new Error('Mock data must include a demo budget.');
+    const demoGroups = new Set(demoBudget.lines.map(({ category }) =>
+      BUDGET_CATEGORY_GROUPS.find(({ categories }) => categories.some((item) => item === category))?.id,
+    ));
+    expect(demoGroups).toEqual(new Set(BUDGET_CATEGORY_GROUPS.map(({ id }) => id)));
+  });
+
   it('resolves amount and percentage lines and requires income for percentages', () => {
     expect(resolveTemplate({
       plannedIncome: 12_345,

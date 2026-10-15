@@ -138,7 +138,13 @@ export const mockAppData: AppData = {
   policies,
   budget: {
     plannedIncome: 50_000,
-    lines: [{ category: 'Food', planned: 8_000 }, { category: 'Mutual fund / SIP', planned: 10_000 }],
+    lines: [
+      { category: 'Food', planned: 8_000 },
+      { category: 'Mutual fund / SIP', planned: 10_000 },
+      { category: 'Shopping', planned: 3_000 },
+      { category: 'Festival', planned: 1_500 },
+      { category: 'Health', planned: 2_000 },
+    ],
   },
   efEntries: emergencyFundEntries,
   efAllocation: null,

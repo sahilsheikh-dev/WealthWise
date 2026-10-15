@@ -46,7 +46,7 @@ Progress bars use the percentage rounded to the nearest whole number and a
 only when its status starts with `Done`; Phases 1–14 count as one part each.
 
 ```text
-Overall progress ███████░░░ 70% (31/44)
+Overall progress ███████░░░ 73% (32/44)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -65,7 +65,7 @@ Phase 15         ██████████ 100% (4/4)
 Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ████████░░ 78% (7/9)
-Phase 19         ░░░░░░░░░░ 0% (0/5)
+Phase 19         ██░░░░░░░░ 20% (1/5)
 Phase 20         ░░░░░░░░░░ 0% (0/1)
 Phase 21         ░░░░░░░░░░ 0% (0/1)
 Phase 22         ░░░░░░░░░░ 0% (0/1)
@@ -109,7 +109,7 @@ Phase 25         ░░░░░░░░░░ 0% (0/1)
 | P18-R6 | P15-FIX-R6 | Done | `367361c`; baseline audit and complete automated gates. | 2026-10-15 |
 | P18-LEDGER | P15-LEDGER | Done | `d11af45`, `b92e145`, `2e5d594`; merged session/checkpoint history and ledger tests. | 2026-10-15 |
 | P18-R7 | — | Done | `0304acd`; tab-label regression tests and all R7 ledger/gate checks pass. | 2026-10-15 |
-| P19-A | — | Planned | Budget groups and compact setup UI (CR-5). | 2026-10-15 |
+| P19-A | — | Done | Budget category groups, compact setup UI, mock data and screen/domain tests; same commit as this row. | 2026-10-15 |
 | P19-B | — | Planned | Pending recurring items and budget lines in Transactions; Pay and Clear due (CR-6). | 2026-10-15 |
 | P19-C | — | Planned | Home upcoming/due actions update Transactions (CR-7). | 2026-10-15 |
 | P19-D | — | Planned | Emergency-fund goal asset links; remove EF from Assets (CR-8). | 2026-10-15 |
@@ -152,14 +152,14 @@ Phase 25         ░░░░░░░░░░ 0% (0/1)
 | CR-2 | Done | Session/checkpoint backfill and prompt archive removal; source limitations remain in Section 8. | 2026-10-14 |
 | CR-3 | Open | Save narrows with validation summaries in `profile-form.tsx` and `transaction-form.tsx`. | 2026-10-14 |
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
-| CR-5 | Planned | Budget divided into five groups, compact setup inputs, and replacement of the Line type label. | 2026-10-15 |
+| CR-5 | Done | Budget category groups and compact expandable setup inputs; replaced “Line type” with “Allocation method”. | P19-A |
 | CR-6 | Planned | Applied budgets and recurring assets/liabilities appear as pending Transactions, with Pay and Clear due. | 2026-10-15 |
 | CR-7 | Planned | Home upcoming/due rows offer Pay and Clear due and update Transactions. | 2026-10-15 |
 | CR-8 | Planned | Emergency fund goals link assets like other goals; EF is not listed as an asset. | 2026-10-15 |
 
 ### Resume point
 
-CH-1 is implemented as the sole schema v6 bump (`c831fe6`). Custom EF options support metadata-driven allocation/warnings, holding links, link integrity and holding-delete cleanup; saving the allocation plan persists the complete plan in one store write. The v5 migration adds only the two empty custom fields and safe storage archives the original v5 bytes once. `solveLoan` covers all recurring solve directions; received-funds defaults on for new liabilities and records origin inflows through one action. Both complete gate passes are green: 64 suites/656 tests, TypeScript, lint, Android/iOS exports and Expo Doctor. Per-directory coverage clears all floors. No real-device verification. FX-L1 `ef7c5b0` and FX-L2 `2bc35f0` are recorded. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category. P15-LEDGER closes CR-2 in this commit; CR-3 remains open for the two Save-width cases in Section 8.
+P19-A is complete: budget categories are organized into five expandable groups in both template setup and monthly budget forms; the domain category set, 50/30/20 suggestion math, and schema v6 are unchanged. Each group contains existing category names only; the mock budget demonstrates all five groups. Focused tests cover group membership, form expansion, field rendering and 44-point header targets at simulated font scales 1.0, 1.3 and 2.0. Full automated gates passed; actual device wrapping, scrolling and assistive-technology behavior remain unverified. **Assumed:** because no part ID was supplied, this request implements the next planned item P19-A in Section 9; `Other` remains in Wants to preserve its existing suggestion bucket; Health and Gifts map to Unexpected Extras; Festival and Donation map to Festival, Donations, Culture; no separate persisted Culture category is added; the first group starts expanded and the others collapsed. The worktree started clean and the P19-A code, tests and ledger update are in one commit.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -465,7 +465,11 @@ A–G close-out: UI, v4 EF allocation, storage guard, reminders, encrypted backu
 
 ### Phase 19 — Budget groups, pending items and emergency fund goal links
 
-Planned parts P19-A–D implement CR-5–CR-8; P19-E is the optional spreadsheet
+| New ID | Legacy ID | History |
+|---|---|---|
+| P19-A | — | Done: grouped the unchanged budget categories into five expandable form sections, retained existing suggestion/persistence behavior, and replaced the “Line type” label. |
+
+Planned parts P19-B–D implement CR-6–CR-8; P19-E is the optional spreadsheet
 seed importer [P15-SEED].
 
 ### Phase 20 — Insurance management
@@ -639,7 +643,7 @@ evidence present in exports/checkpoints.
 | P18-LEDGER | Phase 18 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | Earlier ledger task had already removed archive; form audit opened CR-3. | `d11af45`, `b92e145`, `2e5d594` | No application code changed in the ledger close-out. | verbatim in current request |
 | P18-R0 | Phase 18 | P15-fix-0 | 2 | 2026-10-13 | Initial fix-round ledger/baseline. | Done. | `db967bf` | Progress-ledger test passed. | reconstructed |
 | P18-R7 | Phase 18 | — | 2 | 2026-10-15 | Restore Transactions label, restructure phase tree/progress bars, record confirmation and CR-4–CR-8, and label old commits locally. | Focused tests and all required gates pass; device checks remain outstanding. | `e7d8173`, `0304acd`; this ledger commit | No history rewrite or push. | verbatim current request |
-| P19-A | Phase 19 | — | — | planned | Budget groups and compact setup UI (CR-5). | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P19-A | Phase 19 | — | — | 2026-10-15 | Group budget setup into five categories and compact expandable inputs; replace “Line type”. | Done; focused tests 3/3 suites and full gates pass. | Same commit as this ledger update. | Assumed category placement is recorded in Resume point; schema remains v6. Device layout and screen-reader checks remain outstanding. | current request |
 | P19-B | Phase 19 | — | — | planned | Pending budget/recurring items in Transactions with Pay and Clear due (CR-6). | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P19-C | Phase 19 | — | — | planned | Home upcoming/due actions update Transactions (CR-7). | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P19-D | Phase 19 | — | — | planned | Emergency-fund goal asset links and remove EF from Assets (CR-8). | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -657,7 +661,7 @@ evidence present in exports/checkpoints.
 | CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
 | CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
-| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Planned | P19-A. |
+| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Done | `src/domain/schemas.ts`; `src/components/form/BudgetCategorySections.tsx`; `app/budget-template-form.tsx`; `app/budget-month-form.tsx`; `src/mock/data.ts`; domain and route-render tests. |
 | CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Planned | P19-B. |
 | CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Planned | P19-C. |
 | CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Planned | P19-D. |
@@ -684,6 +688,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - No real iOS or Android device/development-build verification has been done
   for this fix round.
 - **P18-R7 device checks not verified:** actual system font scaling at 1.0/1.3/2.0 and rendered no-clipping behavior, native tab spacing/safe areas, and touch-target behavior on physical iOS/Android devices. Tests inspect the scaling props/style contract only.
+- **P19-A device checks not verified:** category-header wrapping and scrolling on physical iOS/Android at large system font scales, dynamic type behavior, and VoiceOver/TalkBack announcements/operation. Automated layout tests assert the 44-point minimum header style and accessible expanded state but use a renderer rather than a device.
+- **P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the new mock-budget test did not narrow its nullable fixture; an explicit guard fixed it. Final focused/full tests, TypeScript, lint, Doctor, and both exports exited 0. Per-file Istanbul summaries aggregate to domain 2,121/2,154 lines and 1,986/2,120 branches; data excluding hooks 306/331 lines and 219/241 branches; pure lib 107/107 lines and 126/126 branches.
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
   656/656 tests each run; TypeScript; Expo lint; Android and iOS exports; and
   Expo Doctor (21/21 checks). Simulated font-scale tests are not device
@@ -819,7 +825,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 ## 9. Upcoming roadmap
 
 1. **Phase 19 — Budget groups, pending items and emergency fund goal links**
-   (Planned): P19-A compact budget setup and five groups (CR-5); P19-B pending
+   (In progress): P19-A budget group setup is Done (CR-5); P19-B pending
    applied budget and recurring items in Transactions with Pay/Clear due
    (CR-6); P19-C Home upcoming/due actions update Transactions (CR-7); P19-D
    emergency-fund goal asset links and remove the EF asset row (CR-8); P19-E
@@ -852,6 +858,12 @@ evidence for the fixes.
 | STEP 4 — Confirmations and CRs | Done | `docs/PROGRESS.md` | Dated user-confirmation line; CR-4 Done and CR-5–CR-8 Planned, mapped to P19-A–D. |
 | STEP 5 — Local commit labels | Done | `docs/PROGRESS.md`; local `refs/notes/phases` and annotated tags | Commit-subject map cross-checked against Git; notes and tags created locally, without history rewrite or push. |
 | STEP 6 — Gates and ledger | Done | `docs/PROGRESS.md`; `src/lib/__tests__/progressLedger.test.ts`; tab tests | Focused tests, coverage, TypeScript, lint, Doctor, Android/iOS exports, and line/branch coverage aggregation are recorded in the close-out. |
+
+### Phase 19 — budget groups
+
+| Part | Status | Files / source evidence | Test / verification evidence |
+|---|---|---|---|
+| P19-A — grouped budget setup | Done | `src/domain/schemas.ts`; `src/components/form/BudgetCategorySections.tsx`; `app/budget-template-form.tsx`; `app/budget-month-form.tsx`; `src/mock/data.ts`; `src/domain/__tests__/budget.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx` | Focused: 3 suites / 124 tests. Full: 66 suites / 680 tests; TypeScript, lint, Doctor 21/21, Android and iOS exports. Directory coverage: domain 2,121/2,154 lines (98.47%) / 1,986/2,120 branches (93.68%); data excluding hooks 306/331 lines (92.45%) / 219/241 branches (90.87%); lib 107/107 lines (100%) / 126/126 branches (100%). Layout is renderer-simulated; real-device checks remain outstanding. Schema v6 unchanged. |
 
 ### Phase 14 items
 

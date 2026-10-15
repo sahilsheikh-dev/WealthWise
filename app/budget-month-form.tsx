@@ -4,12 +4,13 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { resolveTemplate } from '../src/domain/budget';
-import { BUDGET_CATEGORIES } from '../src/domain/schemas';
+import { BUDGET_CATEGORIES, BUDGET_CATEGORY_GROUPS } from '../src/domain/schemas';
 import { formatMonth } from '../src/lib/format';
 import { AppText, Button } from '../src/components/ui';
 import { incomeBaselineFor } from '../src/domain/summary';
@@ -85,17 +86,23 @@ export default function BudgetMonthFormScreen() {
         ? <AppText>Add planned income to resolve percentage lines from the default template.</AppText>
         : null}
       <View style={{ gap: 14 }}>
-        {BUDGET_CATEGORIES.map((category, index) => (
-          <Controller key={category} control={control} name={`lines.${index}.planned`} render={({ field }) => (
-            <MoneyField
-              label={category}
-              accessibilityLabel={`${category} planned amount`}
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-            />
-          )} />
-        ))}
+        <BudgetCategorySections
+          groups={BUDGET_CATEGORY_GROUPS}
+          renderCategory={(category) => {
+            const index = BUDGET_CATEGORIES.indexOf(category);
+            return (
+              <Controller key={category} control={control} name={`lines.${index}.planned`} render={({ field }) => (
+                <MoneyField
+                  label={category}
+                  accessibilityLabel={`${category} planned amount`}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )} />
+            );
+          }}
+        />
         <AppText>{lines.filter((line) => Number(line?.planned) > 0).length} categories included</AppText>
       </View>
       {stored ? (
