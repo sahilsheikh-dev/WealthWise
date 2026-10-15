@@ -153,7 +153,6 @@ export default function InvestmentEntriesScreen() {
       {holding.kind === 'plan' ? (
         <View style={styles.segment}>
           <SegmentedControl
-            label="View"
             value={effectiveTab}
             options={[{ label: 'Schedule', value: 'Schedule' }, { label: 'Entries', value: 'Entries' }]}
             onChange={setTab}

@@ -85,7 +85,6 @@ describe('compact budget field styles', () => {
       renderer = TestRenderer.create(
         <SegmentedControl
           size="compact"
-          label="Enter as"
           value="amount"
           options={[
             { label: 'Amount (₹)', value: 'amount' },

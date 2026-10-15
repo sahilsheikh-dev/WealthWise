@@ -6,23 +6,23 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
-import { IconButton } from '../src/components/IconButton';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
+import { IconButton } from '../src/components/IconButton';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../src/domain/ef';
-import { emergencyMinimumTarget, effectiveEmergencyTarget } from '../src/domain/goals';
 import { linkableInstruments } from '../src/domain/goalLinks';
+import { effectiveEmergencyTarget, emergencyMinimumTarget } from '../src/domain/goals';
 import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../src/domain/schemas';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
-import { useTheme } from '../src/theme/useTheme';
 import { typography } from '../src/theme/tokens';
+import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -62,7 +62,7 @@ export default function GoalFormScreen() {
           year: String(goal.year),
           links: goal.links.map((link) => ({ instrumentId: link.instrumentId, share: String(link.share) })),
         }
-        : { name: '', target: '', saved: '0', year: String(Number(today.slice(0, 4)) + 1), links: [] },
+        : { name: '', target: '', saved: '0', year: '', links: [] },
     });
   const links = useWatch({ control, name: 'links' }) ?? [];
   const instruments = useMemo(() => linkableInstruments(data, today), [data, today]);
@@ -188,7 +188,7 @@ export default function GoalFormScreen() {
         </>
       ) : null}
       <Controller control={control} name="year" render={({ field }) => (
-        <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} />
+        <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} icon="calendar-outline" />
       )} />
       <Modal
         visible={pickerVisible}

@@ -237,9 +237,9 @@ export default function TransactionsScreen() {
           />
         </View>
         {summary.earnedIncome === 0 ? (
-          <AppText style={[typography.meta, { color: colors.text3 }]}>
+          <WarningBanner>
             No earned income logged this month
-          </AppText>
+          </WarningBanner>
         ) : null}
 
         {summary.overspend > 0 ? (

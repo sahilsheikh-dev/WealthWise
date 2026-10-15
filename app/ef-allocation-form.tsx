@@ -5,10 +5,11 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
+import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
-import { ChoiceField } from '../src/components/form/ChoiceField';
+import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
@@ -16,18 +17,18 @@ import { AppText, Button, Card } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import {
-  EF_BUCKETS,
   EF_BUCKET_META,
-  effectiveAllocation,
+  EF_BUCKETS,
   efBucketMetadata,
+  effectiveAllocation,
   SUGGESTED_EF_ALLOCATION,
   validateAllocation,
   type EfAllocation,
 } from '../src/domain/efAllocation';
 import { holdingValue } from '../src/domain/portfolio';
 import type { EfCustomBucket } from '../src/domain/types';
-import { todayISO } from '../src/lib/clock';
 import { formatAmount } from '../src/lib/amountDisplay';
+import { todayISO } from '../src/lib/clock';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -190,17 +191,14 @@ export default function EfAllocationFormScreen() {
           control={control}
           name="allocation"
           render={({ field }) => (
-            <>
+            <>              
               {EF_BUCKETS.map((id) => (
                 <View key={id} style={styles.fixedBucketField}>
-                  <TextField
-                    label={`${EF_BUCKET_META[id].label} (%)`}
+                  <PercentField
+                    label={EF_BUCKET_META[id].label}
                     accessibilityLabel={`${EF_BUCKET_META[id].label} allocation percentage`}
                     value={field.value[id] ?? String(SUGGESTED_EF_ALLOCATION[id])}
                     onChangeText={(value) => updateAllocation(id, value)}
-                    maxLength={5}
-                    placeholder="0"
-                    autoCapitalize="none"
                   />
                   <Button
                     label={`Link investments: ${EF_BUCKET_META[id].label}`}
@@ -229,17 +227,14 @@ export default function EfAllocationFormScreen() {
                     ))}
                     maxLength={24}
                   />
-                  <TextField
-                    label={`${bucket.name} allocation (%)`}
+                  <PercentField
+                    label={`${bucket.name} allocation`}
                     accessibilityLabel={`${bucket.name} allocation percentage`}
                     value={allocationValues[bucket.id] ?? '0'}
                     onChangeText={(value) => updateAllocation(bucket.id, value)}
-                    maxLength={5}
-                    placeholder="0"
-                    autoCapitalize="none"
                   />
+                  <AppText weight="semibold">How quickly can you access it?</AppText>
                   <SegmentedControl
-                    label="How quickly can you access it?"
                     value={bucket.access}
                     options={[
                       { label: 'Instant', value: 'instant' },
@@ -307,12 +302,12 @@ export default function EfAllocationFormScreen() {
             />
           )}
         />
+        <AppText weight="semibold">How quickly can you access the new option?</AppText>
         <Controller
           control={control}
           name="newBucketAccess"
           render={({ field }) => (
             <SegmentedControl
-              label="How quickly can you access the new option?"
               value={field.value}
               options={[
                 { label: 'Instant', value: 'instant' },

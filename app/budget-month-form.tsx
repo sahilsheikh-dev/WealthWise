@@ -3,20 +3,20 @@ import { useMemo, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 
-import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
+import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { PercentField } from '../src/components/form/PercentField';
 import { RecurringItemsSummary } from '../src/components/form/RecurringItemsSummary';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
+import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, resolveTemplate } from '../src/domain/budget';
-import { formatMonth } from '../src/lib/format';
-import { AppText, Button } from '../src/components/ui';
 import { incomeBaselineFor } from '../src/domain/summary';
 import { transactionCategoryLabel } from '../src/domain/transactions';
+import { formatMonth } from '../src/lib/format';
 
 type MonthForm = {
   plannedIncome: string;
@@ -124,7 +124,6 @@ export default function BudgetMonthFormScreen() {
               <View key={category} style={{ gap: 6 }}>
                 <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
                   <SegmentedControl
-                    label="Enter as"
                     value={field.value}
                     options={[
                       { label: 'Amount (₹)', value: 'amount' },

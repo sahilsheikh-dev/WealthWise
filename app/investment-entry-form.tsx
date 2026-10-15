@@ -15,8 +15,8 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { makeInvestmentEntryFormSchema, type InvestmentEntryFormInput, type InvestmentEntryFormOutput } from '../src/domain/schemas';
 import { holdingValue } from '../src/domain/portfolio';
+import { makeInvestmentEntryFormSchema, type InvestmentEntryFormInput, type InvestmentEntryFormOutput } from '../src/domain/schemas';
 import { currentInstallmentAmount } from '../src/domain/sip';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
@@ -115,7 +115,6 @@ export default function InvestmentEntryFormScreen() {
       {entry ? <ReadOnlyRow label="Entry type" value={entry.kind} /> : (
         <Controller control={control} name="kind" render={({ field }) => (
           <SegmentedControl
-            label="Entry type"
             value={field.value}
             options={[{ label: 'Deposit', value: 'Deposit' }, { label: 'Withdrawal', value: 'Withdrawal' }]}
             onChange={field.onChange}

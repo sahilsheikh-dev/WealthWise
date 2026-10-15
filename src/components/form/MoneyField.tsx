@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import { AppText } from '../ui';
-import { typography } from '../../theme/tokens';
-import { useTheme } from '../../theme/useTheme';
 import { formatINRCompact } from '../../lib/format';
+import { useTheme } from '../../theme/useTheme';
+import { AppText } from '../ui';
 import { FieldError } from './FieldError';
 import { HelperText } from './HelperText';
 
@@ -18,16 +17,16 @@ function cleanMoney(value: string): string {
 function grouped(value: string): string {
   const numeric = Number(value);
   if (!value || !Number.isFinite(numeric)) return value;
-  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(numeric);
+  return new Intl.NumberFormat('en-IN',{maximumFractionDigits: 2,}).format(numeric);
 }
 
 export function MoneyField({
   value,
-  label = 'Amount',
+  label,
   onChangeText,
   onBlur,
   error,
-  accessibilityLabel = 'Amount in rupees',
+  accessibilityLabel,
   size = 'regular',
 }: {
   value: string;
@@ -43,7 +42,6 @@ export function MoneyField({
   const amount = Number(value);
   return (
     <View style={styles.field}>
-      <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
       <View style={[
         styles.inputWrap,
         size === 'compact' ? styles.compactInputWrap : undefined,
@@ -51,10 +49,12 @@ export function MoneyField({
       ]}>
         <AppText weight="semibold" style={[styles.currency, { color: colors.text3 }]}>₹</AppText>
         <TextInput
-          accessibilityLabel={accessibilityLabel}
+          accessibilityLabel={accessibilityLabel ?? label ?? 'Amount in rupees'}
           accessibilityHint={error ? `Error: ${error}` : undefined}
           hitSlop={size === 'compact' ? 4 : undefined}
           keyboardType="decimal-pad"
+          placeholder={label}
+          placeholderTextColor={colors.text3}
           value={focused ? value : grouped(value)}
           onFocus={() => {
             setFocused(true);

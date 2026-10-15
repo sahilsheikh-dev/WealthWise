@@ -21,6 +21,7 @@ import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
+import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import {
   makeHoldingFormSchema,
   makePlanFormSchema,
@@ -29,14 +30,13 @@ import {
   type PlanFormInput,
   type PlanFormOutput,
 } from '../src/domain/schemas';
-import { pendingDues, type PastDuesMode } from '../src/domain/dues';
+import { projection } from '../src/domain/sip';
 import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
-import { projection } from '../src/domain/sip';
 
 const holdingTypes: HoldingType[] = [
   'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
@@ -77,7 +77,6 @@ export default function InvestmentFormScreen() {
           onNameChange={setName}
           fromTransaction={isTransactionPicker}
           modeControl={<SegmentedControl
-            label="Investment type"
             value={kind}
             options={[
               { label: 'Recurring (SIP, RD...)', value: 'recurring' },
@@ -92,7 +91,6 @@ export default function InvestmentFormScreen() {
           onNameChange={setName}
           fromTransaction={isTransactionPicker}
           modeControl={<SegmentedControl
-            label="Investment type"
             value={kind}
             options={[
               { label: 'Recurring (SIP, RD...)', value: 'recurring' },
@@ -137,8 +135,8 @@ function PlanEditor({
         startDate: plan.startDate, trackFrom: plan.trackFrom, opening: String(plan.opening),
         actualValue: plan.actualValue === null ? '' : String(plan.actualValue), actualValueDate: plan.actualValueDate ?? '',
       } : {
-        name: nameSeed, type: 'Mutual fund / SIP', frequency: 'monthly', amount: '', ratePct: '12',
-        stepUpPct: '0', tenureYears: '10', startDate: today, trackFrom: today, opening: '0',
+        name: nameSeed, type: 'Mutual fund / SIP', frequency: 'monthly', amount: '', ratePct: '',
+        stepUpPct: '', tenureYears: '', startDate: today, trackFrom: today, opening: '',
         actualValue: '', actualValueDate: '',
       },
     });
@@ -248,8 +246,8 @@ function PlanEditor({
       />
       {!plan && startDate < today ? (
         <View style={{ gap: 8 }}>
+          <AppText weight="semibold">Past installments</AppText>
           <SegmentedControl
-            label="Past installments"
             value={pastInstallmentsMode}
             options={[
               { label: 'Already paid', value: 'settle' },
@@ -373,10 +371,10 @@ function PlanFields({
         <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">
-        <Controller control={control} name="amount" render={({ field }) => <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
+        <Controller control={control} name="amount" render={({ field }) => <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
         <Controller control={control} name="ratePct" render={({ field }) => <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />} />
         <Controller control={control} name="stepUpPct" render={({ field }) => <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />} />
-        <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} />} />
+        <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />} />
       </FormSection>
       <FormSection title="Dates">
         <Controller control={control} name="startDate" render={({ field }) => <DateField
