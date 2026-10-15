@@ -16,6 +16,7 @@ export type AppHeaderAction = {
   onPress: () => void;
   disabled?: boolean;
   destructive?: boolean;
+  showIndicator?: boolean;
 };
 
 export type AppHeaderMenuItem = Omit<HeaderMenuItem, 'onPress'> & { onPress: () => void };
@@ -46,6 +47,7 @@ export function AppHeader({
   const [menuVisible, setMenuVisible] = useState(false);
   const showBackControl = showBack || routeKind === 'stack';
   const showCloseControl = routeKind === 'form';
+  const constrainTitle = rightActions.length > 2;
   const hasExplicitRightContent = rightActions.length > 0 || menu !== undefined;
   const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false ? globalMenu : undefined;
   const visibleMenu = menu ?? defaultMenu;
@@ -82,11 +84,17 @@ export function AppHeader({
           </Pressable>
         ) : null}
         <View style={styles.titleBlock}>
-          <AppText weight="bold" style={typography.h1} numberOfLines={2}>{title}</AppText>
+          <AppText
+            weight="bold"
+            style={typography.h1}
+            numberOfLines={constrainTitle ? 1 : 2}
+            ellipsizeMode={constrainTitle ? 'tail' : undefined}>
+            {title}
+          </AppText>
           {subtitle ? <AppText style={[typography.meta, { color: colors.text3 }]}>{subtitle}</AppText> : null}
         </View>
         <View style={styles.actions}>
-          {rightActions.slice(0, 2).map((action) => (
+          {rightActions.slice(0, 3).map((action) => (
             <Pressable
               key={action.label}
               accessibilityRole="button"
@@ -96,6 +104,7 @@ export function AppHeader({
               onPress={action.onPress}
               style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }, action.disabled && styles.disabled]}>
               <Feather name={action.icon} size={20} color={action.destructive ? colors.err : colors.primary} />
+              {action.showIndicator ? <View testID="header-action-indicator" style={[styles.actionIndicator, { backgroundColor: colors.primary }]} /> : null}
             </Pressable>
           ))}
           {visibleMenu ? (
@@ -121,5 +130,6 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconButton: { width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
   ellipsis: { fontSize: 25, lineHeight: 30, marginTop: 7 },
+  actionIndicator: { position: 'absolute', top: 7, right: 7, width: 6, height: 6, borderRadius: 3 },
   disabled: { opacity: 0.45 },
 });

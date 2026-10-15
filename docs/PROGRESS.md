@@ -43,11 +43,12 @@ user claims that cannot be proven are called out as such.
 
 Progress bars use the percentage rounded to the nearest whole number and a
 10-character bar with `round(10 × closed / total)` filled blocks. A part is
-closed when its status starts with `Done` or `Superseded`; Phases 1–14 count as
-one part each.
+closed when its status starts with `Done` or starts with `Superseded`; both
+statuses count in the numerator and denominator. Phases 1–14 count as one part
+each.
 
 ```text
-Overall progress ███████░░░ 73% (35/48)
+Overall progress ███████░░░ 73% (36/49)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -66,7 +67,7 @@ Phase 15         ██████████ 100% (4/4)
 Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
-Phase 19         ██████████ 100% (2/2)
+Phase 19         ██████████ 100% (3/3)
 Phase 20         ░░░░░░░░░░ 0% (0/3)
 Phase 21         ░░░░░░░░░░ 0% (0/2)
 Phase 22         ░░░░░░░░░░ 0% (0/2)
@@ -115,6 +116,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P18-R7 | — | Done | `0304acd`; tab-label regression tests and all R7 ledger/gate checks pass. | 2026-10-15 |
 | P19-A | — | Done | Five-group model and category mapping; five-group suggestions; grouped setup/month editors with compact controls, subtotals and recurring-items summary; v6 schema compatibility and demo data. Commits `acc94df`, `af885c1`; see the Phase 19 gate record. | 2026-10-15 |
 | P19-B | — | Done | Invest category and earned-income sync, reconciliation, Month review sources, and History/Month review/Templates actions with no Budget header menu; commit `221d2ed` and the Phase 19 gate record. | 2026-10-15 |
+| P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the Phase 19-C gate record. | 2026-10-15 |
 | P20-A | — | Planned | Pending applied-budget and recurring items in Transactions with Pay and Clear due (CR-6; formerly P19-B). | 2026-10-15 |
 | P20-B | — | Planned | Home due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-15 |
 | P20-C | — | Planned | Restrict bottom tabs to Home, Transactions, Goals and Budget (CR-11). | 2026-10-15 |
@@ -171,11 +173,15 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | CR-13 | Planned | Emergency-fund entries are removed; EF is not added to net worth; schema v7. | P21-A |
 | CR-14 | Planned | Emergency-fund months of cover with salary fallback. | P21-B |
 | CR-15 | Planned | Minimal emergency-fund allocation editing and allocation table with linked assets. | P21-B |
-| CR-16 | Done | Templates joins History and Month review; the Budget header menu is removed. | P19-B |
+| CR-16 | Superseded by CR-17 | Former Budget body action row, replaced by header icons. | P19-C |
+| CR-17 | Done | Budget History/Month review/Templates header icons, ordered actions, labels, indicator and navigation. | P19-C |
+| CR-18 | Done | Compact expandable Available balance card with four metrics and optional pending/review details. | P19-C |
+| CR-19 | Done | User-owned input components restored/current, frozen by SHA-256 guard. | P19-C |
+| CR-20 | Planned | Emergency fund is a goal, not an entity; remove ledger entries and Emergency fund investment reference; visualization-only screen. | P21-A/B |
 
 ### Resume point
 
-P19-A and P19-B passed their gates and are complete. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu, not only its template entry. Schema remains v6 for P19-A/B; Phase 21's CR-13 explicitly calls for schema v7.
+P19-A, P19-B and P19-C passed their gates and are complete; next is P20-A. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. Schema remains v6 through P19-C; Phase 21's CR-13 explicitly calls for schema v7.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -364,8 +370,13 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's
   weights sum to 100.
 - **Assumed:** CR-16's “no header menu on Budget” removes the entire Budget
-  header menu and its right-side actions; the title stays, and the action row
-  contains History, Month review and Templates.
+  header menu; initially, its three actions were placed in a body row. CR-17
+  supersedes that row with right-side header icons; the title stays.
+- DEC-FORM-COMPONENTS: field components under `src/components/form/` are
+  user-owned. Feature work must adapt call sites, not edit those files; the
+  SHA-256 manifest and freeze test guard their contents.
+- **Assumed:** commits without a `Copilot` co-author trailer are treated as
+  user-authored for the input-component ownership audit.
 - **Assumed:** percentage values entered per budget category in the month
   editor are converted to fixed planned rupee amounts on save, preserving the
   existing `MonthBudget` schema and actual-amount semantics.
@@ -393,6 +404,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 | Standalone Record money movement UI/route | CH-4 removed the UI/route; the shared pure logic remains only where still used by liability receipt flows. |
 | Earlier short tab label “Txns” | Superseded on 2026-10-15: the tab must read “Transactions”; tab order is Home, Transactions, Goals, Budget. |
 | P18-R5 detail-tab-bar behavior | Superseded by DEC-TABS; tabs appear only on the four main screens, effective P20-C. |
+| P19-B Budget body action row (CR-16) | Superseded by CR-17: History, Month review and Templates are right-side Budget header icons. |
 
 ## 5. Phase history
 
@@ -501,9 +513,10 @@ A–G close-out: UI, v4 EF allocation, storage guard, reminders, encrypted backu
 
 ### Phase 19 — Budget model and sync
 
-P19-A (CR-5) and P19-B (CR-9, CR-16) are Done. The earlier grouped-form
-delivery remains historical and does not substitute for the expanded scope
-verified here. Next planned work is P20-A.
+P19-A (CR-5), P19-B (CR-9, CR-16) and P19-C (CR-17–CR-19) are Done. CR-16's
+body action row was superseded by the header icons in CR-17. The earlier
+grouped-form delivery remains historical and does not substitute for the
+expanded scope verified here. Next planned work is P20-A.
 
 ### Phase 20 — Pending items, Home and navigation
 
@@ -693,6 +706,7 @@ evidence present in exports/checkpoints.
 | P18-R7 | Phase 18 | — | 2 | 2026-10-15 | Restore Transactions label, restructure phase tree/progress bars, record confirmation and CR-4–CR-8, and label old commits locally. | Focused tests and all required gates pass; device checks remain outstanding. | `e7d8173`, `0304acd`; this ledger commit | No history rewrite or push. | verbatim current request |
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
+| P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | this commit | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
 | P20-A | Phase 20 | — | — | planned | Pending applied-budget lines and recurring assets/liabilities in Transactions with Pay and Clear due (CR-6; formerly P19-B). | Planned; no implementation claimed. | none | Renumbered roadmap item. | planned |
 | P20-B | Phase 20 | — | — | planned | Home upcoming/due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | Planned; no implementation claimed. | none | Renumbered roadmap item. | planned |
 | P20-C | Phase 20 | — | — | planned | Bottom tabs only on Home, Transactions, Goals and Budget (CR-11). | Planned; no implementation claimed. | none | DEC-TABS supersedes P18-R5 detail-bar behavior. | planned |
@@ -724,7 +738,11 @@ evidence present in exports/checkpoints.
 | CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Planned | P21-A. |
 | CR-14 | Emergency-fund months of cover use salary fallback. | Planned | P21-B. |
 | CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Planned | P21-B. |
-| CR-16 | Templates joins History and Month review; remove Budget header menu. | Done | P19-B; navigation and header-menu tests pass. |
+| CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 | P19-B's body action row was replaced by the Budget header icons in P19-C. |
+| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Done | P19-C; action labels, icon order, routing, pending dot and style contracts tested. |
+| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Done | P19-C; collapsed/expanded structure, responsive 2x2 grid, labels, review and negative-balance behavior tested. |
+| CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
+| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Planned | P21-A/B. |
 
 ## 8. Known issues and risks
 
@@ -749,7 +767,22 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
   for this fix round.
 - **P18-R7 device checks not verified:** actual system font scaling at 1.0/1.3/2.0 and rendered no-clipping behavior, native tab spacing/safe areas, and touch-target behavior on physical iOS/Android devices. Tests inspect the scaling props/style contract only.
 - **P19-A device checks not verified:** category-header wrapping and form scrolling on physical iOS/Android at large system font scales, native dynamic type and VoiceOver/TalkBack interaction; simulated tests assert the 44-point minimum header style/accessibility state, not rendered clipping or touch behavior on a device.
-- **P19-B device checks not verified:** real-device wrapping and clipping of the History/Month review/Templates action row at large system font scales, native menu behavior, and accessibility interaction on iOS/Android.
+- **P19-B device checks not verified (historical CR-16 body row, superseded by CR-17):** real-device wrapping/clipping, native menu behavior, and accessibility interaction for the former action row on iOS/Android.
+- **P19-C device checks not verified:** actual 360pt header title/icon fit at system font scale 2.0; Budget icon hit-target/indicator announcements and route behavior with VoiceOver/TalkBack; Transactions card rendered height, wrapping/clipping, expanded scroll flow, and touch behavior at font scales 1.0, 1.3 and 2.0 on physical iOS/Android devices.
+- **Assumed:** component ownership is determined by the requested author heuristic: commits with no `Copilot` co-author trailer are user-authored. The latest such commit was `bf4adf3`; all eight field components in the freeze manifest already matched it, so no source restore commit was necessary.
+- **P19-C report-only category audit:** all five are present in the transaction expense enum and budget category list in `src/domain/schemas.ts`, the form choices in `app/transaction-form.tsx`, and the group mapping in `src/domain/budget.ts`; each is tested in `src/components/__tests__/TransactionForm.test.tsx` and exhaustive group coverage is tested in `src/domain/__tests__/budget.test.ts`.
+  - Eating out — Yes.
+  - Entertainment — Yes.
+  - Fashion — Yes.
+  - Culture — Yes.
+  - Unexpected — Yes.
+- **Invest-category coverage:** `src/components/__tests__/TransactionForm.test.tsx` exercises every investment category through instrument selection, form submission/stored category, transaction label/filter, and budget actual (planned line or the Savings and Investments unbudgeted group). `src/components/__tests__/TransactionsScreen.test.tsx` additionally checks the investment row label.
+- **Investment category behavior:** users do not choose an investment category directly. They choose an instrument in the transaction form; `investCategoryFor` derives the read-only category from the selected instrument type (`Emergency fund` is the dedicated `ef` instrument case).
+- **Schema version:** P19-C does not change persisted or backup schema; it remains v6.
+- **P19-C replaced test assertions:** (1) direct field-component style assertions for compact input height/font size, 40pt wrappers, segmented-option height/font size and hitSlop were replaced with screen-rendering checks for user-field props, labels, values and errors, as explicitly requested by CR-19; (2) body-row wrapping/width/equal-style assertions were replaced with ordered 44pt header targets, exact labels/icons, indicator and navigation checks because CR-17 supersedes that row; (3) five separate expanded balance lines and the old “Includes …” string were replaced by four equal metrics and the compact “Other money in”/optional “Pending” caption, as required by CR-18. The collapsed cap, review dismissal, Available/Closing label switch and no-NaN checks remain.
+- **P19-C final gates (2026-10-15):** focused tests 9 suites/203 tests; `npm test -- --coverage` 68 suites/707 tests; TypeScript, Expo lint, Expo Doctor, Android export and iOS export all exit 0. Expo Doctor output: `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!`. Istanbul totals: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%). `git diff --check` passes. Jest prints a Node experimental warning that localStorage is unavailable without `--localstorage-file`; it does not affect the test result.
+- **Expo patch alignment:** the first Doctor run found three SDK 57 patch mismatches (`@expo/ui` 57.0.24→57.0.25, `expo` 57.0.29→57.0.30, `expo-router` 57.0.27→57.0.28). `npx expo install --fix` applied the Expo-compatible versions and the final Doctor run passes 21/21. npm reported 67 audit advisories (17 moderate, 50 high) and two install-script allow-list notices; no `npm audit fix` was run.
+- **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
@@ -886,9 +919,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 
 ## 9. Upcoming roadmap
 
-1. **Phase 19 — Budget model and sync** (In progress): P19-A five-group setup
-   (CR-5), then P19-B investment/income reconciliation and Budget actions
-   (CR-9, CR-16).
+1. **Phase 19 — Budget model and sync** (Done): P19-A five-group setup (CR-5),
+   P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
+   P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **Phase 20 — Pending items, Home and navigation** (Planned): P20-A pending
    Transactions with Pay/Clear due (CR-6); P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10); P20-C main-screen-only tabs (CR-11).
@@ -933,6 +966,7 @@ evidence for the fixes.
 | P19-A — expanded five-group budget setup | Done | `src/domain/budget.ts`, `src/domain/schemas.ts`, budget forms, grouped/compact form components, recurring-items summary, mock data | Focused 11 suites/235 tests; full 68 suites/702 tests; tsc, lint, Doctor 21/21, Android/iOS exports all exit 0. Domain 98.48% lines/93.59% branches; data excluding hooks 92.45%/90.87%; pure lib 100%/100%. |
 | P19-A — earlier grouped-form delivery | Historical baseline only | `src/domain/schemas.ts`; `src/components/form/BudgetCategorySections.tsx`; `app/budget-template-form.tsx`; `app/budget-month-form.tsx`; `src/mock/data.ts`; `src/domain/__tests__/budget.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx` | Prior gates were reported green for the older scope; they do not verify current P19-A requirements. Schema v6 remained unchanged. |
 | P19-B — budget category/income sync and actions | Done | `src/domain/budget.ts`, `src/domain/links.ts`, `src/domain/transactions.ts`, `app/(tabs)/budget.tsx`, `app/month-review.tsx`, investment/income demo data | Every invest category through form/store/Transactions/budget; earned sources and non-earned inflows in review; 500 seeded reconciliation cases (seed 19052026); 11 focused suites/235 tests and 68 full suites/702 tests. All gates exit 0; device checks remain listed in Section 8. |
+| P19-C — owned inputs, Budget header icons and balance card | Done (automated; device checks outstanding) | `src/components/form/frozen-manifest.json`, `scripts/freezeFormComponents.js`, `src/components/AppHeader.tsx`, `app/(tabs)/budget.tsx`, `app/(tabs)/transactions.tsx`; focused UI/form/ledger tests | Focused 9 suites/203 tests; full 68 suites/707 tests; TypeScript, lint, Doctor (21/21), Android/iOS exports and `git diff --check` all exit 0. Istanbul: domain 98.48% lines/93.59% branches; data excluding hooks 92.45%/90.87%; pure lib 100%/100%. Input source diff against `bf4adf3` is empty. Device layout and screen-reader behavior remain unverified. |
 
 ### Phase 14 items
 
