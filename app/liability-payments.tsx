@@ -11,7 +11,6 @@ import {
   AppText,
   Card,
   ChipRow,
-  DetailTabBar,
   EmptyState,
   Screen,
   StatusBadge,
@@ -203,7 +202,6 @@ export default function LiabilityPaymentsScreen() {
   );
 
   return (
-    <>
     <Screen scroll={false}>
       <FlatList<ListRow>
         data={listRows}
@@ -270,8 +268,6 @@ export default function LiabilityPaymentsScreen() {
         }}
       />
     </Screen>
-    <DetailTabBar active="none" />
-    </>
   );
 }
 

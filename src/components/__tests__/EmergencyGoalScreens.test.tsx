@@ -13,9 +13,13 @@ const mockThemeId: { current: ThemeId } = { current: 'system' };
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  useIsFocused: () => true,
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
-jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData.current }));
+jest.mock('../../data/useAppData', () => ({
+  useAppData: () => mockData.current,
+  useAppActions: () => ({}),
+}));
 jest.mock('../../data/store', () => ({
   metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
 }));
@@ -46,7 +50,6 @@ jest.mock('../../components/ui', () => {
     Card: node('card'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
-    DetailTabBar: node('tabbar'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),

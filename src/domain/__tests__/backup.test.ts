@@ -103,6 +103,7 @@ describe('backup validation and serialization', () => {
         plannedIncome: 10_000,
         lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
       }],
+      defaultBudgetTemplateId: 'new-categories',
       monthBudgets: [{
         month: '2026-10',
         templateId: 'new-categories',

@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import type { ComponentProps, PropsWithChildren, ReactNode } from 'react';
 import {
   Pressable,
@@ -459,31 +458,6 @@ export function BottomTabBar({
         );
       })}
     </View>
-  );
-}
-
-export function DetailTabBar({
-  active = 'Home',
-  placement = 'overlay',
-}: {
-  active?: 'Home' | 'Transactions' | 'Goals' | 'Budget' | 'none';
-  placement?: 'flow' | 'overlay';
-}) {
-  const activeTab = active === 'Home'
-    ? 'index'
-    : active === 'Transactions' ? 'transactions'
-      : active === 'Goals' ? 'goals'
-        : active === 'Budget' ? 'budget' : null;
-  return (
-    <BottomTabBar
-      activeTab={activeTab}
-      placement={placement}
-      onSelect={(tab) => {
-        const destination = bottomTabs.find((item) => item.key === tab);
-        if (!destination) throw new Error(`Unknown bottom tab "${tab}".`);
-        router.replace(destination.route);
-      }}
-    />
   );
 }
 

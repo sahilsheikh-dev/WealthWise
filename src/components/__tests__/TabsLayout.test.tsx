@@ -69,23 +69,24 @@ describe('bottom tab layout', () => {
       .toEqual(['index', 'transactions', 'goals', 'budget']);
     expect(tabs.props.screenOptions).toEqual({ headerShown: false, tabBarShowLabel: false });
 
-    const navigate = jest.fn();
-    let barRenderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      barRenderer = TestRenderer.create((tabs.props.tabBar as (props: unknown) => React.ReactElement)({
-        state: {
-          index: 2,
-          routes: [{ name: 'index' }, { name: 'transactions' }, { name: 'goals' }, { name: 'budget' }],
-        },
-        navigation: { navigate },
-      }));
-    });
-    if (!barRenderer) throw new Error('The shared bar renderer did not render.');
-    const bars = barRenderer.root.findAll((node) => String(node.type) === 'bottomtabbar');
-    expect(bars).toHaveLength(1);
-    expect(bars[0]?.props.activeTab).toBe('goals');
-    act(() => bars[0]?.props.onSelect('budget'));
-    expect(navigate).toHaveBeenCalledWith('budget');
+    const routes = ['index', 'transactions', 'goals', 'budget'];
+    for (const [index, activeTab] of routes.entries()) {
+      const navigate = jest.fn();
+      let barRenderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => {
+        barRenderer = TestRenderer.create((tabs.props.tabBar as (props: unknown) => React.ReactElement)({
+          state: { index, routes: routes.map((name) => ({ name })) },
+          navigation: { navigate },
+        }));
+      });
+      if (!barRenderer) throw new Error(`The shared bar renderer did not render for ${activeTab}.`);
+      const bars = barRenderer.root.findAll((node) => String(node.type) === 'bottomtabbar');
+      expect(bars).toHaveLength(1);
+      expect(bars[0]?.props.activeTab).toBe(activeTab);
+      act(() => bars[0]?.props.onSelect('budget'));
+      expect(navigate).toHaveBeenCalledWith('budget');
+      act(() => barRenderer?.unmount());
+    }
   });
 
   it.each([1, 1.3, 2])('keeps Transactions in one fitting line at font scale %s', (fontScale) => {

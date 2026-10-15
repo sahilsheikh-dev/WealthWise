@@ -1788,15 +1788,11 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('shows one shared Budget-selected tab bar on Budget history and Month review', () => {
+  it('shows no tab bar on Budget history or Month review stack routes', () => {
     const history = renderScreen(React.createElement(BudgetHistoryScreen));
-    const historyBars = history.root.findAll((node) => String(node.type) === 'detailtabbar');
-    expect(historyBars).toHaveLength(1);
-    expect(historyBars[0]?.props).toEqual(expect.objectContaining({ active: 'Budget', placement: 'flow' }));
+    expect(history.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
 
     const review = renderScreen(React.createElement(MonthReviewScreen));
-    const reviewBars = review.root.findAll((node) => String(node.type) === 'detailtabbar');
-    expect(reviewBars).toHaveLength(1);
-    expect(reviewBars[0]?.props).toEqual(expect.objectContaining({ active: 'Budget', placement: 'flow' }));
+    expect(review.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
   });
 });

@@ -16,8 +16,23 @@ function routeFiles(directory: string): string[] {
 
 describe('route kind registry', () => {
   it('registers every screen route under app', () => {
-    expect(routeFiles(join(process.cwd(), 'app')).sort()).toEqual(Object.keys(ROUTE_KINDS).sort());
+    const routes = routeFiles(join(process.cwd(), 'app'));
+    expect(routes.sort()).toEqual(Object.keys(ROUTE_KINDS).sort());
     expect(ROUTE_KINDS).not.toHaveProperty('money-movement-form');
+    const tabs = Object.entries(ROUTE_KINDS)
+      .filter(([, kind]) => kind === 'tab')
+      .map(([route]) => route)
+      .sort();
+    expect(tabs).toEqual([
+      '(tabs)/budget',
+      '(tabs)/goals',
+      '(tabs)/index',
+      '(tabs)/transactions',
+    ]);
+    for (const route of routes.filter((path) => ROUTE_KINDS[path] !== 'tab')) {
+      const source = readFileSync(join(process.cwd(), 'app', `${route}.tsx`), 'utf8');
+      expect(source).not.toMatch(/DetailTabBar|<BottomTabBar|bottom-tab-bar/);
+    }
   });
 
   it('leaves no removed movement-sheet copy or route in the Transactions screen', () => {

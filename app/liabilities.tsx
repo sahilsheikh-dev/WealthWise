@@ -13,7 +13,6 @@ import {
   Button,
   Card,
   ChipRow,
-  DetailTabBar,
   EmptyState,
   ProgressBar,
   Screen,
@@ -66,7 +65,6 @@ export default function LiabilitiesScreen() {
   }));
 
   return (
-    <>
       <Screen bottomPadding={120}>
         <AppHeader
           title="Liabilities"
@@ -139,8 +137,6 @@ export default function LiabilitiesScreen() {
           </>
         ) : null}
       </Screen>
-      <DetailTabBar active="Home" />
-    </>
   );
 }
 

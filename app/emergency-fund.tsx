@@ -11,7 +11,6 @@ import {
   Button,
   Card,
   ChipRow,
-  DetailTabBar,
   ProgressBar,
   Screen,
   StatPill,
@@ -71,7 +70,6 @@ export default function EmergencyFundScreen() {
   }) : null;
 
   return (
-    <>
       <Screen bottomPadding={120}>
         <AppHeader
           title="Emergency fund"
@@ -244,8 +242,6 @@ export default function EmergencyFundScreen() {
           ))}
         </View>
       </Screen>
-      <DetailTabBar active="Home" />
-    </>
   );
 }
 
