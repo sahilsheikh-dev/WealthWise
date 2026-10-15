@@ -4,6 +4,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
@@ -13,7 +14,7 @@ import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { monthlyCommitments, suggestTemplate } from '../src/domain/budget';
-import { BUDGET_CATEGORIES } from '../src/domain/schemas';
+import { BUDGET_CATEGORIES, BUDGET_CATEGORY_GROUPS } from '../src/domain/schemas';
 import type { BudgetTemplateLine } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { incomeBaselineFor } from '../src/domain/summary';
@@ -176,31 +177,38 @@ export default function BudgetTemplateFormScreen() {
       {saveAsTemplate ? <AppText>Saving preserves this month’s planned amounts as a reusable template.</AppText> : null}
       <View style={{ gap: 12 }}>
         <AppText>Total: {percentTotal.toFixed(1)}% of income</AppText>
-        {BUDGET_CATEGORIES.map((category, index) => (
-          <View key={category} style={{ gap: 8 }}>
-            <AppText weight="semibold">{category}</AppText>
-            <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
-              <SegmentedControl
-                label="Line type"
-                value={field.value}
-                options={[
-                  { label: 'Amount', value: 'amount' },
-                  { label: '% income', value: 'percent' },
-                ]}
-                onChange={field.onChange}
-              />
-            )} />
-            <Controller control={control} name={`lines.${index}.value`} render={({ field }) => (
-              watched.lines?.[index]?.mode === 'percent' ? (
-                <TextField label="Percent of income" accessibilityLabel={`${category} percent of income`}
-                  value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
-              ) : (
-                <MoneyField label="Planned amount" accessibilityLabel={`${category} planned amount`}
-                  value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
-              )
-            )} />
-          </View>
-        ))}
+        <AppText weight="semibold">Set up your budget inputs</AppText>
+        <BudgetCategorySections
+          groups={BUDGET_CATEGORY_GROUPS}
+          renderCategory={(category) => {
+            const index = BUDGET_CATEGORIES.indexOf(category);
+            return (
+              <View key={category} style={{ gap: 8 }}>
+                <AppText weight="semibold">{category}</AppText>
+                <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
+                  <SegmentedControl
+                    label="Allocation method"
+                    value={field.value}
+                    options={[
+                      { label: 'Amount', value: 'amount' },
+                      { label: '% income', value: 'percent' },
+                    ]}
+                    onChange={field.onChange}
+                  />
+                )} />
+                <Controller control={control} name={`lines.${index}.value`} render={({ field }) => (
+                  watched.lines?.[index]?.mode === 'percent' ? (
+                    <TextField label="Percent of income" accessibilityLabel={`${category} percent of income`}
+                      value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  ) : (
+                    <MoneyField label="Planned amount" accessibilityLabel={`${category} planned amount`}
+                      value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  )
+                )} />
+              </View>
+            );
+          }}
+        />
       </View>
     </FormScreen>
   );
