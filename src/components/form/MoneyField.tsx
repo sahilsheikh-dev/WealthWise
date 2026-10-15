@@ -28,6 +28,7 @@ export function MoneyField({
   onBlur,
   error,
   accessibilityLabel = 'Amount in rupees',
+  size = 'regular',
 }: {
   value: string;
   label?: string;
@@ -35,6 +36,7 @@ export function MoneyField({
   onBlur?: () => void;
   error?: string;
   accessibilityLabel?: string;
+  size?: 'regular' | 'compact';
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -42,11 +44,16 @@ export function MoneyField({
   return (
     <View style={styles.field}>
       <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
-      <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: error ? colors.err : colors.border }]}>
+      <View style={[
+        styles.inputWrap,
+        size === 'compact' ? styles.compactInputWrap : undefined,
+        { backgroundColor: colors.surface, borderColor: error ? colors.err : colors.border },
+      ]}>
         <AppText weight="semibold" style={[styles.currency, { color: colors.text3 }]}>₹</AppText>
         <TextInput
           accessibilityLabel={accessibilityLabel}
           accessibilityHint={error ? `Error: ${error}` : undefined}
+          hitSlop={size === 'compact' ? 4 : undefined}
           keyboardType="decimal-pad"
           value={focused ? value : grouped(value)}
           onFocus={() => {
@@ -58,7 +65,7 @@ export function MoneyField({
             setFocused(false);
             onBlur?.();
           }}
-          style={[styles.input, { color: colors.text1 }]}
+          style={[styles.input, size === 'compact' ? styles.compactInput : undefined, { color: colors.text1 }]}
         />
       </View>
       {Number.isFinite(amount) && amount >= 100_000
@@ -72,6 +79,8 @@ export function MoneyField({
 const styles = StyleSheet.create({
   field: { gap: 5 },
   inputWrap: { minHeight: 48, flexDirection: 'row', alignItems: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingHorizontal: 14 },
+  compactInputWrap: { minHeight: 40, borderRadius: 10, paddingHorizontal: 10 },
   currency: { fontSize: 15, marginRight: 8 },
   input: { flex: 1, minHeight: 46, paddingVertical: 8, fontFamily: 'Montserrat_500Medium', fontSize: 14 },
+  compactInput: { minHeight: 38, paddingVertical: 4, fontSize: 13 },
 });

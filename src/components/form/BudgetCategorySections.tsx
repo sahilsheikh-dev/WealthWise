@@ -4,16 +4,19 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '../ui';
 import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
-import type { BudgetCategoryGroup } from '../../domain/schemas';
+import { formatAmount } from '../../lib/amountDisplay';
+import type { BudgetGroup } from '../../domain/budget';
 
-type BudgetCategory = BudgetCategoryGroup['categories'][number];
+type BudgetCategory = BudgetGroup['categories'][number];
 
 export function BudgetCategorySections({
   groups,
   renderCategory,
+  summarizeGroup,
 }: {
-  groups: readonly BudgetCategoryGroup[];
+  groups: readonly BudgetGroup[];
   renderCategory: (category: BudgetCategory) => ReactNode;
+  summarizeGroup?: (group: BudgetGroup) => { amount: number; percent: number };
 }) {
   const { colors } = useTheme();
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
@@ -33,6 +36,7 @@ export function BudgetCategorySections({
     <View style={styles.sections}>
       {groups.map((group) => {
         const expanded = expandedGroups.has(group.id);
+        const summary = summarizeGroup?.(group);
         return (
           <View
             key={group.id}
@@ -50,7 +54,14 @@ export function BudgetCategorySections({
                   {expanded ? 'Hide categories' : `Show ${group.categories.length} categories`}
                 </AppText>
               </View>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{group.description}</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{group.hint}</AppText>
+              {summary ? (
+                <AppText
+                  style={[typography.meta, { color: colors.text2 }]}
+                  accessibilityLabel={`${group.name} subtotal ${formatAmount(summary.amount, 'exact', 1)}, ${summary.percent.toFixed(1)}% of planned income`}>
+                  Subtotal {formatAmount(summary.amount, 'exact', 1)} · {summary.percent.toFixed(1)}% of planned income
+                </AppText>
+              ) : null}
             </Pressable>
             {expanded ? (
               <View style={styles.categories}>

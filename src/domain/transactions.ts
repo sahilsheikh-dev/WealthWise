@@ -1,5 +1,7 @@
 import type { ISODate, Transaction } from './types';
-import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
+import { INVESTMENT_FORM_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
+
+const INVESTMENT_CATEGORIES = new Set<string>(INVESTMENT_FORM_CATEGORIES);
 
 export type TransactionMonthSummary = {
   income: number;
@@ -12,6 +14,15 @@ export type TransactionMonthSummary = {
   rates: { savedPct: number; investedPct: number } | null;
   overspend: number;
 };
+
+export function transactionCategoryLabel(
+  category: string,
+  type?: Transaction['type'],
+): string {
+  if (type === 'invest' && !INVESTMENT_CATEGORIES.has(category)) return 'Other investments';
+  if (category === 'Unexpected') return 'Unexpected extras';
+  return category;
+}
 
 export function monthSummary(txs: Transaction[], month: string): TransactionMonthSummary {
   const rows = txs.filter((transaction) => transaction.date.startsWith(month));
@@ -55,7 +66,8 @@ export function filterTransactions(
     .filter((transaction) => transaction.date.startsWith(options.month))
     .filter((transaction) => options.type === 'all' || transaction.type === options.type)
     .filter((transaction) => !options.category || transaction.category === options.category
-      || (options.category === 'Other investments' && transaction.type === 'invest' && transaction.category === 'Other'))
+      || (options.category === 'Other investments' && transaction.type === 'invest'
+        && !INVESTMENT_CATEGORIES.has(transaction.category)))
     .filter((transaction) => !query || `${transaction.note} ${transaction.category}`.toLowerCase().includes(query))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }

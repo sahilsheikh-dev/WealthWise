@@ -27,7 +27,7 @@ import { addDays } from '../../src/domain/dates';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { upcomingDue } from '../../src/domain/schedule';
 import { homeSummary } from '../../src/domain/summary';
-import { expenseCategoryBreakdown } from '../../src/domain/transactions';
+import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
@@ -162,7 +162,7 @@ export default function HomeScreen() {
           <Card style={styles.categoryBreakdown}>
             {spendingByCategory.map(({ category, amount }) => (
               <View key={category} style={[styles.categoryRow, { borderBottomColor: colors.border }]}>
-                <AppText style={{ color: colors.text2 }}>{category}</AppText>
+                <AppText style={{ color: colors.text2 }}>{transactionCategoryLabel(category)}</AppText>
                 <AmountText value={amount} tier="row" weight="semibold" />
               </View>
             ))}

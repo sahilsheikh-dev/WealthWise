@@ -184,7 +184,8 @@ const policySchema = z.object({
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
-  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other',
+  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
@@ -192,39 +193,6 @@ export const BUDGET_CATEGORIES = [
   'Other',
   ...investmentBudgetCategories,
 ] as const;
-export const BUDGET_CATEGORY_GROUPS = [
-  {
-    id: 'survival',
-    name: 'Survival (Needs)',
-    description: 'Essentials such as living, food, transport, family, bills, education, EMI, and insurance.',
-    categories: ['Living', 'Food', 'Transport', 'Family', 'Bills', 'Education', 'EMI', 'Insurance'],
-  },
-  {
-    id: 'savings-investments',
-    name: 'Savings and Investments',
-    description: 'Emergency savings, investment plans, stocks, deposits, precious metals, and other investments.',
-    categories: investmentBudgetCategories,
-  },
-  {
-    id: 'wants',
-    name: 'Wants',
-    description: 'Non-essential or lifestyle spending such as eating out, online shopping, entertainment, and fashion.',
-    categories: ['Shopping', 'Other'],
-  },
-  {
-    id: 'festival-donations-culture',
-    name: 'Festival, Donations, Culture',
-    description: 'Festival, donation, and culture-related spending.',
-    categories: ['Festival', 'Donation'],
-  },
-  {
-    id: 'unexpected-extras',
-    name: 'Unexpected Extras',
-    description: 'Surprises and emergencies such as medical bills, home or vehicle repairs, and sudden gifts.',
-    categories: ['Health', 'Gifts'],
-  },
-] as const;
-export type BudgetCategoryGroup = (typeof BUDGET_CATEGORY_GROUPS)[number];
 const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
 const budgetTemplateLineSchema = z.object({
   category: z.string().min(1).max(60),
@@ -372,11 +340,15 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
-    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other',
+    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected',
   ],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
-  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
+  income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
+  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
+
+export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
+  .filter((category) => category !== 'Other');
 
 export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 

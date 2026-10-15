@@ -19,10 +19,12 @@ import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
 import { efBalance } from '../src/domain/ef';
 import { describeSource, investCategoryFor } from '../src/domain/links';
+import { transactionCategoryLabel } from '../src/domain/transactions';
 import { listInstruments } from '../src/domain/instruments';
 import { holdingValue } from '../src/domain/portfolio';
 import {
   makeTransactionFormSchema,
+  INVESTMENT_FORM_CATEGORIES,
   TRANSACTION_CATEGORIES,
   type TransactionFormInput,
   type TransactionFormOutput,
@@ -143,9 +145,12 @@ export default function TransactionFormScreen() {
   const selectedInstrument = instruments.find((item) => item.id === selectedInstrumentId);
   const isWithdrawalForm = selectedType === 'income' && selectedCategory === 'Withdrawal';
   const linkedEditable = linkedInstrument && transaction?.source !== undefined;
+  const standardCategories = selectedType === 'invest'
+    ? INVESTMENT_FORM_CATEGORIES
+    : TRANSACTION_CATEGORIES[selectedType];
   const choices = [
-    ...TRANSACTION_CATEGORIES[selectedType],
-    ...(transaction?.type === selectedType && !(TRANSACTION_CATEGORIES[selectedType] as readonly string[]).includes(transaction.category)
+    ...standardCategories,
+    ...(transaction?.type === selectedType && !(standardCategories as readonly string[]).includes(transaction.category)
       ? [transaction.category]
       : []),
   ];
@@ -307,7 +312,7 @@ export default function TransactionFormScreen() {
           <>
             <ReadOnlyRow label="Type" value={transaction.type} />
             <ReadOnlyRow label="Amount" value={formatAmount(transaction.amount, 'exact', 1)} />
-            <ReadOnlyRow label="Category" value={linkedEditable ? derivedCategory : transaction.category} />
+            <ReadOnlyRow label="Category" value={transactionCategoryLabel(linkedEditable ? derivedCategory : transaction.category, transaction.type)} />
             <ReadOnlyRow label="Date" value={transaction.date} />
           </>
         ) : (
@@ -326,8 +331,9 @@ export default function TransactionFormScreen() {
                       const category = getValues('category');
                       field.onChange(type);
                       if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      if (!(TRANSACTION_CATEGORIES[type] as readonly string[]).includes(category)) {
-                        setValue('category', TRANSACTION_CATEGORIES[type][0], { shouldDirty: true, shouldValidate: true });
+                      const categories = type === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES[type];
+                      if (!(categories as readonly string[]).includes(category)) {
+                        setValue('category', categories[0], { shouldDirty: true, shouldValidate: true });
                       }
                     }}
                   />
@@ -336,7 +342,7 @@ export default function TransactionFormScreen() {
             ) : (
               <>
                 <ReadOnlyRow label="Type" value={transaction.type} />
-                <ReadOnlyRow label="Category" value={transaction.category} />
+                <ReadOnlyRow label="Category" value={transactionCategoryLabel(transaction.category, transaction.type)} />
               </>
             )}
             <Controller
@@ -386,6 +392,7 @@ export default function TransactionFormScreen() {
                     label="Category"
                     value={field.value}
                     choices={choices}
+                    choiceLabels={Object.fromEntries(choices.map((category) => [category, transactionCategoryLabel(category, selectedType)]))}
                     onChange={(value) => {
                       field.onChange(value);
                       if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
