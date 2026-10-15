@@ -3,13 +3,18 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionFormScreen from '../../../app/transaction-form';
 import { mockAppData } from '../../mock/data';
-import type { Transaction } from '../../domain/types';
+import { addInstrumentTransaction } from '../../domain/instruments';
+import { filterTransactions, transactionCategoryLabel } from '../../domain/transactions';
+import { budgetMonthView } from '../../domain/budget';
+import { emptyAppData } from '../../domain/actions';
+import type { Holding, Transaction } from '../../domain/types';
 
 const mockData = { ...mockAppData, transactions: [] as Transaction[] };
 const mockState = { data: mockData, lastError: null as string | null };
 let mockParams: { id?: string; type?: string } = {};
 const mockPush = jest.fn();
 const mockBack = jest.fn();
+let instrumentIdSequence = 0;
 const mockSetTxMonth = jest.fn();
 const mockSetLastCreatedInstrumentId = jest.fn();
 const mockAddTransaction = jest.fn((input: Omit<Transaction, 'id'>) => {
@@ -22,14 +27,8 @@ const mockAddInstrumentTransaction = jest.fn((input: {
   date: string;
   note: string;
 }) => {
-  mockData.transactions.push({
-    id: 'new-transaction',
-    type: input.kind === 'deposit' ? 'invest' : 'income',
-    amount: input.amount,
-    category: input.kind === 'deposit' ? 'Mutual fund / SIP' : 'Withdrawal',
-    date: input.date,
-    note: input.note,
-  });
+  const updated = addInstrumentTransaction(mockData, input, () => `new-${++instrumentIdSequence}`, '2026-10-13');
+  Object.assign(mockData, updated);
 });
 const mockUpdateTransaction = jest.fn((id: string, input: Partial<Transaction>) => {
   const index = mockData.transactions.findIndex((transaction) => transaction.id === id);
@@ -145,7 +144,10 @@ jest.mock('react-native', () => {
 describe('transaction add form', () => {
   beforeEach(() => {
     mockParams = {};
+    instrumentIdSequence = 0;
     mockData.transactions.length = 0;
+    mockData.holdings = [...mockAppData.holdings];
+    mockData.monthBudgets = mockAppData.monthBudgets;
     mockState.lastError = null;
     mockPush.mockClear();
     mockBack.mockClear();
@@ -227,6 +229,150 @@ describe('transaction add form', () => {
       category,
       amount: 700,
     }));
+  });
+
+  it.each([
+    ['Mutual fund / SIP', 'invest-mf', 'Mutual fund / SIP'],
+    ['Stocks / ETF', 'invest-stocks', 'Stocks / ETF'],
+    ['Fixed deposit / RD', 'invest-fd', 'Fixed deposit'],
+    ['Fixed deposit / RD', 'invest-rd', 'Recurring deposit'],
+    ['Gold / Silver', 'invest-gold', 'Gold'],
+    ['Emergency fund', 'ef', null],
+    ['Other investments', 'invest-other', 'EPFO / PF'],
+  ] as const)('stores, labels and budgets invest category %s end to end', async (category, instrumentId, holdingType) => {
+    if (holdingType) {
+      const holding: Holding = {
+        id: instrumentId,
+        kind: 'manual',
+        name: category,
+        type: holdingType,
+        invested: 1_000,
+        value: 1_000,
+        logs: [],
+      };
+      mockData.holdings = [holding];
+    } else {
+      mockData.holdings = [];
+    }
+    mockData.transactions = [];
+    mockData.monthBudgets = [{
+      month: '2026-10',
+      templateId: null,
+      templateName: null,
+      customized: false,
+      plannedIncome: 10_000,
+      lines: [{ category, planned: 2_000 }],
+    }];
+    const base = emptyAppData('2026-10-01');
+    mockData.efEntries = base.efEntries;
+    mockData.efCustomBuckets = base.efCustomBuckets;
+    mockData.efBucketLinks = base.efBucketLinks;
+    mockData.efAllocation = base.efAllocation;
+    mockData.goals = mockAppData.goals;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const formRenderer = renderer;
+    const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
+    if (!typeControl) throw new Error('Transaction type selector was not rendered.');
+    await act(async () => typeControl.props.onChange('invest'));
+    const investment = renderer.root.findAll((node) =>
+      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+    )[0];
+    if (!investment) throw new Error('Investment selector was not rendered.');
+    await act(async () => investment.props.onChange(instrumentId));
+    const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
+    if (!amount) throw new Error('Amount input was not rendered.');
+    await act(async () => amount.props.onChangeText('150'));
+    await act(async () => {
+      formRenderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const stored = mockData.transactions.at(-1);
+    expect(stored).toMatchObject({ type: 'invest', category, amount: 150 });
+    expect(stored).toBeDefined();
+    if (!stored) throw new Error('Investment transaction was not stored.');
+    expect(transactionCategoryLabel(stored.category, stored.type)).toBe(category);
+    expect(filterTransactions(mockData.transactions, {
+      month: '2026-10', type: 'invest', query: '', category,
+    })).toContain(stored);
+    const view = budgetMonthView(mockData, '2026-10');
+    const matchingLine = view.lines.find((line) => line.category === category);
+    const savingsGroup = view.unbudgetedByGroup.find((item) => item.groupId === 'savings-investments');
+    expect((matchingLine?.actual ?? 0) + (savingsGroup?.amount ?? 0)).toBe(150);
+  });
+
+  it.each(['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const)(
+    'offers the new %s expense category',
+    async (category) => {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        renderer = TestRenderer.create(<TransactionFormScreen />);
+      });
+      if (!renderer) throw new Error('Transaction form renderer was not created.');
+      const categoryField = renderer.root.findAll((node) =>
+        String(node.type) === 'choicefield' && node.props.label === 'Category',
+      )[0];
+      if (!categoryField) throw new Error('Expense category selector was not rendered.');
+      expect(categoryField.props.choices).toContain(category);
+      expect(categoryField.props.choiceLabels[category]).toBe(
+        category === 'Unexpected' ? 'Unexpected extras' : category,
+      );
+    },
+  );
+
+  it('offers and saves Rental as earned income', async () => {
+    mockParams = { type: 'income' };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => { renderer = TestRenderer.create(<TransactionFormScreen />); });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const formRenderer = renderer;
+    const categoryField = renderer.root.findAll((node) =>
+      String(node.type) === 'choicefield' && node.props.label === 'Category',
+    )[0];
+    if (!categoryField) throw new Error('Income category selector was not rendered.');
+    expect(categoryField.props.choices).toContain('Rental');
+    await act(async () => categoryField.props.onChange('Rental'));
+    const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
+    if (!amount) throw new Error('Amount input was not rendered.');
+    await act(async () => amount.props.onChangeText('500'));
+    await act(async () => {
+      formRenderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockAddTransaction).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'income',
+      category: 'Rental',
+      amount: 500,
+    }));
+  });
+
+  it('shows investment category as a derived read-only value', async () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const formRenderer = renderer;
+    const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
+    if (!typeControl) throw new Error('Transaction type selector was not rendered.');
+    await act(async () => typeControl.props.onChange('invest'));
+    const investment = renderer.root.findAll((node) =>
+      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+    )[0];
+    if (!investment) throw new Error('Investment selector was not rendered.');
+    const otherInvestmentId = Object.entries(investment.props.choiceLabels as Record<string, string>)
+      .find(([, label]) => label.includes('EPFO'))?.[0];
+    if (!otherInvestmentId) throw new Error('Other investment choice was not rendered.');
+    await act(async () => investment.props.onChange(otherInvestmentId));
+    expect(renderer.root.findAll((node) => String(node.type) === 'choicefield')
+      .some((node) => node.props.label === 'Category')).toBe(false);
+    expect(formRenderer.root.findAll((node) => String(node.type) === 'readonly')
+      .some((node) => node.props.value === 'Other investments')).toBe(true);
   });
 
   it.each(['Festival', 'Donation', 'Gifts'] as const)('edits an expense into the %s category', async (category) => {

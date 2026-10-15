@@ -128,6 +128,30 @@ function hasAncestor(
 }
 
 describe('Transactions screen withdrawals-only month', () => {
+  it('shows the normalized investment category label on transaction rows', () => {
+    const previousTransactions = mockData.transactions;
+    mockData.transactions = [{
+      id: 'legacy-investment',
+      type: 'invest',
+      amount: 500,
+      category: 'Other',
+      note: '',
+      date: '2026-10-10',
+    }];
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const row = renderer.root.findAll((node) => String(node.type) === 'listitem')[0];
+      if (!row) throw new Error('Invest transaction row did not render.');
+      expect(row.props.title).toBe('Other investments');
+      expect(row.props.subtitle).toBe('Other investments');
+      expect(row.props.accessibilityLabel).toContain('Other investments');
+    } finally {
+      mockData.transactions = previousTransactions;
+    }
+  });
+
   it('keeps the sort chip in the horizontal filter row at font scale 2.0', () => {
     mockFontScale = 2;
     try {
