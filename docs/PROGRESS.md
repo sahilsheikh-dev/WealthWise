@@ -710,18 +710,18 @@ evidence present in exports/checkpoints.
 | CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
 | CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
-| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | In progress | P19-A. Earlier grouped-form work is historical and does not complete the expanded requirements. |
+| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Done | P19-A; focused and full gates pass. |
 | CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Planned | P20-A (formerly P19-B). |
 | CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Planned | P20-B (formerly P19-C). |
 | CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Planned | P21-A (formerly P19-D; now split across P21-A/B). |
-| CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Planned | P19-B. |
+| CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Done | P19-B; category/source reconciliation tests pass. |
 | CR-10 | Home spending by category is collapsed, with Apply budget. | Planned | P20-B. |
 | CR-11 | Bottom tabs appear only on Home, Transactions, Goals and Budget. | Planned | P20-C; DEC-TABS. |
 | CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Planned | P22-A; DEC-DEMO. |
 | CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Planned | P21-A. |
 | CR-14 | Emergency-fund months of cover use salary fallback. | Planned | P21-B. |
 | CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Planned | P21-B. |
-| CR-16 | Templates joins History and Month review; remove Budget header menu. | Planned | P19-B. |
+| CR-16 | Templates joins History and Month review; remove Budget header menu. | Done | P19-B; navigation and header-menu tests pass. |
 
 ## 8. Known issues and risks
 
