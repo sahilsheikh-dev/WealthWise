@@ -376,7 +376,7 @@ evidence present in exports/checkpoints.
 | P15-FIX-R2 | 2 | 2026-10-13 | Recover interrupted work and fix baseline. | Superseded by R3 audit/repair. | `6771f37`, `c0ba0da` | Two visible-message assertions were replaced with weaker checks; R3 restored them. | verbatim in git at `5aeefb9` |
 | P15-FIX-R3 | 2 | 2026-10-13 | Audit FX-BASE and complete fixes with truthful gates. | Done; gates reported green twice. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Restored UI messages/assertions; followed formal ₹1 crore cutoff over a conflicting example. | verbatim in git at `5aeefb9` |
 | P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
-| P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Delivered in `9859d73`; R6 verified the full gates and corrected superseded layout expectations. Real-device checks remain outstanding. | `9859d73`; verification close-out in P15-FIX-R6 | No SortChip appearance, options, logic, or placement changes. The visible tab label is `Txns`; accessibility label remains `Transactions`. | verbatim prior request |
+| P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Delivered in `9859d73`; R6 verified the full gates and corrected superseded layout expectations. Real-device checks remain outstanding. | `9859d73`; verification close-out in P15-FIX-R6 | No SortChip appearance, options, logic, or placement changes. The visible tab label is `Transactions`; accessibility label remains `Transactions`. | verbatim prior request |
 | P15-FIX-R6 | 2 | 2026-10-15 | Close out R5: establish the green baseline, audit SortChip/header history, align Expo SDK patch versions, and rerun all gates. | Done; baseline 64 suites/659 tests, current 65 suites/669 tests, source coverage above floors, Doctor 21/21, both exports, TypeScript and lint pass. Device checks remain unverified. | `798e8ef` SDK patch alignment; this close-out commit | Updated only superseded layout assertions and the visible tab label; SortChip component and sorting logic untouched. No extra WIP commit because R5 source was already committed and the tree was clean. | verbatim current request |
 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer. | Unknown; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | This commit; no code changes beyond ledger test. | this commit | Earlier ledger task had already removed archive; form audit opened CR-3. | verbatim in current request |
@@ -423,12 +423,12 @@ evidence present in exports/checkpoints.
   `budget-history.tsx`, `emergency-fund.tsx`, `investment-entries.tsx`,
   `liabilities.tsx`, `liability-payments.tsx`, and `link-missing.tsx`; it also
   moved the Transactions sort chip out of the shared ChipRow. That commit
-  changed the tab text from `Transactions` to `Txns`; `4178c28` later changed
+  changed the tab text from `Transactions` to `Transactions`; `4178c28` later changed
   it back to `Transactions`. `b92e145` was docs-only. `af76eec` subsequently
   restored the ChipRow presentation, so the present code matches the intended
   wrapper pattern. The two test assertions now require the current ChipRow
   structure and the Transactions test mock models its horizontal scrolling
-  behavior. The visible tab label is `Txns`; accessibility remains
+  behavior. The visible tab label is `Transactions`; accessibility remains
   `Transactions`.
 - `npx expo install --check` reported dependencies up to date. The previously
   committed `798e8ef` changed only `package.json` and `package-lock.json`;
@@ -447,7 +447,7 @@ evidence present in exports/checkpoints.
   requested preservation step; because the worktree was clean, no redundant
   WIP commit was created. SDK patch alignment already existed in the separate
   `798e8ef` package-only commit, so no duplicate `expo install --fix` or empty
-  chore commit was created. The visible tab label is `Txns` per the explicit
+  chore commit was created. The visible tab label is `Transactions` per the explicit
   four-tab rule, while the accessibility label remains `Transactions`.
 - Final per-directory coverage: domain 2,120/2,153 lines (98.47%) and
   1,986/2,120 branches (93.68%); data excluding hooks 306/331 lines (92.45%)
@@ -620,6 +620,6 @@ evidence for the fixes.
 | P15-FIX-R5-3 Cash flow | Done (automated; device checks outstanding) | `app/(tabs)/budget.tsx` — opening, previous position, monthly flow and closing hierarchy; `budgetMonthView` calculations unchanged | `RouteRenderSmoke.test.tsx` — values/labels, positive/negative statuses, review navigation and normal-flow responsive layout. Device rendering not verified. |
 | P15-FIX-R5-4 Budget plan summary | Done (automated; device checks outstanding) | `app/(tabs)/budget.tsx` — summary card opens selected-month editor, template action remains independent, pencil removed, exact values preserved | `RouteRenderSmoke.test.tsx`, `EditActionOwnership.test.tsx` — edit/apply ownership, template modal, month route, populated/no-budget state and accessible financial values. |
 | P15-FIX-R6-A Baseline evidence | Done | No source changes; temporary worktree at `2e5d594` was removed after testing | The two requested suites passed 24/24; full `npm test -- --runInBand` passed 64 suites/659 tests. Current pre-fix failures were captured verbatim in the R6 report and summarized in Section 8. |
-| P15-FIX-R6-B Sort UI history and assertions | Done | `src/components/ui.tsx` — visible tab text restored to `Txns`; `src/components/__tests__/BottomTabBar.test.tsx`, `SectionHeaderRow.test.tsx`, `TransactionsScreen.test.tsx` — revised assertions for the intended ChipRow layout | Focused six-suite run passed 180 tests, including `src/lib/__tests__/sorting.test.ts`; full current coverage run passed 65 suites/669 tests. `src/components/SortChip.tsx` and `src/lib/sorting.ts` are unchanged. |
+| P15-FIX-R6-B Sort UI history and assertions | Done | `src/components/ui.tsx` — visible tab text restored to `Transactions`; `src/components/__tests__/BottomTabBar.test.tsx`, `SectionHeaderRow.test.tsx`, `TransactionsScreen.test.tsx` — revised assertions for the intended ChipRow layout | Focused six-suite run passed 180 tests, including `src/lib/__tests__/sorting.test.ts`; full current coverage run passed 65 suites/669 tests. `src/components/SortChip.tsx` and `src/lib/sorting.ts` are unchanged. |
 | P15-FIX-R6-C Expo SDK alignment | Done | Existing separate `798e8ef` updates only `package.json` and `package-lock.json`; four direct Expo package ranges were bumped, while `expo-constants` was accepted unchanged | `npx expo install --check` — dependencies up to date; `npx expo-doctor` — 21/21; Android/iOS exports and full tests pass after alignment. |
 | P15-FIX-R6-D Gates and close-out | Done (automated; device checks outstanding) | `docs/PROGRESS.md` — R5/R6 status, assumptions, historical audit, and evidence | `npm test -- --coverage` — 65/65 suites, 669/669 tests; `npx tsc --noEmit`; `npx expo lint`; `npx expo-doctor` 21/21; Android/iOS exports; per-directory line/branch coverage; `git diff --check`. Native safe-area and font-scale checks remain for real devices. |
