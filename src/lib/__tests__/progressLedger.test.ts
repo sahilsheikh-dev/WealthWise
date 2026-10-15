@@ -134,6 +134,7 @@ describe('permanent progress ledger', () => {
       if (status.startsWith('Done') || status.startsWith('Superseded')) count.done += 1;
       counts.set(phase, count);
     }
+    expect(rows.some((row) => row.split('|')[3]?.trim().startsWith('Superseded'))).toBe(true);
 
     const total = [...counts.values()].reduce((sum, count) => sum + count.total, 0);
     const done = [...counts.values()].reduce((sum, count) => sum + count.done, 0);
@@ -158,22 +159,30 @@ describe('permanent progress ledger', () => {
       expect(Number(match?.[4])).toBe(completed);
       expect(Number(match?.[5])).toBe(partCount);
     });
+    const phase18 = progressBlock.split('\n').find((line) => line.startsWith('Phase 18'));
+    expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-16 and the current P18-LEDGER work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-20 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const decisions = ledger.split('## 4. Architecture and decisions')[1]?.split('## 5. Phase history')[0] ?? '';
 
     expect(`${dashboard}\n${register}`).toContain('CR-3');
     for (const id of [
       'FX-BASE', 'CH-1', 'CH-2', 'CH-3', 'CH-4',
       'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8', 'CR-9', 'CR-10',
-      'CR-11', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-16',
+      'CR-11', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-16', 'CR-17',
+      'CR-18', 'CR-19', 'CR-20',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
     expect(promptLog).toContain('| P18-LEDGER |');
+    expect(promptLog).toContain('| P19-C |');
+    expect(register).toContain('| CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 |');
+    expect(register).toContain('| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Planned | P21-A/B. |');
+    expect(decisions).toContain('DEC-FORM-COMPONENTS');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 });

@@ -6,7 +6,6 @@ import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, us
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { DueActions } from '../../src/components/DueActions';
-import { QuickActionButton } from '../../src/components/QuickActionButton';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
@@ -46,7 +45,6 @@ export default function BudgetScreen() {
   const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const templates = data.budgetTemplates ?? [];
   const stackMetrics = width < 360 || fontScale >= 1.8;
-  const wrapActions = fontScale >= 1.3;
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
       !touchingHeader && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
@@ -80,7 +78,22 @@ export default function BudgetScreen() {
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...panResponder.panHandlers}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader title="Budget" showDefaultMenu={false} />
+          <AppHeader
+            title="Budget"
+            showDefaultMenu={false}
+            rightActions={[
+              { icon: 'clock', label: 'History', onPress: () => router.push('/budget-history') },
+              {
+                icon: 'check-circle',
+                label: `Month review${reviewableMonth ? ', review pending' : ''}`,
+                showIndicator: Boolean(reviewableMonth),
+                onPress: () => router.push(reviewableMonth
+                  ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
+                  : '/month-review'),
+              },
+              { icon: 'layers', label: 'Templates', onPress: () => router.push('/budget-templates') },
+            ]}
+          />
           <View
             onTouchStart={() => setTouchingHeader(true)}
             onTouchEnd={() => setTouchingHeader(false)}
@@ -94,36 +107,6 @@ export default function BudgetScreen() {
               <Feather name="chevron-right" size={22} color={colors.text2} />
             </Pressable>
           </View>
-          <View testID="budget-quick-actions" style={[styles.quickActions, wrapActions ? styles.quickActionsWrapped : undefined]}>
-            <QuickActionButton
-              label="History"
-              icon="calendar"
-              wrapped={wrapActions}
-              testID="budget-history-action"
-              onPress={() => router.push('/budget-history')}
-            />
-            <QuickActionButton
-              testID="budget-month-review-action"
-              label="Month review"
-              accessibilityLabel={reviewableMonth
-                ? `Month review, ${formatMonth(reviewableMonth.month)} needs review`
-                : 'Month review'}
-              icon="calendar"
-              wrapped={wrapActions}
-              showIndicator={Boolean(reviewableMonth)}
-              onPress={() => router.push(reviewableMonth
-                ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
-                : '/month-review')}
-            />
-            <QuickActionButton
-              label="Templates"
-              icon="database"
-              wrapped={wrapActions}
-              testID="budget-templates-action"
-              onPress={() => router.push('/budget-templates')}
-            />
-          </View>
-
           <Card>
             <AppText weight="bold" style={[typography.name, styles.cashFlowTitle]}>Cash flow</AppText>
             <View style={[styles.cashFlowMetrics, stackMetrics && styles.cashFlowMetricsStacked]}>

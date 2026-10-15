@@ -106,6 +106,7 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    TextInput: node('textinput'),
     View: node('view'),
   };
 });

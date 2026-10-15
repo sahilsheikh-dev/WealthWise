@@ -205,6 +205,7 @@ export default function BudgetTemplateFormScreen() {
                 <AppText weight="semibold">{displayCategory}</AppText>
                 <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
                   <SegmentedControl
+                    label="Enter as"
                     value={field.value}
                     options={[
                       { label: 'Amount (₹)', value: 'amount' },
