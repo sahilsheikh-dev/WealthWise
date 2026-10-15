@@ -74,14 +74,22 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
-  it('imports schema-v6 backups containing the new expense categories', async () => {
-    const categories = ['Festival', 'Donation', 'Gifts'] as const;
+  it('imports schema-v6 backups containing the new budget and expense categories', async () => {
+    const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
     const data = {
       ...mockAppData,
       transactions: [
         ...mockAppData.transactions,
+        {
+          id: 'legacy-invest-other',
+          type: 'invest' as const,
+          amount: 50,
+          category: 'Other',
+          note: 'Legacy category',
+          date: '2026-10-11',
+        },
         ...categories.map((category, index) => ({
-          id: `backup-${category.toLowerCase()}`,
+          id: `backup-category-${index}`,
           type: 'expense' as const,
           amount: 100 + index,
           category,
@@ -106,10 +114,15 @@ describe('backup validation and serialization', () => {
     };
     expect(SCHEMA_VERSION).toBe(6);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    await expect(parseBackup(raw, { digest })).resolves.toMatchObject({
+    const result = await parseBackup(raw, { digest });
+    if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
+    expect(result).toMatchObject({
       ok: true,
       data: {
-        transactions: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))),
+        transactions: expect.arrayContaining([
+          ...categories.map((category) => expect.objectContaining({ category })),
+          expect.objectContaining({ id: 'legacy-invest-other', type: 'invest', category: 'Other' }),
+        ]),
         budgetTemplates: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
         monthBudgets: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
       },
