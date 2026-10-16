@@ -500,6 +500,7 @@ P21-B does not change the schema.
 | Five tabs including Invest and More | FX-B2 established Home, Transactions, Goals, Budget. |
 | P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Transactions, Goals, Budget rule. |
 | CR-17: Budget's three independent header icons | CR-24's single three-dot menu with ordered Budget and standard app items. |
+| CR-18: expandable balance card with four metrics and captions | CR-22's always-visible user-kept balance elements, with no toggle, metric grid or captions. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
 | Schema v1, then v2, v3, v4, v5, or v6 as current | Successive migrations; current schema is v7. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |
@@ -851,7 +852,7 @@ evidence present in exports/checkpoints.
 | CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 | P19-B's body action row was replaced by the Budget header icons in P19-C. |
 | CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 | P19-C icon UI was replaced by the single accessible three-dot menu and ordered menu entries. |
-| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Done | P19-C; collapsed/expanded structure, responsive 2x2 grid, labels, review and negative-balance behavior tested. |
+| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 | P20-D preserves the user's reduced always-visible balance card and removes expansion, metrics and captions. |
 | CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
 | CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Pending | P21-A/B implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-21 | Anchor Home due popup to the bottom safe area, bound and scroll the sheet, and support backdrop dismissal. | Pending | P20-D. |
