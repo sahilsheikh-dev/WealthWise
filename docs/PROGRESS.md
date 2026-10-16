@@ -388,6 +388,17 @@ P21-B does not change the schema.
   (including “Shortfall” and danger tone when negative), optional “From {Mon}
   ₹X” chip, divider, and review link when available. There are no retained
   metric columns or captions.
+- The requested checkpoint audit from `51842bb` through the P20-D start found
+  these user-authored commits without a Copilot co-author trailer: `0e965d4`
+  changed `app/(tabs)/index.tsx` (Home pill order/content and removed spending
+  actions), `app/(tabs)/transactions.tsx` (removed balance details/review
+  dismissal and restored the user's Due payments wording),
+  `app/emergency-fund.tsx` (removed linked-assets card and renamed the
+  allocation value), and `src/components/CardHeaderRow.tsx` (made the value
+  optional); `e57fd0f` changed only `app/(tabs)/transactions.tsx` (refined
+  Due payments count/total text). Checkpoint `51842bb` changed only this
+  ledger with prior P22-A delivery/gate evidence and has a Copilot co-author
+  trailer; it contains no user-owned application changes.
 - DEC-EXPO-ICON: top-level `expo.icon` and `ios.icon` both pointed to
   `./assets/images/icon.png`; `ios.icon` was changed from `./assets/expo.icon`
   to that duplicate path by user-authored commit `beb9711` on 2026-10-10.
@@ -403,6 +414,17 @@ P21-B does not change the schema.
   sheet also had only generic backdrop padding and no safe-area-aware bottom
   inset. The height limit now belongs to the ScrollView style, and the sheet
   is bottom-anchored with the inset applied to its container.
+- DEC-P20D-CR22: the Transactions balance card is always visible and retains
+  only the user-kept balance label/amount (including Shortfall and danger
+  tone), optional brought-forward chip, divider, and review link. Replaced
+  assertions for the expand/collapse control, expanded four-metric grid,
+  captions, “Pending” due caption and review-dismiss action with always-visible
+  kept-content/no-toggle/no-caption assertions; kept label switching, Shortfall
+  and no-NaN assertions. The old `renders a compact collapsed summary and
+  balanced expanded details with review actions` test is now
+  `always shows only the user-kept balance elements and keeps the review
+  action`; the old `shows Pending only when recurring items have unpaid dues`
+  assertion is now that no recurring-due caption appears in the balance card.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
