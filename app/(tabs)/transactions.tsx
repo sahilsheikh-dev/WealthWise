@@ -269,12 +269,12 @@ export default function TransactionsScreen() {
             accessibilityState={{ expanded: pendingExpanded }}
             onPress={() => setPendingExpanded((expanded) => !expanded)}
             style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
-            <AppText weight="semibold">Due payments ({visiblePendingItems.length})</AppText>
-            <AmountText
-              value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)}
-              tier="row"
-              weight="semibold"
-            />
+            <AppText weight="semibold">
+              {visiblePendingItems.length === 1 
+                ? '1 payment due of total ' 
+                : `${visiblePendingItems.length} payments due of total `}
+              <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
+            </AppText>
             <Feather name={pendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
           </Pressable>
           {pendingExpanded ? visiblePendingItems.length > 0 ? (
