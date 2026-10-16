@@ -12,6 +12,7 @@ import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../../data/testFixtures/v1';
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
+import { addInvestmentEntry } from '../investmentActions';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -50,7 +51,39 @@ describe('backup validation and serialization', () => {
       ok: true,
       data: { efAllocation: customData.efAllocation },
     });
+  });
 
+  it('round-trips a manual holding snapshot adjustment through backup export and import', async () => {
+    const holding = mockAppData.holdings.find((item) =>
+      item.kind === 'manual' && item.id === 'holding-cash');
+    if (!holding || holding.kind !== 'manual' || !holding.valueAsOf) {
+      throw new Error('Expected a dated manual holding.');
+    }
+    const data = addInvestmentEntry(mockAppData, holding.id, {
+      date: holding.valueAsOf,
+      amount: 125,
+      note: 'Snapshot-day deposit',
+      kind: 'Deposit',
+    }, (() => {
+      let index = 0;
+      return () => `snapshot-round-trip-${++index}`;
+    })(), '2026-10-16');
+    const raw = await createBackup(data, {
+      exportedAt: '2026-10-16T10:00:00.000Z',
+      digest,
+    });
+    const imported = await parseBackup(raw, { digest, migration: migrationOptions });
+    if (!imported.ok) {
+      throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
+    }
+    const restored = imported.data.holdings.find((item) => item.id === holding.id);
+    if (!restored || restored.kind !== 'manual') throw new Error('Manual holding was not restored.');
+    expect(restored.logs.at(-1)).toMatchObject({
+      amount: 125,
+      date: holding.valueAsOf,
+      snapshotAdjustment: 125,
+    });
+    expect(restored.value).toBe(holding.value + 125);
   });
 
   it('round-trips every v5 collection and new stored field', async () => {

@@ -1,6 +1,5 @@
-import { router, type Href } from 'expo-router';
-import { useIsFocused } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { router, useIsFocused, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { IconButton } from '../../src/components/IconButton';
+import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import {
   AppText,
   Button,
@@ -19,8 +20,6 @@ import {
   StatPillRow,
   WarningBanner,
 } from '../../src/components/ui';
-import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
-import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
@@ -98,14 +97,15 @@ export default function HomeScreen() {
             onPress={() => router.push('/assets' as Href)}
           />
           <StatPill
+            label="Liabilities"
+            value={<AmountText value={summary.liabilities} tier="tile" />}
+            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
+            tone="err"
+            onPress={() => router.push('/liabilities')}
+          />
+          <StatPill
             label="Emergency fund"
-            value={(
-              <>
-                <AmountText value={summary.goals.find(({ goal }) => goal.auto === 'ef')?.saved ?? 0} tier="tile" />
-                {' · '}
-                {summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
-              </>
-            )}
+            value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
             accessibilityLabel={`Emergency fund, ${formatAmount(summary.goals.find(({ goal }) => goal.auto === 'ef')?.saved ?? 0, 'exact', 1)}, ${
               summary.emergencyMonths === null
                 ? 'cover unavailable'
@@ -113,13 +113,6 @@ export default function HomeScreen() {
             }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
-          />
-          <StatPill
-            label="Liabilities"
-            value={<AmountText value={summary.liabilities} tier="tile" />}
-            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
-            tone="err"
-            onPress={() => router.push('/liabilities')}
           />
         </StatPillRow>
       </Card>
@@ -152,23 +145,12 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <SectionTitle>Spending by category</SectionTitle>
       <Card style={styles.categoryBreakdown}>
         <AppText
           weight="semibold"
           accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
           This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
         </AppText>
-        <View style={styles.spendingActions}>
-          <Button label="Open budget" icon="pie-chart" onPress={() => router.push('/(tabs)/budget')} />
-          {!monthBudget.budget ? (
-            <Button
-              label="Apply budget"
-              icon="layers"
-              onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } })}
-            />
-          ) : null}
-        </View>
         <Pressable
           testID="home-spending-toggle"
           accessibilityRole="button"

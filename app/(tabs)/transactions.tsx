@@ -60,8 +60,6 @@ export default function TransactionsScreen() {
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
-  const [dismissedReview, setDismissedReview] = useState<string | null>(null);
-  const [balanceExpanded, setBalanceExpanded] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
   useEffect(() => {
@@ -78,10 +76,6 @@ export default function TransactionsScreen() {
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
   const monthPendingItems = useMemo(() => pendingItems(data, month, today), [data, month, today]);
-  const pendingAmount = useMemo(
-    () => monthPendingItems.reduce((total, item) => total + item.amount, 0),
-    [monthPendingItems],
-  );
   const visiblePendingItems = useMemo(() => monthPendingItems.filter((item) => {
     const type = pendingTransactionType(item);
     return (filter === 'all' || type === filter)
@@ -95,7 +89,6 @@ export default function TransactionsScreen() {
     [data.transactions, month, today],
   );
   const review = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
-  const visibleReview = review?.month === dismissedReview ? undefined : review;
   const creationOrder = useMemo(
     () => new Map(data.transactions.map((transaction, index) => [transaction.id, index])),
     [data.transactions],
@@ -119,99 +112,44 @@ export default function TransactionsScreen() {
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
           menu={[
             { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
-            ...(visibleReview ? [{
-              label: `Review ${formatMonth(visibleReview.month)}`,
+            ...(review ? [{
+              label: `Review ${formatMonth(review.month)}`,
               icon: 'calendar' as const,
-              onPress: () => router.push({ pathname: '/month-review', params: { month: visibleReview.month } }),
+              onPress: () => router.push({ pathname: '/month-review', params: { month: review.month } }),
             }] : []),
           ]}
         />
         <View testID="available-balance-card">
-          <Card style={[styles.cashCard, !balanceExpanded ? styles.cashCardCollapsed : undefined]}>
-          <Pressable
-            testID="available-balance-toggle"
-            accessibilityRole="button"
-            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
-              Math.abs(position.broughtForward) > 0
-                ? `, From ${formatMonth(shiftMonth(month, -1)).slice(0, 3)} ${formatAmount(position.broughtForward, 'exact', 1)}`
-                : ''
-            }`}
-            onPress={() => setBalanceExpanded((expanded) => !expanded)}
-            style={[styles.balanceHeading, !balanceExpanded ? styles.balanceHeadingCollapsed : undefined]}>
-            <View style={styles.balanceSummary}>
-              <View style={styles.balanceTitle}>
-                <AppText style={[typography.meta, styles.balanceLabel, { color: colors.text3 }]} numberOfLines={1}>
-                  {position.label}{position.amount < 0 ? ' · Shortfall' : ''}
-                </AppText>
-                <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
-              </View>
-              <View style={styles.balanceActions}>
-                {Math.abs(position.broughtForward) > 0 ? (
-                  <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
-                    <AppText style={[styles.balanceChipText, { color: colors.text2 }]} numberOfLines={1}>
-                      From {formatMonth(shiftMonth(month, -1)).slice(0, 3)}{' '}
-                    </AppText>
-                    <AmountText value={position.broughtForward} tier="row" />
-                  </View>
-                ) : null}
-              {visibleReview ? <View style={[styles.reviewDot, { backgroundColor: colors.primary }]} /> : null}
-                <Feather name={balanceExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
-              </View>
+          <Card style={styles.cashCard}>
+          <View style={styles.balanceSummary}>
+            <View style={styles.balanceTitle}>
+              <AppText style={[typography.meta, styles.balanceLabel, { color: colors.text3 }]} numberOfLines={1}>
+                {position.label}{position.amount < 0 ? ' · Shortfall' : ''}
+              </AppText>
+              <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
             </View>
-          </Pressable>
-          {balanceExpanded ? (
-            <View testID="available-balance-details" style={styles.balanceDetails}>
-              <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
-              <View testID="available-balance-metrics" style={[styles.balanceMetrics, fontScale >= 1.3 ? styles.balanceMetricsWrapped : undefined]}>
-                {[
-                  { id: 'brought-forward', label: 'Brought fwd', value: position.broughtForward },
-                  { id: 'income', label: 'Income', value: position.income },
-                  { id: 'spent', label: 'Spent', value: position.spent },
-                  { id: 'invested', label: 'Invested', value: position.invested },
-                ].map((metric) => (
-                  <View key={metric.id} testID={`balance-metric-${metric.id}`} style={[
-                    styles.balanceMetric,
-                    fontScale >= 1.3 ? styles.balanceMetricWrapped : undefined,
-                  ]}>
-                    <AppText style={[styles.balanceMetricLabel, { color: colors.text3 }]} numberOfLines={1}>{metric.label}</AppText>
-                    <AmountText value={metric.value} tier="row" />
-                  </View>
-                ))}
-              </View>
-              <View testID="available-balance-caption" style={styles.balanceCaption}>
-                <View style={styles.balanceCaptionItem}>
-                  <AppText style={[styles.balanceCaptionText, { color: colors.text3 }]}>Other money in</AppText>
-                  <AmountText value={position.otherMoneyIn} tier="row" />
-                </View>
-                {pendingAmount > 0 ? (
-                  <View testID="balance-pending-caption" style={styles.balanceCaptionItem}>
-                    <AppText
-                      accessibilityLabel={`Pending this month ${formatAmount(pendingAmount, 'exact', 1)}`}
-                      style={[styles.balanceCaptionText, { color: colors.text3 }]}>
-                      Pending
-                    </AppText>
-                    <AmountText value={pendingAmount} tier="row" />
-                  </View>
-                ) : null}
-              </View>
-              {visibleReview ? (
-                <View style={styles.reviewRow}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Review ${formatMonth(visibleReview.month)}`}
-                    onPress={() => router.push({ pathname: '/month-review', params: { month: visibleReview.month } })}>
-                    <AppText weight="semibold" style={{ color: colors.primary }}>Review {formatMonth(visibleReview.month)}</AppText>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Dismiss month review reminder"
-                    onPress={() => setDismissedReview(visibleReview.month)}>
-                    <Feather name="x" size={18} color={colors.text3} />
-                  </Pressable>
+            <View style={styles.balanceActions}>
+              {Math.abs(position.broughtForward) > 0 ? (
+                <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
+                  <AppText style={[styles.balanceChipText, { color: colors.text2 }]} numberOfLines={1}>
+                    From {formatMonth(shiftMonth(month, -1)).slice(0, 3)}{' '}
+                  </AppText>
+                  <AmountText value={position.broughtForward} tier="row" />
                 </View>
               ) : null}
             </View>
-          ) : null}
+          </View>
+          <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
+              {review ? (
+                <View style={styles.reviewRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Review ${formatMonth(review.month)}`}
+                    onPress={() => router.push({ pathname: '/month-review', params: { month: review.month } })}>
+                    <AppText weight="semibold" style={{ color: colors.primary }}>Review {formatMonth(review.month)}</AppText>
+                  </Pressable>
+                </View>
+              ) : null}
           </Card>
         </View>
         {unlinkedCount > 0 ? (
@@ -320,16 +258,16 @@ export default function TransactionsScreen() {
           <Pressable
             testID="pending-items-toggle"
             accessibilityRole="button"
-            accessibilityLabel={`Pending, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
+            accessibilityLabel={`Due payments, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
             accessibilityState={{ expanded: pendingExpanded }}
             onPress={() => setPendingExpanded((expanded) => !expanded)}
             style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
-            <AppText weight="semibold">Pending ({visiblePendingItems.length})</AppText>
-            <AmountText
-              value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)}
-              tier="row"
-              weight="semibold"
-            />
+            <AppText weight="semibold">
+              {visiblePendingItems.length === 1 
+                ? '1 payment due of total ' 
+                : `${visiblePendingItems.length} payments due of total `}
+              <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
+            </AppText>
             <Feather name={pendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
           </Pressable>
           {pendingExpanded ? visiblePendingItems.length > 0 ? (
@@ -402,11 +340,8 @@ const styles = StyleSheet.create({
   pendingHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   pendingList: { paddingTop: 4, gap: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
-  cashCard: { marginHorizontal: 20, marginTop: 0, minHeight: 56, padding: 3, justifyContent: 'center', gap: 2 },
-  cashCardCollapsed: { maxHeight: 64 },
+  cashCard: { marginHorizontal: 20, marginTop: 0, minHeight: 56, padding: 12, justifyContent: 'center', gap: 8 },
   unlinkedNotice: { minHeight: 44, marginHorizontal: 20, marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
-  balanceHeading: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  balanceHeadingCollapsed: { minHeight: 56 },
   balanceSummary: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, minWidth: 0 },
   balanceLabel: { fontSize: 11 },
@@ -414,16 +349,6 @@ const styles = StyleSheet.create({
   balanceActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
   balanceChipText: { fontSize: 10 },
-  balanceDetails: { gap: 3, paddingTop: 3 },
   balanceDivider: { height: StyleSheet.hairlineWidth },
-  balanceMetrics: { flexDirection: 'row', gap: 4 },
-  balanceMetricsWrapped: { flexWrap: 'wrap' },
-  balanceMetric: { flex: 1, flexBasis: 0, minWidth: 0, gap: 2 },
-  balanceMetricWrapped: { flexBasis: '50%', maxWidth: '50%' },
-  balanceMetricLabel: { fontSize: 10 },
-  balanceCaption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  balanceCaptionItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  balanceCaptionText: { fontSize: 11 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 1 },
-  reviewDot: { width: 6, height: 6, borderRadius: 3 },
 });

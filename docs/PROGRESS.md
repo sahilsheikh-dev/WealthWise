@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 80% (39/49)
+Overall progress ████████░░ 78% (39/50)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (3/3)
+Phase 20         ████████░░ 75% (3/4)
 Phase 21         ░░░░░░░░░░ 0% (0/2)
 Phase 22         ░░░░░░░░░░ 0% (0/2)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -120,6 +120,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-A | — | Done | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
+| P20-D | — | Pending | Due-payment clearing, balance-section simplification, Home sheet positioning and Budget layout/menu changes (CR-21–CR-26). | 2026-10-16 |
 | P21-A | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
 | P21-B | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
 | P22-A | — | Pending | `1f2d9c8`; deterministic four-month linked demo data and undoable dev loader implemented; Expo Doctor remains non-green. | 2026-10-16 |
@@ -371,6 +372,37 @@ P21-B does not change the schema.
   backup/Undo path; never load it automatically. The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
+- DEC-USER-CHANGES: preserve all changes from commits `0e965d4` and `e57fd0f`
+  (both authored by Sahil Sheikh without a Copilot co-author trailer). File
+  intent: `app/(tabs)/index.tsx` reorders the Home pills (Liabilities before
+  Emergency fund), shows only EF cover in the pill, removes the spending-card
+  action buttons, and cleans imports; `app/(tabs)/transactions.tsx` removes
+  the expandable balance metrics/captions and the review-dismiss control,
+  retains the current balance, optional brought-forward chip, divider and
+  review link, and renames the section to “Due payments” with the user's total
+  wording; `app/emergency-fund.tsx` removes the linked-assets card and changes
+  allocation “Actual” to “Available amount”; `src/components/CardHeaderRow.tsx`
+  makes the value prop optional; the follow-up `e57fd0f` only refines the
+  “Due payments” count/total wording in `app/(tabs)/transactions.tsx`.
+  Transaction balance card final user-kept elements: balance label and amount
+  (including “Shortfall” and danger tone when negative), optional “From {Mon}
+  ₹X” chip, divider, and review link when available. There are no retained
+  metric columns or captions.
+- DEC-EXPO-ICON: top-level `expo.icon` and `ios.icon` both pointed to
+  `./assets/images/icon.png`; `ios.icon` was changed from `./assets/expo.icon`
+  to that duplicate path by user-authored commit `beb9711` on 2026-10-10.
+  Since both values were identical, P20-D removes only the redundant iOS
+  override; the shared top-level icon remains.
+- **Assumed:** user-owned Home changes in `0e965d4` remove the “Open budget”
+  and “Apply budget” actions from the spending card. The old route-smoke
+  assertions expecting “Apply budget” with no stored budget and its absence
+  with a stored budget are replaced with assertions that both buttons remain
+  absent in either case; reason: preserve the user's intentional removal.
+- CR-21 root cause: the old 90% `maxHeight` was attached to the ScrollView's
+  `contentContainerStyle`, so it did not constrain the scroll viewport; the
+  sheet also had only generic backdrop padding and no safe-area-aware bottom
+  inset. The height limit now belongs to the ScrollView style, and the sheet
+  is bottom-anchored with the inset applied to its container.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
@@ -536,8 +568,8 @@ expanded scope verified here. Next planned work is P20-A.
 
 ### Phase 20 — Pending items, Home and navigation
 
-Complete: P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10],
-and P20-C [CR-11].
+P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10], and P20-C
+[CR-11] are complete. P20-D (CR-21–CR-26) is in progress.
 
 ### Phase 21 — Emergency fund as a goal-linked model
 
@@ -733,6 +765,7 @@ evidence present in exports/checkpoints.
 | P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | this commit | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
+| P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | In progress; CR-21 implementation/style test passes; CR-26 Doctor 21/21 and both exports pass. | `8590a4a`, `13fbae8`; P20-D commit pending | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | this commit | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Implementation and acceptance tests pass; Pending because Expo Doctor reports the existing `ios.icon` app-config schema error. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
@@ -766,6 +799,12 @@ evidence present in exports/checkpoints.
 | CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Done | P19-C; collapsed/expanded structure, responsive 2x2 grid, labels, review and negative-balance behavior tested. |
 | CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
 | CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Pending | P21-A/B implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-21 | Anchor Home due popup to the bottom safe area, bound and scroll the sheet, and support backdrop dismissal. | Pending | P20-D. |
+| CR-22 | Keep only the user's surviving Available/Closing balance elements and remove its expansion behavior. | Pending | P20-D; DEC-USER-CHANGES records the preserved element set. |
+| CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Pending | P20-D; no per-installment payment-tracking schema change. |
+| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Pending | P20-D; supersedes CR-17. |
+| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Pending | P20-D. |
+| CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
 
 ## 8. Known issues and risks
 
@@ -807,8 +846,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **Expo patch alignment:** the first Doctor run found three SDK 57 patch mismatches (`@expo/ui` 57.0.24→57.0.25, `expo` 57.0.29→57.0.30, `expo-router` 57.0.27→57.0.28). `npx expo install --fix` applied the Expo-compatible versions and the final Doctor run passes 21/21. npm reported 67 audit advisories (17 moderate, 50 high) and two install-script allow-list notices; no `npm audit fix` was run.
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
-- **P21 Expo Doctor blocker:** `npx expo doctor` is not a command supported by the installed local Expo CLI. The supported `npx expo-doctor` completed 20/21 checks and failed app-config validation: `app.json` sets `ios.icon` to `./assets/images/icon.png`, while the checker expects a `.icon` directory. `app.json` was not changed in P21; this configuration issue is outside the requested feature scope. P21-A/B and CR-8/13/14/15/20 remain Pending until the required Doctor gate is green and the gates are rerun.
-- **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. P22-A and CR-12 remain Pending because the required Expo Doctor gate still fails as recorded for P21.
+- **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. `npx expo-doctor` now passes 21/21; Android and iOS exports also pass. The P21 closure status will be recomputed after final sequential gates.
+- **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Automated gates are being rerun for final close-out.
+- **P20-D CR-21 device acceptance not verified:** bottom placement above physical iOS/Android home indicators, backdrop hit testing, scroll gestures with system font scale 2.0, and action-sheet clipping/keyboard interaction; Jest asserts container inset, `justifyContent`, max-height and `scrollEnabled` style props only.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
@@ -1066,6 +1106,14 @@ CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
 | `npx expo export --platform ios` | iOS export passed. | 0 |
 | `npx expo doctor` | Unsupported by the installed local Expo CLI. | 1 |
 | `npx expo-doctor` | 20/21 checks passed. App config check failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`; the checker requires a `.icon` directory. The app config was not modified because this is pre-existing and outside P21 scope. | 1 |
+
+The config issue above was repaired in P20-D commit `8590a4a`. Recheck:
+`npx expo-doctor` now passes 21/21; Android and iOS exports pass. Relevant
+existing tests are `hydrates v6 into v7 and archives exact raw bytes only
+once` (`src/data/__tests__/createAppStore.test.ts`),
+`round-trips custom emergency-fund options and refuses schema version eight`
+and `round-trips a manual holding snapshot adjustment through backup export
+and import` (`src/domain/__tests__/backup.test.ts`).
 
 #### Phase 22-A gates
 

@@ -30,6 +30,7 @@ import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
+import { PendingItemActionSheet } from '../PendingItemActionSheet';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { emptyAppData } from '../../domain/actions';
@@ -42,6 +43,7 @@ import { todayISO } from '../../lib/clock';
 import { buildDemoData } from '../../mock/demoData';
 
 let mockFontScale = 1;
+let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -79,7 +81,7 @@ jest.mock('react-native-safe-area-context', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
     SafeAreaView: ({ children }: { children?: React.ReactNode }) => ReactModule.createElement('view', null, children),
-    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    useSafeAreaInsets: () => mockSafeAreaInsets,
   };
 });
 
@@ -687,7 +689,53 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('keeps Home spending collapsed, conditionally offers Apply budget, and opens due actions', () => {
+  it('anchors the Home due sheet above the safe area and keeps actions scrollable at font scale 2', () => {
+    const onClose = jest.fn();
+    const onViewSchedule = jest.fn();
+    mockFontScale = 2;
+    mockSafeAreaInsets = { top: 0, right: 0, bottom: 30, left: 0 };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(PendingItemActionSheet, {
+        item: {
+          id: 'sheet-due',
+          kind: 'due',
+          title: 'Monthly plan',
+          category: 'Mutual fund / SIP',
+          amount: 1_000,
+          dueDate: '2026-10-15',
+          status: 'overdue',
+          source: { kind: 'plan', parentId: 'sheet-plan', slotId: 'plan:1' },
+          actionable: true,
+        },
+        today: '2026-10-16',
+        onClose,
+        onViewSchedule,
+      }));
+      const container = renderer.root.findByProps({ testID: 'pending-item-action-sheet' });
+      expect(container.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flex: 1, justifyContent: 'flex-end' }),
+        expect.objectContaining({ paddingBottom: 42 }),
+      ]));
+      const sheet = renderer.root.findByProps({ testID: 'pending-item-action-sheet-content' });
+      expect(sheet.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ maxHeight: 506.4 }),
+        expect.objectContaining({ borderTopLeftRadius: 18, borderTopRightRadius: 18 }),
+      ]));
+      expect(sheet.props.scrollEnabled).toBe(true);
+      expect(renderer.root.findAll((node) =>
+        node.type === 'button' && ['Pay', 'Clear due', 'View schedule', 'Close'].includes(String(node.children[0])),
+      )).toHaveLength(4);
+      act(() => renderer.root.findByProps({ testID: 'pending-item-action-sheet-backdrop' }).props.onPress());
+      expect(onClose).toHaveBeenCalledTimes(1);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      mockFontScale = 1;
+      mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+  });
+
+  it('keeps Home spending collapsed without budget actions and opens due actions', () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
     const previousData = { ...routeData };
@@ -702,7 +750,8 @@ describe('route render smoke audit', () => {
       home = renderScreen(React.createElement(HomeScreen));
       expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
         .toEqual({ expanded: false });
-      expect(home.root.findAllByProps({ accessibilityLabel: 'Apply budget' })).toHaveLength(1);
+      expect(home.root.findAllByProps({ accessibilityLabel: 'Open budget' })).toHaveLength(0);
+      expect(home.root.findAllByProps({ accessibilityLabel: 'Apply budget' })).toHaveLength(0);
       expect(home.root.findAllByProps({ testID: 'home-spending-details' })).toHaveLength(0);
       act(() => home?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
@@ -727,6 +776,7 @@ describe('route render smoke audit', () => {
         }],
       });
       home = renderScreen(React.createElement(HomeScreen));
+      expect(home.root.findAllByProps({ accessibilityLabel: 'Open budget' })).toHaveLength(0);
       expect(home.root.findAllByProps({ accessibilityLabel: 'Apply budget' })).toHaveLength(0);
       act(() => home?.unmount());
       home = undefined;
@@ -765,7 +815,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('shows pending rows by filter and keeps the expanded balance metrics in a responsive grid', () => {
+  it('filters due payments and always shows only the user-kept balance elements', () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
     const store = useAppStore((state) => state);
@@ -800,38 +850,26 @@ describe('route render smoke audit', () => {
 
     try {
       const renderer = renderScreen(React.createElement(TransactionsScreen));
-      expect(renderer.root.findAllByProps({ testID: 'available-balance-details' })).toHaveLength(0);
-      expect(renderer.root.findByProps({ testID: 'available-balance-card' })
-        .findAll((node) => String(node.type) === 'card')[0]?.props.style).toEqual(expect.arrayContaining([
-          expect.objectContaining({ minHeight: 56 }),
-        ]));
+      const balance = renderer.root.findByProps({ testID: 'available-balance-card' });
+      const balanceCard = balance.findAll((node) => String(node.type) === 'card')[0];
+      if (!balanceCard) throw new Error('Balance Card did not render.');
+      expect(balanceCard.props.style).toMatchObject({ minHeight: 56 });
+      expect(balance.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
+      expect(balance.findAllByProps({ testID: 'available-balance-details' })).toHaveLength(0);
+      expect(balance.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('balance-metric-'),
+      )).toHaveLength(0);
+      expect(balance.findAllByProps({ testID: 'available-balance-caption' })).toHaveLength(0);
+      expect(balance.findAllByProps({ testID: 'balance-pending-caption' })).toHaveLength(0);
+      const balanceText = balance.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
+      expect(balanceText).toContain('Closing balance');
+      expect(balanceText).not.toContain('NaN');
       const pendingToggle = renderer.root.findByProps({ testID: 'pending-items-toggle' });
       expect(pendingToggle.props.accessibilityState).toEqual({ expanded: false });
       expect(renderer.root.findAllByProps({ testID: 'pending-items-list' })).toHaveLength(0);
 
-      act(() => renderer.root.findByProps({ testID: 'available-balance-toggle' }).props.onPress());
-      const metricIds = ['brought-forward', 'income', 'spent', 'invested'];
-      const metricStyles = metricIds.map((id) => renderer.root.findByProps({ testID: `balance-metric-${id}` }).props.style);
-      expect(metricStyles).toHaveLength(4);
-      for (const style of metricStyles) {
-        expect(style).toEqual(expect.arrayContaining([
-          expect.objectContaining({ flex: 1, flexBasis: 0 }),
-          expect.objectContaining({ flexBasis: '50%', maxWidth: '50%' }),
-        ]));
-      }
-      const caption = renderer.root.findByProps({ testID: 'available-balance-caption' });
-      expect(caption.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('Other money in');
-      expect(renderer.root.findByProps({ testID: 'balance-pending-caption' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: `Review ${formatMonth(month)}` })).toBeDefined();
-      const detailsStyle = renderer.root.findByProps({ testID: 'available-balance-details' }).props.style;
-      expect(detailsStyle).not.toEqual(expect.arrayContaining([
-        expect.objectContaining({ height: expect.anything() }),
-        expect.objectContaining({ maxHeight: expect.anything() }),
-      ]));
-
-      act(() => renderer.root.findByProps({ accessibilityLabel: 'Dismiss month review reminder' }).props.onPress());
-      expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
+        .toBeGreaterThan(0);
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
       act(() => renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.onPress());
       expect(renderer.root.findAll((node) =>
@@ -853,9 +891,11 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, negativeData);
       store.data = negativeData;
       const negativeRenderer = renderScreen(React.createElement(TransactionsScreen));
-      expect(negativeRenderer.root.findAllByType('text').some((node) =>
-        node.children.join('').includes('Shortfall'),
-      )).toBe(true);
+      const negativeBalance = negativeRenderer.root.findByProps({ testID: 'available-balance-card' });
+      expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Shortfall');
+      const negativeAmount = negativeBalance.findByProps({ accessibilityLabel: '-₹1,000' });
+      expect(negativeAmount.props.tone).toBe('err');
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);

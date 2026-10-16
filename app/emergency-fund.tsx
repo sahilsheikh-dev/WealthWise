@@ -6,18 +6,18 @@ import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { AppText, Button, Card, EmptyState, ProgressBar, Screen } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
+import { emergencyFundBaseline, monthsCovered } from '../src/domain/ef';
 import {
   allocateAmounts,
   efBucketMetadata,
   effectiveAllocation,
 } from '../src/domain/efAllocation';
-import { emergencyFundBaseline, monthsCovered } from '../src/domain/ef';
 import { goalSavedFor } from '../src/domain/goalLinks';
-import { ensureEfGoal, effectiveEmergencyTarget } from '../src/domain/goals';
+import { effectiveEmergencyTarget, ensureEfGoal } from '../src/domain/goals';
 import { holdingValue } from '../src/domain/portfolio';
 import type { GoalLink, Holding } from '../src/domain/types';
-import { todayISO } from '../src/lib/clock';
 import { formatAmount } from '../src/lib/amountDisplay';
+import { todayISO } from '../src/lib/clock';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -99,33 +99,8 @@ export default function EmergencyFundScreen() {
       </Card>
 
       <Card>
-        <View style={styles.summaryLine}>
-          <AppText weight="semibold">Linked assets</AppText>
-          <AppText style={[typography.meta, { color: colors.text3 }]}>{links.length} linked</AppText>
-        </View>
-        {linkedAssets.length === 0 ? (
-          <EmptyState title="No assets linked" />
-        ) : linkedAssets.map(({ holding, link }) => {
-          const value = holdingValue(holding, asOf);
-          return (
-            <View key={holding.id} style={[styles.linkedRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.assetName}>
-                <AppText weight="medium">{holding.name}</AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  {holding.type} · {link.share}% of emergency fund
-                </AppText>
-              </View>
-              <AmountText value={value * link.share / 100} tier="row" weight="semibold" />
-            </View>
-          );
-        })}
-        <Button label="Manage links" icon="link" onPress={openGoalEditor} />
-      </Card>
-
-      <Card>
         <CardHeaderRow
           title={<AppText weight="semibold">Allocation</AppText>}
-          value={<AppText style={[typography.meta, { color: colors.text3 }]}>Targets from current value</AppText>}
           editLabel="Edit emergency fund allocation"
           onEdit={() => router.push('/ef-allocation-form')}
         />
@@ -147,7 +122,7 @@ export default function EmergencyFundScreen() {
                   <AmountText value={planned} tier="row" />
                 </View>
                 <View style={styles.amountLine}>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Actual</AppText>
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>Available amount</AppText>
                   <AmountText value={actual} tier="row" weight="semibold" />
                 </View>
                 <ProgressBar percent={percent} />
