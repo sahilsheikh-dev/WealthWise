@@ -125,8 +125,6 @@ function MonthReview({ month }: { month: string }) {
       setSurplusAllocations((items) => [...items, {
         kind: 'invest', amount: values.amount, instrumentId: values.targetId,
       }]);
-    } else if (values.allocationKind === 'ef') {
-      setSurplusAllocations((items) => [...items, { kind: 'ef', amount: values.amount }]);
     } else {
       setSurplusAllocations((items) => [...items, {
         kind: 'liability', amount: values.amount, liabilityId: values.targetId,
@@ -152,14 +150,13 @@ function MonthReview({ month }: { month: string }) {
 
   const kindChoices = mode === 'shortfall'
     ? ['borrowed', 'loan-proceeds', 'withdrawal', 'own-funds']
-    : ['invest', 'ef', 'liability'];
+    : ['invest', 'liability'];
   const kindLabels: Record<string, string> = {
     borrowed: 'Borrowed',
     'loan-proceeds': 'Loan proceeds',
     withdrawal: 'Savings or investments',
     'own-funds': 'Own funds',
     invest: 'Invest',
-    ef: 'Emergency fund',
     liability: 'Repay a liability',
   };
   const targetChoices = allocationKind === 'loan-proceeds' || allocationKind === 'liability'
@@ -238,7 +235,7 @@ function MonthReview({ month }: { month: string }) {
         value={allocationKind}
         onChange={(value) => {
           if (value === 'borrowed' || value === 'loan-proceeds' || value === 'withdrawal' ||
-            value === 'own-funds' || value === 'invest' || value === 'ef' || value === 'liability') {
+            value === 'own-funds' || value === 'invest' || value === 'liability') {
             setValue('allocationKind', value, { shouldDirty: true, shouldValidate: true });
             setValue('targetId', '', { shouldDirty: true, shouldValidate: true });
           }

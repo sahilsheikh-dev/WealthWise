@@ -38,7 +38,6 @@ describe('immutable app actions', () => {
       budgetTemplates: [],
       defaultBudgetTemplateId: null,
       monthBudgets: [],
-      efEntries: [],
       efAllocation: null,
       efCustomBuckets: [],
       efBucketLinks: {},

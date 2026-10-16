@@ -1,4 +1,5 @@
 import { EF_BUCKET_META, EF_BUCKETS, effectiveAllocation, type EfAllocation, validateAllocation } from './efAllocation';
+import { linkEmergencyGoalAssets } from './goalLinks';
 import type { AppData, EfCustomBucket } from './types';
 
 export class InvalidAllocationError extends Error {
@@ -157,9 +158,13 @@ export function setEfBucketLinks(data: AppData, bucketId: string, holdingIds: st
     || data.efCustomBuckets.some(({ id }) => id === bucketId);
   if (!knownBucket) throw new InvalidEfCustomBucketError('Emergency-fund option was not found.');
   assertValidLinks(data, holdingIds);
+  const uniqueAcrossBuckets = Object.entries(data.efBucketLinks).every(([otherBucketId, existingIds]) =>
+    otherBucketId === bucketId || !holdingIds.some((holdingId) => existingIds.includes(holdingId)));
+  if (!uniqueAcrossBuckets) throw new InvalidEfCustomBucketError('An investment can only be linked once to an option.');
+  const linkedData = linkEmergencyGoalAssets(data, holdingIds);
   return {
-    ...data,
-    efBucketLinks: { ...data.efBucketLinks, [bucketId]: [...holdingIds] },
+    ...linkedData,
+    efBucketLinks: { ...linkedData.efBucketLinks, [bucketId]: [...holdingIds] },
   };
 }
 
@@ -208,8 +213,13 @@ export function saveEfPlan(
     assertValidLinks(data, holdingIds);
     links[mappedId] = [...holdingIds];
   }
+  const linkedHoldingIds = Object.values(links).flat();
+  if (new Set(linkedHoldingIds).size !== linkedHoldingIds.length) {
+    throw new InvalidEfCustomBucketError('An investment can only be linked once to an option.');
+  }
+  const linkedData = linkEmergencyGoalAssets(data, linkedHoldingIds);
   return {
-    ...data,
+    ...linkedData,
     efCustomBuckets: customBuckets,
     efAllocation: allocation,
     efBucketLinks: links,

@@ -237,7 +237,6 @@ describe('transaction add form', () => {
     ['Fixed deposit / RD', 'invest-fd', 'Fixed deposit'],
     ['Fixed deposit / RD', 'invest-rd', 'Recurring deposit'],
     ['Gold / Silver', 'invest-gold', 'Gold'],
-    ['Emergency fund', 'ef', null],
     ['Other investments', 'invest-other', 'EPFO / PF'],
   ] as const)('stores, labels and budgets invest category %s end to end', async (category, instrumentId, holdingType) => {
     if (holdingType) {
@@ -264,7 +263,6 @@ describe('transaction add form', () => {
       lines: [{ category, planned: 2_000 }],
     }];
     const base = emptyAppData('2026-10-01');
-    mockData.efEntries = base.efEntries;
     mockData.efCustomBuckets = base.efCustomBuckets;
     mockData.efBucketLinks = base.efBucketLinks;
     mockData.efAllocation = base.efAllocation;

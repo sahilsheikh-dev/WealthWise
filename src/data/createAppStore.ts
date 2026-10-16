@@ -27,7 +27,6 @@ import {
   type SurplusAllocation,
 } from '../domain/cashFlow';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
-import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import {
   addInstrumentTransaction,
   createMissingTransactions,
@@ -79,7 +78,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { mockAppData } from '../mock/data';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
+  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
 } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
@@ -142,9 +141,6 @@ export type AppActions = {
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
-  addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
-  updateEfEntry: (id: string, patch: EfEntryPatch) => void;
-  deleteEfEntry: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
   resetEfAllocation: () => void;
   addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
@@ -433,15 +429,6 @@ export function createAppStore(
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
         },
-        addEfEntry(input) {
-          applyDataAction((data) => addEfEntry(data, input, { newId: deps.newId }));
-        },
-        updateEfEntry(id, patch) {
-          applyDataAction((data) => updateEfEntry(data, id, patch));
-        },
-        deleteEfEntry(id) {
-          applyDataAction((data) => deleteEfEntry(data, id));
-        },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
         },
@@ -572,6 +559,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v3`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v4`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
@@ -630,7 +618,10 @@ export function createAppStore(
       version: SCHEMA_VERSION,
       storage: jsonStorage!,
       partialize: (state) => ({ data: state.data }),
-      migrate: migratePersisted,
+      migrate: (persisted, version) => migratePersisted(persisted, version, {
+        today: deps.today(),
+        newId: deps.newId,
+      }),
       onRehydrateStorage: () => async (state, error) => {
         const storeApi = useStore!;
         if (error) {

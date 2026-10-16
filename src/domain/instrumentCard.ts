@@ -1,4 +1,3 @@
-import { monthsCovered } from './ef';
 import { valueStaleness } from './holdingActions';
 import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from './sip';
 import { planSchedule } from './schedule';
@@ -41,39 +40,11 @@ export type InstrumentCardModel = {
 export type InstrumentCardContext = {
   asOf: ISODate;
   totalAssets: number;
-  monthlyExpenseBaseline: number;
-  emergencyEntryCount: number;
 };
 
 export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardContext): InstrumentCardModel {
   const canWithdraw = row.value >= 1;
   const sharePct = ctx.totalAssets > 0 ? Math.min(100, Math.max(0, row.value / ctx.totalAssets * 100)) : 0;
-
-  if (row.kind === 'auto-ef') {
-    const covered = monthsCovered(row.value, ctx.monthlyExpenseBaseline);
-    return {
-      kind: 'auto-ef',
-      name: row.name,
-      subtitle: [{ text: 'Emergency fund, auto-synced' }],
-      value: row.value,
-      valueCaption: 'Current value',
-      progressPct: sharePct,
-      progressCaption: `${sharePct.toFixed(1)}% of your assets`,
-      description: [{
-        text: ctx.monthlyExpenseBaseline > 0 && covered !== null
-          ? `${covered.toFixed(1)} months of expenses covered`
-          : 'Log expenses to see months covered',
-      }],
-      statuses: [],
-      headerAction: { id: 'edit', label: 'Edit' },
-      actions: [
-        { id: 'deposit', label: 'Deposit' },
-        { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
-        { id: 'entries', label: `Entries (${ctx.emergencyEntryCount})` },
-      ],
-    };
-  }
-
   const holding = row.holding;
   if (!holding) {
     throw new Error(`Portfolio row "${row.id}" is missing its holding.`);

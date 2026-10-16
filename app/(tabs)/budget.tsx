@@ -16,7 +16,6 @@ import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
 import { reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
-import { efBalance } from '../../src/domain/ef';
 import { transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
@@ -305,12 +304,6 @@ export default function BudgetScreen() {
                   </View>
                 );
               })}
-              <Pressable accessibilityRole="button" accessibilityLabel="Open Emergency fund" onPress={() => router.push('/emergency-fund')}>
-                <Card>
-                  <BudgetStat label="Emergency fund balance" value={efBalance(data.efEntries)} />
-                  <AppText style={typography.meta}>Manage your Emergency fund</AppText>
-                </Card>
-              </Pressable>
               <SectionTitle>Debt repayments</SectionTitle>
               <Card>
                 <BudgetStat label="EMIs planned" value={view.debt.emiPlanned} />

@@ -86,18 +86,21 @@ describe('goal asset links', () => {
       .toBe(70);
   });
 
-  it('computes linked saved value by share, falls back to manual saved, and preserves emergency balance', () => {
+  it('computes linked saved value by share and falls back to manual saved', () => {
     const data = setGoalLinks(baseData(), 'goal', [
       { instrumentId: 'manual', share: 50 },
       { instrumentId: 'plan', share: 25 },
     ]);
     const goal = data.goals.find((item) => item.id === 'goal');
     if (!goal) throw new Error('Goal fixture missing');
-    expect(goalSavedFor(goal, data, '2026-10-12', 90_000)).toBe(500);
-    expect(goalSavedFor({ ...goal, links: [] }, data, '2026-10-12', 90_000)).toBe(700);
+    expect(goalSavedFor(goal, data, '2026-10-12')).toBe(500);
+    expect(goalSavedFor({ ...goal, links: [] }, data, '2026-10-12')).toBe(700);
     const emergency = data.goals.find((item) => item.auto === 'ef');
     if (!emergency) throw new Error('Emergency goal fixture missing');
-    expect(goalSavedFor(emergency, data, '2026-10-12', 90_000)).toBe(90_000);
+    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(0);
+    const linkedEmergency = setGoalLinks(data, emergency.id, [{ instrumentId: 'manual', share: 50 }]);
+    const linkedGoal = linkedEmergency.goals.find((item) => item.auto === 'ef')!;
+    expect(goalSavedFor(linkedGoal, linkedEmergency, '2026-10-12')).toBe(500);
   });
 
   it('supports shared allocation across goals and rejects duplicates and over-allocation', () => {
@@ -122,17 +125,30 @@ describe('goal asset links', () => {
     expect(() => setGoalLinks(data, 'unknown', [])).toThrow(InvalidGoalLinksError);
     const emergency = data.goals.find((goal) => goal.auto === 'ef');
     if (!emergency) throw new Error('Emergency goal fixture missing');
-    expect(() => setGoalLinks(data, emergency.id, [{ instrumentId: 'manual', share: 1 }]))
-      .toThrow('cannot be linked');
     expect(setGoalLinks(data, emergency.id, [])).not.toBe(data);
+    expect(setGoalLinks(data, emergency.id, [{ instrumentId: 'plan', share: 100 }]))
+      .not.toBe(data);
     for (const share of [0, 0.05, 100.1, Number.NaN, 20.05]) {
       expect(() => setGoalLinks(data, 'second', [{ instrumentId: 'plan', share }]))
         .toThrow('Asset shares must be');
     }
     const existingGoal = data.goals.find((item) => item.id === 'goal');
     if (!existingGoal) throw new Error('Goal fixture missing');
-    expect(goalSavedFor({ ...existingGoal, links: [{ instrumentId: 'removed', share: 50 }] }, data, '2026-10-12', 0))
+    expect(goalSavedFor({ ...existingGoal, links: [{ instrumentId: 'removed', share: 50 }] }, data, '2026-10-12'))
       .toBe(0);
+  });
+
+  it('removes an emergency-goal link from its allocation bucket', () => {
+    const linked = {
+      ...baseData(),
+      efBucketLinks: { bank: ['manual'] },
+    };
+    const emergency = linked.goals.find((goal) => goal.auto === 'ef');
+    if (!emergency) throw new Error('Emergency goal fixture missing');
+    const withGoalLink = setGoalLinks(linked, emergency.id, [{ instrumentId: 'manual', share: 100 }]);
+    expect(withGoalLink.efBucketLinks).toEqual({ bank: ['manual'] });
+    const withoutGoalLink = setGoalLinks(withGoalLink, emergency.id, []);
+    expect(withoutGoalLink.efBucketLinks).toEqual({ bank: [] });
   });
 
   it('removes dangling links atomically when either holding kind is deleted', () => {

@@ -16,14 +16,13 @@ const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
     type: 'income' as const,
     amount: 5_000,
     category: 'Withdrawal',
-    note: 'Emergency fund withdrawal',
+    note: 'Cash withdrawal',
     date: '2026-10-10',
   }],
   goals: [],
   holdings: [],
   liabilities: [],
   policies: [],
-  efEntries: [],
 };
 const mockThemeId: { current: ThemeId } = { current: 'light' };
 let mockFontScale = 1;
@@ -638,7 +637,7 @@ describe('Transactions sorting', () => {
       type: 'income',
       amount: 5_000,
       category: 'Withdrawal',
-      note: 'Emergency fund withdrawal',
+      note: 'Cash withdrawal',
       date: '2026-10-10',
     }];
   });

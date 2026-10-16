@@ -11,6 +11,7 @@ import {
 } from '../efAllocationActions';
 import { emptyAppData } from '../actions';
 import { deleteHolding } from '../holdingActions';
+import { AssetOverAllocatedError, setGoalLinks } from '../goalLinks';
 import { validateIntegrity } from '../links';
 import type { EfAllocation } from '../types';
 
@@ -126,10 +127,26 @@ describe('custom emergency-fund options', () => {
       }],
       efCustomBuckets: [custom('custom-safe-box')],
     };
-    expect(setEfBucketLinks(data, 'custom-safe-box', ['holding-a']).efBucketLinks)
+    const bucketLinked = setEfBucketLinks(data, 'custom-safe-box', ['holding-a']);
+    expect(bucketLinked.efBucketLinks)
       .toEqual({ 'custom-safe-box': ['holding-a'] });
+    expect(bucketLinked.goals.find((goal) => goal.auto === 'ef')?.links)
+      .toEqual([{ instrumentId: 'holding-a', share: 100 }]);
+    expect(validateIntegrity(bucketLinked)).toEqual([]);
+    expect(setEfBucketLinks(bucketLinked, 'custom-safe-box', ['holding-a']).efBucketLinks)
+      .toEqual({ 'custom-safe-box': ['holding-a'] });
+    expect(() => setEfBucketLinks({
+      ...data,
+      efBucketLinks: { bank: ['holding-a'] },
+    }, 'custom-safe-box', ['holding-a'])).toThrow('only be linked once');
     expect(setEfBucketLinks(data, 'bank', ['holding-a']).efBucketLinks)
       .toEqual({ bank: ['holding-a'] });
+    const fullyAllocated = setGoalLinks({
+      ...data,
+      goals: [...data.goals, { id: 'other', name: 'Other', target: 100, saved: 0, year: 2028, links: [] }],
+    }, 'other', [{ instrumentId: 'holding-a', share: 100 }]);
+    expect(() => setEfBucketLinks(fullyAllocated, 'custom-safe-box', ['holding-a']))
+      .toThrow(AssetOverAllocatedError);
     expect(() => setEfBucketLinks(data, 'custom-safe-box', ['missing'])).toThrow('must exist');
     expect(() => setEfBucketLinks(data, 'custom-safe-box', ['holding-a', 'holding-a'])).toThrow('only be linked once');
     expect(() => setEfBucketLinks(data, 'custom-safe-box', Array.from({ length: 11 }, (_, index) => `h-${index}`)))
@@ -165,7 +182,8 @@ describe('custom emergency-fund options', () => {
       id: 'holding-a', kind: 'manual' as const, name: 'Savings', type: 'Savings account' as const,
       invested: 100, value: 100, logs: [],
     };
-    const data = { ...empty(), holdings: [holding], efCustomBuckets: [custom('existing')] };
+    const secondHolding = { ...holding, id: 'holding-b', name: 'Bank account' };
+    const data = { ...empty(), holdings: [holding, secondHolding], efCustomBuckets: [custom('existing')] };
     const allocation: EfAllocation = {
       cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
       stocks: 0, insurance: 0, other: 0, existing: 10,
@@ -183,12 +201,17 @@ describe('custom emergency-fund options', () => {
     const saved = saveEfPlan(data, {
       customBuckets: [custom('existing')],
       allocation,
-      links: { bank: ['holding-a'], existing: ['holding-a'] },
+      links: { bank: ['holding-a'], existing: ['holding-b'] },
     }, () => 'unused');
     expect(saved.efBucketLinks).toEqual({
       bank: ['holding-a'],
-      existing: ['holding-a'],
+      existing: ['holding-b'],
     });
+    expect(() => saveEfPlan(data, {
+      customBuckets: [custom('existing')],
+      allocation,
+      links: { bank: ['holding-a'], existing: ['holding-a'] },
+    }, () => 'unused')).toThrow('only be linked once');
   });
 
   it('cascades holding deletion through emergency-fund links', () => {
@@ -220,6 +243,7 @@ describe('custom emergency-fund options', () => {
       'missing-ef-allocation-bucket',
       'missing-ef-bucket-link-target',
       'missing-ef-linked-holding',
+      'ef-bucket-missing-goal-link',
     ]));
   });
 

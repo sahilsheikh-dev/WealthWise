@@ -154,7 +154,201 @@ export function migrateV5ToV6(data: unknown): unknown {
   };
 }
 
-export function migratePersisted(persisted: unknown, fromVersion: number): unknown {
+export type V6ToV7Options = {
+  today: string;
+  newId: () => string;
+};
+
+function migrateBudgetLines<T extends Record<string, unknown>>(
+  container: T,
+  categoryKey: 'category',
+  valueKey: 'planned',
+): T {
+  const lines = container.lines;
+  if (!Array.isArray(lines)) return container;
+  const migrated = new Map<string, Record<string, unknown>>();
+  for (const line of lines) {
+    if (!isRecord(line) || typeof line[categoryKey] !== 'string') {
+      throw new PersistedVersionError(6, 'unknown-version');
+    }
+    const category = line[categoryKey] === 'Emergency fund' ? 'Other investments' : line[categoryKey];
+    const current = migrated.get(category);
+    if (current) {
+      if (typeof current[valueKey] !== 'number' || typeof line[valueKey] !== 'number') {
+        throw new PersistedVersionError(6, 'unknown-version');
+      }
+      current[valueKey] += line[valueKey];
+    } else {
+      migrated.set(category, { ...line, [categoryKey]: category });
+    }
+  }
+  return { ...container, lines: [...migrated.values()] };
+}
+
+function migrateTemplate(template: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(template.lines)) throw new PersistedVersionError(6, 'unknown-version');
+  const lines = new Map<string, Record<string, unknown>>();
+  for (const line of template.lines) {
+    if (!isRecord(line) || typeof line.category !== 'string' || typeof line.mode !== 'string' || typeof line.value !== 'number') {
+      throw new PersistedVersionError(6, 'unknown-version');
+    }
+    const category = line.category === 'Emergency fund' ? 'Other investments' : line.category;
+    const current = lines.get(category);
+    if (!current) {
+      lines.set(category, { ...line, category });
+      continue;
+    }
+    if (current.mode === line.mode) {
+      current.value = (current.value as number) + line.value;
+      continue;
+    }
+    const income = template.plannedIncome;
+    if (typeof income !== 'number' && (current.value !== 0 || line.value !== 0)) {
+      throw new PersistedVersionError(6, 'unknown-version');
+    }
+    const currentAmount = current.mode === 'amount'
+      ? current.value as number
+      : (typeof income === 'number' ? (current.value as number) * income / 100 : 0);
+    const lineAmount = line.mode === 'amount'
+      ? line.value
+      : (typeof income === 'number' ? line.value * income / 100 : 0);
+    lines.set(category, { category, mode: 'amount', value: currentAmount + lineAmount });
+  }
+  return { ...template, lines: [...lines.values()] };
+}
+
+function migratedInvestCategory(type: unknown): string {
+  if (type === 'Mutual fund / SIP') return 'Mutual fund / SIP';
+  if (type === 'Stocks / ETF') return 'Stocks / ETF';
+  if (type === 'Fixed deposit' || type === 'Recurring deposit') return 'Fixed deposit / RD';
+  if (type === 'Gold' || type === 'Silver') return 'Gold / Silver';
+  return 'Other investments';
+}
+
+export function migrateV6ToV7(data: unknown, options: V6ToV7Options): unknown {
+  if (
+    !isRecord(data) ||
+    !Array.isArray(data.efEntries) ||
+    !Array.isArray(data.holdings) ||
+    !Array.isArray(data.goals) ||
+    !Array.isArray(data.transactions)
+  ) {
+    throw new PersistedVersionError(6, 'unknown-version');
+  }
+
+  const balance = data.efEntries.reduce((total, entry) => {
+    if (!isRecord(entry) || typeof entry.amount !== 'number' || !Number.isFinite(entry.amount)) {
+      throw new PersistedVersionError(6, 'unknown-version');
+    }
+    return total + entry.amount;
+  }, 0);
+  const holdings = [...data.holdings];
+  type MigrationGoal = Record<string, unknown> & { links: Record<string, unknown>[] };
+  let goals: MigrationGoal[] = data.goals.map((goal) => {
+    if (!isRecord(goal)) throw new PersistedVersionError(6, 'unknown-version');
+    const links = Array.isArray(goal.links) ? goal.links : [];
+    if (!links.every(isRecord)) throw new PersistedVersionError(6, 'unknown-version');
+    return { ...goal, links: links.map((link) => ({ ...link })) };
+  });
+  let emergency = goals.find((goal) => goal.auto === 'ef');
+  if (!emergency) {
+    emergency = {
+      id: 'goal-emergency-fund',
+      name: 'Emergency fund',
+      target: 0,
+      saved: 0,
+      year: Number(options.today.slice(0, 4)),
+      auto: 'ef',
+      links: [],
+    };
+    goals = [...goals, emergency];
+  }
+  if (balance > 0) {
+    const id = options.newId();
+    if (!id || holdings.some((holding) => isRecord(holding) && holding.id === id)) {
+      throw new PersistedVersionError(6, 'unknown-version');
+    }
+    holdings.push({
+      id,
+      kind: 'manual',
+      name: 'Emergency fund (migrated)',
+      type: 'Savings account',
+      invested: balance,
+      value: balance,
+      valueAsOf: options.today,
+      logs: [],
+    });
+    emergency.links = [...emergency.links, { instrumentId: id, share: 100 }];
+  }
+
+  const firstBucket = new Map<string, string>();
+  const migratedBucketLinks: Record<string, string[]> = {};
+  if (isRecord(data.efBucketLinks)) {
+    for (const [bucketId, value] of Object.entries(data.efBucketLinks)) {
+      if (!Array.isArray(value)) continue;
+      const retained = value.filter((holdingId): holdingId is string => {
+        if (typeof holdingId !== 'string' || !holdings.some((holding) => isRecord(holding) && holding.id === holdingId)) return false;
+        if (firstBucket.has(holdingId)) return false;
+        firstBucket.set(holdingId, bucketId);
+        return true;
+      });
+      migratedBucketLinks[bucketId] = retained;
+    }
+  }
+  for (const holdingId of firstBucket.keys()) {
+    const existing = emergency.links.find((link) => isRecord(link) && link.instrumentId === holdingId);
+    if (existing) continue;
+    const allocated = goals.flatMap((goal) => Array.isArray(goal.links) ? goal.links : [])
+      .filter((link) => isRecord(link) && link.instrumentId === holdingId)
+      .reduce((sum, link) => sum + (typeof link.share === 'number' ? link.share : 0), 0);
+    const free = Math.floor(Math.max(0, 100 - allocated) * 10) / 10;
+    if (free < 0.1) {
+      const bucketId = firstBucket.get(holdingId);
+      if (bucketId) migratedBucketLinks[bucketId] = migratedBucketLinks[bucketId].filter((id) => id !== holdingId);
+    } else {
+      emergency.links.push({ instrumentId: holdingId, share: free });
+    }
+  }
+
+  const transactions = data.transactions.map((transaction) => {
+    if (!isRecord(transaction)) throw new PersistedVersionError(6, 'unknown-version');
+    const { source, ...withoutSource } = transaction;
+    const next: Record<string, unknown> = source && isRecord(source) && source.kind === 'ef-entry'
+      ? withoutSource
+      : { ...transaction };
+    if (transaction.category === 'Emergency fund') {
+      let holdingType: unknown;
+      if (source && isRecord(source) && source.kind === 'holding-entry') {
+        const holding = holdings.find((item) => isRecord(item) && item.id === source.parentId);
+        holdingType = isRecord(holding) ? holding.type : undefined;
+      }
+      next.category = migratedInvestCategory(holdingType);
+    }
+    return next;
+  });
+  const result: Record<string, unknown> = { ...data, holdings, goals, transactions, efBucketLinks: migratedBucketLinks };
+  delete result.efEntries;
+  if (isRecord(result.budget)) result.budget = migrateBudgetLines(result.budget, 'category', 'planned');
+  if (Array.isArray(result.budgetTemplates)) {
+    result.budgetTemplates = result.budgetTemplates.map((template) => {
+      if (!isRecord(template)) throw new PersistedVersionError(6, 'unknown-version');
+      return migrateTemplate(template);
+    });
+  }
+  if (Array.isArray(result.monthBudgets)) {
+    result.monthBudgets = result.monthBudgets.map((budget) => {
+      if (!isRecord(budget)) throw new PersistedVersionError(6, 'unknown-version');
+      return migrateBudgetLines(budget, 'category', 'planned');
+    });
+  }
+  return result;
+}
+
+export function migratePersisted(
+  persisted: unknown,
+  fromVersion: number,
+  options?: V6ToV7Options,
+): unknown {
   if (fromVersion === SCHEMA_VERSION) return persisted;
   if (fromVersion > SCHEMA_VERSION) throw new PersistedVersionError(fromVersion, 'future-version');
   if (fromVersion < 0 || !Number.isInteger(fromVersion)) {
@@ -167,6 +361,10 @@ export function migratePersisted(persisted: unknown, fromVersion: number): unkno
     if (fromVersion <= 3) result = migrateV3ToV4(result);
     if (fromVersion <= 4) result = migrateV4ToV5(result);
     if (fromVersion <= 5) result = migrateV5ToV6(result);
+    if (fromVersion <= 6) {
+      if (!options) throw new PersistedVersionError(6, 'unknown-version');
+      result = migrateV6ToV7(result, options);
+    }
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

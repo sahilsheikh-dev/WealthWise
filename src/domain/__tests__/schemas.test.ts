@@ -1,9 +1,10 @@
 import { mockAppData } from '../../mock/data';
 import { validateImportData } from '../backup';
-import { efEndOfDayBalances } from '../efActions';
+import { BUDGET_CATEGORY_WEIGHTS, BUDGET_GROUPS } from '../budget';
 import {
   appDataSchema,
-  makeEfEntryFormSchema,
+  BUDGET_CATEGORIES,
+  INVESTMENT_FORM_CATEGORIES,
   makeGoalFormSchema,
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
@@ -28,9 +29,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version six', () => {
+  it('accepts the typed mock app data and exports schema version seven', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(6);
+    expect(SCHEMA_VERSION).toBe(7);
   });
 
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
@@ -183,12 +184,13 @@ describe('appDataSchema', () => {
         ...mockAppData.transactions[0],
         source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' },
       }],
-      efEntries: [{ id: 'withdrawal', date: '2026-10-01', amount: -10, note: 'Cash' }],
     }).success).toBe(true);
-    expect(appDataSchema.safeParse({
+    const legacyEfField = appDataSchema.safeParse({
       ...mockAppData,
-      efEntries: [{ id: 'zero', date: '2026-10-01', amount: 0, note: '' }],
-    }).success).toBe(false);
+      efEntries: [{ id: 'removed', date: '2026-10-01', amount: 1, note: '' }],
+    });
+    expect(legacyEfField.success).toBe(true);
+    if (legacyEfField.success) expect(legacyEfField.data).not.toHaveProperty('efEntries');
     expect(appDataSchema.safeParse({
       ...mockAppData,
       transactions: [{ ...mockAppData.transactions[0], id: '' }],
@@ -214,8 +216,8 @@ describe('makeTransactionFormSchema', () => {
 
   it('requires the appropriate instrument for investment and withdrawal transaction modes', () => {
     const options = {
-      instruments: [{ id: 'ef' }, { id: 'holding-1' }],
-      withdrawable: { ef: 500, 'holding-1': 1_000 },
+      instruments: [{ id: 'holding-1' }],
+      withdrawable: { 'holding-1': 1_000 },
       mode: 'create' as const,
     };
     const instrumentSchema = makeTransactionFormSchema('2026-10-10', {}, options);
@@ -230,8 +232,8 @@ describe('makeTransactionFormSchema', () => {
     expect(pendingBudgetSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
     const withdrawal = { ...validInput, type: 'income' as const, category: 'Withdrawal', amount: '500' };
     expect(instrumentSchema.safeParse(withdrawal).success).toBe(false);
-    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
-    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef', amount: '500.01' }).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(false);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'holding-1' }).success).toBe(true);
     expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'holding-1', amount: '1000.01' }).success).toBe(false);
     expect(instrumentSchema.safeParse({ ...validInput, instrumentId: 'ef' }).success).toBe(false);
 
@@ -249,7 +251,7 @@ describe('makeTransactionFormSchema', () => {
     expect(linkedSchema.safeParse(invest).success).toBe(false);
     expect(linkedSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
     expect(linkedSchema.safeParse(withdrawal).success).toBe(false);
-    expect(linkedSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
+    expect(linkedSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(false);
   });
 
   const planValues = {
@@ -447,7 +449,7 @@ describe('makeTransactionFormSchema', () => {
       if (!cleared.success) expect(cleared.error.issues.some((issue) => issue.message === 'This liability is already cleared')).toBe(true);
     });
 
-    it('validates goal, holding and emergency-fund entry forms', () => {
+    it('validates goal and holding forms', () => {
       const goalSchema = makeGoalFormSchema('2026-10-10', { otherNames: ['Vacation'], locked: false });
       const goal = { name: 'House', target: '100000', saved: '0', year: '2026' };
       expect(goalSchema.parse(goal)).toMatchObject({ name: 'House', target: 100_000, saved: 0, year: 2026 });
@@ -471,7 +473,7 @@ describe('makeTransactionFormSchema', () => {
       expect(belowMinimum.success).toBe(false);
       if (!belowMinimum.success) {
         expect(belowMinimum.error.issues.find((issue) => issue.path[0] === 'target')?.message)
-          .toBe('Emergency fund target must be at least 3 months of expenses (₹60,000)');
+          .toBe('Emergency fund target must be at least 3 months of cover (₹60,000)');
       }
       expect(minimumTargetSchema.safeParse({ ...goal, target: '60000', year: '2026' }).success).toBe(true);
 
@@ -481,47 +483,6 @@ describe('makeTransactionFormSchema', () => {
       expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
 
-      const efEntries = [
-        { id: 'funding', date: '2026-10-01', amount: 100, note: '' },
-        { id: 'later-spend', date: '2026-10-10', amount: -80, note: '' },
-      ];
-      const schemaFor = (existingId?: string) => makeEfEntryFormSchema('2026-10-10', {
-        firstNegativeDate: (candidate) => efEndOfDayBalances([
-          ...efEntries.filter((entry) => entry.id !== existingId),
-          { id: 'candidate', ...candidate, note: '' },
-        ]).find(({ balance }) => balance < 0)?.date ?? null,
-      });
-      const efSchema = schemaFor();
-      const deposit = { kind: 'Deposit', amount: '100000000', date: '2026-10-10', note: '' };
-      expect(efSchema.parse(deposit).amount).toBe(100_000_000);
-      expect(efSchema.safeParse({ ...deposit, amount: '100000000.01' }).success).toBe(false);
-      const backdated = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '30', date: '2026-10-05' });
-      expect(backdated.success).toBe(false);
-      if (!backdated.success) expect(backdated.error.issues.some((issue) => issue.message.includes('10 Oct 2026'))).toBe(true);
-      const fundingEditSchema = schemaFor('funding');
-      const loweredDeposit = fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '50', date: '2026-10-01' });
-      expect(loweredDeposit.success).toBe(false);
-      expect(fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
-      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '20', date: '2026-10-05' }).success).toBe(true);
-      const exceeded = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01' });
-      expect(exceeded.success).toBe(false);
-      if (!exceeded.success) expect(exceeded.error.issues.some((issue) => issue.message.includes('This would make the balance negative on'))).toBe(true);
-      expect(efSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
-      expect(efSchema.safeParse({ ...deposit, date: '2026-10-11' }).success).toBe(false);
-      expect(efSchema.safeParse({ ...deposit, note: 'x'.repeat(61) }).success).toBe(false);
-
-      const sameDaySchema = makeEfEntryFormSchema('2026-10-10', {
-        firstNegativeDate: (candidate) => efEndOfDayBalances([
-          { id: 'today-deposit', date: '2026-10-10', amount: 10_000, note: '' },
-          { id: 'candidate', ...candidate, note: '' },
-        ]).find(({ balance }) => balance < 0)?.date ?? null,
-      });
-      expect(sameDaySchema.safeParse({
-        kind: 'Withdrawal', amount: '5000', date: '2026-10-10', note: '',
-      }).success).toBe(true);
-      expect(sameDaySchema.safeParse({
-        kind: 'Withdrawal', amount: '10001', date: '2026-10-10', note: '',
-      }).success).toBe(false);
     });
   });
 
@@ -549,7 +510,30 @@ describe('makeTransactionFormSchema', () => {
     const category = schema.safeParse({ ...validInput, category: 'Salary' });
     expect(category.success).toBe(false);
     if (!category.success) expect(category.error.issues[0]).toMatchObject({ path: ['category'], message: 'Choose a category' });
-    expect(TRANSACTION_CATEGORIES.invest).toContain('Emergency fund');
+    expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
+  });
+
+  it('keeps the emergency fund out of investment, budget, and instrument choices', () => {
+    const budgetCategories = [
+      ...BUDGET_CATEGORIES,
+      ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
+      ...Object.values(BUDGET_CATEGORY_WEIGHTS).flatMap((weights) => Object.keys(weights)),
+    ];
+    expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
+    expect(INVESTMENT_FORM_CATEGORIES).not.toContain('Emergency fund');
+    expect(budgetCategories).not.toContain('Emergency fund');
+
+    const transactionSchema = makeTransactionFormSchema('2026-10-10', {}, {
+      instruments: [{ id: 'holding-1' }],
+      withdrawable: { 'holding-1': 1_000 },
+      mode: 'create',
+    });
+    expect(transactionSchema.safeParse({
+      ...validInput, type: 'invest', category: 'Emergency fund', instrumentId: 'holding-1',
+    }).success).toBe(false);
+    expect(transactionSchema.safeParse({
+      ...validInput, type: 'invest', category: 'Other investments', instrumentId: 'ef',
+    }).success).toBe(false);
   });
 });
 

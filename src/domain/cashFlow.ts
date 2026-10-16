@@ -1,5 +1,4 @@
 import { addInvestmentEntry } from './investmentActions';
-import { addEfEntry } from './efActions';
 import { addLiability, addLiabilityPayment, type AddLiabilityInput } from './liabilityActions';
 import { NotFoundError } from './actions';
 import { monthKey, shiftMonth } from './dates';
@@ -129,7 +128,6 @@ export type ShortfallAllocation =
 
 export type SurplusAllocation =
   | { kind: 'invest'; instrumentId: string; amount: number }
-  | { kind: 'ef'; amount: number }
   | { kind: 'liability'; liabilityId: string; amount: number };
 
 function assertAllocations(allocations: { amount: number }[], available: number): void {
@@ -223,11 +221,6 @@ export function fundShortfall(
       return appendOriginTransaction(result, liability, allocation.amount, 'Loan proceeds', newId, date);
     }
     if (allocation.kind === 'withdrawal') {
-      if (allocation.instrumentId === 'ef') {
-        return addEfEntry(result, {
-          date, amount: -allocation.amount, note: 'Withdrawal',
-        }, { newId });
-      }
       return addInvestmentEntry(result, allocation.instrumentId, {
         date, amount: allocation.amount, kind: 'Withdrawal', note: 'Withdrawal',
       }, newId, date);
@@ -260,9 +253,6 @@ export function allocateSurplus(
       return addInvestmentEntry(result, holding.id, {
         date: input.date, amount: allocation.amount, kind: 'Deposit', note: 'Deposit',
       }, newId, today);
-    }
-    if (allocation.kind === 'ef') {
-      return addEfEntry(result, { date: input.date, amount: allocation.amount, note: 'Deposit' }, { newId });
     }
     const liability = result.liabilities.find((item) => item.id === allocation.liabilityId);
     if (!liability) throw new NotFoundError('Liability', allocation.liabilityId);
@@ -333,11 +323,6 @@ export function recordMoneyMovement(
     }, { newId });
   }
   if (movement.kind === 'withdraw') {
-    if (movement.instrumentId === 'ef') {
-      return addEfEntry(data, {
-        date: movement.date, amount: -movement.amount, note: movement.note ?? 'Withdrawal',
-      }, { newId });
-    }
     return addInvestmentEntry(data, movement.instrumentId, {
       date: movement.date,
       amount: movement.amount,
