@@ -715,4 +715,46 @@ describe('bulk due handling', () => {
     if (!unchangedPlan || unchangedPlan.kind !== 'plan') throw new Error('Plan missing.');
     expect(unchangedPlan.logs).toHaveLength(1);
   });
+
+  it('previews only exact scheduled slots and reports an undated one-time liability as empty', () => {
+    const planData = withPlan();
+    expect(duesThroughPreview(planData, { kind: 'plan', id: 'plan' }, '2026-01-15', '2026-01-01'))
+      .toEqual({ count: 0, amount: 0 });
+
+    const undatedData = withLiability(oneTimeLiability({ dueDate: null }));
+    expect(duesThroughPreview(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', '2026-01-01'))
+      .toEqual({ count: 0, amount: 0 });
+    expect(() => clearDuesThrough(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', {
+      date: '2026-01-01',
+      newId: () => 'unused',
+    })).toThrow(NothingToClearError);
+  });
+
+  it('clears and undoes a policy due through the selected scheduled slot', () => {
+    const original = withPolicy();
+    const result = clearDuesThrough(original, { kind: 'policy', id: 'policy' }, '2026-01-01', {
+      date: '2026-01-01',
+      newId: (() => { let id = 0; return () => `policy-through-${++id}`; })(),
+    });
+    expect(result.data.policies[0]?.payments).toHaveLength(1);
+    expect(result.data.transactions[0]).toMatchObject({
+      type: 'expense',
+      amount: 50,
+      source: { kind: 'policy-payment', parentId: 'policy', entryId: result.entryIds[0] },
+    });
+    expect(validateIntegrity(result.data)).toEqual([]);
+    expect(undoClearDuesThrough(result.data, { kind: 'policy', id: 'policy' }, result.entryIds))
+      .toEqual(original);
+  });
+
+  it('reports missing clear-through targets without creating records', () => {
+    const data = base();
+    expect(() => duesThroughPreview(data, { kind: 'plan', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(() => duesThroughPreview(data, { kind: 'liability', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(() => duesThroughPreview(data, { kind: 'policy', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(data.transactions).toEqual([]);
+  });
 });

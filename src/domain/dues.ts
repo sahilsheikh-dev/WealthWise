@@ -224,7 +224,6 @@ export function clearDuesThrough(
   const scheduled = unpaidRows(data, target, options.date);
   if (!scheduled.some((row) => row.dueDate === dueDate)) throw new NothingToClearError();
   const rows = scheduled.filter((row) => row.dueDate <= dueDate);
-  if (rows.length === 0) throw new NothingToClearError();
   if (rows.length > 400) throw new TooManyDuesError(rows.length);
 
   let result = data;

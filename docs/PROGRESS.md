@@ -474,6 +474,12 @@ P21-B does not change the schema.
   prepends Budget entries and includes the Home entries under CR-24. Added
   safe-area hook mocks in the Home/Emergency screen suites for the CR-21 sheet
   import; no runtime behavior changed.
+- Coverage-driven CR-23 follow-up: the first full run exposed `dues.ts` below
+  its 90% per-file branch floor (85.98%). Removed the unreachable empty-range
+  guard after exact-slot validation and added coverage for invalid preview
+  dates, undated one-time liabilities, policy targets and missing targets.
+  `dues.ts` then measured 95.49% lines and 91.61% branches in the focused
+  Istanbul report; the final full-suite run remains the actual gate.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
