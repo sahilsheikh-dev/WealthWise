@@ -39,6 +39,7 @@ import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
 import { formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
+import { buildDemoData } from '../../mock/demoData';
 
 let mockFontScale = 1;
 
@@ -659,6 +660,31 @@ describe('route render smoke audit', () => {
     });
     if (!renderer) throw new Error('Route did not render.');
     assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
+  });
+
+  it('renders every registered screen with the four-month demo data', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const demoData = buildDemoData(todayISO());
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
+      for (const [, screen] of screens) {
+        renderer = renderScreen(screen);
+        expect(renderer.root.findAll((node) => String(node.type) === 'screen').length)
+          .toBeGreaterThan(0);
+        act(() => renderer?.unmount());
+        renderer = undefined;
+      }
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+    }
   });
 
   it('keeps Home spending collapsed, conditionally offers Apply budget, and opens due actions', () => {
