@@ -124,17 +124,13 @@ export default function TransactionsScreen() {
           <View style={styles.balanceSummary}>
             <View style={styles.balanceTitle}>
               <AppText style={[typography.meta, styles.balanceLabel, { color: colors.text3 }]} numberOfLines={1}>
-                {position.label}{position.amount < 0 ? ' · Shortfall' : ''}
+                {position.label}{position.amount < 0 ? ' (Shortfall From ' + formatMonth(shiftMonth(month, -1)).slice(0, 3) + ')': ''}
               </AppText>
-              <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
             </View>
             <View style={styles.balanceActions}>
               {Math.abs(position.broughtForward) > 0 ? (
                 <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
-                  <AppText style={[styles.balanceChipText, { color: colors.text2 }]} numberOfLines={1}>
-                    From {formatMonth(shiftMonth(month, -1)).slice(0, 3)}{' '}
-                  </AppText>
-                  <AmountText value={position.broughtForward} tier="row" />
+                  <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
                 </View>
               ) : null}
             </View>

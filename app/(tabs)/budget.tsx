@@ -9,6 +9,7 @@ import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, ChipRow, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { useAppMenu } from '../../src/components/useAppMenu';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
@@ -26,7 +27,6 @@ import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
-import { useAppMenu } from '../../src/components/useAppMenu';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
@@ -126,7 +126,6 @@ export default function BudgetScreen() {
               { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
               ...appMenu,
             ]}
-            menuIndicator={Boolean(reviewableMonth)}
           />
           <View
             onTouchStart={() => setTouchingHeader(true)}
