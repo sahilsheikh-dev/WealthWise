@@ -721,7 +721,7 @@ describe('bulk due handling', () => {
     expect(duesThroughPreview(planData, { kind: 'plan', id: 'plan' }, '2026-01-15', '2026-01-01'))
       .toEqual({ count: 0, amount: 0 });
 
-    const undatedData = withLiability(oneTimeLiability({ dueDate: null }));
+    const undatedData = { ...base(), liabilities: [oneTimeLiability({ dueDate: null })] };
     expect(duesThroughPreview(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', '2026-01-01'))
       .toEqual({ count: 0, amount: 0 });
     expect(() => clearDuesThrough(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', {

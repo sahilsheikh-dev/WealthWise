@@ -72,7 +72,7 @@ describe('backup validation and serialization', () => {
       exportedAt: '2026-10-16T10:00:00.000Z',
       digest,
     });
-    const imported = await parseBackup(raw, { digest, migration: migrationOptions });
+    const imported = await parseBackup(raw, { digest });
     if (!imported.ok) {
       throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
     }

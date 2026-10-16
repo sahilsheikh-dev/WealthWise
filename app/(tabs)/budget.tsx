@@ -115,15 +115,15 @@ export default function BudgetScreen() {
           <AppHeader
             title="Budget"
             menu={[
-              { icon: 'clock', label: 'Budget history', onPress: () => router.push('/budget-history') },
+              { icon: 'calendar', label: 'Budget history', onPress: () => router.push('/budget-history') },
               {
-                icon: 'check-circle',
+                icon: 'edit',
                 label: `Month review${reviewableMonth ? ', review pending' : ''}`,
                 onPress: () => router.push(reviewableMonth
                   ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
                   : '/month-review'),
               },
-              { icon: 'layers', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
+              { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
               ...appMenu,
             ]}
             menuIndicator={Boolean(reviewableMonth)}

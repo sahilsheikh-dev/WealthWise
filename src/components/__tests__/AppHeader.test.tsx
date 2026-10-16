@@ -175,9 +175,9 @@ describe('AppHeader', () => {
     const review = jest.fn();
     const templates = jest.fn();
     const budgetMenu = [
-      { icon: 'clock' as const, label: 'Budget history', onPress: history },
-      { icon: 'check-circle' as const, label: 'Month review, review pending', onPress: review },
-      { icon: 'layers' as const, label: 'Budget templates', onPress: templates },
+      { icon: 'calendar' as const, label: 'Budget history', onPress: history },
+      { icon: 'edit' as const, label: 'Month review, review pending', onPress: review },
+      { icon: 'database' as const, label: 'Budget templates', onPress: templates },
       { icon: 'download' as const, label: 'Backup and restore', onPress: mockMenuAction },
       { icon: 'lock' as const, label: 'Security', onPress: mockMenuAction },
       { icon: 'user' as const, label: 'Profile', onPress: mockMenuAction },
@@ -217,7 +217,7 @@ describe('AppHeader', () => {
     expect(review).toHaveBeenCalledTimes(1);
     expect(templates).toHaveBeenCalledTimes(1);
     expect(renderer.root.findAll((node) =>
-      String(node.type) === 'feather' && ['clock', 'check-circle', 'layers'].includes(String(node.props.name)),
+      String(node.type) === 'feather' && ['calendar', 'edit', 'database'].includes(String(node.props.name)),
     )).toHaveLength(0);
     expect(renderer.root.findAllByProps({ accessibilityLabel: 'History' })).toHaveLength(0);
     expect(renderer.root.findAllByProps({ accessibilityLabel: 'Templates' })).toHaveLength(0);
@@ -242,22 +242,23 @@ describe('AppHeader', () => {
     act(() => {
       renderer = TestRenderer.create(
         <AppHeader title="Budget" menu={[
-          { icon: 'clock', label: 'Budget history', onPress: jest.fn() },
-          { icon: 'check-circle', label: 'Month review', onPress: jest.fn() },
-          { icon: 'layers', label: 'Budget templates', onPress: jest.fn() },
+          { icon: 'calendar', label: 'Budget history', onPress: jest.fn() },
+          { icon: 'edit', label: 'Month review', onPress: jest.fn() },
+          { icon: 'database', label: 'Budget templates', onPress: jest.fn() },
           ...[
-            { icon: 'download', label: 'Backup and restore' },
-            { icon: 'lock', label: 'Security' },
-            { icon: 'user', label: 'Profile' },
-            { icon: 'sliders', label: 'Theme' },
-            { icon: 'trash-2', label: 'Erase all data' },
+            { icon: 'download' as const, label: 'Backup and restore' },
+            { icon: 'lock' as const, label: 'Security' },
+            { icon: 'user' as const, label: 'Profile' },
+            { icon: 'sliders' as const, label: 'Theme' },
+            { icon: 'trash-2' as const, label: 'Erase all data' },
           ].map((item) => ({ ...item, onPress: mockMenuAction })),
         ]} />,
       );
     });
-    if (!renderer) throw new Error('Budget header did not render.');
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
-    expect(renderer.root.findAllByProps({ accessibilityRole: 'menuitem' })
+    const currentRenderer = renderer;
+    if (!currentRenderer) throw new Error('Budget header did not render.');
+    act(() => currentRenderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+    expect(currentRenderer.root.findAllByProps({ accessibilityRole: 'menuitem' })
       .map((item) => item.props.accessibilityLabel))
       .toEqual([
         'Budget history', 'Month review', 'Budget templates',

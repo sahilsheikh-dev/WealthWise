@@ -719,21 +719,23 @@ describe('route render smoke audit', () => {
         onClose,
         onViewSchedule,
       }));
-      const container = renderer.root.findByProps({ testID: 'pending-item-action-sheet' });
+      const currentRenderer = renderer;
+      if (!currentRenderer) throw new Error('Due action sheet did not render.');
+      const container = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet' });
       expect(container.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ flex: 1, justifyContent: 'flex-end' }),
         expect.objectContaining({ paddingBottom: 42 }),
       ]));
-      const sheet = renderer.root.findByProps({ testID: 'pending-item-action-sheet-content' });
+      const sheet = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-content' });
       expect(sheet.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ maxHeight: 506.4 }),
         expect.objectContaining({ borderTopLeftRadius: 18, borderTopRightRadius: 18 }),
       ]));
       expect(sheet.props.scrollEnabled).toBe(true);
-      expect(renderer.root.findAll((node) =>
+      expect(currentRenderer.root.findAll((node) =>
         node.type === 'button' && ['Pay', 'Clear due', 'View schedule', 'Close'].includes(String(node.children[0])),
       )).toHaveLength(4);
-      act(() => renderer.root.findByProps({ testID: 'pending-item-action-sheet-backdrop' }).props.onPress());
+      act(() => currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-backdrop' }).props.onPress());
       expect(onClose).toHaveBeenCalledTimes(1);
     } finally {
       if (renderer) act(() => renderer?.unmount());
