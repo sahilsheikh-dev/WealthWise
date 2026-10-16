@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '../data/store';
 import { buildAppMenu } from '../lib/appMenu';
-import { choiceAsync } from '../lib/confirm';
+import { choiceAsync, confirmAsync } from '../lib/confirm';
 import { useTheme } from '../theme/useTheme';
 import type { HeaderMenuItem } from './HeaderMenu';
 
@@ -40,12 +40,26 @@ export function useAppMenu(): HeaderMenuItem[] {
       const destination = destinations[item.label];
       if (destination) {
         if (pathname !== destination) router.push(destination as Href);
-      } else if (item.label === 'Load demo data' && devActions) {
-        void choiceAsync({
-          title: 'Load Demo Data?',
-          message: 'Replace local app data with the bundled sample data?',
-          choices: [{ id: 'load', label: 'Load Demo Data' }],
-        }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
+      } else if (item.label === 'Load demo data (4 months)' && devActions) {
+        void confirmAsync({
+          title: 'Load demo data?',
+          message: 'Replace local app data with four months of sample data? You can undo this from Backup and restore.',
+          confirmLabel: 'Load demo data',
+          destructive: true,
+        }).then((confirmed) => {
+          if (!confirmed) return;
+          void devActions.loadDemoData().then((result) => {
+            if (result.ok) {
+              router.push('/backup');
+              return;
+            }
+            void confirmAsync({
+              title: 'Could not load demo data',
+              message: result.message,
+              confirmLabel: 'OK',
+            });
+          });
+        });
       } else if (item.label === 'Generate stress-test data' && devActions) {
         void choiceAsync({
           title: 'Generate stress-test data?',

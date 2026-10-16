@@ -75,7 +75,7 @@ import {
   type PastDuesMode,
 } from '../domain/dues';
 import { SCHEMA_VERSION } from '../domain/schemas';
-import { mockAppData } from '../mock/data';
+import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
   AppData, BudgetLine, BudgetTemplate, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
@@ -161,7 +161,7 @@ export type AppActions = {
 };
 
 export type DevActions = {
-  loadDemoData: () => void;
+  loadDemoData: () => Promise<{ ok: true } | { ok: false; message: string }>;
   loadStressData: () => void;
   simulateCorruption: () => Promise<void>;
 };
@@ -591,13 +591,7 @@ export function createAppStore(
         ...(deps.isDev ?? (typeof __DEV__ !== 'undefined' && __DEV__) ? {
           devActions: {
             loadDemoData() {
-              const expenseBaseline = monthlyBaseline(mockAppData.transactions, 'expense', deps.today());
-              set({
-                data: {
-                  ...mockAppData,
-                  goals: ensureEfGoal(mockAppData.goals, { expenseBaseline, asOf: deps.today() }),
-                },
-              });
+              return actions.replaceAllData(buildDemoData(deps.today()));
             },
             loadStressData() {
               const transactions = createStressTransactions(deps.today(), deps.newId);
