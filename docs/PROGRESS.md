@@ -122,7 +122,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P21-A | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
 | P21-B | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
-| P22-A | — | Planned | Four months of linked demo data and DEC-DEMO (CR-12). | 2026-10-15 |
+| P22-A | — | Pending | `1f2d9c8`; deterministic four-month linked demo data and undoable dev loader implemented; Expo Doctor remains non-green. | 2026-10-16 |
 | P22-B | P15-SEED | Planned | Optional spreadsheet seed importer (formerly P19-E / P15-SEED). | 2026-10-15 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
@@ -169,7 +169,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | CR-9 | Done | Investment categories remain distinct; every earned-income source appears in budget review and month review, with non-earned inflows separated. | P19-B |
 | CR-10 | Done | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
 | CR-11 | Done | Bottom tabs appear only on Home, Transactions, Goals and Budget. | P20-C |
-| CR-12 | Planned | Four months of demo data linked throughout; feature changes extend demo data and tests. | P22-A |
+| CR-12 | Pending | Four-month deterministic demo builder, linked records, validation and route smoke tests are implemented; P22-A remains open until Expo Doctor is green. | P22-A |
 | CR-13 | Pending | Implementation complete; v6→v7 migration and linked-asset conversion preserve net worth; P21-A awaits green Doctor gate. | P21-A |
 | CR-14 | Pending | Implementation complete; expense/salary fallback and truncated one-decimal cover tested; P21-B awaits green Doctor gate. | P21-B |
 | CR-15 | Pending | Implementation complete; compact editor and linked-assets table tested; P21-B awaits green Doctor gate. | P21-B |
@@ -181,7 +181,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 
 ### Resume point
 
-P19-A/B/C and P20-A/B/C passed their gates and are complete. P21-A/B implementation is present, but the parts remain Pending because Expo Doctor reports an app.json schema error; do not resume at P22-A until it is resolved and the gates rerun. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Superseded by CR-20:** remove Emergency fund as a category and combine its former 35% with Other investments for 40%. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema stayed v6 through P20 and changed from v6 to v7 in P21-A.
+P19-A/B/C and P20-A/B/C passed their gates and are complete. P21-A/B implementation is present, but the parts remain Pending because Expo Doctor reports an app.json schema error. P22-A implementation and feature tests are present, but P22-A and CR-12 remain Pending until the required Expo Doctor gate is green. Resume with that config gate, rerun the gates, then close P21 and P22-A; P22-B remains Planned. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Superseded by CR-20:** remove Emergency fund as a category and combine its former 35% with Other investments for 40%. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema stayed v6 through P20 and changed from v6 to v7 in P21-A.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -360,8 +360,17 @@ P21-B does not change the schema.
 - Theme IDs are `system`, `light`, `dark`, `sky`, `mint`, `blush`, and
   `midnight`. Tabs are Home, Transactions, Goals, Budget.
 - DEC-DEMO: every part that adds or changes a feature also extends demo data
-  and adds tests. Until Phase 22's four-month dataset, extend current mock data
-  minimally; do not change unrelated existing test expectations.
+  and adds tests. P22-A adds `buildDemoData(today)` in `src/mock/demoData.ts`:
+  deterministic IDs and amounts, explicit injected date, and four complete
+  months ending with the current month. Keep `src/mock/data.ts` and its
+  established fixtures stable. The data covers all current budget/investment
+  categories, linked instrument/payment transactions, dues, a Month-review
+  shortfall and surplus allocation, goals, linked emergency assets, allocation,
+  policies and stored month budgets. Load it only from the confirmed
+  development-menu action through `replaceAllData`, preserving its existing
+  backup/Undo path; never load it automatically. The strict backup/import entry
+  schema accepts `snapshotAdjustment`, matching the app schema so valid
+  manual-holding entries can be replaced and restored without losing metadata.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
@@ -542,8 +551,9 @@ below.
 
 ### Phase 22 — Demo data and seed importer
 
-Planned: P22-A (four months of linked demo data; CR-12) and P22-B (optional
-spreadsheet importer, formerly P19-E / P15-SEED).
+P22-A (CR-12) has implementation and feature tests; it remains Pending until
+Expo Doctor is green. P22-B (optional spreadsheet importer, formerly P19-E /
+P15-SEED) remains Planned.
 
 ### Phase 23 — Insurance
 
@@ -725,7 +735,7 @@ evidence present in exports/checkpoints.
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | this commit | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | this commit | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
-| P22-A | Phase 22 | — | — | planned | Four months of demo data linked throughout and DEC-DEMO (CR-12). | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Implementation and acceptance tests pass; Pending because Expo Doctor reports the existing `ios.icon` app-config schema error. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
@@ -747,7 +757,7 @@ evidence present in exports/checkpoints.
 | CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Done | P19-B; category/source reconciliation tests pass. |
 | CR-10 | Home spending by category is collapsed, with Apply budget. | Done | P20-B. |
 | CR-11 | Bottom tabs appear only on Home, Transactions, Goals and Budget. | Done | P20-C; DEC-TABS. |
-| CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Planned | P22-A; DEC-DEMO. |
+| CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Pending | `buildDemoData`, integrity/budget/pending/net-worth/storage tests, loader Undo test and every-route smoke test pass; Expo Doctor gate remains non-green. |
 | CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Pending | P21-A implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-14 | Emergency-fund months of cover use salary fallback. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
@@ -798,6 +808,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
 - **P21 Expo Doctor blocker:** `npx expo doctor` is not a command supported by the installed local Expo CLI. The supported `npx expo-doctor` completed 20/21 checks and failed app-config validation: `app.json` sets `ios.icon` to `./assets/images/icon.png`, while the checker expects a `.icon` directory. `app.json` was not changed in P21; this configuration issue is outside the requested feature scope. P21-A/B and CR-8/13/14/15/20 remain Pending until the required Doctor gate is green and the gates are rerun.
+- **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. P22-A and CR-12 remain Pending because the required Expo Doctor gate still fails as recorded for P21.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
@@ -949,8 +960,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    delivered, Expo Doctor gate unresolved): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
    allocation editing and linked-asset table (CR-14, CR-15).
-4. **Phase 22 — Demo data and seed importer** (Planned): P22-A four months of
-   linked demo data (CR-12); P22-B optional spreadsheet importer [P15-SEED].
+4. **Phase 22 — Demo data and seed importer** (Pending; P22-A awaits green
+   Expo Doctor): P22-A four months of linked demo data (CR-12); P22-B optional
+   spreadsheet importer [P15-SEED].
 5. **Phase 23 — Insurance** (Planned) [P15-F].
 6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
@@ -1055,7 +1067,24 @@ CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
 | `npx expo doctor` | Unsupported by the installed local Expo CLI. | 1 |
 | `npx expo-doctor` | 20/21 checks passed. App config check failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`; the checker requires a `.icon` directory. The app config was not modified because this is pre-existing and outside P21 scope. | 1 |
 
-| P22-A four-month linked demo | Planned | Existing mock dataset not extended to four linked months | Demo consistency tests pending |
+#### Phase 22-A gates
+
+P22-A implementation and acceptance tests are green, but the part is Pending
+because the required Expo Doctor gate is not green. No schema change was made;
+`SCHEMA_VERSION` remains 7.
+
+| Gate | Result | Exit |
+|---|---|---:|
+| Focused demo/store/menu/backup tests | 4 suites / 72 tests passed; generated-demo route smoke adds 2 suites / 105 tests across the focused route and demo run. | 0 |
+| `npm test -- --coverage --runInBand` | 70 suites / 733 tests passed. Domain: 98.37% lines, 93.73% branches; data excluding hooks: 93.36% lines, 87.72% branches; pure lib: 100% lines and branches. | 0 |
+| `npx tsc --noEmit` | Typecheck passed. | 0 |
+| `npx expo lint` | Lint passed with no warnings after cleanup. | 0 |
+| `npx expo export --platform android` | Android export passed. | 0 |
+| `npx expo export --platform ios` | iOS export passed. | 0 |
+| `npx expo doctor` | Unsupported by the installed local Expo CLI; it instructed use of `npx expo-doctor`. | 1 |
+| `npx expo-doctor` | 20/21 checks passed. Expo config validation failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`, which is not the `.icon` directory required by the checker. This pre-existing config was not changed as part of P22-A. | 1 |
+
+| P22-A four-month linked demo | Pending | `src/mock/demoData.ts`, development-menu loader, and strict import preservation of `snapshotAdjustment` | `src/mock/__tests__/demoData.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/appMenu.test.ts`; all acceptance tests pass, but required Expo Doctor gate is non-green |
 | P22-B spreadsheet importer [P15-SEED] | Planned | No importer implementation | Importer tests pending |
 | P23-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |
 | P16-C goal links | Done | `src/domain/goalLinks.ts`, `src/domain/goals.ts`, `app/goal-form.tsx` | `src/domain/__tests__/goalLinks.test.ts`, store and route smoke suites |
