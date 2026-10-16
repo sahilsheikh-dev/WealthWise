@@ -3,6 +3,8 @@ import type { StateStorage } from 'zustand/middleware';
 import { createBackup, parseBackup } from '../../domain/backup';
 import { validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
+import { monthPositionAt } from '../../domain/cashFlow';
+import { budgetMonthView } from '../../domain/budget';
 import { netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
@@ -101,11 +103,43 @@ describe('createAppStore persistence', () => {
       ]));
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     writes = storage.setItemCalls;
+    store.getState().actions.applyTemplateToMonth({ month: '2026-10', templateId: 'budget-1' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const plannedRow = pendingItems(store.getState().data, '2026-10', '2026-10-10')
+      .find((item) => item.kind === 'budget' && item.category === 'Food');
+    if (!plannedRow) throw new Error('Expected a planned Food row.');
+    const closingBeforeClear = monthPositionAt(store.getState().data.transactions, '2026-10').closing;
+    writes = storage.setItemCalls;
+    store.getState().actions.addTransaction({
+      type: 'expense',
+      amount: plannedRow.amount,
+      category: plannedRow.category,
+      note: '',
+      date: '2026-10-10',
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(budgetMonthView(store.getState().data, '2026-10').lines
+      .find((line) => line.category === 'Food')?.actual).toBe(plannedRow.amount);
+    expect(pendingItems(store.getState().data, '2026-10', '2026-10-10')
+      .some((item) => item.kind === 'budget' && item.category === 'Food')).toBe(false);
+    expect(monthPositionAt(store.getState().data.transactions, '2026-10').closing)
+      .toBe(closingBeforeClear - plannedRow.amount);
+    const transaction = store.getState().data.transactions.at(-1);
+    if (!transaction) throw new Error('Planned item transaction was not created.');
+    writes = storage.setItemCalls;
+    store.getState().actions.deleteTransaction(transaction.id);
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(pendingItems(store.getState().data, '2026-10', '2026-10-10')
+      .some((item) => item.kind === 'budget' && item.category === 'Food')).toBe(true);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    writes = storage.setItemCalls;
     store.getState().actions.createBudgetTemplateAndApply({
       name: 'Atomic', plannedIncome: 10_000, lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
     }, '2026-04');
     expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.monthBudgets).toHaveLength(2);
+    expect(store.getState().data.monthBudgets).toHaveLength(3);
+    expect(store.getState().data.monthBudgets?.map((budget) => budget.month))
+      .toEqual(expect.arrayContaining(['2026-03', '2026-04', '2026-10']));
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
@@ -446,6 +480,147 @@ describe('createAppStore persistence', () => {
       valueAsOf: null,
       maturityDate: null,
     }, 'settle'));
+  });
+
+  it('clears multiple plan dues and fully undoes them with one persisted write per action', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `through-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addPlan({
+      name: 'Four month plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-08-10',
+      trackFrom: '2026-08-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    });
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan || plan.kind !== 'plan') throw new Error('Test plan was not created.');
+    const original = store.getState().data;
+    const closingBefore = monthPositionAt(original.transactions, '2026-10').closing;
+
+    const clearWrites = storage.setItemCalls;
+    const entryIds = actions.clearDuesThrough({ kind: 'plan', id: plan.id }, '2026-10-10');
+    expect(storage.setItemCalls - clearWrites).toBe(1);
+    expect(entryIds).toHaveLength(3);
+    expect(store.getState().lastError).toBeNull();
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    const cleared = store.getState().data;
+    const updatedPlan = cleared.holdings.find((holding) => holding.id === plan.id);
+    if (!updatedPlan || updatedPlan.kind !== 'plan') throw new Error('Plan missing after clearing.');
+    expect(updatedPlan.logs).toHaveLength(3);
+    expect(pendingItems(cleared, '2026-10', '2026-10-10')
+      .some((item) => item.source.kind === 'plan' && item.source.parentId === plan.id)).toBe(false);
+    expect(cleared.transactions.filter((transaction) => transaction.date.slice(0, 7) === '2026-10'))
+      .toHaveLength(3);
+    expect(monthPositionAt(cleared.transactions, '2026-10').closing).toBe(closingBefore - 300);
+
+    const undoWrites = storage.setItemCalls;
+    actions.undoClearDuesThrough({ kind: 'plan', id: plan.id }, entryIds ?? []);
+    expect(storage.setItemCalls - undoWrites).toBe(1);
+    expect(store.getState().lastError).toBeNull();
+    expect(store.getState().data).toEqual(original);
+  });
+
+  it('clears recurring liability installments and undoes linked payments in one write each', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `liability-through-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const addWrites = storage.setItemCalls;
+    actions.addLiability({
+      kind: 'recurring',
+      name: 'Monthly repayment',
+      type: 'Personal loan',
+      principal: 1_200,
+      ratePct: 0,
+      startDate: '2026-08-10',
+      tenureMonths: 12,
+      emi: 100,
+    });
+    expect(storage.setItemCalls - addWrites).toBe(1);
+    const liability = store.getState().data.liabilities.find((item) => item.kind === 'recurring');
+    if (!liability || liability.kind !== 'recurring') throw new Error('Test liability was not created.');
+    const original = store.getState().data;
+
+    const clearWrites = storage.setItemCalls;
+    const entryIds = actions.clearDuesThrough({ kind: 'liability', id: liability.id }, '2026-10-10');
+    expect(storage.setItemCalls - clearWrites).toBe(1);
+    expect(entryIds).toHaveLength(2);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    const cleared = store.getState().data;
+    expect(cleared.transactions.filter((transaction) =>
+      transaction.source?.kind === 'liability-payment' && transaction.source.parentId === liability.id,
+    )).toHaveLength(2);
+    expect(pendingItems(cleared, '2026-10', '2026-10-10')
+      .some((item) => item.source.kind === 'liability' && item.source.parentId === liability.id)).toBe(false);
+    const clearedLiability = cleared.liabilities.find((item) => item.id === liability.id);
+    if (!clearedLiability) throw new Error('Liability missing after clearing.');
+    expect(loanState(clearedLiability, '2026-10-10').balance)
+      .toBeLessThan(loanState(liability, '2026-10-10').balance);
+
+    const undoWrites = storage.setItemCalls;
+    actions.undoClearDuesThrough({ kind: 'liability', id: liability.id }, entryIds ?? []);
+    expect(storage.setItemCalls - undoWrites).toBe(1);
+    expect(store.getState().data).toEqual(original);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('clears and undoes a one-time liability due with exactly one persisted write per action', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `one-time-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    let writes = storage.setItemCalls;
+    actions.addLiability({
+      kind: 'one-time',
+      name: 'Friend loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-10-10',
+      dueDate: '2026-10-10',
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const liability = store.getState().data.liabilities.find((item) => item.kind === 'one-time');
+    if (!liability || liability.kind !== 'one-time') throw new Error('Test one-time liability was not created.');
+    const original = store.getState().data;
+
+    writes = storage.setItemCalls;
+    const entryId = actions.clearDue({ kind: 'liability', id: liability.id });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(entryId).toBeDefined();
+    const cleared = store.getState().data;
+    const paid = cleared.liabilities.find((item) => item.id === liability.id);
+    if (!paid || paid.kind !== 'one-time') throw new Error('One-time liability missing after clearing.');
+    expect(paid.payments).toHaveLength(1);
+    expect(loanState(paid, '2026-10-10').balance).toBe(0);
+    expect(cleared.transactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'expense',
+        amount: 1_000,
+        date: '2026-10-10',
+        source: { kind: 'liability-payment', parentId: liability.id, entryId },
+      }),
+    ]));
+    expect(pendingItems(cleared, '2026-10', '2026-10-10')
+      .some((item) => item.source.kind === 'liability' && item.source.parentId === liability.id)).toBe(false);
+    expect(validateIntegrity(cleared)).toEqual([]);
+
+    writes = storage.setItemCalls;
+    actions.undoClearDue({ kind: 'liability', id: liability.id }, entryId ?? '');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(original);
   });
 
   it.each(['manual', 'plan'] as const)('links and guards a withdrawal from a %s instrument', async (kind) => {

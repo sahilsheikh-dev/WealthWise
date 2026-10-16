@@ -425,6 +425,17 @@ P21-B does not change the schema.
   `always shows only the user-kept balance elements and keeps the review
   action`; the old `shows Pending only when recurring items have unpaid dues`
   assertion is now that no recurring-due caption appears in the balance card.
+- DEC-P20D-CR23: `clearDuesThrough` preflights the selected scheduled slot and
+  unpaid slots through it, refuses empty/stale selections and ranges over 400,
+  then applies all oldest-first payments as one pure result. The store commits
+  that result with one persisted write; batch Undo restores all entries and
+  linked transactions with one write. Later plan/liability rows show only
+  Clear due and require confirmation; budget rows record a plain transaction.
+  FIFO matching pays installments oldest-first, so clearing a later slot alone
+  would require per-payment installment tracking, a stored-data change outside
+  this task. Tests cover one/three/future/mixed/401 dues, plan and liability
+  payments, one-time settlement, linked transaction integrity, budget actuals,
+  and one-write/deep-equal Undo behavior.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /

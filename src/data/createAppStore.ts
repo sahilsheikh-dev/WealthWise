@@ -68,8 +68,10 @@ import {
   addPlanWithHistory,
   addPolicyWithHistory,
   clearDue,
+  clearDuesThrough,
   clearPastDues,
   undoClearDue,
+  undoClearDuesThrough,
   type AddPolicyInput,
   type DueTarget,
   type PastDuesMode,
@@ -105,12 +107,14 @@ export type AppActions = {
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
   clearDue: (target: DueTarget, rowId?: string) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
     addSkippedToOpening?: boolean;
   }) => { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
   undoClearDue: (target: DueTarget, entryId: string) => void;
+  undoClearDuesThrough: (target: DueTarget, entryIds: string[]) => void;
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
@@ -305,6 +309,18 @@ export function createAppStore(
           });
           return entryId;
         },
+        clearDuesThrough(target, dueDate) {
+          let entryIds: string[] | undefined;
+          applyDataAction((data) => {
+            const result = clearDuesThrough(data, target, dueDate, {
+              date: deps.today(),
+              newId: deps.newId,
+            });
+            entryIds = result.entryIds;
+            return result.data;
+          });
+          return entryIds;
+        },
         clearPastDues(target, options) {
           let summary: { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
           applyDataAction((data) => {
@@ -316,6 +332,9 @@ export function createAppStore(
         },
         undoClearDue(target, entryId) {
           applyDataAction((data) => undoClearDue(data, target, entryId));
+        },
+        undoClearDuesThrough(target, entryIds) {
+          applyDataAction((data) => undoClearDuesThrough(data, target, entryIds));
         },
         addPlanWithHistory(input, mode, addSkippedToOpening = true) {
           applyDataAction((data) => addPlanWithHistory(data, input, {
