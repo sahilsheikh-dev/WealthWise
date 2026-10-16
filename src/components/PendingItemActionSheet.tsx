@@ -1,4 +1,5 @@
-import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmountText } from './AmountText';
 import { AppText, Button, StatusBadge } from './ui';
@@ -27,6 +28,8 @@ export function PendingItemActionSheet({
   onViewSchedule: (item: PendingItem) => void;
 }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   return (
     <Modal
       visible={item !== null}
@@ -34,8 +37,29 @@ export function PendingItemActionSheet({
       animationType="slide"
       onRequestClose={onClose}>
       {item ? (
-        <View testID="pending-item-action-sheet" style={styles.backdrop}>
-          <ScrollView contentContainerStyle={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          testID="pending-item-action-sheet"
+          style={[styles.backdrop, { paddingBottom: insets.bottom + 12 }]}>
+          <Pressable
+            testID="pending-item-action-sheet-backdrop"
+            accessibilityRole="button"
+            accessibilityLabel="Close due details"
+            onPress={onClose}
+            style={[StyleSheet.absoluteFill, { backgroundColor: `${colors.text1}80` }]}
+          />
+          <ScrollView
+            testID="pending-item-action-sheet-content"
+            style={[
+              styles.sheet,
+              {
+                maxHeight: height * 0.6,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+            contentContainerStyle={styles.sheetContent}
+            scrollEnabled
+            showsVerticalScrollIndicator={false}>
             <AppText weight="bold" style={typography.h1}>{item.title}</AppText>
             <View style={styles.summary}>
               <AmountText value={item.amount} tier="tile" weight="bold" />
@@ -62,7 +86,13 @@ export function PendingItemActionSheet({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', padding: 16, backgroundColor: '#0008' },
-  sheet: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, padding: 18, gap: 12, maxHeight: '90%' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', paddingTop: 16, paddingHorizontal: 16 },
+  sheet: {
+    width: '100%',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  sheetContent: { padding: 18, gap: 12 },
   summary: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
 });
