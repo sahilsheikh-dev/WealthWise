@@ -365,9 +365,10 @@ P21-B does not change the schema.
   deterministic IDs and amounts, explicit injected date, and four complete
   months ending with the current month. Keep `src/mock/data.ts` and its
   established fixtures stable. The data covers all current budget/investment
-  categories, linked instrument/payment transactions, dues, a Month-review
-  shortfall and surplus allocation, goals, linked emergency assets, allocation,
-  policies and stored month budgets. Load it only from the confirmed
+  categories, linked instrument/payment transactions, an overdue SIP, upcoming
+  EMI, future-month due, later installment and planned-budget rows, a
+  Month-review shortfall and surplus allocation, goals, linked emergency
+  assets, allocation, policies and stored month budgets. Load it only from the confirmed
   development-menu action through `replaceAllData`, preserving its existing
   backup/Undo path; never load it automatically. The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
@@ -446,6 +447,16 @@ P21-B does not change the schema.
   it now renders at most two right-side actions, which leaves all current
   non-Budget headers unchanged. **Assumed:** standard app-menu items remain
   below the three Budget-specific menu items.
+- DEC-P20D-CR25: Bills and dues uses one section heading with count/total and
+  one shared Card of `PendingItemRow` rows, divided by hairlines and paired
+  with the same action component used in Home and Transactions. At font scale
+  1.3 and above, the row details stack title/date above amount/status. The
+  no-budget state is one Card with the requested helper text, full-width
+  primary Apply template action and secondary Set up budget wizard link.
+  Layout tests assert the single-card structure, divider/alignment/stacking,
+  actions, destinations and empty states. The four-month demo tests additionally
+  verify an overdue SIP, upcoming EMI, future-month liability due, a later
+  non-oldest installment and applied planned-budget rows.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
@@ -893,6 +904,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. `npx expo-doctor` now passes 21/21; Android and iOS exports also pass. The P21 closure status will be recomputed after final sequential gates.
 - **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Automated gates are being rerun for final close-out.
 - **P20-D CR-21 device acceptance not verified:** bottom placement above physical iOS/Android home indicators, backdrop hit testing, scroll gestures with system font scale 2.0, and action-sheet clipping/keyboard interaction; Jest asserts container inset, `justifyContent`, max-height and `scrollEnabled` style props only.
+- **P20-D CR-22–CR-25 device acceptance not verified:** actual rendered balance/card wrapping and Shortfall contrast; native confirmation, FIFO payment, 5-second Undo timing and persistence; menu hit targets/dot visibility/navigation; divider visibility, row wrapping and no-budget card fit at system font scale 1.3/2.0; VoiceOver/TalkBack announcements and actions; and Home/Transactions/Budget due-list consistency on physical iOS/Android. Tests assert component structure, props/styles, action callbacks and store persistence, but are simulated.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
