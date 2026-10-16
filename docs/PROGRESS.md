@@ -371,6 +371,27 @@ P21-B does not change the schema.
   backup/Undo path; never load it automatically. The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
+- DEC-USER-CHANGES: preserve all changes from commits `0e965d4` and `e57fd0f`
+  (both authored by Sahil Sheikh without a Copilot co-author trailer). File
+  intent: `app/(tabs)/index.tsx` reorders the Home pills (Liabilities before
+  Emergency fund), shows only EF cover in the pill, removes the spending-card
+  action buttons, and cleans imports; `app/(tabs)/transactions.tsx` removes
+  the expandable balance metrics/captions and the review-dismiss control,
+  retains the current balance, optional brought-forward chip, divider and
+  review link, and renames the section to “Due payments” with the user's total
+  wording; `app/emergency-fund.tsx` removes the linked-assets card and changes
+  allocation “Actual” to “Available amount”; `src/components/CardHeaderRow.tsx`
+  makes the value prop optional; the follow-up `e57fd0f` only refines the
+  “Due payments” count/total wording in `app/(tabs)/transactions.tsx`.
+  Transaction balance card final user-kept elements: balance label and amount
+  (including “Shortfall” and danger tone when negative), optional “From {Mon}
+  ₹X” chip, divider, and review link when available. There are no retained
+  metric columns or captions.
+- DEC-EXPO-ICON: top-level `expo.icon` and `ios.icon` both pointed to
+  `./assets/images/icon.png`; `ios.icon` was changed from `./assets/expo.icon`
+  to that duplicate path by user-authored commit `beb9711` on 2026-10-10.
+  Since both values were identical, P20-D removes only the redundant iOS
+  override; the shared top-level icon remains.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
