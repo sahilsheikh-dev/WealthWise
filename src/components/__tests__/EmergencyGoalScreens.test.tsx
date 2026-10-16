@@ -15,6 +15,9 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
 }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({
   useAppData: () => mockData.current,
@@ -68,6 +71,7 @@ jest.mock('react-native', () => {
     Alert: { alert: jest.fn() },
     Modal: node('modal'),
     Pressable: node('pressable'),
+    Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),
     View: node('view'),
@@ -156,7 +160,7 @@ describe('three-month emergency target screens', () => {
     const pills = home.root.findAll((node) =>
       ['Assets', 'Emergency fund', 'Liabilities'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])
-      .toEqual(['Assets', 'Emergency fund', 'Liabilities']);
+      .toEqual(['Assets', 'Liabilities', 'Emergency fund']);
     expect(pills.some((pill) => pill.props.accessibilityLabel === 'Assets, ₹2,00,000')).toBe(true);
     expect(pills.some((pill) =>
       pill.props.accessibilityLabel === 'Emergency fund, ₹2,00,000, 2.6 months of cover')).toBe(true);
@@ -251,7 +255,8 @@ describe('three-month emergency target screens', () => {
     const text = renderedText(renderer.root);
     expect(text).toContain('Home reserve');
     expect(text).toContain('Savings account');
-    expect(renderer.root.findByProps({ label: 'Manage links' })).toBeDefined();
+    expect(renderer.root.findAllByProps({ label: 'Manage links' })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ label: 'Link assets' })).toHaveLength(0);
     expect(text).not.toContain('Deposit');
     expect(text).not.toContain('Withdraw');
     expect(text).not.toContain('Passbook');

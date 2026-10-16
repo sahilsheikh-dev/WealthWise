@@ -457,6 +457,23 @@ P21-B does not change the schema.
   actions, destinations and empty states. The four-month demo tests additionally
   verify an overdue SIP, upcoming EMI, future-month liability due, a later
   non-oldest installment and applied planned-budget rows.
+- Gate-repair assertion audit: updated stale pre-existing tests to match the
+  preserved user UI rather than restoring removed controls. In
+  `HomeThemeSmoke.test.tsx`, the old “opens the Budget tab from the Home budget
+  card”/`Open budget` expectation is replaced by asserting both “Open budget”
+  and “Apply budget” are absent; reason: those Home spending-card actions were
+  deliberately removed in `0e965d4`. Its old “Spending by category” section
+  heading expectation is replaced with the rendered “Hide spending by
+  category” control after expansion; category and amount assertions remain.
+  In `EmergencyGoalScreens.test.tsx`, the old pill order
+  Assets/Emergency fund/Liabilities becomes Assets/Liabilities/Emergency fund,
+  matching `0e965d4`; the old “Manage links” presence check becomes absence
+  because the linked-assets card was intentionally removed, while the empty
+  allocation state still verifies “Link assets.” In `AppHeaderUsage.test.ts`,
+  Budget is removed from the global-menu opt-out list; its explicit menu
+  prepends Budget entries and includes the Home entries under CR-24. Added
+  safe-area hook mocks in the Home/Emergency screen suites for the CR-21 sheet
+  import; no runtime behavior changed.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
