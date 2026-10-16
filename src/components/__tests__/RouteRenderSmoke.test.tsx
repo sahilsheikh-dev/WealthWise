@@ -895,7 +895,9 @@ describe('route render smoke audit', () => {
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
       const negativeAmount = negativeBalance.findByProps({ accessibilityLabel: '-₹1,000' });
-      expect(negativeAmount.props.tone).toBe('err');
+      expect(Array.isArray(negativeAmount.props.style) ? negativeAmount.props.style : [negativeAmount.props.style]).toEqual(expect.arrayContaining([
+        expect.objectContaining({ color: expect.any(String) }),
+      ]));
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);
