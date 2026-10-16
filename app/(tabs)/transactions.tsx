@@ -128,72 +128,25 @@ export default function TransactionsScreen() {
         />
         <View testID="available-balance-card">
           <Card style={[styles.cashCard, !balanceExpanded ? styles.cashCardCollapsed : undefined]}>
-          <Pressable
-            testID="available-balance-toggle"
-            accessibilityRole="button"
-            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
-              Math.abs(position.broughtForward) > 0
-                ? `, From ${formatMonth(shiftMonth(month, -1)).slice(0, 3)} ${formatAmount(position.broughtForward, 'exact', 1)}`
-                : ''
-            }`}
-            onPress={() => setBalanceExpanded((expanded) => !expanded)}
-            style={[styles.balanceHeading, !balanceExpanded ? styles.balanceHeadingCollapsed : undefined]}>
-            <View style={styles.balanceSummary}>
-              <View style={styles.balanceTitle}>
-                <AppText style={[typography.meta, styles.balanceLabel, { color: colors.text3 }]} numberOfLines={1}>
-                  {position.label}{position.amount < 0 ? ' · Shortfall' : ''}
-                </AppText>
-                <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
-              </View>
-              <View style={styles.balanceActions}>
-                {Math.abs(position.broughtForward) > 0 ? (
-                  <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
-                    <AppText style={[styles.balanceChipText, { color: colors.text2 }]} numberOfLines={1}>
-                      From {formatMonth(shiftMonth(month, -1)).slice(0, 3)}{' '}
-                    </AppText>
-                    <AmountText value={position.broughtForward} tier="row" />
-                  </View>
-                ) : null}
-              {visibleReview ? <View style={[styles.reviewDot, { backgroundColor: colors.primary }]} /> : null}
-                <Feather name={balanceExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
-              </View>
+          <View style={styles.balanceSummary}>
+            <View style={styles.balanceTitle}>
+              <AppText style={[typography.meta, styles.balanceLabel, { color: colors.text3 }]} numberOfLines={1}>
+                {position.label}{position.amount < 0 ? ' · Shortfall' : ''}
+              </AppText>
+              <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
             </View>
-          </Pressable>
-          {balanceExpanded ? (
-            <View testID="available-balance-details" style={styles.balanceDetails}>
-              <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
-              <View testID="available-balance-metrics" style={[styles.balanceMetrics, fontScale >= 1.3 ? styles.balanceMetricsWrapped : undefined]}>
-                {[
-                  { id: 'brought-forward', label: 'Brought fwd', value: position.broughtForward },
-                  { id: 'income', label: 'Income', value: position.income },
-                  { id: 'spent', label: 'Spent', value: position.spent },
-                  { id: 'invested', label: 'Invested', value: position.invested },
-                ].map((metric) => (
-                  <View key={metric.id} testID={`balance-metric-${metric.id}`} style={[
-                    styles.balanceMetric,
-                    fontScale >= 1.3 ? styles.balanceMetricWrapped : undefined,
-                  ]}>
-                    <AppText style={[styles.balanceMetricLabel, { color: colors.text3 }]} numberOfLines={1}>{metric.label}</AppText>
-                    <AmountText value={metric.value} tier="row" />
-                  </View>
-                ))}
-              </View>
-              <View testID="available-balance-caption" style={styles.balanceCaption}>
-                <View style={styles.balanceCaptionItem}>
-                  <AppText style={[styles.balanceCaptionText, { color: colors.text3 }]}>Other money in</AppText>
-                  <AmountText value={position.otherMoneyIn} tier="row" />
+            <View style={styles.balanceActions}>
+              {Math.abs(position.broughtForward) > 0 ? (
+                <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
+                  <AppText style={[styles.balanceChipText, { color: colors.text2 }]} numberOfLines={1}>
+                    From {formatMonth(shiftMonth(month, -1)).slice(0, 3)}{' '}
+                  </AppText>
+                  <AmountText value={position.broughtForward} tier="row" />
                 </View>
-                {pendingAmount > 0 ? (
-                  <View testID="balance-pending-caption" style={styles.balanceCaptionItem}>
-                    <AppText
-                      accessibilityLabel={`Pending this month ${formatAmount(pendingAmount, 'exact', 1)}`}
-                      style={[styles.balanceCaptionText, { color: colors.text3 }]}>
-                      Pending
-                    </AppText>
-                    <AmountText value={pendingAmount} tier="row" />
-                  </View>
-                ) : null}
-              </View>
+              ) : null}
+            </View>
+          </View>
+          <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
               {visibleReview ? (
                 <View style={styles.reviewRow}>
                   <Pressable
@@ -202,16 +155,8 @@ export default function TransactionsScreen() {
                     onPress={() => router.push({ pathname: '/month-review', params: { month: visibleReview.month } })}>
                     <AppText weight="semibold" style={{ color: colors.primary }}>Review {formatMonth(visibleReview.month)}</AppText>
                   </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Dismiss month review reminder"
-                    onPress={() => setDismissedReview(visibleReview.month)}>
-                    <Feather name="x" size={18} color={colors.text3} />
-                  </Pressable>
                 </View>
               ) : null}
-            </View>
-          ) : null}
           </Card>
         </View>
         {unlinkedCount > 0 ? (
@@ -320,11 +265,11 @@ export default function TransactionsScreen() {
           <Pressable
             testID="pending-items-toggle"
             accessibilityRole="button"
-            accessibilityLabel={`Pending, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
+            accessibilityLabel={`Due payments, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
             accessibilityState={{ expanded: pendingExpanded }}
             onPress={() => setPendingExpanded((expanded) => !expanded)}
             style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
-            <AppText weight="semibold">Pending ({visiblePendingItems.length})</AppText>
+            <AppText weight="semibold">Due payments ({visiblePendingItems.length})</AppText>
             <AmountText
               value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)}
               tier="row"

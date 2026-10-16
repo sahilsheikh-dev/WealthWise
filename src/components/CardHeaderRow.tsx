@@ -14,7 +14,7 @@ export function CardHeaderRow({
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
-  value: ReactNode;
+  value?: ReactNode;
   valueCaption?: ReactNode;
   editLabel: string;
   onEdit: () => void;
