@@ -3,7 +3,7 @@ import type { ReactTestInstance } from 'react-test-renderer';
 import { TEXT_ACTIONS_ALLOWED } from '../IconButton';
 
 const EMPTY_STATE_CTA_TEXTS = new Set([
-  'Add expenses to calculate your 3-month minimum',
+  'Add your monthly income to see cover',
   'Add your first investment',
   'Add a liability',
   'Add entry',
@@ -22,6 +22,7 @@ const HOME_QUICK_ACTIONS = new Set([
   'New Investment',
   'New Liability',
   'Log Emergency Fund',
+  'Add custom option',
 ]);
 
 export function assertNoVerbText(

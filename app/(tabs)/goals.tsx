@@ -7,7 +7,7 @@ import { SortChip } from '../../src/components/SortChip';
 import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { efBalance, monthlyBaseline } from '../../src/domain/ef';
+import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -24,16 +24,16 @@ export default function GoalsScreen() {
   const data = useAppData();
   const sorting = useSort('goals');
   const asOf = todayISO();
-  const emergencyBalance = efBalance(data.efEntries);
-  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
+  const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
+  const expenseBaseline = emergencyBaseline.amount;
   const goals = ensureEfGoal(data.goals, {
     expenseBaseline,
     asOf,
   });
-  const totals = goalTotals(goals, emergencyBalance, expenseBaseline, data, asOf);
+  const totals = goalTotals(goals, expenseBaseline, data, asOf);
   const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
   const sortedGoals = sorting.sort(goals.map((goal) => {
-    const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+    const view = goalView(goal, { expenseBaseline, data, asOf });
     return {
       ...goal,
       targetAmount: view.target,
@@ -60,10 +60,11 @@ export default function GoalsScreen() {
         <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
       </ChipRow>
       {sortedGoals.map((goal) => {
-        const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+        const view = goalView(goal, { expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
+        const coverMonths = goal.auto === 'ef' ? monthsCovered(saved, emergencyBaseline.amount) : null;
         return (
           <Pressable
             key={goal.id}
@@ -128,16 +129,34 @@ export default function GoalsScreen() {
               <>
                 <AppText
                   style={[typography.meta, styles.minimum, { color: colors.text3 }]}
-                  accessibilityLabel={`Minimum 3 months of expenses: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
-                  Minimum 3 months of expenses: <AmountText value={view.minimum ?? 0} tier="row" />
+                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
+                  Minimum 3 months of cover: <AmountText value={view.minimum ?? 0} tier="row" />
                 </AppText>
                 {expenseBaseline > 0 ? (
                   <AppText
                     style={[typography.meta, { color: colors.text3 }]}
-                    accessibilityLabel={`Based on an average of ${formatAmount(expenseBaseline, 'exact', 1)} monthly expenses`}>
-                    Based on an average of <AmountText value={expenseBaseline} tier="row" /> monthly expenses
+                    accessibilityLabel={emergencyBaseline.source === 'expenses'
+                      ? `Based on your average monthly expenses, ${formatAmount(expenseBaseline, 'exact', 1)}`
+                      : 'Based on your monthly income'}>
+                    {emergencyBaseline.source === 'expenses'
+                      ? <>Based on your average monthly expenses: <AmountText value={expenseBaseline} tier="row" /></>
+                      : 'Based on your monthly income'}
                   </AppText>
-                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>}
+                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add your monthly income to see cover</AppText>}
+                <View style={styles.emergencyActions}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>
+                    {coverMonths === null ? '—' : `${Math.trunc(coverMonths * 10) / 10} mo of cover`}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Track emergency fund"
+                    onPress={(event) => {
+                      event.stopPropagation?.();
+                      router.push('/emergency-fund');
+                    }}>
+                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+                  </Pressable>
+                </View>
                 {view.raised ? (
                   <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
                 ) : null}
@@ -161,4 +180,5 @@ const styles = StyleSheet.create({
   projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
   sortRow: { marginHorizontal: 20, marginVertical: 8 },
+  emergencyActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
