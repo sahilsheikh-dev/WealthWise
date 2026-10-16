@@ -246,15 +246,8 @@ describe('linked log and payment actions', () => {
     const removed = deleteInvestmentEntry(withOrdinary, 'p', 'linked');
     expect(removed.transactions).toEqual([noteOnly.transactions[0], extra]);
     expect(() => addPlan(data, { ...planInput, trackFrom: '2026-06-30' }, () => 'bad')).toThrow("Tracking can't start before the plan");
-    expect(validateIntegrity({
-      ...empty(),
-      goals: [],
-      efEntries: [{ id: 'e', date: '2026-07-01', amount: 1, note: '' }],
-      transactions: [{
-        id: 'ef-tx', type: 'expense', amount: 1, date: '2026-07-01', category: 'Other', note: '',
-        source: { kind: 'ef-entry', parentId: 'goal-emergency', entryId: 'e' },
-      }],
-    })).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'emergency-goal-count' })]));
+    expect(validateIntegrity({ ...empty(), goals: [] }))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ code: 'emergency-goal-count' })]));
   });
 
   it('covers no-transaction loan payments, EMI alternatives and deletion filtering branches', () => {

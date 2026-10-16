@@ -10,7 +10,6 @@ import BudgetTemplateFormScreen from '../../../app/budget-template-form';
 import BudgetTemplatesScreen from '../../../app/budget-templates';
 import ClearDuesScreen from '../../../app/clear-dues';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
-import EfEntryFormScreen from '../../../app/ef-entry-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
@@ -116,7 +115,6 @@ jest.mock('../../data/store', () => {
       holdings: [],
       liabilities: [],
       policies: [],
-      efEntries: [],
       efAllocation: null,
       efCustomBuckets: [],
       efBucketLinks: {},
@@ -139,9 +137,6 @@ jest.mock('../../data/store', () => {
       deletePlan: jest.fn(),
       fundShortfall: jest.fn(),
       allocateSurplus: jest.fn(),
-      addEfEntry: jest.fn(),
-      updateEfEntry: jest.fn(),
-      deleteEfEntry: jest.fn(),
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
@@ -180,7 +175,6 @@ jest.mock('../../data/useAppData', () => {
     holdings: [],
     liabilities: [],
     policies: [],
-    efEntries: [],
     efAllocation: null,
     efCustomBuckets: [],
     efBucketLinks: {},
@@ -205,9 +199,6 @@ jest.mock('../../data/useAppData', () => {
       deletePlan: jest.fn(),
       fundShortfall: jest.fn(),
       allocateSurplus: jest.fn(),
-      addEfEntry: jest.fn(),
-      updateEfEntry: jest.fn(),
-      deleteEfEntry: jest.fn(),
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
@@ -509,7 +500,6 @@ describe('route render smoke audit', () => {
     ['Assets', React.createElement(AssetsScreen)],
     ['Emergency fund', React.createElement(EmergencyFundScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
-    ['Emergency fund entry form', React.createElement(EfEntryFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
@@ -530,8 +520,6 @@ describe('route render smoke audit', () => {
     ['Investment form edit', React.createElement(InvestmentFormScreen)],
     ['Investment entry form create', React.createElement(InvestmentEntryFormScreen)],
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
-    ['Emergency fund entry form create', React.createElement(EfEntryFormScreen)],
-    ['Emergency fund entry form edit', React.createElement(EfEntryFormScreen)],
   ];
 
   it.each([1, 1.3, 2])('groups compact budget inputs with accessible touch targets at font scale %s', async (fontScale) => {
@@ -870,6 +858,14 @@ describe('route render smoke audit', () => {
         saved: 12_345_678,
         year: 2030,
         links: [],
+      }, {
+        id: 'large-emergency',
+        name: 'Emergency fund',
+        target: 123_456_789,
+        saved: 0,
+        year: 2028,
+        auto: 'ef' as const,
+        links: [{ instrumentId: 'large-holding', share: 50 }],
       }],
       holdings: [{
         id: 'large-holding',
@@ -925,7 +921,6 @@ describe('route render smoke audit', () => {
         plannedIncome: 123_456_789,
         lines: [{ category: 'Food', planned: 123_456_789 }],
       }],
-      efEntries: [{ id: 'large-ef', date: '2026-10-01', amount: 123_456_789, note: 'Large balance' }],
     };
     Object.assign(routeData, data);
     store.data = data;
@@ -954,7 +949,7 @@ describe('route render smoke audit', () => {
       ]));
       expect(labelsFor(React.createElement(EmergencyFundScreen))).toEqual(expect.arrayContaining([
         exactA,
-        expect.stringContaining(`Based on an average of ${exactB} monthly expenses`),
+        expect.stringContaining(`Based on your average monthly expenses, ${exactB}`),
       ]));
       expect(labelsFor(React.createElement(GoalsScreen)).some((label) =>
         label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
@@ -1173,7 +1168,6 @@ describe('route render smoke audit', () => {
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
-    ['Emergency fund passbook', () => React.createElement(EmergencyFundScreen)],
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
@@ -1634,7 +1628,7 @@ describe('route render smoke audit', () => {
       plannedIncome: 10_000,
       lines: [
         { category: 'Food', planned: 4_000 },
-        { category: 'Emergency fund', planned: 1_000 },
+        { category: 'Other investments', planned: 1_000 },
       ],
     }];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;

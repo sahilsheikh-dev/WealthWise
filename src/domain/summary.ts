@@ -1,4 +1,4 @@
-import { efBalance, monthlyBaseline, monthsCovered } from './ef';
+import { emergencyFundBaseline, monthlyBaseline, monthsCovered } from './ef';
 import { ensureEfGoal, goalView } from './goals';
 import {
   liabilitySummary,
@@ -6,6 +6,7 @@ import {
   type RecurringLiabilitySummary,
 } from './liability';
 import { holdingValue } from './portfolio';
+import { goalSavedFor } from './goalLinks';
 import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import type { AppData, ISODate, RecurringLiability } from './types';
 
@@ -14,8 +15,7 @@ export function netWorth(data: AppData, asOf: ISODate): {
   liabilities: number;
   netWorth: number;
 } {
-  const assets = data.holdings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0)
-    + efBalance(data.efEntries);
+  const assets = data.holdings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0);
   const liabilities = data.liabilities.reduce((sum, liability) =>
     sum + liabilitySummary(liability, asOf, 0).balance, 0);
   return { assets, liabilities, netWorth: assets - liabilities };
@@ -26,20 +26,26 @@ export function homeSummary(data: AppData, asOf: ISODate, expenseBaselineInput?:
   liabilities: number;
   netWorth: number;
   emergencyMonths: number | null;
+  emergencyBaseSource: 'expenses' | 'salary' | null;
   expenseBaseline: number;
   goals: ({
     goal: AppData['goals'][number];
   } & ReturnType<typeof goalView>)[];
 } {
   const worth = netWorth(data, asOf);
-  const emergencyBalance = efBalance(data.efEntries);
   const expenseBaseline = expenseBaselineInput ?? monthlyBaseline(data.transactions, 'expense', asOf);
-  const goals = ensureEfGoal(data.goals, { expenseBaseline, asOf }).map((goal) => {
-    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline, data, asOf }) };
+  const emergencyBase = expenseBaseline > 0
+    ? { amount: expenseBaseline, source: 'expenses' as const }
+    : emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
+  const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+  const emergencyBalance = emergencyGoal ? goalSavedFor(emergencyGoal, data, asOf) : 0;
+  const goals = ensureEfGoal(data.goals, { expenseBaseline: emergencyBase.amount, asOf }).map((goal) => {
+    return { goal, ...goalView(goal, { expenseBaseline: emergencyBase.amount, data, asOf }) };
   });
   return {
     ...worth,
-    emergencyMonths: monthsCovered(emergencyBalance, expenseBaseline),
+    emergencyMonths: monthsCovered(emergencyBalance, emergencyBase.amount),
+    emergencyBaseSource: emergencyBase.source,
     expenseBaseline,
     goals,
   };

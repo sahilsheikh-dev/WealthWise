@@ -13,7 +13,6 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   'budget-template-form': 'form',
   'clear-dues': 'form',
   'ef-allocation-form': 'form',
-  'ef-entry-form': 'form',
   'emergency-fund': 'stack',
   'erase-data': 'stack',
   'goal-form': 'form',

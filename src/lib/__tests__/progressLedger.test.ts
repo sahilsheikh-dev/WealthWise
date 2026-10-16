@@ -181,7 +181,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog).toContain('| P18-LEDGER |');
     expect(promptLog).toContain('| P19-C |');
     expect(register).toContain('| CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 |');
-    expect(register).toContain('| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Planned | P21-A/B. |');
+    expect(register).toContain('| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Pending | P21-A/B implementation/tests complete; phase held by non-green Expo Doctor gate. |');
     expect(decisions).toContain('DEC-FORM-COMPONENTS');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });

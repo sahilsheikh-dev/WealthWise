@@ -1,4 +1,3 @@
-import { addEfEntry } from '../efActions';
 import { addHolding } from '../holdingActions';
 import {
   addInstrumentTransaction,
@@ -14,6 +13,7 @@ import { deleteInvestmentEntry, updateInvestmentEntry } from '../investmentActio
 import { addPlan } from '../planActions';
 import { emptyAppData } from '../actions';
 import type { AppData, Transaction } from '../types';
+import { mockAppData } from '../../mock/data';
 
 const today = '2026-10-10';
 const ids = (...values: string[]) => {
@@ -28,15 +28,11 @@ const addManual = (data: AppData, id: string, name: string, value = 10_000) => (
 });
 
 describe('instrument-linked transactions', () => {
-  it('lists the emergency fund first and creates, edits and deletes deposits and withdrawals', () => {
+  it('creates, edits and deletes linked manual investment entries', () => {
     let data = addHolding(empty(), {
       name: 'Gold', type: 'Gold', invested: 10_000, value: 10_000, valueAsOf: '2026-10-01',
     }, () => 'gold');
-    data = addEfEntry(data, { date: '2026-10-01', amount: 1_000, note: 'Funding' }, { newId: ids('ef-entry', 'ef-tx') });
-    expect(listInstruments(data, today)[0]).toMatchObject({
-      id: 'ef', kind: 'ef', name: 'Emergency fund', valueNow: 1_000, canWithdraw: true,
-    });
-    expect(listInstruments(data, today)[1]).toMatchObject({ id: 'gold', type: 'Gold', valueNow: 10_000 });
+    expect(listInstruments(data, today)[0]).toMatchObject({ id: 'gold', type: 'Gold', valueNow: 10_000 });
 
     data = addInstrumentTransaction(data, {
       kind: 'deposit', instrumentId: 'gold', amount: 500, date: '2026-10-02', note: 'Broker transfer',
@@ -72,7 +68,7 @@ describe('instrument-linked transactions', () => {
     expect(validateIntegrity(data)).toEqual([]);
   });
 
-  it('retargets between holdings and the emergency fund while preserving transaction identity', () => {
+  it('retargets between holdings while preserving transaction identity', () => {
     let data = addManual(empty(), 'gold', 'Gold');
     data = addManual(data, 'cash', 'Cash', 5_000);
     data = addInstrumentTransaction(data, {
@@ -90,15 +86,8 @@ describe('instrument-linked transactions', () => {
     expect(data.holdings.find((item) => item.id === 'cash')?.logs[0]?.id).toBe('cash-entry');
     expect(data.holdings.some((item) => item.logs.some((entry) => entry.id === oldEntryId))).toBe(false);
 
-    data = updateLinkedTransaction(data, 'stable-tx', { instrumentId: 'ef' }, { newId: ids('ef-entry'), today });
-    expect(data.transactions[0]).toMatchObject({
-      id: 'stable-tx', type: 'invest', category: 'Emergency fund',
-      source: { kind: 'ef-entry', parentId: 'goal-emergency', entryId: 'ef-entry' },
-    });
-    expect(data.efEntries[0]).toMatchObject({ id: 'ef-entry', amount: 400 });
     data = updateLinkedTransaction(data, 'stable-tx', { instrumentId: 'gold' }, { newId: ids('gold-again'), today });
     expect(data.transactions[0]?.source).toMatchObject({ kind: 'holding-entry', parentId: 'gold', entryId: 'gold-again' });
-    expect(data.efEntries).toEqual([]);
     expect(validateIntegrity(data)).toEqual([]);
   });
 
@@ -116,41 +105,8 @@ describe('instrument-linked transactions', () => {
     expect(validateIntegrity(data)).toEqual([]);
   });
 
-  it('creates and edits emergency-fund transactions through the instrument actions', () => {
-    let data = addInstrumentTransaction(empty(), {
-      kind: 'deposit', instrumentId: 'ef', amount: 500, date: '2026-10-01', note: 'Funding',
-    }, ids('ef-deposit', 'ef-deposit-tx'), today);
-    expect(data.efEntries).toMatchObject([{ id: 'ef-deposit', amount: 500 }]);
-    expect(listInstruments(data, '2026-10-01')[0]?.valueNow).toBe(500);
-    data = addInstrumentTransaction(data, {
-      kind: 'withdrawal', instrumentId: 'ef', amount: 100, date: '2026-10-02', note: 'Cash out',
-    }, ids('ef-withdrawal', 'ef-withdrawal-tx'), today);
-    expect(data.efEntries[1]?.amount).toBe(-100);
-    expect(data.transactions[1]).toMatchObject({ type: 'income', category: 'Withdrawal' });
-    const before = data;
-    expect(() => updateLinkedTransaction(data, 'ef-deposit-tx', { amount: 99 }, { newId: ids(), today }))
-      .toThrow('This would make the balance negative on 2026-10-02');
-    expect(data).toBe(before);
-    data = updateLinkedTransaction(data, 'ef-withdrawal-tx', { amount: 200, date: '2026-10-01' }, { newId: ids(), today });
-    expect(data.efEntries[1]).toMatchObject({ amount: -200, date: '2026-10-01' });
-    expect(validateIntegrity(data)).toEqual([]);
-    expect(() => addInstrumentTransaction(data, {
-      kind: 'withdrawal', instrumentId: 'ef', amount: 501, date: today, note: '',
-    }, ids(), today)).toThrow('This would make the balance negative');
-  });
-
   it('rejects failed destination guards atomically', () => {
-    let data = empty();
-    data = addEfEntry(data, { date: '2026-10-01', amount: 100, note: 'Fund' }, { newId: ids('fund-entry', 'fund-tx') });
-    data = addEfEntry(data, { date: '2026-10-02', amount: -80, note: 'Spend' }, { newId: ids('spend-entry', 'spend-tx') });
-    const before = data;
-    expect(() => updateLinkedTransaction(data, 'fund-tx', { instrumentId: 'missing' }, { newId: ids('unused'), today }))
-      .toThrow('This would make the balance negative on 2026-10-02');
-    expect(data).toBe(before);
-    expect(() => deleteLinkedTransaction(data, 'fund-tx')).toThrow('This would make the balance negative on 2026-10-02');
-    expect(data).toBe(before);
-
-    let holdings = addManual(empty(), 'manual', 'Manual', 100);
+    const holdings = addManual(empty(), 'manual', 'Manual', 100);
     const beforeDeposit = holdings;
     expect(() => addInstrumentTransaction(holdings, {
       kind: 'withdrawal', instrumentId: 'manual', amount: 101, date: '2026-10-01', note: '',
@@ -234,13 +190,17 @@ describe('instrument-linked transactions', () => {
     expect(findUnlinkedEntries(data)).toEqual([]);
 
     const base = addManual(empty(), 'manual', 'Manual');
+    const planHolding = mockAppData.holdings.find((holding) => holding.id === 'holding-sip');
+    if (!planHolding || planHolding.kind !== 'plan') throw new Error('Plan fixture missing.');
     const withOldEntries: AppData = {
       ...base,
-      holdings: base.holdings.map((holding) => ({ ...holding, logs: [
-        { id: 'deposit', date: '2026-10-01', amount: 100, kind: 'Deposit', note: '' },
-        { id: 'withdrawal', date: '2026-10-02', amount: 20, kind: 'Withdrawal', note: '' },
-      ] })),
-      efEntries: [{ id: 'ef-deposit', date: '2026-10-01', amount: 30, note: '' }],
+      holdings: [
+        ...base.holdings.map((holding) => ({ ...holding, logs: [
+          { id: 'deposit', date: '2026-10-01', amount: 100, kind: 'Deposit' as const, note: '' },
+          { id: 'withdrawal', date: '2026-10-02', amount: 20, kind: 'Withdrawal' as const, note: '' },
+        ] })),
+        { ...planHolding, logs: [{ id: 'plan-deposit', date: '2026-10-02', amount: 200, kind: 'Deposit', note: '' }] },
+      ],
       liabilities: [{
         id: 'debt', kind: 'one-time', name: 'Debt', type: 'Other', principal: 100,
         ratePct: 0, startDate: '2026-09-01', dueDate: null,
@@ -248,9 +208,16 @@ describe('instrument-linked transactions', () => {
       }],
     };
     expect(findUnlinkedEntries(withOldEntries)).toHaveLength(4);
-    const backfilled = createMissingTransactions(withOldEntries, ids('tx-deposit', 'tx-withdrawal', 'tx-ef', 'tx-payment'));
+    const backfilled = createMissingTransactions(
+      withOldEntries,
+      ids('tx-deposit', 'tx-withdrawal', 'tx-plan', 'tx-payment'),
+    );
     expect(backfilled.transactions).toHaveLength(4);
-    expect(backfilled.transactions.map((item) => item.type)).toEqual(['invest', 'invest', 'income', 'expense']);
+    expect(backfilled.transactions.map((item) => item.type)).toEqual(['invest', 'income', 'invest', 'expense']);
+    expect(backfilled.transactions[2]).toMatchObject({
+      id: 'tx-plan',
+      note: 'Retirement fund installment',
+    });
     expect(validateIntegrity(backfilled)).toEqual([]);
     expect(findUnlinkedEntries(backfilled)).toEqual([]);
     expect(createMissingTransactions(backfilled, ids())).toBe(backfilled);

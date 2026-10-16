@@ -5,7 +5,7 @@ import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types
 export type TransactionSource = NonNullable<Transaction['source']>;
 
 export class LinkedTransactionError extends Error {
-  constructor(message = 'This transaction is linked to a holding, liability, or emergency fund entry and must be changed there.') {
+  constructor(message = 'This transaction is linked to a holding, liability, or policy entry and must be changed there.') {
     super(message);
     this.name = 'LinkedTransactionError';
   }
@@ -50,10 +50,7 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
     const liability = data.liabilities.find((entry) => entry.id === source.parentId && entry.id === source.entryId);
     return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
   }
-  const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
-  return goal && data.efEntries.some((entry) => entry.id === source.entryId)
-    ? { label: 'Emergency fund', route: '/emergency-fund', params: {} }
-    : null;
+  return null;
 }
 
 export function findLinkedTransaction(
@@ -98,7 +95,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     { name: 'holdings', ids: data.holdings.map(({ id }) => id) },
     { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
     { name: 'policies', ids: data.policies.map(({ id }) => id) },
-    { name: 'efEntries', ids: data.efEntries.map(({ id }) => id) },
     { name: 'efCustomBuckets', ids: data.efCustomBuckets.map(({ id }) => id) },
     { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
     { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
@@ -129,8 +125,12 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     let validLiabilityOrigin = true;
     if (source.kind === 'holding-entry') {
       const holding = data.holdings.find((item) => item.id === source.parentId);
-      entry = holding?.logs.find((item) => item.id === source.entryId);
-      if (entry) expectedType = holding?.logs.find((item) => item.id === source.entryId)?.kind === 'Withdrawal' ? 'income' : 'invest';
+      const holdingEntry = holding?.logs.find((item) => item.id === source.entryId);
+      entry = holdingEntry;
+      if (holdingEntry) {
+        expectedType = holdingEntry.kind === 'Withdrawal' ? 'income' : 'invest';
+        expectedCategory = holdingEntry.kind === 'Withdrawal' ? 'Withdrawal' : holding ? investCategoryFor(holding.type) : undefined;
+      }
     } else if (source.kind === 'liability-payment') {
       const liability = data.liabilities.find((item) => item.id === source.parentId);
       entry = liability?.payments.find((item) => item.id === source.entryId);
@@ -150,12 +150,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
         (transaction.category === 'Borrowed'
           ? transaction.amount === liability.principal && transaction.date === liability.startDate
           : transaction.category === 'Loan proceeds' && transaction.date >= liability.startDate);
-    } else {
-      const efGoal = data.goals.find((goal) => goal.auto === 'ef');
-      entry = efGoal?.id === source.parentId
-        ? data.efEntries.find((item) => item.id === source.entryId)
-        : undefined;
-      if (entry) expectedType = entry.amount < 0 ? 'income' : 'invest';
     }
     if (!entry) {
       add('orphan-source', 'Transaction source does not point at an existing parent entry.', ['transactions', index, 'source']);
@@ -215,7 +209,15 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       if (seenHoldingIds.has(holdingId)) {
         add('duplicate-ef-linked-holding', 'An investment can only be linked once to an option.', ['efBucketLinks', bucketId, index]);
       }
+      if (Object.entries(data.efBucketLinks).some(([otherBucketId, otherIds]) =>
+        otherBucketId !== bucketId && otherIds.includes(holdingId))) {
+        add('multiple-ef-buckets', 'An asset can belong to at most one emergency-fund option.', ['efBucketLinks', bucketId, index]);
+      }
       seenHoldingIds.add(holdingId);
+      const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+      if (!emergencyGoal?.links.some((link) => link.instrumentId === holdingId)) {
+        add('ef-bucket-missing-goal-link', 'Every emergency-fund option asset must also be linked to the emergency goal.', ['efBucketLinks', bucketId, index]);
+      }
     });
   }
   for (const holding of data.holdings) {

@@ -21,7 +21,6 @@ export function emptyAppData(asOf: ISODate): AppData {
     budgetTemplates: [],
     defaultBudgetTemplateId: null,
     monthBudgets: [],
-    efEntries: [],
     efAllocation: null,
     efCustomBuckets: [],
     efBucketLinks: {},

@@ -120,8 +120,8 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-A | — | Done | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
-| P21-A | — | Planned | Emergency-fund goal links and entries/net-worth model; schema v7 (CR-8, CR-13; former P19-D split). | 2026-10-15 |
-| P21-B | — | Planned | Months-of-cover, salary fallback, minimal allocation editing and linked-assets table (CR-14, CR-15). | 2026-10-15 |
+| P21-A | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
+| P21-B | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
 | P22-A | — | Planned | Four months of linked demo data and DEC-DEMO (CR-12). | 2026-10-15 |
 | P22-B | P15-SEED | Planned | Optional spreadsheet seed importer (formerly P19-E / P15-SEED). | 2026-10-15 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
@@ -165,23 +165,23 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | CR-5 | Done | Five-group categories, suggestions, compact inputs, subtotals and recurring-items summary; P19-A gates pass. | P19-A |
 | CR-6 | Done | Applied budgets and all recurring assets/liabilities, past and future, appear as pending Transactions with Pay and Clear due. | P20-A |
 | CR-7 | Done | Home upcoming/due rows offer Pay and Clear due and update Transactions. | P20-B |
-| CR-8 | Planned | Emergency fund goals link assets like other goals; EF is not listed as an asset. | P21-A |
+| CR-8 | Pending | Implementation complete; P21-A remains open until the Expo Doctor gate is green. | P21-A |
 | CR-9 | Done | Investment categories remain distinct; every earned-income source appears in budget review and month review, with non-earned inflows separated. | P19-B |
 | CR-10 | Done | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
 | CR-11 | Done | Bottom tabs appear only on Home, Transactions, Goals and Budget. | P20-C |
 | CR-12 | Planned | Four months of demo data linked throughout; feature changes extend demo data and tests. | P22-A |
-| CR-13 | Planned | Emergency-fund entries are removed; EF is not added to net worth; schema v7. | P21-A |
-| CR-14 | Planned | Emergency-fund months of cover with salary fallback. | P21-B |
-| CR-15 | Planned | Minimal emergency-fund allocation editing and allocation table with linked assets. | P21-B |
+| CR-13 | Pending | Implementation complete; v6→v7 migration and linked-asset conversion preserve net worth; P21-A awaits green Doctor gate. | P21-A |
+| CR-14 | Pending | Implementation complete; expense/salary fallback and truncated one-decimal cover tested; P21-B awaits green Doctor gate. | P21-B |
+| CR-15 | Pending | Implementation complete; compact editor and linked-assets table tested; P21-B awaits green Doctor gate. | P21-B |
 | CR-16 | Superseded by CR-17 | Former Budget body action row, replaced by header icons. | P19-C |
 | CR-17 | Done | Budget History/Month review/Templates header icons, ordered actions, labels, indicator and navigation. | P19-C |
 | CR-18 | Done | Compact expandable Available balance card with four metrics and optional pending/review details. | P19-C |
 | CR-19 | Done | User-owned input components restored/current, frozen by SHA-256 guard. | P19-C |
-| CR-20 | Planned | Emergency fund is a goal, not an entity; remove ledger entries and Emergency fund investment reference; visualization-only screen. | P21-A/B |
+| CR-20 | Pending | Implementation complete; ledger/category/instrument removed and screen is visualization-only; P21 awaits green Doctor gate. | P21-A/B |
 
 ### Resume point
 
-P19-A, P19-B and P19-C passed their gates and are complete; P20-A, P20-B and P20-C passed their gates and are complete. Resume at P21-A when Phase 21 is authorized; Phase 21 was not started here. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema remains v6 through P20; Phase 21's CR-13 explicitly calls for schema v7.
+P19-A/B/C and P20-A/B/C passed their gates and are complete. P21-A/B implementation is present, but the parts remain Pending because Expo Doctor reports an app.json schema error; do not resume at P22-A until it is resolved and the gates rerun. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Superseded by CR-20:** remove Emergency fund as a category and combine its former 35% with Other investments for 40%. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema stayed v6 through P20 and changed from v6 to v7 in P21-A.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -303,9 +303,10 @@ Premigration bytes are copied once and removed by erase-all.
 | v4 | Emergency-fund allocation across seven fixed buckets. | Reconstructed; later migration/audit commits verify current implementation, not all original acceptance |
 | v5 | Liability settlement snapshots, goal asset links, policies, budget templates/month snapshots, and added transaction source/category types. | P15-D commit `394d338` |
 | v6 | Custom emergency-fund buckets and holding links, with v5→v6 migration. | CH-1 commit `c831fe6`; close-out `17f4748` |
+| v7 | Emergency fund becomes a goal funded by linked assets; legacy ledger/category removed with v6→v7 migration. | P21-A implementation; gate status remains Pending below |
 
-Current schema is `SCHEMA_VERSION = 6`. CH-1 was the sole schema-version
-change in P15-FIX-R4; do not change the version without an explicit migration.
+Current schema is `SCHEMA_VERSION = 7`. P21-A is the explicit v6→v7 migration;
+P21-B does not change the schema.
 
 ### Financial and UI rules
 
@@ -343,10 +344,10 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   use daily accrual. EMI solving is recurring-only. A one-time liability's
   due date cannot precede its start date, and its payment cannot exceed the
   outstanding balance.
-- Investments, manual holdings, liabilities, and EF entries maintain
-  transaction links in both directions. Deletion supports keeping or deleting
-  linked transactions where applicable. The automatic EF goal is pinned and
-  derived from the EF balance.
+- Investments, manual holdings, and liabilities maintain transaction links in
+  both directions. Deletion supports keeping or deleting linked transactions
+  where applicable. The emergency goal's value derives from linked asset
+  shares, not a separate ledger.
 - EF allocations use fixed plus custom bucket IDs and largest-remainder
   rounding exact in paise. Links are explanatory and do not move money or
   change net worth.
@@ -368,7 +369,9 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment
   15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20,
   Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's
-  weights sum to 100.
+  weights sum to 100. **Superseded by CR-20:** Emergency fund is no longer a
+  budget or investment category; its former 35% weight is combined with Other
+  investments, now 40%.
 - **Assumed:** CR-16's “no header menu on Budget” removes the entire Budget
   header menu; initially, its three actions were placed in a body row. CR-17
   supersedes that row with right-side header icons; the title stays.
@@ -382,6 +385,10 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   existing `MonthBudget` schema and actual-amount semantics.
 - DEC-TABS: the bottom tab bar appears only on Home, Transactions, Goals and
   Budget; this supersedes P18-R5 detail-tab-bar behavior, effective P20-C.
+- DEC-EF-GOAL: Emergency fund is a goal funded by shares of linked assets, not
+  a separate ledger or investment instrument. Schema v6 migrates to v7 by
+  materializing a positive legacy ledger balance as one manual holding linked
+  to the emergency goal; current totals derive only from assets and liabilities.
 - Route kinds enumerate every route; form routes have close/discard handling,
   and stack routes have back/fallback behavior. Shared UI follows Section 3's
   text-versus-icon rules.
@@ -398,7 +405,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 | Five tabs including Invest and More | FX-B2 established Home, Transactions, Goals, Budget. |
 | P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Transactions, Goals, Budget rule. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
-| Schema v1, then v2, v3, v4, or v5 as current | Successive migrations; current schema is v6. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
+| Schema v1, then v2, v3, v4, v5, or v6 as current | Successive migrations; current schema is v7. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |
 | Global-menu placement for Link missing transactions, Budget history, and Month review | CH-3 and CH-2 placed those actions on their relevant screens; routes remain. |
 | Standalone Record money movement UI/route | CH-4 removed the UI/route; the shared pure logic remains only where still used by liability receipt flows. |
@@ -525,7 +532,13 @@ and P20-C [CR-11].
 
 ### Phase 21 — Emergency fund as a goal-linked model
 
-Planned: P21-A [former P19-D, split; CR-8, CR-13] and P21-B [CR-14, CR-15].
+Implementation delivered: P21-A [former P19-D, split; CR-8, CR-13] and P21-B
+[CR-14, CR-15, CR-20]. Schema version advanced from v6 to v7 in P21-A; P21-B
+did not change the schema. Feature tests, typecheck, lint and both exports
+pass, but the phase remains Pending because Expo Doctor reports an app.json
+schema error. Migration, linked asset integrity, backup import, salary fallback,
+allocation UI, Home/Goals summaries and device-only limitations are recorded
+below.
 
 ### Phase 22 — Demo data and seed importer
 
@@ -710,8 +723,8 @@ evidence present in exports/checkpoints.
 | P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | this commit | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
-| P21-A | Phase 21 | — | — | planned | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
-| P21-B | Phase 21 | — | — | planned | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
+| P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
+| P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | this commit | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P22-A | Phase 22 | — | — | planned | Four months of demo data linked throughout and DEC-DEMO (CR-12). | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
@@ -730,19 +743,19 @@ evidence present in exports/checkpoints.
 | CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Done | P19-A; focused and full gates pass. |
 | CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Done | P20-A (formerly P19-B). |
 | CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Done | P20-B (formerly P19-C). |
-| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Planned | P21-A (formerly P19-D; now split across P21-A/B). |
+| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Pending | P21-A implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Done | P19-B; category/source reconciliation tests pass. |
 | CR-10 | Home spending by category is collapsed, with Apply budget. | Done | P20-B. |
 | CR-11 | Bottom tabs appear only on Home, Transactions, Goals and Budget. | Done | P20-C; DEC-TABS. |
 | CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Planned | P22-A; DEC-DEMO. |
-| CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Planned | P21-A. |
-| CR-14 | Emergency-fund months of cover use salary fallback. | Planned | P21-B. |
-| CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Planned | P21-B. |
+| CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Pending | P21-A implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-14 | Emergency-fund months of cover use salary fallback. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
 | CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 | P19-B's body action row was replaced by the Budget header icons in P19-C. |
 | CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Done | P19-C; action labels, icon order, routing, pending dot and style contracts tested. |
 | CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Done | P19-C; collapsed/expanded structure, responsive 2x2 grid, labels, review and negative-balance behavior tested. |
 | CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
-| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Planned | P21-A/B. |
+| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Pending | P21-A/B implementation/tests complete; phase held by non-green Expo Doctor gate. |
 
 ## 8. Known issues and risks
 
@@ -777,12 +790,14 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
   - Culture — Yes.
   - Unexpected — Yes.
 - **Invest-category coverage:** `src/components/__tests__/TransactionForm.test.tsx` exercises every investment category through instrument selection, form submission/stored category, transaction label/filter, and budget actual (planned line or the Savings and Investments unbudgeted group). `src/components/__tests__/TransactionsScreen.test.tsx` additionally checks the investment row label.
-- **Investment category behavior:** users do not choose an investment category directly. They choose an instrument in the transaction form; `investCategoryFor` derives the read-only category from the selected instrument type (`Emergency fund` is the dedicated `ef` instrument case).
+- **Investment category behavior:** users do not choose an investment category directly. They choose a real holding in the transaction form; `investCategoryFor` derives the read-only category from the selected holding type. Emergency fund is a goal only, not an instrument or investment category.
 - **Schema version:** P19-C does not change persisted or backup schema; it remains v6.
 - **P19-C replaced test assertions:** (1) direct field-component style assertions for compact input height/font size, 40pt wrappers, segmented-option height/font size and hitSlop were replaced with screen-rendering checks for user-field props, labels, values and errors, as explicitly requested by CR-19; (2) body-row wrapping/width/equal-style assertions were replaced with ordered 44pt header targets, exact labels/icons, indicator and navigation checks because CR-17 supersedes that row; (3) five separate expanded balance lines and the old “Includes …” string were replaced by four equal metrics and the compact “Other money in”/optional “Pending” caption, as required by CR-18. The collapsed cap, review dismissal, Available/Closing label switch and no-NaN checks remain.
 - **P19-C final gates (2026-10-15):** focused tests 9 suites/203 tests; `npm test -- --coverage` 68 suites/707 tests; TypeScript, Expo lint, Expo Doctor, Android export and iOS export all exit 0. Expo Doctor output: `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!`. Istanbul totals: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%). `git diff --check` passes. Jest prints a Node experimental warning that localStorage is unavailable without `--localstorage-file`; it does not affect the test result.
 - **Expo patch alignment:** the first Doctor run found three SDK 57 patch mismatches (`@expo/ui` 57.0.24→57.0.25, `expo` 57.0.29→57.0.30, `expo-router` 57.0.27→57.0.28). `npx expo install --fix` applied the Expo-compatible versions and the final Doctor run passes 21/21. npm reported 67 audit advisories (17 moderate, 50 high) and two install-script allow-list notices; no `npm audit fix` was run.
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
+- **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
+- **P21 Expo Doctor blocker:** `npx expo doctor` is not a command supported by the installed local Expo CLI. The supported `npx expo-doctor` completed 20/21 checks and failed app-config validation: `app.json` sets `ios.icon` to `./assets/images/icon.png`, while the checker expects a `.icon` directory. `app.json` was not changed in P21; this configuration issue is outside the requested feature scope. P21-A/B and CR-8/13/14/15/20 remain Pending until the required Doctor gate is green and the gates are rerun.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
@@ -930,7 +945,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 2. **Phase 20 — Pending items, Home and navigation** (Done): P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), and P20-C main-screen-only tabs (CR-11).
-3. **Phase 21 — Emergency fund as a goal-linked model** (Planned): P21-A links,
+3. **Phase 21 — Emergency fund as a goal-linked model** (Pending; implementation
+   delivered, Expo Doctor gate unresolved): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
    allocation editing and linked-asset table (CR-14, CR-15).
 4. **Phase 22 — Demo data and seed importer** (Planned): P22-A four months of
@@ -1016,8 +1032,29 @@ Per-directory source coverage (Istanbul per-file summaries, excluding tests;
 `src/data` excludes hooks): domain 2192/2225 lines (98.52%), 2047/2187
 branches (93.60%); data 306/331 lines (92.45%), 221/243 branches (90.95%);
 lib 107/107 lines (100.00%), 126/126 branches (100.00%).
-| P21-A emergency-fund linked model [schema v7] | Planned | No EF entry removal/link migration implementation | Migration/net-worth tests pending |
-| P21-B emergency-fund cover/allocation | Planned | No months-of-cover, fallback or allocation edit UI | Domain/UI tests pending |
+### Phase 21 — Emergency fund goal model and allocation
+
+Schema changed from v6 to v7 in P21-A; P21-B did not change the schema. Feature
+implementation and feature-specific tests are complete. P21-A/B and CR-8,
+CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
+
+| Part | Status | Coverage evidence | Test / verification evidence |
+|---|---|---|---|
+| P21-A emergency-fund linked model [schema v7] | Pending | v6→v7 migration, backups, premigration archive, link integrity, category remap and total preservation | `src/data/__tests__/migrate.test.ts`, `migrateV4.test.ts`, `safeStorage.test.ts`, `createAppStore.test.ts`; `src/domain/__tests__/backup.test.ts`, `goalLinks.test.ts`, `schemas.test.ts` |
+| P21-B emergency-fund cover/allocation | Pending | Expense/salary fallback, truncation, minimum target, linked table and compact allocation UI | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`; `src/domain/__tests__/selectors.test.ts`, `efAllocationCustom.test.ts` |
+
+#### Phase 21 gates
+
+| Gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 69 suites / 723 tests passed. Domain: 98.33% lines, 93.54% branches; data excluding hooks: 93.38% lines, 87.73% branches; pure lib: 100% lines and branches. | 0 |
+| `npx tsc --noEmit` | Typecheck passed. | 0 |
+| `npx expo lint` | Lint passed. | 0 |
+| `npx expo export --platform android` | Android export passed. | 0 |
+| `npx expo export --platform ios` | iOS export passed. | 0 |
+| `npx expo doctor` | Unsupported by the installed local Expo CLI. | 1 |
+| `npx expo-doctor` | 20/21 checks passed. App config check failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`; the checker requires a `.icon` directory. The app config was not modified because this is pre-existing and outside P21 scope. | 1 |
+
 | P22-A four-month linked demo | Planned | Existing mock dataset not extended to four linked months | Demo consistency tests pending |
 | P22-B spreadsheet importer [P15-SEED] | Planned | No importer implementation | Importer tests pending |
 | P23-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |

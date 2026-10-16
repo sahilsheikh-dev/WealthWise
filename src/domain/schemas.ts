@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { formatDate, formatINR } from '../lib/format';
+import { formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -48,7 +48,7 @@ const transactionSchema = z.object({
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
-    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin', 'ef-entry']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -187,7 +187,7 @@ const expenseBudgetCategories = [
   'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
   'Entertainment', 'Fashion', 'Culture', 'Unexpected',
 ] as const;
-const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
+const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
   ...expenseBudgetCategories.filter((category) => category !== 'Other'),
   'Other',
@@ -262,13 +262,6 @@ const budgetSchema = z.object({
   });
 });
 
-const efEntrySchema = z.object({
-  id: idSchema,
-  date: isoDateSchema,
-  amount: moneySchema.refine((amount) => amount !== 0),
-  note: z.string(),
-});
-
 const settingsSchema = z.object({
   name: z.string().max(40),
   theme: z.enum(THEME_IDS),
@@ -322,7 +315,6 @@ export const appDataSchema = z.object({
   budgetTemplates: z.array(budgetTemplateSchema).optional(),
   defaultBudgetTemplateId: idSchema.nullable().optional(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
-  efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
   efCustomBuckets: efCustomBucketsSchema,
   efBucketLinks: efBucketLinksSchema,
@@ -344,7 +336,7 @@ export const TRANSACTION_CATEGORIES = {
     'Entertainment', 'Fashion', 'Culture', 'Unexpected',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
-  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments', 'Other'],
+  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
 export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
@@ -468,7 +460,7 @@ export function makeMonthAllocationFormSchema(
 ) {
   const kinds = mode === 'shortfall'
     ? ['borrowed', 'loan-proceeds', 'withdrawal', 'own-funds'] as const
-    : ['invest', 'ef', 'liability'] as const;
+    : ['invest', 'liability'] as const;
   return z.object({
     allocationKind: z.enum(kinds),
     amount: moneyInputSchema({
@@ -723,7 +715,7 @@ export function makeGoalFormSchema(
       context.addIssue({
         code: 'custom',
         path: ['target'],
-        message: `Emergency fund target must be at least 3 months of expenses (${formatINR(ctx.minTarget ?? 0)})`,
+        message: `Emergency fund target must be at least 3 months of cover (${formatINR(ctx.minTarget ?? 0)})`,
       });
     }
   });
@@ -736,31 +728,6 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[] }) {
     type: holdingTypeFormSchema,
     invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
     value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
-  });
-}
-
-export function makeEfEntryFormSchema(
-  today: ISODate,
-  ctx: { firstNegativeDate: (candidate: { date: ISODate; amount: number }) => ISODate | null },
-) {
-  return z.object({
-    kind: z.enum(['Deposit', 'Withdrawal']),
-    amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
-    date: dateInputSchema()
-      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
-    note: z.string().trim().max(60, 'Keep the note under 60 characters'),
-  }).superRefine((value, context) => {
-    const firstNegativeDate = ctx.firstNegativeDate({
-      date: value.date,
-      amount: value.kind === 'Deposit' ? value.amount : -value.amount,
-    });
-    if (firstNegativeDate) {
-      context.addIssue({
-        code: 'custom',
-        path: ['amount'],
-        message: `This would make the balance negative on ${formatDate(firstNegativeDate)}`,
-      });
-    }
   });
 }
 
@@ -799,8 +766,6 @@ export type GoalFormInput = z.input<ReturnType<typeof makeGoalFormSchema>>;
 export type GoalFormOutput = z.output<ReturnType<typeof makeGoalFormSchema>>;
 export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>;
 export type HoldingFormOutput = z.output<ReturnType<typeof makeHoldingFormSchema>>;
-export type EfEntryFormInput = z.input<ReturnType<typeof makeEfEntryFormSchema>>;
-export type EfEntryFormOutput = z.output<ReturnType<typeof makeEfEntryFormSchema>>;
 
 function profileFields() {
   return {

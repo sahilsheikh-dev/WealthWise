@@ -17,7 +17,6 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { efBalance } from '../src/domain/ef';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { holdingValue } from '../src/domain/portfolio';
@@ -78,7 +77,7 @@ export default function TransactionFormScreen() {
   const editing = transactionId !== undefined;
   const transaction = editing ? data.transactions.find((row) => row.id === transactionId) : undefined;
   const linkedSource = transaction?.source ? describeSource(data, transaction.source) : null;
-  const linkedInstrument = transaction?.source?.kind === 'holding-entry' || transaction?.source?.kind === 'ef-entry';
+  const linkedInstrument = transaction?.source?.kind === 'holding-entry';
   const instruments = useMemo(() => listInstruments(data, today), [data, today]);
   const legacyCategories = useMemo(() => {
     const categories: readonly string[] = transaction ? TRANSACTION_CATEGORIES[transaction.type] : [];
@@ -100,11 +99,9 @@ export default function TransactionFormScreen() {
           logs: holding.logs.filter((entry) => entry.id !== transaction.source?.entryId),
         }, today);
       }
-    } else if (transaction?.type === 'income' && transaction.source?.kind === 'ef-entry') {
-      values.ef = efBalance(data.efEntries.filter((entry) => entry.id !== transaction.source?.entryId));
     }
     return values;
-  }, [data.efEntries, data.holdings, instruments, today, transaction]);
+  }, [data.holdings, instruments, today, transaction]);
   const schema = useMemo(
     () => makeTransactionFormSchema(today, legacyCategories, {
       instruments,
@@ -131,9 +128,7 @@ export default function TransactionFormScreen() {
       note: transaction.note,
       type: transaction.type,
       category: transaction.category,
-      instrumentId: transaction.source?.kind === 'holding-entry'
-        ? transaction.source.parentId
-        : transaction.source?.kind === 'ef-entry' ? 'ef' : undefined,
+      instrumentId: transaction.source?.kind === 'holding-entry' ? transaction.source.parentId : undefined,
     } : {
       amount: requestedAmount ?? '',
       date: requestedDate ?? today,
@@ -159,7 +154,7 @@ export default function TransactionFormScreen() {
     setValue('instrumentId', lastCreatedInstrumentId, { shouldDirty: true, shouldValidate: true });
     if (getValues('type') === 'invest') {
       const selected = instruments.find((item) => item.id === lastCreatedInstrumentId);
-      if (selected) setValue('category', selected.id === 'ef' ? 'Emergency fund' : investCategoryFor(selected.type as Exclude<typeof selected.type, 'Emergency fund'>), { shouldDirty: true });
+      if (selected) setValue('category', investCategoryFor(selected.type), { shouldDirty: true });
     }
     setLastCreatedInstrumentId(null);
   }, [getValues, instruments, lastCreatedInstrumentId, setLastCreatedInstrumentId, setValue]);
@@ -182,7 +177,7 @@ export default function TransactionFormScreen() {
     ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
-    ...instruments.map((item) => [item.id, item.id === 'ef' ? item.name : `${item.name} (${item.type})`]),
+    ...instruments.map((item) => [item.id, `${item.name} (${item.type})`]),
     [createInvestmentChoice, '+ Create new investment'],
     [noInvestmentChoice, 'Not linked'],
   ]);
@@ -192,9 +187,7 @@ export default function TransactionFormScreen() {
     `${item.name} · ${formatAmount(withdrawable[item.id] ?? item.valueNow, 'exact', 1)}`,
   ]));
   const derivedCategory = selectedInstrument
-    ? selectedInstrument.id === 'ef'
-      ? 'Emergency fund'
-      : investCategoryFor(selectedInstrument.type as Exclude<typeof selectedInstrument.type, 'Emergency fund'>)
+    ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
 
   const save = async (values: TransactionFormOutput) => {
@@ -316,14 +309,12 @@ export default function TransactionFormScreen() {
               <Button
                 label={linkedSource.route === '/investment-entries'
                   ? 'Open investment entries'
-                  : linkedSource.route === '/liability-payments' ? 'Open liability payments' : 'Open emergency fund'}
+                  : 'Open liability payments'}
                 onPress={() => {
                   if (linkedSource.route === '/investment-entries') {
                     router.push(`/investment-entries?id=${encodeURIComponent(linkedSource.params.id ?? '')}` as Href);
                   } else if (linkedSource.route === '/liability-payments') {
                     router.push({ pathname: '/liability-payments', params: linkedSource.params });
-                  } else {
-                    router.push('/emergency-fund');
                   }
                 }}
               />
@@ -395,7 +386,7 @@ export default function TransactionFormScreen() {
                         }
                         field.onChange(id || undefined);
                         const item = instruments.find((instrument) => instrument.id === id);
-                        if (item) setValue('category', item.id === 'ef' ? 'Emergency fund' : investCategoryFor(item.type as Exclude<typeof item.type, 'Emergency fund'>), { shouldDirty: true, shouldValidate: true });
+                        if (item) setValue('category', investCategoryFor(item.type), { shouldDirty: true, shouldValidate: true });
                       }}
                       error={errors.instrumentId?.message}
                     />
@@ -436,9 +427,7 @@ export default function TransactionFormScreen() {
                     onChange={(value) => {
                       field.onChange(value);
                       const item = instruments.find((candidate) => candidate.id === value);
-                      if (selectedType === 'invest' && item) {
-                        setValue('category', item.id === 'ef' ? 'Emergency fund' : investCategoryFor(item.type as Exclude<typeof item.type, 'Emergency fund'>), { shouldDirty: true, shouldValidate: true });
-                      }
+                      if (selectedType === 'invest' && item) setValue('category', investCategoryFor(item.type), { shouldDirty: true, shouldValidate: true });
                     }}
                     error={errors.instrumentId?.message}
                   />

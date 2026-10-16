@@ -46,9 +46,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'savings-investments',
     name: 'Savings and Investments',
-    hint: 'Savings and every investment category, including Emergency fund.',
+    hint: 'Savings and every investment category.',
     weight: 20,
-    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'],
+    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'],
   },
   {
     id: 'wants',
@@ -76,8 +76,8 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
 export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   survival: { Living: 25, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 10, Insurance: 5 },
   'savings-investments': {
-    'Emergency fund': 35, 'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
-    'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 5,
+    'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
+    'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 40,
   },
   wants: { Shopping: 35, Other: 20, 'Eating out': 15, Entertainment: 15, Fashion: 15 },
   'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },

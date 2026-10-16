@@ -91,10 +91,8 @@ export function goalSavedFor(
   goal: Goal,
   data: AppData,
   asOf: ISODate,
-  efBalance: number,
 ): number {
-  if (goal.auto === 'ef') return efBalance;
-  if (goal.links.length === 0) return goal.saved;
+  if (goal.links.length === 0) return goal.auto === 'ef' ? 0 : goal.saved;
   return goal.links.reduce((total, link) =>
     total + (linkedValue(data, link.instrumentId, asOf) ?? 0) * link.share / 100, 0);
 }
@@ -102,9 +100,6 @@ export function goalSavedFor(
 export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink[]): void {
   const goal = data.goals.find((item) => item.id === goalId);
   if (!goal) throw new InvalidGoalLinksError('The selected goal could not be found.');
-  if (goal.auto === 'ef' && links.length > 0) {
-    throw new InvalidGoalLinksError('The Emergency fund goal cannot be linked to assets.');
-  }
   const seen = new Set<string>();
   for (const link of links) {
     if (!Number.isFinite(link.share) || link.share < 0.1 || link.share > 100
@@ -130,12 +125,39 @@ export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink
 
 export function setGoalLinks(data: AppData, goalId: string, links: GoalLink[]): AppData {
   validateGoalLinks(data, goalId, links);
+  const goal = data.goals.find((item) => item.id === goalId);
+  const linkedIds = new Set(links.map((link) => link.instrumentId));
+  const efBucketLinks = goal?.auto === 'ef'
+    ? Object.fromEntries(Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
+      bucketId,
+      holdingIds.filter((holdingId) => linkedIds.has(holdingId)),
+    ]))
+    : data.efBucketLinks;
   return {
     ...data,
+    efBucketLinks,
     goals: data.goals.map((goal) => goal.id === goalId
       ? { ...goal, links: links.map((link) => ({ ...link })) }
       : goal),
   };
+}
+
+export function linkEmergencyGoalAssets(data: AppData, instrumentIds: readonly string[]): AppData {
+  const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+  if (!emergencyGoal) throw new InvalidGoalLinksError('The emergency fund goal could not be found.');
+  const links = [...emergencyGoal.links];
+  for (const instrumentId of instrumentIds) {
+    if (links.some((link) => link.instrumentId === instrumentId)) continue;
+    const allocatedElsewhere = data.goals
+      .filter((goal) => goal.id !== emergencyGoal.id)
+      .flatMap((goal) => goal.links)
+      .filter((link) => link.instrumentId === instrumentId)
+      .reduce((total, link) => total + link.share, 0);
+    const available = Math.floor(Math.max(0, 100 - allocatedElsewhere) * 10) / 10;
+    if (available < 0.1) throw new AssetOverAllocatedError(allocatedElsewhere, available);
+    links.push({ instrumentId, share: available });
+  }
+  return setGoalLinks(data, emergencyGoal.id, links);
 }
 
 export type GoalProjection = {
@@ -160,8 +182,7 @@ function monthIndex(date: ISODate): number {
 }
 
 export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalProjection {
-  const emergencyBalance = data.efEntries.reduce((total, entry) => total + entry.amount, 0);
-  const current = goalSavedFor(goal, data, asOf, emergencyBalance);
+  const current = goalSavedFor(goal, data, asOf);
   const invested = goal.links.reduce((total, link) =>
     total + (linkedInvested(data, link.instrumentId) ?? 0) * link.share / 100, 0);
   const remaining = Math.max(0, goal.target - current);

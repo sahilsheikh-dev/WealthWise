@@ -1,12 +1,11 @@
-import { efBalance } from './ef';
 import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
   id: string;
-  kind: 'manual' | 'plan' | 'auto-ef';
+  kind: 'manual' | 'plan';
   name: string;
-  type: HoldingType | 'Emergency fund';
+  type: HoldingType;
   invested: number;
   value: number;
   gain: number;
@@ -63,16 +62,12 @@ export function buildPortfolioRows(data: AppData, asOf: ISODate): PortfolioRow[]
       holding,
     ),
   );
-  const emergencyBalance = efBalance(data.efEntries);
-  return [
-    ...holdings,
-    row('auto-ef', 'auto-ef', 'Emergency fund', 'Emergency fund', emergencyBalance, emergencyBalance),
-  ];
+  return holdings;
 }
 
 export function filterRows(
   rows: PortfolioRow[],
-  chip: 'All' | 'Recurring' | HoldingType | 'Emergency fund',
+  chip: 'All' | 'Recurring' | HoldingType,
 ): PortfolioRow[] {
   if (chip === 'All') return [...rows];
   if (chip === 'Recurring') return rows.filter((item) => item.kind === 'plan');

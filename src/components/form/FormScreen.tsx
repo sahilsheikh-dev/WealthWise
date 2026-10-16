@@ -14,12 +14,14 @@ export function FormScreen({
   title,
   onClose,
   children,
+  stickyHeader,
   footer,
   headerAction,
   isDirty = false,
 }: PropsWithChildren<{
   title: string;
   onClose: () => void;
+  stickyHeader?: ReactNode;
   footer: ReactNode;
   headerAction?: { label: string; onPress: () => void; disabled?: boolean };
   isDirty?: boolean;
@@ -70,9 +72,15 @@ export function FormScreen({
           ) : <View style={styles.closePlaceholder} />}
         </View>
         <ScrollView
+          stickyHeaderIndices={stickyHeader ? [0] : undefined}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
+          {stickyHeader ? (
+            <View style={[styles.stickyHeader, { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
+              {stickyHeader}
+            </View>
+          ) : null}
           {children}
         </ScrollView>
         <View style={[
@@ -94,5 +102,6 @@ const styles = StyleSheet.create({
   closePlaceholder: { width: 44, height: 44 },
   title: { flex: 1, textAlign: 'center' },
   content: { padding: 20, gap: 18, paddingBottom: 28 },
+  stickyHeader: { zIndex: 1, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   footer: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
 });
