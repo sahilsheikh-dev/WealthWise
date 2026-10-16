@@ -5,9 +5,10 @@ import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, us
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { AppText, Button, Card, ChipRow, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
@@ -25,6 +26,7 @@ import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
+import { useAppMenu } from '../../src/components/useAppMenu';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
@@ -58,10 +60,11 @@ export default function BudgetScreen() {
   const { colors } = useTheme();
   const { fontScale, width } = useWindowDimensions();
   const sorting = useSort('budgetSpending');
+  const appMenu = useAppMenu();
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
   const monthPendingItems = useMemo(
-    () => pendingItems(data, month, today).filter((item) => item.kind === 'due'),
+    () => pendingItems(data, month, today),
     [data, month, today],
   );
   const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
@@ -94,7 +97,7 @@ export default function BudgetScreen() {
     const plannedCount = pendingItems(useAppStore.getState().data, month, today)
       .filter((item) => item.kind === 'budget').length;
     setActionToast({
-      message: `Budget applied: ${plannedCount} planned items are in Transactions as pending`,
+      message: `Budget applied: ${plannedCount} planned items are in Transactions as due payments`,
       actionLabel: 'View',
       onAction: () => {
         setTxMonth(month);
@@ -111,19 +114,19 @@ export default function BudgetScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <AppHeader
             title="Budget"
-            showDefaultMenu={false}
-            rightActions={[
-              { icon: 'clock', label: 'History', onPress: () => router.push('/budget-history') },
+            menu={[
+              { icon: 'calendar', label: 'Budget history', onPress: () => router.push('/budget-history') },
               {
-                icon: 'check-circle',
+                icon: 'edit',
                 label: `Month review${reviewableMonth ? ', review pending' : ''}`,
-                showIndicator: Boolean(reviewableMonth),
                 onPress: () => router.push(reviewableMonth
                   ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
                   : '/month-review'),
               },
-              { icon: 'layers', label: 'Templates', onPress: () => router.push('/budget-templates') },
+              { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
+              ...appMenu,
             ]}
+            menuIndicator={Boolean(reviewableMonth)}
           />
           <View
             onTouchStart={() => setTouchingHeader(true)}
@@ -189,10 +192,28 @@ export default function BudgetScreen() {
           </Card>
 
           {!view.budget ? (
-            <Card>
-              <EmptyState title="No budget for this month" subtitle="Apply a template to create this month’s spending plan." />
-              <Button label="Apply template" icon="check" variant="primary" onPress={() => setApplyOpen(true)} />
-            </Card>
+            <View testID="budget-no-plan-card">
+              <Card style={styles.noBudgetCard}>
+                <AppText weight="bold" style={typography.name}>No budget for this month</AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>
+                  Apply a saved template or set one up. Planned items appear in Transactions as due payments.
+                </AppText>
+                <Button
+                  label="Apply template"
+                  icon="check"
+                  variant="primary"
+                  onPress={() => setApplyOpen(true)}
+                  style={styles.fullWidthButton}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Set up budget"
+                  onPress={() => router.push({ pathname: '/budget-template-form', params: { wizard: '1' } })}
+                  style={styles.textButton}>
+                  <AppText weight="semibold" style={{ color: colors.primary }}>Set up budget</AppText>
+                </Pressable>
+              </Card>
+            </View>
           ) : (
             <Card>
               <Pressable
@@ -250,17 +271,29 @@ export default function BudgetScreen() {
             ) : null}
           </Card>
 
-          <SectionTitle>Bills and dues</SectionTitle>
-          {monthPendingItems.length ? monthPendingItems.map((item) => (
-            <PendingItemRow
-              key={item.id}
-              item={item}
-              onPress={() => router.push({
-                pathname: '/(tabs)/transactions',
-                params: { month, category: item.category },
-              })}
-            />
-          )) : <Card><AppText style={{ color: colors.text3 }}>No scheduled bills or dues this month.</AppText></Card>}
+          <View testID="budget-bills-section">
+            <View testID="budget-bills-header" style={styles.billsHeader}>
+              <AppText weight="bold" style={[typography.name, styles.billsTitle]}>Bills and dues</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]} accessibilityLabel={`${monthPendingItems.length} due, ${formatAmount(monthPendingItems.reduce((sum, item) => sum + item.amount, 0), 'exact', 1)}`}>
+                {monthPendingItems.length} due · <AmountText value={monthPendingItems.reduce((sum, item) => sum + item.amount, 0)} tier="row" />
+              </AppText>
+            </View>
+            <View testID="budget-bills-list">
+              {monthPendingItems.length ? (
+                <Card style={styles.billsCard}>
+                  {monthPendingItems.map((item) => (
+                    <PendingItemRow
+                      key={item.id}
+                      item={item}
+                      actions={<PendingItemActions item={item} today={today} />}
+                    />
+                  ))}
+                </Card>
+              ) : (
+                <Card><AppText style={{ color: colors.text3 }}>No bills due this month</AppText></Card>
+              )}
+            </View>
+          </View>
           <Card>
             <AppText style={typography.meta}>Reminders are off · <AppText weight="semibold">Manage reminders</AppText></AppText>
           </Card>
@@ -439,6 +472,12 @@ const styles = StyleSheet.create({
   previousPositionText: { flex: 1, minWidth: 0, gap: 3 },
   reviewButton: { flexGrow: 0, minWidth: 82 },
   reviewButtonStacked: { alignSelf: 'stretch' },
+  noBudgetCard: { gap: 12 },
+  fullWidthButton: { alignSelf: 'stretch' },
+  textButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  billsHeader: { marginHorizontal: 20, marginTop: 18, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  billsTitle: { flex: 1 },
+  billsCard: { gap: 0, paddingVertical: 0 },
   closingPosition: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   closingPositionLabel: { flex: 1, minWidth: 0, gap: 3 },
   closingPositionStacked: { flexDirection: 'column', alignItems: 'flex-start' },

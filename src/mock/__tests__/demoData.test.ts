@@ -93,11 +93,12 @@ describe('four-month demo data', () => {
     )).toBe(true);
   });
 
-  it('includes overdue, upcoming and applied-budget pending rows', () => {
+  it('includes an overdue SIP, upcoming EMI, future-month due, later installment, and planned budget rows', () => {
     const currentMonth = monthKey(today);
+    const futureMonth = shiftMonth(currentMonth, 1);
     const pending = [
       ...months.flatMap((month) => pendingItems(data, month, today)),
-      ...pendingItems(data, shiftMonth(currentMonth, 1), today),
+      ...pendingItems(data, futureMonth, today),
       ...pendingItems(data, shiftMonth(currentMonth, 2), today),
     ];
     expect(pending).toEqual(expect.arrayContaining([
@@ -107,6 +108,30 @@ describe('four-month demo data', () => {
     ]));
     expect(pendingItems(data, currentMonth, today).some((item) =>
       item.kind === 'budget' && item.status === 'planned',
+    )).toBe(true);
+    expect(pending.some((item) =>
+      item.kind === 'due'
+      && item.source.kind === 'plan'
+      && item.source.parentId === 'demo-holding-recurring-deposit'
+      && item.status === 'overdue',
+    )).toBe(true);
+    expect(pendingItems(data, futureMonth, today)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'due',
+        title: 'Home improvement loan',
+        status: 'upcoming',
+        source: expect.objectContaining({ kind: 'liability', parentId: 'demo-liability-home' }),
+      }),
+    ]));
+    const laterSip = pendingItems(data, currentMonth, today).find((item) =>
+      item.kind === 'due'
+      && item.source.kind === 'plan'
+      && item.source.parentId === 'demo-holding-recurring-deposit'
+      && item.status === 'upcoming',
+    );
+    expect(laterSip).toMatchObject({ actionable: false, dueDate: `${currentMonth}-25` });
+    expect(pending.some((item) =>
+      item.kind === 'due' && item.dueDate !== undefined && item.dueDate.slice(0, 7) > currentMonth,
     )).toBe(true);
   });
 

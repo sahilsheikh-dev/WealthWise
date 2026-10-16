@@ -81,6 +81,8 @@ jest.mock('react-native', () => {
   const node = (name: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
     ReactModule.createElement(name, props, children);
   return {
+    Platform: { OS: 'ios' },
+    Alert: { alert: jest.fn() },
     PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
@@ -214,7 +216,7 @@ describe('Transactions available-balance card', () => {
     const balanceCard = renderer.root.findByProps({ testID: 'available-balance-card' });
     expect(balanceCard.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
     expect(renderedText(balanceCard)).not.toContain('Other money in');
-    expect(renderedText(balanceCard)).not.toContain('Pending');
+    expect(renderedText(balanceCard)).not.toContain('due');
     expect(renderedText(balanceCard)).not.toContain('NaN');
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
@@ -384,7 +386,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('does not restore the removed Pending balance caption when recurring dues exist', () => {
+  it('does not show a recurring-due caption in the balance card', () => {
     const previousHoldings = mockData.holdings;
     const month = todayISO().slice(0, 7);
     mockData.holdings = [{
@@ -411,7 +413,7 @@ describe('Transactions available-balance card', () => {
       const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
       expect(cashCard.findAllByProps({ testID: 'balance-pending-caption' })).toHaveLength(0);
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
-        .not.toContain('Pending');
+        .not.toContain('due');
     } finally {
       mockData.holdings = previousHoldings;
     }

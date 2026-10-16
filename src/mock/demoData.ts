@@ -194,7 +194,9 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
 }
 
 function makeLiabilities(months: string[]): Liability[] {
-  const startDate = addMonths(`${months[0]}-12`, -1);
+  const currentMonth = months.at(-1);
+  if (!currentMonth) throw new Error('The demo requires a current month.');
+  const startDate = addMonths(`${currentMonth}-12`, -2);
   return [{
     id: 'demo-liability-home',
     kind: 'recurring',

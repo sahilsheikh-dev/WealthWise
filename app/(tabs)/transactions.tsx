@@ -281,7 +281,7 @@ export default function TransactionsScreen() {
               ))}
             </View>
           ) : (
-            <EmptyState title="No pending items this month" />
+            <EmptyState title="No due payments this month" />
           ) : null}
         </View>
 

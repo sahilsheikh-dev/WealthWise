@@ -17,6 +17,9 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
 }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
 jest.mock('../../data/store', () => ({
@@ -134,7 +137,7 @@ describe('Home screen theme smoke', () => {
     act(() => renderer?.unmount());
   });
 
-  it('opens the Budget tab from the Home budget card', async () => {
+  it('keeps the removed Budget actions off the Home spending card', async () => {
     jest.clearAllMocks();
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
@@ -142,8 +145,10 @@ describe('Home screen theme smoke', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    act(() => renderer?.root.findByProps({ label: 'Open budget' }).props.onPress());
-    expect(router.push).toHaveBeenCalledWith('/(tabs)/budget');
+    expect(renderer.root.findAllByType('button').filter((node) =>
+      ['Open budget', 'Apply budget'].includes(String(node.props.label)),
+    )).toHaveLength(0);
+    expect(router.push).not.toHaveBeenCalledWith('/(tabs)/budget');
     await act(async () => renderer?.unmount());
   });
 
@@ -167,8 +172,7 @@ describe('Home screen theme smoke', () => {
         .toEqual({ expanded: false });
       act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(renderer.root.findAll((node) => String(node.type) === 'section')
-        .map((node) => node.children.join(' '))).toContain('Spending by category');
+      expect(visibleText).toContain('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);
       expect(visibleText).not.toContain('Salary');
