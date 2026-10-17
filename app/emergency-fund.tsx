@@ -1,9 +1,8 @@
 import { router } from 'expo-router';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
-import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { AppText, Button, Card, EmptyState, ProgressBar, Screen } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { emergencyFundBaseline, monthsCovered } from '../src/domain/ef';
@@ -15,7 +14,6 @@ import {
 import { goalSavedFor } from '../src/domain/goalLinks';
 import { effectiveEmergencyTarget, ensureEfGoal } from '../src/domain/goals';
 import { holdingValue } from '../src/domain/portfolio';
-import type { GoalLink, Holding } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { typography } from '../src/theme/tokens';
@@ -25,7 +23,6 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 export default function EmergencyFundScreen() {
   const { colors } = useTheme();
-  const { fontScale } = useWindowDimensions();
   const data = useAppData();
   const asOf = todayISO();
   const baseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
@@ -40,10 +37,8 @@ export default function EmergencyFundScreen() {
   const { allocation, repaired } = resolveEfAllocation(data);
   const targetAmounts = allocateAmounts(balance, allocation, data.efCustomBuckets);
   const links = emergencyGoal.links;
-  const linkedAssets = links.flatMap((link): { link: GoalLink; holding: Holding }[] => {
-    const holding = data.holdings.find((item) => item.id === link.instrumentId);
-    return holding ? [{ link, holding }] : [];
-  });
+  const hasLinkedAssets = links.some((link) =>
+    data.holdings.some((holding) => holding.id === link.instrumentId));
   const bucketRows = activeEfBucketMetadata(allocation, data.efCustomBuckets, data.efBucketLinks).map((bucket) => {
     const holdings = (data.efBucketLinks[bucket.id] ?? []).flatMap((id) => {
       const holding = data.holdings.find((item) => item.id === id);
@@ -52,21 +47,29 @@ export default function EmergencyFundScreen() {
     });
     const actual = holdings.reduce((sum, item) => sum + holdingValue(item.holding, asOf) * item.link.share / 100, 0);
     const planned = targetAmounts[bucket.id] ?? 0;
-    const status = actual < planned - 0.005 ? 'Under' : actual > planned + 0.005 ? 'Over' : 'On target';
     return {
       bucket,
       targetPct: allocation[bucket.id] ?? 0,
       planned,
       actual,
       percent: planned > 0 ? Math.min(100, actual / planned * 100) : actual > 0 ? 100 : 0,
-      status,
     };
   });
   const openGoalEditor = () => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } });
 
   return (
     <Screen>
-      <AppHeader title="Emergency fund" showBack fallbackHref="/(tabs)" showDefaultMenu={false} />
+      <AppHeader
+        title="Emergency fund"
+        showBack
+        fallbackHref="/(tabs)"
+        showDefaultMenu={false}
+        rightActions={[{
+          icon: 'edit-2',
+          label: 'Edit allocation',
+          onPress: () => router.push('/ef-allocation-form'),
+        }]}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Current value</AppText>
         <AmountText value={balance} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.amount]} />
@@ -93,57 +96,40 @@ export default function EmergencyFundScreen() {
       </Card>
 
       <Card>
-        <CardHeaderRow
-          title={<AppText weight="semibold">Allocation</AppText>}
-          editLabel="Edit emergency fund allocation"
-          onEdit={() => router.push('/ef-allocation-form')}
-        />
+        <AppText weight="semibold" style={styles.allocationTitle}>Allocation</AppText>
         {repaired ? (
           <AppText style={[typography.meta, { color: colors.text2 }]}>
             Your allocation was adjusted to total 100%. Check it in Edit allocation.
           </AppText>
         ) : null}
-        {linkedAssets.length === 0 ? (
+        {!hasLinkedAssets ? (
           <View style={styles.emptyAllocation}>
             <EmptyState title="No assets linked" />
             <Button label="Link assets" icon="link" onPress={openGoalEditor} />
           </View>
-        ) : (
-          <>
-            {bucketRows.map(({ bucket, targetPct, planned, actual, percent, status }) => (
-              <View key={bucket.id} style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.bucketHeader}>
-                  <AppText weight="semibold" style={styles.bucketName}>{bucket.label}</AppText>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Target {targetPct}%</AppText>
-                </View>
-                <View style={styles.amountLine}>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Target amount</AppText>
-                  <AmountText value={planned} tier="row" />
-                </View>
-                <View style={styles.amountLine}>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Available amount</AppText>
-                  <AmountText value={actual} tier="row" weight="semibold" />
-                </View>
-                <View style={[
-                  styles.progressStatusRow,
-                  fontScale >= 1.3 && styles.progressStatusStacked,
-                ]} testID={`emergency-fund-progress-status-${bucket.id}`}>
-                  <View testID={`emergency-fund-progress-${bucket.id}`} style={styles.progressBar}>
-                    <ProgressBar percent={percent} />
-                  </View>
-                  <AppText style={[
-                    typography.meta,
-                    styles.progressStatus,
-                    fontScale >= 1.3 && styles.progressStatusRight,
-                    { color: status === 'On target' ? colors.ok : colors.text2 },
-                  ]} testID={`emergency-fund-status-${bucket.id}`}>
-                    {status}
-                  </AppText>
-                </View>
-              </View>
-            ))}
-          </>
-        )}
+        ) : null}
+        {bucketRows.map(({ bucket, targetPct, planned, actual, percent }) => (
+          <View
+            key={bucket.id}
+            testID={`emergency-fund-allocation-item-${bucket.id}`}
+            style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
+            <View style={styles.bucketHeader}>
+              <AppText weight="semibold" style={styles.bucketName}>{bucket.label}</AppText>
+            </View>
+            <View style={styles.amountLine}>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Available amount</AppText>
+              <AmountText value={actual} tier="row" weight="semibold" />
+            </View>
+            <View style={styles.amountLine}>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Target amount</AppText>
+              <AmountText value={planned} tier="row" />
+            </View>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>Target {targetPct}%</AppText>
+            <View testID={`emergency-fund-progress-${bucket.id}`} style={styles.progressBar}>
+              <ProgressBar percent={percent} />
+            </View>
+          </View>
+        ))}
       </Card>
     </Screen>
   );
@@ -152,14 +138,11 @@ export default function EmergencyFundScreen() {
 const styles = StyleSheet.create({
   amount: { marginTop: 5 },
   summaryLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  allocationTitle: { marginBottom: 8 },
   bucketRow: { gap: 5, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   bucketHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bucketName: { flex: 1 },
   amountLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  progressStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  progressStatusStacked: { flexDirection: 'column', alignItems: 'stretch' },
-  progressStatus: { flexShrink: 0 },
-  progressStatusRight: { alignSelf: 'flex-end', textAlign: 'right' },
-  progressBar: { flex: 1, minWidth: 0 },
+  progressBar: { width: '100%' },
   emptyAllocation: { gap: 8 },
 });

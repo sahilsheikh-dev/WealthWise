@@ -89,10 +89,6 @@ export function setEfAllocation(data: AppData, allocation: EfAllocation): AppDat
   return { ...data, efAllocation: resolved.allocation };
 }
 
-export function resetEfAllocation(data: AppData): AppData {
-  return { ...data, efAllocation: null };
-}
-
 export function addEfCustomBucket(
   data: AppData,
   input: Omit<EfCustomBucket, 'id'>,

@@ -462,7 +462,7 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls).toBe(writesBeforeFailure);
   });
 
-  it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
+  it('saves emergency fund allocation with one persisted write and rehydrates it', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
     await waitForHydration(store);
@@ -482,10 +482,6 @@ describe('createAppStore persistence', () => {
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
     expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
-    const writesBeforeReset = storage.setItemCalls;
-    store.getState().actions.resetEfAllocation();
-    expect(storage.setItemCalls - writesBeforeReset).toBe(1);
-    expect(store.getState().data.efAllocation).toBeNull();
   });
 
   it('saves custom buckets, percentages, and investment links in one persisted write', async () => {

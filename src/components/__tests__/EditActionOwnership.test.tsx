@@ -21,22 +21,28 @@ function sourceFiles(directory: string): string[] {
   });
 }
 
-describe('shared edit action ownership', () => {
-  it('keeps the edit pencil implementation exclusively in shared row components', () => {
+describe('edit action ownership', () => {
+  it('keeps screen-header edit actions on the explicitly approved screens', () => {
     const root = process.cwd();
     const owners = new Set([
       join(root, 'src/components/CardHeaderRow.tsx'),
       join(root, 'src/components/ListRow.tsx'),
     ]);
-    const budgetHeader = join(root, 'app/(tabs)/budget.tsx');
+    const approvedHeaders = new Map([
+      [join(root, 'app/(tabs)/budget.tsx'), ["icon: 'edit-2'", "label: 'Edit budget'"]],
+      [join(root, 'app/emergency-fund.tsx'), ["icon: 'edit-2'", "label: 'Edit allocation'"]],
+    ]);
     const violations = ['app', 'src/components']
       .flatMap((directory) => sourceFiles(join(root, directory)))
-      .filter((path) => path !== budgetHeader
+      .filter((path) => !approvedHeaders.has(path)
         && !owners.has(path)
         && readFileSync(path, 'utf8').includes('edit-2'));
 
     expect(violations).toEqual([]);
-    expect(readFileSync(budgetHeader, 'utf8')).toContain("icon: 'edit-2', label: 'Edit budget'");
+    for (const [path, expected] of approvedHeaders) {
+      const source = readFileSync(path, 'utf8');
+      for (const action of expected) expect(source).toContain(action);
+    }
   });
 
   it('renders edit actions as the final, accessible action in both shared row types', () => {
