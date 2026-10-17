@@ -6,6 +6,7 @@ import {
   TRANSACTION_CATEGORIES,
 } from '../schemas';
 import { mockAppData } from '../../mock/data';
+import { buildDemoData } from '../../mock/demoData';
 import {
   BUDGET_CATEGORY_WEIGHTS,
   BUDGET_GROUPS,
@@ -19,6 +20,7 @@ import {
   customizeMonthBudget,
   deleteBudgetTemplate,
   ensureMonthBudget,
+  linkedRecurringForMonth,
   MissingPlannedIncomeError,
   monthlyCommitments,
   outstandingAt,
@@ -299,6 +301,74 @@ describe('budget templates and monthly views', () => {
     expect(commitments[1]?.paidAmount).toBe(100);
     expect(commitments[4]?.paidAmount).toBe(25);
     expect(() => monthlyCommitments(data, '2026-13')).toThrow(RangeError);
+  });
+
+  it('projects paid and unpaid recurring schedule rows by month and category', () => {
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      holdings: [{
+        ...plan,
+        logs: [{ id: 'plan-paid', date: '2026-03-05', amount: 100, note: '', kind: 'Deposit' as const }],
+      }],
+      liabilities: [
+        recurringLiability,
+        liability,
+        {
+          ...liability,
+          id: 'settled',
+          payments: [{ id: 'full', date: '2026-03-10', amount: 500, note: '', kind: 'Payment' as const }],
+        },
+        { ...liability, id: 'undated', dueDate: null },
+      ],
+      policies: [{
+        ...policy,
+        payments: [{ id: 'premium-paid', date: '2026-03-05', amount: 60, note: '' }],
+      }, quarterlyPolicy],
+    };
+    const rows = linkedRecurringForMonth(data, '2026-03', '2026-03-31');
+
+    expect(rows.map(({ kind, category, dueDate, status }) => [kind, category, dueDate, status])).toEqual([
+      ['policy', 'Insurance', '2026-03-05', 'paid'],
+      ['plan', 'Mutual fund / SIP', '2026-03-05', 'paid'],
+      ['liability', 'EMI', '2026-03-05', 'paid'],
+      ['policy', 'Insurance', '2026-03-05', 'ongoing'],
+      ['liability', 'EMI', '2026-03-20', 'overdue'],
+    ]);
+    expect(rows.map((row) => row.id)).toEqual(expect.arrayContaining([
+      'plan:plan:plan:0',
+      'liability:recurring:liability:1',
+    ]));
+    expect(rows.find((row) => row.id.startsWith('liability:debt:'))?.amount).toBe(475);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(rows.length);
+    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-04')
+      .find((row) => row.kind === 'plan')?.status).toBe('upcoming');
+    expect(() => linkedRecurringForMonth(data, '2026-13', '2026-03-31')).toThrow(RangeError);
+  });
+
+  it('matches calendar months, including leap February and demo schedule rows', () => {
+    const monthEndPlan: PlanHolding = {
+      ...plan,
+      id: 'month-end-plan',
+      startDate: '2024-01-31',
+      trackFrom: '2024-01-31',
+    };
+    expect(linkedRecurringForMonth({
+      ...emptyAppData('2024-01-01'),
+      holdings: [monthEndPlan],
+    }, '2024-02', '2024-02-01')).toMatchObject([
+      { dueDate: '2024-02-29', status: 'upcoming' },
+    ]);
+    const demoRows = linkedRecurringForMonth(
+      buildDemoData('2026-10-17'), '2026-10', '2026-10-17',
+    );
+    expect(demoRows.length).toBeGreaterThan(0);
+    expect(demoRows.every((row) => row.dueDate.startsWith('2026-10-'))).toBe(true);
+    expect(demoRows.map((row) => row.category)).toEqual(expect.arrayContaining([
+      'EMI', 'Insurance', 'Fixed deposit / RD',
+    ]));
+    expect(linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-03', '2026-03-01')).toEqual([]);
+    expect(() => linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-13', '2026-03-01'))
+      .toThrow(RangeError);
   });
 
   it('builds monthly cash-flow, planned and actual totals, prepayments, and unbudgeted spending', () => {

@@ -6,6 +6,7 @@ import { investCategoryFor } from './links';
 import { monthEndDate, monthPositionAt } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
+import type { ScheduleRow } from './schedule';
 import type {
   AppData,
   BudgetLine,
@@ -25,6 +26,16 @@ export type BudgetCommitment = {
   plannedAmount: number;
   status: 'paid' | 'overdue' | 'ongoing' | 'upcoming';
   paidAmount: number;
+};
+
+export type LinkedRecurringRow = {
+  kind: 'plan' | 'liability' | 'policy';
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+  dueDate: ISODate;
+  status: BudgetCommitment['status'];
 };
 
 export type BudgetGroup = {
@@ -152,6 +163,53 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
     }
   }
   return orderedRows(rows);
+}
+
+function linkedRowsFor(
+  kind: LinkedRecurringRow['kind'],
+  parentId: string,
+  name: string,
+  category: string,
+  month: string,
+  rows: ScheduleRow[],
+): LinkedRecurringRow[] {
+  return rows.flatMap((row) => row.amount <= 0 || monthKey(row.dueDate) !== month
+    ? []
+    : [{
+      kind,
+      id: `${kind}:${parentId}:${row.id}`,
+      name,
+      category,
+      amount: row.amount,
+      dueDate: row.dueDate,
+      status: row.status,
+    }]);
+}
+
+export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISODate): LinkedRecurringRow[] {
+  const key = monthOf(month);
+  const rows: LinkedRecurringRow[] = [];
+  for (const holding of data.holdings) {
+    if (holding.kind !== 'plan') continue;
+    rows.push(...linkedRowsFor(
+      'plan', holding.id, holding.name, investCategoryFor(holding.type), key, planSchedule(holding, asOf).rows,
+    ));
+  }
+  for (const liability of data.liabilities) {
+    if (liability.kind === 'one-time' && liability.dueDate === null) continue;
+    rows.push(...linkedRowsFor(
+      'liability', liability.id, liability.name, 'EMI', key, liabilitySchedule(liability, asOf).rows,
+    ));
+  }
+  for (const policy of data.policies) {
+    rows.push(...linkedRowsFor(
+      'policy', policy.id, policy.name, 'Insurance', key, policySchedule(policy, asOf).rows,
+    ));
+  }
+  return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
+    || a.name.localeCompare(b.name)
+    || a.kind.localeCompare(b.kind)
+    || a.id.localeCompare(b.id));
 }
 
 export class MissingPlannedIncomeError extends Error {
