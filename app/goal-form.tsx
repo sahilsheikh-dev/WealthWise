@@ -62,7 +62,7 @@ export default function GoalFormScreen() {
           year: String(goal.year),
           links: goal.links.map((link) => ({ instrumentId: link.instrumentId, share: String(link.share) })),
         }
-        : { name: '', target: '', saved: '0', year: '', links: [] },
+        : { name: '', target: '', saved: '', year: '', links: [] },
     });
   const links = useWatch({ control, name: 'links' }) ?? [];
   const instruments = useMemo(() => linkableInstruments(data, today), [data, today]);
