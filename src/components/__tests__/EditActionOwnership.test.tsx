@@ -28,11 +28,15 @@ describe('shared edit action ownership', () => {
       join(root, 'src/components/CardHeaderRow.tsx'),
       join(root, 'src/components/ListRow.tsx'),
     ]);
+    const budgetHeader = join(root, 'app/(tabs)/budget.tsx');
     const violations = ['app', 'src/components']
       .flatMap((directory) => sourceFiles(join(root, directory)))
-      .filter((path) => !owners.has(path) && readFileSync(path, 'utf8').includes('edit-2'));
+      .filter((path) => path !== budgetHeader
+        && !owners.has(path)
+        && readFileSync(path, 'utf8').includes('edit-2'));
 
     expect(violations).toEqual([]);
+    expect(readFileSync(budgetHeader, 'utf8')).toContain("icon: 'edit-2', label: 'Edit budget'");
   });
 
   it('renders edit actions as the final, accessible action in both shared row types', () => {
