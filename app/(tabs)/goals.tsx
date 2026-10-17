@@ -6,7 +6,7 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
+import { AppText, Card, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
@@ -26,6 +26,7 @@ export default function GoalsScreen() {
   const data = useAppData();
   const sorting = useSort('goals');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const asOf = todayISO();
   const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
   const expenseBaseline = emergencyBaseline.amount;
@@ -45,6 +46,12 @@ export default function GoalsScreen() {
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleGoals = normalizedQuery
+    ? sortedGoals.filter((goal) =>
+      `${goal.name} ${goal.auto === 'ef' ? 'Emergency fund' : ''}`.toLowerCase().includes(normalizedQuery),
+    )
+    : sortedGoals;
   const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
     || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
 
@@ -70,6 +77,13 @@ export default function GoalsScreen() {
           </ChipRow>
         </View>
       ) : null}
+      <SearchField
+        accessibilityLabel="Search goals"
+        placeholder="Search goal name"
+        value={query}
+        onChangeText={setQuery}
+        onClear={() => setQuery('')}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -80,7 +94,7 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      {sortedGoals.map((goal) => {
+      {visibleGoals.map((goal) => {
         const view = goalView(goal, { expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
@@ -173,6 +187,7 @@ export default function GoalsScreen() {
           </Pressable>
         );
       })}
+      {normalizedQuery && visibleGoals.length === 0 ? <EmptyState title="No matches" /> : null}
     </Screen>
   );
 }

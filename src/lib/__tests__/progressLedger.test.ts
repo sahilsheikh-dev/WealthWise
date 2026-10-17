@@ -234,7 +234,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-29')).toBe('Done');
     expect(statusFor('CR-47')).toBe('In progress');
     expect(statusFor('CR-48')).toBe('Done (focused tests; final gates pending)');
-    expect(statusFor('CR-49')).toBe('Planned');
+    expect(statusFor('CR-49')).toBe('Done (focused tests; final gates pending)');
     expect(statusFor('CR-50')).toBe('Done (focused tests; final gates pending)');
     expect(statusFor('CR-51')).toBe('Planned');
     expect(statusFor('CR-30')).toBe('Done');
@@ -271,6 +271,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P20E-CR27');
     expect(ledger).toContain('DEC-P20E-CR31');
     expect(ledger).toContain('DEC-P20L-CR50');
+    expect(ledger).toContain('DEC-P20L-CR49');
     expect(ledger).toContain('DEC-P20F-STATUS');
     expect(ledger).toContain('DEC-P20G');
     expect(ledger).toContain('DEC-P20H-retired');

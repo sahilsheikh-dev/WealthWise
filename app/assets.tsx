@@ -13,6 +13,7 @@ import {
   Chip,
   ChipRow,
   EmptyState,
+  SearchField,
   Screen,
   StatPill,
   StatPillRow,
@@ -58,6 +59,7 @@ export default function AssetsScreen() {
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
@@ -81,9 +83,15 @@ export default function AssetsScreen() {
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
   const filteredRows = filterRows(rows, filter);
+  const normalizedQuery = query.trim().toLowerCase();
+  const searchedRows = normalizedQuery
+    ? filteredRows.filter((row) =>
+      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
+    )
+    : filteredRows;
   const visibleRows = filter === 'Recurring'
-    ? sipSorting.sort(filteredRows)
-    : assetSorting.sort(filteredRows);
+    ? sipSorting.sort(searchedRows)
+    : assetSorting.sort(searchedRows);
   const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
   const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
   const filterActive = filter !== 'All'
@@ -129,6 +137,13 @@ export default function AssetsScreen() {
           </ChipRow>
         </View>
       ) : null}
+      <SearchField
+        accessibilityLabel="Search assets"
+        placeholder="Search name or type"
+        value={query}
+        onChangeText={setQuery}
+        onClear={() => setQuery('')}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
         <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -190,7 +205,10 @@ export default function AssetsScreen() {
           );
         })}
         {visibleRows.length === 0 ? (
-          <EmptyState title={data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'} subtitle="Your holdings will appear here." />
+          <EmptyState
+            title={normalizedQuery ? 'No matches' : data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'}
+            subtitle={normalizedQuery ? undefined : 'Your holdings will appear here.'}
+          />
         ) : null}
       </View>
       {data.holdings.length === 0 ? (

@@ -16,6 +16,7 @@ import {
   ChipRow,
   EmptyState,
   ProgressBar,
+  SearchField,
   Screen,
   StatPill,
   StatPillRow,
@@ -45,6 +46,7 @@ export default function LiabilitiesScreen() {
   const sorting = useSort('liabilities');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
+  const [query, setQuery] = useState('');
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
@@ -70,9 +72,11 @@ export default function LiabilitiesScreen() {
   const filterActive = kindFilter !== 'All'
     || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
+  const normalizedQuery = query.trim().toLowerCase();
   const visibleLiabilities = sortedLiabilities.filter((liability) =>
-    kindFilter === 'All'
-    || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'),
+    (kindFilter === 'All'
+      || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'))
+    && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
   );
 
   return (
@@ -107,6 +111,13 @@ export default function LiabilitiesScreen() {
             </ChipRow>
           </View>
         ) : null}
+        <SearchField
+          accessibilityLabel="Search liabilities"
+          placeholder="Search name or type"
+          value={query}
+          onChangeText={setQuery}
+          onClear={() => setQuery('')}
+        />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Total outstanding</AppText>
           <AmountText value={overview.totalOutstanding} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -159,17 +170,17 @@ export default function LiabilitiesScreen() {
         {visibleLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
-        {data.liabilities.length === 0 ? (
+        {visibleLiabilities.length === 0 && (normalizedQuery.length > 0 || data.liabilities.length > 0) ? (
+          <View testID="liability-no-matches">
+            <EmptyState title="No matches" />
+          </View>
+        ) : data.liabilities.length === 0 ? (
           <>
             <EmptyState title="No liabilities yet" subtitle="Add a liability to track its outstanding balance." />
             <View style={styles.emptyAction}>
               <Button label="Add a liability" icon="plus" variant="primary" onPress={() => router.push('/liability-form')} />
             </View>
           </>
-        ) : visibleLiabilities.length === 0 ? (
-          <View testID="liability-no-matches">
-            <EmptyState title="No matches" />
-          </View>
         ) : null}
       </Screen>
   );

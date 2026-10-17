@@ -36,7 +36,7 @@ import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability, Transaction } from '../../domain/types';
+import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
@@ -1954,6 +1954,187 @@ describe('route render smoke audit', () => {
       if (!recurringChip) throw new Error('Recurring liability filter did not render.');
       act(() => recurringChip.props.onPress());
       expect(renderer.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches assets by trimmed case-insensitive name or type and composes with type filters', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const assets: ManualHolding[] = [
+      { id: 'gold-antique', kind: 'manual', name: 'Antique collection', type: 'Gold', invested: 1_000, value: 1_500, logs: [] },
+      { id: 'gold-retirement', kind: 'manual', name: 'Retirement reserve', type: 'Gold', invested: 1_000, value: 1_100, logs: [] },
+      { id: 'cash-type', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
+    ];
+    const data: AppData = { ...emptyAppData(todayISO()), holdings: assets };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(AssetsScreen));
+      renderer = screen;
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search assets' });
+      act(() => search.props.onChangeText('  gOlD  '));
+      const assetCards = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('asset-card-'),
+      ).map((node) => node.props.testID) ?? [];
+      expect(assetCards()).toEqual(['asset-card-manual-Antique collection', 'asset-card-manual-Retirement reserve']);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Asset sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Asset name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(assetCards()).toEqual(['asset-card-manual-Retirement reserve', 'asset-card-manual-Antique collection']);
+
+      const cashChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Cash');
+      if (!cashChip) throw new Error('Cash asset filter did not render.');
+      act(() => cashChip.props.onPress());
+      expect(screen.root.findAllByProps({ title: 'No matches' })).not.toHaveLength(0);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' CASH '));
+      expect(assetCards()).toEqual(['asset-card-manual-Emergency cash']);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(AssetsScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search assets' }).props.value).toBe('');
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches liabilities by trimmed case-insensitive name or type alongside the kind filter', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const oneTime: OneTimeLiability = {
+      id: 'search-friend',
+      kind: 'one-time',
+      name: 'Friend loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      dueDate: null,
+      payments: [],
+    };
+    const other: OneTimeLiability = { ...oneTime, id: 'search-bank', name: 'Bank', type: 'Personal loan' };
+    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, oneTime] };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(LiabilitiesScreen));
+      renderer = screen;
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const oneTimeChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'One-time');
+      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+      act(() => oneTimeChip.props.onPress());
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search liabilities' });
+      act(() => search.props.onChangeText('  LOAN  '));
+      const liabilityCards = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('liability-card-search-'),
+      ).map((node) => node.props.testID) ?? [];
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Liability sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(liabilityCards()).toEqual(['liability-card-search-friend', 'liability-card-search-bank']);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  fRiEnD  '));
+      expect(liabilityCards()).toEqual(['liability-card-search-friend']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  personal loan '));
+      expect(liabilityCards()).toEqual(['liability-card-search-bank']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('nothing'));
+      expect(screen.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.value).toBe('');
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches goals by trimmed case-insensitive name and shows No matches', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const goals: Goal[] = [
+      { id: 'search-road-trip', name: 'Road trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
+      { id: 'search-japan-trip', name: 'Japan trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
+    ];
+    const data: AppData = { ...emptyAppData(todayISO()), goals };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(GoalsScreen));
+      renderer = screen;
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search goals' });
+      act(() => search.props.onChangeText('  tRiP  '));
+      const goalNames = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Edit '),
+      ).map((node) => node.props.accessibilityLabel.slice(5).split(',')[0]) ?? [];
+      expect(goalNames()).toEqual(['Road trip', 'Japan trip']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Goal sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Goal name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(goalNames()).toEqual(['Japan trip', 'Road trip']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText('not here'));
+      expect(goalNames()).toHaveLength(0);
+      expect(screen.root.findAll((node) =>
+        String(node.type) === 'empty' && node.props.title === 'No matches',
+      )).toHaveLength(1);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(GoalsScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search goals' }).props.value).toBe('');
     } finally {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
