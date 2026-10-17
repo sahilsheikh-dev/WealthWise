@@ -473,6 +473,11 @@ P21-B does not change the schema.
   the demo loader to Backup; the superseded behavior is the old
   `router.push('/backup')` success path, now covered by an explicit no-navigation
   assertion and exact popup/Undo tests.
+- DEC-P20E-STATUS: progress-ledger tests now expect P20-E and CR-27/28/31 to be
+  Pending while implementation is complete but final gates are outstanding;
+  P20-F/G and CR-29/30 remain Planned. CR-21 is now asserted as
+  `Superseded by CR-27`. This replaces the old assertion that all P20-E/G and
+  CR-27/31 work remained Planned, matching the work actually implemented.
 - Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
   object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
   labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B

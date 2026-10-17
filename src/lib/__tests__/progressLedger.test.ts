@@ -206,13 +206,17 @@ describe('permanent progress ledger', () => {
       .find((line) => line.startsWith(`| ${id} |`))
       ?.split('|')[3]?.trim();
 
-    for (const id of ['P20-E', 'P20-F', 'P20-G']) {
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-E |'))).toContain('| Pending |');
+    for (const id of ['P20-F', 'P20-G']) {
       expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Planned |');
     }
-    for (const id of ['CR-27', 'CR-28', 'CR-29', 'CR-30', 'CR-31']) {
+    for (const id of ['CR-27', 'CR-28', 'CR-31']) {
+      expect(statusFor(id)).toBe('Pending');
+    }
+    for (const id of ['CR-29', 'CR-30']) {
       expect(statusFor(id)).toBe('Planned');
     }
-    expect(statusFor('CR-21')).toBe('Done');
+    expect(statusFor('CR-21')).toBe('Superseded by CR-27');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
