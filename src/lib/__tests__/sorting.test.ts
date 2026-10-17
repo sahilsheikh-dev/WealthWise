@@ -7,7 +7,6 @@ import {
   type SortList,
 } from '../sorting';
 import { mockAppData } from '../../mock/data';
-import type { BudgetHistoryRow } from '../../domain/budget';
 import { buildPortfolioRows, filterRows } from '../../domain/portfolio';
 import { filterTransactions } from '../../domain/transactions';
 
@@ -30,62 +29,6 @@ describe('sorting registries and comparator behavior', () => {
       }
     },
   );
-
-  it.each([
-    ['month', ['2026-01', '2026-02', '2026-03'], ['2026-03', '2026-02', '2026-01']],
-    ['plannedSpend', ['2026-02', '2026-03', '2026-01'], ['2026-01', '2026-03', '2026-02']],
-    ['actualSpend', ['2026-01', '2026-03', '2026-02'], ['2026-02', '2026-03', '2026-01']],
-    ['plannedSave', ['2026-01', '2026-03', '2026-02'], ['2026-02', '2026-03', '2026-01']],
-    ['actualInvested', ['2026-03', '2026-02', '2026-01'], ['2026-01', '2026-02', '2026-03']],
-    ['savingsRate', ['2026-01', '2026-03', '2026-02'], ['2026-03', '2026-01', '2026-02']],
-    ['closing', ['2026-01', '2026-03', '2026-02'], ['2026-02', '2026-03', '2026-01']],
-    ['outstanding', ['2026-02', '2026-03', '2026-01'], ['2026-01', '2026-03', '2026-02']],
-    ['templateName', ['2026-02', '2026-03', '2026-01'], ['2026-01', '2026-03', '2026-02']],
-    ['customized', ['2026-02', '2026-01', '2026-03'], ['2026-01', '2026-03', '2026-02']],
-  ] as const)(
-    'sorts Budget history by %s in both directions',
-    (key, ascendingIds, descendingIds) => {
-      const rows: BudgetHistoryRow[] = [
-        {
-          month: '2026-01', templateName: 'Zulu', customized: true, plannedIncome: null,
-          plannedSpend: 400, plannedSave: 120, actualEarned: 1000, actualSpend: 150,
-          actualInvested: 800, savingsRatePct: 15, closing: 1000, outstanding: { count: 3, amount: 600 },
-        },
-        {
-          month: '2026-02', templateName: 'Alpha', customized: false, plannedIncome: null,
-          plannedSpend: 200, plannedSave: 300, actualEarned: 0, actualSpend: 250,
-          actualInvested: 700, savingsRatePct: null, closing: 3000, outstanding: { count: 1, amount: 100 },
-        },
-        {
-          month: '2026-03', templateName: 'Middle', customized: true, plannedIncome: null,
-          plannedSpend: 300, plannedSave: 200, actualEarned: 1000, actualSpend: 200,
-          actualInvested: 600, savingsRatePct: 30, closing: 2000, outstanding: { count: 2, amount: 300 },
-        },
-      ];
-
-      expect(SORT_OPTIONS.budgetHistory.map((option) => option.key))
-        .toEqual([
-          'month', 'plannedSpend', 'actualSpend', 'plannedSave', 'actualInvested',
-          'savingsRate', 'closing', 'outstanding', 'templateName', 'customized',
-        ]);
-      expect(sortItems(rows, 'budgetHistory', { key, dir: 'asc' }).map((row) => row.month))
-        .toEqual(ascendingIds);
-      expect(sortItems(rows, 'budgetHistory', { key, dir: 'desc' }).map((row) => row.month))
-        .toEqual(descendingIds);
-    },
-  );
-
-  it('uses month as the id tie-breaker in both Budget history directions', () => {
-    const rows = [
-      { month: '2026-03', plannedSpend: 10 },
-      { month: '2026-01', plannedSpend: 10 },
-      { month: '2026-02', plannedSpend: 10 },
-    ];
-    expect(sortItems(rows, 'budgetHistory', { key: 'plannedSpend', dir: 'asc' }).map(({ month }) => month))
-      .toEqual(['2026-01', '2026-02', '2026-03']);
-    expect(sortItems(rows, 'budgetHistory', { key: 'plannedSpend', dir: 'desc' }).map(({ month }) => month))
-      .toEqual(['2026-01', '2026-02', '2026-03']);
-  });
 
   it.each(Object.entries(DEFAULT_SORTS) as [SortList, (typeof DEFAULT_SORTS)[SortList]][])(
     'declares the first listed key as the default for %s',

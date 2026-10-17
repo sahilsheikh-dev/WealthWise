@@ -6,7 +6,7 @@ import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -195,7 +195,7 @@ export const BUDGET_CATEGORIES = [
 ] as const;
 const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
-const budgetTemplateLineSchema = z.object({
+const budgetPlanLineSchema = z.object({
   category: z.string().min(1).max(60),
   mode: z.enum(['amount', 'percent']),
   value: moneySchema.min(0).max(1_000_000_000),
@@ -205,14 +205,17 @@ const budgetTemplateLineSchema = z.object({
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
   }
 });
-const budgetTemplateSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1).max(40),
+const budgetPlanSchema = z.object({
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
-  lines: z.array(budgetTemplateLineSchema).max(1000),
-}).superRefine((template, context) => {
+  lines: z.array(budgetPlanLineSchema).max(1000),
+  repeatMonthly: z.boolean(),
+  repeatFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable(),
+}).superRefine((plan, context) => {
   const seen = new Set<string>();
-  template.lines.forEach((line, index) => {
+  plan.lines.forEach((line, index) => {
+    if (line.category === 'EMI' || line.category === 'Insurance') {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Recurring liabilities and insurance are automatic budget items' });
+    }
     if (!budgetCategorySet.has(line.category)) {
       context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
     }
@@ -224,9 +227,7 @@ const budgetTemplateSchema = z.object({
 });
 const monthBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  templateId: idSchema.nullable(),
-  templateName: z.string().min(1).max(40).nullable(),
-  customized: z.boolean(),
+  source: z.enum(['plan', 'custom']),
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
   linkedIncluded: z.boolean().optional(),
   lines: z.array(z.object({
@@ -317,8 +318,7 @@ export const appDataSchema = z.object({
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
   budget: budgetSchema.nullable(),
-  budgetTemplates: z.array(budgetTemplateSchema).optional(),
-  defaultBudgetTemplateId: idSchema.nullable().optional(),
+  budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
   efAllocation: efAllocationSchema,
   efCustomBuckets: efCustomBucketsSchema,

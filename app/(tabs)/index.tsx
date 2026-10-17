@@ -261,6 +261,16 @@ export default function HomeScreen() {
             ))}
           </View>
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
+        {!monthBudget.budget ? (
+          <Button
+            label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            onPress={() => {
+              if (!data.budgetPlan) router.push('/budget-setup');
+              else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
+            }}
+          />
+        ) : null}
       </Card>
 
       {nudge.show ? (

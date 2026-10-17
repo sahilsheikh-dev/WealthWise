@@ -187,14 +187,11 @@ export const mockAppData: AppData = {
       { category: 'Health', planned: 2_000 },
     ],
   },
-  budgetTemplates: [{
-    id: 'template-demo-monthly',
-    name: 'Demo monthly plan',
+  budgetPlan: {
     plannedIncome: 56_500,
     lines: [
       { category: 'Food', mode: 'amount', value: 8_000 },
       { category: 'Living', mode: 'amount', value: 15_000 },
-      { category: 'EMI', mode: 'amount', value: 6_281 },
       { category: 'Eating out', mode: 'amount', value: 1_000 },
       { category: 'Entertainment', mode: 'amount', value: 500 },
       { category: 'Fashion', mode: 'amount', value: 1_000 },
@@ -209,13 +206,12 @@ export const mockAppData: AppData = {
       { category: 'Festival', mode: 'amount', value: 1_500 },
       { category: 'Health', mode: 'amount', value: 2_000 },
     ],
-  }],
-  defaultBudgetTemplateId: 'template-demo-monthly',
+    repeatMonthly: false,
+    repeatFrom: null,
+  },
   monthBudgets: [{
     month: '2026-10',
-    templateId: 'template-demo-monthly',
-    templateName: 'Demo monthly plan',
-    customized: false,
+    source: 'plan',
     plannedIncome: 56_500,
     lines: [
       { category: 'Food', planned: 8_000 },
