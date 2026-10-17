@@ -1,7 +1,7 @@
-import React from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
-import { Pressable } from 'react-native';
 import { router } from 'expo-router';
+import React from 'react';
+import { Pressable } from 'react-native';
+import TestRenderer, { act } from 'react-test-renderer';
 
 import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
@@ -249,14 +249,14 @@ describe('Home screen theme smoke', () => {
     if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
     const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
       node.props.accessibilityRole === 'button'
-      && ['Add Transaction', 'New Investment', 'New Liability'].includes(
+      && ['New Transaction', 'New Investment', 'New Liability'].includes(
         node.props.accessibilityLabel,
       ),
     );
     expect(quickActionButtons).toHaveLength(3);
     expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(3);
     expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
-      'Add Transaction',
+      'New Transaction',
       'New Investment',
       'New Liability',
     ]);

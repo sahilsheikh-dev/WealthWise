@@ -32,7 +32,7 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Marked as paid',
   'Undo',
   // These visible labels are intentional exceptions on the Home screen only.
-  'Add Transaction',
+  'New Transaction',
   'New Investment',
   'New Liability',
   'Log Emergency Fund',
