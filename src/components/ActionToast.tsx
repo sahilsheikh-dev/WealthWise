@@ -9,11 +9,13 @@ export function ActionToast({
   actionLabel,
   onAction,
   onDismiss,
+  stopParentPress = false,
 }: {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
   onDismiss: () => void;
+  stopParentPress?: boolean;
 }) {
   const { colors } = useTheme();
   useEffect(() => {
@@ -28,7 +30,10 @@ export function ActionToast({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
-          onPress={onAction}
+          onPress={(event) => {
+            if (stopParentPress) event.stopPropagation();
+            onAction();
+          }}
           style={styles.action}>
           <AppText weight="bold" style={{ color: colors.primary }}>{actionLabel}</AppText>
         </Pressable>

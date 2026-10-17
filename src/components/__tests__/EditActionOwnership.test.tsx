@@ -7,6 +7,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { CardHeaderRow } from '../CardHeaderRow';
 import { IconButton } from '../IconButton';
 import { ListRow } from '../ListRow';
+import { ActionRow, Button } from '../ui';
 
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('../../theme/useTheme', () => ({
@@ -83,5 +84,25 @@ describe('edit action ownership', () => {
     act(() => headerButton?.props.onPress());
     act(() => listButton?.props.onPress());
     expect(onEdit).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops liability action presses from bubbling to the card edit target', () => {
+    const action = jest.fn();
+    const event = { stopPropagation: jest.fn() };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <ActionRow
+          stopParentPress
+          actions={[{ label: 'Payments', onPress: action }]}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Action row did not render.');
+
+    const button = renderer.root.findByType(Button);
+    act(() => button.props.onPress(event));
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(action).toHaveBeenCalledTimes(1);
   });
 });

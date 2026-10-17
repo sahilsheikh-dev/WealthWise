@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 89% (51/57)
+Overall progress █████████░ 90% (52/58)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (10/10)
+Phase 20         ██████████ 100% (11/11)
 Phase 21         ██████████ 100% (4/4)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -127,6 +127,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-H | — | Done | CR-32–CR-34; cash flow and plan summary, single grouped cards, paid/partial/linked rows, Month review screen/route removal and Transactions Review-to-Budget navigation. | 2026-10-17 |
 | P20-I | — | Done | `e396059`; initial CR-35/CR-36 delivery; the tick control is corrected by CR-43 and status wording is superseded by CR-40. | 2026-10-17 |
 | P20-J | — | Done | CR-40–CR-43; Home text action, details-first goal cards, equal-split shared assets, and Feather `edit-2` standardization. | 2026-10-17 |
+| P20-K | — | Done | CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -642,6 +643,18 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   `share` properties remain optional for older stored/backup data, but are
   ignored by calculations and omitted by new links. The EF bucket-link
   integrity rules are unchanged. Remaining edit icons use Feather `edit-2`.
+- DEC-P20K-CR44-46: Home goals share one card and single hairline row dividers
+  (none after the last row). Transactions' transaction list itself is not a
+  card; it uses `ListItem` rows with the shared hairline divider, while its
+  separate Available balance card remains unchanged. Asset and liability
+  cards retain their existing visuals and gain accessible body edit targets;
+  card action buttons stop propagation. Liability data and explanatory text
+  are before the progress bar, with only existing due/action buttons after it.
+  Replaced assertions: prior asset-card and recurring/one-time liability edit
+  icon expectations are replaced by body-role/label/hint and route assertions;
+  old card-owned edit-action ownership expectations are replaced by no-icon
+  assertions on those cards, while shared row icon ownership and the global
+  `edit-2` scan remain.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -681,6 +694,12 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   Verified current `app/(tabs)/budget.tsx` still has no “Back to Transactions”
   or “Review” action, and `app/ef-allocation-form.tsx` still uses the exact
   title “Edit allocation”. No protected user edits were restored or changed.
+  Re-verified before P20-K with `git show 3c644d3 -- 'app/(tabs)/budget.tsx'
+  app/ef-allocation-form.tsx`: the commit changes only Budget, removes the
+  menu/template workflow, and does not restore “Back to Transactions”; it has
+  no allocation-form diff. Current Budget still lacks “Back to Transactions”
+  and “Review”, while the allocation-form title remains exactly “Edit
+  allocation”. No protected edits were changed.
   Re-verified before P20-J using `git show 3c644d3 -- 'app/(tabs)/budget.tsx'
   app/ef-allocation-form.tsx`: the Budget changes remove the prior menu and
   budget-template controls and retain the user's removed Back to Transactions
@@ -1258,6 +1277,7 @@ evidence present in exports/checkpoints.
 | P20-H | Phase 20 | — | — | 2026-10-17 | Budget cash flow and plan summary, one card per spending group with paid rows and compact actions; Month review UI/route removed and Transactions Review routes to Budget with its month (CR-32–CR-34). | Done; 70 suites / 765 tests pass; all six final gates pass; see P20-H close-out below. | `00d0ec0` inventory/design; `799a12c` implementation | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use schedule payment amounts. See DEC-P20H. | current request |
 | P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Initially done; CR-35 wording corrected by CR-43 and CR-36 superseded by CR-40; see P20-J close-out. | `e396059` | The Home due cap and native confirmation/Undo remain; former goal-status copy is no longer shown. | current request |
 | P20-J | Phase 20 | — | — | 2026-10-17 | Correct Home due wording, remove goal-card status text, share linked-asset value equally across goals and standardize edit icons (CR-40–CR-43). | Done; 70 suites / 791 tests and all final gates pass; see P20-J close-out. | `269da35` | Legacy shares remain optional for imports and are ignored by calculations; remainder paise assigned by sorted goal ID. | current request |
+| P20-K | Phase 20 | — | — | 2026-10-17 | Group Home goals and make Asset/Liability card bodies edit targets with button isolation and liability order (CR-44–CR-46). | Done; focused route/component coverage and all required gates pass; see P20-K close-out. | this commit | Transactions unchanged; real-device touch/accessibility and large-font layout remain unverified. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed: the fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1316,6 +1336,9 @@ evidence present in exports/checkpoints.
 | CR-41 | Allow assets to link to multiple goals and split each value equally in paise, deterministically; retain legacy share compatibility and EF bucket invariants. | Done | P20-J; one/two/three-goal splits, paise remainder, rebalancing, form picker, duplicate rejection, import compatibility, projection and EF integrity tests pass. |
 | CR-42 | Standardize every remaining edit action on Feather `edit-2`. | Done | P20-J; ownership coverage and source scan reject `edit`, `edit-3` and `pencil` icon names. |
 | CR-43 | Replace the Home due tick icon with the exact compact text action “Marked as paid”. | Done | P20-J; text label and font-scale tests cover the unchanged Paid/Not paid confirmation path; corrects CR-35. |
+| CR-44 | Render Home goals inside one card with single hairline row dividers and no divider after the final row. | Done | P20-K; one-card grouping and divider assertions pass at font scales 1.0, 1.3 and 2.0. |
+| CR-45 | Remove asset-card edit icons; make the card body an accessible edit target without triggering edit from existing buttons. | Done | P20-K; route, accessible-label, no-edit-icon and button-propagation tests pass. |
+| CR-46 | Remove liability-card edit icons, make card bodies edit targets, and place data before the bar with only existing buttons after it. | Done | P20-K; recurring and one-time cards, routing, button isolation and ordering are covered. |
 
 ## 8. Known issues and risks
 

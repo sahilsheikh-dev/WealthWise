@@ -30,6 +30,8 @@ import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
+import { DueActions } from '../DueActions';
+import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
 import { duesThroughPreview } from '../../domain/dues';
@@ -1008,6 +1010,169 @@ describe('route render smoke audit', () => {
       act(() => {
         home?.unmount();
         goals?.unmount();
+      });
+      Object.assign(routeData, previousData);
+      mockFontScale = 1;
+    }
+  });
+
+  it.each([1, 1.3, 2])('renders Home goals as rows in one divided card at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousData = { ...routeData };
+    mockFontScale = fontScale;
+    Object.assign(routeData, {
+      ...emptyAppData(todayISO()),
+      goals: [
+        { id: 'home-goal-a', name: 'Goal A', target: 20_000, saved: 2_000, year: 2028, links: [] },
+        { id: 'home-goal-b', name: 'Goal B', target: 30_000, saved: 3_000, year: 2029, links: [] },
+        { id: 'home-goal-c', name: 'Goal C', target: 40_000, saved: 4_000, year: 2030, links: [] },
+      ],
+    });
+    let home: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      home = renderScreen(React.createElement(HomeScreen));
+      const section = home.root.findByProps({ testID: 'home-goals-section' });
+      expect(section.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
+      const rowsByTestId = new Map(section.findAll((node) =>
+        typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('home-goal-row-'),
+      ).map((node) => [node.props.testID as string, node]));
+      const rows = [...rowsByTestId.values()];
+      expect(rows.map((row) => row.props.testID)).toEqual([
+        'home-goal-row-goal-emergency',
+        'home-goal-row-home-goal-a',
+        'home-goal-row-home-goal-b',
+      ]);
+      expect(rows[0]?.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 1 }),
+      ]));
+      expect(rows[1]?.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 1 }),
+      ]));
+      expect(rows[2]?.props.style).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 1 }),
+      ]));
+    } finally {
+      act(() => home?.unmount());
+      Object.assign(routeData, previousData);
+      mockFontScale = 1;
+    }
+  });
+
+  it.each([1.3, 2])('opens asset and liability editing from the card body at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousData = { ...routeData };
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    mockFontScale = fontScale;
+    const today = todayISO();
+    const dueDate = `${shiftMonth(monthKey(today), 1)}-01`;
+    Object.assign(routeData, {
+      ...emptyAppData(today),
+      holdings: [{
+        id: 'tap-cash',
+        kind: 'manual' as const,
+        name: 'Tap cash',
+        type: 'Cash' as const,
+        invested: 10_000,
+        value: 10_000,
+        valueAsOf: today,
+        logs: [],
+      }],
+      liabilities: [{
+        id: 'tap-liability',
+        kind: 'one-time' as const,
+        name: 'Tap liability',
+        type: 'Borrowed money' as const,
+        principal: 20_000,
+        ratePct: 0,
+        startDate: today,
+        dueDate,
+        payments: [],
+      }, {
+        id: 'tap-recurring-liability',
+        kind: 'recurring' as const,
+        name: 'Tap recurring liability',
+        type: 'Other' as const,
+        principal: 20_000,
+        ratePct: 0,
+        startDate: `${shiftMonth(monthKey(today), -2)}-01`,
+        tenureMonths: 12,
+        emi: 2_000,
+        settlement: null,
+        payments: [],
+      }],
+    });
+    let assets: TestRenderer.ReactTestRenderer | undefined;
+    let liabilities: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      router.push.mockClear();
+      assets = renderScreen(React.createElement(AssetsScreen));
+      const assetCard = assets.root.findByProps({ testID: 'asset-card-manual-Tap cash' });
+      expect(assetCard.props.accessibilityRole).toBe('button');
+      expect(assetCard.props.accessibilityLabel).toBe('Edit Tap cash');
+      expect(assetCard.findAllByType(IconButton)).toHaveLength(0);
+      act(() => assetCard.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/investment-form?id=tap-cash');
+
+      router.push.mockClear();
+      const deposit = assetCard.findByProps({ accessibilityLabel: 'Deposit' });
+      const stopPropagation = jest.fn();
+      act(() => deposit.props.onPress({ stopPropagation }));
+      expect(stopPropagation).toHaveBeenCalledTimes(1);
+      expect(router.push).toHaveBeenLastCalledWith('/investment-entry-form?holdingId=tap-cash&kind=Deposit');
+      expect(router.push).not.toHaveBeenCalledWith('/investment-form?id=tap-cash');
+      act(() => assets?.unmount());
+      assets = undefined;
+
+      liabilities = renderScreen(React.createElement(LiabilitiesScreen));
+      const liabilityCard = liabilities.root.findByProps({ testID: 'liability-card-tap-liability' });
+      const liabilityContent = liabilityCard.findByProps({ testID: 'liability-card-content-tap-liability' });
+      expect(liabilityCard.props.accessibilityRole).toBe('button');
+      expect(liabilityCard.props.accessibilityLabel).toBe('Edit Tap liability');
+      expect(liabilityCard.findAllByType(IconButton)).toHaveLength(0);
+      const liabilityNodes = liabilityContent.findAll(() => true);
+      const progressIndex = liabilityNodes.findIndex((node) => node.type === 'progress');
+      const actionsIndex = liabilityNodes.findIndex((node) =>
+        node.props.testID === 'liability-card-actions-tap-liability',
+      );
+      expect(progressIndex).toBeGreaterThan(0);
+      expect(actionsIndex).toBeGreaterThan(progressIndex);
+      expect(liabilityNodes.slice(progressIndex + 1, actionsIndex)
+        .every((node) => node.type !== 'text')).toBe(true);
+      const paymentActions = liabilityContent.findAll((node) => String(node.type) === 'actionrow')[0];
+      if (!paymentActions) throw new Error('One-time liability action row did not render.');
+      expect(paymentActions.props.stopParentPress).toBe(true);
+      act(() => liabilityCard.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/liability-form',
+        params: { id: 'tap-liability' },
+      });
+      const recurringCard = liabilities.root.findByProps({ testID: 'liability-card-tap-recurring-liability' });
+      const recurringContent = recurringCard.findByProps({ testID: 'liability-card-content-tap-recurring-liability' });
+      const recurringNodes = recurringContent.findAll(() => true);
+      const recurringProgressIndex = recurringNodes.findIndex((node) => node.type === 'progress');
+      const recurringActionsIndex = recurringNodes.findIndex((node) =>
+        node.props.testID === 'liability-card-actions-tap-recurring-liability',
+      );
+      expect(recurringProgressIndex).toBeGreaterThan(0);
+      expect(recurringActionsIndex).toBeGreaterThan(recurringProgressIndex);
+      expect(recurringNodes.slice(recurringProgressIndex + 1, recurringActionsIndex)
+        .every((node) => node.type !== 'text')).toBe(true);
+      const recurringActionRow = recurringContent.findAll((node) => String(node.type) === 'actionrow')[0];
+      if (!recurringActionRow) throw new Error('Recurring liability action row did not render.');
+      expect(recurringActionRow.props.stopParentPress).toBe(true);
+      const dueActions = recurringContent.findByType(DueActions);
+      expect(dueActions.props.stopParentPress).toBe(true);
+      expect(recurringCard.props.accessibilityLabel).toBe('Edit Tap recurring liability');
+      act(() => recurringCard.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/liability-form',
+        params: { id: 'tap-recurring-liability' },
+      });
+    } finally {
+      act(() => {
+        assets?.unmount();
+        liabilities?.unmount();
       });
       Object.assign(routeData, previousData);
       mockFontScale = 1;

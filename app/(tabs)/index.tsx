@@ -354,17 +354,24 @@ export default function HomeScreen() {
       ) : null}
 
       <SectionTitle>Goal Progress</SectionTitle>
-      {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
+      <View testID="home-goals-section">
+      <Card style={styles.goalsCard}>
+      {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }, index, goals) => {
         const projection = goalProjection(goal, data, today);
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
         return (
           <Pressable
             key={goal.id}
+            testID={`home-goal-row-${goal.id}`}
             accessibilityRole="button"
             accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
             accessibilityHint="Opens this goal for editing"
             onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            style={[
+              styles.goalRow,
+              index < goals.length - 1 && styles.goalRowDivider,
+              { borderBottomColor: colors.border },
+            ]}>
             <View style={styles.goalTop}>
               <View style={styles.goalNameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
@@ -446,6 +453,8 @@ export default function HomeScreen() {
           </Pressable>
         );
       })}
+      </Card>
+      </View>
     </Screen>
   );
 }
@@ -470,7 +479,9 @@ const styles = StyleSheet.create({
   dueActionsStacked: { justifyContent: 'flex-end' },
   markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 0 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
-  goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
+  goalsCard: { paddingVertical: 4 },
+  goalRow: { paddingVertical: 14 },
+  goalRowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   goalNameBlock: { flex: 1, minWidth: 0, gap: 3 },
   goalPercent: { fontSize: 12 },
