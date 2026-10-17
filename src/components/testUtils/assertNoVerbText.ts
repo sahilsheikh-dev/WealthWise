@@ -18,7 +18,7 @@ function flattenText(node: ReactTestInstance): string {
 }
 
 const HOME_QUICK_ACTIONS = new Set([
-  'Add Transaction',
+  'New Transaction',
   'New Investment',
   'New Liability',
   'Log Emergency Fund',

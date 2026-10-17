@@ -13,10 +13,9 @@ import {
   Button,
   Card,
   Screen,
-  SectionTitle,
   StatPill,
   StatPillRow,
-  WarningBanner,
+  WarningBanner
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useAppStore } from '../../src/data/store';
@@ -40,7 +39,7 @@ import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export const HOME_QUICK_ACTIONS = [
-  { id: 'transaction', label: 'Add Transaction', icon: 'file-plus' },
+  { id: 'transaction', label: 'New Transaction', icon: 'file-plus' },
   { id: 'investment', label: 'New Investment', icon: 'trending-up' },
   { id: 'liability', label: 'New Liability', icon: 'credit-card' },
 ] as const;
@@ -234,11 +233,6 @@ export default function HomeScreen() {
       </View>
 
       <Card style={styles.categoryBreakdown}>
-        <AppText
-          weight="semibold"
-          accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
-          This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
-        </AppText>
         <Pressable
           testID="home-spending-toggle"
           accessibilityRole="button"
@@ -246,8 +240,10 @@ export default function HomeScreen() {
           accessibilityState={{ expanded: spendingExpanded }}
           onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}
           style={[styles.spendingToggle, { borderTopColor: colors.border }]}>
-          <AppText style={{ color: colors.primary }}>
-            {spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+          <AppText
+            weight="semibold"
+            accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
+            This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
           </AppText>
           <Feather name={spendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
         </Pressable>
@@ -319,7 +315,7 @@ export default function HomeScreen() {
 
       {dueItems.length > 0 ? (
         <>
-          <SectionTitle>Upcoming and due</SectionTitle>
+          <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Upcoming and due</AppText>
           <Card style={styles.upcomingCard}>
             {dueItems.map((item) => (
               <View
@@ -331,17 +327,15 @@ export default function HomeScreen() {
                   { borderBottomColor: colors.border },
                 ]}>
                 <View style={styles.dueTitle}>
-                  <AppText weight="semibold" style={typography.name}>{item.title}</AppText>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>
-                    {item.dueDate ? formatDate(item.dueDate) : 'Date unavailable'}
+                  <AppText weight="regular">
+                    Due <AmountText value={item.amount} tier="row" weight="semibold" /> for {item.title} on {item.dueDate ? formatDate(item.dueDate) : 'Date unavailable'}
                   </AppText>
                 </View>
                 <View
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
-                  <AmountText value={item.amount} tier="row" weight="semibold" />
                   <Button
-                    label="Marked as paid"
+                    label="Paid"
                     accessibilityHint="Confirms whether this scheduled item was paid."
                     style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
@@ -353,7 +347,7 @@ export default function HomeScreen() {
         </>
       ) : null}
 
-      <SectionTitle>Goal Progress</SectionTitle>
+      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Goal Progress</AppText>
       <View testID="home-goals-section">
         <Card style={styles.goalsCard}>
           {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }, index, goals) => {
@@ -465,7 +459,7 @@ const styles = StyleSheet.create({
   categoryBreakdown: { gap: 10 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  spendingToggle: { minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  spendingToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
@@ -477,7 +471,7 @@ const styles = StyleSheet.create({
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dueActionsStacked: { justifyContent: 'flex-end' },
-  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 0 },
+  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goalsCard: { paddingVertical: 4 },
   goalRow: { paddingVertical: 14 },
