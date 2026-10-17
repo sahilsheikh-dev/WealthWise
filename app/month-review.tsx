@@ -12,6 +12,7 @@ import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, Card, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
+import { budgetMonthView } from '../src/domain/budget';
 import {
   monthEndDate,
   monthPositionAt,
@@ -21,7 +22,6 @@ import {
   type ShortfallAllocation,
   type SurplusAllocation,
 } from '../src/domain/cashFlow';
-import { budgetMonthView } from '../src/domain/budget';
 import { listInstruments } from '../src/domain/instruments';
 import { loanState } from '../src/domain/liability';
 import {
@@ -267,7 +267,6 @@ function MonthReview({ month }: { month: string }) {
           if (!submitting.current) void handleSubmit(addAllocation)();
         }}
       />
-      <Button label="Back to transactions" onPress={() => router.push('/(tabs)/transactions')} />
     </FormScreen>
   );
 }
