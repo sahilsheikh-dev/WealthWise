@@ -313,4 +313,50 @@ describe('three-month emergency target screens', () => {
     expect(renderer.root.findAllByProps({ title: 'No assets linked' }).length).toBeGreaterThan(0);
     expect(renderer.root.findByProps({ label: 'Link assets' })).toBeDefined();
   });
+
+  it('renders Home, Goals and Emergency fund for malformed persisted allocations', async () => {
+    const empty = emptyAppData('2026-10-11');
+    const custom = { id: 'renamed-option', name: 'Renamed', access: 'instant' as const, marketLinked: false };
+    const scenarios: { name: string; allocation: Record<string, number>; customBuckets?: AppData['efCustomBuckets'] }[] = [
+      { name: '99.99 total', allocation: { cash: 9.99, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: '100.01 total', allocation: { cash: 10.01, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'unknown deleted option', allocation: { ...empty.efAllocation, 'deleted-option': 0 } },
+      { name: 'negative value', allocation: { cash: -1, bank: 41, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'NaN value', allocation: { cash: Number.NaN, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'empty object', allocation: {} },
+      { name: 'removed custom option', allocation: { ...empty.efAllocation, 'deleted-option': 0 }, customBuckets: [] },
+      {
+        name: 'renamed custom option',
+        allocation: { cash: 10, bank: 30, 'fd-rd': 35, 'mutual-funds-bonds': 15, 'old-option': 10 },
+        customBuckets: [custom],
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      mockData.current = {
+        ...empty,
+        efAllocation: scenario.allocation,
+        efCustomBuckets: scenario.customBuckets ?? [],
+      };
+      let home: TestRenderer.ReactTestRenderer | undefined;
+      let goals: TestRenderer.ReactTestRenderer | undefined;
+      let emergency: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        home = TestRenderer.create(<HomeScreen />);
+        goals = TestRenderer.create(<GoalsScreen />);
+        emergency = TestRenderer.create(<EmergencyFundScreen />);
+        await Promise.resolve();
+      });
+      if (!home || !goals || !emergency) throw new Error(`${scenario.name}: a screen did not render.`);
+      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit allocation.';
+      expect(renderedText(emergency.root)).toContain(repairMessage);
+      expect(emergency.root.findAllByType('text').filter((node) =>
+        node.children.join('') === repairMessage)).toHaveLength(1);
+      await act(async () => {
+        home?.unmount();
+        goals?.unmount();
+        emergency?.unmount();
+      });
+    }
+  });
 });
