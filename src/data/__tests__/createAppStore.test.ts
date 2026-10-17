@@ -452,7 +452,7 @@ describe('createAppStore persistence', () => {
 
     expect(storage.setItemCalls - writesBefore).toBe(1);
     expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
-      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+      .toEqual([{ instrumentId: 'asset' }]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
 
     const dataBeforeFailure = store.getState().data;
@@ -462,7 +462,7 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls).toBe(writesBeforeFailure);
   });
 
-  it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
+  it('saves emergency fund allocation with one persisted write and rehydrates it', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
     await waitForHydration(store);
@@ -482,10 +482,6 @@ describe('createAppStore persistence', () => {
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
     expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
-    const writesBeforeReset = storage.setItemCalls;
-    store.getState().actions.resetEfAllocation();
-    expect(storage.setItemCalls - writesBeforeReset).toBe(1);
-    expect(store.getState().data.efAllocation).toBeNull();
   });
 
   it('saves custom buckets, percentages, and investment links in one persisted write', async () => {
@@ -528,7 +524,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efCustomBuckets).toEqual([]);
     expect(store.getState().data.efBucketLinks).toEqual({});
     expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.links)
-      .toContainEqual({ instrumentId: holding.id, share: 100 });
+      .toContainEqual({ instrumentId: holding.id });
     expect(validateIntegrity(store.getState().data)).toEqual([]);
 
     const writesBeforeDelete = storage.setItemCalls;

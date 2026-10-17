@@ -340,10 +340,10 @@ export default function HomeScreen() {
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
                   <AmountText value={item.amount} tier="row" weight="semibold" />
-                  <IconButton
-                    icon="check"
-                    label="Mark as paid"
-                    hint="Confirms whether this scheduled item was paid."
+                  <Button
+                    label="Marked as paid"
+                    accessibilityHint="Confirms whether this scheduled item was paid."
+                    style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
                   />
                 </View>
@@ -384,7 +384,6 @@ export default function HomeScreen() {
               </View>
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
-            <GoalProgressRow percent={pct} projection={projection} />
             <View style={styles.goalAmounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -397,8 +396,7 @@ export default function HomeScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' && projection.projectedDate
-              && projection.projectedDate !== 'Already reached' ? (
+            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
               <AppText style={[typography.meta, { color: colors.text2 }]}>
                 Projected {formatDate(projection.projectedDate)}
               </AppText>
@@ -444,6 +442,7 @@ export default function HomeScreen() {
                 ) : null}
               </>
             ) : null}
+            <GoalProgressRow percent={pct} />
           </Pressable>
         );
       })}
@@ -469,6 +468,7 @@ const styles = StyleSheet.create({
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dueActionsStacked: { justifyContent: 'flex-end' },
+  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 0 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

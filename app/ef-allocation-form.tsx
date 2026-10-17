@@ -7,7 +7,6 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { AmountText } from '../src/components/AmountText';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
-import { HelperText } from '../src/components/form/HelperText';
 import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
@@ -273,7 +272,7 @@ export default function EfAllocationFormScreen() {
                     />
                   </View>
                   {customBucket ? (
-                    <IconButton icon="edit-3" label={`Edit ${metadata.label}`} onPress={() => editBucket(customBucket)} />
+                    <IconButton icon="edit-2" label={`Edit ${metadata.label}`} onPress={() => editBucket(customBucket)} />
                   ) : null}
                   <IconButton
                     icon="link-2"
@@ -294,15 +293,6 @@ export default function EfAllocationFormScreen() {
         />
 
         {formError ?? allocationError ? <FormErrorBanner message={formError ?? allocationError ?? ''} /> : null}
-        <Button
-          label="Reset to suggested allocation"
-          icon="rotate-ccw"
-          onPress={() => {
-            actions.resetEfAllocation();
-            if (!useAppStore.getState().lastError) router.back();
-          }}
-        />
-        <HelperText>Reset to suggested: clears your custom mix and goes back to the app&apos;s suggestion.</HelperText>
       </FormScreen>
 
       <Modal

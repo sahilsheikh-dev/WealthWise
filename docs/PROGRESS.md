@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 89% (50/56)
+Overall progress █████████░ 89% (51/57)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (9/9)
+Phase 20         ██████████ 100% (10/10)
 Phase 21         ██████████ 100% (4/4)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -125,10 +125,11 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-F | — | Done | F1–F5 budget groundwork; final 70-suite/777-test coverage gate and all required gates pass. CR-29 remains in progress for later one-plan/apply behavior. | 2026-10-17 |
 | P20-G | — | Done | Schema-v8 single budget plan, current-month apply/repeat, linked rows, setup screen and CR-30 no-menu behavior. | 2026-10-17 |
 | P20-H | — | Done | CR-32–CR-34; cash flow and plan summary, single grouped cards, paid/partial/linked rows, Month review screen/route removal and Transactions Review-to-Budget navigation. | 2026-10-17 |
-| P20-I | — | Done | `e396059`; CR-35–CR-36, Home's separate tick confirmation, one status beside each Home/Goals progress bar, demo later due and responsive-style tests. | 2026-10-17 |
+| P20-I | — | Done | `e396059`; initial CR-35/CR-36 delivery; the tick control is corrected by CR-43 and status wording is superseded by CR-40. | 2026-10-17 |
+| P20-J | — | Done | CR-40–CR-43; Home text action, details-first goal cards, equal-split shared assets, and Feather `edit-2` standardization. | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
-| P21-C | `d43be28` | Done | CR-37 normal-mode allocation display and responsive status; CR-38 editable allocation items, default buckets and menu opt-out. | 2026-10-17 |
+| P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
@@ -231,9 +232,10 @@ compact display while passing an exact accessibility label.
 
 **FX-E2 evidence (superseded by P21-C):** the former explicit suggestion
 control populated the React Hook Form values and saved only through the
-“Save allocation” action; the retained reset control immediately calls
-`resetEfAllocation`, whose pure action writes `efAllocation: null`. Only the
-reset path remains. Its store test still asserts exactly one persisted write.
+“Save allocation” action. P21-C also removed the reset-to-default function
+`resetEfAllocation`, its store wrapper and form control; the previous
+reset-specific pure, form and one-write store assertions were replaced by
+default-item, validation and save/rehydration coverage.
 
 **Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
@@ -539,14 +541,13 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   rows sort by due date then name, undated last; due-date and 1.3/2.0 text
   wrapping tests model styles and accessibility props, not native pixel   layout.
 - DEC-P21C-CR37-38: normal Emergency fund mode no longer renders linked holding
-  names/chips; each active allocation row places its text status beside a
-  flexible `flex: 1, minWidth: 0` progress-bar wrapper, stacking the status
-  right-aligned at font scale >=1.3. Emergency fund explicitly opts out of
-  AppHeader's global menu. Other menu-enabled screens are `app/assets.tsx`,
-  `app/security.tsx`, `app/investment-entries.tsx`,
-  `app/liability-payments.tsx`, `app/liabilities.tsx`,
-  `app/link-missing.tsx`, `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx`,
-  `app/(tabs)/transactions.tsx`, `app/theme.tsx`, and `app/backup.tsx`;
+  names/chips or Over/Under/On target labels; each active allocation row shows
+  name, available amount, target amount and target percentage before a full
+  width progress bar as its final element. The single `edit-2` “Edit
+  allocation” action is in AppHeader; no card pencil or menu is shown.
+  Emergency fund explicitly opts out of AppHeader's global menu. Other screens
+  that show a menu are Home, Transactions, Security, Backup and restore, Link
+  missing transactions, Theme, Investment entries, and Liability schedule;
   none were changed for this request. The allocation editor adds predefined
   items from its header plus action, offers Custom, and confirms removal of
   fixed or custom items with the exact requested copy. Removal changes only
@@ -560,17 +561,30 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   suggested 10/40/35/15 mix remains Cash, Bank account, FD / RD, and Mutual
   funds / Bonds. The demo uses only those four defaults and no custom item.
   Superseded P21-C assertions: the old EmergencyGoalScreens expectation that
-  “Savings account” linked-asset text/chips render in normal mode is replaced
-  by a no-linked-name assertion and progress/status style contracts (CR-37).
+  “Savings account” linked-asset text/chips render in normal mode and the
+  beside/stacked status layout assertions are replaced by checks that the
+  header has exactly one `edit-2` action, rows omit status labels, and each
+  allocation item's bar is last at font scales 1.0, 1.3 and 2.0 (CR-37).
   The old compact custom-only deletion tests that required moving a positive
   allocation, tested move targets, and expected an empty custom link-map entry
   are replaced by exact confirmation, 100%-total validation and a pure
   save-plan test proving fixed/custom grouping removal preserves goal links
-  (CR-38). In `EfAllocationForm.test.tsx`, the old explicit suggestion
-  button/helper/action-save assertions and the expand-all assertion are
-  replaced by absence checks, four default-value checks, header add-choice/
-  custom flow, deletion confirmation and live-total checks; reset-to-default
-  remains.
+  (CR-38). In `EfAllocationForm.test.tsx`, obsolete reset-control assertions
+  and the prior `resetEfAllocation` action assertions in
+  `efAllocation.test.ts` and `createAppStore.test.ts` are deleted; the former
+  form test is replaced by a source scan proving no reset/suggested-mix action
+  remains. Four default-value checks, header add-choice/custom flow, deletion
+  confirmation and live-total checks remain. Deleted function/store action:
+  `resetEfAllocation`; removed/replaced tests: the reset assertion in
+  `normalizes partial and invalid allocations and applies set/reset actions`
+  (renamed `normalizes partial and invalid allocations and validates set
+  actions`), the reset block in `saves emergency fund allocation with one
+  persisted write and restores the suggestion` (renamed `saves emergency fund
+  allocation with one persisted write and rehydrates it`), and the reset UI
+  assertions in `keeps reset-to-default behavior and removes the old
+  suggested-mix control` (replaced by `does not expose an expand-all control or
+  legacy allocation reset actions`). The unused expand-all assertion is
+  replaced by an explicit absence check.
   The form-level “Market-linked” switch remains and now has its requested
   helper. `FormScreen`'s existing optional header action gained optional icon
   and variant props; its legacy trash/destructive defaults remain tested.
@@ -580,8 +594,9 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   `app/(tabs)/budget.tsx` source was not changed.
   The repeated `3c644d3` audit and unchanged title are recorded in
   DEC-USER-CHANGES. No schema change; the schema remains v8.
-  P21-C font-scale and screen-reader tests are simulated: real OS scaling,
-  rendered clipping, touch behavior, modal confirmation presentation and
+  P21-C font-scale tests are simulated: real OS scaling, rendered clipping,
+  touch behavior for header edit/add/remove controls, native confirmation
+  presentation/cancellation, editor scrolling/keyboard behavior and
   VoiceOver/TalkBack announcements remain unverified on a physical device.
 - DEC-P21C1-CR39: the crash reproduces when a v8 allocation contains a stale
   fixed/custom bucket key such as `deleted-custom: 0`. `appDataSchema` checks
@@ -612,18 +627,21 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   allocation first; persisted full maps with zero-valued keys are replaced by
   canonical positive-only allocation assertions. Form totals now display two
   decimal places (`100.0%` → `100.00%`) so 99.99% does not appear complete.
-- DEC-P20I-CR35-36: Home due rows are non-interactive containers showing only
-  title, amount, date and a compact check button; only the button opens the
-  existing native Paid / Not paid confirmation. Oldest dues clear directly,
-  later dues use the existing clear-through preview/action, and both preserve
-  the existing Undo toast and atomic store actions. Home due rows stack their
-  title/date over amount/button at font scale 1.3 and above. Each Home and
-  Goals card, including Emergency fund, puts one text projection status next
-  to a flexing progress bar; at 1.3 and above it appears right-aligned below
-  the bar. `none` is rendered as “Not reachable with current contributions”;
-  projected completion dates remain below the bar when available. Demo data
-  already supplies an unpaid later due in Home's five-row preview and now
-  asserts that clear-through coverage explicitly.
+- DEC-P20I-CR35-36: Initial Home due confirmation and goal-status layout,
+  subsequently corrected/superseded by P20-J; see DEC-P20J-CR40-43 below.
+- DEC-P20J-CR40-43: Home due rows remain non-interactive and show title,
+  amount, date and the compact text action “Marked as paid”; only the button
+  opens the unchanged native Paid / Not paid confirmation. Oldest dues clear
+  directly, later dues use the existing clear-through preview/action, and
+  both preserve Undo and the existing atomic store actions. At font scale 1.3
+  and above the Home rows stack. Goal cards on Home and Goals (including
+  Emergency fund) show details before a final progress bar and no projection
+  status or unreachable text; projection calculations and dates remain.
+  Linked asset values are divided by the count of linked goals, in integer
+  paise; sorted goal IDs deterministically receive remainder paise. Legacy
+  `share` properties remain optional for older stored/backup data, but are
+  ignored by calculations and omitted by new links. The EF bucket-link
+  integrity rules are unchanged. Remaining edit icons use Feather `edit-2`.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -657,6 +675,19 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   wiring and retains the user's missing Back to Transactions action; it has
   no allocation-form diff. The current allocation form still has the exact
   title “Edit allocation”. Preserve both.
+  Repeated at the start of this P21-C request with the same `git show`:
+  the Budget diff removes the app menu/template workflow and does not restore
+  “Back to Transactions”; `3c644d3` contains no allocation-form changes.
+  Verified current `app/(tabs)/budget.tsx` still has no “Back to Transactions”
+  or “Review” action, and `app/ef-allocation-form.tsx` still uses the exact
+  title “Edit allocation”. No protected user edits were restored or changed.
+  Re-verified before P20-J using `git show 3c644d3 -- 'app/(tabs)/budget.tsx'
+  app/ef-allocation-form.tsx`: the Budget changes remove the prior menu and
+  budget-template controls and retain the user's removed Back to Transactions
+  action; the commit has no allocation-form diff. The current allocation form
+  still displays exactly “Edit allocation”; current Budget still lacks the
+  removed Back to Transactions and Review actions. No protected edits were
+  changed.
   Related stale assertions are replaced as follows: the Transactions test's
   old expectation of an accessible red `-₹1,000` amount becomes an assertion
   that this amount is absent while the Shortfall text remains; reason:
@@ -1225,10 +1256,11 @@ evidence present in exports/checkpoints.
 | P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. Assumed: one-time liabilities without dueDate do not become linked rows. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
 | P20-G | Phase 20 | — | — | 2026-10-17 | Schema-v8 single budget plan, template migration, repeat/apply store actions, setup screen, Budget/Home routing and CR-30 no-menu behavior. | Done; 70 suites / 763 tests and all six final gates pass. | `3c644d3` | See DEC-P20G; real-device UI checks remain unverified. | current request |
 | P20-H | Phase 20 | — | — | 2026-10-17 | Budget cash flow and plan summary, one card per spending group with paid rows and compact actions; Month review UI/route removed and Transactions Review routes to Budget with its month (CR-32–CR-34). | Done; 70 suites / 765 tests pass; all six final gates pass; see P20-H close-out below. | `00d0ec0` inventory/design; `799a12c` implementation | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use schedule payment amounts. See DEC-P20H. | current request |
-| P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Done; focused Home/Goals, demo and persisted-write tests plus all six final gates pass; see P20-I close-out. | `e396059` | Assumed: Home's existing five-row preview and native confirmation/Undo semantics remain; `none` projection is displayed as “Not reachable with current contributions.” | current request |
+| P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Initially done; CR-35 wording corrected by CR-43 and CR-36 superseded by CR-40; see P20-J close-out. | `e396059` | The Home due cap and native confirmation/Undo remain; former goal-status copy is no longer shown. | current request |
+| P20-J | Phase 20 | — | — | 2026-10-17 | Correct Home due wording, remove goal-card status text, share linked-asset value equally across goals and standardize edit icons (CR-40–CR-43). | Done; focused regressions and all final gates pass; see P20-J close-out. | working tree | Legacy shares remain optional for imports and are ignored by calculations; remainder paise assigned by sorted goal ID. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
-| P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund normal-mode status layout and all-item allocation editor (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28` | Assumed: existing fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. | current request |
+| P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed: the fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. Stored zero-percent unlinked items count as deleted. | current request |
 | P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed: normalize positive known buckets by largest remainder; fall back to the four P21-C defaults (10/40/35/15). Preserve P21-C as previously delivered. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
@@ -1275,11 +1307,15 @@ evidence present in exports/checkpoints.
 | CR-32 | Merge Budget dues and planned/actual data into one responsive card per group, retaining paid rows and direct clear/Undo behavior. | Done | P20-H; grouped row projection, paid/partial/overdue/linked states, one card per group and simulated 1.3/2.0 font-scale layout tests pass. |
 | CR-33 | Reorder Budget to cash flow, plan summary and group cards, with only the Edit budget header action. | Done | P20-H; screen-order, two-row cash-flow, tone, plan-summary styling, no-menu and month-switch tests pass. |
 | CR-34 | Remove Month review UI and route; route Transactions' Review {Mon} action to Budget at that month. | Done | P20-H; route-kind absence and valid/invalid month navigation tests pass; pure review allocation functions and transaction records remain. |
-| CR-35 | Home upcoming/due rows show title, amount, date and a compact tick button; Paid clears oldest/later dues with Undo, while Not paid/dismissal do nothing. | Done | P20-I; button-only confirmation, clear-through copy, Undo, no-op cancellation and one-write store tests pass; demo includes a later clearable due in Home's preview. |
-| CR-36 | Put a text status to the right of every goal progress bar, including Emergency fund; at font scale 1.3+ stack status below and right-aligned. | Done | P20-I; Home and Goals tests cover all card rows and style contracts at 1, 1.3 and 2. |
-| CR-37 | Remove linked-asset details from normal Emergency fund mode and place allocation status beside the flexible progress bar, stacking at font scale 1.3+. | Done | P21-C; normal-mode content, no-menu behavior, flex/minWidth and status layout tests pass. |
+| CR-35 | Home upcoming/due rows show title, amount, date and a compact tick button; Paid clears oldest/later dues with Undo, while Not paid/dismissal do nothing. | Done; corrected by CR-43 | P20-I behavior remains; CR-43 replaces the check icon with the exact compact text action “Marked as paid”; confirmation/Undo semantics are unchanged. |
+| CR-36 | Put a text status to the right of every goal progress bar, including Emergency fund; at font scale 1.3+ stack status below and right-aligned. | Superseded by CR-40 | P20-J removes all status words and unreachable-status copy; projection calculations remain. |
+| CR-37 | Remove linked-asset details and status labels from normal Emergency fund mode; put one Edit allocation icon in the app header and show each allocation bar last after row details. | Done | P21-C; normal-mode, one-header-action/no-menu and bar-last checks at font scales 1.0, 1.3 and 2.0 pass. |
 | CR-38 | Edit allocation items from a header add menu, remove any fixed/custom item with confirmation, retain goal asset links, and default to four items. | Done | P21-C; add choices, exact removal copy, 100% validation, custom metadata, preserved goal links and one-write save tests pass. |
 | CR-39 | Prevent Emergency fund from crashing on invalid/stale saved allocation data; validate at source, resolve every render input, and repair/archive invalid data once on hydration. | Done | P21-C1; malformed-data screen matrix, domain rejection/rounding, form blocking, exact raw archive, single write and idempotent hydration tests pass; schema v8 unchanged. |
+| CR-40 | Remove goal-card status and unreachable-contribution wording on Home and Goals; keep details above a final progress bar. | Done | P20-J; every card, including Emergency fund, is covered at font scales 1, 1.3 and 2; projection logic remains. |
+| CR-41 | Allow assets to link to multiple goals and split each value equally in paise, deterministically; retain legacy share compatibility and EF bucket invariants. | Done | P20-J; one/two/three-goal splits, paise remainder, rebalancing, form picker, duplicate rejection, import compatibility, projection and EF integrity tests pass. |
+| CR-42 | Standardize every remaining edit action on Feather `edit-2`. | Done | P20-J; ownership coverage and source scan reject `edit`, `edit-3` and `pencil` icon names. |
+| CR-43 | Replace the Home due tick icon with the exact compact text action “Marked as paid”. | Done | P20-J; text label and font-scale tests cover the unchanged Paid/Not paid confirmation path; corrects CR-35. |
 
 ## 8. Known issues and risks
 
@@ -1321,7 +1357,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **Expo patch alignment:** the first Doctor run found three SDK 57 patch mismatches (`@expo/ui` 57.0.24→57.0.25, `expo` 57.0.29→57.0.30, `expo-router` 57.0.27→57.0.28). `npx expo install --fix` applied the Expo-compatible versions and the final Doctor run passes 21/21. npm reported 67 audit advisories (17 moderate, 50 high) and two install-script allow-list notices; no `npm audit fix` was run.
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
-- **P21-C device acceptance not verified:** actual OS font scaling and clipping of the allocation status at 1.3/2.0, touch behavior for the header plus/remove controls, native confirm-alert copy/layout and cancellation, allocation-form scrolling/keyboard behavior, and VoiceOver/TalkBack announcement of active items/status. Tests inspect component props and simulated styles only.
+- **P21-C device acceptance not verified:** actual OS font scaling and clipping of detail-first allocation rows and their final progress bars at 1.3/2.0; header edit and form add/remove touch targets; native confirm-alert copy/layout and cancellation; allocation-form scrolling/keyboard behavior; and VoiceOver/TalkBack announcements. Tests inspect component props and simulated styles only.
 - **P21-C1 device acceptance not verified:** open Emergency fund with a real legacy/stale allocation and verify the adjusted-total message, editor keyboard entry and disabled Save at 99.99/100.01, a valid save on iOS and Android, native font scaling/clipping of the repair line, and VoiceOver/TalkBack announcement. Hydration/archive correctness and one-write behavior are covered by tests; physical-device storage behavior is not.
 - **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. The final P20-E `npx expo-doctor` result is 21/21; Android and iOS exports, tests, typecheck and lint also pass, so P21/P22 gates remain green.
 - **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Final automated gates pass.
@@ -1578,7 +1614,7 @@ and P21-A/B/C with CR-8, CR-13, CR-14, CR-15, CR-20, CR-37 and CR-38 are Done.
 |---|---|---|---|
 | P21-A emergency-fund linked model [schema v7] | Done | v6→v7 migration, backups, premigration archive, link integrity, category remap and total preservation | `src/data/__tests__/migrate.test.ts`, `migrateV4.test.ts`, `safeStorage.test.ts`, `createAppStore.test.ts`; `src/domain/__tests__/backup.test.ts`, `goalLinks.test.ts`, `schemas.test.ts` |
 | P21-B emergency-fund cover/allocation | Done | Expense/salary fallback, truncation, minimum target, linked table and compact allocation UI | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`; `src/domain/__tests__/selectors.test.ts`, `efAllocationCustom.test.ts` |
-| P21-C allocation display and editor | Done | Normal-mode linked-name removal, responsive progress/status, default items, fixed/custom deletion and retained goal links; schema v8 unchanged | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `FormScreen.test.tsx`, `AppHeaderUsage.test.ts`; `src/domain/__tests__/efAllocation.test.ts`, `efAllocationCustom.test.ts`; `src/data/__tests__/createAppStore.test.ts`; `src/mock/__tests__/demoData.test.ts` |
+| P21-C allocation display and editor | Done | Header-only edit action, no status labels, allocation bar-last rows at multiple font scales, four defaults, fixed/custom deletion and retained goal links; schema v8 unchanged | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `FormScreen.test.tsx`, `AppHeaderUsage.test.ts`; `src/domain/__tests__/efAllocation.test.ts`, `efAllocationCustom.test.ts`; `src/data/__tests__/createAppStore.test.ts`; `src/mock/__tests__/demoData.test.ts` |
 | P21-C1 allocation crash repair | Done | CR-39; strict domain action validation, resolver with largest-remainder normalization, safe render path, one-write hydration repair and exact raw archive; schema v8 unchanged | `src/domain/__tests__/efAllocation.test.ts`, `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `src/data/__tests__/createAppStore.test.ts`, `safeStorage.test.ts`, `src/domain/__tests__/schemas.test.ts` |
 
 #### Phase 21 initial gates (historical; Doctor issue resolved in CR-26)
@@ -1601,12 +1637,12 @@ once` (`src/data/__tests__/createAppStore.test.ts`),
 and `round-trips a manual holding snapshot adjustment through backup export
 and import` (`src/domain/__tests__/backup.test.ts`).
 
-#### P21-C final gates (2026-10-17)
+#### P21-C final gates (2026-10-17, reverified after P21-C1)
 
 | Gate | Result | Exit |
 |---|---|---:|
-| Focused P21-C and ledger tests | 9 suites / 138 tests passed | 0 |
-| `npm test -- --coverage` | 70 suites / 780 tests passed; statements 96.34%, branches 93.03%, functions 97.72%, lines 97.81% | 0 |
+| Focused P21-C and ledger tests | 8 suites / 133 tests passed | 0 |
+| `npm test -- --coverage` | 70 suites / 786 tests passed; statements 96.31%, branches 93.02%, functions 97.54%, lines 97.78% | 0 |
 | `npx tsc --noEmit` | TypeScript passed | 0 |
 | `npx expo lint` | Lint passed | 0 |
 | `npx expo-doctor` | `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!` | 0 |
@@ -1614,13 +1650,13 @@ and import` (`src/domain/__tests__/backup.test.ts`).
 | `npx expo export --platform ios` | iOS bundle exported | 0 |
 | `git diff --check` | No whitespace errors | 0 |
 
-Per-directory Istanbul aggregation, excluding tests and excluding data hooks:
-domain 2217/2253 lines (98.40%), 2061/2201 branches (93.64%); data 455/481
-lines (94.59%), 392/445 branches (88.09%); pure lib 107/107 lines and
-126/126 branches (100%). The initial full coverage attempt exposed two
-assertion mismatches: the new modal heading used an unapproved verb, and the
-edit-icon scanner rejected Budget's required CR-33 header action. Both were
-corrected; the final full coverage run passed.
+Per-directory coverage from the final run, excluding tests and data hooks:
+domain 98.42% lines / 93.72% branches; data 94.38% lines / 87.76% branches;
+pure lib 100% lines / 100% branches. The first full run exposed the expected
+edit-action ownership assertion that needed to allow the newly required
+Emergency Fund header action, plus test typing issues; the test and types were
+corrected before the final green run. Font-scale checks remain simulated; see
+the device limitations in DEC-P21C-CR37-38.
 
 #### P21-C1 final gates (2026-10-17)
 
@@ -2440,8 +2476,9 @@ for (const [name, include] of Object.entries(groups)) {
 }
 ```
 
-`docs/PROGRESS.md` ledger assertions now require P20-I, CR-35/36, overall
-48/54, and Phase 20 9/9.
+The P20-I ledger assertions were updated in P20-J to track CR-40–CR-43,
+overall progress 51/57, and Phase 20 10/10. P20-I remains historical; CR-35
+is corrected by CR-43 and CR-36 is superseded by CR-40.
 
 **P20-I acceptance criteria not verified on a real device:** actual OS font
 scaling, text clipping and touch target rendering at 1.3/2.0; native Paid /
@@ -2449,3 +2486,104 @@ Not paid dialog button ordering and dismissal on iOS/Android; check-button
 touch behavior, status placement and assistive-technology announcements; and
 the Undo toast's real five-second timing. No physical device or development
 build was used.
+
+### P20-J Home action, goal status removal and shared-asset close-out
+
+P20-J closes CR-40–CR-43 without a schema change (`SCHEMA_VERSION` remains
+8). Home's due-row action is now the exact compact text “Marked as paid” and
+continues to call the same native Paid / Not paid confirmation. Goal cards
+show their name, saved/target and available target/projection details before
+one final progress bar; all status and unreachable-contribution copy is
+removed while projection calculations remain. Goal-linked asset values are
+divided equally in integer paise across the linked-goal count. Sorted goal IDs
+make remainder assignment deterministic; unlinking automatically rebalances.
+New links omit `share`; old stored/backup links with an explicit optional
+`share` still parse, but calculations ignore it. The EF bucket-link
+invariants remain intact. Every remaining UI edit icon uses Feather
+`edit-2`.
+
+Acceptance coverage:
+
+- Home's existing Paid / Not paid confirmation test asserts the exact text
+  action, unchanged confirmation labels/message, cancellation no-op behavior
+  and absence of the old due-row action sheet; the Home row stacks at font
+  scales 1.3 and 2.0.
+- Home and Goals goal-card tests, including Emergency fund, assert status and
+  unreachable wording are absent and the progress bar is the last element at
+  font scales 1.0, 1.3 and 2.0.
+- Goal-link tests cover one/two/three-goal allocation, deterministic
+  largest-remainder paise (including 1,000.01), rebalance after unlink,
+  duplicate rejection, projection and EF bucket compatibility.
+- Goal-form test confirms an asset already linked to another goal remains
+  selectable and newly linked form data has no share input/property.
+- Schema test confirms legacy explicit-share goal links still parse.
+- Edit-action tests check ownership and scan source for legacy `edit`,
+  `edit-3` and `pencil` icon names.
+- `goalLinks.test.ts` records before/after saved totals at the fixed as-of
+  date 2026-10-12:
+
+| Fixture | Goal | Before (legacy shares) | After (equal split) |
+|---|---|---:|---:|
+| Mock | First ₹5L portfolio | ₹35,532.14 | ₹118,440.47 |
+| Mock | Home - Nagpur | ₹20,625.00 | ₹82,500.00 |
+| Mock | Poultry farm | ₹0.00 | ₹0.00 |
+| Mock | Emergency fund | ₹155,000.00 | ₹290,456.00 |
+| Demo | Emergency fund | ₹189,000.00 | ₹189,000.00 |
+| Demo | Retirement portfolio | ₹9,626.45 | ₹8,022.04 |
+| Demo | Home deposit | ₹56,363.22 | ₹214,222.04 |
+| Demo | Education fund | ₹7,250.00 | ₹29,000.00 |
+| Demo | Family holiday | ₹25,000.00 | ₹25,000.00 |
+
+Replaced assertions and their reasons:
+
+1. P20-I's Home tick accessibility-label and tick-button stacking assertions
+   are replaced with the exact `Marked as paid` text-button label and text
+   action stacking assertions; CR-43 changes presentation only.
+2. P20-I's expectation of one status beside each Home/Goals progress bar,
+   including the 1.3+ status-placement assertions, is replaced by absence of
+   status/unreachable text and details-before-final-bar assertions; CR-40
+   supersedes CR-36 while retaining projection logic.
+3. The per-goal share/free-share allocation expectations and the
+   `goal-link-overallocated` integrity assertion are replaced with equal
+   per-goal split, deterministic paise remainder, rebalance and valid
+   cross-goal integrity assertions; CR-41 permits shared assets.
+4. The Emergency Fund custom-bucket test's expected over-allocation exception
+   is replaced with a successful shared-link assertion; the existing
+   one-bucket-per-holding and Emergency-goal invariants remain tested.
+5. The icon ownership test's old icon allow-list expectations are updated
+   for the changed UI edit icons; a source scan now explicitly rejects
+   `edit`, `edit-3` and `pencil` icon names, allowing only `edit-2`.
+
+Assumed: a legacy link whose `share` is absent contributes as a normal link
+under the equal-split rule; the count includes each goal once, and the
+lexicographically sorted goal ID order assigns any leftover paise. A goal
+with no links continues to use its existing manually saved value (or zero
+for the automatic Emergency fund goal). Stored share fields remain accepted
+for compatibility and are stripped whenever a goal's links are rewritten.
+
+P20-J final gates:
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 70 suites / 791 tests passed; 96.35% statements, 93.03% branches, 97.72% functions, 97.84% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Coverage gates (Istanbul covered/total):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2663/2733 (97.44%) | 2071/2209 (93.75%) |
+| `src/data` excluding hooks | 561/618 (90.78%) | 409/466 (87.77%) |
+| Pure `src/lib` | 133/133 (100.00%) | 126/126 (100.00%) |
+
+**P20-J acceptance criteria not verified on a real device:** actual OS font
+scaling, text clipping and the hit target at 1.3/2.0; native confirmation and
+Undo-toast presentation/timing on iOS and Android; progress-bar-last layout
+and VoiceOver/TalkBack announcements; and real save/render behavior for a
+single asset linked to multiple goals. Simulated tests inspect tree content,
+accessibility props and styles only; no physical device or development build
+was used.

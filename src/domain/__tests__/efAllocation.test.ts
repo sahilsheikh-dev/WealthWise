@@ -11,7 +11,7 @@ import {
   validateAllocation,
   type EfAllocation,
 } from '../efAllocation';
-import { InvalidAllocationError, resetEfAllocation, saveEfPlan, setEfAllocation } from '../efAllocationActions';
+import { InvalidAllocationError, saveEfPlan, setEfAllocation } from '../efAllocationActions';
 
 describe('ef allocation', () => {
   it('suggested allocation totals 100%', () => {
@@ -71,7 +71,7 @@ describe('ef allocation', () => {
     expect(allocationWarnings(null)).toEqual([]);
   });
 
-  it('normalizes partial and invalid allocations and applies set/reset actions', () => {
+  it('normalizes partial and invalid allocations and validates set actions', () => {
     expect(resolveEfAllocation({ efAllocation: null }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
     expect(resolveEfAllocation({ efAllocation: undefined }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
     expect(resolveEfAllocation({ efAllocation: {} }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
@@ -98,7 +98,6 @@ describe('ef allocation', () => {
 
     const updated = setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 });
     expect(updated.efAllocation).toMatchObject({ cash: 20, bank: 30 });
-    expect(resetEfAllocation(updated)).toMatchObject({ efAllocation: null });
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(InvalidAllocationError);
 
     const floatDrift = {

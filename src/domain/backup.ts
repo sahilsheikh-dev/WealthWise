@@ -52,7 +52,7 @@ const goalSchema = z.strictObject({
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
-    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10)),
+    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10)).optional(),
   })).max(1000),
 });
 const holdingType = z.enum([

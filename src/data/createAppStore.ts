@@ -42,7 +42,6 @@ import { ensureEfGoal } from '../domain/goals';
 import {
   addEfCustomBucket,
   renameEfCustomBucket,
-  resetEfAllocation,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
@@ -143,7 +142,6 @@ export type AppActions = {
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
-  resetEfAllocation: () => void;
   addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
   renameEfCustomBucket: (bucketId: string, name: string) => void;
   setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
@@ -449,9 +447,6 @@ export function createAppStore(
         },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
-        },
-        resetEfAllocation() {
-          applyDataAction(resetEfAllocation);
         },
         addEfCustomBucket(input) {
           applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
