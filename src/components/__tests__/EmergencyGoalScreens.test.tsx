@@ -64,6 +64,7 @@ jest.mock('../../components/ui', () => {
     EmptyState: node('empty'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
+    SearchField: node('searchfield'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
@@ -323,7 +324,7 @@ describe('three-month emergency target screens', () => {
     expect(item.findAll((node) => node.props.testID === 'emergency-fund-status-cash')).toHaveLength(0);
   });
 
-  it('offers to link assets without hiding the four default allocation items', () => {
+  it('offers to link assets while showing the three requested default allocation items', () => {
     mockData.current = emptyAppData('2026-10-11');
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
@@ -337,7 +338,7 @@ describe('three-month emergency target screens', () => {
         && lastChildTestID(node)
           === `emergency-fund-progress-${testID.replace('emergency-fund-allocation-item-', '')}`;
     });
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(3);
   });
 
   it('renders Home, Goals and Emergency fund for malformed persisted allocations', async () => {

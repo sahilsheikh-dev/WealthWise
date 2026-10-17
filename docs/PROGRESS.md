@@ -128,12 +128,12 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-I | — | Done | `e396059`; initial CR-35/CR-36 delivery; the tick control is corrected by CR-43 and status wording is superseded by CR-40. | 2026-10-17 |
 | P20-J | — | Done | CR-40–CR-43; Home text action, details-first goal cards, equal-split shared assets, and Feather `edit-2` standardization. | 2026-10-17 |
 | P20-K | — | Done | `026e671`; CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
-| P20-L | — | In progress | CR-47–CR-49; due section and shared filter/search work in progress. | 2026-10-18 |
+| P20-L | — | In progress | CR-47–CR-50; due section, inline filter panel, liability-kind chips and search implemented; final gates pending. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
-| P21-D | — | Planned | CR-51; adjust only emergency-fund null/default/repair allocation targets. | 2026-10-18 |
+| P21-D | — | In progress | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50; focused tests pass, final gates pending. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
@@ -559,10 +559,10 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   `deleteEfCustomBucket` domain/store path was removed rather than retained as
   a second deletion behavior. Old zero-percent fixed items without links are
   treated as deleted when opening the editor.
-  Assumed: the current seven-bucket domain has a combined `FD / RD` item, not
-  separate FD and RD items; to avoid a schema/type change, the existing
-  suggested 10/40/35/15 mix remains Cash, Bank account, FD / RD, and Mutual
-  funds / Bonds. The demo uses only those four defaults and no custom item.
+  Assumed at P21-C delivery (superseded for defaults by DEC-P21D-CR51): the
+  current seven-bucket domain has a combined `FD / RD` item, not separate FD
+  and RD items; the original suggested 10/40/35/15 mix included Mutual funds /
+  Bonds. P21-D now uses only Cash, Bank account and FD / RD as defaults.
   Superseded P21-C assertions: the old EmergencyGoalScreens expectation that
   “Savings account” linked-asset text/chips render in normal mode and the
   beside/stacked status layout assertions are replaced by checks that the
@@ -619,8 +619,9 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   No schema-version change; v8 remains current.
   Assumed: valid positive percentages are proportionally renormalized to
   hundredth-percent units; stable fixed/custom bucket order breaks equal
-  remainders. If nothing valid remains, use the four P21-C default buckets
-  (10/40/35/15), not zero-valued entries for the other fixed categories.
+  remainders. At P21-C1 delivery, if nothing valid remained, the four P21-C
+  default buckets (10/40/35/15) were used; this fallback is superseded by
+  DEC-P21D-CR51.
   Assumed: P21-C remains Done as previously delivered; P21-C1 is an additive
   fourth Phase 21 entry rather than a rewrite of the earlier delivery.
   Superseded assertions: the old `effectiveAllocation` partial-map expectation
@@ -630,6 +631,19 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   allocation first; persisted full maps with zero-valued keys are replaced by
   canonical positive-only allocation assertions. Form totals now display two
   decimal places (`100.0%` → `100.00%`) so 99.99% does not appear complete.
+- DEC-P21D-CR51: Null allocations and repair fallbacks now use only Cash 10,
+  Bank account 40, and FD / RD 50. The demo allocation follows that mix.
+  Mutual funds / Bonds remains available from the editor header's Add
+  allocation item action. Valid allocations already stored by users are
+  unchanged; the schema remains v8.
+  Superseded assertions: the old four-default `activeEfBucketMetadata(null)`
+  list is replaced by the three requested defaults; form and demo expectations
+  for 10/40/35/15 are replaced by 10/40/50; the empty-allocation hydration
+  fallback expectation changes from four groups to three. The form separately
+  verifies that Mutual funds / Bonds is still addable. Existing saved 10/40/35/15
+  allocations remain in tests and must resolve without repair.
+  Assumed: this request supersedes only the default and repair-fallback mix
+  from P21-C/P21-C1; it does not rewrite any valid persisted allocation.
 - DEC-P20I-CR35-36: Initial Home due confirmation and goal-status layout,
   subsequently corrected/superseded by P20-J; see DEC-P20J-CR40-43 below.
 - DEC-P20J-CR40-43: Home due rows remain non-interactive and show title,
@@ -1380,12 +1394,12 @@ evidence present in exports/checkpoints.
 | P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Initially done; CR-35 wording corrected by CR-43 and CR-36 superseded by CR-40; see P20-J close-out. | `e396059` | The Home due cap and native confirmation/Undo remain; former goal-status copy is no longer shown. | current request |
 | P20-J | Phase 20 | — | — | 2026-10-17 | Correct Home due wording, remove goal-card status text, share linked-asset value equally across goals and standardize edit icons (CR-40–CR-43). | Done; 70 suites / 791 tests and all final gates pass; see P20-J close-out. | `269da35` | Legacy shares remain optional for imports and are ignored by calculations; remainder paise assigned by sorted goal ID. | current request |
 | P20-K | Phase 20 | — | — | 2026-10-17 | Group Home goals and make asset/liability card bodies edit targets with independent buttons and liability data-before-progress order (CR-44–CR-46). | Done; 3 focused suites / 122 tests and 70 suites / 799 full tests; all requested automated gates pass; see P20-K close-out. | `026e671` | Simulated route/propagation/layout assertions do not replace real-device touch, font-scale or assistive-technology checks. | current request |
-| P20-L | Phase 20 | — | — | 2026-10-18 | Always-open Transactions due payments, inline header filters, liability-kind filtering, and search across Assets, Liabilities and Goals (CR-47–CR-50). | In progress; CR-47/48/50 are implemented and focused tests pass. CR-49 search is implemented and focused tests pass; final gates remain. | `1be9c92`, `086d084`, `9f11265`; CR-49 step commit pending | Assumed: only due rows use the new compact Paid/Received labels; the existing budget/Home actions and paid/Undo behavior remain unchanged. Liability kind filtering is local, defaults to All and preserves sort persistence. Search is local, trims and lowercases the query, and resets on screen remount. | current request |
+| P20-L | Phase 20 | — | — | 2026-10-18 | Always-open Transactions due payments, inline header filters, liability-kind filtering, and search across Assets, Liabilities and Goals (CR-47–CR-50). | In progress; CR-47/48/50 implementations are committed; CR-49 search and focused tests pass. Final gates remain. | `1be9c92`, `086d084`, `9f11265`, `7c71377` | Assumed: only due rows use the new compact Paid/Received labels; existing Budget/Home actions and paid/Undo behavior remain unchanged. Liability kind filtering is local, defaults to All and preserves sort persistence. Search is local, trims and lowercases the query, and resets on screen remount. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
-| P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed: the fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. Stored zero-percent unlinked items count as deleted. | current request |
-| P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed: normalize positive known buckets by largest remainder; fall back to the four P21-C defaults (10/40/35/15). Preserve P21-C as previously delivered. | current request |
-| P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | Planned; preserve any existing stored allocation. | none | No schema change; Mutual funds / Bonds remains addable. | current request |
+| P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
+| P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. Its four-default fallback is superseded by P21-D/CR-51. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed at delivery: normalize positive known buckets by largest remainder and fall back to P21-C's 10/40/35/15 mix. Preserve P21-C behavior; CR-51 supersedes only the fallback mix. | current request |
+| P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | In progress; focused domain, form, repair, screen and demo tests pass; final gates pending. | CR-51 step commit pending | Assumed: only null/default/fallback values change; existing valid stored allocations stay byte-for-byte unchanged. No schema change; Mutual funds / Bonds remains addable. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
@@ -1447,7 +1461,7 @@ evidence present in exports/checkpoints.
 | CR-48 | Move existing sort/type controls on Transactions, Assets, Liabilities and Goals into an inline header filter panel with ordered filter/plus actions and active indicator. | Done (focused tests; final gates pending) | P20-L; closed-by-default and toggle/content/order/active-filter tests pass; SortChip and sorting implementation remain unchanged. |
 | CR-49 | Add local case-insensitive, trimmed search to Assets, Liabilities and Goals; compose with filters and sorting. | Done (focused tests; final gates pending) | P20-L; three screens cover matching, filters/sort composition, empty results and remount reset. `SearchField.test.tsx` covers clear behavior without changing the Transactions field. |
 | CR-50 | Add All/Recurring/One-time liability-kind filters in the Liabilities filter panel. | Done (focused tests; final gates pending) | P20-L; all three kinds filter correctly, selection is local/default All, active dot and No matches empty state are covered. |
-| CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Planned | P21-D; schema v8 unchanged. |
+| CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Done (focused tests; final gates pending) | P21-D; default/resolver, empty repair hydration, UI, demo and schema-v8 tests pass; saved 10/40/35/15 allocation remains unchanged and Mutual funds / Bonds is still addable. |
 
 ## 8. Known issues and risks
 
@@ -1681,7 +1695,7 @@ evidence for the fixes.
 | P20-L STEP 2 — inline filters (CR-48) | Done (focused tests; final gates pending) | `src/components/AppHeader.tsx`; Transactions, Assets, Liabilities and Goals screens; SortChip/sorting sources unchanged | `AppHeader.test.tsx`, `AppHeaderUsage.test.ts`, `RouteRenderSmoke.test.tsx`, `TransactionsScreen.test.tsx`, `SectionHeaderRow.test.tsx`: icon order, expanded state, panel content, default closed state, active dot and protected placement scan. |
 | P20-L STEP 3 — Liabilities type filter (CR-50) | Done (focused tests; final gates pending) | `app/liabilities.tsx`; `src/components/__tests__/RouteRenderSmoke.test.tsx` | `filters recurring and one-time liabilities and shows a no-matches state`, `shows No matches when a liability kind has no records`; All/Recurring/One-time filtering, active indicator and empty state. CR-49 tests also cover composition with search and sorting. |
 | P20-L STEP 4 — Assets/Liabilities/Goals search (CR-49) | Done (focused tests; final gates pending) | `app/assets.tsx`, `app/liabilities.tsx`, `app/(tabs)/goals.tsx`, `src/components/ui.tsx` | `searches assets by trimmed case-insensitive name or type and composes with type filters`, `searches liabilities by trimmed case-insensitive name or type alongside the kind filter`, `searches goals by trimmed case-insensitive name and shows No matches`, `SearchField`; type/name matching, sort/filter composition, clear action, empty state and remount reset. |
-| P21-D — Emergency-fund default items (CR-51) | Planned | `src/domain/efAllocation.ts`, demo data | Existing default/resolver, form and demo-data tests; no schema version change. |
+| P21-D — Emergency-fund default items (CR-51) | Done (focused tests; final gates pending) | `src/domain/efAllocation.ts`, `src/mock/demoData.ts` | `uses the three requested defaults and leaves saved allocations unchanged`, `repairs an empty allocation to the three requested defaults only once`, `shows only the three requested default items when no allocation is saved`, `offers missing predefined items including Mutual funds / Bonds from the header`, `uses the three requested emergency-fund default allocations`; schema v8. |
 
 ### P18-R7 housekeeping
 

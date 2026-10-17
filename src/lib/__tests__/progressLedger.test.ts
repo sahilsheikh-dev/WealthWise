@@ -236,7 +236,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-48')).toBe('Done (focused tests; final gates pending)');
     expect(statusFor('CR-49')).toBe('Done (focused tests; final gates pending)');
     expect(statusFor('CR-50')).toBe('Done (focused tests; final gates pending)');
-    expect(statusFor('CR-51')).toBe('Planned');
+    expect(statusFor('CR-51')).toBe('Done (focused tests; final gates pending)');
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
@@ -254,7 +254,7 @@ describe('permanent progress ledger', () => {
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-D |'))).toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-D |'))).toContain('| In progress |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done;');
     expect(statusFor('CR-25')).toBe('Superseded by CR-32');
     expect(statusFor('CR-24')).toBe('Superseded by CR-30');
@@ -272,6 +272,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P20E-CR31');
     expect(ledger).toContain('DEC-P20L-CR50');
     expect(ledger).toContain('DEC-P20L-CR49');
+    expect(ledger).toContain('DEC-P21D-CR51');
     expect(ledger).toContain('DEC-P20F-STATUS');
     expect(ledger).toContain('DEC-P20G');
     expect(ledger).toContain('DEC-P20H-retired');
