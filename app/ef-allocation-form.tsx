@@ -9,11 +9,11 @@ import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
-import { IconButton } from '../src/components/IconButton';
 import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
+import { IconButton } from '../src/components/IconButton';
 import { AppText, Button, Card } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -203,7 +203,7 @@ export default function EfAllocationFormScreen() {
   return (
     <>
       <FormScreen
-        title="Emergency fund allocation"
+        title="Edit allocation"
         onClose={() => router.back()}
         isDirty={isDirty}
         stickyHeader={(
