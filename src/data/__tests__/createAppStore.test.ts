@@ -213,7 +213,7 @@ describe('createAppStore persistence', () => {
     expect(storage.values.get(`${key}.prerepair-efallocation`)).toBe(raw);
   });
 
-  it('repairs an empty allocation to the four defaults only once', async () => {
+  it('repairs an empty allocation to the three requested defaults only once', async () => {
     const storage = new MemoryStorage();
     const key = 'wealthwise.app.v1';
     const data = {
@@ -234,8 +234,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efAllocation).toEqual({
       cash: 10,
       bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
+      'fd-rd': 50,
     });
     expect(storage.values.get(`${key}.prerepair-efallocation`)).toBe(raw);
     expect(storage.calls.filter((call) => call === `set:${key}`)).toHaveLength(1);

@@ -36,7 +36,7 @@ import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
+import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
@@ -248,23 +248,40 @@ jest.mock('../../components/AppHeader', () => {
       title,
       rightActions,
       menu,
+      menuPlacement,
       menuIndicator,
     }: {
       title: string;
-      rightActions?: { label: string; icon: string; onPress: () => void }[];
+      rightActions?: {
+        label: string;
+        icon: string;
+        onPress: () => void;
+        expanded?: boolean;
+        showIndicator?: boolean;
+      }[];
       menu?: { label: string; onPress: () => void }[];
+      menuPlacement?: 'leading' | 'trailing';
       menuIndicator?: boolean;
     }) => {
       const [menuOpen, setMenuOpen] = ReactModule.useState(false);
       return ReactModule.createElement('header', null,
         ReactModule.createElement('text', null, title),
+        ...(menu && menuPlacement === 'leading' ? [
+          ReactModule.createElement('button', {
+            key: 'more-options',
+            accessibilityLabel: 'More options',
+            menuIndicator,
+          }, 'More options'),
+        ] : []),
         ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
           key: action.label,
           accessibilityLabel: action.label,
+          accessibilityState: action.expanded === undefined ? {} : { expanded: action.expanded },
           icon: action.icon,
+          showIndicator: action.showIndicator,
           onPress: action.onPress,
-        }, action.label)),
-        ...(menu ? [
+        }, action.label, action.showIndicator ? ReactModule.createElement('view', { testID: 'header-action-indicator' }) : null)),
+        ...(menu && menuPlacement !== 'leading' ? [
           ReactModule.createElement('button', {
             key: 'more-options',
             accessibilityLabel: 'More options',
@@ -764,9 +781,9 @@ describe('route render smoke audit', () => {
       expect(textOf(dueHome)).toContain('Test plan');
       expect(textOf(dueHome)).toContain(formatAmount(1_000, 'exact', 1));
       expect(textOf(dueHome)).toContain(formatDate(today));
-      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Paid' });
       expect(markPaid.type).toBe('button');
-      expect(markPaid.children).toContain('Marked as paid');
+      expect(markPaid.children).toContain('Paid');
       expect(mockConfirmAsync).not.toHaveBeenCalled();
       await act(async () => {
         markPaid.props.onPress();
@@ -825,7 +842,7 @@ describe('route render smoke audit', () => {
       expect(actions?.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ justifyContent: 'flex-end' }),
       ]));
-      expect(dueRow.findByProps({ accessibilityLabel: 'Marked as paid' }).type).toBe('button');
+      expect(dueRow.findByProps({ accessibilityLabel: 'Paid' }).type).toBe('button');
     } finally {
       act(() => home?.unmount());
       Object.assign(routeData, previousData);
@@ -885,7 +902,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:investment-plan-test'),
       )[0];
       if (!oldestRow) throw new Error('Oldest due row did not render.');
-      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Paid' });
       await act(async () => {
         markPaid.props.onPress();
         await Promise.resolve();
@@ -914,7 +931,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:older-plan:'),
       )[0];
       if (!laterRow) throw new Error('Later due row did not render.');
-      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
       const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
@@ -1257,22 +1274,48 @@ describe('route render smoke audit', () => {
       const balanceText = balance.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       expect(balanceText).toContain('Closing balance');
       expect(balanceText).not.toContain('NaN');
-      const pendingToggle = renderer.root.findByProps({ testID: 'pending-items-toggle' });
-      expect(pendingToggle.props.accessibilityState).toEqual({ expanded: false });
-      expect(renderer.root.findAllByProps({ testID: 'pending-items-list' })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ testID: 'pending-items-toggle' })).toHaveLength(0);
+      const pendingHeader = renderer.root.findByProps({ testID: 'pending-items-header' });
+      expect(pendingHeader.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('3 payments due of total');
+      const pendingList = renderer.root.findByProps({ testID: 'pending-items-list' });
+      const pendingCard = renderer.root.findByProps({ testID: 'pending-items-section' })
+        .findAll((node) => String(node.type) === 'card')[0];
+      if (!pendingCard) throw new Error('Due payments Card did not render.');
+      expect(pendingList.findAll((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      )).toHaveLength(1);
+      expect(pendingList.findAllByProps({ children: 'Paid' })).toHaveLength(3);
+      expect(pendingList.findAllByProps({ children: 'Pay' })).toHaveLength(0);
+      const firstDueRow = pendingList.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      );
+      if (!firstDueRow) throw new Error('Filtered due row did not render.');
+      expect(firstDueRow.props.accessibilityLabel).toContain('Food');
+      expect(firstDueRow.props.accessibilityLabel).not.toContain('Overdue');
+      expect(firstDueRow.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 1 }),
+      ]));
 
       expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
         .toBeGreaterThan(0);
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
-      act(() => renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.onPress());
       expect(renderer.root.findAll((node) =>
         node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
       )).toHaveLength(1);
       expect(renderer.root.findAll((node) =>
         node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
       )).toHaveLength(0);
-      expect(renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.accessibilityLabel)
-        .toContain(formatAmount(75, 'exact', 1));
+      const lastDueRow = renderer.root.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
+      );
+      if (!lastDueRow) throw new Error('Filtered last due row did not render.');
+      expect(lastDueRow.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 0 }),
+      ]));
+      expect(renderer.root.findByProps({ testID: 'pending-items-header' }).findAllByType('text')
+        .map((node) => node.children.join('')).join(' ')).toContain(formatAmount(75, 'exact', 1));
       act(() => renderer.unmount());
 
       const negativeData: AppData = {
@@ -1287,6 +1330,7 @@ describe('route render smoke audit', () => {
       const negativeBalance = negativeRenderer.root.findByProps({ testID: 'available-balance-card' });
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
+      expect(negativeRenderer.root.findAllByProps({ testID: 'pending-items-section' })).toHaveLength(0);
       expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
         .toHaveLength(0);
       act(() => negativeRenderer.unmount());
@@ -1294,6 +1338,48 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
       act(() => useUIStore.getState().setTxMonth(previousTxMonth));
+      mockFontScale = 1;
+    }
+  });
+
+  it.each([1.3, 2])('stacks Transactions due rows at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousMonth = useUIStore.getState().txMonth;
+    const today = todayISO();
+    const month = monthKey(today);
+    const data: AppData = {
+      ...emptyAppData(today),
+      monthBudgets: [{
+        month,
+        source: 'custom',
+        plannedIncome: 1_000,
+        lines: [{ category: 'Food', planned: 300 }],
+      }],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    act(() => useUIStore.getState().setTxMonth(month));
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(TransactionsScreen));
+      const row = renderer.root.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      );
+      if (!row) throw new Error('Transactions due row did not render.');
+      expect(row.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ alignItems: 'stretch', flexDirection: 'column' }),
+      ]));
+      expect(row.findAllByProps({ accessibilityLabel: 'Paid' })).toHaveLength(1);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      act(() => useUIStore.getState().setTxMonth(previousMonth));
       mockFontScale = 1;
     }
   });
@@ -1626,7 +1712,7 @@ describe('route render smoke audit', () => {
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
-  ])('%s exposes its SortChip', (name, makeScreen) => {
+  ])('%s exposes its SortChip in the existing location or inline filter panel', (name, makeScreen) => {
     const appData = jest.requireMock('../../data/useAppData').useAppData() as {
       holdings: object[];
       liabilities: object[];
@@ -1672,12 +1758,388 @@ describe('route render smoke audit', () => {
         : {});
 
     const renderer = renderScreen(makeScreen());
-    expect(renderer.root.findAll((node) =>
+    const filteredScreenPanel: Record<string, string> = {
+      Transactions: 'transaction-filter-panel',
+      Goals: 'goal-filter-panel',
+      Assets: 'asset-filter-panel',
+      Liabilities: 'liability-filter-panel',
+    };
+    const panelTestID = filteredScreenPanel[name];
+    if (panelTestID) {
+      expect(renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ testID: panelTestID })).toHaveLength(0);
+      const filterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
+      expect(filterButton.props.accessibilityState).toEqual({ expanded: false });
+      act(() => filterButton.props.onPress());
+      expect(renderer.root.findByProps({ testID: panelTestID })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.accessibilityState)
+        .toEqual({ expanded: true });
+      if (name === 'Transactions') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Income', 'Expense', 'Invested'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(4);
+        const investedChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Invested');
+        if (!investedChip) throw new Error('Invested filter chip did not render.');
+        act(() => investedChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Invested')?.props.selected)
+          .toBe(true);
+      } else if (name === 'Assets') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Recurring', 'Mutual fund / SIP'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(3);
+        const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Recurring');
+        if (!recurringChip) throw new Error('Recurring filter chip did not render.');
+        act(() => recurringChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Recurring')?.props.selected)
+          .toBe(true);
+      } else if (name === 'Liabilities') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Recurring', 'One-time'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(3);
+        const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'One-time');
+        if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+        act(() => oneTimeChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'One-time')?.props.selected)
+          .toBe(true);
+      } else {
+        expect(renderer.root.findAll((node) =>
+          typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith('Sort:'),
+        )).toHaveLength(1);
+      }
+      if (name === 'Transactions' || name === 'Assets' || name === 'Liabilities') {
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
+        expect(renderer.root.findAll((node) =>
+          String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
+        )).toHaveLength(1);
+      }
+      const header = renderer.root.findAllByType('header')[0];
+      const headerActionLabels = header?.findAll((node) =>
+        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'More options']
+          .includes(String(node.props.accessibilityLabel)),
+      ).map((node) => node.props.accessibilityLabel);
+      expect(headerActionLabels?.at(-1)).toBe(name === 'Transactions'
+        ? 'Add transaction'
+        : name === 'Goals'
+          ? 'New goal'
+          : name === 'Assets'
+            ? 'New investment'
+            : 'Add a liability');
+      expect(headerActionLabels).toContain('Filter');
+      if (name === 'Transactions') {
+        expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);
+      }
+    } else {
+      expect(renderer.root.findAll((node) =>
       typeof node.props.accessibilityLabel === 'string'
       && node.props.accessibilityLabel.startsWith('Sort:'),
-    )).toHaveLength(1);
+      )).toHaveLength(1);
+    }
     act(() => renderer.unmount());
     routeParams.mockReturnValue({});
+  });
+
+  it('filters recurring and one-time liabilities and shows a no-matches state', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const recurringA: RecurringLiability = {
+      id: 'filter-liability-a',
+      kind: 'recurring',
+      name: 'Alpha recurring',
+      type: 'Home loan',
+      principal: 12_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      tenureMonths: 24,
+      emi: 500,
+      payments: [],
+      settlement: null,
+    };
+    const recurringB: RecurringLiability = {
+      ...recurringA,
+      id: 'filter-liability-b',
+      name: 'Beta recurring',
+    };
+    const oneTime: OneTimeLiability = {
+      id: 'filter-one-time',
+      kind: 'one-time',
+      name: 'Friend loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      dueDate: null,
+      payments: [],
+    };
+    const data: AppData = {
+      ...emptyAppData(todayISO()),
+      liabilities: [recurringA, oneTime, recurringB],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const cardIds = () => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('liability-card-filter-'),
+      ).map((node) => node.props.testID) ?? [];
+      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Recurring');
+      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
+      act(() => recurringChip.props.onPress());
+      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
+      expect(renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(1);
+
+      const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'One-time');
+      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+      act(() => oneTimeChip.props.onPress());
+      expect(cardIds()).toEqual(['liability-card-filter-one-time']);
+
+      act(() => recurringChip.props.onPress());
+      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('shows No matches when a liability kind has no records', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const data: AppData = {
+      ...emptyAppData(todayISO()),
+      liabilities: [{
+        id: 'only-one-time',
+        kind: 'one-time',
+        name: 'Friend loan',
+        type: 'Borrowed money',
+        principal: 1_000,
+        ratePct: 0,
+        startDate: '2026-01-01',
+        dueDate: null,
+        payments: [],
+      }],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Recurring');
+      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
+      act(() => recurringChip.props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches assets by trimmed case-insensitive name or type and composes with type filters', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const assets: ManualHolding[] = [
+      { id: 'gold-antique', kind: 'manual', name: 'Antique collection', type: 'Gold', invested: 1_000, value: 1_500, logs: [] },
+      { id: 'gold-retirement', kind: 'manual', name: 'Retirement reserve', type: 'Gold', invested: 1_000, value: 1_100, logs: [] },
+      { id: 'cash-type', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
+    ];
+    const data: AppData = { ...emptyAppData(todayISO()), holdings: assets };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(AssetsScreen));
+      renderer = screen;
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search assets' });
+      act(() => search.props.onChangeText('  gOlD  '));
+      const assetCards = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('asset-card-'),
+      ).map((node) => node.props.testID) ?? [];
+      expect(assetCards()).toEqual(['asset-card-manual-Antique collection', 'asset-card-manual-Retirement reserve']);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Asset sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Asset name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(assetCards()).toEqual(['asset-card-manual-Retirement reserve', 'asset-card-manual-Antique collection']);
+
+      const cashChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Cash');
+      if (!cashChip) throw new Error('Cash asset filter did not render.');
+      act(() => cashChip.props.onPress());
+      expect(screen.root.findAllByProps({ title: 'No matches' })).not.toHaveLength(0);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' CASH '));
+      expect(assetCards()).toEqual(['asset-card-manual-Emergency cash']);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(AssetsScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search assets' }).props.value).toBe('');
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches liabilities by trimmed case-insensitive name or type alongside the kind filter', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const oneTime: OneTimeLiability = {
+      id: 'search-friend',
+      kind: 'one-time',
+      name: 'Friend loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      dueDate: null,
+      payments: [],
+    };
+    const other: OneTimeLiability = { ...oneTime, id: 'search-bank', name: 'Bank', type: 'Personal loan' };
+    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, oneTime] };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(LiabilitiesScreen));
+      renderer = screen;
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const oneTimeChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'One-time');
+      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+      act(() => oneTimeChip.props.onPress());
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search liabilities' });
+      act(() => search.props.onChangeText('  LOAN  '));
+      const liabilityCards = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('liability-card-search-'),
+      ).map((node) => node.props.testID) ?? [];
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Liability sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(liabilityCards()).toEqual(['liability-card-search-friend', 'liability-card-search-bank']);
+
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  fRiEnD  '));
+      expect(liabilityCards()).toEqual(['liability-card-search-friend']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  personal loan '));
+      expect(liabilityCards()).toEqual(['liability-card-search-bank']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('nothing'));
+      expect(screen.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.value).toBe('');
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('searches goals by trimmed case-insensitive name and shows No matches', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const goals: Goal[] = [
+      { id: 'search-road-trip', name: 'Road trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
+      { id: 'search-japan-trip', name: 'Japan trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
+    ];
+    const data: AppData = { ...emptyAppData(todayISO()), goals };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      const screen = renderScreen(React.createElement(GoalsScreen));
+      renderer = screen;
+      const search = screen.root.findByProps({ accessibilityLabel: 'Search goals' });
+      act(() => search.props.onChangeText('  tRiP  '));
+      const goalNames = () => screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Edit '),
+      ).map((node) => node.props.accessibilityLabel.slice(5).split(',')[0]) ?? [];
+      expect(goalNames()).toEqual(['Road trip', 'Japan trip']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = screen.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Goal sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = screen.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Goal name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      expect(goalNames()).toEqual(['Japan trip', 'Road trip']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText('not here'));
+      expect(goalNames()).toHaveLength(0);
+      expect(screen.root.findAll((node) =>
+        String(node.type) === 'empty' && node.props.title === 'No matches',
+      )).toHaveLength(1);
+      act(() => screen.unmount());
+      renderer = renderScreen(React.createElement(GoalsScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Search goals' }).props.value).toBe('');
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
   });
 
   it('changes months with horizontal swipes and leaves chip-origin swipes alone', () => {
@@ -1685,7 +2147,8 @@ describe('route render smoke audit', () => {
     const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
     const previousMonthLabel = monthLabel();
     const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
-    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-row' });
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-panel' });
     const responder = () => renderer.root.findAll(
       (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
     )[0];

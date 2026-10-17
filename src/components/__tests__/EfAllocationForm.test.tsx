@@ -239,26 +239,26 @@ describe('emergency-fund allocation form', () => {
     expect(cashPercent.props.size).toBe('compact');
   });
 
-  it('shows only the four existing default items when no allocation is saved', () => {
+  it('shows only the three requested default items when no allocation is saved', () => {
     mockState.data = { ...mockAppData, efAllocation: null, efCustomBuckets: [], efBucketLinks: {} };
     const renderer = renderForm();
     const source = readFileSync(require.resolve('../../../app/ef-allocation-form'), 'utf8');
     for (const [label, value] of [
       ['Cash', '10'],
       ['Bank account', '40'],
-      ['FD / RD', '35'],
-      ['Mutual funds / Bonds', '15'],
+      ['FD / RD', '50'],
     ]) {
       expect(renderer.root.findByProps({ accessibilityLabel: `${label} allocation percentage` }).props.value)
         .toBe(value);
     }
-    for (const label of ['Stock market', 'LIC / Insurance', 'Other']) {
+    for (const label of ['Mutual funds / Bonds', 'Stock market', 'LIC / Insurance', 'Other']) {
       expect(renderer.root.findAllByProps({ accessibilityLabel: `${label} allocation percentage` })).toHaveLength(0);
     }
     expect(source).not.toMatch(/\b(?:use|apply)SuggestedMix\b/);
   });
 
-  it('offers missing predefined items from the header', () => {
+  it('offers missing predefined items including Mutual funds / Bonds from the header', () => {
+    mockState.data = { ...mockAppData, efAllocation: null, efCustomBuckets: [], efBucketLinks: {} };
     const renderer = renderForm();
     act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
     const choicesModal = renderer.root.findAllByProps({ visible: true })
@@ -267,11 +267,12 @@ describe('emergency-fund allocation form', () => {
     const choiceLabels = new Set(choicesModal?.findAll(() => true)
       .map((node) => node.props.label)
       .filter((label): label is string => typeof label === 'string'));
-    expect([...choiceLabels]).toEqual(['Stock market', 'LIC / Insurance', 'Other', 'Custom', 'Cancel']);
+    expect([...choiceLabels]).toEqual(['Mutual funds / Bonds', 'Stock market', 'LIC / Insurance', 'Other', 'Custom', 'Cancel']);
     expect(renderer.root.findAllByProps({ label: 'Cash' })).toHaveLength(0);
-    expect(renderer.root.findByProps({ label: 'Stock market' })).toBeDefined();
-    act(() => renderer.root.findByProps({ label: 'Stock market' }).props.onPress());
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Stock market allocation percentage' }).props.value).toBe('0');
+    expect(renderer.root.findByProps({ label: 'Mutual funds / Bonds' })).toBeDefined();
+    act(() => renderer.root.findByProps({ label: 'Mutual funds / Bonds' }).props.onPress());
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Mutual funds / Bonds allocation percentage' }).props.value)
+      .toBe('0');
   });
 
   it('confirms deletion without moving its allocation and keeps a live total', async () => {

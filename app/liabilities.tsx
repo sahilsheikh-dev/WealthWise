@@ -12,9 +12,11 @@ import {
   AppText,
   Button,
   Card,
+  Chip,
   ChipRow,
   EmptyState,
   ProgressBar,
+  SearchField,
   Screen,
   StatPill,
   StatPillRow,
@@ -29,11 +31,12 @@ import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const EXTRA_ERROR = 'Enter a whole number between 0 and 10,00,000';
+const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time'] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -41,6 +44,9 @@ export default function LiabilitiesScreen() {
   const { colors } = useTheme();
   const data = useAppData();
   const sorting = useSort('liabilities');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
+  const [query, setQuery] = useState('');
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
@@ -63,6 +69,15 @@ export default function LiabilitiesScreen() {
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
   }));
+  const filterActive = kindFilter !== 'All'
+    || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
+    || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleLiabilities = sortedLiabilities.filter((liability) =>
+    (kindFilter === 'All'
+      || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'))
+    && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
+  );
 
   return (
       <Screen bottomPadding={120}>
@@ -70,7 +85,38 @@ export default function LiabilitiesScreen() {
           title="Liabilities"
           showBack
           fallbackHref="/(tabs)"
-          rightActions={[{ icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') }]}
+          rightActions={[
+            {
+              icon: 'filter',
+              label: 'Filter',
+              onPress: () => setFilterPanelOpen((open) => !open),
+              expanded: filterPanelOpen,
+              showIndicator: filterActive,
+            },
+            { icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') },
+          ]}
+        />
+        {filterPanelOpen ? (
+          <View testID="liability-filter-panel">
+            <ChipRow>
+              <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
+              {LIABILITY_FILTERS.map((item) => (
+                <Chip
+                  key={item}
+                  label={item}
+                  selected={kindFilter === item}
+                  onPress={() => setKindFilter(item)}
+                />
+              ))}
+            </ChipRow>
+          </View>
+        ) : null}
+        <SearchField
+          accessibilityLabel="Search liabilities"
+          placeholder="Search name or type"
+          value={query}
+          onChangeText={setQuery}
+          onClear={() => setQuery('')}
         />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Total outstanding</AppText>
@@ -121,14 +167,14 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        <ChipRow>
-          <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
-        </ChipRow>
-
-        {sortedLiabilities.map((liability) => liability.kind === 'recurring'
+        {visibleLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
-        {data.liabilities.length === 0 ? (
+        {visibleLiabilities.length === 0 && (normalizedQuery.length > 0 || data.liabilities.length > 0) ? (
+          <View testID="liability-no-matches">
+            <EmptyState title="No matches" />
+          </View>
+        ) : data.liabilities.length === 0 ? (
           <>
             <EmptyState title="No liabilities yet" subtitle="Add a liability to track its outstanding balance." />
             <View style={styles.emptyAction}>

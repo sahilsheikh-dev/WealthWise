@@ -16,6 +16,8 @@ export type AppHeaderAction = {
   onPress: () => void;
   disabled?: boolean;
   destructive?: boolean;
+  expanded?: boolean;
+  showIndicator?: boolean;
 };
 
 export type AppHeaderMenuItem = Omit<HeaderMenuItem, 'onPress'> & { onPress: () => void };
@@ -28,6 +30,7 @@ export function AppHeader({
   fallbackHref = '/',
   rightActions = [],
   menu,
+  menuPlacement = 'trailing',
   showDefaultMenu,
   menuIndicator = false,
 }: {
@@ -38,6 +41,7 @@ export function AppHeader({
   fallbackHref?: '/' | '/(tabs)' | '/assets' | '/liabilities' | '/emergency-fund';
   rightActions?: AppHeaderAction[];
   menu?: AppHeaderMenuItem[];
+  menuPlacement?: 'leading' | 'trailing';
   showDefaultMenu?: boolean;
   menuIndicator?: boolean;
 }) {
@@ -48,14 +52,24 @@ export function AppHeader({
   const [menuVisible, setMenuVisible] = useState(false);
   const showBackControl = showBack || routeKind === 'stack';
   const showCloseControl = routeKind === 'form';
-  const constrainTitle = rightActions.length > 1;
   const hasExplicitRightContent = rightActions.length > 0 || menu !== undefined;
   const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false ? globalMenu : undefined;
   const visibleMenu = menu ?? defaultMenu;
+  const constrainTitle = rightActions.length + (visibleMenu ? 1 : 0) > 1;
   const menuItems = visibleMenu?.map((item) => ({
     ...item,
     onPress: item.onPress,
   }));
+  const menuControl = visibleMenu ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="More options"
+      onPress={() => setMenuVisible(true)}
+      style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <AppText weight="bold" style={styles.ellipsis}>⋯</AppText>
+      {menuIndicator ? <View testID="header-menu-indicator" style={[styles.actionIndicator, { backgroundColor: colors.primary }]} /> : null}
+    </Pressable>
+  ) : null;
 
   function goBack() {
     if (router.canGoBack()) router.back();
@@ -95,28 +109,24 @@ export function AppHeader({
           {subtitle ? <AppText style={[typography.meta, { color: colors.text3 }]}>{subtitle}</AppText> : null}
         </View>
         <View style={styles.actions}>
+          {menuPlacement === 'leading' ? menuControl : null}
           {rightActions.slice(0, 2).map((action) => (
             <Pressable
               key={action.label}
               accessibilityRole="button"
               accessibilityLabel={action.label}
-              accessibilityState={{ disabled: action.disabled }}
+              accessibilityState={{
+                disabled: action.disabled,
+                ...(action.expanded === undefined ? {} : { expanded: action.expanded }),
+              }}
               disabled={action.disabled}
               onPress={action.onPress}
               style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }, action.disabled && styles.disabled]}>
               <Feather name={action.icon} size={20} color={action.destructive ? colors.err : colors.primary} />
+              {action.showIndicator ? <View testID="header-action-indicator" style={[styles.actionIndicator, { backgroundColor: colors.primary }]} /> : null}
             </Pressable>
           ))}
-          {visibleMenu ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="More options"
-              onPress={() => setMenuVisible(true)}
-              style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <AppText weight="bold" style={styles.ellipsis}>⋯</AppText>
-              {menuIndicator ? <View testID="header-menu-indicator" style={[styles.actionIndicator, { backgroundColor: colors.primary }]} /> : null}
-            </Pressable>
-          ) : null}
+          {menuPlacement !== 'leading' ? menuControl : null}
         </View>
       </View>
       {menuItems ? <HeaderMenu visible={menuVisible} items={menuItems} onClose={() => setMenuVisible(false)} /> : null}

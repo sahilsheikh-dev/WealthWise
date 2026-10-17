@@ -14,6 +14,28 @@ import {
 import { InvalidAllocationError, saveEfPlan, setEfAllocation } from '../efAllocationActions';
 
 describe('ef allocation', () => {
+  it('uses the three requested defaults and leaves saved allocations unchanged', () => {
+    expect(DEFAULT_EF_ALLOCATION).toEqual({ cash: 10, bank: 40, 'fd-rd': 50 });
+    expect(resolveEfAllocation({ efAllocation: null })).toEqual({
+      allocation: { cash: 10, bank: 40, 'fd-rd': 50 },
+      repaired: false,
+    });
+    expect(resolveEfAllocation({ efAllocation: {} })).toEqual({
+      allocation: { cash: 10, bank: 40, 'fd-rd': 50 },
+      repaired: true,
+    });
+    const saved: EfAllocation = {
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    };
+    expect(resolveEfAllocation({ efAllocation: saved })).toEqual({
+      allocation: saved,
+      repaired: false,
+    });
+  });
+
   it('suggested allocation totals 100%', () => {
     const total = Object.values(SUGGESTED_EF_ALLOCATION).reduce((sum, value) => sum + value, 0);
     expect(total).toBe(100);
@@ -139,12 +161,11 @@ describe('ef allocation', () => {
     });
   });
 
-  it('uses the four default groups and drops legacy zero groups without linked assets', () => {
+  it('uses only the three requested default groups and drops legacy zero groups without linked assets', () => {
     expect(activeEfBucketMetadata(null).map(({ id }) => id)).toEqual([
       'cash',
       'bank',
       'fd-rd',
-      'mutual-funds-bonds',
     ]);
     expect(activeEfBucketMetadata({
       cash: 10,
