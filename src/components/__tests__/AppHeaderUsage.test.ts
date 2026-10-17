@@ -34,6 +34,6 @@ describe('AppHeader menu usage', () => {
     const budget = usages.find(({ file }) => file === 'app/(tabs)/budget.tsx');
     expect(budget?.props).toContain('menu={[');
     expect(budget?.props).toContain('...appMenu');
-    expect(budget?.props).toContain('menuIndicator={Boolean(reviewableMonth)}');
+    expect(budget?.props).not.toContain('menuIndicator={Boolean(reviewableMonth)}');
   });
 });

@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { IconButton } from '../../src/components/IconButton';
-import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import {
   AppText,
@@ -21,17 +20,20 @@ import {
   WarningBanner,
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
+import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
-import { useAppData } from '../../src/data/useAppData';
+import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
+import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
+import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const isFocused = useIsFocused();
   const data = useAppData();
+  const actions = useAppActions();
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
@@ -64,9 +67,9 @@ export default function HomeScreen() {
     setSpendingState({ focused: isFocused, expanded: false });
   }
   const spendingExpanded = spendingState.expanded;
-  const [selectedDue, setSelectedDue] = useState<PendingItem | null>(null);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
@@ -82,6 +85,91 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
+  const handleDuePress = async (item: PendingItem) => {
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
+    if (!item.dueDate) {
+      Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
+      return;
+    }
+    const target: DueTarget = { kind: item.source.kind, id: item.source.parentId };
+    const preview = item.actionable
+      ? null
+      : duesThroughPreview(data, target, item.dueDate, today);
+    if (preview && preview.count === 0) {
+      Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
+      return;
+    }
+    const clearThrough = preview !== null && preview.count > 1;
+    const extra = clearThrough && preview
+      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
+      : '';
+    const confirmed = await confirmAsync({
+      title: 'Was this paid?',
+      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
+      confirmLabel: 'Paid',
+      cancelLabel: 'Not paid',
+    });
+    if (!confirmed) return;
+
+    if (clearThrough && preview) {
+      const entryIds = actions.clearDuesThrough(target, item.dueDate);
+      if (!entryIds || useAppStore.getState().lastError) {
+        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+        return;
+      }
+      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
+        transaction.source?.kind === (target.kind === 'plan' ? 'holding-entry' : 'liability-payment')
+        && transaction.source.parentId === target.id
+        && transaction.source.entryId === entryId,
+      ));
+      if (transactions.some((transaction) => transaction === undefined)) {
+        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+        return;
+      }
+      let total = 0;
+      for (const transaction of transactions) {
+        if (!transaction) {
+          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+          return;
+        }
+        total += transaction.amount;
+      }
+      setActionToast({
+        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
+        actionLabel: 'Undo',
+        onAction: () => {
+          actions.undoClearDuesThrough(target, entryIds);
+          const error = useAppStore.getState().lastError;
+          if (error) Alert.alert('Unable to undo', error);
+        },
+      });
+      return;
+    }
+
+    const entryId = actions.clearDue(target, item.source.slotId);
+    if (!entryId || useAppStore.getState().lastError) {
+      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      return;
+    }
+    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
+      (candidate.source?.kind === 'holding-entry' || candidate.source?.kind === 'liability-payment')
+      && candidate.source.parentId === target.id
+      && candidate.source.entryId === entryId,
+    );
+    if (!transaction) {
+      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
+      return;
+    }
+    setActionToast({
+      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
+      actionLabel: 'Undo',
+      onAction: () => {
+        actions.undoClearDue(target, entryId);
+        const error = useAppStore.getState().lastError;
+        if (error) Alert.alert('Unable to undo', error);
+      },
+    });
+  };
   return (
     <Screen>
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
@@ -227,25 +315,12 @@ export default function HomeScreen() {
               <PendingItemRow
                 key={item.id}
                 item={item}
-                onPress={() => setSelectedDue(item)}
+                onPress={() => { void handleDuePress(item); }}
               />
             ))}
           </Card>
         </>
       ) : null}
-      <PendingItemActionSheet
-        item={selectedDue}
-        today={today}
-        onClose={() => setSelectedDue(null)}
-        onViewSchedule={(item) => {
-          setSelectedDue(null);
-          if (item.source.kind === 'plan') {
-            router.push(`/investment-entries?id=${encodeURIComponent(item.source.parentId)}` as Href);
-          } else if (item.source.kind === 'liability') {
-            router.push({ pathname: '/liability-payments', params: { id: item.source.parentId } });
-          }
-        }}
-      />
 
       <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
