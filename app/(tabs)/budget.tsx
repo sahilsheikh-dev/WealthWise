@@ -132,34 +132,10 @@ export default function BudgetScreen() {
           <Card>
             <AppText weight="bold" style={[typography.name, styles.cashFlowTitle]}>Cash flow</AppText>
             <View style={[styles.cashFlowMetrics, stackMetrics && styles.cashFlowMetricsStacked]}>
-              <CashFlowMetric label="Opening balance" value={view.position.opening} />
+              <CashFlowMetric label={`Previous month ${view.position.previousClosing < 0 ? 'deficit' : view.position.previousClosing > 0 ? 'surplus' : 'balanced'}`} value={view.position.opening} />
               <CashFlowMetric
-                label="This month’s flow"
+                label="This month's flow"
                 value={view.position.flow}
-                negativeStatus="Net outflow"
-                positiveStatus="Net inflow"
-              />
-            </View>
-            <View style={[styles.previousPosition, stackMetrics && styles.previousPositionStacked, { borderTopColor: colors.border }]}>
-              <View style={styles.previousPositionText}>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  Previous month {view.position.previousClosing < 0
-                    ? 'deficit'
-                    : view.position.previousClosing > 0 ? 'surplus' : 'balanced'}
-                </AppText>
-                <AmountText
-                  value={Math.abs(view.position.previousClosing)}
-                  tier="row"
-                  weight="semibold"
-                  tone={view.position.previousClosing < 0 ? 'err' : 'neutral'}
-                />
-              </View>
-              <Button
-                label="Review"
-                icon="arrow-right"
-                accessibilityHint="Opens the previous month review"
-                onPress={() => router.push({ pathname: '/month-review', params: { month: shiftMonth(month, -1) } })}
-                style={[styles.reviewButton, stackMetrics && styles.reviewButtonStacked]}
               />
             </View>
             <View style={[styles.closingPosition, stackMetrics && styles.closingPositionStacked, { borderTopColor: colors.border }]}>
@@ -206,11 +182,23 @@ export default function BudgetScreen() {
                 onEdit={() => router.push('/budget-setup')}
               />
               <View>
-                <View style={[styles.planMetrics, stackMetrics && styles.planMetricsStacked]}>
-                  <PlanMetric label="Planned income" value={view.plannedIncome} />
-                  <PlanMetric label="Planned spending" value={view.plannedSpend} />
-                  <PlanMetric label="Planned savings" value={view.plannedSave} />
-                  <PlanMetric label="Unallocated" value={view.unallocated} />
+                <View style={styles.planMetricsGrid}>
+                  <View style={styles.planMetricsRow}>
+                    <View style={styles.planMetricCell}>
+                      <PlanMetric label="Income" value={view.plannedIncome} />
+                    </View>
+                    <View style={styles.planMetricCell}>
+                      <PlanMetric label="Spending" value={view.plannedSpend} />
+                    </View>
+                  </View>
+                  <View style={styles.planMetricsRow}>
+                    <View style={styles.planMetricCell}>
+                      <PlanMetric label="Savings" value={view.plannedSave} />
+                    </View>
+                    <View style={styles.planMetricCell}>
+                      <PlanMetric label="Unallocated" value={view.unallocated} />
+                    </View>
+                  </View>
                 </View>
                 <Button label="Adjust this month" onPress={() => router.push({ pathname: '/budget-month-form', params: { month } })} />
               </View>
@@ -353,7 +341,7 @@ export default function BudgetScreen() {
 function CashFlowMetric({
   label,
   value,
-  negativeStatus = 'Deficit',
+  negativeStatus,
   positiveStatus,
 }: {
   label: string;
@@ -454,9 +442,10 @@ const styles = StyleSheet.create({
   closingPositionLabel: { flex: 1, minWidth: 0, gap: 3 },
   closingPositionStacked: { flexDirection: 'column', alignItems: 'flex-start' },
   closingAmount: { fontSize: 18 },
-  planMetrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  planMetricsStacked: { flexDirection: 'column' },
-  planMetric: { flexBasis: '45%', flexGrow: 1, minWidth: 0, gap: 4 },
+  planMetricsGrid: { marginBottom: 10, gap: 16 },
+  planMetricsRow: { flexDirection: 'row', gap: 16 },
+  planMetricCell: { flex: 1, minWidth: 0 },
+  planMetric: { gap: 4 },
   statRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   lineCard: { marginHorizontal: 20, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, gap: 10 },
   lineTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
