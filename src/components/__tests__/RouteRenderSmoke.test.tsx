@@ -1110,6 +1110,7 @@ describe('route render smoke audit', () => {
       const assetCard = assets.root.findByProps({ testID: 'asset-card-manual-Tap cash' });
       expect(assetCard.props.accessibilityRole).toBe('button');
       expect(assetCard.props.accessibilityLabel).toBe('Edit Tap cash');
+      expect(assetCard.props.accessibilityHint).toBe('Opens this asset for editing');
       expect(assetCard.findAllByType(IconButton)).toHaveLength(0);
       act(() => assetCard.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith('/investment-form?id=tap-cash');
@@ -1117,6 +1118,7 @@ describe('route render smoke audit', () => {
       router.push.mockClear();
       const deposit = assetCard.findByProps({ accessibilityLabel: 'Deposit' });
       const stopPropagation = jest.fn();
+      router.push.mockClear();
       act(() => deposit.props.onPress({ stopPropagation }));
       expect(stopPropagation).toHaveBeenCalledTimes(1);
       expect(router.push).toHaveBeenLastCalledWith('/investment-entry-form?holdingId=tap-cash&kind=Deposit');
@@ -1129,6 +1131,7 @@ describe('route render smoke audit', () => {
       const liabilityContent = liabilityCard.findByProps({ testID: 'liability-card-content-tap-liability' });
       expect(liabilityCard.props.accessibilityRole).toBe('button');
       expect(liabilityCard.props.accessibilityLabel).toBe('Edit Tap liability');
+      expect(liabilityCard.props.accessibilityHint).toBe('Opens this liability for editing');
       expect(liabilityCard.findAllByType(IconButton)).toHaveLength(0);
       const liabilityNodes = liabilityContent.findAll(() => true);
       const progressIndex = liabilityNodes.findIndex((node) => node.type === 'progress');
@@ -1139,6 +1142,13 @@ describe('route render smoke audit', () => {
       expect(actionsIndex).toBeGreaterThan(progressIndex);
       expect(liabilityNodes.slice(progressIndex + 1, actionsIndex)
         .every((node) => node.type !== 'text')).toBe(true);
+      const oneTimeActionContainer = liabilityContent.findByProps({
+        testID: 'liability-card-actions-tap-liability',
+      });
+      expect(oneTimeActionContainer.children.map((child) =>
+        typeof child === 'string' ? child : String(child.type),
+      )).toEqual(['view']);
+      expect(oneTimeActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
       const paymentActions = liabilityContent.findAll((node) => String(node.type) === 'actionrow')[0];
       if (!paymentActions) throw new Error('One-time liability action row did not render.');
       expect(paymentActions.props.stopParentPress).toBe(true);
@@ -1149,6 +1159,7 @@ describe('route render smoke audit', () => {
       });
       const recurringCard = liabilities.root.findByProps({ testID: 'liability-card-tap-recurring-liability' });
       const recurringContent = recurringCard.findByProps({ testID: 'liability-card-content-tap-recurring-liability' });
+      expect(recurringCard.findAllByType(IconButton)).toHaveLength(0);
       const recurringNodes = recurringContent.findAll(() => true);
       const recurringProgressIndex = recurringNodes.findIndex((node) => node.type === 'progress');
       const recurringActionsIndex = recurringNodes.findIndex((node) =>
@@ -1158,11 +1169,31 @@ describe('route render smoke audit', () => {
       expect(recurringActionsIndex).toBeGreaterThan(recurringProgressIndex);
       expect(recurringNodes.slice(recurringProgressIndex + 1, recurringActionsIndex)
         .every((node) => node.type !== 'text')).toBe(true);
+      const recurringActionContainer = recurringContent.findByProps({
+        testID: 'liability-card-actions-tap-recurring-liability',
+      });
+      expect(recurringActionContainer.children.map((child) =>
+        typeof child === 'string' ? child : String(child.type),
+      )).toEqual(['view']);
+      expect(recurringActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
       const recurringActionRow = recurringContent.findAll((node) => String(node.type) === 'actionrow')[0];
       if (!recurringActionRow) throw new Error('Recurring liability action row did not render.');
       expect(recurringActionRow.props.stopParentPress).toBe(true);
       const dueActions = recurringContent.findByType(DueActions);
       expect(dueActions.props.stopParentPress).toBe(true);
+      const clearDue = recurringCard.findByProps({ accessibilityLabel: 'Clear due' });
+      const clearDueStopPropagation = jest.fn();
+      const dataActions = (jest.requireMock('../../data/useAppData') as {
+        useAppActions: () => { clearDue: jest.Mock };
+      }).useAppActions();
+      router.push.mockClear();
+      act(() => clearDue.props.onPress({ stopPropagation: clearDueStopPropagation }));
+      expect(clearDueStopPropagation).toHaveBeenCalledTimes(1);
+      expect(dataActions.clearDue).toHaveBeenCalledWith({ kind: 'liability', id: 'tap-recurring-liability' });
+      expect(router.push).not.toHaveBeenCalledWith({
+        pathname: '/liability-form',
+        params: { id: 'tap-recurring-liability' },
+      });
       expect(recurringCard.props.accessibilityLabel).toBe('Edit Tap recurring liability');
       act(() => recurringCard.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({

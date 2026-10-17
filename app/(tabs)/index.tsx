@@ -355,105 +355,105 @@ export default function HomeScreen() {
 
       <SectionTitle>Goal Progress</SectionTitle>
       <View testID="home-goals-section">
-      <Card style={styles.goalsCard}>
-      {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }, index, goals) => {
-        const projection = goalProjection(goal, data, today);
-        const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
-        return (
-          <Pressable
-            key={goal.id}
-            testID={`home-goal-row-${goal.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
-            accessibilityHint="Opens this goal for editing"
-            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-            style={[
-              styles.goalRow,
-              index < goals.length - 1 && styles.goalRowDivider,
-              { borderBottomColor: colors.border },
-            ]}>
-            <View style={styles.goalTop}>
-              <View style={styles.goalNameBlock}>
-                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText
-                  style={[typography.meta, { color: colors.text3 }]}
-                  accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
-                  Target <AmountText value={target} tier="row" /> · {goal.year}
-                </AppText>
-                {targetYearPassed ? (
-                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
-                ) : null}
-                {goal.links.length > 0 ? (
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>
-                    Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
-                  </AppText>
-                ) : null}
-              </View>
-              <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
-            </View>
-            <View style={styles.goalAmounts}>
-              <AppText
-                style={[typography.meta, { color: colors.ok }]}
-                accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
-                <AmountText value={saved} tier="row" /> saved
-              </AppText>
-              <AppText
-                style={[typography.meta, { color: colors.text3 }]}
-                accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
-                <AmountText value={Math.max(0, target - saved)} tier="row" /> left
-              </AppText>
-            </View>
-            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
-              <AppText style={[typography.meta, { color: colors.text2 }]}>
-                Projected {formatDate(projection.projectedDate)}
-              </AppText>
-            ) : null}
-            {goal.auto === 'ef' ? (
-              <>
-                <AppText
-                  style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
-                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
-                  Minimum 3 months of cover: <AmountText value={minimum ?? 0} tier="row" />
-                </AppText>
-                <AppText
-                  style={[typography.meta, { color: colors.text3 }]}
-                  accessibilityLabel={summary.emergencyBaseSource === 'expenses'
-                    ? `Based on your average monthly expenses, ${formatAmount(summary.expenseBaseline, 'exact', 1)}`
-                    : summary.emergencyBaseSource === 'salary'
-                      ? 'Based on your monthly income'
-                      : 'Add your monthly income to see cover'}>
-                  {summary.emergencyBaseSource === 'expenses'
-                    ? <>Based on your average monthly expenses: <AmountText value={summary.expenseBaseline} tier="row" /></>
-                    : summary.emergencyBaseSource === 'salary'
-                      ? 'Based on your monthly income'
-                      : 'Add your monthly income to see cover'}
-                </AppText>
-                <View style={styles.emergencyGoalActions}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>
-                    {summary.emergencyMonths === null
-                      ? '—'
-                      : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo of cover`}
-                  </AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Track emergency fund"
-                    onPress={(event) => {
-                      event.stopPropagation?.();
-                      router.push('/emergency-fund');
-                    }}>
-                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
-                  </Pressable>
+        <Card style={styles.goalsCard}>
+          {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }, index, goals) => {
+            const projection = goalProjection(goal, data, today);
+            const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
+            return (
+              <Pressable
+                key={goal.id}
+                testID={`home-goal-row-${goal.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
+                accessibilityHint="Opens this goal for editing"
+                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+                style={[
+                  styles.goalRow,
+                  index < goals.length - 1 && styles.goalRowDivider,
+                  { borderBottomColor: colors.border },
+                ]}>
+                <View style={styles.goalTop}>
+                  <View style={styles.goalNameBlock}>
+                    <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+                    <AppText
+                      style={[typography.meta, { color: colors.text3 }]}
+                      accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
+                      Target <AmountText value={target} tier="row" /> · {goal.year}
+                    </AppText>
+                    {targetYearPassed ? (
+                      <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
+                    ) : null}
+                    {goal.links.length > 0 ? (
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
+                      </AppText>
+                    ) : null}
+                  </View>
+                  <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
                 </View>
-                {raised ? (
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
+                <View style={styles.goalAmounts}>
+                  <AppText
+                    style={[typography.meta, { color: colors.ok }]}
+                    accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
+                    <AmountText value={saved} tier="row" /> saved
+                  </AppText>
+                  <AppText
+                    style={[typography.meta, { color: colors.text3 }]}
+                    accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
+                    <AmountText value={Math.max(0, target - saved)} tier="row" /> left
+                  </AppText>
+                </View>
+                {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>
+                    Projected {formatDate(projection.projectedDate)}
+                  </AppText>
                 ) : null}
-              </>
-            ) : null}
-            <GoalProgressRow percent={pct} />
-          </Pressable>
-        );
-      })}
-      </Card>
+                {goal.auto === 'ef' ? (
+                  <>
+                    <AppText
+                      style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
+                      accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
+                      Minimum 3 months of cover: <AmountText value={minimum ?? 0} tier="row" />
+                    </AppText>
+                    <AppText
+                      style={[typography.meta, { color: colors.text3 }]}
+                      accessibilityLabel={summary.emergencyBaseSource === 'expenses'
+                        ? `Based on your average monthly expenses, ${formatAmount(summary.expenseBaseline, 'exact', 1)}`
+                        : summary.emergencyBaseSource === 'salary'
+                          ? 'Based on your monthly income'
+                          : 'Add your monthly income to see cover'}>
+                      {summary.emergencyBaseSource === 'expenses'
+                        ? <>Based on your average monthly expenses: <AmountText value={summary.expenseBaseline} tier="row" /></>
+                        : summary.emergencyBaseSource === 'salary'
+                          ? 'Based on your monthly income'
+                          : 'Add your monthly income to see cover'}
+                    </AppText>
+                    <View style={styles.emergencyGoalActions}>
+                      <AppText style={[typography.meta, { color: colors.text2 }]}>
+                        {summary.emergencyMonths === null
+                          ? '—'
+                          : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo of cover`}
+                      </AppText>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Track emergency fund"
+                        onPress={(event) => {
+                          event.stopPropagation?.();
+                          router.push('/emergency-fund');
+                        }}>
+                        <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+                      </Pressable>
+                    </View>
+                    {raised ? (
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
+                    ) : null}
+                  </>
+                ) : null}
+                <GoalProgressRow percent={pct} />
+              </Pressable>
+            );
+          })}
+        </Card>
       </View>
     </Screen>
   );
