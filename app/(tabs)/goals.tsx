@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
@@ -92,7 +93,7 @@ export default function GoalsScreen() {
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
-            <ProgressBar percent={goalPercent} />
+            <GoalProgressRow percent={goalPercent} projection={projection} />
             <View style={styles.amounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -107,20 +108,9 @@ export default function GoalsScreen() {
             </View>
             {goal.auto !== 'ef' ? (
               <View style={styles.projection}>
-                <AppText style={[typography.meta, { color: colors.text2 }]}>
-                  {projection.projectedDate === 'Already reached'
-                    ? 'Already reached'
-                    : projection.projectedDate
-                      ? `Projected completion ${formatDate(projection.projectedDate)}`
-                      : 'Not reachable with current contributions'}
-                </AppText>
-                {projection.status !== 'none' ? (
-                  <AppText style={[typography.meta, { color: projection.status === 'behind' ? colors.err : colors.primary }]}>
-                    {projection.status === 'on-track'
-                      ? 'On track'
-                      : projection.status === 'ahead'
-                        ? 'Ahead'
-                        : 'Behind'}
+                {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>
+                    Projected completion {formatDate(projection.projectedDate)}
                   </AppText>
                 ) : null}
               </View>
