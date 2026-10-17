@@ -417,6 +417,10 @@ P21-B does not change the schema.
   rows from schedules, suppresses duplicate EMI/Insurance/instrument budget
   rows, and creates a budget due row only for an otherwise-unrepresented
   category.
+  Assumed: a one-time liability with no due date is omitted from linked
+  calendar rows, matching existing `monthlyCommitments` and `pendingItems`
+  behavior; the schedule's internal start-date fallback is not treated as a
+  user-scheduled due.
   Assumed: absent or false `linkedIncluded` keeps all derived budget-view
   values unchanged and keeps all existing snapshots valid; the `budget` field
   continues to echo its stored input. Additive linked-total behavior is opt-in.
@@ -979,7 +983,7 @@ evidence present in exports/checkpoints.
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
 | P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | Done; focused suites and 70 suites / 772 tests pass; TypeScript, lint, Doctor 21/21, Android and iOS exports all exit 0. | `033d493` (CR-28), `501dce7` (CR-27), `fe5fa1e` (CR-31), tracker/test updates `973241e`, `b0cb6ee` | Assumed: Paid / Not paid use the existing confirm helper's labels; default native-alert dismissal is not paid; the existing five-second ActionToast is the brief Undo notice. | current request |
-| P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
+| P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. Assumed: one-time liabilities without dueDate do not become linked rows. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
 | P20-G | Phase 20 | — | — | 2026-10-17 | Remove Budget header menu (CR-30). | Planned; no implementation claimed in P20-E. | none | No assumptions recorded. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
@@ -1715,6 +1719,9 @@ objects): `5d81b65` (F1 design), `e36d153` (F2 due-day support), `d736b11`
 demo data), and `18fc19d` (tracker-test state update). No dependencies changed.
 `SCHEMA_VERSION` was 7 before and after. SortChip, `src/lib/sorting.ts`, and
 the frozen form components were not modified; `formComponentsFrozen` passes.
+Assumed: an undated one-time liability is not a linked month row, consistent
+with existing pending and monthly-commitment behavior rather than the
+schedule's internal start-date fallback.
 The user's manual change commit `6cb4fa0` remains intact: the touched user-owned
 files are `app/(tabs)/budget.tsx`, `app/(tabs)/transactions.tsx`, and
 `app/month-review.tsx`; specifically, the removed “Back to transactions”
