@@ -12,6 +12,7 @@ import {
   AppText,
   Button,
   Card,
+  Chip,
   ChipRow,
   EmptyState,
   ProgressBar,
@@ -34,6 +35,7 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const EXTRA_ERROR = 'Enter a whole number between 0 and 10,00,000';
+const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time'] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -42,6 +44,7 @@ export default function LiabilitiesScreen() {
   const data = useAppData();
   const sorting = useSort('liabilities');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
@@ -64,8 +67,13 @@ export default function LiabilitiesScreen() {
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
   }));
-  const filterActive = sorting.spec.key !== DEFAULT_SORTS.liabilities.key
+  const filterActive = kindFilter !== 'All'
+    || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
+  const visibleLiabilities = sortedLiabilities.filter((liability) =>
+    kindFilter === 'All'
+    || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'),
+  );
 
   return (
       <Screen bottomPadding={120}>
@@ -88,6 +96,14 @@ export default function LiabilitiesScreen() {
           <View testID="liability-filter-panel">
             <ChipRow>
               <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
+              {LIABILITY_FILTERS.map((item) => (
+                <Chip
+                  key={item}
+                  label={item}
+                  selected={kindFilter === item}
+                  onPress={() => setKindFilter(item)}
+                />
+              ))}
             </ChipRow>
           </View>
         ) : null}
@@ -140,7 +156,7 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        {sortedLiabilities.map((liability) => liability.kind === 'recurring'
+        {visibleLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
         {data.liabilities.length === 0 ? (
@@ -150,6 +166,10 @@ export default function LiabilitiesScreen() {
               <Button label="Add a liability" icon="plus" variant="primary" onPress={() => router.push('/liability-form')} />
             </View>
           </>
+        ) : visibleLiabilities.length === 0 ? (
+          <View testID="liability-no-matches">
+            <EmptyState title="No matches" />
+          </View>
         ) : null}
       </Screen>
   );

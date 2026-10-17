@@ -36,7 +36,7 @@ import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
+import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
@@ -1799,13 +1799,24 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findAll((node) => String(node.type) === 'chip')
           .find((node) => node.props.accessibilityLabel === 'Recurring')?.props.selected)
           .toBe(true);
+      } else if (name === 'Liabilities') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Recurring', 'One-time'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(3);
+        const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'One-time');
+        if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+        act(() => oneTimeChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'One-time')?.props.selected)
+          .toBe(true);
       } else {
         expect(renderer.root.findAll((node) =>
           typeof node.props.accessibilityLabel === 'string'
           && node.props.accessibilityLabel.startsWith('Sort:'),
         )).toHaveLength(1);
       }
-      if (name === 'Transactions' || name === 'Assets') {
+      if (name === 'Transactions' || name === 'Assets' || name === 'Liabilities') {
         expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
         expect(renderer.root.findAll((node) =>
           String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
@@ -1835,6 +1846,119 @@ describe('route render smoke audit', () => {
     }
     act(() => renderer.unmount());
     routeParams.mockReturnValue({});
+  });
+
+  it('filters recurring and one-time liabilities and shows a no-matches state', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const recurringA: RecurringLiability = {
+      id: 'filter-liability-a',
+      kind: 'recurring',
+      name: 'Alpha recurring',
+      type: 'Home loan',
+      principal: 12_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      tenureMonths: 24,
+      emi: 500,
+      payments: [],
+      settlement: null,
+    };
+    const recurringB: RecurringLiability = {
+      ...recurringA,
+      id: 'filter-liability-b',
+      name: 'Beta recurring',
+    };
+    const oneTime: OneTimeLiability = {
+      id: 'filter-one-time',
+      kind: 'one-time',
+      name: 'Friend loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-01-01',
+      dueDate: null,
+      payments: [],
+    };
+    const data: AppData = {
+      ...emptyAppData(todayISO()),
+      liabilities: [recurringA, oneTime, recurringB],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const cardIds = () => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && node.props.testID.startsWith('liability-card-filter-'),
+      ).map((node) => node.props.testID) ?? [];
+      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Recurring');
+      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
+      act(() => recurringChip.props.onPress());
+      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
+      expect(renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(1);
+
+      const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'One-time');
+      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
+      act(() => oneTimeChip.props.onPress());
+      expect(cardIds()).toEqual(['liability-card-filter-one-time']);
+
+      act(() => recurringChip.props.onPress());
+      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
+  });
+
+  it('shows No matches when a liability kind has no records', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const data: AppData = {
+      ...emptyAppData(todayISO()),
+      liabilities: [{
+        id: 'only-one-time',
+        kind: 'one-time',
+        name: 'Friend loan',
+        type: 'Borrowed money',
+        principal: 1_000,
+        ratePct: 0,
+        startDate: '2026-01-01',
+        dueDate: null,
+        payments: [],
+      }],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Recurring');
+      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
+      act(() => recurringChip.props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+    }
   });
 
   it('changes months with horizontal swipes and leaves chip-origin swipes alone', () => {
