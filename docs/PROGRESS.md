@@ -655,6 +655,26 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   old card-owned edit-action ownership expectations are replaced by no-icon
   assertions on those cards, while shared row icon ownership and the global
   `edit-2` scan remain.
+- DEC-BUDGET-DIRECTION: Planned, to be built only on the user's command.
+  Budget is a forward-looking plan of recurring income, bills, investments,
+  and loans arranged in sections. It is created once from the Edit button and
+  flows into future months and into Transactions as due items. Actual spending
+  is recorded in Transactions by selecting a budget item. Budget is a visual
+  plan-versus-actual overview, not a transaction list, with three charts and
+  equivalent text: an income/spend/invest/left stacked bar, planned versus
+  actual bars per section, and a month-pace line. Loans, SIPs, and policies
+  appear automatically. The plan includes income items with name, amount,
+  and day of month that create "Received" dues. Fixed categories may be
+  extended now; custom items come later. Budget has no pay buttons; paying is
+  done in Transactions and Home. Each item shows its title, spent/planned
+  amount (for example, "1,000 / 12,000"), and an `edit-2` action opening a
+  small sheet for planned amount, due day, and "this month only" or "this and
+  following months". Upcoming months show the plan derived on the fly, with
+  nothing persisted until the month starts; past and current months remain
+  frozen.
+- DEC-P20J-LEGACY-SHARES: P20-J ignores legacy goal-link shares and splits
+  linked asset value equally. Derived saved totals rose as a result; the user
+  will verify this against real data.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -717,6 +737,37 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   (including “Shortfall” and danger tone when negative), optional “From {Mon}
   ₹X” chip, divider, and review link when available. There are no retained
   metric columns or captions.
+  This task's starting audit found four commits since `5bd3c41` without a
+  Copilot co-author trailer; each changed file is recorded separately below
+  and is preserved:
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-selected cash-flow labels and
+    plan-summary layout. Keep the missing "Back to Transactions" action and
+    all other removed items absent.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: user-selected title exactly
+    "Edit allocation".
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot prop and import
+    ordering.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and the
+    user's balance amount placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed "Back to transactions"
+    control and import ordering.
+  - `9a01941` — `app/goal-form.tsx`: a new goal's Saved field starts blank.
+  - `268e4c7` — `app/(tabs)/index.tsx`: exact "New Transaction" label and
+    associated Home UI changes.
+  - `268e4c7` — `src/components/IconButton.tsx`: verb-guard allowance for
+    "New Transaction".
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: test
+    expectations updated to "New Transaction".
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: allowed
+    text action updated to "New Transaction".
+  No checkpoint commit was needed; the initial worktree was clean.
+  Re-verified for P20-L/P21-D with
+  `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`:
+  `3c644d3` changes Budget and removes menu/template workflow, without
+  restoring "Back to Transactions"; there is no allocation-form diff.
+  Current Budget still has no "Back to Transactions" action, and
+  `app/ef-allocation-form.tsx` still has the exact title "Edit allocation".
+  These protected edits remain unchanged.
 - The requested checkpoint audit from `51842bb` through the P20-D start found
   these user-authored commits without a Copilot co-author trailer: `0e965d4`
   changed `app/(tabs)/index.tsx` (Home pill order/content and removed spending
