@@ -399,6 +399,25 @@ P21-B does not change the schema.
   backup/Undo path; never load it automatically. The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
+- DEC-BUDGET-PLAN: the target budget design has one budget plan replacing
+  templates. Its own lines may have a due day; when present, a line due row is
+  dated on that day clamped to the month's final day. Without a due day, the
+  existing undated planned-row behavior remains. The plan may repeat monthly
+  from next month, and auto-apply creates only the current month. EMI,
+  Insurance and recurring investments are linked automatically from their
+  schedules; they are computed, never stored on the plan, and never emitted as
+  extra due rows. Month views may include linked rows in planned category and
+  group totals, while actuals remain transaction-derived. Budget actuals use
+  expense transactions for expense categories and investment transactions for
+  investment categories (with non-investment investment transactions grouped
+  as Other investments); linked EMI, Insurance and plan schedule amounts affect
+  planned totals, not actuals. `pendingItems` creates plan and liability due
+  rows from schedules, suppresses duplicate EMI/Insurance/instrument budget
+  rows, and creates a budget due row only for an otherwise-unrepresented
+  category.
+  Assumed: absent or false `linkedIncluded` keeps the current budget view
+  behavior byte-for-byte in its returned values and keeps all existing
+  snapshots valid; the additive linked-total behavior is opt-in.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0`
   (both authored by Sahil Sheikh without a Copilot co-author trailer). File
