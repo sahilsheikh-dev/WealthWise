@@ -30,22 +30,28 @@ import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
-import { PendingItemActionSheet } from '../PendingItemActionSheet';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
 import { monthKey, shiftMonth } from '../../domain/dates';
+import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
 import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
-import { formatINR, formatMonth } from '../../lib/format';
+import { formatDate, formatINR, formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { buildAppMenu } from '../../lib/appMenu';
 import { buildDemoData } from '../../mock/demoData';
 
 let mockFontScale = 1;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+const mockConfirmAsync = jest.fn(async (_options: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+}) => true);
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -154,6 +160,10 @@ jest.mock('../../data/store', () => {
       addInvestmentEntry: jest.fn(),
       updateInvestmentEntry: jest.fn(),
       deleteInvestmentEntry: jest.fn(),
+      clearDue: jest.fn(),
+      clearDuesThrough: jest.fn(),
+      undoClearDue: jest.fn(),
+      undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
     },
@@ -216,6 +226,10 @@ jest.mock('../../data/useAppData', () => {
       addInvestmentEntry: jest.fn(),
       updateInvestmentEntry: jest.fn(),
       deleteInvestmentEntry: jest.fn(),
+      clearDue: jest.fn(),
+      clearDuesThrough: jest.fn(),
+      undoClearDue: jest.fn(),
+      undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
     },
@@ -420,7 +434,7 @@ jest.mock('../../components/form/FormErrorBanner', () => {
 
 jest.mock('../../lib/confirm', () => ({
   choiceAsync: async () => null,
-  confirmAsync: async () => true,
+  confirmAsync: (...args: Parameters<typeof mockConfirmAsync>) => mockConfirmAsync(...args),
 }));
 
 jest.mock('../../theme/useTheme', () => ({
@@ -697,60 +711,11 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('anchors the Home due sheet above the safe area and keeps actions scrollable at font scale 2', () => {
-    const onClose = jest.fn();
-    const onViewSchedule = jest.fn();
-    mockFontScale = 2;
-    mockSafeAreaInsets = { top: 0, right: 0, bottom: 30, left: 0 };
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(PendingItemActionSheet, {
-        item: {
-          id: 'sheet-due',
-          kind: 'due',
-          title: 'Monthly plan',
-          category: 'Mutual fund / SIP',
-          amount: 1_000,
-          dueDate: '2026-10-15',
-          status: 'overdue',
-          source: { kind: 'plan', parentId: 'sheet-plan', slotId: 'plan:1' },
-          actionable: true,
-        },
-        today: '2026-10-16',
-        onClose,
-        onViewSchedule,
-      }));
-      const currentRenderer = renderer;
-      if (!currentRenderer) throw new Error('Due action sheet did not render.');
-      const container = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet' });
-      expect(container.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ flex: 1, justifyContent: 'flex-end' }),
-        expect.objectContaining({ paddingBottom: 42 }),
-      ]));
-      const sheet = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-content' });
-      expect(sheet.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ maxHeight: 506.4 }),
-        expect.objectContaining({ borderTopLeftRadius: 18, borderTopRightRadius: 18 }),
-      ]));
-      expect(sheet.props.scrollEnabled).toBe(true);
-      expect(currentRenderer.root.findAll((node) =>
-        node.type === 'button' && ['Pay', 'Clear due', 'View schedule', 'Close'].includes(String(node.children[0])),
-      )).toHaveLength(4);
-      act(() => currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-backdrop' }).props.onPress());
-      expect(onClose).toHaveBeenCalledTimes(1);
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      mockFontScale = 1;
-      mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
-    }
-  });
-
-  it('keeps Home spending collapsed without budget actions and opens due actions', () => {
+  it('keeps Home spending collapsed and asks before changing a due', async () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
     const previousData = { ...routeData };
     const today = todayISO();
-    const router = jest.requireMock('expo-router').router as { push: jest.Mock };
     const textOf = (renderer: TestRenderer.ReactTestRenderer) =>
       renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
     let home: TestRenderer.ReactTestRenderer | undefined;
@@ -795,6 +760,7 @@ describe('route render smoke audit', () => {
         ...emptyAppData(today),
         holdings: [makeInvestmentTestPlan()],
       });
+      mockConfirmAsync.mockResolvedValue(false);
       mockFontScale = 2;
       home = renderScreen(React.createElement(HomeScreen));
       const dueRow = home.root.findAll((node) =>
@@ -808,20 +774,140 @@ describe('route render smoke audit', () => {
           && style.flexDirection === 'column',
         ),
       ).length).toBeGreaterThan(0);
-      act(() => dueRow.props.onPress());
-      expect(home.root.findByProps({ testID: 'pending-item-action-sheet' })).toBeDefined();
+      await act(async () => {
+        dueRow.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledWith({
+        title: 'Was this paid?',
+        message: `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(today)}`,
+        confirmLabel: 'Paid',
+        cancelLabel: 'Not paid',
+      });
       expect(textOf(home)).toContain('Test plan');
-      expect(textOf(home)).toContain('Due ');
-      const viewSchedule = home.root.findAll((node) =>
-        node.type === 'button' && node.children.includes('View schedule'),
-      )[0];
-      if (!viewSchedule) throw new Error('View schedule action did not render.');
-      act(() => viewSchedule.props.onPress());
-      expect(router.push).toHaveBeenCalledWith('/investment-entries?id=investment-plan-test');
+      expect(home.root.findAll((node) =>
+        node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
+      )).toHaveLength(0);
+      expect(home.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
+      const actions = (jest.requireMock('../../data/useAppData') as {
+        useAppActions: () => { clearDue: jest.Mock };
+      }).useAppActions();
+      expect(actions.clearDue).not.toHaveBeenCalled();
     } finally {
       act(() => home?.unmount());
       Object.assign(routeData, previousData);
       mockFontScale = 1;
+      mockConfirmAsync.mockResolvedValue(true);
+    }
+  });
+
+  it('clears a confirmed Home due with Undo and previews earlier dues', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const actions = (jest.requireMock('../../data/useAppData') as {
+      useAppActions: () => {
+        clearDue: jest.Mock;
+        clearDuesThrough: jest.Mock;
+        undoClearDue: jest.Mock;
+        undoClearDuesThrough: jest.Mock;
+      };
+    }).useAppActions();
+    const store = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousToast = useUIStore.getState().actionToast;
+    const today = todayISO();
+    const currentMonth = monthKey(today);
+    const oldMonth = shiftMonth(currentMonth, -4);
+    const singlePlan = makeInvestmentTestPlan();
+    const laterPlan = { ...singlePlan, id: 'older-plan', startDate: `${oldMonth}-01`, trackFrom: `${oldMonth}-01` };
+    const addLinkedTransactions = (entryIds: string[], linkedPlan: PlanHolding) => {
+      store.data = {
+        ...store.data,
+        transactions: [
+          ...store.data.transactions,
+          ...entryIds.map((entryId) => ({
+            id: `tx-${entryId}`,
+            type: 'invest' as const,
+            amount: 1_000,
+            category: linkedPlan.type,
+            note: linkedPlan.name,
+            date: today,
+            source: { kind: 'holding-entry' as const, parentId: linkedPlan.id, entryId },
+          })),
+        ],
+      };
+    };
+    let home: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      Object.assign(routeData, { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] });
+      store.data = routeData;
+      actions.clearDue.mockImplementation((_target, _slotId) => {
+        addLinkedTransactions(['paid-entry'], singlePlan);
+        return 'paid-entry';
+      });
+      mockConfirmAsync.mockResolvedValue(true);
+      useUIStore.getState().setActionToast(null);
+      home = renderScreen(React.createElement(HomeScreen));
+      const oldestRow = home.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:plan:investment-plan-test'),
+      )[0];
+      if (!oldestRow) throw new Error('Oldest due row did not render.');
+      await act(async () => {
+        oldestRow.props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, expect.any(String));
+      expect(useUIStore.getState().actionToast?.message).toBe(`${formatAmount(1_000, 'exact', 1)} marked as paid`);
+      const singleUndo = useUIStore.getState().actionToast?.onAction;
+      if (!singleUndo) throw new Error('Single-due Undo action was not set.');
+      act(() => singleUndo());
+      expect(actions.undoClearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, 'paid-entry');
+      act(() => home?.unmount());
+      home = undefined;
+
+      Object.assign(routeData, { ...emptyAppData(today), holdings: [laterPlan] });
+      store.data = routeData;
+      actions.clearDuesThrough.mockImplementation((_target, _dueDate) => {
+        const entryIds = ['paid-older-1', 'paid-older-2', 'paid-current'];
+        addLinkedTransactions(entryIds, laterPlan);
+        return entryIds;
+      });
+      actions.undoClearDuesThrough.mockClear();
+      mockConfirmAsync.mockClear();
+      useUIStore.getState().setActionToast(null);
+      home = renderScreen(React.createElement(HomeScreen));
+      const laterRow = home.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:plan:older-plan:'),
+      )[0];
+      if (!laterRow) throw new Error('Later due row did not render.');
+      const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
+      expect(preview.count).toBeGreaterThan(1);
+      const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
+      await act(async () => {
+        laterRow.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledWith({
+        title: 'Was this paid?',
+        message: expectedMessage,
+        confirmLabel: 'Paid',
+        cancelLabel: 'Not paid',
+      });
+      expect(actions.clearDuesThrough).toHaveBeenCalledWith({ kind: 'plan', id: laterPlan.id }, currentMonth + '-01');
+      const throughUndo = useUIStore.getState().actionToast?.onAction;
+      if (!throughUndo) throw new Error('Clear-through Undo action was not set.');
+      act(() => throughUndo());
+      expect(actions.undoClearDuesThrough).toHaveBeenCalledWith(
+        { kind: 'plan', id: laterPlan.id },
+        ['paid-older-1', 'paid-older-2', 'paid-current'],
+      );
+    } finally {
+      act(() => home?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      useUIStore.getState().setActionToast(previousToast);
+      mockConfirmAsync.mockResolvedValue(true);
     }
   });
 

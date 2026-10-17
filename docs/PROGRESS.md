@@ -121,7 +121,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
-| P20-E | — | Pending | CR-28 is implemented and focused tests pass; Home due confirmation and demo-loaded popup remain; full gates pending. | 2026-10-17 |
+| P20-E | — | Pending | CR-28 and CR-27 are implemented with focused tests passing; demo-loaded popup and full gates remain. | 2026-10-17 |
 | P20-F | — | Planned | One budget plan with apply-from-next-month and linked recurring items (CR-29). | 2026-10-17 |
 | P20-G | — | Planned | Remove the Budget header menu (CR-30). | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
@@ -456,6 +456,15 @@ P21-B does not change the schema.
   tone selection. Negative uses `err`, positive uses `primary`, and zero uses
   `neutral`; AmountText's existing `formatINR` accessibility label receives
   the normalized amount. Other screens are not altered by the tone change.
+- DEC-P20E-CR27: the Home due interaction is now a native confirmation with
+  `Paid` and `Not paid`; the Paid action uses the existing single-due clear or
+  FIFO clear-through store action, each with the existing one-step Undo toast.
+  Not paid and native dismissal leave data unchanged. The old CR-21 sheet tests
+  asserting bottom anchoring, safe-area padding, 60% max height, scrollability,
+  backdrop dismissal, and Pay/Clear due/View schedule/Close sheet actions are
+  superseded by assertions for the exact alert copy and button labels,
+  no-op cancellation, oldest/later clear actions and Undo. Reason: CR-27
+  explicitly replaces the sheet with the platform's standard confirmation.
 - Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
   object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
   labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B
@@ -943,13 +952,13 @@ evidence present in exports/checkpoints.
 | CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 | P20-D preserves the user's reduced always-visible balance card and removes expansion, metrics and captions. |
 | CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
 | CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Done | P21-A/B tests pass; final required gates are green. |
-| CR-21 | Anchor Home due popup to the bottom safe area, bound and scroll the sheet, and support backdrop dismissal. | Done | P20-D; style assertions cover bottom anchoring, inset, max height, scroll and backdrop dismissal. |
+| CR-21 | Anchor Home due popup to the bottom safe area, bound and scroll the sheet, and support backdrop dismissal. | Superseded by CR-27 | P20-D sheet was replaced by the native Paid / Not paid confirmation; its style, scroll, backdrop and action assertions are replaced by confirmation tests. |
 | CR-22 | Keep only the user's surviving Available/Closing balance elements and remove its expansion behavior. | Done | P20-D; DEC-USER-CHANGES records the final element set and replaces expansion tests with always-visible/no-toggle assertions. |
 | CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done | P20-D; 1/3/401, future, mixed, plan, liability and budget cases; single-write/deep-equal Undo tests pass. |
 | CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Done | P20-D menu order, labels, navigation and review-dot tests pass; supersedes CR-17. |
 | CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done | P20-D single-card, divider, alignment, scale 1.3/2.0, actions/navigation and empty-state tests pass. |
 | CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
-| CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Planned | P20-E. |
+| CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Pending | P20-E implementation complete; Home/component and confirm-adapter focused tests pass. |
 | CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Pending | `normalizeMoney` and closing-position normalization implemented; domain and screen tests pass; final gates pending. |
 | CR-29 | Keep one budget plan, apply from next month and link recurring items. | Planned | P20-F. |
 | CR-30 | Remove the Budget header menu. | Planned | P20-G. |
