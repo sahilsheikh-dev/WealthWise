@@ -764,9 +764,9 @@ describe('route render smoke audit', () => {
       expect(textOf(dueHome)).toContain('Test plan');
       expect(textOf(dueHome)).toContain(formatAmount(1_000, 'exact', 1));
       expect(textOf(dueHome)).toContain(formatDate(today));
-      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Paid' });
       expect(markPaid.type).toBe('button');
-      expect(markPaid.children).toContain('Marked as paid');
+      expect(markPaid.children).toContain('Paid');
       expect(mockConfirmAsync).not.toHaveBeenCalled();
       await act(async () => {
         markPaid.props.onPress();
@@ -825,7 +825,7 @@ describe('route render smoke audit', () => {
       expect(actions?.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ justifyContent: 'flex-end' }),
       ]));
-      expect(dueRow.findByProps({ accessibilityLabel: 'Marked as paid' }).type).toBe('button');
+      expect(dueRow.findByProps({ accessibilityLabel: 'Paid' }).type).toBe('button');
     } finally {
       act(() => home?.unmount());
       Object.assign(routeData, previousData);
@@ -885,7 +885,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:investment-plan-test'),
       )[0];
       if (!oldestRow) throw new Error('Oldest due row did not render.');
-      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Paid' });
       await act(async () => {
         markPaid.props.onPress();
         await Promise.resolve();
@@ -914,7 +914,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:older-plan:'),
       )[0];
       if (!laterRow) throw new Error('Later due row did not render.');
-      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
       const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
@@ -1257,22 +1257,47 @@ describe('route render smoke audit', () => {
       const balanceText = balance.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       expect(balanceText).toContain('Closing balance');
       expect(balanceText).not.toContain('NaN');
-      const pendingToggle = renderer.root.findByProps({ testID: 'pending-items-toggle' });
-      expect(pendingToggle.props.accessibilityState).toEqual({ expanded: false });
-      expect(renderer.root.findAllByProps({ testID: 'pending-items-list' })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ testID: 'pending-items-toggle' })).toHaveLength(0);
+      const pendingHeader = renderer.root.findByProps({ testID: 'pending-items-header' });
+      expect(pendingHeader.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('3 payments due of total');
+      const pendingList = renderer.root.findByProps({ testID: 'pending-items-list' });
+      const pendingCard = renderer.root.findByProps({ testID: 'pending-items-section' })
+        .findAll((node) => String(node.type) === 'card')[0];
+      if (!pendingCard) throw new Error('Due payments Card did not render.');
+      expect(pendingList.findAll((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      )).toHaveLength(1);
+      expect(pendingList.findAllByProps({ children: 'Paid' })).toHaveLength(3);
+      expect(pendingList.findAllByProps({ children: 'Pay' })).toHaveLength(0);
+      const firstDueRow = pendingList.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      );
+      if (!firstDueRow) throw new Error('Filtered due row did not render.');
+      expect(firstDueRow.props.accessibilityLabel).toContain('Food');
+      expect(firstDueRow.props.accessibilityLabel).not.toContain('Overdue');
+      expect(firstDueRow.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 1 }),
+      ]));
 
       expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
         .toBeGreaterThan(0);
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
-      act(() => renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.onPress());
       expect(renderer.root.findAll((node) =>
         node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
       )).toHaveLength(1);
       expect(renderer.root.findAll((node) =>
         node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
       )).toHaveLength(0);
-      expect(renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.accessibilityLabel)
-        .toContain(formatAmount(75, 'exact', 1));
+      const lastDueRow = renderer.root.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
+      );
+      if (!lastDueRow) throw new Error('Filtered last due row did not render.');
+      expect(lastDueRow.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ borderBottomWidth: 0 }),
+      ]));
+      expect(renderer.root.findByProps({ testID: 'pending-items-header' }).findAllByType('text')
+        .map((node) => node.children.join('')).join(' ')).toContain(formatAmount(75, 'exact', 1));
       act(() => renderer.unmount());
 
       const negativeData: AppData = {
@@ -1287,6 +1312,7 @@ describe('route render smoke audit', () => {
       const negativeBalance = negativeRenderer.root.findByProps({ testID: 'available-balance-card' });
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
+      expect(negativeRenderer.root.findAllByProps({ testID: 'pending-items-section' })).toHaveLength(0);
       expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
         .toHaveLength(0);
       act(() => negativeRenderer.unmount());
@@ -1294,6 +1320,48 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
       act(() => useUIStore.getState().setTxMonth(previousTxMonth));
+      mockFontScale = 1;
+    }
+  });
+
+  it.each([1.3, 2])('stacks Transactions due rows at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousMonth = useUIStore.getState().txMonth;
+    const today = todayISO();
+    const month = monthKey(today);
+    const data: AppData = {
+      ...emptyAppData(today),
+      monthBudgets: [{
+        month,
+        source: 'custom',
+        plannedIncome: 1_000,
+        lines: [{ category: 'Food', planned: 300 }],
+      }],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    act(() => useUIStore.getState().setTxMonth(month));
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(TransactionsScreen));
+      const row = renderer.root.find((node) =>
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+      );
+      if (!row) throw new Error('Transactions due row did not render.');
+      expect(row.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ alignItems: 'stretch', flexDirection: 'column' }),
+      ]));
+      expect(row.findAllByProps({ accessibilityLabel: 'Paid' })).toHaveLength(1);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      act(() => useUIStore.getState().setTxMonth(previousMonth));
       mockFontScale = 1;
     }
   });

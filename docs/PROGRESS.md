@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 90% (52/58)
+Overall progress █████████░ 87% (52/60)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,8 +68,8 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (11/11)
-Phase 21         ██████████ 100% (4/4)
+Phase 20         █████████░ 92% (11/12)
+Phase 21         ████████░░ 80% (4/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
@@ -128,10 +128,12 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-I | — | Done | `e396059`; initial CR-35/CR-36 delivery; the tick control is corrected by CR-43 and status wording is superseded by CR-40. | 2026-10-17 |
 | P20-J | — | Done | CR-40–CR-43; Home text action, details-first goal cards, equal-split shared assets, and Feather `edit-2` standardization. | 2026-10-17 |
 | P20-K | — | Done | `026e671`; CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
+| P20-L | — | In progress | CR-47–CR-49; due section and shared filter/search work in progress. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
+| P21-D | — | Planned | CR-51; adjust only emergency-fund null/default/repair allocation targets. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
@@ -655,6 +657,25 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   old card-owned edit-action ownership expectations are replaced by no-icon
   assertions on those cards, while shared row icon ownership and the global
   `edit-2` scan remain.
+- DEC-P20L-CR47: Transactions' "Due payments" section keeps the user's exact
+  count/total header wording, is always expanded in one Card, and is omitted
+  when the current filtered month has no dues. Rows use the list's hairline
+  divider style and show title/date, amount and only one compact Paid or
+  Received clear action; they omit pending-status badges. The oldest due still
+  clears directly with Undo; later dues retain the exact FIFO confirm preview,
+  one store action and one Undo. The old collapsed-toggle/arrow/hidden-list
+  assertions become always-open/no-toggle/visible-list assertions; old
+  separate Pay/Clear due button expectations become the one Paid/Received
+  action; reason: the section is now always open and has one clear action.
+  Current source/tests had no literal "After earlier dues" assertion; the
+  existing clear-through confirmation assertion remains and checks the exact
+  "This includes N-1 earlier dues" message.
+  Assumed: only Transactions due rows adopt these labels; Home/Budget clear
+  behavior and the generic Pay-navigation path stay unchanged. The initial
+  targeted run also found stale Home RouteRenderSmoke expectations for
+  "Marked as paid": `268e4c7` changed that user-owned Home label to "Paid",
+  so only those test expectations were aligned to the current source; Home
+  code was not changed.
 - DEC-BUDGET-DIRECTION: Planned, to be built only on the user's command.
   Budget is a forward-looking plan of recurring income, bills, investments,
   and loans arranged in sections. It is created once from the Edit button and
@@ -1329,10 +1350,12 @@ evidence present in exports/checkpoints.
 | P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Initially done; CR-35 wording corrected by CR-43 and CR-36 superseded by CR-40; see P20-J close-out. | `e396059` | The Home due cap and native confirmation/Undo remain; former goal-status copy is no longer shown. | current request |
 | P20-J | Phase 20 | — | — | 2026-10-17 | Correct Home due wording, remove goal-card status text, share linked-asset value equally across goals and standardize edit icons (CR-40–CR-43). | Done; 70 suites / 791 tests and all final gates pass; see P20-J close-out. | `269da35` | Legacy shares remain optional for imports and are ignored by calculations; remainder paise assigned by sorted goal ID. | current request |
 | P20-K | Phase 20 | — | — | 2026-10-17 | Group Home goals and make asset/liability card bodies edit targets with independent buttons and liability data-before-progress order (CR-44–CR-46). | Done; 3 focused suites / 122 tests and 70 suites / 799 full tests; all requested automated gates pass; see P20-K close-out. | `026e671` | Simulated route/propagation/layout assertions do not replace real-device touch, font-scale or assistive-technology checks. | current request |
+| P20-L | Phase 20 | — | — | 2026-10-18 | Always-open Transactions due payments and inline header filters/search on Transactions, Assets, Liabilities and Goals (CR-47–CR-50). | In progress; CR-47 implementation and focused due-row/action tests pass. Remaining filter/search steps and final gates are pending. | Step commits pending | Assumed: only due rows use the new compact Paid/Received labels; the existing budget/Home actions and paid/Undo behavior remain unchanged. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed: the fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. Stored zero-percent unlinked items count as deleted. | current request |
 | P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed: normalize positive known buckets by largest remainder; fall back to the four P21-C defaults (10/40/35/15). Preserve P21-C as previously delivered. | current request |
+| P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | Planned; preserve any existing stored allocation. | none | No schema change; Mutual funds / Bonds remains addable. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
@@ -1390,6 +1413,11 @@ evidence present in exports/checkpoints.
 | CR-44 | Render Home goals inside one card with single hairline row dividers and no divider after the final row. | Done | P20-K; one-card grouping and divider assertions pass at font scales 1.0, 1.3 and 2.0. |
 | CR-45 | Remove asset-card edit icons; make the card body an accessible edit target without triggering edit from existing buttons. | Done | P20-K; route, accessible-label, no-edit-icon and button-propagation tests pass. |
 | CR-46 | Remove liability-card edit icons, make card bodies edit targets, and place data before the bar with only existing buttons after it. | Done | P20-K; recurring and one-time cards, routing, button isolation and ordering are covered. |
+| CR-47 | Make Transactions Due payments always open; show each due as title, date, amount and one compact Paid/Received clear action, retaining FIFO confirm/Undo semantics. | In progress | P20-L; focused due-row/action tests pass; pending final gates. |
+| CR-48 | Move existing sort/type controls on Transactions, Assets, Liabilities and Goals into an inline header filter panel with ordered filter/plus actions and active indicator. | Planned | P20-L; SortChip and sorting implementation remain unchanged. |
+| CR-49 | Add local case-insensitive, trimmed search to Assets, Liabilities and Goals; compose with filters and sorting. | Planned | P20-L. |
+| CR-50 | Add All/Recurring/One-time liability-kind filters in the Liabilities filter panel. | Planned | P20-L. |
+| CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Planned | P21-D; schema v8 unchanged. |
 
 ## 8. Known issues and risks
 
@@ -1614,6 +1642,13 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### Current P20-L / P21-D work
+
+| Part / step | Status | Source evidence | Test / verification evidence |
+|---|---|---|---|
+| P20-L STEP 1 — Transactions Due payments (CR-47) | In progress | `app/(tabs)/transactions.tsx`, `src/components/PendingItemRow.tsx`, `src/components/PendingItemActions.tsx`, `src/components/IconButton.tsx` | `RouteRenderSmoke.test.tsx`, `PendingItemActions.test.tsx`: always-open section, hidden when empty, Card/list dividers, Paid/Received labels, font-scale stacking, direct oldest clear/Undo and later clear-through confirmation. Targeted suites pass; final gates pending. |
+| P21-D — Emergency-fund default items (CR-51) | Planned | `src/domain/efAllocation.ts`, demo data | Existing default/resolver, form and demo-data tests; no schema version change. |
 
 ### P18-R7 housekeeping
 

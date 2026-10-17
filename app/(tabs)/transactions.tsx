@@ -82,7 +82,6 @@ export default function TransactionsScreen() {
       && (!categoryFilter || item.category === categoryFilter)
       && (!query || `${item.title} ${item.category}`.toLowerCase().includes(query.trim().toLowerCase()));
   }), [categoryFilter, filter, monthPendingItems, query]);
-  const [pendingExpanded, setPendingExpanded] = useState(false);
   const unlinkedCount = useMemo(() => findUnlinkedEntries(data).length, [data]);
   const position = useMemo(
     () => availableBalance(data.transactions, month, today),
@@ -245,36 +244,38 @@ export default function TransactionsScreen() {
           onChangeText={setQuery}
         />
 
-        <View testID="pending-items-section" style={styles.pendingSection}>
-          <Pressable
-            testID="pending-items-toggle"
-            accessibilityRole="button"
-            accessibilityLabel={`Due payments, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
-            accessibilityState={{ expanded: pendingExpanded }}
-            onPress={() => setPendingExpanded((expanded) => !expanded)}
-            style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
-            <AppText weight="semibold">
-              {visiblePendingItems.length === 1 
-                ? '1 payment due of total ' 
-                : `${visiblePendingItems.length} payments due of total `}
-              <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
-            </AppText>
-            <Feather name={pendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
-          </Pressable>
-          {pendingExpanded ? visiblePendingItems.length > 0 ? (
-            <View testID="pending-items-list" style={styles.pendingList}>
-              {visiblePendingItems.map((item) => (
-                <PendingItemRow
-                  key={item.id}
-                  item={item}
-                  actions={<PendingItemActions item={item} today={today} />}
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyState title="No due payments this month" />
-          ) : null}
-        </View>
+        {visiblePendingItems.length > 0 ? (
+          <View testID="pending-items-section" style={styles.pendingSection}>
+            <Card style={styles.pendingCard}>
+              <View testID="pending-items-header" style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
+                <AppText weight="semibold">
+                  {visiblePendingItems.length === 1
+                    ? '1 payment due of total '
+                    : `${visiblePendingItems.length} payments due of total `}
+                  <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
+                </AppText>
+              </View>
+              <View testID="pending-items-list" style={styles.pendingList}>
+                {visiblePendingItems.map((item, index) => (
+                  <PendingItemRow
+                    key={item.id}
+                    item={item}
+                    transactionDue
+                    last={index === visiblePendingItems.length - 1}
+                    actions={(
+                      <PendingItemActions
+                        item={item}
+                        today={today}
+                        compact
+                        actionLabel={pendingTransactionType(item) === 'income' ? 'Received' : 'Paid'}
+                      />
+                    )}
+                  />
+                ))}
+              </View>
+            </Card>
+          </View>
+        ) : null}
 
         <View testID="transactions-list" style={styles.list}>
           {!hasMonthTransactions ? (
@@ -328,6 +329,7 @@ const styles = StyleSheet.create({
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   pendingSection: { marginHorizontal: 20, marginTop: 8 },
+  pendingCard: { marginHorizontal: 0, marginTop: 0, paddingVertical: 10, paddingHorizontal: 14 },
   pendingHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   pendingList: { paddingTop: 4, gap: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
