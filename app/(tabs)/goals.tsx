@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
@@ -14,7 +15,7 @@ import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { SORT_OPTIONS } from '../../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -24,6 +25,7 @@ export default function GoalsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
   const sorting = useSort('goals');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const asOf = todayISO();
   const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
   const expenseBaseline = emergencyBaseline.amount;
@@ -43,10 +45,31 @@ export default function GoalsScreen() {
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
+    || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
 
   return (
     <Screen>
-      <AppHeader title="Goals" rightActions={[{ icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') }]} />
+      <AppHeader
+        title="Goals"
+        rightActions={[
+          {
+            icon: 'filter',
+            label: 'Filter',
+            onPress: () => setFilterPanelOpen((open) => !open),
+            expanded: filterPanelOpen,
+            showIndicator: filterActive,
+          },
+          { icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') },
+        ]}
+      />
+      {filterPanelOpen ? (
+        <View testID="goal-filter-panel">
+          <ChipRow>
+            <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+          </ChipRow>
+        </View>
+      ) : null}
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -57,9 +80,6 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <ChipRow>
-        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
-      </ChipRow>
       {sortedGoals.map((goal) => {
         const view = goalView(goal, { expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);

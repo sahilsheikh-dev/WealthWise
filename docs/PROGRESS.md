@@ -676,6 +676,20 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   "Marked as paid": `268e4c7` changed that user-owned Home label to "Paid",
   so only those test expectations were aligned to the current source; Home
   code was not changed.
+- DEC-P20L-CR48: On Transactions, Assets, Liabilities and Goals, the
+  Feather `filter` action toggles a closed-by-default inline panel directly
+  under the header. The existing SortChip and type chips live in the panel;
+  sorting persistence/logic remain unchanged. Transactions orders the
+  existing menu before Filter and keeps the plus action rightmost; Assets,
+  Liabilities and Goals have Filter immediately before their existing plus.
+  The dot marks a non-All type filter or a non-default sort. Replaced tests
+  that expected SortChip/type chips visible in the old screen-level row now
+  assert no panel controls while closed, accessibility expanded state,
+  panel contents after opening, header order and active-filter dot; reason:
+  the user explicitly relocates those controls into the header panel.
+  `SortChip.tsx` and `src/lib/sorting.ts` remain unchanged. Of the four
+  screens, only Transactions already had an explicit menu; other menu
+  visibility was not changed.
 - DEC-BUDGET-DIRECTION: Planned, to be built only on the user's command.
   Budget is a forward-looking plan of recurring income, bills, investments,
   and loans arranged in sections. It is created once from the Edit button and
@@ -1414,7 +1428,7 @@ evidence present in exports/checkpoints.
 | CR-45 | Remove asset-card edit icons; make the card body an accessible edit target without triggering edit from existing buttons. | Done | P20-K; route, accessible-label, no-edit-icon and button-propagation tests pass. |
 | CR-46 | Remove liability-card edit icons, make card bodies edit targets, and place data before the bar with only existing buttons after it. | Done | P20-K; recurring and one-time cards, routing, button isolation and ordering are covered. |
 | CR-47 | Make Transactions Due payments always open; show each due as title, date, amount and one compact Paid/Received clear action, retaining FIFO confirm/Undo semantics. | In progress | P20-L; focused due-row/action tests pass; pending final gates. |
-| CR-48 | Move existing sort/type controls on Transactions, Assets, Liabilities and Goals into an inline header filter panel with ordered filter/plus actions and active indicator. | Planned | P20-L; SortChip and sorting implementation remain unchanged. |
+| CR-48 | Move existing sort/type controls on Transactions, Assets, Liabilities and Goals into an inline header filter panel with ordered filter/plus actions and active indicator. | In progress | P20-L; closed-by-default and toggle/content/order/active-filter tests pass; SortChip and sorting implementation remain unchanged. |
 | CR-49 | Add local case-insensitive, trimmed search to Assets, Liabilities and Goals; compose with filters and sorting. | Planned | P20-L. |
 | CR-50 | Add All/Recurring/One-time liability-kind filters in the Liabilities filter panel. | Planned | P20-L. |
 | CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Planned | P21-D; schema v8 unchanged. |
@@ -1648,6 +1662,7 @@ evidence for the fixes.
 | Part / step | Status | Source evidence | Test / verification evidence |
 |---|---|---|---|
 | P20-L STEP 1 — Transactions Due payments (CR-47) | In progress | `app/(tabs)/transactions.tsx`, `src/components/PendingItemRow.tsx`, `src/components/PendingItemActions.tsx`, `src/components/IconButton.tsx` | `RouteRenderSmoke.test.tsx`, `PendingItemActions.test.tsx`: always-open section, hidden when empty, Card/list dividers, Paid/Received labels, font-scale stacking, direct oldest clear/Undo and later clear-through confirmation. Targeted suites pass; final gates pending. |
+| P20-L STEP 2 — inline filters (CR-48) | In progress | `src/components/AppHeader.tsx`; Transactions, Assets, Liabilities and Goals screens; SortChip/sorting sources unchanged | `AppHeader.test.tsx`, `AppHeaderUsage.test.ts`, `RouteRenderSmoke.test.tsx`, `TransactionsScreen.test.tsx`, `SectionHeaderRow.test.tsx`: icon order, expanded state, panel content, default closed state, active dot and protected placement scan. Targeted tests pass; final gates pending. |
 | P21-D — Emergency-fund default items (CR-51) | Planned | `src/domain/efAllocation.ts`, demo data | Existing default/resolver, form and demo-data tests; no schema version change. |
 
 ### P18-R7 housekeeping

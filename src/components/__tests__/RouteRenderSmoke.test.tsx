@@ -248,23 +248,40 @@ jest.mock('../../components/AppHeader', () => {
       title,
       rightActions,
       menu,
+      menuPlacement,
       menuIndicator,
     }: {
       title: string;
-      rightActions?: { label: string; icon: string; onPress: () => void }[];
+      rightActions?: {
+        label: string;
+        icon: string;
+        onPress: () => void;
+        expanded?: boolean;
+        showIndicator?: boolean;
+      }[];
       menu?: { label: string; onPress: () => void }[];
+      menuPlacement?: 'leading' | 'trailing';
       menuIndicator?: boolean;
     }) => {
       const [menuOpen, setMenuOpen] = ReactModule.useState(false);
       return ReactModule.createElement('header', null,
         ReactModule.createElement('text', null, title),
+        ...(menu && menuPlacement === 'leading' ? [
+          ReactModule.createElement('button', {
+            key: 'more-options',
+            accessibilityLabel: 'More options',
+            menuIndicator,
+          }, 'More options'),
+        ] : []),
         ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
           key: action.label,
           accessibilityLabel: action.label,
+          accessibilityState: action.expanded === undefined ? {} : { expanded: action.expanded },
           icon: action.icon,
+          showIndicator: action.showIndicator,
           onPress: action.onPress,
-        }, action.label)),
-        ...(menu ? [
+        }, action.label, action.showIndicator ? ReactModule.createElement('view', { testID: 'header-action-indicator' }) : null)),
+        ...(menu && menuPlacement !== 'leading' ? [
           ReactModule.createElement('button', {
             key: 'more-options',
             accessibilityLabel: 'More options',
@@ -1282,6 +1299,7 @@ describe('route render smoke audit', () => {
 
       expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
         .toBeGreaterThan(0);
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
       expect(renderer.root.findAll((node) =>
         node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
@@ -1694,7 +1712,7 @@ describe('route render smoke audit', () => {
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
-  ])('%s exposes its SortChip', (name, makeScreen) => {
+  ])('%s exposes its SortChip in the existing location or inline filter panel', (name, makeScreen) => {
     const appData = jest.requireMock('../../data/useAppData').useAppData() as {
       holdings: object[];
       liabilities: object[];
@@ -1740,10 +1758,81 @@ describe('route render smoke audit', () => {
         : {});
 
     const renderer = renderScreen(makeScreen());
-    expect(renderer.root.findAll((node) =>
+    const filteredScreenPanel: Record<string, string> = {
+      Transactions: 'transaction-filter-panel',
+      Goals: 'goal-filter-panel',
+      Assets: 'asset-filter-panel',
+      Liabilities: 'liability-filter-panel',
+    };
+    const panelTestID = filteredScreenPanel[name];
+    if (panelTestID) {
+      expect(renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ testID: panelTestID })).toHaveLength(0);
+      const filterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
+      expect(filterButton.props.accessibilityState).toEqual({ expanded: false });
+      act(() => filterButton.props.onPress());
+      expect(renderer.root.findByProps({ testID: panelTestID })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.accessibilityState)
+        .toEqual({ expanded: true });
+      if (name === 'Transactions') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Income', 'Expense', 'Invested'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(4);
+        const investedChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Invested');
+        if (!investedChip) throw new Error('Invested filter chip did not render.');
+        act(() => investedChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Invested')?.props.selected)
+          .toBe(true);
+      } else if (name === 'Assets') {
+        expect(renderer.root.findAll((node) =>
+          ['All', 'Recurring', 'Mutual fund / SIP'].includes(String(node.props.accessibilityLabel)),
+        ).length).toBeGreaterThanOrEqual(3);
+        const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Recurring');
+        if (!recurringChip) throw new Error('Recurring filter chip did not render.');
+        act(() => recurringChip.props.onPress());
+        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+          .find((node) => node.props.accessibilityLabel === 'Recurring')?.props.selected)
+          .toBe(true);
+      } else {
+        expect(renderer.root.findAll((node) =>
+          typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith('Sort:'),
+        )).toHaveLength(1);
+      }
+      if (name === 'Transactions' || name === 'Assets') {
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
+        expect(renderer.root.findAll((node) =>
+          String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
+        )).toHaveLength(1);
+      }
+      const header = renderer.root.findAllByType('header')[0];
+      const headerActionLabels = header?.findAll((node) =>
+        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'More options']
+          .includes(String(node.props.accessibilityLabel)),
+      ).map((node) => node.props.accessibilityLabel);
+      expect(headerActionLabels?.at(-1)).toBe(name === 'Transactions'
+        ? 'Add transaction'
+        : name === 'Goals'
+          ? 'New goal'
+          : name === 'Assets'
+            ? 'New investment'
+            : 'Add a liability');
+      expect(headerActionLabels).toContain('Filter');
+      if (name === 'Transactions') {
+        expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);
+      }
+    } else {
+      expect(renderer.root.findAll((node) =>
       typeof node.props.accessibilityLabel === 'string'
       && node.props.accessibilityLabel.startsWith('Sort:'),
-    )).toHaveLength(1);
+      )).toHaveLength(1);
+    }
     act(() => renderer.unmount());
     routeParams.mockReturnValue({});
   });
@@ -1753,7 +1842,8 @@ describe('route render smoke audit', () => {
     const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
     const previousMonthLabel = monthLabel();
     const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
-    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-row' });
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-panel' });
     const responder = () => renderer.root.findAll(
       (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
     )[0];

@@ -29,7 +29,7 @@ import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -41,6 +41,7 @@ export default function LiabilitiesScreen() {
   const { colors } = useTheme();
   const data = useAppData();
   const sorting = useSort('liabilities');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
@@ -63,6 +64,8 @@ export default function LiabilitiesScreen() {
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
   }));
+  const filterActive = sorting.spec.key !== DEFAULT_SORTS.liabilities.key
+    || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
 
   return (
       <Screen bottomPadding={120}>
@@ -70,8 +73,24 @@ export default function LiabilitiesScreen() {
           title="Liabilities"
           showBack
           fallbackHref="/(tabs)"
-          rightActions={[{ icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') }]}
+          rightActions={[
+            {
+              icon: 'filter',
+              label: 'Filter',
+              onPress: () => setFilterPanelOpen((open) => !open),
+              expanded: filterPanelOpen,
+              showIndicator: filterActive,
+            },
+            { icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') },
+          ]}
         />
+        {filterPanelOpen ? (
+          <View testID="liability-filter-panel">
+            <ChipRow>
+              <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
+            </ChipRow>
+          </View>
+        ) : null}
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Total outstanding</AppText>
           <AmountText value={overview.totalOutstanding} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -120,10 +139,6 @@ export default function LiabilitiesScreen() {
             </>
           ) : null}
         </Card>
-
-        <ChipRow>
-          <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
-        </ChipRow>
 
         {sortedLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />

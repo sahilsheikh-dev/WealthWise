@@ -30,7 +30,7 @@ import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { SORT_OPTIONS } from '../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -57,6 +57,7 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
@@ -83,6 +84,11 @@ export default function AssetsScreen() {
   const visibleRows = filter === 'Recurring'
     ? sipSorting.sort(filteredRows)
     : assetSorting.sort(filteredRows);
+  const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
+  const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
+  const filterActive = filter !== 'All'
+    || activeSorting.spec.key !== activeSortDefault.key
+    || activeSorting.spec.dir !== activeSortDefault.dir;
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
@@ -98,8 +104,31 @@ export default function AssetsScreen() {
         title="Assets"
         showBack
         fallbackHref="/(tabs)"
-        rightActions={[{ icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) }]}
+        rightActions={[
+          {
+            icon: 'filter',
+            label: 'Filter',
+            onPress: () => setFilterPanelOpen((open) => !open),
+            expanded: filterPanelOpen,
+            showIndicator: filterActive,
+          },
+          { icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) },
+        ]}
       />
+      {filterPanelOpen ? (
+        <View testID="asset-filter-panel">
+          <ChipRow>
+            <SortChip
+              options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+              spec={activeSorting.spec}
+              onChange={activeSorting.setSpec}
+            />
+            {filters.map((item) => (
+              <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+            ))}
+          </ChipRow>
+        </View>
+      ) : null}
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
         <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -129,17 +158,6 @@ export default function AssetsScreen() {
           />
         </StatPillRow>
       </Card>
-
-      <ChipRow>
-        {<SortChip
-          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />}
-        {filters.map((item) => (
-          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
-        ))}
-      </ChipRow>
 
       <View style={styles.holdingList}>
         {visibleRows.map((row) => {

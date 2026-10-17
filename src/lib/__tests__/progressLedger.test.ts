@@ -206,6 +206,8 @@ describe('permanent progress ledger', () => {
     expect(decisions).toContain('DEC-P20K-CR44-46');
     expect(decisions).toContain('DEC-BUDGET-DIRECTION');
     expect(decisions).toContain('DEC-P20J-LEGACY-SHARES');
+    expect(decisions).toContain('DEC-P20L-CR47');
+    expect(decisions).toContain('DEC-P20L-CR48');
     expect(decisions).toContain('DEC-FORM-COMPONENTS');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
@@ -230,6 +232,11 @@ describe('permanent progress ledger', () => {
       expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-29')).toBe('Done');
+    expect(statusFor('CR-47')).toBe('In progress');
+    expect(statusFor('CR-48')).toBe('In progress');
+    expect(statusFor('CR-49')).toBe('Planned');
+    expect(statusFor('CR-50')).toBe('Planned');
+    expect(statusFor('CR-51')).toBe('Planned');
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
