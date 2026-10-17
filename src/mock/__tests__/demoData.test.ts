@@ -3,7 +3,7 @@ import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
 import { validateIntegrity } from '../../domain/links';
-import { pendingItems } from '../../domain/pending';
+import { budgetGroupRows, pendingItems } from '../../domain/pending';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -105,7 +105,7 @@ describe('four-month demo data', () => {
     }
   });
 
-  it('conserves month positions and includes a Month-review-funded shortfall and allocated surplus', () => {
+  it('conserves month positions with a funded shortfall and allocated surplus', () => {
     const positions = monthPositions(data.transactions);
     expect(positions.map(({ month }) => month)).toEqual(months);
     positions.forEach((position, index) => {
@@ -176,6 +176,19 @@ describe('four-month demo data', () => {
     expect(pending.some((item) =>
       item.kind === 'due' && item.dueDate !== undefined && item.dueDate.slice(0, 7) > currentMonth,
     )).toBe(true);
+  });
+
+  it('renders paid, overdue, partial and linked rows for the current budget', () => {
+    const rows = budgetGroupRows(data, monthKey(today), today);
+    expect(rows.some((row) => row.status === 'paid')).toBe(true);
+    expect(rows.some((row) => row.status === 'overdue')).toBe(true);
+    expect(rows.some((row) => row.actualAmount > 0 && row.actualAmount < row.plannedAmount)).toBe(true);
+    expect(rows.some((row) => row.automatic)).toBe(true);
+    expect(rows.find((row) => row.category === 'Festival')).toMatchObject({
+      status: 'paid',
+      plannedAmount: 1_000,
+      actualAmount: 1_000,
+    });
   });
 
   it('shows the linked-asset emergency fund and reachable and unreachable goal projections', () => {

@@ -4,7 +4,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useAppStore } from '../data/store';
 import { useAppActions } from '../data/useAppData';
 import { duesThroughPreview, type DueTarget } from '../domain/dues';
-import { pendingTransactionType, type PendingItem } from '../domain/pending';
+import { pendingActionLabel, pendingTransactionType, type PendingItem } from '../domain/pending';
 import { formatAmount } from '../lib/amountDisplay';
 import { formatDate } from '../lib/format';
 import { confirmAsync } from '../lib/confirm';
@@ -15,10 +15,12 @@ export function PendingItemActions({
   item,
   today,
   onClose,
+  compact = false,
 }: {
   item: PendingItem;
   today: string;
   onClose?: () => void;
+  compact?: boolean;
 }) {
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -91,7 +93,7 @@ export function PendingItemActions({
       };
     } else {
       const source = item.source;
-      if (source.kind !== 'plan' && source.kind !== 'liability') return;
+      if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
       const target: DueTarget = { kind: source.kind, id: source.parentId };
       const entryId = actions.clearDue(target, source.slotId);
       const state = useAppStore.getState();
@@ -99,7 +101,11 @@ export function PendingItemActions({
         Alert.alert('Could not clear due', state.lastError ?? 'The due could not be recorded.');
         return;
       }
-      const sourceKind = source.kind === 'plan' ? 'holding-entry' : 'liability-payment';
+      const sourceKind = source.kind === 'plan'
+        ? 'holding-entry'
+        : source.kind === 'liability'
+          ? 'liability-payment'
+          : 'policy-payment';
       const transaction = state.data.transactions.find((row) =>
         row.source?.kind === sourceKind
         && row.source.parentId === source.parentId
@@ -124,7 +130,7 @@ export function PendingItemActions({
   };
 
   const clearThrough = async () => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
     if (!item.dueDate) {
       Alert.alert('Could not clear due', 'This due does not have a scheduled date.');
       return;
@@ -148,7 +154,11 @@ export function PendingItemActions({
       Alert.alert('Could not clear due', state.lastError ?? 'The dues could not be recorded.');
       return;
     }
-    const sourceKind = target.kind === 'plan' ? 'holding-entry' : 'liability-payment';
+    const sourceKind = target.kind === 'plan'
+      ? 'holding-entry'
+      : target.kind === 'liability'
+        ? 'liability-payment'
+        : 'policy-payment';
     const transactions = entryIds.map((entryId) => state.data.transactions.find((row) =>
       row.source?.kind === sourceKind
       && row.source.parentId === target.id
@@ -169,6 +179,22 @@ export function PendingItemActions({
     });
     onClose?.();
   };
+
+  if (compact) {
+    return (
+      <View style={styles.actions}>
+        <Button
+          label={pendingActionLabel(pendingTransactionType(item))}
+          icon="check"
+          onPress={() => {
+            if (item.actionable) clear();
+            else void clearThrough();
+          }}
+          style={styles.compactButton}
+        />
+      </View>
+    );
+  }
 
   return item.kind === 'budget' ? (
     <View style={styles.actions}>

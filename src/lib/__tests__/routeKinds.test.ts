@@ -44,6 +44,9 @@ describe('route kind registry', () => {
     const routes = routeFiles(join(process.cwd(), 'app'));
     expect(routes).toContain('(tabs)/budget');
     expect(routes).not.toContain('budget');
+    expect(routes).not.toContain('month-review');
+    expect(ROUTE_KINDS).not.toHaveProperty('month-review');
+    expect(() => routeKindForPath('/month-review')).toThrow('No route kind is registered');
   });
 
   it('normalizes path params and routes tab groups', () => {

@@ -193,7 +193,7 @@ function PlanEditor({
           title: 'Record past installments?',
           message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
           confirmLabel: `Record ${previewPastDues.count} installments`,
-          cancelLabel: 'Review',
+          cancelLabel: 'Cancel',
         });
         if (!confirmed) return;
         actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);

@@ -112,11 +112,6 @@ export default function TransactionsScreen() {
           rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
           menu={[
             { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
-            ...(review ? [{
-              label: `Review ${formatMonth(review.month)}`,
-              icon: 'calendar' as const,
-              onPress: () => router.push({ pathname: '/month-review', params: { month: review.month } }),
-            }] : []),
           ]}
         />
         <View testID="available-balance-card">
@@ -141,7 +136,7 @@ export default function TransactionsScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Review ${formatMonth(review.month)}`}
-                    onPress={() => router.push({ pathname: '/month-review', params: { month: review.month } })}>
+                    onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month: review.month } })}>
                     <AppText weight="semibold" style={{ color: colors.primary }}>Review {formatMonth(review.month)}</AppText>
                   </Pressable>
                 </View>
