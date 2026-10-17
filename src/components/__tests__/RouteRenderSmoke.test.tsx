@@ -691,11 +691,12 @@ describe('route render smoke audit', () => {
         ...emptyAppData(today),
         holdings: [makeInvestmentTestPlan()],
       });
+      mockConfirmAsync.mockClear();
       mockConfirmAsync.mockResolvedValue(false);
       mockFontScale = 2;
       home = renderScreen(React.createElement(HomeScreen));
       const dueRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:'),
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:'),
       )[0];
       if (!dueRow) throw new Error('Home due item did not render.');
       expect(dueRow.findAll((node) =>
@@ -705,8 +706,14 @@ describe('route render smoke audit', () => {
           && style.flexDirection === 'column',
         ),
       ).length).toBeGreaterThan(0);
+      expect(dueRow.props.onPress).toBeUndefined();
+      expect(textOf(home)).toContain('Test plan');
+      expect(textOf(home)).toContain(formatAmount(1_000, 'exact', 1));
+      expect(textOf(home)).toContain(formatDate(today));
+      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Mark as paid' });
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
       await act(async () => {
-        dueRow.props.onPress();
+        markPaid.props.onPress();
         await Promise.resolve();
       });
       expect(mockConfirmAsync).toHaveBeenCalledWith({
@@ -720,6 +727,12 @@ describe('route render smoke audit', () => {
         node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
       )).toHaveLength(0);
       expect(home.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
+      expect(dueRow.props.onPress).toBeUndefined();
+      await act(async () => {
+        markPaid.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledTimes(2);
       const actions = (jest.requireMock('../../data/useAppData') as {
         useAppActions: () => { clearDue: jest.Mock };
       }).useAppActions();
@@ -729,6 +742,38 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, previousData);
       mockFontScale = 1;
       mockConfirmAsync.mockResolvedValue(true);
+    }
+  });
+
+  it.each([1.3, 2])('stacks Home due content and the tick action at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousData = { ...routeData };
+    mockFontScale = fontScale;
+    let home: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      Object.assign(routeData, {
+        ...emptyAppData(todayISO()),
+        holdings: [makeInvestmentTestPlan()],
+      });
+      home = renderScreen(React.createElement(HomeScreen));
+      const dueRow = home.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-'),
+      )[0];
+      if (!dueRow) throw new Error('Home due item did not render.');
+      expect(dueRow.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ alignItems: 'stretch', flexDirection: 'column' }),
+      ]));
+      const actions = dueRow.find((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-actions-'),
+      );
+      expect(actions?.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ justifyContent: 'flex-end' }),
+      ]));
+      expect(dueRow.findByProps({ accessibilityLabel: 'Mark as paid' })).toBeDefined();
+    } finally {
+      act(() => home?.unmount());
+      Object.assign(routeData, previousData);
+      mockFontScale = 1;
     }
   });
 
@@ -781,11 +826,12 @@ describe('route render smoke audit', () => {
       useUIStore.getState().setActionToast(null);
       home = renderScreen(React.createElement(HomeScreen));
       const oldestRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:plan:investment-plan-test'),
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:investment-plan-test'),
       )[0];
       if (!oldestRow) throw new Error('Oldest due row did not render.');
+      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Mark as paid' });
       await act(async () => {
-        oldestRow.props.onPress();
+        markPaid.props.onPress();
         await Promise.resolve();
       });
       expect(actions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, expect.any(String));
@@ -809,14 +855,15 @@ describe('route render smoke audit', () => {
       useUIStore.getState().setActionToast(null);
       home = renderScreen(React.createElement(HomeScreen));
       const laterRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:plan:older-plan:'),
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:older-plan:'),
       )[0];
       if (!laterRow) throw new Error('Later due row did not render.');
+      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Mark as paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
       const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
       await act(async () => {
-        laterRow.props.onPress();
+        laterMarkPaid.props.onPress();
         await Promise.resolve();
       });
       expect(mockConfirmAsync).toHaveBeenCalledWith({
@@ -839,6 +886,82 @@ describe('route render smoke audit', () => {
       store.data = previousStoreData;
       useUIStore.getState().setActionToast(previousToast);
       mockConfirmAsync.mockResolvedValue(true);
+    }
+  });
+
+  it.each([1, 1.3, 2])('places one status beside every goal progress bar at font scale %s', async (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousData = { ...routeData };
+    const today = todayISO();
+    const data: AppData = {
+      ...emptyAppData(today),
+      goals: [{
+        id: 'goal-travel',
+        name: 'Travel',
+        target: 50_000,
+        saved: 5_000,
+        year: 2028,
+        links: [],
+      }, {
+        id: 'goal-emergency',
+        name: 'Emergency fund',
+        target: 100_000,
+        saved: 0,
+        year: 2028,
+        auto: 'ef',
+        links: [],
+      }],
+    };
+    let home: TestRenderer.ReactTestRenderer | undefined;
+    let goals: TestRenderer.ReactTestRenderer | undefined;
+    mockFontScale = fontScale;
+
+    try {
+      Object.assign(routeData, data);
+      home = renderScreen(React.createElement(HomeScreen));
+      goals = renderScreen(React.createElement(GoalsScreen));
+      if (!home || !goals) throw new Error('Goal screens did not render.');
+
+      for (const screen of [home, goals]) {
+        const rows = screen.root.findAll((node) =>
+          node.type === 'view' && node.props.testID === 'goal-progress-row',
+        );
+        expect(rows.length).toBeGreaterThanOrEqual(2);
+        expect(screen.root.findAllByType('text').some((node) =>
+          node.children.includes('Emergency fund'),
+        )).toBe(true);
+        for (const row of rows) {
+          const statuses = row.findAll((node) =>
+            node.type === 'text' && node.props.testID === 'goal-progress-status',
+          );
+          expect(statuses).toHaveLength(1);
+          expect(statuses[0]?.children.join('')).toBe('Not reachable with current contributions');
+
+          const bar = row.find((node) =>
+            node.type === 'view' && node.props.testID === 'goal-progress-bar',
+          );
+          if (!bar) throw new Error('Goal progress bar did not render.');
+          expect(bar.props.style).toEqual(expect.objectContaining({ flex: 1, minWidth: 0 }));
+          expect(row.props.style).toEqual(expect.arrayContaining([
+            expect.objectContaining({ flexDirection: fontScale >= 1.3 ? 'column' : 'row' }),
+          ]));
+          expect(statuses[0]?.props.style).toEqual(expect.arrayContaining([
+            expect.objectContaining({ flexShrink: 0 }),
+          ]));
+          if (fontScale >= 1.3) {
+            expect(statuses[0]?.props.style).toEqual(expect.arrayContaining([
+              expect.objectContaining({ alignSelf: 'flex-end', textAlign: 'right' }),
+            ]));
+          }
+        }
+      }
+    } finally {
+      act(() => {
+        home?.unmount();
+        goals?.unmount();
+      });
+      Object.assign(routeData, previousData);
+      mockFontScale = 1;
     }
   });
 

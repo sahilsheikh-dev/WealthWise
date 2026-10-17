@@ -3,6 +3,7 @@ import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
 import { validateIntegrity } from '../../domain/links';
+import { duesThroughPreview } from '../../domain/dues';
 import { budgetGroupRows, pendingItems } from '../../domain/pending';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
@@ -175,6 +176,20 @@ describe('four-month demo data', () => {
     expect(laterSip).toMatchObject({ actionable: false, dueDate: `${currentMonth}-25` });
     expect(pending.some((item) =>
       item.kind === 'due' && item.dueDate !== undefined && item.dueDate.slice(0, 7) > currentMonth,
+    )).toBe(true);
+  });
+
+  it("shows a later clearable due in Home's five-row preview", () => {
+    const homeDues = pendingItems(data, monthKey(today), today)
+      .filter((item) => item.kind === 'due')
+      .slice(0, 5);
+    expect(homeDues.some((item) =>
+      item.dueDate
+      && (item.source.kind === 'plan' || item.source.kind === 'liability')
+      && duesThroughPreview(data, {
+        kind: item.source.kind,
+        id: item.source.parentId,
+      }, item.dueDate, today).count > 1,
     )).toBe(true);
   });
 
