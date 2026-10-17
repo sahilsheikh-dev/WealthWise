@@ -187,7 +187,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 |');
     expect(register).toContain('| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 |');
     expect(register).toContain('| CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done |');
-    expect(register).toContain("| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Done |");
+    expect(register).toContain("| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Superseded by CR-30 |");
     expect(register).toContain('| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done |');
     expect(register).toContain('| CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done |');
     expect(decisions).toContain('DEC-P20D-CR22');
@@ -198,7 +198,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 
-  it('tracks P20-F done, keeps P20-G planned, and removes the withdrawn importer part', () => {
+  it('tracks P20-G completion and removes the withdrawn importer part', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -208,24 +208,26 @@ describe('permanent progress ledger', () => {
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-E |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-F |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-G |'))).toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-G |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
-    expect(statusFor('CR-29')).toBe('In progress');
-    expect(statusFor('CR-30')).toBe('Planned');
+    expect(statusFor('CR-29')).toBe('Done');
+    expect(statusFor('CR-30')).toBe('Done');
+    expect(statusFor('CR-24')).toBe('Superseded by CR-30');
     expect(statusFor('CR-21')).toBe('Superseded by CR-27');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 87% (45/52)');
-    expect(dashboard).toContain('Phase 20         █████████░ 86% (6/7)');
+    expect(dashboard).toContain('Overall progress █████████░ 88% (46/52)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (7/7)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (2/2)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
     expect(ledger).toContain('DEC-P20E-CR27');
     expect(ledger).toContain('DEC-P20E-CR31');
     expect(ledger).toContain('DEC-P20F-STATUS');
+    expect(ledger).toContain('DEC-P20G');
   });
 });

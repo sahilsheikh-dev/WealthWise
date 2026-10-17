@@ -45,6 +45,7 @@ const baseData = (changes: Partial<AppData> = {}): AppData => ({
   liabilities: [],
   policies: [],
   budget: null,
+  budgetPlan: null,
   efCustomBuckets: [],
   efBucketLinks: {},
   ...changes,

@@ -344,6 +344,70 @@ export function migrateV6ToV7(data: unknown, options: V6ToV7Options): unknown {
   return result;
 }
 
+export function migrateV7ToV8(data: unknown): unknown {
+  if (!isRecord(data)) {
+    throw new PersistedVersionError(7, 'unknown-version');
+  }
+  const templates = Array.isArray(data.budgetTemplates) ? data.budgetTemplates : [];
+  if (!templates.every(isRecord)) throw new PersistedVersionError(7, 'unknown-version');
+  if (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets)) {
+    throw new PersistedVersionError(7, 'unknown-version');
+  }
+
+  const templateById = new Map<string, Record<string, unknown>>();
+  for (const template of templates) {
+    if (typeof template.id !== 'string' || !Array.isArray(template.lines)) {
+      throw new PersistedVersionError(7, 'unknown-version');
+    }
+    templateById.set(template.id, template);
+  }
+
+  const snapshots = Array.isArray(data.monthBudgets) ? data.monthBudgets : [];
+  if (!snapshots.every(isRecord)) throw new PersistedVersionError(7, 'unknown-version');
+  const counts = new Map<string, number>();
+  const latestMonth = new Map<string, string>();
+  for (const snapshot of snapshots) {
+    if (typeof snapshot.templateId !== 'string') continue;
+    const id = snapshot.templateId;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+    if (typeof snapshot.month === 'string'
+      && snapshot.month > (latestMonth.get(id) ?? '')) latestMonth.set(id, snapshot.month);
+  }
+
+  const defaultId = typeof data.defaultBudgetTemplateId === 'string'
+    ? data.defaultBudgetTemplateId
+    : null;
+  const templateOrder = new Map(templates.map((template, index) => [template.id as string, index]));
+  const selected = (defaultId === null ? undefined : templateById.get(defaultId))
+    ?? [...templateById.entries()].sort(([leftId], [rightId]) => {
+      const countDifference = (counts.get(rightId) ?? 0) - (counts.get(leftId) ?? 0);
+      if (countDifference !== 0) return countDifference;
+      const monthDifference = (latestMonth.get(rightId) ?? '').localeCompare(latestMonth.get(leftId) ?? '');
+      if (monthDifference !== 0) return monthDifference;
+      return (templateOrder.get(leftId) ?? 0) - (templateOrder.get(rightId) ?? 0);
+    })[0]?.[1];
+
+  let budgetPlan: Record<string, unknown> | null = null;
+  if (selected) {
+    if (!Array.isArray(selected.lines)) throw new PersistedVersionError(7, 'unknown-version');
+    budgetPlan = {
+      plannedIncome: selected.plannedIncome ?? null,
+      lines: selected.lines.filter((line): line is Record<string, unknown> =>
+        isRecord(line) && line.category !== 'EMI' && line.category !== 'Insurance',
+      ),
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+  }
+
+  const monthBudgets = snapshots.map((snapshot) => {
+    const { templateId: _templateId, templateName: _templateName, customized: _customized, linkedIncluded: _linkedIncluded, ...rest } = snapshot;
+    return { ...rest, source: 'custom', linkedIncluded: false };
+  });
+  const { budgetTemplates: _budgetTemplates, defaultBudgetTemplateId: _defaultBudgetTemplateId, ...rest } = data;
+  return { ...rest, budgetPlan, monthBudgets };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -365,6 +429,7 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(6, 'unknown-version');
       result = migrateV6ToV7(result, options);
     }
+    if (fromVersion <= 7) result = migrateV7ToV8(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

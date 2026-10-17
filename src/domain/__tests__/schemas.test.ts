@@ -29,9 +29,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version seven', () => {
+  it('accepts the typed mock app data and exports schema version eight', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(7);
+    expect(SCHEMA_VERSION).toBe(8);
   });
 
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
@@ -52,26 +52,24 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
   });
 
-  it('validates budget templates and stored month snapshots', () => {
+  it('validates the budget plan and stored month snapshots', () => {
     const budgeted = {
       ...mockAppData,
-      budgetTemplates: [{
-        id: 'template', name: 'Monthly', plannedIncome: 50_000,
+      budgetPlan: {
+        plannedIncome: 50_000,
         lines: [{ category: 'Food', mode: 'percent' as const, value: 20, dueDay: 31 }],
-      }],
-      defaultBudgetTemplateId: 'template',
+        repeatMonthly: false,
+        repeatFrom: null,
+      },
       monthBudgets: [{
-        month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
+        month: '2026-10', source: 'plan' as const,
         plannedIncome: 50_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 10_000, dueDay: 31 }],
       }],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetTemplates: [{
-        ...budgeted.budgetTemplates[0],
-        lines: [{ category: 'Food', mode: 'percent', value: 101 }],
-      }],
+      budgetPlan: { ...budgeted.budgetPlan, lines: [{ category: 'Food', mode: 'percent', value: 101 }] },
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
@@ -82,10 +80,7 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetTemplates: [{
-        ...budgeted.budgetTemplates[0],
-        lines: [{ category: 'Food', mode: 'amount', value: 10, dueDay: 0 }],
-      }],
+      budgetPlan: { ...budgeted.budgetPlan, lines: [{ category: 'Food', mode: 'amount', value: 10, dueDay: 0 }] },
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,

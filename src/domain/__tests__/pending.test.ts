@@ -109,9 +109,7 @@ describe('pending item projection', () => {
       holdings: [plan()],
       monthBudgets: [{
         month: '2026-02',
-        templateId: null,
-        templateName: null,
-        customized: true,
+        source: 'custom' as const,
         plannedIncome: 10_000,
         lines: [
           { category: 'Food', planned: 300 },
@@ -138,7 +136,7 @@ describe('pending item projection', () => {
       const data = {
         ...base(),
         monthBudgets: [{
-          month, templateId: null, templateName: null, customized: true, plannedIncome: null,
+          month, source: 'custom' as const, plannedIncome: null,
           lines: [{ category: 'Bills', planned: 100, dueDay: 31 }],
         }],
       };
@@ -157,7 +155,7 @@ describe('pending item projection', () => {
     const earlyDue = {
       ...base(),
       monthBudgets: [{
-        month: '2026-05', templateId: null, templateName: null, customized: true,
+        month: '2026-05', source: 'custom' as const,
         plannedIncome: null, lines: [{ category: 'Bills', planned: 100, dueDay: 5 }],
       }],
     };
@@ -171,7 +169,7 @@ describe('pending item projection', () => {
       holdings: [plan()],
       liabilities: [oneTime()],
       monthBudgets: [{
-        month: '2026-02', templateId: null, templateName: null, customized: true,
+        month: '2026-02', source: 'custom' as const,
         plannedIncome: 1_000, lines: [{ category: 'Food', planned: 500 }],
       }],
       transactions: [
