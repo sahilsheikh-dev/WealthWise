@@ -68,6 +68,7 @@ jest.mock('../../components/ui', () => {
     Card: node('card'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
+    SearchField: node('searchfield'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
