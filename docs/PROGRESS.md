@@ -478,6 +478,19 @@ P21-B does not change the schema.
   P20-F/G and CR-29/30 remain Planned. CR-21 is now asserted as
   `Superseded by CR-27`. This replaces the old assertion that all P20-E/G and
   CR-27/31 work remained Planned, matching the work actually implemented.
+- Full-suite assertion corrections preserving user commit `6cb4fa0`: the old
+  Transactions balance test expected both `₹830` and the removed separate
+  `₹600` brought-forward amount; it now asserts only the kept `₹830` amount.
+  The old shortfall test expected the hidden `-₹130` amount when no
+  brought-forward balance existed; its fixture now includes prior-month
+  `₹100`, expects the rendered `-₹30` closing value, and still verifies
+  Shortfall plus danger tone. The old Budget-header source test expected
+  `menuIndicator={Boolean(reviewableMonth)}`; it now asserts that prop remains
+  absent, preserving the user's deliberate removal. Home theme test fixtures
+  now expose `useAppActions` after Home began using the existing store action
+  hook; no visible Home actions were restored. The old check for a `From Sep`
+  caption is replaced with an assertion that it stays absent, because the
+  user-owned balance section no longer renders that prior-month caption.
 - Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
   object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
   labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B

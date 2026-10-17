@@ -12,6 +12,7 @@ import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
+const mockActions = { clearDue: jest.fn(), clearDuesThrough: jest.fn(), undoClearDue: jest.fn(), undoClearDuesThrough: jest.fn() };
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
@@ -21,7 +22,10 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
-jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
+jest.mock('../../data/useAppData', () => ({
+  useAppData: () => mockData,
+  useAppActions: () => mockActions,
+}));
 jest.mock('../../data/store', () => ({
   useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
   metaStore: {
