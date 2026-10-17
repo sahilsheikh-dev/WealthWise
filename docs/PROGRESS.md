@@ -403,7 +403,11 @@ P21-B does not change the schema.
   liabilities and policies; no templates are present. It also includes a
   one-time borrowed-money liability and partial payment. Load demo data only
   from the confirmed development-menu action through `replaceAllData`,
-  preserving its existing backup/Undo path; never load it automatically. The strict backup/import entry
+  preserving its existing backup/Undo path; never load it automatically. The
+  P20-H current-month snapshot deliberately has a fully paid Festival row, an
+  overdue Bills row, a partially paid Food row and a linked SIP row so the
+  grouped Budget screen demonstrates Paid, Overdue, partial and Auto states.
+  The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
 - DEC-BUDGET-PLAN: the target budget design has one budget plan replacing
