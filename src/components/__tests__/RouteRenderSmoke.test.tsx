@@ -644,6 +644,57 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it('offers assets already linked to another goal and adds them without a share field', () => {
+    const storeState = useAppStore((state) => state) as { data: AppData };
+    const previousData = storeState.data;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const plan = makeInvestmentTestPlan();
+    const goal = {
+      id: 'goal-under-test',
+      name: 'Goal under test',
+      target: 10_000,
+      saved: 0,
+      year: 2030,
+      links: [],
+    };
+    const otherGoal = {
+      id: 'other-goal',
+      name: 'Other goal',
+      target: 10_000,
+      saved: 0,
+      year: 2031,
+      links: [{ instrumentId: plan.id, share: 100 }],
+    };
+    let form: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      storeState.data = { ...emptyAppData(today), goals: [goal, otherGoal], holdings: [plan] };
+      routeParams.mockReturnValue({ id: goal.id });
+      form = renderScreen(React.createElement(GoalFormScreen));
+      act(() => form?.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
+
+      const availableAsset = form.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Link Test plan, current value '),
+      )[0];
+      if (!availableAsset) throw new Error('An asset linked to another goal was unavailable.');
+      act(() => availableAsset.props.onPress());
+
+      expect(form.root.findAll((node) => node.type === 'text' && node.children.includes('Test plan'))).toHaveLength(1);
+      expect(form.root.findAll((node) => node.type === 'button' && node.children.includes('Link an asset'))).toHaveLength(1);
+      expect(form.root.findAll((node) => node.type === 'text' && node.children.includes('Share of asset (%)'))).toHaveLength(0);
+      const linked = storeState.data.goals.find((item) => item.id === goal.id);
+      expect(linked?.links).toEqual([]);
+    } finally {
+      act(() => form?.unmount());
+      storeState.data = previousData;
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
   it('keeps Home spending collapsed and asks before changing a due', async () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
@@ -695,7 +746,8 @@ describe('route render smoke audit', () => {
       mockConfirmAsync.mockResolvedValue(false);
       mockFontScale = 2;
       home = renderScreen(React.createElement(HomeScreen));
-      const dueRow = home.root.findAll((node) =>
+      const dueHome = home;
+      const dueRow = dueHome.root.findAll((node) =>
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:'),
       )[0];
       if (!dueRow) throw new Error('Home due item did not render.');
@@ -707,10 +759,12 @@ describe('route render smoke audit', () => {
         ),
       ).length).toBeGreaterThan(0);
       expect(dueRow.props.onPress).toBeUndefined();
-      expect(textOf(home)).toContain('Test plan');
-      expect(textOf(home)).toContain(formatAmount(1_000, 'exact', 1));
-      expect(textOf(home)).toContain(formatDate(today));
-      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Mark as paid' });
+      expect(textOf(dueHome)).toContain('Test plan');
+      expect(textOf(dueHome)).toContain(formatAmount(1_000, 'exact', 1));
+      expect(textOf(dueHome)).toContain(formatDate(today));
+      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Marked as paid' });
+      expect(markPaid.type).toBe('button');
+      expect(markPaid.children).toContain('Marked as paid');
       expect(mockConfirmAsync).not.toHaveBeenCalled();
       await act(async () => {
         markPaid.props.onPress();
@@ -722,11 +776,11 @@ describe('route render smoke audit', () => {
         confirmLabel: 'Paid',
         cancelLabel: 'Not paid',
       });
-      expect(textOf(home)).toContain('Test plan');
-      expect(home.root.findAll((node) =>
+      expect(textOf(dueHome)).toContain('Test plan');
+      expect(dueHome.root.findAll((node) =>
         node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
       )).toHaveLength(0);
-      expect(home.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
+      expect(dueHome.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
       expect(dueRow.props.onPress).toBeUndefined();
       await act(async () => {
         markPaid.props.onPress();
@@ -745,7 +799,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it.each([1.3, 2])('stacks Home due content and the tick action at font scale %s', (fontScale) => {
+  it.each([1.3, 2])('stacks Home due content and the text payment action at font scale %s', (fontScale) => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previousData = { ...routeData };
     mockFontScale = fontScale;
@@ -769,7 +823,7 @@ describe('route render smoke audit', () => {
       expect(actions?.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ justifyContent: 'flex-end' }),
       ]));
-      expect(dueRow.findByProps({ accessibilityLabel: 'Mark as paid' })).toBeDefined();
+      expect(dueRow.findByProps({ accessibilityLabel: 'Marked as paid' }).type).toBe('button');
     } finally {
       act(() => home?.unmount());
       Object.assign(routeData, previousData);
@@ -829,7 +883,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:investment-plan-test'),
       )[0];
       if (!oldestRow) throw new Error('Oldest due row did not render.');
-      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Mark as paid' });
+      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Marked as paid' });
       await act(async () => {
         markPaid.props.onPress();
         await Promise.resolve();
@@ -858,7 +912,7 @@ describe('route render smoke audit', () => {
         typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:older-plan:'),
       )[0];
       if (!laterRow) throw new Error('Later due row did not render.');
-      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Mark as paid' });
+      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Marked as paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
       const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
@@ -889,19 +943,21 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it.each([1, 1.3, 2])('places one status beside every goal progress bar at font scale %s', async (fontScale) => {
+  it.each([1, 1.3, 2])('places goal details above a final progress bar without status text at font scale %s', async (fontScale) => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previousData = { ...routeData };
     const today = todayISO();
+    const plan = makeInvestmentTestPlan();
     const data: AppData = {
       ...emptyAppData(today),
+      holdings: [plan],
       goals: [{
         id: 'goal-travel',
         name: 'Travel',
         target: 50_000,
         saved: 5_000,
         year: 2028,
-        links: [],
+        links: [{ instrumentId: plan.id }],
       }, {
         id: 'goal-emergency',
         name: 'Emergency fund',
@@ -931,29 +987,22 @@ describe('route render smoke audit', () => {
           node.children.includes('Emergency fund'),
         )).toBe(true);
         for (const row of rows) {
-          const statuses = row.findAll((node) =>
-            node.type === 'text' && node.props.testID === 'goal-progress-status',
-          );
-          expect(statuses).toHaveLength(1);
-          expect(statuses[0]?.children.join('')).toBe('Not reachable with current contributions');
-
           const bar = row.find((node) =>
             node.type === 'view' && node.props.testID === 'goal-progress-bar',
           );
           if (!bar) throw new Error('Goal progress bar did not render.');
-          expect(bar.props.style).toEqual(expect.objectContaining({ flex: 1, minWidth: 0 }));
-          expect(row.props.style).toEqual(expect.arrayContaining([
-            expect.objectContaining({ flexDirection: fontScale >= 1.3 ? 'column' : 'row' }),
-          ]));
-          expect(statuses[0]?.props.style).toEqual(expect.arrayContaining([
-            expect.objectContaining({ flexShrink: 0 }),
-          ]));
-          if (fontScale >= 1.3) {
-            expect(statuses[0]?.props.style).toEqual(expect.arrayContaining([
-              expect.objectContaining({ alignSelf: 'flex-end', textAlign: 'right' }),
-            ]));
-          }
+          expect(bar.props.style).toEqual(expect.objectContaining({ width: '100%' }));
+          expect(row.children).toHaveLength(1);
+          expect(row.children.map((child) => typeof child === 'string' ? child : child.props.testID))
+            .toEqual(['goal-progress-bar']);
+          const siblingIds = row.parent?.children.map((child) =>
+            typeof child === 'string' ? child : child.props.testID,
+          );
+          expect(siblingIds?.at(-1)).toBe('goal-progress-row');
         }
+        const visibleText = screen.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
+        expect(visibleText).toContain('Projected');
+        expect(visibleText).not.toMatch(/\b(?:Behind|On track|Ahead)\b|Not reachable with current contributions/);
       }
     } finally {
       act(() => {

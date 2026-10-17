@@ -272,7 +272,7 @@ export default function EfAllocationFormScreen() {
                     />
                   </View>
                   {customBucket ? (
-                    <IconButton icon="edit-3" label={`Edit ${metadata.label}`} onPress={() => editBucket(customBucket)} />
+                    <IconButton icon="edit-2" label={`Edit ${metadata.label}`} onPress={() => editBucket(customBucket)} />
                   ) : null}
                   <IconButton
                     icon="link-2"

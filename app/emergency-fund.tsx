@@ -11,7 +11,7 @@ import {
   activeEfBucketMetadata,
   resolveEfAllocation,
 } from '../src/domain/efAllocation';
-import { goalSavedFor } from '../src/domain/goalLinks';
+import { goalAssetValueFor, goalSavedFor } from '../src/domain/goalLinks';
 import { effectiveEmergencyTarget, ensureEfGoal } from '../src/domain/goals';
 import { holdingValue } from '../src/domain/portfolio';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -45,7 +45,9 @@ export default function EmergencyFundScreen() {
       const link = links.find((item) => item.instrumentId === id);
       return holding && link ? [{ holding, link }] : [];
     });
-    const actual = holdings.reduce((sum, item) => sum + holdingValue(item.holding, asOf) * item.link.share / 100, 0);
+    const actual = holdings.reduce((sum, item) => sum + goalAssetValueFor(
+      emergencyGoal, data, item.holding.id, holdingValue(item.holding, asOf),
+    ), 0);
     const planned = targetAmounts[bucket.id] ?? 0;
     return {
       bucket,

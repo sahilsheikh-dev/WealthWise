@@ -132,7 +132,7 @@ describe('AppHeader', () => {
   });
 
   it('renders only the supplied right-side content for every menu/action combination', () => {
-    const menu = [{ label: 'Only menu', icon: 'edit' as const, onPress: jest.fn() }];
+    const menu = [{ label: 'Only menu', icon: 'edit-2' as const, onPress: jest.fn() }];
     const action = { icon: 'plus' as const, label: 'Add', onPress: jest.fn() };
     const cases = [
       { props: { title: 'Actions', rightActions: [action] }, expected: ['Add'] },

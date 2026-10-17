@@ -93,7 +93,6 @@ export default function GoalsScreen() {
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
-            <GoalProgressRow percent={goalPercent} projection={projection} />
             <View style={styles.amounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -106,13 +105,11 @@ export default function GoalsScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' ? (
+            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
               <View style={styles.projection}>
-                {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>
-                    Projected completion {formatDate(projection.projectedDate)}
-                  </AppText>
-                ) : null}
+                <AppText style={[typography.meta, { color: colors.text2 }]}>
+                  Projected completion {formatDate(projection.projectedDate)}
+                </AppText>
               </View>
             ) : null}
             {goal.auto === 'ef' ? (
@@ -152,6 +149,7 @@ export default function GoalsScreen() {
                 ) : null}
               </>
             ) : null}
+            <GoalProgressRow percent={goalPercent} />
           </Pressable>
         );
       })}

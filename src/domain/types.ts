@@ -19,7 +19,7 @@ export type Transaction = {
 
 export type GoalLink = {
   instrumentId: string;
-  share: number;
+  share?: number;
 };
 
 export type Goal = {

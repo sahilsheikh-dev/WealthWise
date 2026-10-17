@@ -452,7 +452,7 @@ describe('createAppStore persistence', () => {
 
     expect(storage.setItemCalls - writesBefore).toBe(1);
     expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
-      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+      .toEqual([{ instrumentId: 'asset' }]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
 
     const dataBeforeFailure = store.getState().data;
@@ -524,7 +524,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efCustomBuckets).toEqual([]);
     expect(store.getState().data.efBucketLinks).toEqual({});
     expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.links)
-      .toContainEqual({ instrumentId: holding.id, share: 100 });
+      .toContainEqual({ instrumentId: holding.id });
     expect(validateIntegrity(store.getState().data)).toEqual([]);
 
     const writesBeforeDelete = storage.setItemCalls;
