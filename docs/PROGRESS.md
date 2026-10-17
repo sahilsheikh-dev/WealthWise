@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 89% (51/57)
+Overall progress █████████░ 90% (52/58)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (10/10)
+Phase 20         ██████████ 100% (11/11)
 Phase 21         ██████████ 100% (4/4)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -127,6 +127,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-H | — | Done | CR-32–CR-34; cash flow and plan summary, single grouped cards, paid/partial/linked rows, Month review screen/route removal and Transactions Review-to-Budget navigation. | 2026-10-17 |
 | P20-I | — | Done | `e396059`; initial CR-35/CR-36 delivery; the tick control is corrected by CR-43 and status wording is superseded by CR-40. | 2026-10-17 |
 | P20-J | — | Done | CR-40–CR-43; Home text action, details-first goal cards, equal-split shared assets, and Feather `edit-2` standardization. | 2026-10-17 |
+| P20-K | — | Done | CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -642,6 +643,18 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   `share` properties remain optional for older stored/backup data, but are
   ignored by calculations and omitted by new links. The EF bucket-link
   integrity rules are unchanged. Remaining edit icons use Feather `edit-2`.
+- DEC-P20K-CR44-46: Home goals share one card and single hairline row dividers
+  (none after the last row). Transactions' transaction list itself is not a
+  card; it uses `ListItem` rows with the shared hairline divider, while its
+  separate Available balance card remains unchanged. Asset and liability
+  cards retain their existing visuals and gain accessible body edit targets;
+  card action buttons stop propagation. Liability data and explanatory text
+  are before the progress bar, with only existing due/action buttons after it.
+  Replaced assertions: prior asset-card and recurring/one-time liability edit
+  icon expectations are replaced by body-role/label/hint and route assertions;
+  old card-owned edit-action ownership expectations are replaced by no-icon
+  assertions on those cards, while shared row icon ownership and the global
+  `edit-2` scan remain.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -681,6 +694,12 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   Verified current `app/(tabs)/budget.tsx` still has no “Back to Transactions”
   or “Review” action, and `app/ef-allocation-form.tsx` still uses the exact
   title “Edit allocation”. No protected user edits were restored or changed.
+  Re-verified before P20-K with `git show 3c644d3 -- 'app/(tabs)/budget.tsx'
+  app/ef-allocation-form.tsx`: the commit changes only Budget, removes the
+  menu/template workflow, and does not restore “Back to Transactions”; it has
+  no allocation-form diff. Current Budget still lacks “Back to Transactions”
+  and “Review”, while the allocation-form title remains exactly “Edit
+  allocation”. No protected edits were changed.
   Re-verified before P20-J using `git show 3c644d3 -- 'app/(tabs)/budget.tsx'
   app/ef-allocation-form.tsx`: the Budget changes remove the prior menu and
   budget-template controls and retain the user's removed Back to Transactions
@@ -1258,6 +1277,7 @@ evidence present in exports/checkpoints.
 | P20-H | Phase 20 | — | — | 2026-10-17 | Budget cash flow and plan summary, one card per spending group with paid rows and compact actions; Month review UI/route removed and Transactions Review routes to Budget with its month (CR-32–CR-34). | Done; 70 suites / 765 tests pass; all six final gates pass; see P20-H close-out below. | `00d0ec0` inventory/design; `799a12c` implementation | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use schedule payment amounts. See DEC-P20H. | current request |
 | P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Initially done; CR-35 wording corrected by CR-43 and CR-36 superseded by CR-40; see P20-J close-out. | `e396059` | The Home due cap and native confirmation/Undo remain; former goal-status copy is no longer shown. | current request |
 | P20-J | Phase 20 | — | — | 2026-10-17 | Correct Home due wording, remove goal-card status text, share linked-asset value equally across goals and standardize edit icons (CR-40–CR-43). | Done; 70 suites / 791 tests and all final gates pass; see P20-J close-out. | `269da35` | Legacy shares remain optional for imports and are ignored by calculations; remainder paise assigned by sorted goal ID. | current request |
+| P20-K | Phase 20 | — | — | 2026-10-17 | Group Home goals and make asset/liability card bodies edit targets with independent buttons and liability data-before-progress order (CR-44–CR-46). | Done; focused tests and all requested automated gates pass; see P20-K close-out. | `TBD` | Simulated route/propagation/layout assertions do not replace real-device touch, font-scale or assistive-technology checks. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed: the fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1316,6 +1336,9 @@ evidence present in exports/checkpoints.
 | CR-41 | Allow assets to link to multiple goals and split each value equally in paise, deterministically; retain legacy share compatibility and EF bucket invariants. | Done | P20-J; one/two/three-goal splits, paise remainder, rebalancing, form picker, duplicate rejection, import compatibility, projection and EF integrity tests pass. |
 | CR-42 | Standardize every remaining edit action on Feather `edit-2`. | Done | P20-J; ownership coverage and source scan reject `edit`, `edit-3` and `pencil` icon names. |
 | CR-43 | Replace the Home due tick icon with the exact compact text action “Marked as paid”. | Done | P20-J; text label and font-scale tests cover the unchanged Paid/Not paid confirmation path; corrects CR-35. |
+| CR-44 | Render Home goals inside one card with single hairline row dividers and no divider after the final row. | Done | P20-K; one-card grouping and divider assertions pass at font scales 1.0, 1.3 and 2.0. |
+| CR-45 | Remove asset-card edit icons; make the card body an accessible edit target without triggering edit from existing buttons. | Done | P20-K; route, accessible-label, no-edit-icon and button-propagation tests pass. |
+| CR-46 | Remove liability-card edit icons, make card bodies edit targets, and place data before the bar with only existing buttons after it. | Done | P20-K; recurring and one-time cards, routing, button isolation and ordering are covered. |
 
 ## 8. Known issues and risks
 
@@ -1362,6 +1385,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. The final P20-E `npx expo-doctor` result is 21/21; Android and iOS exports, tests, typecheck and lint also pass, so P21/P22 gates remain green.
 - **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Final automated gates pass.
 - **P20-D CR-21 device acceptance not verified:** at the time of P20-D, bottom placement above physical iOS/Android home indicators, backdrop hit testing, scroll gestures with system font scale 2.0, and action-sheet clipping/keyboard interaction were unverified. CR-27 supersedes the sheet with a native confirmation; physical native alert button behavior remains unverified.
+- **P20-K device acceptance not verified:** actual OS font scaling/clipping and goal-row divider rendering at 1.3/2.0; touch conflict and VoiceOver/TalkBack behavior for nested asset/liability card buttons and body edit targets; liability progress-bar/action spacing and clear/Undo toast behavior on physical iOS/Android.
 - **P20-D CR-22–CR-25 and P20-E CR-27/28/31 device acceptance not verified:** actual rendered balance/card wrapping and Shortfall contrast; native confirmation button appearance/dismissal, FIFO payment, five-second Undo timing and persistence; demo-load popup behavior and Undo against real storage; divider visibility, row wrapping and no-budget card fit at system font scale 1.3/2.0; VoiceOver/TalkBack announcements and actions; and Home/Transactions/Budget due-list consistency on physical iOS/Android. Tests assert component structure, props/styles, action callbacks and store persistence, but are simulated.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
@@ -2587,3 +2611,55 @@ and VoiceOver/TalkBack announcements; and real save/render behavior for a
 single asset linked to multiple goals. Simulated tests inspect tree content,
 accessibility props and styles only; no physical device or development build
 was used.
+
+### P20-K Home goals, Assets and Liabilities close-out
+
+P20-K closes CR-44–CR-46 without changing schema or Transactions. Home's
+visible goals now occupy one shared `Card`, separated by hairline dividers
+except after the last row; details and progress-bar order remain unchanged.
+Asset and recurring/one-time liability cards have no separate edit icon: the
+accessible card body opens the existing edit route. Existing buttons stop
+propagation so payments, deposits, due clearing and Undo do not open edit.
+Liability data and explanatory text appear before its progress bar; after the
+bar, the action area contains only the existing due/payment button groups.
+
+Transactions' transaction list is the other observed presentation: it uses
+`ListItem` rows and hairline separators rather than a card. The Transactions
+screen and its available-balance card were not changed.
+
+Replaced assertions:
+
+1. Asset-card edit-icon expectations for `InstrumentCard` are replaced by
+   accessible body role/label/hint and route assertions, a no-`IconButton`
+   assertion, and proof that an existing Deposit button stops propagation.
+2. Recurring and one-time liability edit-icon expectations are replaced by
+   accessible body route/no-icon assertions, action isolation, and
+   data/progress/action ordering checks at font scales 1.3 and 2.0.
+3. EditActionOwnership now rejects separate asset/liability `editLabel`
+   wiring; shared `CardHeaderRow`/`ListRow` edit action ownership and the
+   global Feather `edit-2` scan remain. ActionRow and Undo toast tests prove
+   their child actions stop propagation to the body edit target.
+
+Focused tests: 3 suites / 122 tests pass. The full test suite passes 70
+suites / 799 tests. Istanbul aggregation (covered/total):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2,237/2,271 (98.50%) | 2,071/2,209 (93.75%) |
+| `src/data` excluding hooks | 471/499 (94.39%) | 409/466 (87.77%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Final gates: `npx tsc --noEmit`, `npx expo lint`, Android/iOS `npx expo
+export`, and `npx expo-doctor` pass. Expo Doctor output:
+`Running 21 checks on your project...` / `21/21 checks passed. No issues detected!`
+The separately requested `npx expo doctor` alias is not supported by this
+local CLI (`$ expo doctor is not supported in the local CLI, please use npx
+expo-doctor instead`); the documented supported `npx expo-doctor` gate passes.
+`git diff --check` passes.
+
+**P20-K acceptance criteria not verified on a real device:** OS font scaling,
+divider rendering and clipping at 1.3/2.0; native touch conflict behavior and
+screen-reader announcements for nested card buttons/body edit targets; and
+liability progress/action spacing, due clearing and Undo toast on physical
+iOS/Android. TestRenderer verifies structure, styles, accessibility props
+and callbacks only.

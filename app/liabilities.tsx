@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
@@ -148,7 +148,14 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
     ? null
     : payoffDate(summary.monthsLeftWithExtra, asOf);
   return (
-    <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <Pressable
+      testID={`liability-card-${liability.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${liability.name}`}
+      accessibilityHint="Opens this liability for editing"
+      onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View testID={`liability-card-content-${liability.id}`}>
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
@@ -162,10 +169,7 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
             <AmountText value={liability.emi} tier="row" />/mo
           </AppText>
         )}
-        editLabel={`Edit ${liability.name}`}
-        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
       />
-      <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText
           accessibilityLabel={`Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
@@ -192,13 +196,6 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       {!summary.cleared && schedule.summary.overdue > 0
         ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
         : null}
-      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
-        <DueActions
-          target={{ kind: 'liability', id: liability.id }}
-          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
-          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
-        />
-      ) : null}
       {!summary.cleared && extra > 0 ? (
         <AppText style={[typography.meta, styles.scenario, { color: colors.primary }]}>
           {scenarioDate === null
@@ -208,6 +205,16 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
               : `With extra: ${summary.monthsLeftWithExtra} months · ${formatMonth(scenarioDate.slice(0, 7))} · saves ${summary.monthsSaved} months`}
         </AppText>
       ) : null}
+      <ProgressBar percent={summary.principalPaidPct} tone="ok" />
+      <View testID={`liability-card-actions-${liability.id}`}>
+      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
+        <DueActions
+          target={{ kind: 'liability', id: liability.id }}
+          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
+          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
+          stopParentPress
+        />
+      ) : null}
       <ActionRow actions={[
         ...(!summary.cleared ? [{
           label: 'Pay EMI',
@@ -216,8 +223,10 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }),
         }] : []),
         { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-      ]} />
-    </View>
+      ]} stopParentPress />
+      </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -227,17 +236,21 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
   const schedule = liabilitySchedule(liability, asOf);
   const overdue = summary.overdueDays !== undefined && !summary.cleared;
   return (
-    <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <Pressable
+      testID={`liability-card-${liability.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${liability.name}`}
+      accessibilityHint="Opens this liability for editing"
+      onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View testID={`liability-card-content-${liability.id}`}>
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
         </AppText>}
         value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
-        editLabel={`Edit ${liability.name}`}
-        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
       />
-      <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText
           accessibilityLabel={`Next: ${liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
@@ -254,6 +267,9 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       {!summary.cleared && schedule.summary.overdue > 0
         ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
         : null}
+      {overdue ? <AppText style={[typography.meta, { color: colors.err }]}>This liability is overdue.</AppText> : null}
+      <ProgressBar percent={summary.principalPaidPct} tone="ok" />
+      <View testID={`liability-card-actions-${liability.id}`}>
       <ActionRow actions={[
         ...(!summary.cleared ? [{
           label: 'Pay',
@@ -262,9 +278,10 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }] : []),
         { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-      ]} />
-      {overdue ? <AppText style={[typography.meta, { color: colors.err }]}>This liability is overdue.</AppText> : null}
-    </View>
+      ]} stopParentPress />
+      </View>
+      </View>
+    </Pressable>
   );
 }
 

@@ -357,7 +357,13 @@ export type ActionItem = {
   icon?: keyof typeof Feather.glyphMap;
 };
 
-export function ActionRow({ actions }: { actions: ActionItem[] }) {
+export function ActionRow({
+  actions,
+  stopParentPress = false,
+}: {
+  actions: ActionItem[];
+  stopParentPress?: boolean;
+}) {
   const { colors } = useTheme();
   return (
     <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
@@ -365,7 +371,10 @@ export function ActionRow({ actions }: { actions: ActionItem[] }) {
         <Button
           key={action.label}
           label={action.label}
-          onPress={action.onPress}
+          onPress={(event) => {
+            if (stopParentPress) event?.stopPropagation();
+            action.onPress?.();
+          }}
           variant={action.variant ?? 'soft'}
           disabled={action.disabled}
           icon={action.icon}
