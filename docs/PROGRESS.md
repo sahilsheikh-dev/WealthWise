@@ -2053,6 +2053,7 @@ Replaced assertions and reasons:
 - The prior Transactions assertion that only kept the Review button visible is replaced by an assertion that its selected month is passed to `/(tabs)/budget`. Reason: the button remains, but its destination changes.
 - The prior menu assertion that included a Month review entry is replaced by no Review menu item and no Budget header menu. Reason: no Month review action remains in app menus.
 - Old single Bills/dues-row and nested/progress-card expectations are replaced by seven group cards in fixed order, each containing rows once, no nested cards/progress bars, Auto tags, paid chips, partial balances and responsive row styles. Reason: CR-32 supersedes CR-25's section design.
+- The old `Edit budget plan` accessibility-label assertion is replaced by the exact `Edit budget` label. Due-row `Clear due` label assertions are replaced by `Marked as paid` for expense/investment and `Received` for income; direct clear and Undo behavior remain. Reason: CR-32 specifies compact action copy without changing the underlying action.
 - The ledger test's P20-H Pending/CR-32–34 Planned, CR-25 Done, 46/53 and 7/8 assertions are replaced by Done, CR-25 Superseded, 47/53 and 8/8. Reason: P20-H and its CRs closed after acceptance and gates.
 
 Final sequential gates (real exit codes):
