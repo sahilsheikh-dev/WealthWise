@@ -87,6 +87,24 @@ export function efBucketMetadata(customBuckets: readonly EfCustomBucket[] = []):
   return [...fixed, ...custom];
 }
 
+export function activeEfBucketMetadata(
+  allocation: Partial<EfAllocation> | null | undefined,
+  customBuckets: readonly EfCustomBucket[] = [],
+  links: Record<string, readonly string[]> = {},
+): EfBucketMetadata[] {
+  const linkedIds = new Set(
+    Object.entries(links)
+      .filter(([, holdingIds]) => holdingIds.length > 0)
+      .map(([id]) => id),
+  );
+  const customIds = new Set(customBuckets.map(({ id }) => id));
+  const fixedIds = new Set<string>(EF_BUCKETS.filter((id) => allocation == null
+    ? Number(SUGGESTED_EF_ALLOCATION[id] ?? 0) > 0 || linkedIds.has(id)
+    : (Number(allocation[id] ?? 0) !== 0 && Object.hasOwn(allocation, id)) || linkedIds.has(id)));
+  return efBucketMetadata(customBuckets).filter(({ id }) =>
+    fixedIds.has(id) || customIds.has(id) || linkedIds.has(id));
+}
+
 function normalizeAllocation(
   allocation: Partial<EfAllocation> | null | undefined,
   customBuckets: readonly EfCustomBucket[] = [],

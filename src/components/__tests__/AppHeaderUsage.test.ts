@@ -2,7 +2,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const appRoot = join(process.cwd(), 'app');
-const noDefaultMenuScreens = new Set(['app/erase-data.tsx', 'app/(tabs)/budget.tsx']);
+const noDefaultMenuScreens = new Set([
+  'app/erase-data.tsx',
+  'app/(tabs)/budget.tsx',
+  'app/emergency-fund.tsx',
+]);
 
 function routeFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

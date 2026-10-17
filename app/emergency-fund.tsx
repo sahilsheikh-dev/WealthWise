@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
@@ -9,7 +9,7 @@ import { useAppData } from '../src/data/useAppData';
 import { emergencyFundBaseline, monthsCovered } from '../src/domain/ef';
 import {
   allocateAmounts,
-  efBucketMetadata,
+  activeEfBucketMetadata,
   effectiveAllocation,
 } from '../src/domain/efAllocation';
 import { goalSavedFor } from '../src/domain/goalLinks';
@@ -25,6 +25,7 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 export default function EmergencyFundScreen() {
   const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const data = useAppData();
   const asOf = todayISO();
   const baseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
@@ -43,8 +44,7 @@ export default function EmergencyFundScreen() {
     const holding = data.holdings.find((item) => item.id === link.instrumentId);
     return holding ? [{ link, holding }] : [];
   });
-  const assigned = new Set(Object.values(data.efBucketLinks).flat());
-  const bucketRows = efBucketMetadata(data.efCustomBuckets).map((bucket) => {
+  const bucketRows = activeEfBucketMetadata(data.efAllocation, data.efCustomBuckets, data.efBucketLinks).map((bucket) => {
     const holdings = (data.efBucketLinks[bucket.id] ?? []).flatMap((id) => {
       const holding = data.holdings.find((item) => item.id === id);
       const link = links.find((item) => item.instrumentId === id);
@@ -60,19 +60,13 @@ export default function EmergencyFundScreen() {
       actual,
       percent: planned > 0 ? Math.min(100, actual / planned * 100) : actual > 0 ? 100 : 0,
       status,
-      holdings,
     };
   });
-  const unassigned = linkedAssets.filter(({ holding }) => !assigned.has(holding.id))
-    .map(({ holding, link }) => ({
-      holding,
-      value: holdingValue(holding, asOf) * link.share / 100,
-    }));
   const openGoalEditor = () => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } });
 
   return (
     <Screen>
-      <AppHeader title="Emergency fund" showBack fallbackHref="/(tabs)" />
+      <AppHeader title="Emergency fund" showBack fallbackHref="/(tabs)" showDefaultMenu={false} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Current value</AppText>
         <AmountText value={balance} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.amount]} />
@@ -111,7 +105,7 @@ export default function EmergencyFundScreen() {
           </View>
         ) : (
           <>
-            {bucketRows.map(({ bucket, targetPct, planned, actual, percent, status, holdings }) => (
+            {bucketRows.map(({ bucket, targetPct, planned, actual, percent, status }) => (
               <View key={bucket.id} style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.bucketHeader}>
                   <AppText weight="semibold" style={styles.bucketName}>{bucket.label}</AppText>
@@ -125,40 +119,24 @@ export default function EmergencyFundScreen() {
                   <AppText style={[typography.meta, { color: colors.text3 }]}>Available amount</AppText>
                   <AmountText value={actual} tier="row" weight="semibold" />
                 </View>
-                <ProgressBar percent={percent} />
-                <AppText style={[typography.meta, { color: status === 'On target' ? colors.ok : colors.text2 }]}>
-                  {status}
-                </AppText>
-                {holdings.length > 0 ? (
-                  <View style={styles.chips}>
-                    {holdings.map(({ holding, link }) => {
-                      const amount = holdingValue(holding, asOf) * link.share / 100;
-                      return (
-                        <View
-                          key={holding.id}
-                          accessible
-                          accessibilityLabel={`${holding.name}, ${formatAmount(amount, 'exact', 1)}`}
-                          style={[styles.chip, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-                          <AppText style={typography.chip}>{holding.name}</AppText>
-                          <AmountText value={amount} tier="row" style={typography.chip} />
-                        </View>
-                      );
-                    })}
+                <View style={[
+                  styles.progressStatusRow,
+                  fontScale >= 1.3 && styles.progressStatusStacked,
+                ]} testID={`emergency-fund-progress-status-${bucket.id}`}>
+                  <View testID={`emergency-fund-progress-${bucket.id}`} style={styles.progressBar}>
+                    <ProgressBar percent={percent} />
                   </View>
-                ) : null}
+                  <AppText style={[
+                    typography.meta,
+                    styles.progressStatus,
+                    fontScale >= 1.3 && styles.progressStatusRight,
+                    { color: status === 'On target' ? colors.ok : colors.text2 },
+                  ]} testID={`emergency-fund-status-${bucket.id}`}>
+                    {status}
+                  </AppText>
+                </View>
               </View>
             ))}
-            {unassigned.length > 0 ? (
-              <View style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
-                <AppText weight="semibold">Not assigned</AppText>
-                {unassigned.map(({ holding, value }) => (
-                  <View key={holding.id} style={styles.amountLine}>
-                    <AppText style={[typography.meta, { color: colors.text2 }]}>{holding.name}</AppText>
-                    <AmountText value={value} tier="row" />
-                  </View>
-                ))}
-              </View>
-            ) : null}
           </>
         )}
       </Card>
@@ -169,13 +147,14 @@ export default function EmergencyFundScreen() {
 const styles = StyleSheet.create({
   amount: { marginTop: 5 },
   summaryLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  linkedRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  assetName: { flex: 1, minWidth: 0, gap: 2 },
   bucketRow: { gap: 5, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   bucketHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bucketName: { flex: 1 },
   amountLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { minHeight: 30, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
+  progressStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  progressStatusStacked: { flexDirection: 'column', alignItems: 'stretch' },
+  progressStatus: { flexShrink: 0 },
+  progressStatusRight: { alignSelf: 'flex-end', textAlign: 'right' },
+  progressBar: { flex: 1, minWidth: 0 },
   emptyAllocation: { gap: 8 },
 });

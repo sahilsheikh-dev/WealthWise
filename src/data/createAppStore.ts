@@ -41,7 +41,6 @@ import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
   addEfCustomBucket,
-  deleteEfCustomBucket,
   renameEfCustomBucket,
   resetEfAllocation,
   saveEfPlan,
@@ -148,7 +147,6 @@ export type AppActions = {
   addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
   renameEfCustomBucket: (bucketId: string, name: string) => void;
   setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
-  deleteEfCustomBucket: (bucketId: string, options?: { moveTo?: string }) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -463,9 +461,6 @@ export function createAppStore(
         },
         setEfCustomBucketAccess(bucketId, access) {
           applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
-        },
-        deleteEfCustomBucket(bucketId, options) {
-          applyDataAction((data) => deleteEfCustomBucket(data, bucketId, options));
         },
         setEfBucketLinks(bucketId, holdingIds) {
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));

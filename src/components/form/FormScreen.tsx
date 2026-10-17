@@ -23,7 +23,13 @@ export function FormScreen({
   onClose: () => void;
   stickyHeader?: ReactNode;
   footer: ReactNode;
-  headerAction?: { label: string; onPress: () => void; disabled?: boolean };
+  headerAction?: {
+    label: string;
+    onPress: () => void;
+    icon?: keyof typeof Feather.glyphMap;
+    variant?: 'default' | 'primary' | 'destructive';
+    disabled?: boolean;
+  };
   isDirty?: boolean;
 }>) {
   const { colors } = useTheme();
@@ -63,10 +69,10 @@ export function FormScreen({
           <AppText weight="bold" style={[typography.h1, styles.title]} numberOfLines={1}>{title}</AppText>
           {headerAction ? (
             <IconButton
-              icon="trash-2"
+              icon={headerAction.icon ?? 'trash-2'}
               label={headerAction.label}
               onPress={headerAction.onPress}
-              variant="destructive"
+              variant={headerAction.variant ?? 'destructive'}
               disabled={headerAction.disabled}
             />
           ) : <View style={styles.closePlaceholder} />}

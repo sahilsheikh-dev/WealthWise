@@ -439,10 +439,23 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efAllocation?.['ef-plan-2']).toBe(10);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
 
+    const writesBeforeUngroup = storage.setItemCalls;
+    store.getState().actions.saveEfPlan({
+      customBuckets: [],
+      allocation: { cash: 10, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 },
+      links: {},
+    });
+    expect(storage.setItemCalls - writesBeforeUngroup).toBe(1);
+    expect(store.getState().data.efCustomBuckets).toEqual([]);
+    expect(store.getState().data.efBucketLinks).toEqual({});
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.links)
+      .toContainEqual({ instrumentId: holding.id, share: 100 });
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
     const writesBeforeDelete = storage.setItemCalls;
     store.getState().actions.deleteHolding(holding.id);
     expect(storage.setItemCalls - writesBeforeDelete).toBe(1);
-    expect(store.getState().data.efBucketLinks).toEqual({ 'ef-plan-2': [] });
+    expect(store.getState().data.efBucketLinks).toEqual({});
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
