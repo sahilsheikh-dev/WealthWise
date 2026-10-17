@@ -1,4 +1,5 @@
 import { emptyAppData } from '../actions';
+import { pendingItems } from '../pending';
 import { filterTransactions, monthSummary, transactionCategoryLabel } from '../transactions';
 import {
   appDataSchema,
@@ -369,6 +370,78 @@ describe('budget templates and monthly views', () => {
     expect(linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-03', '2026-03-01')).toEqual([]);
     expect(() => linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-13', '2026-03-01'))
       .toThrow(RangeError);
+  });
+
+  it('adds opt-in linked rows to planned category and group totals without changing actuals or dues', () => {
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      holdings: [plan],
+      liabilities: [recurringLiability],
+      monthBudgets: [{
+        month: '2026-03', templateId: null, templateName: null, customized: true,
+        plannedIncome: 1_000,
+        lines: [
+          { category: 'Bills', planned: 50, dueDay: 5 },
+          { category: 'EMI', planned: 10 },
+          { category: 'Mutual fund / SIP', planned: 20 },
+        ],
+      }],
+      transactions: [
+        { id: 'bill-actual', type: 'expense' as const, amount: 20, category: 'Bills', note: '', date: '2026-03-06' },
+        { id: 'emi-actual', type: 'expense' as const, amount: 40, category: 'EMI', note: '', date: '2026-03-06' },
+        { id: 'sip-actual', type: 'invest' as const, amount: 30, category: 'Mutual fund / SIP', note: '', date: '2026-03-06' },
+      ],
+    };
+    const legacyView = budgetMonthView(data, '2026-03');
+    const explicitFalseView = budgetMonthView({
+      ...data,
+      monthBudgets: data.monthBudgets.map((budget) => ({ ...budget, linkedIncluded: false })),
+    }, '2026-03');
+    expect({ ...legacyView, budget: undefined }).toEqual({ ...explicitFalseView, budget: undefined });
+    expect(legacyView.lines.map(({ category, planned }) => [category, planned])).toEqual([
+      ['Bills', 50],
+      ['EMI', 100],
+      ['Mutual fund / SIP', 100],
+    ]);
+    expect(legacyView).not.toHaveProperty('linkedByCategory');
+    expect(legacyView).not.toHaveProperty('groupTotals');
+
+    const includedData = {
+      ...data,
+      monthBudgets: data.monthBudgets.map((budget) => ({ ...budget, linkedIncluded: true })),
+    };
+    const includedView = budgetMonthView(includedData, '2026-03');
+    expect(includedView.lines.map(({ category, planned }) => [category, planned])).toEqual([
+      ['Bills', 50],
+      ['EMI', 110],
+      ['Mutual fund / SIP', 120],
+    ]);
+    expect(includedView.linkedByCategory?.map(({ category, rows }) => [category, rows.length])).toEqual([
+      ['EMI', 1],
+      ['Mutual fund / SIP', 1],
+    ]);
+    expect(includedView.linkedByCategory?.find(({ category }) => category === 'EMI')?.rows[0]?.status)
+      .toBe('paid');
+    expect(includedView.groupTotals).toEqual([
+      { groupId: 'survival', groupName: 'Survival (Needs)', planned: 160 },
+      { groupId: 'savings-investments', groupName: 'Savings and Investments', planned: 120 },
+      { groupId: 'wants', groupName: 'Wants', planned: 0 },
+      { groupId: 'festival-donations-culture', groupName: 'Festival, Donations, Culture', planned: 0 },
+      { groupId: 'unexpected-extras', groupName: 'Unexpected Extras', planned: 0 },
+    ]);
+    expect(includedView.actualSpend).toBe(60);
+    expect(includedView.actualSave).toBe(30);
+    expect(includedView.lines.map(({ category, actual }) => [category, actual])).toEqual([
+      ['Bills', 20], ['EMI', 40], ['Mutual fund / SIP', 30],
+    ]);
+
+    const dueRows = pendingItems(includedData, '2026-03', '2026-03-04');
+    expect(dueRows).toHaveLength(3);
+    expect(dueRows.map(({ title, dueDate, kind }) => [title, dueDate, kind])).toEqual([
+      ['Bills', '2026-03-05', 'budget'],
+      ['Monthly fund', '2026-03-05', 'due'],
+      ['Monthly loan', '2026-03-05', 'due'],
+    ]);
   });
 
   it('builds monthly cash-flow, planned and actual totals, prepayments, and unbudgeted spending', () => {

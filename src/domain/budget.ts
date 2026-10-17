@@ -448,6 +448,8 @@ export type BudgetMonthView = {
   lines: { category: string; planned: number; actual: number; remaining: number; usedPct: number | null; status: 'ok' | 'near' | 'over' }[];
   unbudgetedByGroup: { groupId: BudgetGroup['id']; groupName: string; amount: number }[];
   commitments: BudgetCommitment[];
+  linkedByCategory?: { category: string; rows: LinkedRecurringRow[] }[];
+  groupTotals?: { groupId: BudgetGroup['id']; groupName: string; planned: number }[];
   plannedSpend: number;
   actualSpend: number;
   plannedSave: number;
@@ -462,16 +464,24 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
   const key = monthOf(month);
   const budget = monthRows(data).find((row) => row.month === key) ?? null;
   const commitments = monthlyCommitments(data, key);
+  const includeLinked = budget?.linkedIncluded === true;
+  const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
   const planned = new Map((budget?.lines ?? []).map((line) => [line.category, line.planned]));
-  for (const category of ['EMI', 'Insurance']) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, amount);
-  }
-  for (const category of INVESTMENT_CATEGORIES) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+  if (includeLinked) {
+    for (const row of linkedRows) {
+      planned.set(row.category, (planned.get(row.category) ?? 0) + row.amount);
+    }
+  } else {
+    for (const category of ['EMI', 'Insurance']) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, amount);
+    }
+    for (const category of INVESTMENT_CATEGORIES) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+    }
   }
   const lines = [...planned].map(([category, amount]) => {
     const actual = budgetLineActual(data, key, category);
@@ -491,6 +501,20 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     .reduce((sum, line) => sum + line.planned, 0);
   const plannedSave = lines.filter((line) => isInvestmentCategory(line.category))
     .reduce((sum, line) => sum + line.planned, 0);
+  const linkedByCategory = includeLinked
+    ? BUDGET_CATEGORIES.flatMap((category) => {
+      const rows = linkedRows.filter((row) => row.category === category);
+      return rows.length === 0 ? [] : [{ category, rows }];
+    })
+    : [];
+  const groupTotals = includeLinked
+    ? BUDGET_GROUPS.map((group) => ({
+      groupId: group.id,
+      groupName: group.name,
+      planned: lines.filter((line) => group.categories.includes(line.category))
+        .reduce((sum, line) => sum + line.planned, 0),
+    }))
+    : [];
   const budgetCategories = new Set(lines.map((line) => line.category));
   const unbudgetedAmounts = new Map<BudgetGroup['id'], number>();
   for (const row of data.transactions) {
@@ -544,6 +568,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     },
     otherMoneyIn,
     lines, unbudgetedByGroup, commitments, plannedSpend, actualSpend, plannedSave, actualSave,
+    ...(includeLinked ? { linkedByCategory, groupTotals } : {}),
     debt: {
       emiPlanned: commitments.filter((item) => item.kind === 'liability').reduce((sum, item) => sum + item.plannedAmount, 0),
       emiActual: monthPayments.filter((row) => row.isEmi).reduce((sum, row) => sum + row.payment.amount, 0),
