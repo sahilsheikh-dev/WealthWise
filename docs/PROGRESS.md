@@ -421,6 +421,9 @@ P21-B does not change the schema.
   calendar rows, matching existing `monthlyCommitments` and `pendingItems`
   behavior; the schedule's internal start-date fallback is not treated as a
   user-scheduled due.
+  Assumed: `budgetMonthView` evaluates linked schedule statuses as of the
+  month's final day, matching the existing `monthlyCommitments` projection;
+  direct callers of `linkedRecurringForMonth` provide their own `asOf`.
   Assumed: absent or false `linkedIncluded` keeps all derived budget-view
   values unchanged and keeps all existing snapshots valid; the `budget` field
   continues to echo its stored input. Additive linked-total behavior is opt-in.
@@ -1721,7 +1724,9 @@ demo data), and `18fc19d` (tracker-test state update). No dependencies changed.
 the frozen form components were not modified; `formComponentsFrozen` passes.
 Assumed: an undated one-time liability is not a linked month row, consistent
 with existing pending and monthly-commitment behavior rather than the
-schedule's internal start-date fallback.
+schedule's internal start-date fallback. `budgetMonthView` uses month-end as
+its schedule `asOf`, matching `monthlyCommitments`; direct helper callers
+inject their own `asOf`.
 The user's manual change commit `6cb4fa0` remains intact: the touched user-owned
 files are `app/(tabs)/budget.tsx`, `app/(tabs)/transactions.tsx`, and
 `app/month-review.tsx`; specifically, the removed “Back to transactions”
