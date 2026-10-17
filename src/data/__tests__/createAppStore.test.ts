@@ -16,6 +16,7 @@ import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
+import type { ISODate } from '../../domain/types';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -45,7 +46,7 @@ const makeStore = (storage: StateStorage, overrides: {
   reload?: () => void;
   isDev?: boolean;
   removeLockSettings?: () => Promise<void>;
-  today?: () => '2026-10-10' | '2026-10-11';
+  today?: () => ISODate;
 } = {}) => createAppStore(storage, {
   newId: overrides.newId ?? (() => 'fixed-id'),
   today: overrides.today ?? (() => '2026-10-10'),
@@ -173,6 +174,78 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.monthBudgets).toEqual([]);
     expect(storage.setItemCalls).toBe(2);
     expect(storage.values.get('wealthwise.app.v1.premigration.v7')).toBe(raw);
+  });
+
+  it('repairs a stale emergency allocation once and archives the exact original bytes', async () => {
+    const storage = new MemoryStorage();
+    const key = 'wealthwise.app.v1';
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      goals: [{
+        id: 'ef-goal', name: 'Emergency fund', target: 100_000, saved: 0,
+        year: 2028, auto: 'ef' as const, links: [],
+      }],
+      efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
+    };
+    const raw = JSON.stringify({ state: { data }, version: 8 });
+    storage.values.set(key, raw);
+
+    const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
+    await waitForHydration(store);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(store.getState().status).toBe('ready');
+    expect(store.getState().data.efAllocation).toEqual({
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    });
+    expect(storage.values.get(`${key}.prerepair-efallocation`)).toBe(raw);
+    expect(storage.calls.filter((call) => call === `set:${key}`)).toHaveLength(1);
+
+    const writesBeforeSecondHydration = storage.setItemCalls;
+    const secondStore = makeStore(storage, { today: () => '2026-03-15', isDev: false });
+    await waitForHydration(secondStore);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(storage.setItemCalls).toBe(writesBeforeSecondHydration);
+    expect(storage.calls.filter((call) => call === `set:${key}.prerepair-efallocation`)).toHaveLength(1);
+    expect(storage.values.get(`${key}.prerepair-efallocation`)).toBe(raw);
+  });
+
+  it('repairs an empty allocation to the four defaults only once', async () => {
+    const storage = new MemoryStorage();
+    const key = 'wealthwise.app.v1';
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      goals: [{
+        id: 'ef-goal', name: 'Emergency fund', target: 100_000, saved: 0,
+        year: 2028, auto: 'ef' as const, links: [],
+      }],
+      efAllocation: {},
+    };
+    const raw = JSON.stringify({ state: { data }, version: 8 });
+    storage.values.set(key, raw);
+
+    const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
+    await waitForHydration(store);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(store.getState().data.efAllocation).toEqual({
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    });
+    expect(storage.values.get(`${key}.prerepair-efallocation`)).toBe(raw);
+    expect(storage.calls.filter((call) => call === `set:${key}`)).toHaveLength(1);
+
+    const writesAfterRepair = storage.setItemCalls;
+    const secondStore = makeStore(storage, { today: () => '2026-03-15', isDev: false });
+    await waitForHydration(secondStore);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(storage.setItemCalls).toBe(writesAfterRepair);
+    expect(storage.calls.filter((call) => call === `set:${key}.prerepair-efallocation`)).toHaveLength(1);
   });
 
   it('restores a replaced plan and month with one write and deep-equal data', async () => {
@@ -399,10 +472,16 @@ describe('createAppStore persistence', () => {
     store.getState().actions.setEfAllocation(allocation);
 
     expect(storage.setItemCalls - writesBefore).toBe(1);
-    expect(store.getState().data.efAllocation).toEqual(allocation);
+    const resolvedAllocation = {
+      cash: 20,
+      bank: 30,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    };
+    expect(store.getState().data.efAllocation).toEqual(resolvedAllocation);
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
-    expect(relaunchedStore.getState().data.efAllocation).toEqual(allocation);
+    expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
     const writesBeforeReset = storage.setItemCalls;
     store.getState().actions.resetEfAllocation();
     expect(storage.setItemCalls - writesBeforeReset).toBe(1);
@@ -1531,6 +1610,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v4', 'original-v4-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v5', 'original-v5-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v6', 'original-v6-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
+  storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -1554,6 +1635,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v4',
     'wealthwise.app.v1.premigration.v5',
     'wealthwise.app.v1.premigration.v6',
+    'wealthwise.app.v1.premigration.v7',
+    'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',

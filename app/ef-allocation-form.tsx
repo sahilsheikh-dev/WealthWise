@@ -19,7 +19,7 @@ import { useAppActions } from '../src/data/useAppData';
 import {
   activeEfBucketMetadata,
   efBucketMetadata,
-  effectiveAllocation,
+  resolveEfAllocation,
   validateAllocation,
   type EfAllocation,
 } from '../src/domain/efAllocation';
@@ -47,9 +47,12 @@ function toFormValues(
   customBuckets: EfCustomBucket[],
   links: Record<string, string[]>,
 ): AllocationFormValues {
-  const allocation = effectiveAllocation(sourceAllocation, customBuckets);
+  const allocation = resolveEfAllocation({
+    efAllocation: sourceAllocation,
+    efCustomBuckets: customBuckets,
+  }).allocation;
   const amounts: Record<string, string> = {};
-  for (const bucket of activeEfBucketMetadata(sourceAllocation, customBuckets, links)) {
+  for (const bucket of activeEfBucketMetadata(allocation, customBuckets, links)) {
     amounts[bucket.id] = String(allocation[bucket.id] ?? 0);
   }
   return {
@@ -106,6 +109,10 @@ export default function EfAllocationFormScreen() {
   );
   const allocationCheck = validateAllocation(numericAllocation, true, customBuckets);
   const allocationTotal = typeof allocationCheck === 'object' ? allocationCheck.total : 0;
+  const allocationIsValid = typeof allocationCheck === 'object' && allocationCheck.valid;
+  const allocationError = typeof allocationCheck === 'object' && !allocationCheck.valid
+    ? allocationCheck.issues.join('. ')
+    : undefined;
 
   const save = handleSubmit((values) => {
     const nextAllocation: EfAllocation = Object.fromEntries(
@@ -127,6 +134,7 @@ export default function EfAllocationFormScreen() {
 
   const updateAllocation = (id: string, value: string) => {
     setValue('allocation', { ...allocationValues, [id]: value.replace(/[^\d.]/g, '') }, { shouldDirty: true });
+    setFormError(undefined);
   };
 
   const removeDraftBucket = async (bucketId: string) => {
@@ -221,13 +229,19 @@ export default function EfAllocationFormScreen() {
         }}
         stickyHeader={(
           <View style={styles.totals} accessibilityLabel={`Total ${allocationTotal.toFixed(1)} percent. Remaining ${(100 - allocationTotal).toFixed(1)} percent.`}>
-            <AppText style={typography.meta}>Total: {allocationTotal.toFixed(1)}%</AppText>
-            <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(1)}%</AppText>
+            <AppText style={typography.meta}>Total: {allocationTotal.toFixed(2)}%</AppText>
+            <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(2)}%</AppText>
           </View>
         )}
         footer={(
           <View>
-            <Button label="Save allocation" icon="save" variant="primary" disabled={isSubmitting} onPress={save} />
+            <Button
+              label="Save allocation"
+              icon="save"
+              variant="primary"
+              disabled={isSubmitting || !allocationIsValid}
+              onPress={save}
+            />
           </View>
         )}
       >
@@ -279,7 +293,7 @@ export default function EfAllocationFormScreen() {
           )}
         />
 
-        {formError ? <FormErrorBanner message={formError} /> : null}
+        {formError ?? allocationError ? <FormErrorBanner message={formError ?? allocationError ?? ''} /> : null}
         <Button
           label="Reset to suggested allocation"
           icon="rotate-ccw"

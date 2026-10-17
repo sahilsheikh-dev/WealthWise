@@ -1,4 +1,10 @@
-import { EF_BUCKET_META, EF_BUCKETS, effectiveAllocation, type EfAllocation, validateAllocation } from './efAllocation';
+import {
+  EF_BUCKET_META,
+  EF_BUCKETS,
+  resolveEfAllocation,
+  type EfAllocation,
+  validateAllocation,
+} from './efAllocation';
 import { linkEmergencyGoalAssets } from './goalLinks';
 import type { AppData, EfCustomBucket } from './types';
 
@@ -79,7 +85,8 @@ export function setEfAllocation(data: AppData, allocation: EfAllocation): AppDat
   }
   if (!check) throw new InvalidAllocationError();
 
-  return { ...data, efAllocation: effectiveAllocation(allocation, data.efCustomBuckets) };
+  const resolved = resolveEfAllocation({ ...data, efAllocation: allocation });
+  return { ...data, efAllocation: resolved.allocation };
 }
 
 export function resetEfAllocation(data: AppData): AppData {
@@ -190,7 +197,7 @@ export function saveEfPlan(
   return {
     ...linkedData,
     efCustomBuckets: customBuckets,
-    efAllocation: allocation,
+    efAllocation: resolveEfAllocation({ ...linkedData, efCustomBuckets: customBuckets, efAllocation: allocation }).allocation,
     efBucketLinks: links,
   };
 }
