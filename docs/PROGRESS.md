@@ -121,7 +121,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
-| P20-E | — | Pending | CR-28 and CR-27 are implemented with focused tests passing; demo-loaded popup and full gates remain. | 2026-10-17 |
+| P20-E | — | Pending | CR-27, CR-28 and CR-31 implementations and focused tests pass; final sequential gates remain. | 2026-10-17 |
 | P20-F | — | Planned | One budget plan with apply-from-next-month and linked recurring items (CR-29). | 2026-10-17 |
 | P20-G | — | Planned | Remove the Budget header menu (CR-30). | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
@@ -465,6 +465,14 @@ P21-B does not change the schema.
   superseded by assertions for the exact alert copy and button labels,
   no-op cancellation, oldest/later clear actions and Undo. Reason: CR-27
   explicitly replaces the sheet with the platform's standard confirmation.
+- DEC-P20E-CR31: successful demo loading now remains on the current route and
+  opens the native `Demo data loaded` alert with `Undo` and `OK`. Undo calls
+  the store's existing `undoImport` path and shows the existing five-second
+  action-toast treatment with `Demo data removed`; failures are shown
+  explicitly. Repository search found no prior test asserting navigation from
+  the demo loader to Backup; the superseded behavior is the old
+  `router.push('/backup')` success path, now covered by an explicit no-navigation
+  assertion and exact popup/Undo tests.
 - Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
   object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
   labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B
@@ -962,7 +970,7 @@ evidence present in exports/checkpoints.
 | CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Pending | `normalizeMoney` and closing-position normalization implemented; domain and screen tests pass; final gates pending. |
 | CR-29 | Keep one budget plan, apply from next month and link recurring items. | Planned | P20-F. |
 | CR-30 | Remove the Budget header menu. | Planned | P20-G. |
-| CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Planned | P20-E. |
+| CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Pending | P20-E implementation and focused menu tests pass; final gates remain. |
 
 ## 8. Known issues and risks
 
