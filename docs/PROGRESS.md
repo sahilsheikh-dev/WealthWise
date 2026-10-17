@@ -121,7 +121,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
-| P20-E | — | Planned | Budget balance normalization and tone; Home due confirmation; demo-load completion popup (CR-27, CR-28, CR-31). | 2026-10-17 |
+| P20-E | — | Pending | CR-28 is implemented and focused tests pass; Home due confirmation and demo-loaded popup remain; full gates pending. | 2026-10-17 |
 | P20-F | — | Planned | One budget plan with apply-from-next-month and linked recurring items (CR-29). | 2026-10-17 |
 | P20-G | — | Planned | Remove the Budget header menu (CR-30). | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
@@ -417,6 +417,12 @@ P21-B does not change the schema.
   `app/month-review.tsx` removes the “Back to transactions” button and
   reorders imports. These edits are user-owned; keep the removed button and
   other removed elements absent.
+  Related stale assertions are replaced as follows: the Transactions test's
+  old expectation of an accessible red `-₹1,000` amount becomes an assertion
+  that this amount is absent while the Shortfall text remains; reason:
+  `6cb4fa0` removed the main balance amount. The Budget route test's old
+  expectation of a visible review dot becomes an assertion that no indicator
+  prop or dot renders; reason: the user's commit removed that indicator.
   Transaction balance card final user-kept elements: balance label and amount
   (including “Shortfall” and danger tone when negative), optional “From {Mon}
   ₹X” chip, divider, and review link when available. There are no retained
@@ -443,6 +449,13 @@ P21-B does not change the schema.
   withdrawn importer part. The old phase totals (Phase 20 4/4 and Phase 22 1/2)
   are replaced with seven Phase 20 parts and one Phase 22 part; reason: P20-E,
   P20-F and P20-G now belong to Phase 20 and P22-A is the only Phase 22 item.
+- DEC-P20E-CR28: `normalizeMoney` in `src/domain/cashFlow.ts` rounds finite
+  amounts to paise and returns positive zero whenever the rounded value is
+  zero. Monthly closing positions are normalized at calculation time, then
+  Budget normalizes its displayed closing amount before both AmountText and
+  tone selection. Negative uses `err`, positive uses `primary`, and zero uses
+  `neutral`; AmountText's existing `formatINR` accessibility label receives
+  the normalized amount. Other screens are not altered by the tone change.
 - Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
   object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
   labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B
@@ -894,7 +907,7 @@ evidence present in exports/checkpoints.
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
-| P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | Planned at tracker cleanup; tests and gates pending. | not yet implemented | Assumed: Paid / Not paid use the existing confirm helper's confirm/cancel labels; dismissed alerts resolve as not paid. | current request |
+| P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | In progress; CR-28 implementation and focused tests pass; CR-27/31 and full gates remain. | CR-28 step commit follows | Assumed: Paid / Not paid use the existing confirm helper's confirm/cancel labels; dismissed alerts resolve as not paid. | current request |
 | P20-F | Phase 20 | — | — | 2026-10-17 | One budget plan, apply-from-next-month and linked recurring items (CR-29). | Planned; no implementation claimed in P20-E. | none | No assumptions recorded. | current request |
 | P20-G | Phase 20 | — | — | 2026-10-17 | Remove Budget header menu (CR-30). | Planned; no implementation claimed in P20-E. | none | No assumptions recorded. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
@@ -937,7 +950,7 @@ evidence present in exports/checkpoints.
 | CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done | P20-D single-card, divider, alignment, scale 1.3/2.0, actions/navigation and empty-state tests pass. |
 | CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
 | CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Planned | P20-E. |
-| CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Planned | P20-E. |
+| CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Pending | `normalizeMoney` and closing-position normalization implemented; domain and screen tests pass; final gates pending. |
 | CR-29 | Keep one budget plan, apply from next month and link recurring items. | Planned | P20-F. |
 | CR-30 | Remove the Budget header menu. | Planned | P20-G. |
 | CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Planned | P20-E. |

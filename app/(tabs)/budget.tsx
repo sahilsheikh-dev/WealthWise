@@ -15,7 +15,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
-import { reviewableMonths } from '../../src/domain/cashFlow';
+import { normalizeMoney, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { transactionCategoryLabel } from '../../src/domain/transactions';
@@ -63,6 +63,7 @@ export default function BudgetScreen() {
   const appMenu = useAppMenu();
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
+  const closingBalance = normalizeMoney(view.position.closing);
   const monthPendingItems = useMemo(
     () => pendingItems(data, month, today),
     [data, month, today],
@@ -176,15 +177,15 @@ export default function BudgetScreen() {
             <View style={[styles.closingPosition, stackMetrics && styles.closingPositionStacked, { borderTopColor: colors.border }]}>
               <View style={styles.closingPositionLabel}>
                 <AppText weight="semibold">Closing balance</AppText>
-                {view.position.closing < 0 ? (
+                {closingBalance < 0 ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Deficit</AppText>
                 ) : null}
               </View>
               <AmountText
-                value={view.position.closing}
+                value={closingBalance}
                 tier="tile"
                 weight="bold"
-                tone={view.position.closing < 0 ? 'err' : 'primary'}
+                tone={closingBalance < 0 ? 'err' : closingBalance > 0 ? 'primary' : 'neutral'}
                 style={styles.closingAmount}
               />
             </View>

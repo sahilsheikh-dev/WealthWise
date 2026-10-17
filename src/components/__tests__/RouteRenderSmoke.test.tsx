@@ -32,13 +32,14 @@ import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { PendingItemActionSheet } from '../PendingItemActionSheet';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
+import { AmountText } from '../AmountText';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { emptyAppData } from '../../domain/actions';
 import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
-import { formatMonth } from '../../lib/format';
+import { formatINR, formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { buildAppMenu } from '../../lib/appMenu';
 import { buildDemoData } from '../../mock/demoData';
@@ -903,10 +904,8 @@ describe('route render smoke audit', () => {
       const negativeBalance = negativeRenderer.root.findByProps({ testID: 'available-balance-card' });
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
-      const negativeAmount = negativeBalance.findByProps({ accessibilityLabel: '-₹1,000' });
-      expect(Array.isArray(negativeAmount.props.style) ? negativeAmount.props.style : [negativeAmount.props.style]).toEqual(expect.arrayContaining([
-        expect.objectContaining({ color: expect.any(String) }),
-      ]));
+      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
+        .toHaveLength(0);
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);
@@ -1719,8 +1718,8 @@ describe('route render smoke audit', () => {
       const renderer = renderScreen(React.createElement(BudgetScreen));
       const header = renderer.root.findByType('header');
       const menuButton = header.findByProps({ accessibilityLabel: 'More options' });
-      expect(menuButton.props.menuIndicator).toBe(true);
-      expect(header.findAllByProps({ testID: 'header-menu-indicator' })).toHaveLength(1);
+      expect(menuButton.props.menuIndicator).toBeUndefined();
+      expect(header.findAllByProps({ testID: 'header-menu-indicator' })).toHaveLength(0);
       act(() => menuButton.props.onPress());
       const review = header.findByProps({ accessibilityLabel: 'Month review, review pending' });
       act(() => review.props.onPress());
@@ -1930,6 +1929,45 @@ describe('route render smoke audit', () => {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
       mockFontScale = 1;
+    }
+  });
+
+  it.each([
+    [-0, 0, 'neutral'],
+    [-0.001, 0, 'neutral'],
+    [0, 0, 'neutral'],
+    [0.004, 0, 'neutral'],
+    [1500, 1500, 'primary'],
+    [-1500, -1500, 'err'],
+  ] as const)('normalizes Budget closing balance %s with matching tone and accessible label', (input, expected, tone) => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousTransactions = data.transactions;
+    const selectedMonth = '2026-09';
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    routeParams.mockReturnValue({ month: selectedMonth });
+    data.transactions = input < 0
+      ? [{ id: 'balance-expense', type: 'expense', amount: Math.abs(input), category: 'Food', note: '', date: `${selectedMonth}-10` }]
+      : input > 0
+        ? [{ id: 'balance-income', type: 'income', amount: input, category: 'Salary', note: '', date: `${selectedMonth}-10` }]
+        : [];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      const closingAmount = renderer.root.findAllByType(AmountText)
+        .find((node) => node.props.style?.fontSize === 18);
+      if (!closingAmount) throw new Error('Budget closing balance did not render.');
+      expect(closingAmount.props.value).toBe(expected);
+      expect(closingAmount.props.tone).toBe(tone);
+      expect(closingAmount.findAll((node) =>
+        node.props.accessibilityLabel === formatINR(expected),
+      ).length).toBeGreaterThan(0);
+      expect(closingAmount.findAll((node) =>
+        node.type === 'text' && node.children.join('') === formatAmount(expected, 'tile', 1),
+      ).length).toBeGreaterThan(0);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      data.transactions = previousTransactions;
+      routeParams.mockReturnValue({});
     }
   });
 

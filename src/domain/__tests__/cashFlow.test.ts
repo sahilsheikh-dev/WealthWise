@@ -4,6 +4,7 @@ import {
   availableBalance,
   fundShortfall,
   monthPositions,
+  normalizeMoney,
   recordMoneyMovement,
   reviewableMonths,
   shortfallForMonth,
@@ -27,6 +28,27 @@ const tx = (
   amount: number,
   category: string,
 ): Transaction => ({ id, date, type, amount, category, note: category });
+
+describe('money normalization', () => {
+  it.each([
+    [-0, 0],
+    [-0.001, 0],
+    [0, 0],
+    [0.004, 0],
+    [1500, 1500],
+    [-1500, -1500],
+  ])('normalizes %s to %s', (input, expected) => {
+    const result = normalizeMoney(input);
+    expect(result).toBe(expected);
+    if (expected === 0) expect(Object.is(result, -0)).toBe(false);
+  });
+
+  it('rounds finite values to paise and rejects non-finite amounts', () => {
+    expect(normalizeMoney(12.345)).toBe(12.35);
+    expect(normalizeMoney(-12.345)).toBe(-12.35);
+    expect(() => normalizeMoney(Number.NaN)).toThrow('Money amount must be finite.');
+  });
+});
 
 describe('cash flow positions', () => {
   it('carries closing cash across empty months without double-counting opening as income', () => {
