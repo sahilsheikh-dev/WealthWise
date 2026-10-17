@@ -1810,17 +1810,38 @@ Replaced test assertions and reason:
 - Old Budget-menu assertions expected the CR-24 three-dot menu, ordered
   entries, navigation and review indicator. They are replaced by an explicit
   no-menu assertion plus previous/next month navigation and the on-screen
-  Review control. Reason: CR-30 supersedes CR-24.
+  Review control. Specifically, `shows the ordered Budget menu, review dot,
+  navigation and Home menu entries`, `omits the review dot when there is no
+  reviewable month`, `keeps explicit menu items ahead of the standard Home
+  menu items`, `shows one Budget menu with ordered Budget items followed by
+  Home menu entries`, and `marks a reviewable month in the Budget header and
+  opens that month review` no longer assert Budget menu entries or a dot.
+  Reason: CR-30 supersedes CR-24.
+- The old `keeps the no-budget prompt in one card with both setup actions and
+  empty bills state` assertion expected both setup actions; it now expects one
+  primary action whose label and behavior depend on whether a plan exists.
+  The old `shows cash-flow positions and keeps plan editing separate from
+  template application` assertion now expects the single-plan setup flow and
+  separate month adjustment. Reason: schema v8 removes the template picker.
 - Old Budget History sorting tests asserted template-name/customized keys
   and history-month tie-break ordering, and the metadata test expected saved
   `budgetHistory` sort preferences. Those assertions were removed; active-list
   sort persistence tests remain and `src/lib/sorting.ts` stays unchanged.
-  Reason: history snapshots and their fields are no longer a screen or model
-  surface.
+  This includes `lists every Budget history sort key in the SortChip menu`,
+  `uses month as the id tie-breaker in both Budget history directions`,
+  `returns from Budget history to the tab with the selected month`,
+  `shows no tab bar on Budget history or Month review stack routes`, and
+  `persists Budget history sort choices and falls back to month for an invalid
+  stored key`. Reason: history snapshots and their fields are no longer a
+  screen or model surface.
 - Old AppHeader tests expected a Budget menu containing History, Month review
   and Templates, tested its navigation/review-dot behavior and global-item
-  ordering. They are replaced by direct Budget no-menu assertions; Home's
-  standard menu tests remain. Reason: CR-30 removes the Budget menu entirely.
+  ordering. This covers `shows one Budget menu with ordered Budget items
+  followed by Home menu entries`, `marks a reviewable month in the Budget
+  header and opens that month review`, and `keeps explicit menu items ahead
+  of the standard Home menu items`. They are replaced by direct Budget
+  no-menu assertions; Home's standard menu tests remain. Reason: CR-30
+  removes the Budget menu entirely.
 - Old ledger assertions kept P20-G Planned, CR-29 In progress, CR-30 Planned,
   overall 45/52 and Phase 20 6/7. They now assert Done, Done, Done, 46/52 and
   7/7 respectively. Reason: P20-G and both change requests are complete.
