@@ -253,13 +253,13 @@ describe('backup validation and serialization', () => {
       ...mockAppData,
       budgetTemplates: [{
         id: 'monthly', name: 'Monthly', plannedIncome: 10_000,
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 25 }],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 25, dueDay: 31 }],
       }],
       defaultBudgetTemplateId: 'monthly',
       monthBudgets: [{
         month: '2026-10', templateId: 'monthly', templateName: 'Monthly',
-        customized: false, plannedIncome: 10_000,
-        lines: [{ category: 'Food', planned: 2_500 }],
+        customized: false, plannedIncome: 10_000, linkedIncluded: true,
+        lines: [{ category: 'Food', planned: 2_500, dueDay: 31 }],
       }],
     };
     expect(validateImportData(budgetData)).toMatchObject({ ok: true });
@@ -268,6 +268,10 @@ describe('backup validation and serialization', () => {
       {
         ...budgetData,
         budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Food', mode: 'percent' as const, value: 101 }] }],
+      },
+      {
+        ...budgetData,
+        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Food', mode: 'amount' as const, value: 1, dueDay: 0 }] }],
       },
       {
         ...budgetData,
@@ -283,6 +287,10 @@ describe('backup validation and serialization', () => {
       {
         ...budgetData,
         monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [{ category: 'Unknown', planned: 1 }] }],
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [{ category: 'Food', planned: 1, dueDay: 32 }] }],
       },
       {
         ...budgetData,

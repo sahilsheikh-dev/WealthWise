@@ -1,4 +1,5 @@
 import { BUDGET_GROUPS, budgetLineActual, budgetGroupFor } from './budget';
+import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
 import { investCategoryFor } from './links';
 import { liabilitySchedule, planSchedule } from './schedule';
@@ -113,13 +114,17 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
       if (!group) throw new Error(`No budget group is defined for category "${line.category}".`);
       const remaining = Math.max(0, line.planned - budgetLineActual(data, month, line.category));
       if (remaining === 0) continue;
+      const dueDate = line.dueDay === undefined
+        ? undefined
+        : `${month}-${String(Math.min(line.dueDay, Number(monthEndDate(month).slice(8, 10)))).padStart(2, '0')}`;
       items.push({
         id: `budget:${month}:${line.category}`,
         kind: 'budget',
         title: line.category,
         category: line.category,
         amount: remaining,
-        status: 'planned',
+        ...(dueDate === undefined ? {} : { dueDate }),
+        status: dueDate === undefined ? 'planned' : dueStatus(dueDate, month, today),
         source: { kind: 'budget', category: line.category },
         actionable: true,
       });

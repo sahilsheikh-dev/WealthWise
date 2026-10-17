@@ -6,6 +6,7 @@ import { investCategoryFor } from './links';
 import { monthEndDate, monthPositionAt } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
+import type { ScheduleRow } from './schedule';
 import type {
   AppData,
   BudgetLine,
@@ -25,6 +26,16 @@ export type BudgetCommitment = {
   plannedAmount: number;
   status: 'paid' | 'overdue' | 'ongoing' | 'upcoming';
   paidAmount: number;
+};
+
+export type LinkedRecurringRow = {
+  kind: 'plan' | 'liability' | 'policy';
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+  dueDate: ISODate;
+  status: BudgetCommitment['status'];
 };
 
 export type BudgetGroup = {
@@ -154,6 +165,53 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
   return orderedRows(rows);
 }
 
+function linkedRowsFor(
+  kind: LinkedRecurringRow['kind'],
+  parentId: string,
+  name: string,
+  category: string,
+  month: string,
+  rows: ScheduleRow[],
+): LinkedRecurringRow[] {
+  return rows.flatMap((row) => row.amount <= 0 || monthKey(row.dueDate) !== month
+    ? []
+    : [{
+      kind,
+      id: `${kind}:${parentId}:${row.id}`,
+      name,
+      category,
+      amount: row.amount,
+      dueDate: row.dueDate,
+      status: row.status,
+    }]);
+}
+
+export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISODate): LinkedRecurringRow[] {
+  const key = monthOf(month);
+  const rows: LinkedRecurringRow[] = [];
+  for (const holding of data.holdings) {
+    if (holding.kind !== 'plan') continue;
+    rows.push(...linkedRowsFor(
+      'plan', holding.id, holding.name, investCategoryFor(holding.type), key, planSchedule(holding, asOf).rows,
+    ));
+  }
+  for (const liability of data.liabilities) {
+    if (liability.kind === 'one-time' && liability.dueDate === null) continue;
+    rows.push(...linkedRowsFor(
+      'liability', liability.id, liability.name, 'EMI', key, liabilitySchedule(liability, asOf).rows,
+    ));
+  }
+  for (const policy of data.policies) {
+    rows.push(...linkedRowsFor(
+      'policy', policy.id, policy.name, 'Insurance', key, policySchedule(policy, asOf).rows,
+    ));
+  }
+  return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
+    || a.name.localeCompare(b.name)
+    || a.kind.localeCompare(b.kind)
+    || a.id.localeCompare(b.id));
+}
+
 export class MissingPlannedIncomeError extends Error {
   constructor() {
     super('A planned income is required to resolve percentage budget lines.');
@@ -166,11 +224,18 @@ export function resolveTemplate(
   plannedIncome = template.plannedIncome,
 ): BudgetLine[] {
   return template.lines.map((line) => {
-    if (line.mode === 'amount') return { category: line.category, planned: line.value };
+    if (line.mode === 'amount') {
+      return {
+        category: line.category,
+        planned: line.value,
+        ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+      };
+    }
     if (plannedIncome === null) throw new MissingPlannedIncomeError();
     return {
       category: line.category,
       planned: Math.round(line.value * plannedIncome / 100),
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
 }
@@ -321,7 +386,12 @@ export function saveMonthAsTemplate(
   if (!budget) throw new NotFoundError('Month budget', monthInput);
   return createBudgetTemplate(data, {
     name, plannedIncome: budget.plannedIncome,
-    lines: budget.lines.map((line) => ({ category: line.category, mode: 'amount', value: line.planned })),
+    lines: budget.lines.map((line) => ({
+      category: line.category,
+      mode: 'amount',
+      value: line.planned,
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+    })),
   }, newId);
 }
 
@@ -378,6 +448,8 @@ export type BudgetMonthView = {
   lines: { category: string; planned: number; actual: number; remaining: number; usedPct: number | null; status: 'ok' | 'near' | 'over' }[];
   unbudgetedByGroup: { groupId: BudgetGroup['id']; groupName: string; amount: number }[];
   commitments: BudgetCommitment[];
+  linkedByCategory?: { category: string; rows: LinkedRecurringRow[] }[];
+  groupTotals?: { groupId: BudgetGroup['id']; groupName: string; planned: number }[];
   plannedSpend: number;
   actualSpend: number;
   plannedSave: number;
@@ -392,16 +464,24 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
   const key = monthOf(month);
   const budget = monthRows(data).find((row) => row.month === key) ?? null;
   const commitments = monthlyCommitments(data, key);
+  const includeLinked = budget?.linkedIncluded === true;
+  const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
   const planned = new Map((budget?.lines ?? []).map((line) => [line.category, line.planned]));
-  for (const category of ['EMI', 'Insurance']) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, amount);
-  }
-  for (const category of INVESTMENT_CATEGORIES) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+  if (includeLinked) {
+    for (const row of linkedRows) {
+      planned.set(row.category, (planned.get(row.category) ?? 0) + row.amount);
+    }
+  } else {
+    for (const category of ['EMI', 'Insurance']) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, amount);
+    }
+    for (const category of INVESTMENT_CATEGORIES) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+    }
   }
   const lines = [...planned].map(([category, amount]) => {
     const actual = budgetLineActual(data, key, category);
@@ -421,6 +501,20 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     .reduce((sum, line) => sum + line.planned, 0);
   const plannedSave = lines.filter((line) => isInvestmentCategory(line.category))
     .reduce((sum, line) => sum + line.planned, 0);
+  const linkedByCategory = includeLinked
+    ? BUDGET_CATEGORIES.flatMap((category) => {
+      const rows = linkedRows.filter((row) => row.category === category);
+      return rows.length === 0 ? [] : [{ category, rows }];
+    })
+    : [];
+  const groupTotals = includeLinked
+    ? BUDGET_GROUPS.map((group) => ({
+      groupId: group.id,
+      groupName: group.name,
+      planned: lines.filter((line) => group.categories.includes(line.category))
+        .reduce((sum, line) => sum + line.planned, 0),
+    }))
+    : [];
   const budgetCategories = new Set(lines.map((line) => line.category));
   const unbudgetedAmounts = new Map<BudgetGroup['id'], number>();
   for (const row of data.transactions) {
@@ -474,6 +568,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     },
     otherMoneyIn,
     lines, unbudgetedByGroup, commitments, plannedSpend, actualSpend, plannedSave, actualSave,
+    ...(includeLinked ? { linkedByCategory, groupTotals } : {}),
     debt: {
       emiPlanned: commitments.filter((item) => item.kind === 'liability').reduce((sum, item) => sum + item.plannedAmount, 0),
       emiActual: monthPayments.filter((row) => row.isEmi).reduce((sum, row) => sum + row.payment.amount, 0),

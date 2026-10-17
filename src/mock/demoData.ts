@@ -511,6 +511,20 @@ export function buildDemoData(today: ISODate): AppData {
 
   const currentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
-  data.budget = { plannedIncome: currentBudget.plannedIncome, lines: currentBudget.lines };
+  data = {
+    ...data,
+    monthBudgets: data.monthBudgets?.map((budget) => budget.month !== currentMonth
+      ? budget
+      : {
+        ...budget,
+        linkedIncluded: true,
+        lines: budget.lines.map((line) => line.category === 'Bills'
+          ? { ...line, dueDay: 5 }
+          : line),
+      }),
+  };
+  const linkedCurrentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
+  if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
+  data.budget = { plannedIncome: linkedCurrentBudget.plannedIncome, lines: linkedCurrentBudget.lines };
   return data;
 }

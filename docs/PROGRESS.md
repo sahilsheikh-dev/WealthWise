@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 85% (44/52)
+Overall progress █████████░ 87% (45/52)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ███████░░░ 71% (5/7)
+Phase 20         █████████░ 86% (6/7)
 Phase 21         ██████████ 100% (2/2)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -122,7 +122,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
 | P20-E | — | Done | CR-27, CR-28 and CR-31 delivered; 70 suites / 772 tests and all final gates pass. | 2026-10-17 |
-| P20-F | — | Planned | One budget plan with apply-from-next-month and linked recurring items (CR-29). | 2026-10-17 |
+| P20-F | — | Done | F1–F5 budget groundwork; final 70-suite/777-test coverage gate and all required gates pass. CR-29 remains in progress for later one-plan/apply behavior. | 2026-10-17 |
 | P20-G | — | Planned | Remove the Budget header menu (CR-30). | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
@@ -185,8 +185,10 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 ### Resume point
 
 P19-A/B/C and P20-A/B/C/D passed their required gates and are complete.
-P20-E, P21-A/B and P22-A are also Done. The optional importer has been removed
-from active scope. P20-F is next; P20-G remains Planned. The earlier
+P20-E, P20-F, P21-A/B and P22-A are also Done. The optional importer has been removed
+from active scope. P20-G is next; CR-29 remains in progress beyond its P20-F
+groundwork because replacing templates with one plan and apply-from-next-month
+behavior are not implemented here. The earlier
 Doctor failure was resolved by CR-26. The previously planned P19-B, P19-C and
 P19-D became P20-A, P20-B and P21-A/P21-B, respectively. **Assumed:**
 category assignment follows the five groups specified in
@@ -399,6 +401,32 @@ P21-B does not change the schema.
   backup/Undo path; never load it automatically. The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
+- DEC-BUDGET-PLAN: the target budget design has one budget plan replacing
+  templates. Its own lines may have a due day; when present, a line due row is
+  dated on that day clamped to the month's final day. Without a due day, the
+  existing undated planned-row behavior remains. The plan may repeat monthly
+  from next month, and auto-apply creates only the current month. EMI,
+  Insurance and recurring investments are linked automatically from their
+  schedules; they are computed, never stored on the plan, and never emitted as
+  extra due rows. Month views may include linked rows in planned category and
+  group totals, while actuals remain transaction-derived. Budget actuals use
+  expense transactions for expense categories and investment transactions for
+  investment categories (with non-investment investment transactions grouped
+  as Other investments); linked EMI, Insurance and plan schedule amounts affect
+  planned totals, not actuals. `pendingItems` creates plan and liability due
+  rows from schedules, suppresses duplicate EMI/Insurance/instrument budget
+  rows, and creates a budget due row only for an otherwise-unrepresented
+  category.
+  Assumed: a one-time liability with no due date is omitted from linked
+  calendar rows, matching existing `monthlyCommitments` and `pendingItems`
+  behavior; the schedule's internal start-date fallback is not treated as a
+  user-scheduled due.
+  Assumed: `budgetMonthView` evaluates linked schedule statuses as of the
+  month's final day, matching the existing `monthlyCommitments` projection;
+  direct callers of `linkedRecurringForMonth` provide their own `asOf`.
+  Assumed: absent or false `linkedIncluded` keeps all derived budget-view
+  values unchanged and keeps all existing snapshots valid; the `budget` field
+  continues to echo its stored input. Additive linked-total behavior is opt-in.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0`
   (both authored by Sahil Sheikh without a Copilot co-author trailer). File
@@ -478,10 +506,19 @@ P21-B does not change the schema.
 - DEC-P20E-STATUS: the pre-closeout test temporarily distinguished implemented
   but ungated P20-E and CR-27/28/31 as Pending. After every final gate passed,
   those assertions were replaced with Done, and progress moved from 43/52 to
-  44/52 and Phase 20 from 4/7 to 5/7. P20-F/G and CR-29/30 remain Planned.
+  44/52 and Phase 20 from 4/7 to 5/7. At that P20-E close-out, P20-F/G and
+  CR-29/30 were Planned.
   CR-21 is asserted as `Superseded by CR-27`. This replaces the old assertion
   that all P20-E/G and CR-27/31 work remained Planned, matching the closed
   implementation and its green gates.
+- DEC-P20F-STATUS: while P20-F was active, the ledger test's old assertion
+  that P20-F and CR-29 remain Planned was replaced with exact In progress
+  assertions; P20-G and CR-30 stayed Planned and the progress numerator stayed
+  44/52 (5/7 for Phase 20). After all P20-F gates passed, P20-F became Done
+  and its dashboard assertion was updated to Done; progress moved to 45/52
+  (6/7). CR-29 remains In progress because P20-F delivers only its budget
+  groundwork: the single-plan replacement and apply-from-next-month behavior
+  are not implemented in this phase.
 - Full-suite assertion corrections preserving user commit `6cb4fa0`: the old
   Transactions balance test expected both `₹830` and the removed separate
   `₹600` brought-forward amount; it now asserts only the kept `₹830` amount.
@@ -751,7 +788,8 @@ expanded scope verified here. Next planned work is P20-A.
 P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10], P20-C
 [CR-11] and P20-D [CR-21–CR-26] are complete; the final required gates pass.
 P20-E [CR-27, CR-28, CR-31] is complete after the final sequential gates;
-P20-F and P20-G remain planned.
+P20-F budget groundwork (CR-29 part 1) is complete after final gates.
+P20-G (CR-30) remains planned.
 
 ### Phase 21 — Emergency fund as a goal-linked model
 
@@ -948,7 +986,7 @@ evidence present in exports/checkpoints.
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
 | P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | Done; focused suites and 70 suites / 772 tests pass; TypeScript, lint, Doctor 21/21, Android and iOS exports all exit 0. | `033d493` (CR-28), `501dce7` (CR-27), `fe5fa1e` (CR-31), tracker/test updates `973241e`, `b0cb6ee` | Assumed: Paid / Not paid use the existing confirm helper's labels; default native-alert dismissal is not paid; the existing five-second ActionToast is the brief Undo notice. | current request |
-| P20-F | Phase 20 | — | — | 2026-10-17 | One budget plan, apply-from-next-month and linked recurring items (CR-29). | Planned; no implementation claimed in P20-E. | none | No assumptions recorded. | current request |
+| P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. Assumed: one-time liabilities without dueDate do not become linked rows. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
 | P20-G | Phase 20 | — | — | 2026-10-17 | Remove Budget header menu (CR-30). | Planned; no implementation claimed in P20-E. | none | No assumptions recorded. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
@@ -991,7 +1029,7 @@ evidence present in exports/checkpoints.
 | CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
 | CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Done | P20-E; oldest/later due confirmation, cancellation/dismissal no-op, clear-through preview, Undo and no-navigation tests pass. |
 | CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Done | P20-E; domain and screen tests cover -0, -0.001, 0, 0.004, 1500 and -1500; all final gates pass. |
-| CR-29 | Keep one budget plan, apply from next month and link recurring items. | Planned | P20-F. |
+| CR-29 | Keep one budget plan, apply from next month and link recurring items. | In progress | P20-F delivers part 1: due-day support, computed linked schedules, opt-in grouped/planned totals and demo coverage. Replacing templates with one plan and apply-from-next-month behavior remain unimplemented. |
 | CR-30 | Remove the Budget header menu. | Planned | P20-G. |
 | CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Done | P20-E; exact popup copy/button order, current-route retention, Undo restoration and brief toast tests pass; all final gates pass. |
 
@@ -1183,13 +1221,14 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 1. **Phase 19 — Budget model and sync** (Done): P19-A five-group setup (CR-5),
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
-2. **Phase 20 — Pending items, Home and navigation** (P20-A through P20-E
-   Done; P20-F/G Planned): P20-A pending
+2. **Phase 20 — Pending items, Home and navigation** (P20-A through P20-F
+   Done; P20-G Planned): P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
    balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
-   CR-31), P20-F one budget plan/apply-from-next-month (CR-29), and P20-G
-   remove Budget header menu (CR-30).
+   CR-31), P20-F budget groundwork for due days and linked schedule totals
+   (CR-29 part 1; one-plan/apply-from-next-month behavior remains In progress),
+   and P20-G remove Budget header menu (CR-30).
 3. **Phase 21 — Emergency fund as a goal-linked model** (Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
    allocation editing and linked-asset table (CR-14, CR-15).
@@ -1565,8 +1604,8 @@ no-network standing instruction and is recorded as a deviation.
 
 `SCHEMA_VERSION` was 7 at the start and remains 7. SortChip, `src/lib/sorting.ts`
 and every frozen input component are unchanged; the frozen-component hash test
-passes. P21-A/B and P22-A remain Done with all final gates green. P20-F and
-P20-G remain Planned; the next resume point is P20-F.
+passes. P21-A/B and P22-A remain Done with all final gates green. P20-F is
+Done; P20-G remains Planned and is the next resume point.
 
 **P20-E device checks not verified:** real iOS/Android rendering and interaction
 for native Paid/Not paid and Demo data loaded alerts; hardware Back/outside
@@ -1574,3 +1613,131 @@ dismissal; full Home/Transactions/Budget due-list refresh after actual storage
 writes; Undo against device storage; five-second toast timing; TalkBack/
 VoiceOver copy and actions; and text/tone visibility at OS font scaling. Test
 Renderer verifies callbacks and styles only; no physical device was used.
+
+### P20-F green-gate close-out
+
+F1 audited budget due rows and schedule/actual flows and recorded
+DEC-BUDGET-PLAN. The design note specifies one future budget plan replacing
+templates, optional line due days, repeat-from-next-month, current-month-only
+auto-apply, and schedule-computed linked EMI, Insurance and investments that
+are never stored or emitted as extra due rows.
+
+F2 adds optional validated `dueDay` (integer 1–31) to template, month and
+legacy budget lines and optional `linkedIncluded` to month snapshots; both app
+and strict backup schemas accept these fields while absent fields remain
+compatible and `SCHEMA_VERSION` stays 7. Budget due dates clamp at the actual
+month length, including leap February. Without `dueDay`, the line remains
+undated and `planned`, as before. The existing template and month forms
+preserve imported due-day values but do not expose due-day editing controls.
+
+F3 adds pure `linkedRecurringForMonth(data, month, asOf)` and tests for plans,
+recurring and one-time liabilities, policies, paid/unpaid/zero rows, leap
+February, empty/invalid months and `buildDemoData`. F4 makes
+`linkedIncluded: true` additive over the month’s own line amounts, provides
+linked rows grouped by category and planned totals by budget group, and leaves
+transaction actuals unchanged. Absent/false flags keep prior derived budget
+view results. Linked rows are not written into budgets and do not create
+pending due rows; the Bills budget line still creates its own row. F5 sets the
+current demo month to `linkedIncluded: true` and gives its Bills line `dueDay:
+5`, with schema, totals and one-row assertions.
+
+Focused test runs:
+
+- `npm test -- --runInBand src/domain/__tests__/pending.test.ts src/domain/__tests__/schemas.test.ts src/domain/__tests__/backup.test.ts src/domain/__tests__/budget.test.ts`: 4 suites / 72 tests pass.
+- `npm test -- --runInBand src/domain/__tests__/budget.test.ts`: 21 tests pass, including `projects paid and unpaid recurring schedule rows by month and category` and `matches calendar months, including leap February and demo schedule rows`.
+- Final focused P20-F run: 5 suites / 84 tests pass, including `clamps budget due days to the month length, including leap February`, `adds opt-in linked rows to planned category and group totals without changing actuals or dues`, and four-month demo data tests.
+- `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts`: 1 suite / 9 tests pass; the renamed test is `tracks P20-F done, keeps P20-G planned, and removes the withdrawn importer part`.
+
+Replaced assertion and reason:
+
+- The old progress-ledger assertion required both P20-F and P20-G to remain
+  Planned and required CR-29 to remain Planned. During implementation it now
+  asserts P20-F and CR-29 are In progress while P20-G and CR-30 remain
+  Planned, because work began but final gates had not yet passed. After the
+  final gates, P20-F's assertion changed to Done while CR-29 stayed In
+  progress and P20-G/CR-30 remained Planned. Progress counts remained 44/52
+  and 5/7 while in progress, then closed at 45/52 and 6/7. No product
+  behavior assertion was weakened. The paired progress-count assertions were
+  also updated from 44/52 and 5/7 to 45/52 and 6/7 after closure; the
+  intermediate focused test caught this stale expected count and passed after
+  the exact calculated totals were updated.
+
+The first full coverage run exited 1 only because of that stale tracker
+expectation (69 suites passed, 1 failed; 776 tests passed, 1 failed). The
+ledger assertion was updated as described and the full command was rerun.
+Final sequential gates:
+
+| Gate | Result | Exit |
+|---|---|---:|
+| First `npm test -- --coverage` | Stale progress-ledger status assertion failed; corrected without changing product assertions. | 1 |
+| Final `npm test -- --coverage` | 70 suites / 777 tests passed; statements 96.28%, branches 93.32%, functions 97.15%, lines 97.69%. | 0 |
+| `npx tsc --noEmit` | TypeScript check passed. | 0 |
+| `npx expo lint` | Lint passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android export passed. | 0 |
+| `npx expo export --platform ios` | iOS export passed. | 0 |
+
+Per-directory Istanbul totals (tests excluded; hooks excluded from data):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2187/2222 (98.42%) | 2026/2157 (93.93%) |
+| `src/data` excluding hooks | 414/443 (93.45%) | 336/383 (87.73%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Changed pure-domain per-file Istanbul summaries:
+
+| File | Statements | Branches | Lines |
+|---|---:|---:|---:|
+| `src/domain/budget.ts` | 98.87% | 94.55% | 100.00% |
+| `src/domain/pending.ts` | 96.66% | 94.82% | 100.00% |
+| `src/domain/schemas.ts` | 92.57% | 90.22% | 92.62% |
+| `src/domain/backup.ts` | 98.65% | 97.05% | 98.54% |
+
+Exact per-directory aggregation script used:
+
+```sh
+node <<'NODE'
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(require('./coverage/coverage-final.json'));
+for (const [name, match] of Object.entries({
+  domain: f => /\/src\/domain\//.test(f) && !/\/__tests__\//.test(f),
+  data: f => /\/src\/data\//.test(f) && !/\/__tests__\//.test(f) && !/\/hooks?\//.test(f),
+  lib: f => /\/src\/lib\//.test(f) && !/\/__tests__\//.test(f),
+})) {
+  let lc = 0, lt = 0, bc = 0, bt = 0;
+  for (const file of map.files()) if (match(file)) {
+    const s = map.fileCoverageFor(file).toSummary();
+    lc += s.lines.covered; lt += s.lines.total;
+    bc += s.branches.covered; bt += s.branches.total;
+  }
+  console.log(`${name}: lines ${lc}/${lt} (${(100 * lc / lt).toFixed(2)}%); branches ${bc}/${bt} (${(100 * bc / bt).toFixed(2)}%)`);
+}
+NODE
+```
+
+P20-F implementation commits (all abbreviated hashes checked as Git commit
+objects): `5d81b65` (F1 design), `e36d153` (F2 due-day support), `d736b11`
+(F3 linked schedule projection), `f41d6d4` (F4 budget view), `b8fff43` (F5
+demo data), and `18fc19d` (tracker-test state update). No dependencies changed.
+`SCHEMA_VERSION` was 7 before and after. SortChip, `src/lib/sorting.ts`, and
+the frozen form components were not modified; `formComponentsFrozen` passes.
+Assumed: an undated one-time liability is not a linked month row, consistent
+with existing pending and monthly-commitment behavior rather than the
+schedule's internal start-date fallback. `budgetMonthView` uses month-end as
+its schedule `asOf`, matching `monthlyCommitments`; direct helper callers
+inject their own `asOf`.
+The user's manual change commit `6cb4fa0` remains intact: the touched user-owned
+files are `app/(tabs)/budget.tsx`, `app/(tabs)/transactions.tsx`, and
+`app/month-review.tsx`; specifically, the removed “Back to transactions”
+button and other removed Budget/balance UI were not restored. The final
+Transactions balance section remains the user's label and amount (including
+Shortfall/danger styling), optional “From {Mon} ₹X” chip, divider and review
+link when available, without the removed metric columns or captions.
+
+**P20-F device checks not verified:** no physical iOS/Android device or
+development build was used. Native rendering and month-form persistence of
+imported `dueDay` data, TalkBack/VoiceOver announcements, platform-specific
+date boundaries, and real-device storage/backup round trips remain unverified.
+This phase adds no due-day editing UI; a later feature must verify its
+controls, clamping display and accessibility on device.

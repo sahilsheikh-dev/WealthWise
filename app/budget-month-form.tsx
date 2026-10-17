@@ -23,7 +23,7 @@ import { todayISO } from '../src/lib/clock';
 
 type MonthForm = {
   plannedIncome: string;
-  lines: { category: string; mode: 'amount' | 'percent'; planned: string }[];
+  lines: { category: string; mode: 'amount' | 'percent'; planned: string; dueDay?: number }[];
 };
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -47,11 +47,16 @@ export default function BudgetMonthFormScreen() {
       const templateLines = defaultTemplate && (!defaultTemplate.lines.some((line) => line.mode === 'percent') || suggestedIncome !== null)
         ? resolveTemplate(defaultTemplate, suggestedIncome)
         : [];
-      const lineValues = new Map((stored?.lines ?? templateLines).map((line) => [line.category, line.planned]));
-      return BUDGET_CATEGORIES.map((category) => ({
-        category, mode: 'amount' as const,
-        planned: lineValues.has(category) ? String(lineValues.get(category)) : '',
-      }));
+      const lineValues = new Map((stored?.lines ?? templateLines).map((line) => [line.category, line]));
+      return BUDGET_CATEGORIES.map((category) => {
+        const line = lineValues.get(category);
+        return {
+          category,
+          mode: 'amount' as const,
+          planned: line ? String(line.planned) : '',
+          ...(line?.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+        };
+      });
     })(),
   }), [defaultTemplate, stored, suggestedIncome]);
   const { control, handleSubmit, formState: { isDirty, isSubmitting } } = useForm<MonthForm>({ defaultValues });
@@ -74,6 +79,7 @@ export default function BudgetMonthFormScreen() {
           planned: line.mode === 'percent' && plannedIncome !== null
             ? Math.round(Number(line.planned) * plannedIncome / 100)
             : Number(line.planned),
+          ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
         }));
       if ((plannedIncome !== null && (!Number.isFinite(plannedIncome) || plannedIncome <= 0))
         || values.lines.some((line) => line.planned.trim() !== '' && line.mode === 'percent'

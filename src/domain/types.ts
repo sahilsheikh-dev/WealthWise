@@ -173,6 +173,7 @@ export type Policy = {
 export type BudgetLine = {
   category: string;
   planned: number;
+  dueDay?: number;
 };
 
 export type Budget = {
@@ -184,6 +185,7 @@ export type BudgetTemplateLine = {
   category: string;
   mode: 'amount' | 'percent';
   value: number;
+  dueDay?: number;
 };
 
 export type BudgetTemplate = {
@@ -200,6 +202,7 @@ export type MonthBudget = {
   customized: boolean;
   plannedIncome: number | null;
   lines: BudgetLine[];
+  linkedIncluded?: boolean;
 };
 
 export type Settings = {
