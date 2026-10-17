@@ -272,6 +272,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P20E-CR31');
     expect(ledger).toContain('DEC-P20L-CR50');
     expect(ledger).toContain('DEC-P20L-CR49');
+    expect(ledger).toContain('DEC-P20L-GATE-TEST');
     expect(ledger).toContain('DEC-P21D-CR51');
     expect(ledger).toContain('DEC-P20F-STATUS');
     expect(ledger).toContain('DEC-P20G');

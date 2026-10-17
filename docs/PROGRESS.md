@@ -720,6 +720,11 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   No matches appears for empty results, and local queries reset on remount.
   Tests cover case/trim, matching by type, clear handling, no matches,
   remount reset, type-filter composition, and active sorting.
+- DEC-P20L-GATE-TEST: The full suite exposed an existing HomeThemeSmoke
+  assertion that looked for "Hide spending by category" among visible child
+  text, while the unchanged Home control exposes that exact string as its
+  accessibilityLabel and renders a numeric summary. The assertion now checks
+  the existing accessible label directly; Home screen source is unchanged.
 - DEC-BUDGET-DIRECTION: Planned, to be built only on the user's command.
   Budget is a forward-looking plan of recurring income, bills, investments,
   and loans arranged in sections. It is created once from the Edit button and

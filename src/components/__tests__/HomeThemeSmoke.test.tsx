@@ -200,7 +200,8 @@ describe('Home screen theme smoke', () => {
         .toEqual({ expanded: false });
       act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(visibleText).toContain('Hide spending by category');
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
+        .toBe('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);
       expect(visibleText).not.toContain('Salary');
