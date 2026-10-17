@@ -212,7 +212,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 
-  it('tracks P20-K, active P20-L and planned P21-D without the withdrawn importer part', () => {
+  it('tracks completed P20-L and P21-D without the withdrawn importer part', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -227,16 +227,14 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-I |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-J |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-29')).toBe('Done');
-    expect(statusFor('CR-47')).toBe('In progress');
-    expect(statusFor('CR-48')).toBe('Done (focused tests; final gates pending)');
-    expect(statusFor('CR-49')).toBe('Done (focused tests; final gates pending)');
-    expect(statusFor('CR-50')).toBe('Done (focused tests; final gates pending)');
-    expect(statusFor('CR-51')).toBe('Done (focused tests; final gates pending)');
+    for (const id of ['CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51']) {
+      expect(statusFor(id)).toBe('Done');
+    }
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
@@ -254,7 +252,7 @@ describe('permanent progress ledger', () => {
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-D |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-D |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done;');
     expect(statusFor('CR-25')).toBe('Superseded by CR-32');
     expect(statusFor('CR-24')).toBe('Superseded by CR-30');
@@ -263,9 +261,9 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 87% (52/60)');
-    expect(dashboard).toContain('Phase 20         █████████░ 92% (11/12)');
-    expect(dashboard).toContain('Phase 21         ████████░░ 80% (4/5)');
+    expect(dashboard).toContain('Overall progress █████████░ 90% (54/60)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (12/12)');
+    expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
     expect(ledger).toContain('DEC-P20E-CR27');
@@ -273,6 +271,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P20L-CR50');
     expect(ledger).toContain('DEC-P20L-CR49');
     expect(ledger).toContain('DEC-P20L-GATE-TEST');
+    expect(ledger).toContain('P20-L / P21-D device checks not verified');
     expect(ledger).toContain('DEC-P21D-CR51');
     expect(ledger).toContain('DEC-P20F-STATUS');
     expect(ledger).toContain('DEC-P20G');
