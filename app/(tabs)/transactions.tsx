@@ -153,7 +153,7 @@ export default function TransactionsScreen() {
             </ChipRow>
           </View>
         ) : null}
-        <View testID="available-balance-card">
+        <View testID="available-balance-card" style={{marginTop: 10}}>
           <Card style={styles.cashCard}>
           <View style={styles.balanceSummary}>
             <View style={styles.balanceTitle}>
