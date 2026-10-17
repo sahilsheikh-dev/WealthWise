@@ -242,6 +242,26 @@ describe('budget templates and monthly views', () => {
     expect(ensureMonthBudget(percentOnly, '2026-03', '2026-03-12')).toBe(percentOnly);
   });
 
+  it('carries optional due days from templates into month lines and saved templates', () => {
+    const initial = emptyAppData('2026-03-01');
+    const template = createBudgetTemplate(initial, {
+      name: 'Bills', plannedIncome: 10_000,
+      lines: [{ category: 'Bills', mode: 'amount', value: 500, dueDay: 5 }],
+    }, () => 'bills');
+    const applied = applyTemplateToMonth(template, { month: '2026-03', templateId: 'bills' });
+    expect(applied.monthBudgets?.[0]?.lines).toEqual([
+      { category: 'Bills', planned: 500, dueDay: 5 },
+    ]);
+    const customized = customizeMonthBudget(applied, '2026-03', {
+      plannedIncome: 10_000,
+      lines: applied.monthBudgets?.[0]?.lines,
+    });
+    expect(saveMonthAsTemplate(customized, '2026-03', 'March bills', () => 'march')
+      .budgetTemplates?.at(-1)?.lines).toEqual([
+      { category: 'Bills', mode: 'amount', value: 500, dueDay: 5 },
+    ]);
+  });
+
   it('ensures only the current month from the default and is idempotent by reference', () => {
     const data = setDefaultBudgetTemplate(createBudgetTemplate(emptyAppData('2026-03-01'), {
       name: 'Default', plannedIncome: null, lines: [{ category: 'Food', mode: 'amount', value: 100 }],

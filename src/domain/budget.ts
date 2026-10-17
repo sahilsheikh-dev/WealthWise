@@ -166,11 +166,18 @@ export function resolveTemplate(
   plannedIncome = template.plannedIncome,
 ): BudgetLine[] {
   return template.lines.map((line) => {
-    if (line.mode === 'amount') return { category: line.category, planned: line.value };
+    if (line.mode === 'amount') {
+      return {
+        category: line.category,
+        planned: line.value,
+        ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+      };
+    }
     if (plannedIncome === null) throw new MissingPlannedIncomeError();
     return {
       category: line.category,
       planned: Math.round(line.value * plannedIncome / 100),
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
 }
@@ -321,7 +328,12 @@ export function saveMonthAsTemplate(
   if (!budget) throw new NotFoundError('Month budget', monthInput);
   return createBudgetTemplate(data, {
     name, plannedIncome: budget.plannedIncome,
-    lines: budget.lines.map((line) => ({ category: line.category, mode: 'amount', value: line.planned })),
+    lines: budget.lines.map((line) => ({
+      category: line.category,
+      mode: 'amount',
+      value: line.planned,
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+    })),
   }, newId);
 }
 

@@ -57,12 +57,12 @@ describe('appDataSchema', () => {
       ...mockAppData,
       budgetTemplates: [{
         id: 'template', name: 'Monthly', plannedIncome: 50_000,
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 20 }],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 20, dueDay: 31 }],
       }],
       defaultBudgetTemplateId: 'template',
       monthBudgets: [{
         month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
-        plannedIncome: 50_000, lines: [{ category: 'Food', planned: 10_000 }],
+        plannedIncome: 50_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 10_000, dueDay: 31 }],
       }],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
@@ -79,6 +79,24 @@ describe('appDataSchema', () => {
         ...budgeted.monthBudgets[0],
         lines: [{ category: 'Not a category', planned: 10 }],
       }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetTemplates: [{
+        ...budgeted.budgetTemplates[0],
+        lines: [{ category: 'Food', mode: 'amount', value: 10, dueDay: 0 }],
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      monthBudgets: [{
+        ...budgeted.monthBudgets[0],
+        lines: [{ category: 'Food', planned: 10, dueDay: 32 }],
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      monthBudgets: [{ ...budgeted.monthBudgets[0], linkedIncluded: 'yes' }],
     }).success).toBe(false);
   });
 
