@@ -71,7 +71,7 @@ export default function ClearDuesScreen() {
       title: mode === 'settle' ? 'Mark past dues as already paid?' : 'Record past payments?',
       message: `This will handle ${pending.count} dues totalling ${formatAmount(pending.amount, 'exact', 1)}.${recordWarning}`,
       confirmLabel: 'Confirm',
-      cancelLabel: 'Review',
+      cancelLabel: 'Cancel',
     });
     if (!confirmed) return;
     setBusy(true);

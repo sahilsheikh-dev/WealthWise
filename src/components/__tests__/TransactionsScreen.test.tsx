@@ -295,7 +295,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('always shows only the user-kept balance elements and keeps the review action', () => {
+  it('keeps the Review action and routes its selected month to Budget', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
       { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: '2026-09-02' },
@@ -346,15 +346,15 @@ describe('Transactions available-balance card', () => {
 
       const reviewLabel = `Review ${formatMonth('2026-09')}`;
       expect(currentRenderer.root.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
+      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       const reviewButton = currentRenderer.root.findAll((node) => String(node.type) === 'pressable')
         .find((node) => node.findAllByType('text').some((text) =>
           text.children.join(' ').replace(/\s+/g, ' ').trim() === reviewLabel,
         ));
       if (!reviewButton) throw new Error('Review action was not rendered.');
       act(() => reviewButton.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: '2026-09' } });
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month: '2026-09' } });
       expect(cashCard.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
-      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
         .not.toContain('NaN');
     } finally {

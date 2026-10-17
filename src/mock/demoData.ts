@@ -89,7 +89,9 @@ function makeBudgetPlanLines(): BudgetPlanLine[] {
     ...TRANSACTION_CATEGORIES.expense.filter((category) => category !== 'EMI' && category !== 'Insurance').map((category) => ({
       category,
       mode: percentages[category] === undefined ? 'amount' as const : 'percent' as const,
-      value: percentages[category] ?? Math.max(1_500, (EXPENSE_AMOUNTS[category] ?? 1_000) * 1.5),
+      value: category === 'Festival'
+        ? EXPENSE_AMOUNTS.Festival
+        : percentages[category] ?? Math.max(1_500, (EXPENSE_AMOUNTS[category] ?? 1_000) * 1.5),
       ...(category === 'Bills' ? { dueDay: 5 } : {}),
     })),
     ...INVESTMENT_FORM_CATEGORIES.map((category) => ({

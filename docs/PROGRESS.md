@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 87% (46/53)
+Overall progress █████████░ 89% (47/53)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         █████████░ 88% (7/8)
+Phase 20         ██████████ 100% (8/8)
 Phase 21         ██████████ 100% (2/2)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -124,7 +124,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-E | — | Done | CR-27, CR-28 and CR-31 delivered; 70 suites / 772 tests and all final gates pass. | 2026-10-17 |
 | P20-F | — | Done | F1–F5 budget groundwork; final 70-suite/777-test coverage gate and all required gates pass. CR-29 remains in progress for later one-plan/apply behavior. | 2026-10-17 |
 | P20-G | — | Done | Schema-v8 single budget plan, current-month apply/repeat, linked rows, setup screen and CR-30 no-menu behavior. | 2026-10-17 |
-| P20-H | — | Pending | Budget screen/review inventory and CR-32–CR-34 target design recorded; implementation and gates are in progress. | 2026-10-17 |
+| P20-H | — | Done | CR-32–CR-34; cash flow and plan summary, single grouped cards, paid/partial/linked rows, Month review screen/route removal and Transactions Review-to-Budget navigation. | 2026-10-17 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
@@ -186,8 +186,8 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 ### Resume point
 
 P19-A/B/C and P20-A/B/C/D passed their required gates and are complete.
-P20-E/F/G, P21-A/B and P22-A are Done. P20-H is in progress. The optional importer has been removed
-from active scope. Phase 23 follows P20-H. CR-29's single-plan replacement and
+P20-E/F/G/H, P21-A/B and P22-A are Done. The optional importer has been removed
+from active scope. Phase 23 is next. CR-29's single-plan replacement and
 apply-from-next-month behavior are delivered in P20-G. The earlier
 Doctor failure was resolved by CR-26. P20-H removes Month review UI while
 keeping the Transactions Review link to Budget. The previously planned P19-B, P19-C and
@@ -469,7 +469,7 @@ P21-B does not change the schema.
   choice-specific inputs included amount, target, lender and note. No
   persisted reviewed/dismissed flag existed: eligible months were derived
   from transactions and committed allocations were transactions.
-  P20-H target is the existing header, one Edit budget action and
+  P20-H final screen has the existing header, one Edit budget action and
   month switcher; a Cash flow card with only Opening balance and Closing
   balance; a same-style plan summary with the existing plan figures and actual
   income where available; then one card per group in the order Survival
@@ -479,10 +479,10 @@ P21-B does not change the schema.
   and action; linked rows retain Auto. Paid rows remain visible without an
   action. No progress bars, nested cards, separate Bills and dues section,
   source-breakdown card, reminders, sort control, outstanding card, or Review
-  control is intended to be absent. The amount figures should appear only in cash flow, the plan
+  control is absent. The amount figures appear only in cash flow, the plan
   summary, the relevant group header and its rows; no duplicated due block or
   repeated linked row remains. Transactions' user-kept Review {Mon} action
-  should open Budget for the eligible month. Decisions: KEEP opening/closing once in
+  opens Budget for the eligible month. Decisions: KEEP opening/closing once in
   Cash flow, planned income/spending/saving/left-to-allocate and actual income
   once in Plan summary, and month switching. MERGE linked schedules and budget
   rows into their category groups; each group has one card, each obligation
@@ -494,7 +494,7 @@ P21-B does not change the schema.
   longer has a Review action; `app/(tabs)/transactions.tsx` retains the one
   “Review {Mon}” action and routes it to Budget with the month; no Month review
   entry remains in `src/lib/appMenu.ts` or the rendered menu. The corresponding
-  references in `src/lib/routeKinds.ts` are targeted for removal; tests in
+  references in `src/lib/routeKinds.ts` are removed; tests in
   `src/components/__tests__/RouteRenderSmoke.test.tsx`,
   `src/components/__tests__/TransactionsScreen.test.tsx`,
   `src/components/__tests__/useAppMenu.test.tsx`, and
@@ -504,23 +504,27 @@ P21-B does not change the schema.
   `src/lib/sorting.ts` still contains its `monthReview` sort metadata, left
   unchanged as protected legacy metadata for P27-A. The demo test's old
   “Month-review-funded” title was renamed to avoid implying the removed screen.
+  Generic confirmation cancel labels in `app/clear-dues.tsx`,
+  `app/investment-form.tsx` and `app/liability-form.tsx` changed from “Review”
+  to “Cancel”; their negative/cancel outcomes and form data remain unchanged.
   Other `Preview`/`preview` strings in security settings, import/form previews,
   and `duesThroughPreview` refer to distinct behavior and remain unchanged.
-- DEC-P20H-retired: P20-H will remove the Month review screen/action surface.
+- DEC-P20H-retired: P20-H removed the Month review screen/action surface.
   Retired
-  controls are Record funding, Save allocations, Keep as cash, Add allocation,
-  Remove, How was it funded?, and the source choices Borrowed, Loan proceeds,
-  Savings or investments, Own funds, Invest and Repay a liability. Pure
+  controls are the empty-state Back and screen close/back navigation, Record
+  funding, Save allocations, Keep as cash, Add allocation, Remove,
+  How was it funded?, and the source choices Borrowed, Loan proceeds, Savings
+  or investments, Own funds, Invest and Repay a liability. Pure
   `reviewableMonths`, `shortfallForMonth`, `surplusForMonth`, `fundShortfall`,
   and `allocateSurplus`, their allocation types/schema, store actions and
-  persisted transaction records are to remain unchanged as P27-A cleanup candidates.
+  persisted transaction records remain unchanged as P27-A cleanup candidates.
   `reviewableMonths` is not dead code because Transactions still uses it to
   determine the month in its retained link; only shortfall/surplus allocation
   UI and store-action call sites are no longer reachable from a screen.
   There was no separate persisted review flag or review data to delete.
   CR-34 removes the old Month review route and Budget's Review control, plus
   the review menu action if present; Transactions' “Review {Mon}” is retained
-  and will route to Budget. Home had no Month review navigation reference.
+  and routes to Budget. Home had no Month review navigation reference.
   Assumed: linked schedule row actuals use the schedule payment amount, while
   manual budget actuals stay derived from transactions in the selected month;
   current-month schedule rows are the usual payment-action path. Assumed:
@@ -908,8 +912,8 @@ P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10], P20-C
 P20-E [CR-27, CR-28, CR-31] is complete after the final sequential gates;
 P20-F budget groundwork and P20-G single-plan replacement (CR-29) are complete
 after final gates. P20-G also supersedes CR-24 with CR-30's explicit no-menu
-design. P20-H adds paid, overdue, partial and linked rows in the Budget group
-cards; Phase 20 is 8/8 complete and Phase 23 is the next resume point.
+design. P20-H closes CR-32–CR-34; Budget group cards show paid, overdue,
+partial and linked rows. Phase 20 is 8/8 complete and Phase 23 is next.
 
 ### Phase 21 — Emergency fund as a goal-linked model
 
@@ -1108,7 +1112,7 @@ evidence present in exports/checkpoints.
 | P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | Done; focused suites and 70 suites / 772 tests pass; TypeScript, lint, Doctor 21/21, Android and iOS exports all exit 0. | `033d493` (CR-28), `501dce7` (CR-27), `fe5fa1e` (CR-31), tracker/test updates `973241e`, `b0cb6ee` | Assumed: Paid / Not paid use the existing confirm helper's labels; default native-alert dismissal is not paid; the existing five-second ActionToast is the brief Undo notice. | current request |
 | P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. Assumed: one-time liabilities without dueDate do not become linked rows. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
 | P20-G | Phase 20 | — | — | 2026-10-17 | Schema-v8 single budget plan, template migration, repeat/apply store actions, setup screen, Budget/Home routing and CR-30 no-menu behavior. | Done; 70 suites / 763 tests and all six final gates pass. | `3c644d3` | See DEC-P20G; real-device UI checks remain unverified. | current request |
-| P20-H | Phase 20 | — | — | 2026-10-17 | Inventory Budget and Month review; target cash-flow/plan/group order, CR-32–CR-34. | Pending implementation and verification. | none | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use the schedule payment amount. See DEC-P20H. | current request |
+| P20-H | Phase 20 | — | — | 2026-10-17 | Budget cash flow and plan summary, one card per spending group with paid rows and compact actions; Month review UI/route removed and Transactions Review routes to Budget with its month (CR-32–CR-34). | Done; 70 suites / 765 tests pass; all six final gates pass; see P20-H close-out below. | Implementation commit to be recorded by close-out | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use schedule payment amounts. See DEC-P20H. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
@@ -1146,16 +1150,16 @@ evidence present in exports/checkpoints.
 | CR-22 | Keep only the user's surviving Available/Closing balance elements and remove its expansion behavior. | Done | P20-D; DEC-USER-CHANGES records the final element set and replaces expansion tests with always-visible/no-toggle assertions. |
 | CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done | P20-D; 1/3/401, future, mixed, plan, liability and budget cases; single-write/deep-equal Undo tests pass. |
 | CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Superseded by CR-30 | The interim menu design is replaced by an explicit no-menu Budget header; month switching and on-screen Review remain. |
-| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done | Existing P20-D responsive Bills/dues structure remains until CR-32 merges it into the spending groups. |
+| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Superseded by CR-32 | The separate Bills and dues section is merged into the group cards; linked rows appear once in their group. |
 | CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
 | CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Done | P20-E; oldest/later due confirmation, cancellation/dismissal no-op, clear-through preview, Undo and no-navigation tests pass. |
 | CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Done | P20-E; domain and screen tests cover -0, -0.001, 0, 0.004, 1500 and -1500; all final gates pass. |
 | CR-29 | Keep one budget plan, apply from next month and link recurring items. | Done | P20-F due-day/linked groundwork plus P20-G schema-v8 migration, one plan, repeat/apply actions, setup UI, Home/Budget flows, demo and tests. |
 | CR-30 | Remove the Budget header menu. | Done | P20-G sets `showDefaultMenu={false}`; tests assert no header menu while preserving month switching. CR-34 later removes Budget's Review control. |
 | CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Done | P20-E; exact popup copy/button order, current-route retention, Undo restoration and brief toast tests pass; all final gates pass. |
-| CR-32 | Merge Budget dues and planned/actual data into one responsive card per group, retaining paid rows and direct clear/Undo behavior. | Planned | P20-H target; implementation and acceptance tests pending. |
-| CR-33 | Reorder Budget to cash flow, plan summary and group cards, with only the Edit budget header action. | Planned | P20-H target; implementation and acceptance tests pending. |
-| CR-34 | Remove Month review UI and route; route Transactions' Review {Mon} action to Budget at that month. | Planned | P20-H target; route and navigation tests pending. |
+| CR-32 | Merge Budget dues and planned/actual data into one responsive card per group, retaining paid rows and direct clear/Undo behavior. | Done | P20-H; grouped row projection, paid/partial/overdue/linked states, one card per group and simulated 1.3/2.0 font-scale layout tests pass. |
+| CR-33 | Reorder Budget to cash flow, plan summary and group cards, with only the Edit budget header action. | Done | P20-H; screen-order, two-row cash-flow, tone, plan-summary styling, no-menu and month-switch tests pass. |
+| CR-34 | Remove Month review UI and route; route Transactions' Review {Mon} action to Budget at that month. | Done | P20-H; route-kind absence and valid/invalid month navigation tests pass; pure review allocation functions and transaction records remain. |
 
 ## 8. Known issues and risks
 
@@ -2018,3 +2022,99 @@ voice-control/screen-reader behavior for automatic linked rows; and storage
 write/Undo behavior on physical devices. Layout tests assert React Native
 props and styles only; no real iOS/Android device or development build was
 used.
+
+### P20-H grouped Budget and Month review retirement close-out
+
+P20-H closes CR-32, CR-33 and CR-34; CR-25 is superseded by CR-32. The Budget
+screen now has cash flow, plan summary and one card for each group, with
+schedule and own-line rows merged, paid rows retained, and compact
+“Marked as paid”/“Received” labels. Transactions keeps “Review {Mon}” but
+routes to Budget with the selected month. Month review screen and route are
+deleted. No schema or persisted data changed: `SCHEMA_VERSION` is 8 before and
+after P20-H; month-review calculations, store actions, allocation schema/types
+and transaction records remain unchanged.
+
+P20-H test evidence:
+
+- Focused: `npm test -- --runInBand src/domain/__tests__/pending.test.ts src/components/__tests__/PendingItemActions.test.tsx src/components/__tests__/RouteRenderSmoke.test.tsx src/components/__tests__/TransactionsScreen.test.tsx src/components/__tests__/useAppMenu.test.tsx src/lib/__tests__/routeKinds.test.ts src/mock/__tests__/demoData.test.ts src/lib/__tests__/progressLedger.test.ts` — 8 suites / 162 tests passed.
+- Acceptance tests include `uses Paid wording for expense/investment rows and Received for income rows`; `projects paid, partial, overdue, and linked rows once in due-date order`; `shows the paid amount for a scheduled row cleared after its due month`; `clears a compact budget row directly as Marked as paid and offers undo`; `uses the compact paid action for later dues and confirms the exact clear-through preview`; `keeps paid, overdue, partial and linked rows inside their budget groups`; `renders grouped Auto and budget rows at font scale 1, 1.3 and 2`; `keeps one Edit budget action and the month switcher without a menu or Review control`; `shows cash flow, plan summary and grouped rows in the required order`; `normalizes Budget closing balance with matching tone and accessible label`; `selects the routed Budget month, falling back for an invalid value`; `keeps the Review action and routes its selected month to Budget`; and route-kind assertions that no Month review route is registered.
+- Demo test confirms the four-month data shows a paid row, overdue row, partial
+  row and linked schedule row in the Budget groups.
+
+Replaced assertions and reasons:
+
+- `keeps one no-budget card with a plan-dependent primary action and empty bills state` now asserts the primary action and its setup/apply behavior in Plan summary; the separate Bills and dues block is gone. Reason: CR-32 merges rows into groups and CR-33 sets the new order.
+- `shows cash-flow positions and keeps plan editing separate from template application` now checks only Opening/Closing cash-flow rows, the plan summary metrics and matching metric-row styles. Reason: CR-33 removes the extra flow metric and template application model.
+- `expands earned-income sources and labels unexpected spending clearly` is replaced by group-card, category-row and actual/planned assertions. Reason: the separate income/source card and nested category presentation are removed.
+- `shows earned income by source and separates other money in on Month review` is removed; its values/actions are not a separate screen. Opening/closing remain in Cash flow and available plan figures remain in Plan summary. Reason: CR-34 deletes Month review UI.
+- `keeps the Budget header menu removed and retains on-screen month review` now asserts no Budget Review control and retains month switching/Edit budget. Reason: CR-34 moves the remaining review link to Transactions.
+- `shows no tab bar on Budget setup or Month review stack routes` is replaced by a Budget setup stack-route check and a Month review route-kind absence check. Reason: the Month review route no longer exists.
+- The old RouteRenderSmoke MonthReview empty-state screen entry and `/month-review` route assertion are replaced by route-registry absence and valid/invalid Budget month-parameter assertions. Reason: CR-34 deletes that screen and routes Transactions Review to Budget.
+- The prior Transactions assertion that only kept the Review button visible is replaced by an assertion that its selected month is passed to `/(tabs)/budget`. Reason: the button remains, but its destination changes.
+- The prior menu assertion that included a Month review entry is replaced by no Review menu item and no Budget header menu. Reason: no Month review action remains in app menus.
+- Old single Bills/dues-row and nested/progress-card expectations are replaced by seven group cards in fixed order, each containing rows once, no nested cards/progress bars, Auto tags, paid chips, partial balances and responsive row styles. Reason: CR-32 supersedes CR-25's section design.
+- The ledger test's P20-H Pending/CR-32–34 Planned, CR-25 Done, 46/53 and 7/8 assertions are replaced by Done, CR-25 Superseded, 47/53 and 8/8. Reason: P20-H and its CRs closed after acceptance and gates.
+
+Final sequential gates (real exit codes):
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 70 suites / 765 tests passed. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Coverage aggregates (independent Istanbul covered/total line and branch counts):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2227/2263 (98.41%) | 2069/2210 (93.62%) |
+| `src/data` excluding hooks | 455/482 (94.40%) | 392/445 (88.09%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Aggregation script:
+
+```js
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8')));
+const groups = {
+  'src/domain': (file) => file.includes(`${path.sep}src${path.sep}domain${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+  'src/data excluding hooks': (file) => file.includes(`${path.sep}src${path.sep}data${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`) && !file.includes(`${path.sep}hooks${path.sep}`),
+  'pure src/lib': (file) => file.includes(`${path.sep}src${path.sep}lib${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+};
+for (const [name, include] of Object.entries(groups)) {
+  const summaries = map.files().filter(include).map((file) => map.fileCoverageFor(file).toSummary());
+  const totals = summaries.reduce((total, summary) => {
+    for (const metric of ['lines', 'branches']) {
+      total[metric].covered += summary[metric].covered;
+      total[metric].total += summary[metric].total;
+    }
+    return total;
+  }, { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } });
+  for (const metric of ['lines', 'branches']) {
+    totals[metric].pct = totals[metric].total ? 100 * totals[metric].covered / totals[metric].total : 100;
+  }
+  console.log(`${name}: lines ${totals.lines.covered}/${totals.lines.total} (${totals.lines.pct.toFixed(2)}%); branches ${totals.branches.covered}/${totals.branches.total} (${totals.branches.pct.toFixed(2)}%)`);
+}
+```
+
+Changed-source per-file Istanbul summary for `src/domain/pending.ts`:
+Statements 98.54%, Branches 94.55%, Functions 100.00%, Lines 100.00%.
+
+Assumed: manual budget actuals remain selected-month transaction totals;
+schedule-linked row actuals use their schedule payment amounts. Assumed:
+monthly schedule rows are the usual payment-action path; row ordering is by
+due date then name with undated rows last. Layout tests inspect React Native
+styles/accessibility props only.
+
+**P20-H acceptance criteria not verified on a real device:** OS font scaling
+and actual text wrapping/clipping at 1.3/2.0; touch and navigation behavior
+for the month switcher, Edit budget and due actions; native dialog/toast
+presentation and five-second Undo timing; VoiceOver/TalkBack announcements
+for Paid, Auto and compact action labels; real-time refresh across Budget,
+Transactions and Home after a payment; and platform-specific rendering on
+iOS/Android. No physical device or development build was used.

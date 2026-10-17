@@ -144,6 +144,62 @@ describe('pending item Pay navigation', () => {
 });
 
 describe('later due and planned item actions', () => {
+  it('clears a compact budget row directly as Marked as paid and offers undo', () => {
+    const planned = item({ kind: 'budget', category: 'Food' });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" compact />); });
+    if (!renderer) throw new Error('Compact budget actions did not render.');
+    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
+      .toEqual(['Marked as paid']);
+    act(() => renderer?.root.findByType('button').props.onPress());
+    expect(mockActions.addTransaction).toHaveBeenCalledWith({
+      type: 'expense',
+      amount: 125,
+      category: 'Food',
+      note: '',
+      date: '2026-10-12',
+    });
+    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Marked ₹125 as paid',
+      actionLabel: 'Undo',
+      onAction: expect.any(Function),
+    }));
+    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
+    toast.onAction();
+    expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
+  });
+
+  it('uses the compact paid action for later dues and confirms the exact clear-through preview', async () => {
+    mockConfirmAsync.mockResolvedValue(true);
+    const laterDue = {
+      ...item({ kind: 'plan', parentId: 'sip-1', slotId: 'slot-3' }, 'Mutual fund / SIP'),
+      dueDate: '2026-12-10',
+      actionable: false,
+    };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<PendingItemActions item={laterDue} today="2026-10-12" compact />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Compact later-due actions did not render.');
+    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
+      .toEqual(['Marked as paid']);
+    await act(async () => {
+      renderer?.root.findByType('button').props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockConfirmAsync).toHaveBeenCalledWith({
+      title: 'Clear dues?',
+      message: 'Clear 3 dues through 10 Dec 2026? This includes 2 earlier dues, ₹250 total.',
+      confirmLabel: 'Clear due',
+    });
+    expect(mockActions.clearDuesThrough).toHaveBeenCalledWith(
+      { kind: 'plan', id: 'sip-1' },
+      '2026-12-10',
+    );
+  });
+
   it('asks before clearing later installments, records one through action and provides one undo', async () => {
     mockConfirmAsync.mockResolvedValue(true);
     const laterDue = {
