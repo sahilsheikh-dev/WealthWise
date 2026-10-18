@@ -4,9 +4,12 @@ import { investCategoryFor } from './links';
 import { monthEndDate, monthPositionAt, normalizeMoney } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
+import { EARNED_INCOME_CATEGORIES } from './types';
+import { formatINR } from '../lib/format';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
+  EarnedIncomeCategory,
   BudgetIncomeItem,
   BudgetLine,
   BudgetPlan,
@@ -30,6 +33,8 @@ export type BudgetCommitment = {
 export type LinkedRecurringRow = {
   kind: 'plan' | 'liability' | 'policy';
   id: string;
+  parentId: string;
+  entryId?: string;
   name: string;
   category: string;
   amount: number;
@@ -101,6 +106,10 @@ const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
 export function budgetGroupFor(category: string): BudgetGroup | undefined {
   return BUDGET_GROUPS.find((group) => group.categories.includes(category));
+}
+
+function isEarnedIncomeCategory(category: string): category is EarnedIncomeCategory {
+  return (EARNED_INCOME_CATEGORIES as readonly string[]).includes(category);
 }
 
 function isInvestmentCategory(category: string): boolean {
@@ -180,6 +189,8 @@ function linkedRowsFor(
     : [{
       kind,
       id: `${kind}:${parentId}:${row.id}`,
+      parentId,
+      ...(row.entryId === undefined ? {} : { entryId: row.entryId }),
       name,
       category,
       amount: row.amount,
@@ -615,5 +626,349 @@ export function projectedCashFlow(
     opening,
     closing: normalizeMoney(opening + income - spend - save),
     projected: true,
+  };
+}
+
+export type BudgetOverviewItem = {
+  id: string;
+  title: string;
+  planned: number;
+  actual: number;
+  kind: 'line' | 'linked' | 'income';
+  editable: boolean;
+  source: { kind: 'line'; category: string }
+    | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory }
+    | { kind: 'plan' | 'liability' | 'policy'; parentId: string };
+};
+
+export type BudgetOverviewSection = {
+  id: string;
+  name: string;
+  planned: number;
+  actual: number;
+  items: BudgetOverviewItem[];
+};
+
+export type BudgetOverview = {
+  mode: 'past' | 'current' | 'future';
+  cashFlow: ReturnType<typeof projectedCashFlow>;
+  stacked: {
+    income: { planned: number; actual: number };
+    spend: { planned: number; actual: number };
+    invest: { planned: number; actual: number };
+    left: { planned: number; actual: number };
+  };
+  sections: BudgetOverviewSection[];
+  pace: { days: number; planned: number[]; actual: number[] } | null;
+  summary: { stacked: string; sections: string; pace: string | null };
+};
+
+const OVERVIEW_SECTIONS = [
+  { id: 'income', name: 'Income' },
+  { id: 'survival', name: 'Survival (Needs)' },
+  { id: 'savings-investments', name: 'Savings and Investments' },
+  { id: 'wants', name: 'Wants' },
+  { id: 'festival-donations-culture', name: 'Festival, Donations, Culture' },
+  { id: 'unexpected-extras', name: 'Unexpected Extras' },
+  { id: 'debt-repayments', name: 'Debt repayments' },
+  { id: 'insurance', name: 'Insurance' },
+] as const;
+
+function overviewSectionFor(category: string): string {
+  if (category === 'EMI') return 'debt-repayments';
+  if (category === 'Insurance') return 'insurance';
+  const group = budgetGroupFor(category);
+  if (!group) throw new Error(`No budget group is defined for category "${category}".`);
+  return group.id;
+}
+
+function overviewSourceKind(
+  kind: NonNullable<Transaction['source']>['kind'],
+): 'plan' | 'liability' | 'policy' | null {
+  if (kind === 'holding-entry') return 'plan';
+  if (kind === 'liability-payment') return 'liability';
+  if (kind === 'policy-payment') return 'policy';
+  return null;
+}
+
+function monthActualTransactions(data: AppData, month: string, today: ISODate): Transaction[] {
+  const currentMonth = monthKey(today);
+  if (month > currentMonth) return [];
+  const through = month < currentMonth ? monthEndDate(month) : today;
+  return data.transactions.filter((row) => monthKey(row.date) === month && row.date <= through);
+}
+
+function moneySum(values: readonly number[]): number {
+  return normalizeMoney(values.reduce((total, value) => total + value, 0));
+}
+
+export function budgetOverview(data: AppData, monthInput: string, today: ISODate): BudgetOverview {
+  const month = monthOf(monthInput);
+  const currentMonth = monthKey(today);
+  const mode = month < currentMonth ? 'past' : month === currentMonth ? 'current' : 'future';
+  const cashFlow = projectedCashFlow(data, month, today);
+  const { budget } = effectiveMonthBudget(data, month, today);
+  const emptyStacked = {
+    income: { planned: 0, actual: 0 },
+    spend: { planned: 0, actual: 0 },
+    invest: { planned: 0, actual: 0 },
+    left: { planned: 0, actual: 0 },
+  };
+  if (!budget) {
+    return {
+      mode,
+      cashFlow,
+      stacked: emptyStacked,
+      sections: [],
+      pace: null,
+      summary: {
+        stacked: 'No budget for this month.',
+        sections: 'No budget sections.',
+        pace: null,
+      },
+    };
+  }
+
+  const view = budgetMonthView(data, month, today);
+  const actualTransactions = monthActualTransactions(data, month, today);
+  const actualEarnedByCategory = new Map<EarnedIncomeCategory, number>();
+  for (const transaction of actualTransactions) {
+    if (transaction.type !== 'income'
+      || (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(transaction.category)
+      || !isEarnedIncomeCategory(transaction.category)) continue;
+    const category = transaction.category;
+    actualEarnedByCategory.set(
+      category,
+      normalizeMoney((actualEarnedByCategory.get(category) ?? 0) + transaction.amount),
+    );
+  }
+
+  const sectionItems = new Map<string, BudgetOverviewItem[]>(
+    OVERVIEW_SECTIONS.map((section) => [section.id, []]),
+  );
+  const remainingEarned = new Map(actualEarnedByCategory);
+  for (const income of budget.incomes) {
+    const actual = Math.min(income.amount, remainingEarned.get(income.category) ?? 0);
+    remainingEarned.set(income.category, normalizeMoney(
+      (remainingEarned.get(income.category) ?? 0) - actual,
+    ));
+    sectionItems.get('income')?.push({
+      id: `income:${income.id}`,
+      title: income.name,
+      planned: normalizeMoney(income.amount),
+      actual: normalizeMoney(actual),
+      kind: 'income',
+      editable: true,
+      source: { kind: 'income', incomeId: income.id, category: income.category },
+    });
+  }
+  for (const category of EARNED_INCOME_CATEGORIES) {
+    const extra = remainingEarned.get(category) ?? 0;
+    if (extra <= 0) continue;
+    sectionItems.get('income')?.push({
+      id: `income:actual:${category}`,
+      title: category,
+      planned: 0,
+      actual: normalizeMoney(extra),
+      kind: 'income',
+      editable: true,
+      source: { kind: 'income', incomeId: `actual:${category}`, category },
+    });
+  }
+
+  const actualByCategory = new Map<string, number>();
+  for (const transaction of actualTransactions) {
+    if (transaction.type !== 'expense' && transaction.type !== 'invest') continue;
+    const category = budgetCategoryForTransaction(transaction);
+    actualByCategory.set(
+      category,
+      normalizeMoney((actualByCategory.get(category) ?? 0) + transaction.amount),
+    );
+  }
+
+  const linkedRows = linkedRecurringForMonth(data, month, monthEndDate(month));
+  const matchedEntryIds = new Set<string>();
+  const linkedPlannedByCategory = new Map<string, number>();
+  const linkedActualByCategory = new Map<string, number>();
+  for (const row of linkedRows) {
+    const linkedActual = row.kind === 'liability'
+      && data.liabilities.find((item) => item.id === row.parentId)?.kind === 'one-time'
+      ? actualTransactions.filter((transaction) =>
+        transaction.source?.kind === 'liability-payment'
+        && transaction.source.parentId === row.parentId,
+      ).reduce((sum, transaction) => sum + transaction.amount, 0)
+      : row.entryId
+        ? actualTransactions.filter((transaction) =>
+          overviewSourceKind(transaction.source?.kind ?? 'liability-origin') === row.kind
+          && transaction.source?.parentId === row.parentId
+          && transaction.source.entryId === row.entryId,
+        ).reduce((sum, transaction) => sum + transaction.amount, 0)
+        : 0;
+    if (row.entryId) matchedEntryIds.add(row.entryId);
+    if (row.kind === 'liability'
+      && data.liabilities.find((item) => item.id === row.parentId)?.kind === 'one-time') {
+      for (const transaction of actualTransactions) {
+        if (transaction.source?.kind === 'liability-payment'
+          && transaction.source.parentId === row.parentId) {
+          matchedEntryIds.add(transaction.source.entryId);
+        }
+      }
+    }
+    const category = row.category;
+    sectionItems.get(overviewSectionFor(category))?.push({
+      id: row.id,
+      title: row.name,
+      planned: normalizeMoney(row.amount),
+      actual: normalizeMoney(linkedActual),
+      kind: 'linked',
+      editable: false,
+      source: { kind: row.kind, parentId: row.parentId },
+    });
+    linkedPlannedByCategory.set(
+      category,
+      normalizeMoney((linkedPlannedByCategory.get(category) ?? 0) + row.amount),
+    );
+    linkedActualByCategory.set(
+      category,
+      normalizeMoney((linkedActualByCategory.get(category) ?? 0) + linkedActual),
+    );
+  }
+
+  for (const transaction of actualTransactions) {
+    const source = transaction.source;
+    if (!source) continue;
+    const kind = overviewSourceKind(source.kind);
+    if (!kind || matchedEntryIds.has(source.entryId)) continue;
+    const isKnownParent = kind === 'plan'
+      ? data.holdings.some((holding) => holding.id === source.parentId)
+      : kind === 'liability'
+        ? data.liabilities.some((liability) => liability.id === source.parentId)
+        : data.policies.some((policy) => policy.id === source.parentId);
+    if (!isKnownParent) continue;
+    const category = kind === 'plan'
+      ? investCategoryFor(data.holdings.find((holding) => holding.id === source.parentId)?.type ?? 'Other')
+      : kind === 'liability' ? 'EMI' : 'Insurance';
+    const title = kind === 'plan'
+      ? data.holdings.find((holding) => holding.id === source.parentId)?.name ?? 'Investment'
+      : kind === 'liability'
+        ? data.liabilities.find((liability) => liability.id === source.parentId)?.name ?? 'Liability'
+        : data.policies.find((policy) => policy.id === source.parentId)?.name ?? 'Policy';
+    const id = `linked:${kind}:${source.parentId}:${source.entryId}`;
+    sectionItems.get(overviewSectionFor(category))?.push({
+      id,
+      title,
+      planned: 0,
+      actual: normalizeMoney(transaction.amount),
+      kind: 'linked',
+      editable: false,
+      source: { kind, parentId: source.parentId },
+    });
+    linkedActualByCategory.set(
+      category,
+      normalizeMoney((linkedActualByCategory.get(category) ?? 0) + transaction.amount),
+    );
+  }
+
+  const categories = new Set([
+    ...view.lines.map((line) => line.category),
+    ...actualByCategory.keys(),
+  ]);
+  for (const category of categories) {
+    const sectionId = overviewSectionFor(category);
+    const line = view.lines.find((row) => row.category === category);
+    const planned = normalizeMoney(Math.max(
+      0,
+      (line?.planned ?? 0) - (linkedPlannedByCategory.get(category) ?? 0),
+    ));
+    const actual = normalizeMoney(Math.max(
+      0,
+      (actualByCategory.get(category) ?? 0) - (linkedActualByCategory.get(category) ?? 0),
+    ));
+    if (planned === 0 && actual === 0) continue;
+    sectionItems.get(sectionId)?.push({
+      id: `line:${month}:${category}`,
+      title: category,
+      planned,
+      actual,
+      kind: 'line',
+      editable: true,
+      source: { kind: 'line', category },
+    });
+  }
+
+  const sections = OVERVIEW_SECTIONS.map((definition) => {
+    const items = sectionItems.get(definition.id) ?? [];
+    return {
+      ...definition,
+      planned: moneySum(items.map((item) => item.planned)),
+      actual: moneySum(items.map((item) => item.actual)),
+      items,
+    };
+  });
+  const sectionTotal = (ids: readonly string[], key: 'planned' | 'actual') => moneySum(
+    sections.filter((section) => ids.includes(section.id)).map((section) => section[key]),
+  );
+  const income = sections[0];
+  const spendPlanned = sectionTotal(
+    ['survival', 'wants', 'festival-donations-culture', 'unexpected-extras', 'debt-repayments', 'insurance'],
+    'planned',
+  );
+  const spendActual = sectionTotal(
+    ['survival', 'wants', 'festival-donations-culture', 'unexpected-extras', 'debt-repayments', 'insurance'],
+    'actual',
+  );
+  const invest = sections.find((section) => section.id === 'savings-investments');
+  const plannedIncome = income?.planned ?? 0;
+  const actualIncome = income?.actual ?? 0;
+  const stacked = {
+    income: { planned: plannedIncome, actual: actualIncome },
+    spend: { planned: spendPlanned, actual: spendActual },
+    invest: { planned: invest?.planned ?? 0, actual: invest?.actual ?? 0 },
+    left: {
+      planned: normalizeMoney(plannedIncome - spendPlanned - (invest?.planned ?? 0)),
+      actual: normalizeMoney(actualIncome - spendActual - (invest?.actual ?? 0)),
+    },
+  };
+
+  const endDay = Number(monthEndDate(month).slice(8, 10));
+  const elapsedDays = mode === 'past' ? endDay : mode === 'current' ? Number(today.slice(8, 10)) : 0;
+  const dailyExpenses = new Map<number, number>();
+  for (const transaction of actualTransactions) {
+    if (transaction.type !== 'expense') continue;
+    const day = Number(transaction.date.slice(8, 10));
+    dailyExpenses.set(day, normalizeMoney((dailyExpenses.get(day) ?? 0) + transaction.amount));
+  }
+  const actualPace: number[] = [];
+  let cumulativeActual = 0;
+  for (let day = 1; day <= elapsedDays; day += 1) {
+    cumulativeActual = normalizeMoney(cumulativeActual + (dailyExpenses.get(day) ?? 0));
+    actualPace.push(cumulativeActual);
+  }
+  const plannedSpend = stacked.spend.planned;
+  const pace = mode === 'future' ? null : {
+    days: endDay,
+    planned: Array.from({ length: endDay }, (_, index) =>
+      normalizeMoney(plannedSpend * (index + 1) / endDay)),
+    actual: actualPace,
+  };
+  const leftSummary = [
+    stacked.left.planned < 0 ? `Planned over by ${formatINR(Math.abs(stacked.left.planned))}.` : '',
+    stacked.left.actual < 0 ? `Actual over by ${formatINR(Math.abs(stacked.left.actual))}.` : '',
+  ].filter(Boolean).join(' ');
+  return {
+    mode,
+    cashFlow,
+    stacked,
+    sections,
+    pace,
+    summary: {
+      stacked: `Income ${formatINR(plannedIncome)} planned and ${formatINR(actualIncome)} actual; spending ${formatINR(spendPlanned)} planned and ${formatINR(spendActual)} actual; investing ${formatINR(stacked.invest.planned)} planned and ${formatINR(stacked.invest.actual)} actual; left ${formatINR(stacked.left.planned)} planned and ${formatINR(stacked.left.actual)} actual.${leftSummary ? ` ${leftSummary}` : ''}`,
+      sections: sections.map((section) =>
+        `${section.name}: ${formatINR(section.actual)} actual of ${formatINR(section.planned)} planned.`,
+      ).join(' '),
+      pace: pace
+        ? `Spending pace through day ${elapsedDays}: ${formatINR(pace.actual.at(-1) ?? 0)} actual; ${formatINR(plannedSpend)} planned by month end.`
+        : null,
+    },
   };
 }

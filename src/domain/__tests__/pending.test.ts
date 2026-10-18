@@ -1,10 +1,10 @@
 import { emptyAppData } from '../actions';
 import { availableBalance, monthPositionAt } from '../cashFlow';
-import { budgetGroupRows, pendingActionLabel, pendingItems } from '../pending';
+import { pendingActionLabel, pendingItems } from '../pending';
 import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
-import type { AppData, OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
+import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
 
 const base = () => emptyAppData('2026-01-01');
 
@@ -287,119 +287,4 @@ describe('pending item projection', () => {
       .toEqual([]);
   });
 
-  it('projects paid, partial, overdue, and linked rows once in due-date order', () => {
-    const month = '2026-02';
-    const today = '2026-02-15';
-    const sip = plan({
-      startDate: '2026-02-05',
-      trackFrom: '2026-02-05',
-      logs: [{ id: 'sip-paid', date: '2026-02-05', amount: 100, note: '', kind: 'Deposit' }],
-    });
-    const emi = liability({ startDate: '2026-01-01' });
-    const policy: Policy = {
-      id: 'policy',
-      name: 'Health cover',
-      insurer: 'Insurer',
-      kind: 'health',
-      premium: 80,
-      frequency: 'monthly',
-      startDate: '2026-02-06',
-      premiumYears: 1,
-      trackFrom: '2026-02-01',
-      coverAmount: null,
-      currentValue: null,
-      valueAsOf: null,
-      maturityDate: null,
-      payments: [{ id: 'policy-paid', date: '2026-02-06', amount: 80, note: '' }],
-    };
-    const data: AppData = {
-      ...base(),
-      holdings: [sip],
-      liabilities: [emi],
-      policies: [policy],
-      monthBudgets: [{
-        month,
-        source: 'custom',
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 2_000 }],
-        linkedIncluded: true,
-        lines: [
-          { category: 'Bills', planned: 120, dueDay: 5 },
-          { category: 'Food', planned: 100 },
-          { category: 'Shopping', planned: 200 },
-        ],
-      }],
-      transactions: [
-        {
-          id: 'sip-tx', type: 'invest', amount: 100, category: 'Mutual fund / SIP', note: '',
-          date: '2026-02-05', source: { kind: 'holding-entry', parentId: sip.id, entryId: 'sip-paid' },
-        },
-        { id: 'food-tx', type: 'expense', amount: 25, category: 'Food', note: '', date: '2026-02-10' },
-        { id: 'shopping-tx', type: 'expense', amount: 200, category: 'Shopping', note: '', date: '2026-02-11' },
-        {
-          id: 'policy-tx', type: 'expense', amount: 80, category: 'Insurance', note: '',
-          date: '2026-02-06', source: { kind: 'policy-payment', parentId: policy.id, entryId: 'policy-paid' },
-        },
-      ],
-    };
-
-    const rows = budgetGroupRows(data, month, today);
-    expect(rows.map((row) => row.id)).toEqual([...rows]
-      .sort((left, right) => (left.dueDate ?? '9999-12-31').localeCompare(right.dueDate ?? '9999-12-31')
-        || left.title.localeCompare(right.title)
-        || left.id.localeCompare(right.id))
-      .map((row) => row.id));
-    expect(rows.filter((row) => row.id === `budget:${month}:Bills`)).toMatchObject([{
-      dueDate: '2026-02-05',
-      status: 'overdue',
-      plannedAmount: 120,
-      actualAmount: 0,
-      amount: 120,
-    }]);
-    expect(rows.find((row) => row.id === `budget:${month}:Food`)).toMatchObject({
-      status: 'planned', plannedAmount: 100, actualAmount: 25, amount: 75,
-    });
-    expect(rows.find((row) => row.id === `budget:${month}:Food`)).not.toHaveProperty('dueDate');
-    expect(rows.find((row) => row.id === `budget:${month}:Shopping`)).toMatchObject({
-      status: 'paid', plannedAmount: 200, actualAmount: 200, amount: 0, actionable: false,
-    });
-    expect(rows.find((row) => row.source.kind === 'plan')).toMatchObject({
-      category: 'Mutual fund / SIP', status: 'paid', actualAmount: 100, automatic: true,
-    });
-    expect(rows.find((row) => row.source.kind === 'liability')).toMatchObject({
-      category: 'EMI', status: 'overdue', amount: 100, automatic: true,
-    });
-    expect(rows.find((row) => row.source.kind === 'policy')).toMatchObject({
-      category: 'Insurance', status: 'paid', actualAmount: 80, automatic: true,
-    });
-    expect(new Set(rows.map((row) => row.id)).size).toBe(rows.length);
-  });
-
-  it('shows the paid amount for a scheduled row cleared after its due month', () => {
-    const holding = plan({
-      startDate: '2026-01-05',
-      trackFrom: '2026-01-05',
-      logs: [{ id: 'late-deposit', date: '2026-02-15', amount: 100, note: '', kind: 'Deposit' }],
-    });
-    const data: AppData = {
-      ...base(),
-      holdings: [holding],
-      transactions: [{
-        id: 'late-deposit-transaction',
-        type: 'invest',
-        amount: 100,
-        category: 'Mutual fund / SIP',
-        note: '',
-        date: '2026-02-15',
-        source: { kind: 'holding-entry', parentId: holding.id, entryId: 'late-deposit' },
-      }],
-    };
-
-    expect(budgetGroupRows(data, '2026-01', '2026-02-15')).toContainEqual(expect.objectContaining({
-      category: 'Mutual fund / SIP',
-      status: 'paid',
-      plannedAmount: 100,
-      actualAmount: 100,
-      actionable: false,
-    }));
-  });
 });

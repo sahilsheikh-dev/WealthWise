@@ -72,6 +72,41 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('updates linked policy details with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const policy = {
+      id: 'policy-update',
+      name: 'Health cover',
+      insurer: 'Old insurer',
+      kind: 'health' as const,
+      premium: 600,
+      frequency: 'monthly' as const,
+      startDate: '2026-01-01',
+      premiumYears: 10,
+      trackFrom: '2026-01-01',
+      coverAmount: 100_000,
+      currentValue: null,
+      valueAsOf: null,
+      maturityDate: null,
+      payments: [],
+    };
+    const data = { ...emptyAppData('2026-10-10'), policies: [policy] };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data }, version: 9,
+    }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writes = storage.setItemCalls;
+    store.getState().actions.updatePolicy(policy.id, { name: 'Family cover', premium: 750 });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.policies[0]).toMatchObject({
+      id: policy.id,
+      name: 'Family cover',
+      insurer: 'Old insurer',
+      premium: 750,
+    });
+  });
+
   it('stores a single budget plan and applied month with one write per action', async () => {
     const storage = new MemoryStorage();
     storage.values.set('wealthwise.app.v1', JSON.stringify({

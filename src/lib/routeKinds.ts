@@ -23,6 +23,7 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   'liability-payments': 'stack',
   'link-missing': 'stack',
   onboarding: 'special',
+  'policy-form': 'form',
   'profile-form': 'form',
   security: 'stack',
   theme: 'stack',
