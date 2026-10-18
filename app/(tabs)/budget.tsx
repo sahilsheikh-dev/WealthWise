@@ -5,60 +5,25 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { PendingItemActions } from '../../src/components/PendingItemActions';
-import { PendingItemRow } from '../../src/components/PendingItemRow';
+import { PaceLine, SectionBars, StackedBar } from '../../src/components/BudgetCharts';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
-import { normalizeMoney } from '../../src/domain/cashFlow';
+import { budgetOverview, type BudgetOverviewItem } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
-import { budgetGroupRows, type BudgetGroupRow, type PendingItem } from '../../src/domain/pending';
-import { transactionCategoryLabel } from '../../src/domain/transactions';
-import { formatAmount } from '../../src/lib/amountDisplay';
+import { pendingItems } from '../../src/domain/pending';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
-import { formatMonth } from '../../src/lib/format';
+import { formatINR, formatMonth } from '../../src/lib/format';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
-const DISPLAY_GROUPS = [
-  ...BUDGET_GROUPS.map((group) => ({
-    id: group.id,
-    name: group.name,
-    categories: group.id === 'survival'
-      ? group.categories.filter((category) => category !== 'EMI' && category !== 'Insurance')
-      : group.categories,
-  })),
-  { id: 'debt-repayments', name: 'Debt repayments', categories: ['EMI'] },
-  { id: 'insurance', name: 'Insurance', categories: ['Insurance'] },
-];
-
 function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
-}
-
-function asPendingItem(row: BudgetGroupRow): PendingItem {
-  return {
-    id: row.id,
-    kind: row.source.kind === 'budget' ? 'budget' : 'due',
-    title: row.title,
-    category: row.category,
-    amount: row.amount,
-    ...(row.dueDate === undefined ? {} : { dueDate: row.dueDate }),
-    status: row.status === 'paid' ? 'planned' : row.status,
-    source: row.source,
-    actionable: row.actionable,
-  };
-}
-
-function displayTitle(row: BudgetGroupRow): string {
-  if (row.automatic) return row.title;
-  return transactionCategoryLabel(row.title, row.category === 'Other investments' ? 'invest' : 'expense');
 }
 
 export default function BudgetScreen() {
@@ -86,9 +51,10 @@ export default function BudgetScreen() {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
   const today = todayISO();
-  const view = useMemo(() => budgetMonthView(data, month, today), [data, month, today]);
-  const closingBalance = normalizeMoney(view.position.closing);
-  const groupRows = useMemo(() => budgetGroupRows(data, month, today), [data, month, today]);
+  const overview = useMemo(() => budgetOverview(data, month, today), [data, month, today]);
+  const currentMonth = today.slice(0, 7);
+  const lastAllowedMonth = shiftMonth(currentMonth, 24);
+  const nextDisabled = month >= lastAllowedMonth;
   const stackMetrics = fontScale >= 1.3;
   const autoApplyStarted = useRef(false);
   const panResponder = useMemo(() => PanResponder.create({
@@ -97,9 +63,13 @@ export default function BudgetScreen() {
     onPanResponderTerminationRequest: () => false,
     onPanResponderRelease: (_event, gesture) => {
       const intent = swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx });
-      if (intent) setMonth(shiftMonth(month, intent === 'next' ? 1 : -1));
+      if (!intent) return;
+      const target = shiftMonth(month, intent === 'next' ? 1 : -1);
+      if (intent === 'next' && target > lastAllowedMonth) return;
+      setMonth(target);
     },
-  }), [month, touchingHeader]);
+  }), [lastAllowedMonth, month, touchingHeader]);
+
   const apply = useCallback(async () => {
     if (!data.budgetPlan) {
       router.push('/budget-setup');
@@ -120,21 +90,37 @@ export default function BudgetScreen() {
       Alert.alert('Could not apply budget plan', error);
       return;
     }
-    const plannedCount = budgetGroupRows(useAppStore.getState().data, month, today)
-      .filter((row) => row.source.kind === 'budget' && row.status !== 'paid').length;
+    const plannedCount = pendingItems(useAppStore.getState().data, month, today)
+      .filter((item) => item.source.kind === 'budget').length;
     setActionToast({
       message: `Budget applied: ${plannedCount} planned items are in Transactions as due payments`,
       actionLabel: 'Undo',
-      onAction: () => {
-        actions.restoreMonthBudget(month, previous);
-      },
+      onAction: () => actions.restoreMonthBudget(month, previous),
     });
   }, [actions, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
+
   useEffect(() => {
     if (!routeApply || autoApplyStarted.current) return;
     autoApplyStarted.current = true;
     void apply();
   }, [routeApply, apply]);
+
+  const editBudgetItem = (item: BudgetOverviewItem) => {
+    switch (item.source.kind) {
+      case 'line':
+      case 'income':
+        router.push('/budget-setup');
+        return;
+      case 'plan':
+        router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
+        return;
+      case 'liability':
+        router.push({ pathname: '/liability-form', params: { id: item.source.parentId } });
+        return;
+      case 'policy':
+        router.push({ pathname: '/policy-form', params: { id: item.source.parentId } });
+    }
+  };
 
   return (
     <Screen scroll={false}>
@@ -150,107 +136,135 @@ export default function BudgetScreen() {
             onTouchEnd={() => setTouchingHeader(false)}
             onTouchCancel={() => setTouchingHeader(false)}
             style={styles.monthHeader}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => setMonth(shiftMonth(month, -1))}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Previous month"
+              onPress={() => setMonth(shiftMonth(month, -1))}>
               <Feather name="chevron-left" size={22} color={colors.text2} />
             </Pressable>
             <AppText weight="semibold" style={typography.name}>{formatMonth(month)}</AppText>
-            <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => setMonth(shiftMonth(month, 1))}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Next month"
+              accessibilityState={{ disabled: nextDisabled }}
+              disabled={nextDisabled}
+              onPress={() => setMonth(shiftMonth(month, 1))}
+              style={nextDisabled && styles.disabled}>
               <Feather name="chevron-right" size={22} color={colors.text2} />
             </Pressable>
           </View>
 
           <View testID="budget-cash-flow">
             <Card>
-            <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Cash flow</AppText>
-            <View style={[styles.metricRows, stackMetrics && styles.metricRowsStacked]}>
-              <MetricRow label="Opening balance" value={view.position.opening} />
-              <MetricRow
-                label="Closing balance"
-                value={closingBalance}
-                tone={closingBalance < 0 ? 'err' : closingBalance > 0 ? 'primary' : 'neutral'}
-              />
-            </View>
+              <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Cash flow</AppText>
+              <View style={[styles.metricRows, stackMetrics && styles.metricRowsStacked]}>
+                <MetricRow
+                  label={overview.cashFlow.projected ? 'Projected opening balance' : 'Opening balance'}
+                  value={overview.cashFlow.opening}
+                />
+                <MetricRow
+                  label={overview.cashFlow.projected ? 'Projected closing balance' : 'Closing balance'}
+                  value={overview.cashFlow.closing}
+                  tone={overview.cashFlow.closing < 0 ? 'err' : overview.cashFlow.closing > 0 ? 'primary' : 'neutral'}
+                />
+              </View>
             </Card>
           </View>
 
-          <View testID="budget-plan-summary">
-            <Card>
-            <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Plan summary</AppText>
-            {view.budget ? (
-              <>
-                <View style={[styles.metricRows, stackMetrics && styles.metricRowsStacked]}>
-                  <MetricRow label="Planned income" value={view.plannedIncome} />
-                  <MetricRow label="Planned spending" value={view.plannedSpend} />
-                  <MetricRow label="Planned saving" value={view.plannedSave} />
-                  <MetricRow label="Left to allocate" value={view.unallocated} />
-                  {view.income.bySource.length > 0
-                    ? <MetricRow label="Actual income" value={view.income.actual} />
-                    : null}
-                </View>
-                <Button
-                  label="Adjust this month"
-                  onPress={() => router.push({ pathname: '/budget-month-form', params: { month } })}
-                />
-              </>
-            ) : (
-              <>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>No budget for this month</AppText>
+          {overview.sections.length === 0 ? (
+            <View testID="budget-empty-state">
+              <Card>
+                <AppText weight="bold" style={[typography.name, styles.cardTitle]}>
+                  {overview.mode === 'future' && data.budgetPlan ? 'Not planned' : 'No budget for this month'}
+                </AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  {data.budgetPlan ? 'Apply your plan to see this month’s budget.' : 'Set up a plan to start budgeting.'}
+                  {overview.mode === 'future' && data.budgetPlan
+                    ? 'This future month has no budget snapshot.'
+                    : 'Set up a budget to start planning this month.'}
                 </AppText>
                 <Button
-                  label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
-                  icon={data.budgetPlan ? 'check' : 'plus'}
+                  label={overview.mode === 'future' && data.budgetPlan
+                    ? `Apply plan to ${formatMonth(month)}`
+                    : 'Set up budget'}
+                  icon={overview.mode === 'future' && data.budgetPlan ? 'check' : 'plus'}
                   variant="primary"
                   onPress={() => {
-                    if (data.budgetPlan) void apply();
+                    if (overview.mode === 'future' && data.budgetPlan) void apply();
                     else router.push('/budget-setup');
                   }}
                 />
-              </>
-            )}
-            </Card>
-          </View>
-
-          {DISPLAY_GROUPS.map((group) => {
-            const rows = groupRows.filter((row) => group.categories.includes(row.category));
-            const planned = rows.reduce((sum, row) => sum + row.plannedAmount, 0);
-            const actual = rows.reduce((sum, row) => sum + row.actualAmount, 0);
-            return (
-              <View key={group.id} testID={`budget-group-${group.id}`}>
-                <Card style={styles.groupCard}>
-                  <View style={styles.groupHeader}>
-                    <AppText weight="bold" style={[typography.name, styles.groupTitle]}>{group.name}</AppText>
-                    <AppText
-                      weight="semibold"
-                      style={typography.meta}
-                      accessibilityLabel={`${group.name}: actual ${formatAmount(actual, 'exact', 1)} of planned ${formatAmount(planned, 'exact', 1)}`}>
-                      <AmountText value={actual} tier="row" /> / <AmountText value={planned} tier="row" />
-                    </AppText>
+              </Card>
+            </View>
+          ) : (
+            <>
+              <View testID="budget-overview-card">
+                <Card>
+                  <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Overview</AppText>
+                  <StackedBar values={overview.stacked} summary={overview.summary.stacked} />
+                  <View style={styles.metricRows}>
+                    <OverviewMetricRow label="Income" planned={overview.stacked.income.planned} actual={overview.stacked.income.actual} stacked={stackMetrics} />
+                    <OverviewMetricRow label="Spending" planned={overview.stacked.spend.planned} actual={overview.stacked.spend.actual} stacked={stackMetrics} />
+                    <OverviewMetricRow label="Investing" planned={overview.stacked.invest.planned} actual={overview.stacked.invest.actual} stacked={stackMetrics} />
+                    <OverviewMetricRow label="Left" planned={overview.stacked.left.planned} actual={overview.stacked.left.actual} stacked={stackMetrics} />
                   </View>
-                  {rows.length > 0 ? rows.map((row) => {
-                    const pendingItem = asPendingItem(row);
-                    return (
-                      <PendingItemRow
-                        key={row.id}
-                        item={{ ...pendingItem, title: displayTitle(row) }}
-                        actualAmount={row.actualAmount}
-                        plannedAmount={row.plannedAmount}
-                        automatic={row.automatic}
-                        statusOverride={row.status === 'paid' ? 'paid' : undefined}
-                        showDuePrefix
-                        actions={row.status === 'paid'
-                          ? undefined
-                          : <PendingItemActions item={pendingItem} today={today} compact />}
-                      />
-                    );
-                  }) : (
-                    <AppText style={[typography.meta, { color: colors.text3 }]}>No items this month</AppText>
-                  )}
                 </Card>
               </View>
-            );
-          })}
+
+              <View testID="budget-planned-vs-actual">
+                <Card>
+                  <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Planned vs actual</AppText>
+                  <SectionBars sections={overview.sections} summary={overview.summary.sections} />
+                </Card>
+              </View>
+
+              {overview.pace ? (
+                <View testID="budget-pace">
+                  <Card>
+                    <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Pace</AppText>
+                    <PaceLine pace={overview.pace} summary={overview.summary.pace ?? ''} />
+                  </Card>
+                </View>
+              ) : null}
+
+              {overview.sections.map((section) => (
+                <View key={section.id} testID={`budget-section-${section.id}`}>
+                  <Card style={styles.sectionCard}>
+                    <AppText weight="bold" style={[typography.name, styles.sectionTitle]}>{section.name}</AppText>
+                    {section.items.map((item, index) => (
+                      <View
+                        key={item.id}
+                        testID={`budget-row-${item.id}`}
+                        style={[
+                          styles.overviewRow,
+                          stackMetrics && styles.overviewRowStacked,
+                          index < section.items.length - 1
+                            ? [styles.rowDivider, { borderBottomColor: colors.border }]
+                            : undefined,
+                        ]}>
+                        <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                        <View style={styles.rowValueAndAction}>
+                          <AppText
+                            style={typography.meta}
+                            accessibilityLabel={`${item.title}, ${formatINR(item.actual)} of ${formatINR(item.planned)}`}>
+                            <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
+                          </AppText>
+                          {overview.mode !== 'past' ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Edit ${item.title}`}
+                              onPress={() => editBudgetItem(item)}
+                              style={styles.editButton}>
+                              <Feather name="edit-2" size={16} color={colors.primary} />
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
+                  </Card>
+                </View>
+              ))}
+            </>
+          )}
         </ScrollView>
       </View>
     </Screen>
@@ -263,15 +277,41 @@ function MetricRow({
   tone,
 }: {
   label: string;
-  value: number | null;
+  value: number;
   tone?: 'err' | 'primary' | 'neutral';
 }) {
   return (
     <View style={styles.metricRow}>
+      <AppText accessibilityLabel={label} style={typography.meta}>{label}</AppText>
+      <AmountText value={value} tier="row" weight="semibold" tone={tone} />
+    </View>
+  );
+}
+
+function OverviewMetricRow({
+  label,
+  planned,
+  actual,
+  stacked,
+}: {
+  label: string;
+  planned: number;
+  actual: number;
+  stacked: boolean;
+}) {
+  return (
+    <View style={[styles.overviewMetricRow, stacked && styles.overviewMetricRowStacked]}>
       <AppText style={typography.meta}>{label}</AppText>
-      {value === null
-        ? <AppText weight="semibold">—</AppText>
-        : <AmountText value={value} tier="row" weight="semibold" tone={tone} />}
+      <View style={[styles.overviewMetricValues, stacked && styles.overviewMetricValuesStacked]}>
+        <View style={styles.metricValue}>
+          <AppText style={styles.valueLabel}>Planned</AppText>
+          <AmountText value={planned} tier="row" weight="semibold" />
+        </View>
+        <View style={styles.metricValue}>
+          <AppText style={styles.valueLabel}>Actual</AppText>
+          <AmountText value={actual} tier="row" weight="semibold" />
+        </View>
+      </View>
     </View>
   );
 }
@@ -280,11 +320,23 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 10 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
+  disabled: { opacity: 0.45 },
   cardTitle: { marginBottom: 8 },
   metricRows: { gap: 8 },
   metricRowsStacked: { gap: 12 },
   metricRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  groupCard: { gap: 0, paddingVertical: 0 },
-  groupHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  groupTitle: { flex: 1, minWidth: 0 },
+  overviewMetricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  overviewMetricRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
+  overviewMetricValues: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' },
+  overviewMetricValuesStacked: { justifyContent: 'space-between' },
+  metricValue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  valueLabel: { ...typography.label },
+  sectionCard: { paddingVertical: 12, gap: 0 },
+  sectionTitle: { paddingHorizontal: 4, paddingBottom: 8 },
+  overviewRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 4, paddingVertical: 6 },
+  overviewRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
+  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
+  rowTitle: { flex: 1, minWidth: 0 },
+  rowValueAndAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+  editButton: { width: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
 });

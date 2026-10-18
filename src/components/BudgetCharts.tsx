@@ -1,5 +1,5 @@
-import { useState, type LayoutChangeEvent } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { AmountText } from './AmountText';
 import { AppText } from './ui';

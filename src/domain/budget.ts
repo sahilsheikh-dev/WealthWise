@@ -682,7 +682,9 @@ function overviewSectionFor(category: string): string {
   return group.id;
 }
 
-function overviewSourceKind(kind: NonNullable<Transaction['source']>['kind']): string | null {
+function overviewSourceKind(
+  kind: NonNullable<Transaction['source']>['kind'],
+): 'plan' | 'liability' | 'policy' | null {
   if (kind === 'holding-entry') return 'plan';
   if (kind === 'liability-payment') return 'liability';
   if (kind === 'policy-payment') return 'policy';
