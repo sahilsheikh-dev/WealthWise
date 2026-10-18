@@ -495,6 +495,9 @@ export function buildDemoData(today: ISODate): AppData {
     allocations: [{ kind: 'liability', liabilityId: recurringLiability.id, amount: 5_000 }],
   }, id, today);
 
+  for (const month of months.slice(0, 3)) {
+    data = applyBudgetPlanToMonth(data, month, { newId: id, today });
+  }
   data = applyBudgetPlanToMonth(data, currentMonth, { newId: id, today });
   const currentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
