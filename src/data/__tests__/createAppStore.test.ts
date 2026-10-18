@@ -75,7 +75,7 @@ describe('createAppStore persistence', () => {
   it('stores a single budget plan and applied month with one write per action', async () => {
     const storage = new MemoryStorage();
     storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data: emptyAppData('2026-03-01') }, version: 8,
+      state: { data: emptyAppData('2026-03-01') }, version: 9,
     }));
     let nextId = 0;
     const store = createAppStore(storage, {
@@ -87,7 +87,7 @@ describe('createAppStore persistence', () => {
 
     let writes = storage.setItemCalls;
     store.getState().actions.saveBudgetPlan({
-      plannedIncome: 20_000,
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 20_000 }],
       lines: [{ category: 'Food', mode: 'percent', value: 20 }],
       repeatMonthly: false,
       repeatFrom: null,
@@ -141,7 +141,7 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     writes = storage.setItemCalls;
     store.getState().actions.saveAndApplyBudgetPlan({
-      plannedIncome: 10_000,
+      incomes: [{ id: 'salary-2', name: 'Salary', category: 'Salary', amount: 10_000 }],
       lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
       repeatMonthly: false,
       repeatFrom: null,
@@ -170,10 +170,55 @@ describe('createAppStore persistence', () => {
       newId: () => 'unused', today: () => '2026-03-15', isDev: false,
     });
     await waitForHydration(store);
-    expect(store.getState().data.budgetPlan).toMatchObject({ plannedIncome: 20_000, repeatMonthly: false });
+    expect(store.getState().data.budgetPlan).toMatchObject({
+      incomes: [{ id: 'unused', name: 'Salary', category: 'Salary', amount: 20_000, day: 1 }],
+      repeatMonthly: false,
+    });
     expect(store.getState().data.monthBudgets).toEqual([]);
     expect(storage.setItemCalls).toBe(2);
     expect(storage.values.get('wealthwise.app.v1.premigration.v7')).toBe(raw);
+  });
+
+  it('archives v8 bytes once, migrates income totals, and removes the archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetPlan: {
+        plannedIncome: 12_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 2_000 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-04',
+      },
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
+        plannedIncome: 10_000,
+        lines: [{ category: 'Food', planned: 1_000 }],
+      }],
+    };
+    const key = 'wealthwise.app.v1';
+    const raw = JSON.stringify({ state: { data }, version: 8 });
+    storage.values.set(key, raw);
+    let id = 0;
+    const first = makeStore(storage, {
+      today: () => '2026-03-15',
+      newId: () => `migrated-${++id}`,
+      isDev: false,
+    });
+    await waitForHydration(first);
+    expect(first.getState().data.budgetPlan?.incomes).toEqual([
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1 },
+    ]);
+    expect(first.getState().data.monthBudgets?.[0]?.incomes).toEqual([
+      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000 },
+    ]);
+    expect(storage.values.get(`${key}.premigration.v8`)).toBe(raw);
+    const archiveWrites = storage.calls.filter((call) => call === `set:${key}.premigration.v8`).length;
+    const second = makeStore(storage, { today: () => '2026-03-15', isDev: false });
+    await waitForHydration(second);
+    expect(storage.calls.filter((call) => call === `set:${key}.premigration.v8`)).toHaveLength(archiveWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has(`${key}.premigration.v8`)).toBe(false);
   });
 
   it('repairs a stale emergency allocation once and archives the exact original bytes', async () => {
@@ -187,7 +232,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 8 });
+    const raw = JSON.stringify({ state: { data }, version: 9 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -224,7 +269,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 8 });
+    const raw = JSON.stringify({ state: { data }, version: 9 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -252,7 +297,7 @@ describe('createAppStore persistence', () => {
     const initial = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: {
-        plannedIncome: 10_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
         lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
         repeatMonthly: false,
         repeatFrom: null,
@@ -260,11 +305,11 @@ describe('createAppStore persistence', () => {
       monthBudgets: [{
         month: '2026-03',
         source: 'custom' as const,
-        plannedIncome: 9_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 9_000 }],
         lines: [{ category: 'Bills', planned: 500 }],
       }],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 8 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 9 }));
     const store = createAppStore(storage, {
       newId: () => 'unused',
       today: () => '2026-03-15',
@@ -276,7 +321,7 @@ describe('createAppStore persistence', () => {
 
     let writes = storage.setItemCalls;
     store.getState().actions.saveAndApplyBudgetPlan({
-      plannedIncome: 20_000,
+      incomes: [{ id: 'salary-next', name: 'Salary', category: 'Salary', amount: 20_000 }],
       lines: [{ category: 'Food', mode: 'percent', value: 25 }],
       repeatMonthly: true,
       repeatFrom: '2026-04',
@@ -294,14 +339,14 @@ describe('createAppStore persistence', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: {
-        plannedIncome: 10_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
         lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
         repeatMonthly: true,
         repeatFrom: '2026-03',
       },
       monthBudgets: [],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 8 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 9 }));
     const createStore = () => createAppStore(storage, {
       newId: () => 'unused',
       today: () => '2026-03-15',
@@ -312,7 +357,7 @@ describe('createAppStore persistence', () => {
     expect(firstStore.getState().data.monthBudgets).toEqual([{
       month: '2026-03',
       source: 'plan',
-      plannedIncome: 10_000,
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
       lines: [{ category: 'Food', planned: 1_000 }],
       linkedIncluded: true,
     }]);
@@ -803,7 +848,7 @@ describe('createAppStore persistence', () => {
 
   it.each(['manual', 'plan'] as const)('links and guards a withdrawal from a %s instrument', async (kind) => {
     const storage = new MemoryStorage();
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 7 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 9 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `withdrawal-${++id}` });
     await waitForHydration(store);
@@ -860,7 +905,7 @@ describe('createAppStore persistence', () => {
       valueAsOf: '2026-10-10',
       logs: [{ id: 'old-entry', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }],
     });
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 7 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 9 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `instrument-${++id}` });
     await waitForHydration(store);
@@ -1606,6 +1651,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v5', 'original-v5-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v6', 'original-v6-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
@@ -1631,6 +1677,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v5',
     'wealthwise.app.v1.premigration.v6',
     'wealthwise.app.v1.premigration.v7',
+    'wealthwise.app.v1.premigration.v8',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

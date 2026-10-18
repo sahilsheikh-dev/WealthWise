@@ -56,6 +56,56 @@ const oneTime = (changes: Partial<OneTimeLiability> = {}): OneTimeLiability => (
 });
 
 describe('pending item projection', () => {
+  it('creates clamped income dues, allocates recorded earnings across same-category items, and supports future months', () => {
+    const data = {
+      ...base(),
+      budgetPlan: {
+        incomes: [
+          { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
+          { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
+        ],
+        lines: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+      },
+      monthBudgets: [{
+        month: '2026-02',
+        source: 'plan' as const,
+        incomes: [
+          { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
+          { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
+        ],
+        lines: [],
+        linkedIncluded: true,
+      }],
+    };
+    const future = pendingItems(data, '2026-02', '2026-01-20');
+    expect(future.filter((item) => item.source.kind === 'income')).toEqual([
+      expect.objectContaining({
+        title: 'Bonus', category: 'Salary', amount: 500,
+        dueDate: '2026-02-15', status: 'upcoming',
+      }),
+      expect.objectContaining({
+        title: 'Salary', category: 'Salary', amount: 1_000,
+        dueDate: '2026-02-28', status: 'upcoming',
+      }),
+    ]);
+    data.transactions.push({
+      id: 'partial-income', type: 'income', amount: 1_200, category: 'Salary',
+      note: '', date: '2026-02-03',
+    });
+    expect(pendingItems(data, '2026-02', '2026-02-05')
+      .filter((item) => item.source.kind === 'income')
+      .map((item) => [item.title, item.amount]))
+      .toEqual([['Bonus', 300]]);
+    data.transactions.push({
+      id: 'remaining-income', type: 'income', amount: 300, category: 'Salary',
+      note: '', date: '2026-02-04',
+    });
+    expect(pendingItems(data, '2026-02', '2026-02-05')
+      .some((item) => item.source.kind === 'income')).toBe(false);
+  });
+
   it('uses Paid wording for expense/investment rows and Received for income rows', () => {
     expect(pendingActionLabel('expense')).toBe('Marked as paid');
     expect(pendingActionLabel('invest')).toBe('Marked as paid');
@@ -116,7 +166,7 @@ describe('pending item projection', () => {
       monthBudgets: [{
         month: '2026-02',
         source: 'custom' as const,
-        plannedIncome: 10_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
         lines: [
           { category: 'Food', planned: 300 },
           { category: 'Fashion', planned: 250 },
@@ -142,7 +192,7 @@ describe('pending item projection', () => {
       const data = {
         ...base(),
         monthBudgets: [{
-          month, source: 'custom' as const, plannedIncome: null,
+          month, source: 'custom' as const, incomes: [],
           lines: [{ category: 'Bills', planned: 100, dueDay: 31 }],
         }],
       };
@@ -162,7 +212,7 @@ describe('pending item projection', () => {
       ...base(),
       monthBudgets: [{
         month: '2026-05', source: 'custom' as const,
-        plannedIncome: null, lines: [{ category: 'Bills', planned: 100, dueDay: 5 }],
+        incomes: [], lines: [{ category: 'Bills', planned: 100, dueDay: 5 }],
       }],
     };
     expect(pendingItems(earlyDue, '2026-05', '2026-05-06').find((item) => item.kind === 'budget'))
@@ -176,7 +226,7 @@ describe('pending item projection', () => {
       liabilities: [oneTime()],
       monthBudgets: [{
         month: '2026-02', source: 'custom' as const,
-        plannedIncome: 1_000, lines: [{ category: 'Food', planned: 500 }],
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }], lines: [{ category: 'Food', planned: 500 }],
       }],
       transactions: [
         { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: '2026-02-01' },
@@ -270,7 +320,7 @@ describe('pending item projection', () => {
       monthBudgets: [{
         month,
         source: 'custom',
-        plannedIncome: 2_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 2_000 }],
         linkedIncluded: true,
         lines: [
           { category: 'Bills', planned: 120, dueDay: 5 },

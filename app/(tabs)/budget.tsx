@@ -86,7 +86,7 @@ export default function BudgetScreen() {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
   const today = todayISO();
-  const view = useMemo(() => budgetMonthView(data, month), [data, month]);
+  const view = useMemo(() => budgetMonthView(data, month, today), [data, month, today]);
   const closingBalance = normalizeMoney(view.position.closing);
   const groupRows = useMemo(() => budgetGroupRows(data, month, today), [data, month, today]);
   const stackMetrics = fontScale >= 1.3;

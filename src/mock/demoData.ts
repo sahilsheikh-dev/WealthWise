@@ -11,6 +11,7 @@ import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
+  BudgetPlan,
   BudgetPlanLine,
   Goal,
   Holding,
@@ -307,8 +308,11 @@ export function buildDemoData(today: ISODate): AppData {
   const liabilities = makeLiabilities(months);
   const goals = makeGoals();
   const policies = makePolicies(today, months[0]!);
-  const budgetPlan = {
-    plannedIncome: 75_000,
+  const budgetPlan: BudgetPlan = {
+    incomes: [
+      { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
+      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15 },
+    ],
     lines: makeBudgetPlanLines(),
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
@@ -496,6 +500,9 @@ export function buildDemoData(today: ISODate): AppData {
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
   const linkedCurrentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
-  data.budget = { plannedIncome: linkedCurrentBudget.plannedIncome, lines: linkedCurrentBudget.lines };
+  data.budget = {
+    plannedIncome: linkedCurrentBudget.incomes.reduce((total, income) => total + income.amount, 0),
+    lines: linkedCurrentBudget.lines,
+  };
   return data;
 }

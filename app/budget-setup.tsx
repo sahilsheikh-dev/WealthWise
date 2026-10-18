@@ -4,12 +4,14 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Switch, View } from 'react-native';
 
 import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
+import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
+import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
@@ -23,7 +25,7 @@ import {
 } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
 import { pendingItems } from '../src/domain/pending';
-import type { BudgetPlanLine } from '../src/domain/types';
+import { EARNED_INCOME_CATEGORIES, type BudgetIncomeItem, type BudgetPlanLine, type EarnedIncomeCategory } from '../src/domain/types';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -37,9 +39,13 @@ type SetupLine = {
 };
 
 type SetupForm = {
-  plannedIncome: string;
+  incomes: { id: string; name: string; category: string; amount: string; day: string }[];
   lines: SetupLine[];
 };
+
+function isEarnedIncomeCategory(value: string): value is EarnedIncomeCategory {
+  return EARNED_INCOME_CATEGORIES.some((category) => category === value);
+}
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -57,8 +63,13 @@ export default function BudgetSetupScreen() {
     const plan = data.budgetPlan;
     const byCategory = new Map((plan?.lines ?? []).map((line) => [line.category, line]));
     return {
-      plannedIncome: plan?.plannedIncome === null || plan?.plannedIncome === undefined
-        ? '' : String(plan.plannedIncome),
+      incomes: (plan?.incomes ?? []).map((income) => ({
+        id: income.id,
+        name: income.name,
+        category: income.category,
+        amount: String(income.amount),
+        day: income.day === undefined ? '' : String(income.day),
+      })),
       lines: BUDGET_CATEGORIES.map((category) => {
         const line = byCategory.get(category);
         return {
@@ -74,11 +85,19 @@ export default function BudgetSetupScreen() {
     defaultValues,
   });
   const lines = useWatch({ control, name: 'lines' }) ?? [];
-  const incomeValue = useWatch({ control, name: 'plannedIncome' }) ?? '';
-  const plannedIncome = incomeValue.trim() === '' ? null : Number(incomeValue);
+  const incomes = useWatch({ control, name: 'incomes' }) ?? [];
+  const plannedIncome = incomes.length === 0
+    ? null
+    : incomes.reduce((sum, income) => sum + (Number(income.amount) || 0), 0);
 
   const planFromValues = (values: SetupForm) => {
-    const income = values.plannedIncome.trim() === '' ? null : Number(values.plannedIncome);
+    const incomeItems: BudgetIncomeItem[] = values.incomes.map((income) => ({
+      id: income.id,
+      name: income.name.trim(),
+      category: isEarnedIncomeCategory(income.category) ? income.category : 'Other',
+      amount: Number(income.amount),
+      ...(income.day.trim() === '' ? {} : { day: Number(income.day) }),
+    }));
     const planLines: BudgetPlanLine[] = values.lines.flatMap((line) => {
       if (line.category === 'EMI' || line.category === 'Insurance' || line.value.trim() === '') return [];
       const value = Number(line.value);
@@ -90,7 +109,7 @@ export default function BudgetSetupScreen() {
       }];
     });
     return {
-      plannedIncome: income,
+      incomes: incomeItems,
       lines: planLines,
       repeatMonthly,
       repeatFrom: repeatMonthly ? shiftMonth(month, 1) : null,
@@ -98,16 +117,22 @@ export default function BudgetSetupScreen() {
   };
 
   const validate = (values: SetupForm) => {
-    const income = values.plannedIncome.trim() === '' ? null : Number(values.plannedIncome);
-    if (income !== null && (!Number.isFinite(income) || income <= 0)) {
-      Alert.alert('Check your budget', 'Enter a valid planned monthly income.');
-      return false;
+    const income = values.incomes.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    for (const item of values.incomes) {
+      const amount = Number(item.amount);
+      const day = item.day.trim() === '' ? null : Number(item.day);
+      if (!item.name.trim() || !isEarnedIncomeCategory(item.category)
+        || !Number.isFinite(amount) || amount <= 0
+        || (day !== null && (!Number.isInteger(day) || day < 1 || day > 31))) {
+        Alert.alert('Check your budget', 'Enter an income name, a valid amount, and an optional day from 1 to 31.');
+        return false;
+      }
     }
     for (const line of values.lines) {
       if (line.category === 'EMI' || line.category === 'Insurance' || line.value.trim() === '') continue;
       const value = Number(line.value);
       if (!Number.isFinite(value) || value < 0
-        || (line.mode === 'percent' && (value > 100 || income === null))
+        || (line.mode === 'percent' && (value > 100 || income <= 0))
         || (line.dueDay.trim() !== ''
           && (!Number.isInteger(Number(line.dueDay)) || Number(line.dueDay) < 1 || Number(line.dueDay) > 31))) {
         Alert.alert('Check your budget', 'Enter valid amounts, percentages up to 100%, and due days from 1 to 31.');
@@ -171,7 +196,7 @@ export default function BudgetSetupScreen() {
     });
     if (!confirmed) return;
     if (plannedIncome === null || !Number.isFinite(plannedIncome) || plannedIncome <= 0) {
-      Alert.alert('Add planned income', 'Enter planned monthly income before starting from the suggested split.');
+      Alert.alert('Add planned income', 'Add income before starting from the suggested split.');
       return;
     }
     const suggestion = suggestBudgetSplit({
@@ -206,11 +231,40 @@ export default function BudgetSetupScreen() {
         </View>
       )}>
       <View style={{ gap: 12 }}>
-        <AppText weight="semibold">Planned monthly income</AppText>
-        <Controller control={control} name="plannedIncome" render={({ field }) => (
-          <MoneyField label="Planned monthly income" accessibilityLabel="Planned monthly income"
-            value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
-        )} />
+        <AppText weight="semibold">Income</AppText>
+        {incomes.map((income, index) => (
+          <View key={income.id} style={{ gap: 8 }}>
+            <Controller control={control} name={`incomes.${index}.name`} render={({ field }) => (
+              <TextField label="Name" accessibilityLabel={`Income ${index + 1} name`} value={field.value}
+                onChangeText={field.onChange} onBlur={field.onBlur} maxLength={40} />
+            )} />
+            <Controller control={control} name={`incomes.${index}.amount`} render={({ field }) => (
+              <MoneyField label="Amount" accessibilityLabel={`Income ${index + 1} amount`} value={field.value}
+                onChangeText={field.onChange} onBlur={field.onBlur} />
+            )} />
+            <Controller control={control} name={`incomes.${index}.day`} render={({ field }) => (
+              <IntegerField label="Day (optional)" accessibilityLabel={`Income ${index + 1} day`} value={field.value}
+                onChangeText={field.onChange} onBlur={field.onBlur} />
+            )} />
+            <Controller control={control} name={`incomes.${index}.category`} render={({ field }) => (
+              <ChoiceField label="Category" value={field.value} choices={EARNED_INCOME_CATEGORIES}
+                onChange={field.onChange} />
+            )} />
+            <Button label="Remove income" icon="x" variant="danger-text"
+              onPress={() => setValue('incomes', incomes.filter((_, itemIndex) => itemIndex !== index), { shouldDirty: true })} />
+          </View>
+        ))}
+        <Button label="Add income" onPress={() => {
+          let index = incomes.length + 1;
+          while (incomes.some((income) => income.id === `income-${index}`)) index += 1;
+          setValue('incomes', [...incomes, {
+            id: `income-${index}`,
+            name: '',
+            category: 'Salary',
+            amount: '',
+            day: '',
+          }], { shouldDirty: true });
+        }} />
         <Button label="Start from suggested split" onPress={() => void startSuggestedSplit()} />
       </View>
       <FormErrorBanner message={lastError} />

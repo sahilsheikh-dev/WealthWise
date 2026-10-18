@@ -188,7 +188,12 @@ export const mockAppData: AppData = {
     ],
   },
   budgetPlan: {
-    plannedIncome: 56_500,
+    incomes: [
+      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1 },
+      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15 },
+      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000 },
+      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500 },
+    ],
     lines: [
       { category: 'Food', mode: 'amount', value: 8_000 },
       { category: 'Living', mode: 'amount', value: 15_000 },
@@ -212,7 +217,12 @@ export const mockAppData: AppData = {
   monthBudgets: [{
     month: '2026-10',
     source: 'plan',
-    plannedIncome: 56_500,
+    incomes: [
+      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1 },
+      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15 },
+      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000 },
+      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500 },
+    ],
     lines: [
       { category: 'Food', planned: 8_000 },
       { category: 'Living', planned: 15_000 },

@@ -39,7 +39,7 @@ describe('permanent progress ledger', () => {
       'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26', 'CR-27', 'CR-28',
       'CR-29', 'CR-30', 'CR-31', 'CR-32', 'CR-33', 'CR-34', 'CR-35', 'CR-36',
       'CR-37', 'CR-38', 'CR-39', 'CR-40', 'CR-41', 'CR-42', 'CR-43', 'CR-44', 'CR-45', 'CR-46',
-      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52',
+      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -167,7 +167,7 @@ describe('permanent progress ledger', () => {
     expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-52 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-55 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -182,7 +182,7 @@ describe('permanent progress ledger', () => {
       'CR-25', 'CR-26', 'CR-27', 'CR-28', 'CR-29', 'CR-30', 'CR-31',
       'CR-32', 'CR-33', 'CR-34', 'CR-35', 'CR-36', 'CR-37', 'CR-38', 'CR-39',
       'CR-40', 'CR-41', 'CR-42', 'CR-43', 'CR-44', 'CR-45', 'CR-46',
-      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51',
+      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
@@ -207,6 +207,7 @@ describe('permanent progress ledger', () => {
     expect(decisions).toContain('DEC-BUDGET-DIRECTION');
     expect(decisions).toContain('DEC-BUDGET-SPEC');
     expect(decisions).toContain('DEC-P20M-CR52');
+    expect(decisions).toContain('DEC-P20M-CR53-55');
     expect(decisions).toContain('DEC-P20J-LEGACY-SHARES');
     expect(decisions).toContain('DEC-P20L-CR47');
     expect(decisions).toContain('DEC-P20L-CR48');
@@ -214,7 +215,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 
-  it('tracks P20-M preflight while preserving completed P20-L and P21-D', () => {
+  it('tracks completed P20-M while preserving completed P20-L and P21-D', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -230,12 +231,12 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-J |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-29')).toBe('Done');
-    for (const id of ['CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51']) {
+    for (const id of ['CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55']) {
       expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-30')).toBe('Done');
@@ -264,8 +265,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 89% (54/61)');
-    expect(dashboard).toContain('Phase 20         █████████░ 92% (12/13)');
+    expect(dashboard).toContain('Overall progress █████████░ 90% (55/61)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (13/13)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
@@ -282,6 +283,8 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P20I-CR35-36');
     expect(ledger).toContain('DEC-P20J-CR40-43');
     expect(ledger).toContain('DEC-P20K-CR44-46');
+    expect(ledger).toContain('DEC-P20M-CR53-55');
+    expect(ledger).toContain('schema v9');
     expect(ledger).toContain('DEC-P21C-CR37-38');
     expect(ledger).toContain('DEC-P21C1-CR39');
   });

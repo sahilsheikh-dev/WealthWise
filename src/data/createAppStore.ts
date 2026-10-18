@@ -77,7 +77,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetLine, BudgetPlan, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetLine, BudgetPlan, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
 } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
@@ -131,7 +131,7 @@ export type AppActions = {
   saveAndApplyBudgetPlan: (plan: BudgetPlan, month: string) => void;
   applyBudgetPlan: (month: string) => void;
   setBudgetRepeat: (repeatMonthly: boolean, repeatFrom: string | null) => void;
-  customizeMonthBudget: (month: string, input: { plannedIncome: number | null; lines?: BudgetLine[] }) => void;
+  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] }) => void;
   restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
   restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
   clearMonthBudget: (month: string) => void;
@@ -571,6 +571,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
