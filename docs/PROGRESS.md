@@ -446,6 +446,21 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   Assumed: absent or false `linkedIncluded` keeps all derived budget-view
   values unchanged and keeps all existing snapshots valid; the `budget` field
   continues to echo its stored input. Additive linked-total behavior is opt-in.
+- DEC-BUDGET-SPEC: P20-N changes only the Budget overview presentation and
+  pure model; the P20-M schema-v9 plan, frozen past/current snapshots,
+  read-only future months, income dues, and projection rules remain frozen.
+  The overview reports income, spending, investing and left as planned/actual
+  figures, reconciles totals to ordered budget sections, and shows pace only
+  for past/current months. Linked liability, investment-plan and policy rows
+  remain automatically derived and are not editable from the overview.
+  P20-N preflight verified that the user-owned Cash flow labels are exactly
+  “Opening balance” and “Closing balance”, and that Budget has no “Back to
+  Transactions” or “Review” control. Preserve those labels and absences;
+  Transactions retains its “Review {Mon}” route into Budget. Empty months
+  without a budget offer setup, while an unplanned future month with a plan
+  offers “Apply plan to {Month}”. Chart/layout tests are simulated; chart
+  rendering, rotated pace segments, scrolling, and native font-scale/touch
+  behavior require real-device verification.
 - DEC-P20G: schema v8 replaces all budget-template state with one nullable
   `budgetPlan`; applied month snapshots use `source: 'plan'`, hand-edited
   month snapshots use `source: 'custom'`, and v7 snapshots retain their lines
