@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 90% (55/61)
+Overall progress █████████░ 89% (55/62)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (13/13)
+Phase 20         █████████░ 93% (13/14)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -130,7 +130,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-K | — | Done | `026e671`; CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
 | P20-L | — | Done | CR-47–CR-50; due section, inline header filters, liability-kind chips and search. Full tests/coverage and all required gates pass. | 2026-10-18 |
 | P20-M | — | Done | CR-52–CR-55; categories, schema-v9 migration, future virtual budgets, income dues, projected cash flow and setup income items. 71 suites/820 tests; all six final gates pass. | 2026-10-18 |
-| P20-N | — | In progress | CR-56 model and three chart components implemented with focused tests passing; Budget screen and final gates pending. | 2026-10-18 |
+| P20-N | — | In progress | CR-56/CR-57 overview model, charts, screen, and grouped-row cleanup implemented; demo and final gates pending. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -462,6 +462,9 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   offers “Apply plan to {Month}”. Assumed: because no policy edit route or
   update action existed, the linked policy row uses a new limited editor for
   name, insurer and premium; schedule and payment fields remain unchanged.
+  CR-56/CR-57 supersede the CR-32/CR-33 Budget presentation structure only;
+  their due-clearing, apply-plan and Transactions Review navigation behavior
+  remains in place.
   Chart/layout tests are simulated; chart
   rendering, rotated pace segments, scrolling, and native font-scale/touch
   behavior require real-device verification. Assumed: selected-month actuals
@@ -1811,6 +1814,7 @@ evidence for the fixes.
 | P20-N STEP 1 — Pure overview model (CR-56) | Done (focused tests; final gates pending) | `src/domain/budget.ts` | `budget.test.ts`: empty model, ordered sections, shared earned-income allocation, linked plan/liability rows, current-day cutoff, future plan edits, negative-left copy, and reconciliation of section/stacked totals. |
 | P20-N STEP 2 — Charts (CR-57) | Done (focused tests; final gates pending) | `src/components/BudgetCharts.tsx` | `BudgetCharts.test.tsx`: stacked proportions, zero segments, overage segment/colour, section actual overlay clamping/overage, text summaries/accessibility labels, and PaceLine measured-width/rotated segments/dots. |
 | P20-N STEP 3 — Budget overview screen and linked edit routes (CR-57) | Done (focused tests; final gates pending) | `app/(tabs)/budget.tsx`, `app/policy-form.tsx`, `src/domain/policyActions.ts`, `src/data/createAppStore.ts` | `RouteRenderSmoke.test.tsx`: screen order, cash-flow labels and modes, empty states, row/edit routing, read-only past mode, font-scale stacking and Transactions month-param navigation; `policyActions.test.ts`, `createAppStore.test.ts`: policy update and one persisted write. |
+| P20-N STEP 4 — Remove superseded grouped-row implementation | Done (focused tests; final gates pending) | `src/domain/pending.ts`, pending/demo tests | Removed `budgetGroupRows`/`BudgetGroupRow` and its schedule-to-section aggregation. Superseded assertions: paid/partial/overdue group-row ordering and amounts in `pending.test.ts`, late-cleared group-row amounts in `pending.test.ts`, and current-budget group-row status/automatic-tag checks in `demoData.test.ts`; CR-56 overview totals/linked rows and CR-57 screen tests now cover the presentation. `pendingItems` remains for Home/Transactions dues. Ledger test progress expectations changed from 90% (55/61), Phase 20 100% (13/13) to 89% (55/62), Phase 20 93% (13/14): the new in-progress P20-N part increases each denominator without incrementing completed counts. |
 
 ### P18-R7 housekeeping
 
