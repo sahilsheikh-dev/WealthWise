@@ -974,6 +974,28 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   balance” and has no “Back to Transactions” or “Review” control. The snapshot
   `file_Untitled-2.txt` remains read-only. P20-O does not change the schema
   (still v9) or any frozen form component.
+  P20-P preflight on 2026-10-18, from base `0809b67`, re-ran the requested
+  audit from `5bd3c41..HEAD`. The worktree was clean, so no manual checkpoint
+  commit was needed. The same seven commits without a Copilot co-author
+  trailer remain the full list; each changed file is recorded below:
+  - `4cb6367` — `.claude/settings.json`: removed local settings.
+  - `4cb6367` — `.gitignore`: ignores `.claude` content.
+  - `c49cafd` — `app.json`: formatting adjustment.
+  - `b217a2a` — `app/(tabs)/transactions.tsx`: available-balance card margin.
+  - `268e4c7` — `app/(tabs)/index.tsx`: New Transaction action wording/UI.
+  - `268e4c7` — `src/components/IconButton.tsx`: allow exact action label.
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: label tests.
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: allow label.
+  - `9a01941` — `app/goal-form.tsx`: blank Saved value for new goals.
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-owned Cash flow labels/layout;
+    removed controls stay absent.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: exact Edit allocation title.
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot wiring.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance
+    placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed Back to transactions action.
+  In particular, no Back to Transactions button, Review control, or other
+  removed Budget items were restored.
   Re-verified for P20-L/P21-D with
   `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`:
   `3c644d3` changes Budget and removes menu/template workflow, without
