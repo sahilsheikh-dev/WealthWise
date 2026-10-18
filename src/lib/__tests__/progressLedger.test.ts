@@ -39,7 +39,7 @@ describe('permanent progress ledger', () => {
       'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26', 'CR-27', 'CR-28',
       'CR-29', 'CR-30', 'CR-31', 'CR-32', 'CR-33', 'CR-34', 'CR-35', 'CR-36',
       'CR-37', 'CR-38', 'CR-39', 'CR-40', 'CR-41', 'CR-42', 'CR-43', 'CR-44', 'CR-45', 'CR-46',
-      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51',
+      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -167,7 +167,7 @@ describe('permanent progress ledger', () => {
     expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-51 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-52 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -206,6 +206,7 @@ describe('permanent progress ledger', () => {
     expect(decisions).toContain('DEC-P20K-CR44-46');
     expect(decisions).toContain('DEC-BUDGET-DIRECTION');
     expect(decisions).toContain('DEC-BUDGET-SPEC');
+    expect(decisions).toContain('DEC-P20M-CR52');
     expect(decisions).toContain('DEC-P20J-LEGACY-SHARES');
     expect(decisions).toContain('DEC-P20L-CR47');
     expect(decisions).toContain('DEC-P20L-CR48');

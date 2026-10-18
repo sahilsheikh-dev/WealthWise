@@ -29,6 +29,7 @@ import {
   setBudgetRepeat,
   suggestBudgetSplit,
 } from '../budget';
+import { validateImportData } from '../backup';
 import type { Liability, PlanHolding, Policy, Transaction } from '../types';
 
 const plan: PlanHolding = {
@@ -62,9 +63,9 @@ const quarterlyPolicy: Policy = {
 describe('budget plans and monthly views', () => {
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
-      ['Survival (Needs)', 50, ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
+      ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
       ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
-      ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion']],
+      ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],
     ]);
@@ -102,10 +103,10 @@ describe('budget plans and monthly views', () => {
   it('suggests rounded five-group allocations, respects commitments, and warns on group overages', () => {
     const ordinary = suggestBudgetSplit({ plannedIncome: 10_000, commitments: [] });
     expect(ordinary.lines).toHaveLength(BUDGET_CATEGORIES.length);
-    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_300);
+    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_000);
     expect(ordinary.lines.find((line) => line.category === 'Food')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(500);
-    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(300);
+    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(400);
+    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(200);
     expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(200);
     expect(ordinary.lines.find((line) => line.category === 'Unexpected')?.planned).toBe(1_000);
     expect(ordinary.lines.find((line) => line.category === 'Other investments')?.planned).toBe(800);
@@ -116,7 +117,7 @@ describe('budget plans and monthly views', () => {
       commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
         dueDate: '2026-03-20', plannedAmount: 1_000, status: 'upcoming', paidAmount: 0 }],
     });
-    expect(committed.lines.find((line) => line.category === 'EMI')?.planned).toBe(1_400);
+    expect(committed.lines.find((line) => line.category === 'EMI')?.planned).toBe(1_200);
     expect(committed.lines.find((line) => line.category === 'Food')?.planned).toBe(800);
     const overspent = suggestBudgetSplit({
       plannedIncome: 10_000,
@@ -143,13 +144,16 @@ describe('budget plans and monthly views', () => {
       expect(Object.values(weights).reduce((total, weight) => total + weight, 0)).toBe(100);
     }
     const { lines } = suggestBudgetSplit({ plannedIncome: 10_001, commitments: [] });
-    expect(lines.find(({ category }) => category === 'Living')?.planned).toBe(1_300);
+    expect(lines.find(({ category }) => category === 'Living')?.planned).toBe(1_000);
     expect(lines.find(({ category }) => category === 'Eating out')?.planned).toBe(200);
     expect(lines.every(({ planned }) => planned >= 0 && planned % 100 === 0)).toBe(true);
   });
 
   it('accepts the new expense categories in transactions, filters and budget schemas', () => {
-    const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
+    const categories = [
+      'Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected',
+      'Rent', 'Utilities', 'Subscriptions', 'Personal spending', 'Travel',
+    ] as const;
     const transactions = categories.map((category, index) => ({
       id: `expense-${index}`,
       date: '2026-03-10',
@@ -175,7 +179,12 @@ describe('budget plans and monthly views', () => {
       },
     };
     expect(appDataSchema.safeParse(data).success).toBe(true);
+    expect(validateImportData(data).ok).toBe(true);
     expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining(categories));
+    for (const category of categories) {
+      expect(transactionCategoryLabel(category, 'expense'))
+        .toBe(category === 'Unexpected' ? 'Unexpected extras' : category);
+    }
     const view = budgetMonthView(data, '2026-03');
     expect(view.lines.map(({ category, actual }) => [category, actual])).toEqual(
       categories.map((category, index) => [category, 25 + index]),

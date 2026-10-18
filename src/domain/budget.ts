@@ -49,9 +49,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'survival',
     name: 'Survival (Needs)',
-    hint: 'Essentials: living, food, transport, family, health, bills, education, EMI and insurance.',
+    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education, EMI and insurance.',
     weight: 50,
-    categories: ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
+    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
   },
   {
     id: 'savings-investments',
@@ -63,9 +63,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'wants',
     name: 'Wants',
-    hint: 'Non-essential or lifestyle spending: eating out, online shopping, entertainment and fashion.',
+    hint: 'Non-essential or lifestyle spending: subscriptions, personal spending, travel, eating out, online shopping, entertainment and fashion.',
     weight: 15,
-    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion'],
+    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel'],
   },
   {
     id: 'festival-donations-culture',
@@ -84,12 +84,15 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
 ];
 
 export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  survival: { Living: 25, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 10, Insurance: 5 },
+  survival: { Living: 20, Rent: 5, Utilities: 5, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 5, Insurance: 5 },
   'savings-investments': {
     'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
     'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 40,
   },
-  wants: { Shopping: 35, Other: 20, 'Eating out': 15, Entertainment: 15, Fashion: 15 },
+  wants: {
+    Shopping: 25, Other: 10, 'Eating out': 10, Entertainment: 10, Fashion: 10,
+    Subscriptions: 15, 'Personal spending': 10, Travel: 10,
+  },
   'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },
   'unexpected-extras': { Unexpected: 100 },
 };

@@ -185,7 +185,8 @@ const policySchema = z.object({
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
   'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-  'Entertainment', 'Fashion', 'Culture', 'Unexpected',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+  'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
@@ -338,7 +339,8 @@ export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
     'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-    'Entertainment', 'Fashion', 'Culture', 'Unexpected',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+    'Subscriptions', 'Personal spending', 'Travel',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments', 'Other'],

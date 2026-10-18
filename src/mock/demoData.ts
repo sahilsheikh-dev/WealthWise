@@ -39,6 +39,11 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
   Fashion: 800,
   Culture: 400,
   Unexpected: 700,
+  Rent: 15_000,
+  Utilities: 2_500,
+  Subscriptions: 800,
+  'Personal spending': 1_200,
+  Travel: 1_500,
 };
 
 const INVESTMENT_AMOUNTS: Record<string, number> = {
