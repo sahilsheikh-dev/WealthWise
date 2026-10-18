@@ -69,12 +69,12 @@ export function PendingItemActions({
     if (!item.actionable) return;
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
-    if (item.source.kind === 'budget') {
+    if (item.source.kind === 'budget' || item.source.kind === 'income') {
       actions.addTransaction({
         type: pendingTransactionType(item),
         amount: item.amount,
         category: item.category,
-        note: '',
+        note: item.source.kind === 'income' ? item.title : '',
         date: today,
       });
       const state = useAppStore.getState();
@@ -124,7 +124,9 @@ export function PendingItemActions({
       };
     }
     setActionToast({
-      message: `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
+      message: pendingTransactionType(item) === 'income'
+        ? `Received ${formatAmount(clearedAmount, 'exact', 1)}`
+        : `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
       actionLabel: 'Undo',
       onAction: undo,
     });

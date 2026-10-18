@@ -33,7 +33,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 8 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 9 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -42,19 +42,20 @@ describe('backup validation and serialization', () => {
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
   });
 
-  it('verifies v7 checksums before migrating backups to schema eight', async () => {
+  it('verifies v7 checksums before migrating backups to schema nine', async () => {
     const { budgetPlan, monthBudgets, ...rest } = mockAppData;
     const oldData = {
       ...rest,
       budgetTemplates: [{
         id: 'legacy-plan',
         name: 'Legacy plan',
-        plannedIncome: budgetPlan?.plannedIncome ?? null,
+        plannedIncome: budgetPlan?.incomes.reduce((sum, income) => sum + income.amount, 0) ?? null,
         lines: budgetPlan?.lines ?? [],
       }],
       defaultBudgetTemplateId: 'legacy-plan',
-      monthBudgets: (monthBudgets ?? []).map(({ source: _source, linkedIncluded: _linked, ...snapshot }) => ({
+      monthBudgets: (monthBudgets ?? []).map(({ source: _source, linkedIncluded: _linked, incomes, ...snapshot }) => ({
         ...snapshot,
+        plannedIncome: incomes.reduce((sum, income) => sum + income.amount, 0),
         templateId: 'legacy-plan',
         templateName: 'Legacy plan',
         customized: false,
@@ -77,6 +78,44 @@ describe('backup validation and serialization', () => {
     expect(imported.data).not.toHaveProperty('budgetTemplates');
 
     const tampered = { ...envelope, data: { ...oldData, settings: { ...oldData.settings, name: 'tampered' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v8 checksums as written before migrating income totals', async () => {
+    const data = {
+      ...mockAppData,
+      budgetPlan: {
+        plannedIncome: 15_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 2_000 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-11',
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom' as const,
+        plannedIncome: 12_000,
+        lines: [{ category: 'Food', planned: 1_000 }],
+      }],
+    };
+    const checksum = await digest(canonicalJson(data));
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 8,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: checksum },
+      data,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.budgetPlan?.incomes).toEqual([
+      expect.objectContaining({ name: 'Salary', category: 'Business', amount: 15_000, day: 1 }),
+    ]);
+    expect(imported.data.monthBudgets?.[0]?.incomes).toEqual([
+      expect.objectContaining({ name: 'Income', category: 'Business', amount: 12_000 }),
+    ]);
+    const tampered = { ...envelope, data: { ...data, settings: { ...data.settings, name: 'changed' } } };
     await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
@@ -148,7 +187,7 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
-  it('round trips v8 backups containing the current budget plan and expense categories', async () => {
+  it('round trips v9 backups containing the current budget plan and expense categories', async () => {
     const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
     const data = {
       ...mockAppData,
@@ -172,7 +211,7 @@ describe('backup validation and serialization', () => {
         })),
       ],
       budgetPlan: {
-        plannedIncome: 10_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
         lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
         repeatMonthly: false,
         repeatFrom: null,
@@ -180,11 +219,11 @@ describe('backup validation and serialization', () => {
       monthBudgets: [{
         month: '2026-10',
         source: 'plan' as const,
-        plannedIncome: 10_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
         lines: categories.map((category) => ({ category, planned: 100 })),
       }],
     };
-    expect(SCHEMA_VERSION).toBe(8);
+    expect(SCHEMA_VERSION).toBe(9);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -201,7 +240,7 @@ describe('backup validation and serialization', () => {
     });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version nine', async () => {
+  it('round trips custom emergency-fund options and refuses schema version ten', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -225,7 +264,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 9;
+    future.schemaVersion = 10;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -289,14 +328,15 @@ describe('backup validation and serialization', () => {
     const budgetData = {
       ...mockAppData,
       budgetPlan: {
-        plannedIncome: 10_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
         lines: [{ category: 'Food', mode: 'percent' as const, value: 25, dueDay: 31 }],
         repeatMonthly: false,
         repeatFrom: null,
       },
       monthBudgets: [{
         month: '2026-10', source: 'plan' as const,
-        plannedIncome: 10_000, linkedIncluded: true,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
+        linkedIncluded: true,
         lines: [{ category: 'Food', planned: 2_500, dueDay: 31 }],
       }],
     };
@@ -347,7 +387,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 9;
+    newer.schemaVersion = 10;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

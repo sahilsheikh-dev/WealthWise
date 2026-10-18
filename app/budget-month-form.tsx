@@ -14,7 +14,7 @@ import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments } from '../src/domain/budget';
+import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, plannedIncomeOf } from '../src/domain/budget';
 import { incomeBaselineFor } from '../src/domain/summary';
 import { pendingItems } from '../src/domain/pending';
 import { transactionCategoryLabel } from '../src/domain/transactions';
@@ -36,11 +36,13 @@ export default function BudgetMonthFormScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const setActionToast = useUIStore((state) => state.setActionToast);
   const stored = data.monthBudgets?.find((row) => row.month === month);
-  const suggestedIncome = stored?.plannedIncome ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
+  const suggestedIncome = stored
+    ? stored.incomes.length > 0 ? plannedIncomeOf(stored) : null
+    : incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
   const lastError = useAppStore((state) => state.lastError);
   const defaultValues = useMemo<MonthForm>(() => ({
-    plannedIncome: stored?.plannedIncome !== undefined
-      ? stored.plannedIncome === null ? '' : String(stored.plannedIncome)
+    plannedIncome: stored !== undefined
+      ? suggestedIncome === null ? '' : String(suggestedIncome)
       : suggestedIncome === null ? '' : String(suggestedIncome),
     lines: (() => {
     const lineValues = new Map((stored?.lines ?? []).map((line) => [line.category, line]));
@@ -85,7 +87,14 @@ export default function BudgetMonthFormScreen() {
         Alert.alert('Check your budget', 'Enter planned income for percentage lines and valid non-negative amounts or percentages up to 100%.');
         return;
       }
-      actions.customizeMonthBudget(month, { plannedIncome, lines: budgetLines });
+      const existingIncome = stored?.incomes[0];
+      const incomes = plannedIncome === null ? [] : [{
+        id: existingIncome?.id ?? `month-income-${month}`,
+        name: existingIncome?.name ?? 'Income',
+        category: existingIncome?.category ?? 'Salary',
+        amount: plannedIncome,
+      }];
+      actions.customizeMonthBudget(month, { incomes, lines: budgetLines });
       const error = useAppStore.getState().lastError;
       if (error) Alert.alert('Could not save budget', error);
       else {

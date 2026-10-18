@@ -29,9 +29,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version eight', () => {
+  it('accepts the typed mock app data and exports schema version nine', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(8);
+    expect(SCHEMA_VERSION).toBe(9);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {
@@ -82,14 +82,15 @@ describe('appDataSchema', () => {
     const budgeted = {
       ...mockAppData,
       budgetPlan: {
-        plannedIncome: 50_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 50_000, day: 1 }],
         lines: [{ category: 'Food', mode: 'percent' as const, value: 20, dueDay: 31 }],
         repeatMonthly: false,
         repeatFrom: null,
       },
       monthBudgets: [{
         month: '2026-10', source: 'plan' as const,
-        plannedIncome: 50_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 10_000, dueDay: 31 }],
+        incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
+        linkedIncluded: true, lines: [{ category: 'Food', planned: 10_000, dueDay: 31 }],
       }],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);

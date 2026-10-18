@@ -1,13 +1,13 @@
-import { incomeBaselineFor } from './summary';
 import { liabilitySchedule, planSchedule } from './schedule';
 import { policySchedule } from './policySchedule';
 import { investCategoryFor } from './links';
-import { monthEndDate, monthPositionAt } from './cashFlow';
+import { monthEndDate, monthPositionAt, normalizeMoney } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
+  BudgetIncomeItem,
   BudgetLine,
   BudgetPlan,
   ISODate,
@@ -49,9 +49,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'survival',
     name: 'Survival (Needs)',
-    hint: 'Essentials: living, food, transport, family, health, bills, education, EMI and insurance.',
+    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education, EMI and insurance.',
     weight: 50,
-    categories: ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
+    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
   },
   {
     id: 'savings-investments',
@@ -63,9 +63,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'wants',
     name: 'Wants',
-    hint: 'Non-essential or lifestyle spending: eating out, online shopping, entertainment and fashion.',
+    hint: 'Non-essential or lifestyle spending: subscriptions, personal spending, travel, eating out, online shopping, entertainment and fashion.',
     weight: 15,
-    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion'],
+    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel'],
   },
   {
     id: 'festival-donations-culture',
@@ -84,12 +84,15 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
 ];
 
 export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  survival: { Living: 25, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 10, Insurance: 5 },
+  survival: { Living: 20, Rent: 5, Utilities: 5, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 5, Insurance: 5 },
   'savings-investments': {
     'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
     'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 40,
   },
-  wants: { Shopping: 35, Other: 20, 'Eating out': 15, Entertainment: 15, Fashion: 15 },
+  wants: {
+    Shopping: 25, Other: 10, 'Eating out': 10, Entertainment: 10, Fashion: 10,
+    Subscriptions: 15, 'Personal spending': 10, Travel: 10,
+  },
   'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },
   'unexpected-extras': { Unexpected: 100 },
 };
@@ -218,9 +221,13 @@ export class MissingPlannedIncomeError extends Error {
   }
 }
 
+export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] }): number {
+  return value.incomes.reduce((total, income) => total + income.amount, 0);
+}
+
 export function resolveBudgetPlan(
-  plan: Pick<BudgetPlan, 'plannedIncome' | 'lines'>,
-  plannedIncome = plan.plannedIncome,
+  plan: Pick<BudgetPlan, 'incomes' | 'lines'>,
+  plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
 ): BudgetLine[] {
   return plan.lines.map((line) => {
     if (line.mode === 'amount') {
@@ -291,13 +298,46 @@ export function applyBudgetPlanToMonth(
 ): AppData {
   const month = monthOf(monthInput);
   void options.newId;
+  void options.today;
   const plan = data.budgetPlan;
   if (!plan) return data;
-  const plannedIncome = plan.plannedIncome ?? incomeBaselineFor(data, options.today)?.amount ?? null;
+  const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
   const lines = resolveBudgetPlan(plan, plannedIncome);
   return replaceMonth(data, {
-    month, source: 'plan', plannedIncome, lines, linkedIncluded: true,
+    month, source: 'plan', incomes: plan.incomes.map((income) => ({ ...income })), lines, linkedIncluded: true,
   });
+}
+
+export function effectiveMonthBudget(
+  data: AppData,
+  monthInput: string,
+  today: ISODate,
+): { budget: MonthBudget | null; virtual: boolean } {
+  const month = monthOf(monthInput);
+  const stored = monthRows(data).find((row) => row.month === month);
+  if (stored) return { budget: stored, virtual: false };
+  const currentMonth = monthKey(today);
+  const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
+    + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
+  const plan = data.budgetPlan;
+  if (!plan || !plan.repeatMonthly || !plan.repeatFrom
+    || month <= currentMonth || month < plan.repeatFrom || monthDistance > 24) {
+    return { budget: null, virtual: false };
+  }
+  if (plan.incomes.length === 0 && plan.lines.some((line) => line.mode === 'percent')) {
+    return { budget: null, virtual: false };
+  }
+  const lines = resolveBudgetPlan(plan);
+  return {
+    budget: {
+      month,
+      source: 'plan',
+      incomes: plan.incomes.map((income) => ({ ...income })),
+      lines,
+      linkedIncluded: true,
+    },
+    virtual: true,
+  };
 }
 
 export function saveAndApplyBudgetPlan(
@@ -312,14 +352,17 @@ export function saveAndApplyBudgetPlan(
 export function customizeMonthBudget(
   data: AppData,
   monthInput: string,
-  input: { plannedIncome: number | null; lines?: BudgetLine[] },
+  input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] },
 ): AppData {
   const month = monthOf(monthInput);
   const stored = monthRows(data).find((row) => row.month === month);
   const baseLines = stored?.lines ?? [];
-  const base = stored ?? { month, source: 'custom' as const, plannedIncome: input.plannedIncome, lines: baseLines };
+  const base = stored ?? { month, source: 'custom' as const, incomes: input.incomes, lines: baseLines };
   return replaceMonth(data, {
-    ...base, source: 'custom', plannedIncome: input.plannedIncome, lines: input.lines ?? baseLines,
+    ...base,
+    source: 'custom',
+    incomes: input.incomes.map((income) => ({ ...income })),
+    lines: input.lines ?? baseLines,
   });
 }
 
@@ -359,8 +402,7 @@ export function ensureCurrentMonthBudget(data: AppData, today: ISODate, newId: (
   const plan = data.budgetPlan;
   if (!plan || !plan.repeatMonthly || plan.repeatFrom === null || plan.repeatFrom > month
     || monthRows(data).some((row) => row.month === month)) return data;
-  if (plan.plannedIncome === null && plan.lines.some((line) => line.mode === 'percent')
-    && incomeBaselineFor(data, today) === null) return data;
+  if (plan.incomes.length === 0 && plan.lines.some((line) => line.mode === 'percent')) return data;
   return applyBudgetPlanToMonth(data, month, { newId, today });
 }
 
@@ -416,9 +458,9 @@ export type BudgetMonthView = {
   outstanding: OutstandingSummary;
 };
 
-export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
+export function budgetMonthView(data: AppData, month: string, today: ISODate = `${month}-01`): BudgetMonthView {
   const key = monthOf(month);
-  const budget = monthRows(data).find((row) => row.month === key) ?? null;
+  const { budget } = effectiveMonthBudget(data, key, today);
   const commitments = monthlyCommitments(data, key);
   const includeLinked = budget?.linkedIncluded === true;
   const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
@@ -427,6 +469,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     for (const row of linkedRows) {
       planned.set(row.category, (planned.get(row.category) ?? 0) + row.amount);
     }
+
   } else {
     for (const category of ['EMI', 'Insurance']) {
       const amount = commitments.filter((item) => item.category === category)
@@ -510,7 +553,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     .filter((row) => (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category))
     .reduce((sum, row) => sum + row.amount, 0);
   const actualEarned = position.earnedIncome;
-  const plannedIncome = budget?.plannedIncome ?? null;
+  const plannedIncome = budget && budget.incomes.length > 0 ? plannedIncomeOf(budget) : null;
   return {
     budget, position, plannedIncome,
     actualEarned,
@@ -532,8 +575,45 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
       prepaymentsActual: monthPayments.filter((row) => row.payment.kind === 'Prepayment')
         .reduce((sum, row) => sum + row.payment.amount, 0),
     },
-    unallocated: budget?.plannedIncome === null || budget?.plannedIncome === undefined
-      ? null : budget.plannedIncome - plannedSpend - plannedSave,
+    unallocated: plannedIncome === null
+      ? null : plannedIncome - plannedSpend - plannedSave,
     unbudgeted, outstanding: outstandingAt(data, monthEndDate(key)),
+  };
+}
+
+export function projectedCashFlow(
+  data: AppData,
+  monthInput: string,
+  today: ISODate,
+): { opening: number; closing: number; projected: boolean } {
+  const month = monthOf(monthInput);
+  const currentMonth = monthKey(today);
+  if (month <= currentMonth) {
+    const position = monthPositionAt(data.transactions, month);
+    return { opening: position.opening, closing: position.closing, projected: false };
+  }
+  const prior = projectedCashFlow(data, shiftMonth(month, -1), today);
+  const opening = prior.closing;
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) return { opening, closing: opening, projected: true };
+  const view = budgetMonthView(data, month, today);
+  const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
+    + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
+  if (monthDistance > 1) {
+    const plannedIncome = plannedIncomeOf(budget);
+    return {
+      opening,
+      closing: normalizeMoney(opening + plannedIncome - view.plannedSpend - view.plannedSave),
+      projected: true,
+    };
+  }
+  const plannedIncome = plannedIncomeOf(budget);
+  const income = Math.max(0, plannedIncome - view.actualEarned);
+  const spend = Math.max(0, view.plannedSpend - view.actualSpend);
+  const save = Math.max(0, view.plannedSave - view.actualSave);
+  return {
+    opening,
+    closing: normalizeMoney(opening + income - spend - save),
+    projected: true,
   };
 }

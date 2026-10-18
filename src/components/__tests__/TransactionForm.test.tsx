@@ -257,7 +257,7 @@ describe('transaction add form', () => {
     mockData.monthBudgets = [{
       month: '2026-10',
       source: 'custom' as const,
-      plannedIncome: 10_000,
+      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
       lines: [{ category, planned: 2_000 }],
     }];
     const base = emptyAppData('2026-10-01');

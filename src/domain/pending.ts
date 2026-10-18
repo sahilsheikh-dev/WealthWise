@@ -1,4 +1,10 @@
-import { BUDGET_GROUPS, budgetLineActual, budgetGroupFor, budgetMonthView } from './budget';
+import {
+  BUDGET_GROUPS,
+  budgetLineActual,
+  budgetGroupFor,
+  budgetMonthView,
+  effectiveMonthBudget,
+} from './budget';
 import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
 import { investCategoryFor } from './links';
@@ -12,7 +18,8 @@ export type PendingSource =
   | { kind: 'plan'; parentId: string; slotId: string }
   | { kind: 'liability'; parentId: string; slotId: string; paymentKind: 'EMI' | 'Payment' }
   | { kind: 'policy'; parentId: string; slotId: string }
-  | { kind: 'budget'; category: string };
+  | { kind: 'budget'; category: string }
+  | { kind: 'income'; incomeId: string };
 
 export type PendingItem = {
   id: string;
@@ -120,8 +127,37 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     }
   }
 
-  const budget = data.monthBudgets?.find((row) => row.month === month);
+  const budget = effectiveMonthBudget(data, month, today).budget;
   if (budget) {
+    const earnedByCategory = new Map<string, number>();
+    for (const transaction of data.transactions) {
+      if (transaction.type !== 'income' || monthKey(transaction.date) !== month) continue;
+      earnedByCategory.set(
+        transaction.category,
+        (earnedByCategory.get(transaction.category) ?? 0) + transaction.amount,
+      );
+    }
+    for (const income of budget.incomes) {
+      if (income.day === undefined) continue;
+      const earned = earnedByCategory.get(income.category) ?? 0;
+      const applied = Math.min(earned, income.amount);
+      earnedByCategory.set(income.category, earned - applied);
+      const remaining = Math.max(0, income.amount - applied);
+      if (remaining === 0) continue;
+      const dueDate = dueDateForLine(month, income.day);
+      if (!dueDate) continue;
+      items.push({
+        id: `income:${month}:${income.id}`,
+        kind: 'due',
+        title: income.name,
+        category: income.category,
+        amount: remaining,
+        dueDate,
+        status: dueStatus(dueDate, month, today),
+        source: { kind: 'income', incomeId: income.id },
+        actionable: true,
+      });
+    }
     for (const line of budget.lines) {
       if (line.category === 'EMI' || line.category === 'Insurance'
         || instrumentCategories.has(line.category)
@@ -267,8 +303,8 @@ export function budgetGroupRows(data: AppData, monthInput: string, today: ISODat
     }
   }
 
-  const budget = data.monthBudgets?.find((item) => item.month === month);
-  const view = budgetMonthView(data, month);
+  const budget = effectiveMonthBudget(data, month, today).budget;
+  const view = budgetMonthView(data, month, today);
   const plannedByCategory = new Map<string, number>();
   const actualByCategory = new Map<string, number>();
   for (const row of rows) {
@@ -307,6 +343,7 @@ export function budgetGroupRows(data: AppData, monthInput: string, today: ISODat
 }
 
 export function pendingTransactionType(item: PendingItem): Transaction['type'] {
+  if (item.source.kind === 'income') return 'income';
   if (item.source.kind === 'plan') return 'invest';
   if (item.source.kind === 'liability' || item.source.kind === 'policy') return 'expense';
   const group = budgetGroupFor(item.category);

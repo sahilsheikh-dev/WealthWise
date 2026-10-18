@@ -4,9 +4,15 @@ import { formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
-import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
+import {
+  EARNED_INCOME_CATEGORIES,
+  THEME_IDS,
+  type AppData,
+  type ISODate,
+  type Transaction,
+} from './types';
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -185,7 +191,8 @@ const policySchema = z.object({
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
   'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-  'Entertainment', 'Fashion', 'Culture', 'Unexpected',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+  'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
@@ -194,6 +201,15 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
+const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
+const nonEarnedIncomeCategories = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
+const budgetIncomeSchema = z.object({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  category: z.enum(earnedIncomeCategories),
+  amount: moneySchema.positive().max(1_000_000_000),
+  day: z.number().int().min(1).max(31).optional(),
+});
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
 const budgetPlanLineSchema = z.object({
   category: z.string().min(1).max(60),
@@ -206,7 +222,7 @@ const budgetPlanLineSchema = z.object({
   }
 });
 const budgetPlanSchema = z.object({
-  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  incomes: z.array(budgetIncomeSchema).max(1000),
   lines: z.array(budgetPlanLineSchema).max(1000),
   repeatMonthly: z.boolean(),
   repeatFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable(),
@@ -228,7 +244,7 @@ const budgetPlanSchema = z.object({
 const monthBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   source: z.enum(['plan', 'custom']),
-  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  incomes: z.array(budgetIncomeSchema).max(1000),
   linkedIncluded: z.boolean().optional(),
   lines: z.array(z.object({
     category: z.string().min(1).max(60),
@@ -338,7 +354,8 @@ export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
     'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-    'Entertainment', 'Fashion', 'Culture', 'Unexpected',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+    'Subscriptions', 'Personal spending', 'Travel',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments', 'Other'],
@@ -347,7 +364,8 @@ export const TRANSACTION_CATEGORIES = {
 export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
   .filter((category) => category !== 'Other');
 
-export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
+export { EARNED_INCOME_CATEGORIES };
+export const NON_EARNED_INCOME_CATEGORIES = nonEarnedIncomeCategories;
 
 type MoneyOptions = {
   minimum?: number;
