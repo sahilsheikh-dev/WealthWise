@@ -60,7 +60,13 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
 
 export function filterTransactions(
   txs: Transaction[],
-  options: { month: string; type: 'all' | Transaction['type']; query: string; category?: string },
+  options: {
+    month: string;
+    type: 'all' | Transaction['type'];
+    query: string;
+    category?: string;
+    customCategories?: ReadonlySet<string>;
+  },
 ): Transaction[] {
   const query = options.query.trim().toLowerCase();
   return txs
@@ -68,7 +74,8 @@ export function filterTransactions(
     .filter((transaction) => options.type === 'all' || transaction.type === options.type)
     .filter((transaction) => !options.category || transaction.category === options.category
       || (options.category === 'Other investments' && transaction.type === 'invest'
-        && !INVESTMENT_CATEGORIES.has(transaction.category)))
+        && !INVESTMENT_CATEGORIES.has(transaction.category)
+        && !options.customCategories?.has(transaction.category)))
     .filter((transaction) => !query || `${transaction.note} ${transaction.category}`.toLowerCase().includes(query))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }

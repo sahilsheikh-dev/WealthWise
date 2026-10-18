@@ -8,6 +8,7 @@ import GoalsScreen from '../../../app/(tabs)/goals';
 import { useUIStore } from '../../data/uiStore';
 import { emptyAppData } from '../../domain/actions';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
+import { budgetPlanFromLines } from '../../testFixtures/budget';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
@@ -156,12 +157,9 @@ describe('Home screen theme smoke', () => {
     expect(router.push).toHaveBeenCalledWith('/budget-setup');
     await act(async () => renderer?.unmount());
 
-    mockData.budgetPlan = {
+    mockData.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 1_000 }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Food', mode: 'amount', value: 1_000 }],
-      repeatMonthly: false,
-      repeatFrom: null,
-    };
+    });
     mockData.monthBudgets = [];
     jest.mocked(router.push).mockClear();
     await act(async () => {

@@ -5,7 +5,7 @@ import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
 import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
-import { budgetPlanFromLines, monthBudgetFromLines } from './budgetFixtures';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 const base = () => emptyAppData('2026-01-01');
 

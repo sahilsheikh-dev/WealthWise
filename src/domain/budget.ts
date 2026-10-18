@@ -6,6 +6,7 @@ import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import { EARNED_INCOME_CATEGORIES } from './types';
 import { formatINR } from '../lib/format';
+import { BUDGET_GROUPS, budgetGroupFor, type BudgetGroup } from './budgetGroups';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
@@ -45,51 +46,8 @@ export type LinkedRecurringRow = {
   status: BudgetCommitment['status'];
 };
 
-export type BudgetGroup = {
-  id: 'survival' | 'savings-investments' | 'wants' | 'festival-donations-culture' | 'unexpected-extras';
-  name: string;
-  hint: string;
-  weight: number;
-  categories: readonly string[];
-};
-
-export const BUDGET_GROUPS: readonly BudgetGroup[] = [
-  {
-    id: 'survival',
-    name: 'Survival (Needs)',
-    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education, EMI and insurance.',
-    weight: 50,
-    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
-  },
-  {
-    id: 'savings-investments',
-    name: 'Savings and Investments',
-    hint: 'Savings and every investment category.',
-    weight: 20,
-    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'],
-  },
-  {
-    id: 'wants',
-    name: 'Wants',
-    hint: 'Non-essential or lifestyle spending: subscriptions, personal spending, travel, eating out, online shopping, entertainment and fashion.',
-    weight: 15,
-    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel'],
-  },
-  {
-    id: 'festival-donations-culture',
-    name: 'Festival, Donations, Culture',
-    hint: 'Festival, donation, gifts and culture-related spending.',
-    weight: 5,
-    categories: ['Festival', 'Donation', 'Gifts', 'Culture'],
-  },
-  {
-    id: 'unexpected-extras',
-    name: 'Unexpected Extras',
-    hint: 'Surprises and emergencies: medical bills, home or vehicle repairs, or sudden gifts.',
-    weight: 10,
-    categories: ['Unexpected'],
-  },
-];
+export { BUDGET_GROUPS, budgetGroupFor };
+export type { BudgetGroup };
 
 const SYSTEM_BUDGET_SECTIONS: readonly BudgetSection[] = [
   { id: 'income', name: 'Income', type: 'spend', system: 'income' },
@@ -109,8 +67,6 @@ export function defaultBudgetSections(): BudgetSection[] {
 }
 
 export function defaultBudgetSectionIdFor(category: string): string {
-  if (category === 'EMI') return 'debt-repayments';
-  if (category === 'Insurance') return 'insurance';
   return budgetGroupFor(category)?.id ?? 'survival';
 }
 
@@ -129,10 +85,6 @@ export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<st
 };
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
-
-export function budgetGroupFor(category: string): BudgetGroup | undefined {
-  return BUDGET_GROUPS.find((group) => group.categories.includes(category));
-}
 
 function isEarnedIncomeCategory(category: string): category is EarnedIncomeCategory {
   return (EARNED_INCOME_CATEGORIES as readonly string[]).includes(category);
@@ -158,10 +110,16 @@ function budgetCategoryForTransaction(transaction: Transaction, customCategories
     : transaction.category;
 }
 
-function customBudgetCategories(data: AppData): ReadonlySet<string> {
+export function customBudgetCategories(data: AppData): ReadonlySet<string> {
   return new Set([
     ...(data.budgetPlan?.items.map((item) => item.name) ?? []),
     ...(data.monthBudgets ?? []).flatMap((budget) => budget.items.map((item) => item.name)),
+    ...data.transactions
+      .filter((transaction) =>
+        (transaction.type === 'expense' || transaction.type === 'invest')
+        && !BUILT_IN_BUDGET_CATEGORY_SET.has(transaction.category),
+      )
+      .map((transaction) => transaction.category),
   ]);
 }
 
@@ -624,6 +582,19 @@ export type BudgetItemPatch = {
   dueDay?: number | null;
 };
 
+function validateStructuralItemValues(
+  mode: BudgetItem['mode'],
+  value: number,
+  dueDay: number | undefined,
+): number {
+  if (!Number.isFinite(value) || value < 0 || value > 1_000_000_000
+    || (mode === 'percent' && value > 100)
+    || (dueDay !== undefined && (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid amount, percentage, and due day.');
+  }
+  return normalizeMoney(value);
+}
+
 function validateBudgetName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 30 || trimmed !== name) {
@@ -638,6 +609,9 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
   const sectionIds = new Set<string>();
   const sectionNames = new Set<string>();
   for (const section of sections) {
+    if (!section.id || section.name.trim() !== section.name || section.name.length < 1 || section.name.length > 30) {
+      throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
+    }
     if (sectionIds.has(section.id) || sectionNames.has(section.name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Section names and IDs must be unique.');
     }
@@ -648,6 +622,9 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
   const itemIds = new Set<string>();
   const itemCounts = new Map<string, number>();
   for (const item of items) {
+    if (!item.id || item.name.trim() !== item.name || item.name.length < 1 || item.name.length > 30) {
+      throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
+    }
     if (!sectionIds.has(item.sectionId)) {
       throw new BudgetMutationError('section-not-found', 'Choose an existing section for each budget item.');
     }
@@ -713,7 +690,7 @@ export function addSection(
     if (sections.some((section) => section.name.toLowerCase() === name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Section names must be unique.');
     }
-    return { sections: [...sections, { ...input, name }], items };
+    return { sections: [...sections, { id: input.id, name, type: input.type }], items };
   });
 }
 
@@ -780,15 +757,13 @@ export function addItem(
   today: ISODate,
 ): AppData {
   const name = validateBudgetName(input.name);
-  validateBudgetItemValues({ amount: input.value, ...(input.dueDay === undefined ? {} : { dueDay: input.dueDay }) });
-  if (input.mode === 'percent' && input.value > 100) {
-    throw new BudgetMutationError('invalid-item', 'Percentage items cannot exceed 100%.');
-  }
+  const value = validateStructuralItemValues(input.mode, input.value, input.dueDay);
+  if (!input.id) throw new BudgetMutationError('invalid-item', 'An item ID is required.');
   return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
     if (items.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
-    return { sections, items: [...items, { ...input, name }] };
+    return { sections, items: [...items, { ...input, name, value }] };
   });
 }
 
@@ -799,17 +774,21 @@ export function editItem(
   scope: BudgetItemScope,
   today: ISODate,
 ): AppData {
+  const requestedItem = effectiveMonthBudget(data, month, today).budget?.items
+    .find((item) => item.id === input.itemId);
+  if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
   const name = input.patch.name === undefined ? undefined : validateBudgetName(input.patch.name);
-  if (input.patch.value !== undefined) {
-    validateBudgetItemValues({ amount: input.patch.value, ...(input.patch.dueDay == null ? {} : { dueDay: input.patch.dueDay }) });
-    if (input.patch.mode === 'percent' && input.patch.value > 100) {
-      throw new BudgetMutationError('invalid-item', 'Percentage items cannot exceed 100%.');
-    }
-  }
   return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
-    const target = items.find((item) => item.id === input.itemId);
+    const target = items.find((item) => item.id === input.itemId)
+      ?? items.find((item) => item.name === requestedItem.name);
     if (!target) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
     const nextName = name ?? target.name;
+    const nextMode = input.patch.mode ?? target.mode;
+    const nextValue = input.patch.value ?? target.value;
+    const nextDueDay = input.patch.dueDay === null
+      ? undefined
+      : input.patch.dueDay ?? target.dueDay;
+    const normalizedValue = validateStructuralItemValues(nextMode, nextValue, nextDueDay);
     if (items.some((item) => item.id !== target.id && item.name.toLowerCase() === nextName.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
@@ -824,7 +803,7 @@ export function editItem(
         ...item,
         ...(name === undefined ? {} : { name }),
         ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
-        ...(input.patch.value === undefined ? {} : { value: input.patch.value }),
+        ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
         ...(input.patch.dueDay === undefined ? {} : input.patch.dueDay === null
           ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
           : { dueDay: input.patch.dueDay }),
@@ -840,11 +819,16 @@ export function deleteItem(
   scope: BudgetItemScope,
   today: ISODate,
 ): AppData {
+  const requestedItem = effectiveMonthBudget(data, month, today).budget?.items
+    .find((item) => item.id === input.itemId);
+  if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
   return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
-    if (!items.some((item) => item.id === input.itemId)) {
+    const target = items.find((item) => item.id === input.itemId)
+      ?? items.find((item) => item.name === requestedItem.name);
+    if (!target) {
       throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
     }
-    return { sections, items: items.filter((item) => item.id !== input.itemId) };
+    return { sections, items: items.filter((item) => item.name !== requestedItem.name) };
   });
 }
 
@@ -861,10 +845,11 @@ export function customizeMonthBudget(
   data: AppData,
   monthInput: string,
   input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] },
+  today: ISODate,
 ): AppData {
   const month = monthOf(monthInput);
   const stored = monthRows(data).find((row) => row.month === month);
-  const base = stored ?? {
+  const base = stored ?? effectiveMonthBudget(data, month, today).budget ?? {
     month,
     source: 'custom' as const,
     incomes: input.incomes,
@@ -1065,9 +1050,13 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
     const category = budgetCategoryForTransaction(row, customCategories);
     if (budgetCategories.has(category)) continue;
     const group = budgetGroupFor(category);
-    const itemSectionId = budget?.items.find((item) => item.name === category)?.sectionId;
-    const sectionId = itemSectionId
-      ?? (group && budget?.sections.some((section) => section.id === group.id) ? group.id : 'other-not-in-budget');
+    const itemSectionId = budget?.items.find((item) => item.name === category)?.sectionId
+      ?? data.budgetPlan?.items.find((item) => item.name === category)?.sectionId;
+    const sectionId = itemSectionId && budget?.sections.some((section) => section.id === itemSectionId)
+      ? itemSectionId
+      : group && budget?.sections.some((section) => section.id === group.id)
+        ? group.id
+        : 'other-not-in-budget';
     unbudgetedAmounts.set(sectionId, (unbudgetedAmounts.get(sectionId) ?? 0) + row.amount);
   }
   const unbudgetedByGroup = [
@@ -1207,11 +1196,16 @@ export type BudgetOverview = {
   summary: { stacked: string; sections: string; pace: string | null };
 };
 
-function overviewSectionFor(category: string, budget: MonthBudget): string {
+function overviewSectionFor(
+  category: string,
+  budget: MonthBudget,
+  plan: BudgetPlan | null,
+): string {
   if (category === 'EMI') return budget.sections.find((section) => section.system === 'debt')?.id ?? 'debt-repayments';
   if (category === 'Insurance') return budget.sections.find((section) => section.system === 'insurance')?.id ?? 'insurance';
-  const item = budget.items.find((row) => row.name === category);
-  if (item) return item.sectionId;
+  const item = budget.items.find((row) => row.name === category)
+    ?? plan?.items.find((row) => row.name === category);
+  if (item && budget.sections.some((section) => section.id === item.sectionId)) return item.sectionId;
   const group = budgetGroupFor(category);
   return group && budget.sections.some((section) => section.id === group.id)
     ? group.id
@@ -1272,6 +1266,9 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   if (!overviewDefinitions.some((section) => section.id === incomeSectionId)) {
     overviewDefinitions.unshift({ id: incomeSectionId, name: 'Income', type: 'spend', system: 'income' });
   }
+  overviewDefinitions.sort((left, right) =>
+    left.id === incomeSectionId ? -1 : right.id === incomeSectionId ? 1 : 0,
+  );
   const sectionItems = new Map<string, BudgetOverviewItem[]>(
     overviewDefinitions.map((section) => [section.id, []]),
   );
@@ -1366,7 +1363,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       }
     }
     const category = row.category;
-    itemsForSection(overviewSectionFor(category, budget)).push({
+    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
       id: row.id,
       title: row.name,
       planned: normalizeMoney(row.amount),
@@ -1405,7 +1402,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
         ? data.liabilities.find((liability) => liability.id === source.parentId)?.name ?? 'Liability'
         : data.policies.find((policy) => policy.id === source.parentId)?.name ?? 'Policy';
     const id = `linked:${kind}:${source.parentId}:${source.entryId}`;
-    itemsForSection(overviewSectionFor(category, budget)).push({
+    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
       id,
       title,
       planned: 0,
@@ -1425,7 +1422,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     ...actualByCategory.keys(),
   ]);
   for (const category of categories) {
-    const sectionId = overviewSectionFor(category, budget);
+    const sectionId = overviewSectionFor(category, budget, data.budgetPlan);
     const line = view.lines.find((row) => row.category === category);
     const planned = normalizeMoney(Math.max(
       0,

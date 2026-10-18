@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 import { ensureEfGoal } from './goals';
 import { validateIntegrity } from './links';
+import { budgetGroupFor } from './budgetGroups';
 import { migratePersisted } from '../data/migrate';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import {
   appDataSchema,
-  BUDGET_CATEGORIES,
   EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
@@ -163,11 +163,7 @@ const budgetSchema = z.strictObject({
   })).max(1000),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
-  const allowed = new Set<string>(BUDGET_CATEGORIES);
   budget.lines.forEach((line, index) => {
-    if (!allowed.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget category is not allowed' });
-    }
     if (seen.has(line.category)) {
       context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
     }
@@ -213,6 +209,10 @@ const budgetPlanSchema = z.strictObject({
     if (!sections.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Budget item IDs must be unique' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
     names.add(item.name.toLowerCase());
     itemIds.add(item.id);
   });
@@ -230,6 +230,10 @@ const monthBudgetSchema = z.strictObject({
   budget.items.forEach((item, index) => {
     if (!sections.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
     names.add(item.name.toLowerCase());
   });
 });

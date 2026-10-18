@@ -4,6 +4,7 @@ import { formatINR } from '../lib/format';
 import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
+import { budgetGroupFor } from './budgetGroups';
 import {
   EARNED_INCOME_CATEGORIES,
   THEME_IDS,
@@ -215,6 +216,18 @@ const budgetSectionSchema = z.strictObject({
   name: z.string().min(1).max(30).refine((name) => name === name.trim()),
   type: z.enum(['spend', 'invest']),
   system: z.enum(['income', 'debt', 'insurance']).optional(),
+}).superRefine((section, context) => {
+  const systemSections = {
+    income: { id: 'income', name: 'Income' },
+    debt: { id: 'debt-repayments', name: 'Debt repayments' },
+    insurance: { id: 'insurance', name: 'Insurance' },
+  } as const;
+  if (section.system) {
+    const expected = systemSections[section.system];
+    if (section.id !== expected.id || section.name !== expected.name || section.type !== 'spend') {
+      context.addIssue({ code: 'custom', path: [], message: 'System section identity and type cannot be changed' });
+    }
+  }
 });
 const budgetItemSchema = z.strictObject({
   id: idSchema,
@@ -243,6 +256,7 @@ const budgetPlanSchema = z.object({
     sectionIds.add(section.id);
     sectionNames.add(section.name.toLowerCase());
   });
+  const systemIds = new Set(plan.sections.filter((section) => section.system).map((section) => section.id));
   const itemIds = new Set<string>();
   const itemNames = new Set<string>();
   const itemCounts = new Map<string, number>();
@@ -250,12 +264,22 @@ const budgetPlanSchema = z.object({
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (itemNames.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
+    if (systemIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
     itemIds.add(item.id);
     itemNames.add(item.name.toLowerCase());
     itemCounts.set(item.sectionId, (itemCounts.get(item.sectionId) ?? 0) + 1);
   });
   for (const [sectionId, count] of itemCounts) {
     if (count > 40) context.addIssue({ code: 'custom', path: ['items'], message: `Section ${sectionId} exceeds 40 items` });
+  }
+  const duplicateSystemSections = plan.sections.filter((section) => section.system)
+    .map((section) => section.system);
+  if (new Set(duplicateSystemSections).size !== duplicateSystemSections.length) {
+    context.addIssue({ code: 'custom', path: ['sections'], message: 'System sections must be unique' });
   }
 });
 const monthBudgetSchema = z.object({
@@ -266,16 +290,39 @@ const monthBudgetSchema = z.object({
   items: z.array(budgetItemSchema).max(100),
   linkedIncluded: z.boolean().optional(),
 }).superRefine((budget, context) => {
-  const sectionIds = new Set(budget.sections.map((section) => section.id));
+  const sectionIds = new Set<string>();
+  const sectionNames = new Set<string>();
+  const sectionSystemIds = new Set<string>();
+  budget.sections.forEach((section, index) => {
+    if (sectionIds.has(section.id)) context.addIssue({ code: 'custom', path: ['sections', index, 'id'], message: 'Section IDs must be unique' });
+    if (sectionNames.has(section.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['sections', index, 'name'], message: 'Section names must be unique' });
+    sectionIds.add(section.id);
+    sectionNames.add(section.name.toLowerCase());
+    if (section.system) sectionSystemIds.add(section.id);
+  });
   const names = new Set<string>();
   const ids = new Set<string>();
+  const itemCounts = new Map<string, number>();
   budget.items.forEach((item, index) => {
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (ids.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
+    if (sectionSystemIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
     ids.add(item.id);
     names.add(item.name.toLowerCase());
+    itemCounts.set(item.sectionId, (itemCounts.get(item.sectionId) ?? 0) + 1);
   });
+  for (const [sectionId, count] of itemCounts) {
+    if (count > 40) context.addIssue({ code: 'custom', path: ['items'], message: `Section ${sectionId} exceeds 40 items` });
+  }
+  const systems = budget.sections.filter((section) => section.system).map((section) => section.system);
+  if (new Set(systems).size !== systems.length) {
+    context.addIssue({ code: 'custom', path: ['sections'], message: 'System sections must be unique' });
+  }
 });
 const budgetSchema = z.object({
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
@@ -286,11 +333,7 @@ const budgetSchema = z.object({
   })).default([]),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
-  const allowed = new Set<string>(BUDGET_CATEGORIES);
   budget.lines.forEach((line, index) => {
-    if (!allowed.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
     if (seen.has(line.category)) {
       context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
     }

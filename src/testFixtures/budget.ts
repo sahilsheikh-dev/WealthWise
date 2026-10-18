@@ -1,5 +1,5 @@
-import { defaultBudgetSectionIdFor, defaultBudgetSections } from '../budget';
-import type { BudgetItem, BudgetPlan, BudgetSection, MonthBudget } from '../types';
+import { defaultBudgetSectionIdFor, defaultBudgetSections } from '../domain/budget';
+import type { BudgetItem, BudgetPlan, BudgetSection, MonthBudget } from '../domain/types';
 
 type LineInput = {
   category: string;

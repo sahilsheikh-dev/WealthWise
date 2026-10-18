@@ -3,7 +3,6 @@ import {
   budgetGroupFor,
   budgetMonthView,
   defaultBudgetSections,
-  defaultBudgetSectionIdFor,
   effectiveMonthBudget,
 } from './budget';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from './schemas';
@@ -44,7 +43,7 @@ export function budgetCategoryChoiceSections(
   for (const category of available) {
     const item = items.find((row) => row.name === category);
     const builtIn = budgetGroupFor(category);
-    const requestedId = item?.sectionId ?? builtIn?.id ?? defaultBudgetSectionIdFor(category);
+    const requestedId = item?.sectionId ?? builtIn?.id;
     const section = sections.find((row) => row.id === requestedId)
       ?? sections.find((row) => row.type === (type === 'invest' ? 'invest' : 'spend') && row.system === undefined)
       ?? { id: 'other-not-in-budget', name: 'Other (not in budget)', type: type === 'invest' ? 'invest' as const : 'spend' as const };
@@ -56,15 +55,20 @@ export function budgetCategoryChoiceSections(
       actual: normalizeMoney(line?.actual ?? 0),
     });
   }
-  return [...grouped.values()].map(({ section, categories }) => {
-    categories.sort((left, right) =>
-      Number(right.planned > 0) - Number(left.planned > 0)
-      || (BUDGET_GROUPS.find((group) => group.id === section.id)?.categories.indexOf(left.category) ?? -1)
-        - (BUDGET_GROUPS.find((group) => group.id === section.id)?.categories.indexOf(right.category) ?? -1)
-      || (items.findIndex((item) => item.name === left.category) - items.findIndex((item) => item.name === right.category))
-      || left.category.localeCompare(right.category));
-    return { id: section.id, name: section.name, categories };
-  });
+  return [...grouped.values()]
+    .sort((left, right) => sections.indexOf(left.section) - sections.indexOf(right.section))
+    .map(({ section, categories }) => {
+      const categoryOrder = (category: string) => {
+        const itemIndex = items.findIndex((item) =>
+          item.sectionId === section.id && item.name === category,
+        );
+        const builtInIndex = BUDGET_GROUPS.flatMap((group) => group.categories).indexOf(category);
+        if (itemIndex >= 0) return builtInIndex >= 0 ? builtInIndex : 100 + itemIndex;
+        return 200 + Math.max(0, builtInIndex);
+      };
+      categories.sort((left, right) => categoryOrder(left.category) - categoryOrder(right.category));
+      return { id: section.id, name: section.name, categories };
+    });
 }
 
 export function budgetItemCategoriesForTransaction(

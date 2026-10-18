@@ -1,4 +1,3 @@
-import { BUDGET_CATEGORIES } from './schemas';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
@@ -256,9 +255,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   }
   if (data.budget) {
     const seen = new Set<string>();
-    const allowed = new Set<string>(BUDGET_CATEGORIES);
     for (const [index, line] of data.budget.lines.entries()) {
-      if (!allowed.has(line.category)) add('invalid-budget-category', 'Budget category is not allowed.', ['budget', 'lines', index, 'category']);
       if (seen.has(line.category)) add('duplicate-budget-category', 'Budget categories must be unique.', ['budget', 'lines', index, 'category']);
       seen.add(line.category);
     }

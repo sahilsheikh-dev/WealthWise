@@ -35,6 +35,7 @@ import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
+import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
 import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability } from '../../domain/types';
@@ -44,6 +45,7 @@ import { formatAmount } from '../../lib/amountDisplay';
 import { formatDate, formatINR, formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { buildDemoData } from '../../mock/demoData';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 let mockFontScale = 1;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -763,12 +765,9 @@ describe('route render smoke audit', () => {
 
       Object.assign(routeData, {
         ...emptyAppData(today),
-        monthBudgets: [{
-          month: today.slice(0, 7),
-          source: 'custom' as const,
+        monthBudgets: [monthBudgetFromLines(today.slice(0, 7), [{ category: 'Food', planned: 1_000 }], {
           incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
-          lines: [{ category: 'Food', planned: 1_000 }],
-        }],
+        })],
       });
       home = renderScreen(React.createElement(HomeScreen));
       expect(home.root.findAllByProps({ accessibilityLabel: 'Open budget' })).toHaveLength(0);
@@ -1261,17 +1260,17 @@ describe('route render smoke audit', () => {
         { id: 'income', type: 'income', amount: 1_000, category: 'Salary', note: '', date: `${month}-01` },
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: `${month}-02` },
       ],
-      monthBudgets: [{
-        month,
-        source: 'custom' as const,
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-        lines: [
+      monthBudgets: [monthBudgetFromLines(month, [
           { category: 'Food', planned: 300 },
           { category: 'Shopping', planned: 200 },
           { category: 'Other investments', planned: 75 },
-        ],
-      }],
+        ], {
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
+      })],
     };
+    expect(pendingItems(data, month, today)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'budget', title: 'Food', amount: 200 }),
+    ]));
     Object.assign(routeData, data);
     store.data = data;
     act(() => useUIStore.getState().setTxMonth(month));
@@ -1302,12 +1301,12 @@ describe('route render smoke audit', () => {
         .findAll((node) => String(node.type) === 'card')[0];
       if (!pendingCard) throw new Error('Due payments Card did not render.');
       expect(pendingList.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
       )).toHaveLength(1);
       expect(pendingList.findAllByProps({ children: 'Paid' })).toHaveLength(3);
       expect(pendingList.findAllByProps({ children: 'Pay' })).toHaveLength(0);
       const firstDueRow = pendingList.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
       );
       if (!firstDueRow) throw new Error('Filtered due row did not render.');
       expect(firstDueRow.props.accessibilityLabel).toContain('Food');
@@ -1321,13 +1320,13 @@ describe('route render smoke audit', () => {
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
       expect(renderer.root.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-3`,
       )).toHaveLength(1);
       expect(renderer.root.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
       )).toHaveLength(0);
       const lastDueRow = renderer.root.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-3`,
       );
       if (!lastDueRow) throw new Error('Filtered last due row did not render.');
       expect(lastDueRow.props.style).toEqual(expect.arrayContaining([
@@ -1371,12 +1370,9 @@ describe('route render smoke audit', () => {
     const month = monthKey(today);
     const data: AppData = {
       ...emptyAppData(today),
-      monthBudgets: [{
-        month,
-        source: 'custom',
+      monthBudgets: [monthBudgetFromLines(month, [{ category: 'Food', planned: 300 }], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-        lines: [{ category: 'Food', planned: 300 }],
-      }],
+      })],
     };
     Object.assign(routeData, data);
     store.data = data;
@@ -1387,7 +1383,7 @@ describe('route render smoke audit', () => {
     try {
       renderer = renderScreen(React.createElement(TransactionsScreen));
       const row = renderer.root.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
       );
       if (!row) throw new Error('Transactions due row did not render.');
       expect(row.props.style).toEqual(expect.arrayContaining([
@@ -1477,12 +1473,9 @@ describe('route render smoke audit', () => {
         plannedIncome: 123_456_789,
         lines: [{ category: 'Food', planned: 123_456_789 }],
       },
-      monthBudgets: [{
-        month: '2026-10',
-        source: 'custom' as const,
+      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 123_456_789 }], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 123_456_789 }],
-        lines: [{ category: 'Food', planned: 123_456_789 }],
-      }],
+      })],
     };
     Object.assign(routeData, data);
     store.data = data;
@@ -1761,11 +1754,11 @@ describe('route render smoke audit', () => {
     };
     appData.holdings = name === 'Investment entries' ? [holding] : [];
     appData.liabilities = name === 'Liability payments' ? [liability] : [];
-    appData.monthBudgets = name === 'Budget spending' ? [{
-      month: todayISO().slice(0, 7), source: 'custom' as const,
-      incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 1000 }],
-      lines: [{ category: 'Food', planned: 500 }],
-    }] : [];
+    appData.monthBudgets = name === 'Budget spending' ? [monthBudgetFromLines(
+      todayISO().slice(0, 7),
+      [{ category: 'Food', planned: 500 }],
+      { incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 1000 }] },
+    )] : [];
     storeData.holdings = name === 'Link missing transactions' ? [holding] : [];
     storeData.liabilities = [];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
@@ -2316,15 +2309,12 @@ describe('route render smoke audit', () => {
       const previousBudgets = data.monthBudgets;
       const month = todayISO().slice(0, 7);
       data.transactions = [];
-      data.monthBudgets = [{
-        month,
-        source: 'custom' as const,
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
-        lines: ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
+      data.monthBudgets = [monthBudgetFromLines(month, ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
           category: lineCategory,
           planned: 500,
-        })),
-      }];
+        })), {
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
+      })];
       const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
       routeParams.mockReturnValue({ month });
 
@@ -2378,12 +2368,9 @@ describe('route render smoke audit', () => {
       expect(router.push).toHaveBeenCalledWith('/budget-setup');
       act(() => empty.unmount());
 
-      data.budgetPlan = {
+      data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000 }],
-        lines: [{ category: 'Food', mode: 'amount', value: 200 }],
-        repeatMonthly: false,
-        repeatFrom: null,
-      };
+      });
       routeParams.mockReturnValue({ month: future });
       actions.applyBudgetPlan.mockClear();
       const futureMonth = renderScreen(React.createElement(BudgetScreen));
@@ -2409,12 +2396,9 @@ describe('route render smoke audit', () => {
       { id: 'salary', type: 'income', amount: 500, category: 'Salary', note: '', date: todayISO() },
       { id: 'food', type: 'expense', amount: 50, category: 'Food', note: '', date: todayISO() },
     ];
-    data.monthBudgets = [{
-      month,
-      source: 'custom',
+    data.monthBudgets = [monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
       incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
-      lines: [{ category: 'Food', planned: 200 }],
-    }];
+    })];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     routeParams.mockReturnValue({ month });
     try {
@@ -2476,27 +2460,20 @@ describe('route render smoke audit', () => {
     const month = monthKey(todayISO());
     const later = shiftMonth(month, 1);
     const previous = { monthBudgets: data.monthBudgets, budgetPlan: data.budgetPlan };
-    const snapshot = {
-      month,
-      source: 'custom' as const,
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
-      lines: [{ category: 'Food', planned: 200 }],
-    };
-    data.budgetPlan = {
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Food', mode: 'amount', value: 200 }],
+    });
+    data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
       repeatMonthly: true,
       repeatFrom: later,
-    };
+    });
     const originalPlan = data.budgetPlan;
     data.monthBudgets = [
       snapshot,
-      {
-        month: later,
-        source: 'custom',
+      monthBudgetFromLines(later, [{ category: 'Food', planned: 300 }], {
         incomes: snapshot.incomes,
-        lines: [{ category: 'Food', planned: 300 }],
-      },
+      }),
     ];
     routeParams.mockReturnValue({ month });
     actions.editBudgetItem.mockClear();
@@ -2569,12 +2546,9 @@ describe('route render smoke audit', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previousBudgets = data.monthBudgets;
     const month = '2026-09';
-    data.monthBudgets = [{
-      month,
-      source: 'custom',
+    data.monthBudgets = [monthBudgetFromLines(month, [], {
       incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-      lines: [],
-    }];
+    })];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     routeParams.mockReturnValue({ month });
@@ -2603,12 +2577,9 @@ describe('route render smoke audit', () => {
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const current = monthKey(todayISO());
     const past = shiftMonth(current, -1);
-    data.monthBudgets = [{
-      month: past,
-      source: 'custom',
+    data.monthBudgets = [monthBudgetFromLines(past, [{ category: 'Food', planned: 500 }], {
       incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-      lines: [{ category: 'Food', planned: 500 }],
-    }];
+    })];
     routeParams.mockReturnValue({ month: past });
     try {
       const pastRenderer = renderScreen(React.createElement(BudgetScreen));
@@ -2635,12 +2606,9 @@ describe('route render smoke audit', () => {
       transactions: data.transactions,
     };
     const month = monthKey(todayISO());
-    data.monthBudgets = [{
-      month,
-      source: 'custom',
+    data.monthBudgets = [monthBudgetFromLines(month, [], {
       incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-      lines: [],
-    }];
+    })];
     data.transactions = [];
     data.holdings = [{
       id: 'overview-plan',
@@ -2784,12 +2752,13 @@ describe('route render smoke audit', () => {
         renderer?.root.findByProps({ label: 'Save only' }).props.onPress();
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
-      expect(actions.saveBudgetPlan).toHaveBeenCalledWith({
+      expect(actions.saveBudgetPlan).toHaveBeenCalledWith(expect.objectContaining({
         incomes: [{ id: expect.any(String), name: 'Salary', category: 'Salary', amount: 75_000, day: 15 }],
-        lines: [],
+        items: [],
+        sections: expect.any(Array),
         repeatMonthly: false,
         repeatFrom: null,
-      });
+      }));
     } finally {
       act(() => renderer?.unmount());
       data.budgetPlan = previousPlan;

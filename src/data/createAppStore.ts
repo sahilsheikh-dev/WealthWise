@@ -143,14 +143,14 @@ export type AppActions = {
   saveAndApplyBudgetPlan: (plan: BudgetPlan, month: string) => void;
   applyBudgetPlan: (month: string) => void;
   setBudgetRepeat: (repeatMonthly: boolean, repeatFrom: string | null) => void;
-  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: { category: string; planned: number; dueDay?: number }[] }) => void;
+  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: { category: string; planned: number; dueDay?: number }[] }, today: ISODate) => void;
   restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
   restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
   editBudgetItem: (
     month: string, source: BudgetItemSource, values: BudgetItemValues, scope: BudgetItemScope, today: ISODate,
   ) => void;
   removeBudgetItem: (month: string, source: BudgetItemSource, scope: BudgetItemScope, today: ISODate) => void;
-  addSection: (month: string, input: Omit<BudgetSection, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  addSection: (month: string, input: Pick<BudgetSection, 'name' | 'type'>, scope: BudgetItemScope, today: ISODate) => void;
   renameSection: (month: string, sectionId: string, name: string, scope: BudgetItemScope, today: ISODate) => void;
   changeSectionType: (month: string, sectionId: string, type: BudgetSection['type'], scope: BudgetItemScope, today: ISODate) => void;
   deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
@@ -435,8 +435,8 @@ export function createAppStore(
         setBudgetRepeat(repeatMonthly, repeatFrom) {
           applyDataAction((data) => setBudgetRepeat(data, repeatMonthly, repeatFrom));
         },
-        customizeMonthBudget(month, input) {
-          applyDataAction((data) => customizeMonthBudget(data, month, input));
+        customizeMonthBudget(month, input, today) {
+          applyDataAction((data) => customizeMonthBudget(data, month, input, today));
         },
         restoreMonthBudget(month, budget) {
           applyDataAction((data) => restoreMonthBudget(data, month, budget));

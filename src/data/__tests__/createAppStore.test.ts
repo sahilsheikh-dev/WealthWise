@@ -4,7 +4,7 @@ import { createBackup, parseBackup } from '../../domain/backup';
 import { validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
 import { monthPositionAt } from '../../domain/cashFlow';
-import { budgetMonthView } from '../../domain/budget';
+import { budgetMonthView, defaultBudgetSections } from '../../domain/budget';
 import { netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
@@ -17,6 +17,7 @@ import { createAppStore } from '../createAppStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
 import type { ISODate } from '../../domain/types';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -92,7 +93,7 @@ describe('createAppStore persistence', () => {
     };
     const data = { ...emptyAppData('2026-10-10'), policies: [policy] };
     storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data }, version: 9,
+      state: { data }, version: 10,
     }));
     const store = makeStore(storage);
     await waitForHydration(store);
@@ -110,7 +111,7 @@ describe('createAppStore persistence', () => {
   it('stores a single budget plan and applied month with one write per action', async () => {
     const storage = new MemoryStorage();
     storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data: emptyAppData('2026-03-01') }, version: 9,
+      state: { data: emptyAppData('2026-03-01') }, version: 10,
     }));
     let nextId = 0;
     const store = createAppStore(storage, {
@@ -121,12 +122,11 @@ describe('createAppStore persistence', () => {
     await waitForHydration(store);
 
     let writes = storage.setItemCalls;
-    store.getState().actions.saveBudgetPlan({
+    store.getState().actions.saveBudgetPlan(budgetPlanFromLines([
+      { category: 'Food', mode: 'percent', value: 20 },
+    ], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 20_000 }],
-      lines: [{ category: 'Food', mode: 'percent', value: 20 }],
-      repeatMonthly: false,
-      repeatFrom: null,
-    });
+    }));
     expect(storage.setItemCalls - writes).toBe(1);
     writes = storage.setItemCalls;
     store.getState().actions.setBudgetRepeat(true, '2026-11');
@@ -138,7 +138,9 @@ describe('createAppStore persistence', () => {
     writes = storage.setItemCalls;
     store.getState().actions.applyBudgetPlan('2026-03');
     expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
+    expect(store.getState().data.monthBudgets?.[0]?.items).toEqual([
+      expect.objectContaining({ name: 'Food', value: 4_000 }),
+    ]);
     expect(pendingItems(store.getState().data, '2026-03', '2026-10-10'))
       .toEqual(expect.arrayContaining([
         expect.objectContaining({ kind: 'budget', title: 'Food', amount: 4_000, status: 'planned' }),
@@ -175,12 +177,11 @@ describe('createAppStore persistence', () => {
       .some((item) => item.kind === 'budget' && item.category === 'Food')).toBe(true);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     writes = storage.setItemCalls;
-    store.getState().actions.saveAndApplyBudgetPlan({
+    store.getState().actions.saveAndApplyBudgetPlan(budgetPlanFromLines([
+      { category: 'Bills', mode: 'amount', value: 1_000 },
+    ], {
       incomes: [{ id: 'salary-2', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
-      repeatMonthly: false,
-      repeatFrom: null,
-    }, '2026-04');
+    }), '2026-04');
     expect(storage.setItemCalls - writes).toBe(1);
     expect(store.getState().data.monthBudgets).toHaveLength(3);
     expect(store.getState().data.monthBudgets?.map((budget) => budget.month))
@@ -192,22 +193,23 @@ describe('createAppStore persistence', () => {
     const storage = new MemoryStorage();
     const before = {
       ...emptyAppData('2026-03-15'),
-      budgetPlan: {
+      budgetPlan: budgetPlanFromLines([
+        { category: 'Food', mode: 'percent' as const, value: 10, dueDay: 5 },
+      ], {
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 }],
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 10, dueDay: 5 }],
         repeatMonthly: true,
         repeatFrom: '2026-04',
-      },
-      monthBudgets: [{
-        month: '2026-03',
-        source: 'plan' as const,
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-03', [
+        { category: 'Food', planned: 1_000, dueDay: 5 },
+      ], {
+        source: 'plan',
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 }],
-        lines: [{ category: 'Food', planned: 1_000, dueDay: 5 }],
         linkedIncluded: true,
-      }],
+      })],
     };
     storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data: before }, version: 9,
+      state: { data: before }, version: 10,
     }));
     const store = makeStore(storage, { isDev: false, today: () => '2026-03-15' });
     await waitForHydration(store);
@@ -221,8 +223,8 @@ describe('createAppStore persistence', () => {
       '2026-03-15',
     );
     expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.budgetPlan?.lines[0]).toEqual({
-      category: 'Food', mode: 'amount', value: 1_500, dueDay: 12,
+    expect(store.getState().data.budgetPlan?.items[0]).toMatchObject({
+      name: 'Food', mode: 'amount', value: 1_500, dueDay: 12,
     });
     writes = storage.setItemCalls;
     store.getState().actions.restoreBudgetPlanAndMonth(
@@ -241,7 +243,7 @@ describe('createAppStore persistence', () => {
       '2026-03-15',
     );
     expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([]);
+    expect(store.getState().data.monthBudgets?.[0]?.items).toEqual([]);
     writes = storage.setItemCalls;
     store.getState().actions.restoreBudgetPlanAndMonth(
       before.budgetPlan,
@@ -331,7 +333,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 9 });
+    const raw = JSON.stringify({ state: { data }, version: 10 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -368,7 +370,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 9 });
+    const raw = JSON.stringify({ state: { data }, version: 10 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -395,20 +397,14 @@ describe('createAppStore persistence', () => {
     const storage = new MemoryStorage();
     const initial = {
       ...emptyAppData('2026-03-01'),
-      budgetPlan: {
+      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 1_000 }], {
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-        lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
-        repeatMonthly: false,
-        repeatFrom: null,
-      },
-      monthBudgets: [{
-        month: '2026-03',
-        source: 'custom' as const,
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-03', [{ category: 'Bills', planned: 500 }], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 9_000 }],
-        lines: [{ category: 'Bills', planned: 500 }],
-      }],
+      })],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 9 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 10 }));
     const store = createAppStore(storage, {
       newId: () => 'unused',
       today: () => '2026-03-15',
@@ -419,12 +415,13 @@ describe('createAppStore persistence', () => {
     const previous = before.monthBudgets?.find((budget) => budget.month === '2026-03') ?? null;
 
     let writes = storage.setItemCalls;
-    store.getState().actions.saveAndApplyBudgetPlan({
+    store.getState().actions.saveAndApplyBudgetPlan(budgetPlanFromLines([
+      { category: 'Food', mode: 'percent', value: 25 },
+    ], {
       incomes: [{ id: 'salary-next', name: 'Salary', category: 'Salary', amount: 20_000 }],
-      lines: [{ category: 'Food', mode: 'percent', value: 25 }],
       repeatMonthly: true,
       repeatFrom: '2026-04',
-    }, '2026-03');
+    }), '2026-03');
     expect(storage.setItemCalls - writes).toBe(1);
 
     writes = storage.setItemCalls;
@@ -445,7 +442,8 @@ describe('createAppStore persistence', () => {
       },
       monthBudgets: [],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 9 }));
+    const rawV9 = JSON.stringify({ state: { data }, version: 9 });
+    storage.values.set('wealthwise.app.v1', rawV9);
     const createStore = () => createAppStore(storage, {
       newId: () => 'unused',
       today: () => '2026-03-15',
@@ -457,16 +455,62 @@ describe('createAppStore persistence', () => {
       month: '2026-03',
       source: 'plan',
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
-      lines: [{ category: 'Food', planned: 1_000 }],
+      sections: defaultBudgetSections(),
+      items: [{
+        id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000,
+      }],
       linkedIncluded: true,
     }]);
-    expect(storage.setItemCalls).toBe(1);
+    expect(storage.values.get('wealthwise.app.v1.premigration.v9')).toBe(rawV9);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1')).toHaveLength(2);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v9')).toHaveLength(1);
 
     storage.setItemCalls = 0;
     const secondStore = createStore();
     await waitForHydration(secondStore);
     expect(secondStore.getState().data.monthBudgets).toEqual(firstStore.getState().data.monthBudgets);
     expect(storage.setItemCalls).toBe(0);
+  });
+
+  it('applies each managed budget mutation with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const today = '2026-03-15';
+    const month = '2026-03';
+    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000 }],
+    });
+    plan.sections.push({ id: 'pets', name: 'Pets', type: 'spend' });
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 100 }], {
+      source: 'plan',
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000 }],
+    });
+    snapshot.sections = plan.sections.map((section) => ({ ...section }));
+    const data = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 10 }));
+    const store = makeStore(storage, { today: () => today });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const runOnce = (action: () => void) => {
+      const writesBefore = storage.calls.filter((call) => call === 'set:wealthwise.app.v1').length;
+      action();
+      expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1').length - writesBefore).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+    };
+
+    runOnce(() => actions.addSection(month, { name: 'Travel extras', type: 'spend' }, 'month', today));
+    const addedSection = store.getState().data.monthBudgets?.[0]?.sections.find((section) =>
+      section.name === 'Travel extras');
+    if (!addedSection) throw new Error('Added budget section missing.');
+    runOnce(() => actions.renameSection(month, addedSection.id, 'Trips', 'month', today));
+    runOnce(() => actions.changeSectionType(month, addedSection.id, 'invest', 'month', today));
+    runOnce(() => actions.addBudgetItem(month, {
+      sectionId: addedSection.id, name: 'Pet care', mode: 'amount', value: 100,
+    }, 'month', today));
+    const addedItem = store.getState().data.monthBudgets?.[0]?.items.find((item) => item.name === 'Pet care');
+    if (!addedItem) throw new Error('Added budget item missing.');
+    runOnce(() => actions.editBudgetStructureItem(month, addedItem.id, { value: 200 }, 'month', today));
+    runOnce(() => actions.deleteBudgetStructureItem(month, addedItem.id, 'month', today));
+    runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {
@@ -947,7 +991,7 @@ describe('createAppStore persistence', () => {
 
   it.each(['manual', 'plan'] as const)('links and guards a withdrawal from a %s instrument', async (kind) => {
     const storage = new MemoryStorage();
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 9 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 10 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `withdrawal-${++id}` });
     await waitForHydration(store);
@@ -1004,7 +1048,7 @@ describe('createAppStore persistence', () => {
       valueAsOf: '2026-10-10',
       logs: [{ id: 'old-entry', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }],
     });
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 9 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 10 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `instrument-${++id}` });
     await waitForHydration(store);

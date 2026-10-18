@@ -24,6 +24,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
+import { customBudgetCategories } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
@@ -76,10 +77,7 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
-  const customBudgetCategories = useMemo(() => new Set([
-    ...(data.budgetPlan?.items.map((item) => item.name) ?? []),
-    ...(data.monthBudgets ?? []).flatMap((budget) => budget.items.map((item) => item.name)),
-  ]), [data.budgetPlan, data.monthBudgets]);
+  const budgetCategories = useMemo(() => customBudgetCategories(data), [data]);
   const monthPendingItems = useMemo(() => pendingItems(data, month, today), [data, month, today]);
   const visiblePendingItems = useMemo(() => monthPendingItems.filter((item) => {
     const type = pendingTransactionType(item);
@@ -98,11 +96,13 @@ export default function TransactionsScreen() {
     [data.transactions],
   );
   const filteredRows = useMemo(
-    () => filterTransactions(data.transactions, { month, type: filter, query, category: categoryFilter }).map((transaction) => ({
+    () => filterTransactions(data.transactions, {
+      month, type: filter, query, category: categoryFilter, customCategories: budgetCategories,
+    }).map((transaction) => ({
       ...transaction,
       sortCreatedIndex: creationOrder.get(transaction.id) ?? 0,
     })),
-    [categoryFilter, creationOrder, data.transactions, filter, month, query],
+    [budgetCategories, categoryFilter, creationOrder, data.transactions, filter, month, query],
   );
   const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
@@ -149,7 +149,7 @@ export default function TransactionsScreen() {
               ))}
               {categoryFilter ? (
                 <Chip
-                  label={`Category: ${transactionCategoryLabel(categoryFilter, undefined, customBudgetCategories)} ×`}
+                  label={`Category: ${transactionCategoryLabel(categoryFilter, undefined, budgetCategories)} ×`}
                   selected
                   onPress={() => setCategoryOverride('')}
                 />
@@ -310,7 +310,7 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
-                const categoryLabel = transactionCategoryLabel(item.category, item.type, customBudgetCategories);
+                const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
                 return (
                   <ListItem
                     key={item.id}

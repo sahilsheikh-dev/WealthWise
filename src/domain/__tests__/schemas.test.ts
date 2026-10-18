@@ -1,6 +1,7 @@
 import { mockAppData } from '../../mock/data';
 import { validateImportData } from '../backup';
 import { BUDGET_CATEGORY_WEIGHTS, BUDGET_GROUPS } from '../budget';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import {
   appDataSchema,
   BUDGET_CATEGORIES,
@@ -30,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version nine', () => {
+  it('accepts the typed mock app data and exports schema version ten', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(9);
+    expect(SCHEMA_VERSION).toBe(10);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {
@@ -82,39 +83,40 @@ describe('appDataSchema', () => {
   it('validates the budget plan and stored month snapshots', () => {
     const budgeted = {
       ...mockAppData,
-      budgetPlan: {
+      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 20, dueDay: 31 }], {
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 50_000, day: 1 }],
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 20, dueDay: 31 }],
-        repeatMonthly: false,
-        repeatFrom: null,
-      },
-      monthBudgets: [{
-        month: '2026-10', source: 'plan' as const,
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 10_000, dueDay: 31 }], {
+        source: 'plan',
         incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
-        linkedIncluded: true, lines: [{ category: 'Food', planned: 10_000, dueDay: 31 }],
-      }],
+        linkedIncluded: true,
+      })],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, lines: [{ category: 'Food', mode: 'percent', value: 101 }] },
+      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], value: 101 }] },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], sectionId: 'wants' }] },
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
       monthBudgets: [{
         ...budgeted.monthBudgets[0],
-        lines: [{ category: 'Not a category', planned: 10 }],
+        items: [{ ...budgeted.monthBudgets[0].items[0], sectionId: 'missing-section' }],
       }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, lines: [{ category: 'Food', mode: 'amount', value: 10, dueDay: 0 }] },
+      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], mode: 'amount', value: 10, dueDay: 0 }] },
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
       monthBudgets: [{
         ...budgeted.monthBudgets[0],
-        lines: [{ category: 'Food', planned: 10, dueDay: 32 }],
+        items: [{ ...budgeted.monthBudgets[0].items[0], dueDay: 32 }],
       }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
@@ -190,6 +192,21 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
+      liabilities: mockAppData.liabilities.map((item) => item.id === recurring.id
+        ? {
+          ...recurring,
+          payments: [{
+            id: 'invalid-payment',
+            date: '2026-03-31',
+            amount: 100,
+            note: '',
+            kind: 'Payment',
+          }],
+        }
+        : item),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
       policies: [{ ...policy, premium: 10_000_001 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
@@ -212,6 +229,39 @@ describe('appDataSchema', () => {
     expect(appDataSchema.safeParse({
       ...mockAppData,
       liabilities: [{ ...oneTime, settlement: null }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...oneTime,
+        dueDate: '2026-03-01',
+        startDate: '2026-03-02',
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...oneTime,
+        payments: [{
+          id: 'invalid-payment',
+          date: '2026-03-31',
+          amount: 100,
+          note: '',
+          kind: 'EMI',
+        }],
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, frequency: 'single' }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, maturityDate: '2000-01-01' }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, currentValue: 1, valueAsOf: null }],
     }).success).toBe(false);
     expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
@@ -253,6 +303,25 @@ describe('makeTransactionFormSchema', () => {
   it('normalizes and rounds valid amount and trimmed note strings', () => {
     expect(schema.parse(validInput)).toMatchObject({ amount: 1500.5, note: 'October' });
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
+  });
+
+  it('accepts a custom category only in the selected month budget', () => {
+    const customSchema = makeTransactionFormSchema('2026-10-10', {}, {
+      instruments: [],
+      withdrawable: {},
+      mode: 'create',
+      allowUnlinkedInvestment: true,
+      budgetCategoriesForMonth: (type, date) =>
+        type === 'expense' && date.startsWith('2026-11') ? ['Pet care'] : [],
+    });
+    const customExpense = { ...validInput, category: 'Pet care' };
+    expect(customSchema.safeParse(customExpense).success).toBe(false);
+    expect(customSchema.safeParse({ ...customExpense, date: '2026-11-01' }).success).toBe(true);
+    expect(customSchema.safeParse({
+      ...customExpense,
+      type: 'invest',
+      date: '2026-11-01',
+    }).success).toBe(false);
   });
 
   it('requires the appropriate instrument for investment and withdrawal transaction modes', () => {

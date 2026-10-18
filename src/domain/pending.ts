@@ -141,6 +141,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
       });
     }
     for (const item of budget.items) {
+      if (item.name === 'EMI' || item.name === 'Insurance') continue;
       const section = budget.sections.find((row) => row.id === item.sectionId);
       if (section?.system) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';

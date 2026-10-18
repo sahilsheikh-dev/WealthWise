@@ -1,6 +1,6 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
-import { budgetGroupFor, defaultBudgetSections, defaultBudgetSectionIdFor } from '../domain/budget';
+import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -171,7 +171,9 @@ export function migrateV9ToV10(data: unknown, options: V6ToV7Options): unknown {
   const mapCategory = (category: unknown): string => {
     if (typeof category !== 'string') throw new PersistedVersionError(9, 'unknown-version');
     const mapped = budgetGroupFor(category);
-    return mapped?.id ?? defaultBudgetSectionIdFor(category);
+    return mapped?.id
+      ?? sections.find((section) => section.type === 'spend' && section.system === undefined)?.id
+      ?? 'survival';
   };
   const plan = data.budgetPlan;
   const budgetPlan = plan === null ? null : (() => {
@@ -205,10 +207,6 @@ export function migrateV9ToV10(data: unknown, options: V6ToV7Options): unknown {
         throw new PersistedVersionError(9, 'unknown-version');
       }
       const sectionId = mapCategory(line.category);
-      if (!budgetGroupFor(line.category)) {
-        const firstSpend = sections.find((section) => section.type === 'spend' && section.system === undefined);
-        if (firstSpend) return { id: `v10-${snapshot.month}-${index}`, sectionId: firstSpend.id, name: line.category, mode: 'amount', value: line.planned, ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}) };
-      }
       return {
         id: `v10-${snapshot.month}-${index}`,
         sectionId,

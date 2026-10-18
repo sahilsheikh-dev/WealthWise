@@ -59,20 +59,31 @@ describe('four-month demo data', () => {
       }
     }
     expect(BUDGET_GROUPS.every((group) => group.categories.length > 0)).toBe(true);
-    expect(data.budgetPlan?.lines.some((line) => line.mode === 'amount')).toBe(true);
-    expect(data.budgetPlan?.lines.some((line) => line.mode === 'percent')).toBe(true);
+    expect(data.budgetPlan?.items.some((item) => item.mode === 'amount')).toBe(true);
+    expect(data.budgetPlan?.items.some((item) => item.mode === 'percent')).toBe(true);
+    expect(data.budgetPlan?.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'demo-section-pets', name: 'Pets', type: 'spend' }),
+    ]));
+    expect(data.budgetPlan?.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Pet care', sectionId: 'demo-section-pets' }),
+      expect.objectContaining({ name: 'Domestic help', sectionId: 'survival' }),
+    ]));
+    expect(data.transactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ category: 'Pet care', type: 'expense' }),
+      expect.objectContaining({ category: 'Domestic help', type: 'expense' }),
+    ]));
     expect(data.budgetPlan).toMatchObject({
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),
     });
 
-    expect(data.budgetPlan?.lines.some((line) => line.category === 'EMI' || line.category === 'Insurance')).toBe(false);
+    expect(data.budgetPlan?.items.some((item) => item.name === 'EMI' || item.name === 'Insurance')).toBe(false);
     expect(data).not.toHaveProperty('budgetTemplates');
     expect(data.monthBudgets?.find(({ month }) => month === monthKey(today)))
       .toMatchObject({
         source: 'plan',
         linkedIncluded: true,
-        lines: expect.arrayContaining([expect.objectContaining({ category: 'Bills', dueDay: 5 })]),
+        items: expect.arrayContaining([expect.objectContaining({ name: 'Bills', dueDay: 5 })]),
       });
     expect(data.monthBudgets?.find(({ month }) => month === customMonth)).toMatchObject({
       source: 'custom',
@@ -80,8 +91,8 @@ describe('four-month demo data', () => {
       incomes: expect.arrayContaining([
         expect.objectContaining({ id: 'demo-income-freelance', amount: 8_000, day: 18 }),
       ]),
-      lines: expect.arrayContaining([
-        { category: 'Food', planned: 2_400, dueDay: 17 },
+      items: expect.arrayContaining([
+        expect.objectContaining({ name: 'Food', value: 2_400, dueDay: 17 }),
       ]),
     });
   });
@@ -109,16 +120,19 @@ describe('four-month demo data', () => {
         const stored = data.monthBudgets?.find((budget) => budget.month === month);
         expect(stored?.linkedIncluded).toBe(true);
         expect(view.linkedByCategory?.length).toBeGreaterThan(0);
-        expect(view.groupTotals).toHaveLength(BUDGET_GROUPS.length);
+        expect(view.groupTotals).toHaveLength(stored?.sections.filter((section) => section.system !== 'income').length ?? 0);
         for (const linked of view.linkedByCategory ?? []) {
-          const ownPlanned = stored?.lines.find((line) => line.category === linked.category)?.planned ?? 0;
+          const ownPlanned = stored?.items.find((item) => item.name === linked.category)?.value ?? 0;
           const linkedPlanned = linked.rows.reduce((sum, row) => sum + row.amount, 0);
           expect(view.lines.find((line) => line.category === linked.category)?.planned)
             .toBe(ownPlanned + linkedPlanned);
         }
-        for (const group of BUDGET_GROUPS) {
-          expect(view.groupTotals?.find((row) => row.groupId === group.id)?.planned).toBe(
-            view.lines.filter((line) => group.categories.includes(line.category))
+        for (const section of stored?.sections.filter((row) => row.system !== 'income') ?? []) {
+          expect(view.groupTotals?.find((row) => row.groupId === section.id)?.planned).toBe(
+            view.lines.filter((line) => stored?.items.some((item) =>
+              item.name === line.category && item.sectionId === section.id,
+            ) || (line.category === 'EMI' && section.system === 'debt')
+              || (line.category === 'Insurance' && section.system === 'insurance'))
               .reduce((sum, line) => sum + line.planned, 0),
           );
         }

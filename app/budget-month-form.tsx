@@ -94,7 +94,7 @@ export default function BudgetMonthFormScreen() {
         category: existingIncome?.category ?? 'Salary',
         amount: plannedIncome,
       }];
-      actions.customizeMonthBudget(month, { incomes, lines: budgetLines });
+      actions.customizeMonthBudget(month, { incomes, lines: budgetLines }, todayISO());
       const error = useAppStore.getState().lastError;
       if (error) Alert.alert('Could not save budget', error);
       else {
