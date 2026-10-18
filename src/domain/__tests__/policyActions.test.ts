@@ -21,7 +21,8 @@ const policy: Policy = {
 
 describe('policyActions', () => {
   it('updates editable policy details while retaining schedule and payment history', () => {
-    const data = { ...emptyAppData('2026-03-01'), policies: [policy] };
+    const secondPolicy = { ...policy, id: 'life-policy', name: 'Life cover' };
+    const data = { ...emptyAppData('2026-03-01'), policies: [policy, secondPolicy] };
     const updated = updatePolicy(data, policy.id, { name: 'Family cover', insurer: 'New insurer', premium: 750 });
     expect(updated.policies[0]).toEqual({
       ...policy,
@@ -29,6 +30,7 @@ describe('policyActions', () => {
       insurer: 'New insurer',
       premium: 750,
     });
+    expect(updated.policies[1]).toEqual(secondPolicy);
     expect(data.policies[0]).toEqual(policy);
   });
 

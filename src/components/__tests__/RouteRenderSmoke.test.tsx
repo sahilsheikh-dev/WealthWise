@@ -37,7 +37,7 @@ import { monthKey, shiftMonth } from '../../domain/dates';
 import { linkedRecurringForMonth } from '../../domain/budget';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability, Transaction } from '../../domain/types';
+import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';

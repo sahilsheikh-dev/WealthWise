@@ -15,7 +15,8 @@ import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
-import { formatINR, formatMonth } from '../../src/lib/format';
+import { formatAmount } from '../../src/lib/amountDisplay';
+import { formatMonth } from '../../src/lib/format';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -245,7 +246,7 @@ export default function BudgetScreen() {
                         <View style={styles.rowValueAndAction}>
                           <AppText
                             style={typography.meta}
-                            accessibilityLabel={`${item.title}, ${formatINR(item.actual)} of ${formatINR(item.planned)}`}>
+                            accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
                             <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
                           </AppText>
                           {overview.mode !== 'past' ? (

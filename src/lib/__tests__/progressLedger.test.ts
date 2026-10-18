@@ -215,7 +215,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 
-  it('tracks completed P20-M and in-progress P20-N while preserving P20-L and P21-D', () => {
+  it('tracks completed P20-M and P20-N while preserving P20-L and P21-D', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -232,7 +232,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
@@ -240,6 +240,8 @@ describe('permanent progress ledger', () => {
     for (const id of ['CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55']) {
       expect(statusFor(id)).toBe('Done');
     }
+    expect(statusFor('CR-56')).toBe('Done');
+    expect(statusFor('CR-57')).toBe('Done');
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
@@ -266,8 +268,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 89% (55/62)');
-    expect(dashboard).toContain('Phase 20         █████████░ 93% (13/14)');
+    expect(dashboard).toContain('Overall progress █████████░ 90% (56/62)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (14/14)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');

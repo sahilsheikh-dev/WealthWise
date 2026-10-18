@@ -875,6 +875,46 @@ describe('budget plans and monthly views', () => {
     expect(after.stacked.left.planned).toBe(100);
   });
 
+  it('includes unmatched policy payments and unplanned income in an actual overspend summary', () => {
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      policies: [policy],
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
+        incomes: incomes(100),
+        lines: [{ category: 'Food', planned: 50 }],
+      }],
+      transactions: [
+        { id: 'salary', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-03-02' },
+        { id: 'rental', type: 'income' as const, amount: 30, category: 'Rental', note: '', date: '2026-03-03' },
+        { id: 'food', type: 'expense' as const, amount: 150, category: 'Food', note: '', date: '2026-03-04' },
+        {
+          id: 'unmatched-policy-payment',
+          type: 'expense' as const,
+          amount: 20,
+          category: 'Insurance',
+          note: '',
+          date: '2026-03-06',
+          source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'unmatched-entry' },
+        },
+      ],
+    };
+    const overview = budgetOverview(data, '2026-03', '2026-03-15');
+    expect(overview.sections.find(({ id }) => id === 'income')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Rental', planned: 0, actual: 30, kind: 'income' }),
+      ]),
+    );
+    expect(overview.sections.find(({ id }) => id === 'insurance')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Health cover', planned: 0, actual: 20, kind: 'linked' }),
+      ]),
+    );
+    expect(overview.stacked.left.actual).toBe(-40);
+    expect(overview.summary.stacked).toContain('Actual over by ₹40');
+  });
+
   it('reports overdue obligations without a separate budget history model', () => {
     const olderPlan = { ...plan, startDate: '2026-01-05', trackFrom: '2026-01-05' };
     const data = {
