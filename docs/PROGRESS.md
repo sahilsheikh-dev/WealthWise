@@ -130,6 +130,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-K | — | Done | `026e671`; CR-44–CR-46; one Home goals card, tap-to-edit asset/liability cards with independent buttons, and liability data-before-progress order. | 2026-10-17 |
 | P20-L | — | Done | CR-47–CR-50; due section, inline header filters, liability-kind chips and search. Full tests/coverage and all required gates pass. | 2026-10-18 |
 | P20-M | — | Done | CR-52–CR-55; categories, schema-v9 migration, future virtual budgets, income dues, projected cash flow and setup income items. 71 suites/820 tests; all six final gates pass. | 2026-10-18 |
+| P20-N | — | In progress | CR-56–CR-57; pure budget overview model implemented and focused domain tests pass; chart/screen work and final gates pending. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -460,7 +461,10 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   without a budget offer setup, while an unplanned future month with a plan
   offers “Apply plan to {Month}”. Chart/layout tests are simulated; chart
   rendering, rotated pace segments, scrolling, and native font-scale/touch
-  behavior require real-device verification.
+  behavior require real-device verification. Assumed: selected-month actuals
+  include all past-month transactions, stop at injected today for the current
+  month, and are empty in future months; linked entry transactions are assigned
+  to their scheduled parent rows where possible.
 - DEC-P20G: schema v8 replaces all budget-template state with one nullable
   `budgetPlan`; applied month snapshots use `source: 'plan'`, hand-edited
   month snapshots use `source: 'custom'`, and v7 snapshots retain their lines
@@ -1485,6 +1489,7 @@ evidence present in exports/checkpoints.
 | P20-K | Phase 20 | — | — | 2026-10-17 | Group Home goals and make asset/liability card bodies edit targets with independent buttons and liability data-before-progress order (CR-44–CR-46). | Done; 3 focused suites / 122 tests and 70 suites / 799 full tests; all requested automated gates pass; see P20-K close-out. | `026e671` | Simulated route/propagation/layout assertions do not replace real-device touch, font-scale or assistive-technology checks. | current request |
 | P20-L | Phase 20 | — | — | 2026-10-18 | Always-open Transactions due payments, inline header filters, liability-kind filtering, and search across Assets, Liabilities and Goals (CR-47–CR-50). | Done; full suite 71/71, 811/811 tests; all six required gates exit 0. Simulated UI only; device checks remain outstanding. | `1be9c92`, `086d084`, `9f11265`, `7c71377`, `d56a553`, `b48a624` | Assumed: only due rows use the new compact Paid/Received labels; existing Budget/Home actions and paid/Undo behavior remain unchanged. Liability kind filtering is local, defaults to All and preserves sort persistence. Search is local, trims and lowercases the query, and resets on screen remount. | current request |
 | P20-M | Phase 20 | — | — | 2026-10-18 | Budget plan schema v9, v8 migration, derived future months, income dues, projected cash flow, and setup income editor (CR-52–CR-55). | Done; 71 suites/820 tests; all six final gates pass. Directory coverage: domain 99.04% lines/95.23% branches, data excluding hooks 95.34%/90.91%, lib 100%/100%. Real-device checks remain unverified. | Preflight `fabde34`; CR-52 `62d7a20`; CR-53–CR-55 `b5c6c7a`. | Assumed: see DEC-P20M-CR53-55. | current request |
+| P20-N | Phase 20 | — | — | 2026-10-18 | Rebuild Budget as a visual overview (CR-56–CR-57). | In progress; pure model tests pass (27/27 in `budget.test.ts`); charts, screen and final gates pending. | Preflight `9d72ab1`; model commit hash recorded at closeout. | Assumed: see DEC-BUDGET-SPEC. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1556,6 +1561,8 @@ evidence present in exports/checkpoints.
 | CR-53 | Replace scalar planned income with income items in plans and frozen month snapshots; migrate v8 and import backups v1-v8. | Done | P20-M; schema, backup, migration and premigration archive tests pass; schema version 9, version 10 refused. |
 | CR-54 | Derive repeated future month budgets on demand through 24 months; include income dues and undoable clearing without persisting views. | Done | P20-M; future snapshot/plan edits, repeat-off/horizon/no-write, income due remainder/category sharing, clearing and Undo tests pass. |
 | CR-55 | Project current and future cash flow from actual balances and chained plans. | Done | P20-M; current/past actual, 24-month chain and no-plan flat-month tests pass. |
+| CR-56 | Create a pure Budget overview model with ordered income/expense/investment sections, planned/actual totals, linked sources, cash-flow projection, pace, and accessible text summaries. | In progress | `budgetOverview` covers empty, current, future, linked and shared-category cases; focused `budget.test.ts` passes. |
+| CR-57 | Replace the Budget screen with stacked/section/pace charts, text equivalents, mode-specific edit routes and empty states while preserving user-owned labels and removals. | Pending | Chart, route, layout and interaction tests pending; no physical-device checks claimed. |
 
 ## 8. Known issues and risks
 
@@ -1798,6 +1805,7 @@ evidence for the fixes.
 | P20-M STEP 5 — Projected cash flow (CR-55) | Done | `src/domain/budget.ts` | `budget.test.ts`; current/past actuals, first future month actual remainder, a 24-month chain and a flat month without a plan. |
 | P20-M STEP 6 — Setup income editor | Done | `app/budget-setup.tsx`; legacy scalar month editor adapted without changing its presentation | `RouteRenderSmoke.test.tsx`; add/remove, validation, amount/day bounds and saved item payload. |
 | P20-M STEP 7 — Demo, ledger and gates | Done | `src/mock/data.ts`, `src/mock/demoData.ts`, `docs/PROGRESS.md` | `demoData.test.ts`, `progressLedger.test.ts`; demo salary/freelance items, upcoming virtual months, 820 tests, all six gates. UI layout is simulated; no Android/iOS device verification. |
+| P20-N STEP 1 — Pure overview model (CR-56) | Done (focused tests; final gates pending) | `src/domain/budget.ts` | `budget.test.ts`: empty model, ordered sections, shared earned-income allocation, linked plan/liability rows, current-day cutoff, future plan edits, negative-left copy, and reconciliation of section/stacked totals. |
 
 ### P18-R7 housekeeping
 
