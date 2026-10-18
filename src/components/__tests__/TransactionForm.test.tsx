@@ -81,6 +81,16 @@ jest.mock('../../components/form/ChoiceField', () => {
     ChoiceField: (props: Record<string, unknown>) => ReactModule.createElement('choicefield', props),
   };
 });
+jest.mock('../../components/BudgetCategoryPicker', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    BudgetCategoryPicker: (props: Record<string, unknown>) =>
+      ReactModule.createElement('budgetcategorypicker', props),
+    budgetCategoryHint: (planned: number, actual: number) => planned <= 0
+      ? 'No budget'
+      : actual > planned ? `Over by ${actual - planned}` : `Left ${planned - actual} of ${planned}`,
+  };
+});
 jest.mock('../../components/form/DateField', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
@@ -211,11 +221,11 @@ describe('transaction add form', () => {
       renderer = TestRenderer.create(<TransactionFormScreen />);
     });
     if (!renderer) throw new Error('Transaction form renderer was not created.');
-    const categoryField = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Category',
-    )[0];
+    const categoryField = renderer.root.findAll((node) => String(node.type) === 'budgetcategorypicker')[0];
     if (!categoryField) throw new Error('Expense category selector was not rendered.');
-    expect(categoryField.props.choices).toContain(category);
+    expect(categoryField.props.sections.flatMap((section: { categories: { category: string }[] }) =>
+      section.categories.map((choice) => choice.category),
+    )).toContain(category);
     await act(async () => categoryField.props.onChange(category));
     const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
     if (!amount) throw new Error('Amount input was not rendered.');
@@ -310,16 +320,68 @@ describe('transaction add form', () => {
         renderer = TestRenderer.create(<TransactionFormScreen />);
       });
       if (!renderer) throw new Error('Transaction form renderer was not created.');
-      const categoryField = renderer.root.findAll((node) =>
-        String(node.type) === 'choicefield' && node.props.label === 'Category',
-      )[0];
+      const categoryField = renderer.root.findAll((node) => String(node.type) === 'budgetcategorypicker')[0];
       if (!categoryField) throw new Error('Expense category selector was not rendered.');
-      expect(categoryField.props.choices).toContain(category);
-      expect(categoryField.props.choiceLabels[category]).toBe(
+      const categories = categoryField.props.sections.flatMap((section: { categories: { category: string }[] }) =>
+        section.categories.map((choice) => choice.category),
+      );
+      expect(categories).toContain(category);
+      expect(categoryField.props.labels[category]).toBe(
         category === 'Unexpected' ? 'Unexpected extras' : category,
       );
     },
   );
+
+  it('recomputes expense budget hints when the selected transaction date moves to an upcoming month', async () => {
+    const previousPlan = mockData.budgetPlan;
+    const previousBudgets = mockData.monthBudgets;
+    const previousTransactions = mockData.transactions;
+    mockData.transactions = [{
+      id: 'rent-actual',
+      type: 'expense',
+      amount: 1_200,
+      category: 'Rent',
+      note: '',
+      date: '2026-10-10',
+    }];
+    mockData.budgetPlan = {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      lines: [{ category: 'Rent', mode: 'amount', value: 1_500 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-11',
+    };
+    mockData.monthBudgets = [{
+      month: '2026-10',
+      source: 'custom',
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      lines: [{ category: 'Rent', planned: 1_000 }],
+    }];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      await act(async () => { renderer = TestRenderer.create(<TransactionFormScreen />); });
+      if (!renderer) throw new Error('Transaction form renderer was not created.');
+      const before = renderer.root.findAll((node) => String(node.type) === 'budgetcategorypicker')[0];
+      if (!before) throw new Error('Expected the budget-aware category picker.');
+      const beforeRent = before.props.sections.flatMap((section: { categories: { category: string; planned: number; actual: number }[] }) =>
+        section.categories,
+      ).find((choice: { category: string }) => choice.category === 'Rent');
+      expect(beforeRent).toMatchObject({ planned: 1_000, actual: 1_200 });
+      const dateField = renderer.root.findAll((node) => String(node.type) === 'datefield')[0];
+      if (!dateField) throw new Error('Expected the transaction date field.');
+      await act(async () => dateField.props.onChange('2026-11-12'));
+      const after = renderer.root.findAll((node) => String(node.type) === 'budgetcategorypicker')[0];
+      if (!after) throw new Error('Expected the budget-aware category picker after changing the date.');
+      const afterRent = after.props.sections.flatMap((section: { categories: { category: string; planned: number; actual: number }[] }) =>
+        section.categories,
+      ).find((choice: { category: string }) => choice.category === 'Rent');
+      expect(afterRent).toMatchObject({ planned: 1_500, actual: 0 });
+    } finally {
+      mockData.budgetPlan = previousPlan;
+      mockData.monthBudgets = previousBudgets;
+      mockData.transactions = previousTransactions;
+      if (renderer) act(() => renderer?.unmount());
+    }
+  });
 
   it('offers and saves Rental as earned income', async () => {
     mockParams = { type: 'income' };
@@ -347,28 +409,50 @@ describe('transaction add form', () => {
     }));
   });
 
-  it('shows investment category as a derived read-only value', async () => {
+  it('keeps investment categories instrument-derived and shows the selected month budget hint', async () => {
+    const previousPlan = mockData.budgetPlan;
+    const previousBudgets = mockData.monthBudgets;
+    mockData.budgetPlan = {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      lines: [{ category: 'Other investments', mode: 'amount', value: 5_000 }],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+    mockData.monthBudgets = [{
+      month: '2026-10',
+      source: 'custom',
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      lines: [{ category: 'Other investments', planned: 5_000 }],
+    }];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<TransactionFormScreen />);
-    });
-    if (!renderer) throw new Error('Transaction form renderer was not created.');
-    const formRenderer = renderer;
-    const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
-    if (!typeControl) throw new Error('Transaction type selector was not rendered.');
-    await act(async () => typeControl.props.onChange('invest'));
-    const investment = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
-    )[0];
-    if (!investment) throw new Error('Investment selector was not rendered.');
-    const otherInvestmentId = Object.entries(investment.props.choiceLabels as Record<string, string>)
-      .find(([, label]) => label.includes('EPFO'))?.[0];
-    if (!otherInvestmentId) throw new Error('Other investment choice was not rendered.');
-    await act(async () => investment.props.onChange(otherInvestmentId));
-    expect(renderer.root.findAll((node) => String(node.type) === 'choicefield')
-      .some((node) => node.props.label === 'Category')).toBe(false);
-    expect(formRenderer.root.findAll((node) => String(node.type) === 'readonly')
-      .some((node) => node.props.value === 'Other investments')).toBe(true);
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<TransactionFormScreen />);
+      });
+      if (!renderer) throw new Error('Transaction form renderer was not created.');
+      const formRenderer = renderer;
+      const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
+      if (!typeControl) throw new Error('Transaction type selector was not rendered.');
+      await act(async () => typeControl.props.onChange('invest'));
+      const investment = renderer.root.findAll((node) =>
+        String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+      )[0];
+      if (!investment) throw new Error('Investment selector was not rendered.');
+      const otherInvestmentId = Object.entries(investment.props.choiceLabels as Record<string, string>)
+        .find(([, label]) => label.includes('EPFO'))?.[0];
+      if (!otherInvestmentId) throw new Error('Other investment choice was not rendered.');
+      await act(async () => investment.props.onChange(otherInvestmentId));
+      expect(renderer.root.findAll((node) => String(node.type) === 'choicefield')
+        .some((node) => node.props.label === 'Category')).toBe(false);
+      expect(formRenderer.root.findAll((node) => String(node.type) === 'readonly')
+        .some((node) => node.props.value === 'Other investments')).toBe(true);
+      expect(renderer.root.findAllByType('text')
+        .some((node) => node.children.join('') === 'Left 5000 of 5000')).toBe(true);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      mockData.budgetPlan = previousPlan;
+      mockData.monthBudgets = previousBudgets;
+    }
   });
 
   it.each(['Festival', 'Donation', 'Gifts'] as const)('edits an expense into the %s category', async (category) => {
@@ -386,11 +470,12 @@ describe('transaction add form', () => {
       renderer = TestRenderer.create(<TransactionFormScreen />);
     });
     if (!renderer) throw new Error('Transaction form renderer was not created.');
-    const categoryField = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Category',
-    )[0];
+    const categoryField = renderer.root.findAll((node) => String(node.type) === 'budgetcategorypicker')[0];
     if (!categoryField) throw new Error('Expense category selector was not rendered.');
-    expect(categoryField.props.choices).toContain(category);
+    const categories = categoryField.props.sections.flatMap((section: { categories: { category: string }[] }) =>
+      section.categories.map((choice) => choice.category),
+    );
+    expect(categories).toContain(category);
     await act(async () => categoryField.props.onChange(category));
     await act(async () => {
       renderer?.root.findByProps({ label: 'Save' }).props.onPress();

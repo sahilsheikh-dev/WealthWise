@@ -826,6 +826,17 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   Income name/category remain read-only. The linked loan/plan/policy edit
   routes are unchanged. The full P20-O close-out will record CR-59, demo data,
   gate results, and device limitations.
+- DEC-P20O-CR59: Expense categories are grouped by Budget section, budgeted
+  categories sort first within each section, and each category exposes the
+  selected month's remaining/over-budget hint. Investment categories remain
+  instrument-derived and show the same hint; income still uses the frozen
+  ChoiceField. The frozen ChoiceField and all frozen form components are
+  unchanged. **Assumed:** transaction dates are selectable through the last
+  day of the month 24 months ahead so users can inspect upcoming budget hints.
+  Replaced assertion: the old flat expense ChoiceField expectation is replaced
+  with grouped budget-aware categories and date-driven hints; investment
+  category derivation remains asserted. Device checks for scrolling, keyboard
+  avoidance and 1.3/2.0 font-scale picker layout remain outstanding.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -1526,6 +1537,7 @@ evidence present in exports/checkpoints.
 | P20-L | Phase 20 | — | — | 2026-10-18 | Always-open Transactions due payments, inline header filters, liability-kind filtering, and search across Assets, Liabilities and Goals (CR-47–CR-50). | Done; full suite 71/71, 811/811 tests; all six required gates exit 0. Simulated UI only; device checks remain outstanding. | `1be9c92`, `086d084`, `9f11265`, `7c71377`, `d56a553`, `b48a624` | Assumed: only due rows use the new compact Paid/Received labels; existing Budget/Home actions and paid/Undo behavior remain unchanged. Liability kind filtering is local, defaults to All and preserves sort persistence. Search is local, trims and lowercases the query, and resets on screen remount. | current request |
 | P20-M | Phase 20 | — | — | 2026-10-18 | Budget plan schema v9, v8 migration, derived future months, income dues, projected cash flow, and setup income editor (CR-52–CR-55). | Done; 71 suites/820 tests; all six final gates pass. Directory coverage: domain 99.04% lines/95.23% branches, data excluding hooks 95.34%/90.91%, lib 100%/100%. Real-device checks remain unverified. | Preflight `fabde34`; CR-52 `62d7a20`; CR-53–CR-55 `b5c6c7a`. | Assumed: see DEC-P20M-CR53-55. | current request |
 | P20-N | Phase 20 | — | — | 2026-10-18 | Rebuild Budget as a visual overview (CR-56–CR-57). | Done; 73 suites/828 tests; all six final gates exit 0. Device criteria remain unverified. | Preflight `9d72ab1`; model `e630a3d`; charts `cf876bb`; screen `530fccd`; cleanup `88154aa`; demo `d825c1e`; final closeout `9e48d83`. | Assumed: see DEC-BUDGET-SPEC. | current request |
+| P20-O | Phase 20 | — | — | 2026-10-18 | Budget item edit sheet and budget-aware category picker (CR-58–CR-59). | Implementation complete; demo and full gates pending. | CR-58 `509653e`; CR-59 pending. | Assumed: transaction dates extend to the 24-month budget horizon; see DEC-P20O-CR59. Sheet keyboard/scroll and picker font-scale layouts remain device checks. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
