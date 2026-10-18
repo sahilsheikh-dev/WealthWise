@@ -172,6 +172,9 @@ jest.mock('../../data/store', () => {
       saveAndApplyBudgetPlan: jest.fn(),
       applyBudgetPlan: jest.fn(),
       restoreMonthBudget: jest.fn(),
+      restoreBudgetPlanAndMonth: jest.fn(),
+      editBudgetItem: jest.fn(),
+      removeBudgetItem: jest.fn(),
     },
   };
 
@@ -243,6 +246,9 @@ jest.mock('../../data/useAppData', () => {
       saveAndApplyBudgetPlan: jest.fn(),
       applyBudgetPlan: jest.fn(),
       restoreMonthBudget: jest.fn(),
+      restoreBudgetPlanAndMonth: jest.fn(),
+      editBudgetItem: jest.fn(),
+      removeBudgetItem: jest.fn(),
     },
   };
 
@@ -2456,6 +2462,106 @@ describe('route render smoke audit', () => {
       Object.assign(data, previous);
       routeParams.mockReturnValue({});
       mockFontScale = 1;
+    }
+  });
+
+  it('edits and removes plan lines in the sheet, with a snapshot-aware Undo callback', async () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      editBudgetItem: jest.Mock;
+      removeBudgetItem: jest.Mock;
+      restoreBudgetPlanAndMonth: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const month = monthKey(todayISO());
+    const later = shiftMonth(month, 1);
+    const previous = { monthBudgets: data.monthBudgets, budgetPlan: data.budgetPlan };
+    const snapshot = {
+      month,
+      source: 'custom' as const,
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
+      lines: [{ category: 'Food', planned: 200 }],
+    };
+    data.budgetPlan = {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      lines: [{ category: 'Food', mode: 'amount', value: 200 }],
+      repeatMonthly: true,
+      repeatFrom: later,
+    };
+    const originalPlan = data.budgetPlan;
+    data.monthBudgets = [
+      snapshot,
+      {
+        month: later,
+        source: 'custom',
+        incomes: snapshot.incomes,
+        lines: [{ category: 'Food', planned: 300 }],
+      },
+    ];
+    routeParams.mockReturnValue({ month });
+    actions.editBudgetItem.mockClear();
+    actions.removeBudgetItem.mockClear();
+    actions.restoreBudgetPlanAndMonth.mockClear();
+    useUIStore.getState().setActionToast(null);
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      if (!renderer) throw new Error('Budget screen renderer was not created.');
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Edit Food' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(renderer.root.findByProps({ testID: 'budget-item-edit-sheet' })).toBeDefined();
+      expect(renderer.root.findAllByType('text').some((node) =>
+        node.children.join('') === '1 later month has its own values and is kept.',
+      )).toBe(false);
+      await act(async () => {
+        renderer?.root.findByProps({ label: 'Apply changes to' }).props.onChange('following');
+        await Promise.resolve();
+      });
+      expect(renderer.root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
+        .toContain('1 later month has its own values and is kept.');
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('450');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(actions.editBudgetItem).toHaveBeenCalledWith(
+        month,
+        { kind: 'line', category: 'Food' },
+        { amount: 450 },
+        'following',
+        todayISO(),
+      );
+      const editToast = useUIStore.getState().actionToast;
+      expect(editToast?.actionLabel).toBe('Undo');
+      act(() => editToast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(originalPlan, month, snapshot);
+
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Edit Food' }).props.onPress();
+        await Promise.resolve();
+      });
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Remove item' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.removeBudgetItem).toHaveBeenCalledWith(
+        month,
+        { kind: 'line', category: 'Food' },
+        'month',
+        todayISO(),
+      );
+      const removeToast = useUIStore.getState().actionToast;
+      expect(removeToast?.actionLabel).toBe('Undo');
+      act(() => removeToast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenLastCalledWith(originalPlan, month, snapshot);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(data, previous);
+      routeParams.mockReturnValue({});
+      useUIStore.getState().setActionToast(null);
     }
   });
 

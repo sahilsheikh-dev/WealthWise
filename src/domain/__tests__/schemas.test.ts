@@ -14,6 +14,7 @@ import {
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
+  makeBudgetItemEditSchema,
   makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
@@ -532,14 +533,31 @@ describe('makeTransactionFormSchema', () => {
     if (!result.success) expect(result.error.issues.some((issue) => issue.path[0] === 'amount')).toBe(true);
   });
 
-  it('accepts comma grouping and rejects invalid calendar/future dates with the right errors', () => {
+  it('accepts comma grouping, validates calendar dates and permits the 24-month planning horizon', () => {
     expect(schema.parse({ ...validInput, amount: '1,500.50', date: '2026-10-10' }).date).toBe('2026-10-10');
     const invalidDate = schema.safeParse({ ...validInput, date: '2026-02-30' });
     expect(invalidDate.success).toBe(false);
     if (!invalidDate.success) expect(invalidDate.error.issues[0]?.message).toBe('Enter a valid date');
-    const future = schema.safeParse({ ...validInput, date: '2026-10-11' });
-    expect(future.success).toBe(false);
-    if (!future.success) expect(future.error.issues[0]?.message).toBe('Date cannot be in the future');
+    expect(schema.safeParse({ ...validInput, date: '2026-10-11' }).success).toBe(true);
+    const beyondPlanningHorizon = schema.safeParse({ ...validInput, date: '2028-11-01' });
+    expect(beyondPlanningHorizon.success).toBe(false);
+    if (!beyondPlanningHorizon.success) {
+      expect(beyondPlanningHorizon.error.issues[0]?.message)
+        .toBe('Date cannot be more than 24 months ahead');
+    }
+  });
+
+  it('validates budget-item edit amount and optional due day', () => {
+    const editSchema = makeBudgetItemEditSchema();
+    expect(editSchema.parse({ amount: '0', day: '31', scope: 'month' }))
+      .toEqual({ amount: 0, day: 31, scope: 'month' });
+    expect(editSchema.parse({ amount: '500.50', day: '', scope: 'following' }))
+      .toEqual({ amount: 500.5, day: undefined, scope: 'following' });
+    for (const day of ['0', '32', '2.5', 'no']) {
+      expect(editSchema.safeParse({ amount: '1', day, scope: 'month' }).success).toBe(false);
+    }
+    expect(editSchema.safeParse({ amount: '-1', day: '', scope: 'month' }).success).toBe(false);
+    expect(editSchema.safeParse({ amount: '', day: '', scope: 'month' }).success).toBe(false);
   });
 
   it('enforces note length and the category list for the chosen type', () => {

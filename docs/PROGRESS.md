@@ -817,6 +817,15 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   snapshots now require income arrays; safe-storage's future-version case
   moves from v9 to v10; premigration archive coverage expands through v8.
   Device acceptance is not established by simulator-style tests.
+- DEC-P20O-CR58: Budget plan-line and income-row edits are now owned by the
+  bottom sheet. “This month only” materializes a virtual month as a custom
+  snapshot; “This and following months” updates the plan plus the viewed
+  stored snapshot, without rewriting later custom snapshots. Remove follows
+  the same scope rules. Edit and remove each use one store action and the
+  existing five-second Undo toast restores the prior plan and viewed month.
+  Income name/category remain read-only. The linked loan/plan/policy edit
+  routes are unchanged. The full P20-O close-out will record CR-59, demo data,
+  gate results, and device limitations.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File

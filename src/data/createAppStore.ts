@@ -53,7 +53,9 @@ import {
   applyBudgetPlanToMonth,
   clearMonthBudget,
   customizeMonthBudget,
+  editBudgetItem as editBudgetItemData,
   ensureCurrentMonthBudget,
+  removeBudgetItem as removeBudgetItemData,
   restoreMonthBudget,
   restoreBudgetPlanAndMonth,
   saveAndApplyBudgetPlan,
@@ -80,6 +82,7 @@ import { createStressTransactions } from '../domain/stressData';
 import type {
   AppData, BudgetIncomeItem, BudgetLine, BudgetPlan, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
 } from '../domain/types';
+import type { BudgetItemScope, BudgetItemSource, BudgetItemValues } from '../domain/budget';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -136,6 +139,10 @@ export type AppActions = {
   customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] }) => void;
   restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
   restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
+  editBudgetItem: (
+    month: string, source: BudgetItemSource, values: BudgetItemValues, scope: BudgetItemScope, today: ISODate,
+  ) => void;
+  removeBudgetItem: (month: string, source: BudgetItemSource, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
   ensureCurrentMonthBudget: (today: ISODate) => void;
   deleteGoal: (id: string) => void;
@@ -422,6 +429,12 @@ export function createAppStore(
         },
         restoreBudgetPlanAndMonth(plan, month, budget) {
           applyDataAction((data) => restoreBudgetPlanAndMonth(data, plan, month, budget));
+        },
+        editBudgetItem(month, source, values, scope, today) {
+          applyDataAction((data) => editBudgetItemData(data, month, source, values, scope, today));
+        },
+        removeBudgetItem(month, source, scope, today) {
+          applyDataAction((data) => removeBudgetItemData(data, month, source, scope, today));
         },
         clearMonthBudget(month) {
           applyDataAction((data) => clearMonthBudget(data, month));
