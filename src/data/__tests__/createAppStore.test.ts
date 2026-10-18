@@ -188,6 +188,70 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
+  it('edits and removes budget items in one write and restores exact data with one Undo write', async () => {
+    const storage = new MemoryStorage();
+    const before = {
+      ...emptyAppData('2026-03-15'),
+      budgetPlan: {
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 }],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 10, dueDay: 5 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-04',
+      },
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'plan' as const,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 }],
+        lines: [{ category: 'Food', planned: 1_000, dueDay: 5 }],
+        linkedIncluded: true,
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: before }, version: 9,
+    }));
+    const store = makeStore(storage, { isDev: false, today: () => '2026-03-15' });
+    await waitForHydration(store);
+
+    let writes = storage.setItemCalls;
+    store.getState().actions.editBudgetItem(
+      '2026-03',
+      { kind: 'line', category: 'Food' },
+      { amount: 1_500, dueDay: 12 },
+      'following',
+      '2026-03-15',
+    );
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.budgetPlan?.lines[0]).toEqual({
+      category: 'Food', mode: 'amount', value: 1_500, dueDay: 12,
+    });
+    writes = storage.setItemCalls;
+    store.getState().actions.restoreBudgetPlanAndMonth(
+      before.budgetPlan,
+      '2026-03',
+      before.monthBudgets[0] ?? null,
+    );
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(before);
+
+    writes = storage.setItemCalls;
+    store.getState().actions.removeBudgetItem(
+      '2026-03',
+      { kind: 'line', category: 'Food' },
+      'month',
+      '2026-03-15',
+    );
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([]);
+    writes = storage.setItemCalls;
+    store.getState().actions.restoreBudgetPlanAndMonth(
+      before.budgetPlan,
+      '2026-03',
+      before.monthBudgets[0] ?? null,
+    );
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
   it('migrates the default v7 template to a non-repeating plan without applying a month', async () => {
     const storage = new MemoryStorage();
     const { budgetPlan: _budgetPlan, ...v7Base } = emptyAppData('2026-03-01');

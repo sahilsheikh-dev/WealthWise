@@ -6,11 +6,12 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { PaceLine, SectionBars, StackedBar } from '../../src/components/BudgetCharts';
+import { BudgetItemEditSheet } from '../../src/components/BudgetItemEditSheet';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { budgetOverview, type BudgetOverviewItem } from '../../src/domain/budget';
+import { budgetOverview, effectiveMonthBudget, type BudgetOverviewItem } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { todayISO } from '../../src/lib/clock';
@@ -46,6 +47,7 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
+  const [editingItem, setEditingItem] = useState<BudgetOverviewItem | null>(null);
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -110,7 +112,7 @@ export default function BudgetScreen() {
     switch (item.source.kind) {
       case 'line':
       case 'income':
-        router.push('/budget-setup');
+        if (item.editable) setEditingItem(item);
         return;
       case 'plan':
         router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
@@ -122,6 +124,64 @@ export default function BudgetScreen() {
         router.push({ pathname: '/policy-form', params: { id: item.source.parentId } });
     }
   };
+
+  const saveBudgetItem = (item: BudgetOverviewItem, values: {
+    amount: number;
+    day?: number;
+    scope: 'month' | 'following';
+  }) => {
+    if (item.source.kind !== 'line' && item.source.kind !== 'income') return false;
+    const previousPlan = data.budgetPlan;
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.editBudgetItem(
+      month,
+      item.source,
+      { amount: values.amount, ...(values.day === undefined ? {} : { dueDay: values.day }) },
+      values.scope,
+      today,
+    );
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not update budget item', error);
+      return false;
+    }
+    setActionToast({
+      message: `${item.title} updated`,
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
+    });
+    return true;
+  };
+
+  const removeBudgetItem = (item: BudgetOverviewItem, scope: 'month' | 'following') => {
+    if (item.source.kind !== 'line' && item.source.kind !== 'income') return false;
+    const previousPlan = data.budgetPlan;
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.removeBudgetItem(month, item.source, scope, today);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not remove budget item', error);
+      return false;
+    }
+    setActionToast({
+      message: `${item.title} removed`,
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
+    });
+    return true;
+  };
+
+  const editingBudget = editingItem
+    ? effectiveMonthBudget(data, month, today).budget
+    : null;
+  const editingSource = editingItem?.source;
+  const editingDay = editingSource?.kind === 'line'
+    ? editingBudget?.lines.find((line) => line.category === editingSource.category)?.dueDay
+    : editingSource?.kind === 'income'
+      ? editingBudget?.incomes.find((income) => income.id === editingSource.incomeId)?.day
+      : undefined;
+  const laterCustomMonths = (data.monthBudgets ?? [])
+    .filter((budget) => budget.month > month && budget.source === 'custom').length;
 
   return (
     <Screen scroll={false}>
@@ -249,7 +309,7 @@ export default function BudgetScreen() {
                             accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
                             <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
                           </AppText>
-                          {overview.mode !== 'past' ? (
+                          {overview.mode !== 'past' && (item.kind === 'linked' || item.editable) ? (
                             <Pressable
                               accessibilityRole="button"
                               accessibilityLabel={`Edit ${item.title}`}
@@ -267,6 +327,24 @@ export default function BudgetScreen() {
             </>
           )}
         </ScrollView>
+        {editingItem && overview.mode !== 'past'
+          && (editingItem.source.kind === 'line' || editingItem.source.kind === 'income') ? (
+            <BudgetItemEditSheet
+              key={editingItem.id}
+              visible
+              title={editingItem.title}
+              amount={editingItem.planned}
+              day={editingDay}
+              incomeDetails={editingItem.source.kind === 'income'
+                ? { name: editingItem.title, category: editingItem.source.category }
+                : undefined}
+              laterCustomMonths={laterCustomMonths}
+              onClose={() => setEditingItem(null)}
+              onSave={(values) => saveBudgetItem(editingItem, values)}
+              onRemove={(scope) => removeBudgetItem(editingItem, scope)}
+            />
+          )
+          : null}
       </View>
     </Screen>
   );

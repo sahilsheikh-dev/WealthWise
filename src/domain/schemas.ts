@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { formatINR } from '../lib/format';
-import { addDays, isValidISO } from './dates';
+import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import {
@@ -415,10 +415,11 @@ export function makeTransactionFormSchema(
     allowUnlinkedInvestment?: boolean;
   } = { instruments: [], withdrawable: {}, mode: 'create' },
 ) {
+  const latestMonth = shiftMonth(monthKey(today), 24);
   return z.object({
     amount: amountInputSchema,
     date: dateInputSchema()
-      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
+      .refine((date) => !isValidISO(date) || date.slice(0, 7) <= latestMonth, 'Date cannot be more than 24 months ahead'),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
@@ -474,6 +475,26 @@ export function makeTransactionFormSchema(
     ) {
       context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Only investment transactions can be linked' });
     }
+  });
+}
+
+export function makeBudgetItemEditSchema() {
+  const daySchema = z.union([
+    z.literal('').transform(() => undefined),
+    z.string()
+      .regex(/^\d+$/, 'Enter a day from 1 to 31')
+      .transform(Number)
+      .refine((day) => Number.isInteger(day) && day >= 1 && day <= 31, 'Enter a day from 1 to 31'),
+  ]).optional();
+  return z.object({
+    amount: requiredMoneyInputSchema({
+      minimum: 0,
+      maximum: 1_000_000_000,
+      minimumMessage: 'Amount cannot be negative',
+      maximumMessage: 'Amount is too large',
+    }),
+    day: daySchema,
+    scope: z.enum(['month', 'following']),
   });
 }
 

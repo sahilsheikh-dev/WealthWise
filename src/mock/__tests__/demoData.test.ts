@@ -39,8 +39,9 @@ describe('four-month demo data', () => {
     });
   });
 
-  it('has four complete months of income, every budget expense category, and each investment category', () => {
-    expect(data.monthBudgets?.map(({ month }) => month)).toEqual(months);
+  it('has four complete months and a custom upcoming override for the item editor demo', () => {
+    const customMonth = shiftMonth(monthKey(today), 2);
+    expect(data.monthBudgets?.map(({ month }) => month)).toEqual([...months, customMonth]);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);
       expect(rows).toEqual(expect.arrayContaining([
@@ -73,6 +74,16 @@ describe('four-month demo data', () => {
         linkedIncluded: true,
         lines: expect.arrayContaining([expect.objectContaining({ category: 'Bills', dueDay: 5 })]),
       });
+    expect(data.monthBudgets?.find(({ month }) => month === customMonth)).toMatchObject({
+      source: 'custom',
+      linkedIncluded: true,
+      incomes: expect.arrayContaining([
+        expect.objectContaining({ id: 'demo-income-freelance', amount: 8_000, day: 18 }),
+      ]),
+      lines: expect.arrayContaining([
+        { category: 'Food', planned: 2_400, dueDay: 17 },
+      ]),
+    });
   });
 
   it('shows past, current and upcoming months in the budget overview demo', () => {

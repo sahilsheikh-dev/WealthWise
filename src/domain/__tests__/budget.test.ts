@@ -13,6 +13,7 @@ import {
   BUDGET_GROUPS,
   budgetOverview,
   applyBudgetPlanToMonth,
+  editBudgetItem,
   budgetGroupFor,
   budgetMonthView,
   clearMonthBudget,
@@ -27,6 +28,7 @@ import {
   resolveBudgetPlan,
   restoreBudgetPlanAndMonth,
   restoreMonthBudget,
+  removeBudgetItem,
   saveAndApplyBudgetPlan,
   setBudgetPlan,
   setBudgetRepeat,
@@ -99,6 +101,22 @@ describe('budget plans and monthly views', () => {
     expect(effectiveMonthBudget(data, '2028-02', '2026-01-15').budget).toBeNull();
     data.budgetPlan.repeatMonthly = false;
     expect(effectiveMonthBudget(data, '2026-03', '2026-01-15').budget).toBeNull();
+  });
+
+  it('does not derive percentage budgets when the plan has no income', () => {
+    const data = {
+      ...emptyAppData('2026-01-15'),
+      budgetPlan: {
+        incomes: [],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 10 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+      },
+    };
+    expect(effectiveMonthBudget(data, '2026-02', '2026-01-15')).toEqual({
+      budget: null,
+      virtual: false,
+    });
   });
 
   it('projects cash flow through the 24-month plan horizon without mutating data', () => {
@@ -326,6 +344,197 @@ describe('budget plans and monthly views', () => {
     expect(clearMonthBudget(withSnapshot, '2026-03').monthBudgets).toEqual([]);
     expect(clearMonthBudget(withSnapshot, '2026-02')).toBe(withSnapshot);
     expect(() => customizeMonthBudget(data, 'not-a-month', { incomes: [] })).toThrow(RangeError);
+  });
+
+  describe('budget item edits', () => {
+    const today = '2026-03-15';
+    const planWithItems = {
+      incomes: [
+        { id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 },
+        { id: 'freelance', name: 'Freelance', category: 'Freelance' as const, amount: 2_000, day: 15 },
+      ],
+      lines: [
+        { category: 'Food', mode: 'amount' as const, value: 1_000, dueDay: 5 },
+        { category: 'Travel', mode: 'percent' as const, value: 10 },
+      ],
+      repeatMonthly: true,
+      repeatFrom: '2026-04',
+    };
+
+    function withPlanAndMonth() {
+      const data = setBudgetPlan(emptyAppData(today), planWithItems);
+      return applyBudgetPlanToMonth(data, '2026-03', { newId: () => 'unused', today });
+    }
+
+    it('edits the current snapshot only and marks it custom', () => {
+      const before = withPlanAndMonth();
+      const edited = editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 1_500,
+      }, 'month', today);
+      expect(edited.budgetPlan).toEqual(before.budgetPlan);
+      const editedSnapshot = edited.monthBudgets?.find((row) => row.month === '2026-03');
+      expect(editedSnapshot?.source).toBe('custom');
+      expect(editedSnapshot?.lines).toContainEqual({ category: 'Food', planned: 1_500 });
+    });
+
+    it('updates the current snapshot and plan together for following months', () => {
+      const before = withPlanAndMonth();
+      const edited = editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 2_500, dueDay: 12,
+      }, 'following', today);
+      expect(edited.budgetPlan?.lines).toEqual([
+        { category: 'Food', mode: 'amount', value: 2_500, dueDay: 12 },
+        { category: 'Travel', mode: 'percent', value: 10 },
+      ]);
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-03')?.lines)
+        .toContainEqual({ category: 'Food', planned: 2_500, dueDay: 12 });
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-03')?.source).toBe('plan');
+    });
+
+    it('materializes an upcoming derived month for month-only edits', () => {
+      const before = withPlanAndMonth();
+      const virtual = effectiveMonthBudget(before, '2026-04', today);
+      expect(virtual.virtual).toBe(true);
+      const edited = editBudgetItem(before, '2026-04', { kind: 'line', category: 'Food' }, {
+        amount: 3_000, dueDay: 31,
+      }, 'month', today);
+      expect(edited.budgetPlan).toEqual(before.budgetPlan);
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-04')).toMatchObject({
+        source: 'custom',
+        lines: expect.arrayContaining([{ category: 'Food', planned: 3_000, dueDay: 31 }]),
+        incomes: planWithItems.incomes,
+        linkedIncluded: true,
+      });
+      expect(effectiveMonthBudget(edited, '2026-04', today).virtual).toBe(false);
+    });
+
+    it('updates the plan for an upcoming derived month and preserves later custom snapshots', () => {
+      const before = withPlanAndMonth();
+      const customLater = {
+        month: '2026-05',
+        source: 'custom' as const,
+        incomes: planWithItems.incomes,
+        lines: [{ category: 'Food', planned: 777 }],
+        linkedIncluded: true,
+      };
+      const data = { ...before, monthBudgets: [...(before.monthBudgets ?? []), customLater] };
+      const edited = editBudgetItem(data, '2026-04', { kind: 'line', category: 'Food' }, {
+        amount: 2_000,
+      }, 'following', today);
+      expect(edited.budgetPlan?.lines[0]).toEqual({
+        category: 'Food', mode: 'amount', value: 2_000,
+      });
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-04')).toBeUndefined();
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-05')).toEqual(customLater);
+      expect(effectiveMonthBudget(edited, '2026-04', today).budget?.lines)
+        .toContainEqual({ category: 'Food', planned: 2_000 });
+    });
+
+    it('adds absent lines to both scopes and leaves other stored months unchanged', () => {
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: { ...planWithItems, lines: [] },
+        monthBudgets: [
+          { month: '2026-03', source: 'custom' as const, incomes: [], lines: [] },
+          { month: '2026-04', source: 'custom' as const, incomes: [], lines: [] },
+        ],
+      };
+      const monthOnly = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 250,
+      }, 'month', today);
+      expect(monthOnly.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 250 }]);
+      expect(monthOnly.budgetPlan).toEqual(data.budgetPlan);
+
+      const following = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 350,
+      }, 'following', today);
+      expect(following.budgetPlan?.lines).toEqual([
+        { category: 'Food', mode: 'amount', value: 350 },
+      ]);
+      expect(following.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 350 }]);
+      expect(following.monthBudgets?.[1]).toEqual(data.monthBudgets[1]);
+    });
+
+    it('uses the viewed snapshot as the base when a following-scope income is absent from the plan', () => {
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: { ...planWithItems, incomes: [], lines: [] },
+        monthBudgets: [{
+          month: '2026-03',
+          source: 'custom' as const,
+          incomes: [{ id: 'legacy-income', name: 'Legacy', category: 'Salary' as const, amount: 500 }],
+          lines: [],
+        }],
+      };
+      const edited = editBudgetItem(data, '2026-03', {
+        kind: 'income', incomeId: 'legacy-income', category: 'Salary',
+      }, { amount: 750, dueDay: 10 }, 'following', today);
+      expect(edited.budgetPlan?.incomes).toEqual([
+        { id: 'legacy-income', name: 'Legacy', category: 'Salary', amount: 750, day: 10 },
+      ]);
+      expect(edited.monthBudgets?.[0]?.incomes).toEqual(edited.budgetPlan?.incomes);
+
+      const withoutPlan = editBudgetItem({ ...data, budgetPlan: null }, '2026-03', {
+        kind: 'income', incomeId: 'legacy-income', category: 'Salary',
+      }, { amount: 800 }, 'following', today);
+      expect(withoutPlan.budgetPlan?.incomes).toEqual([
+        { id: 'legacy-income', name: 'Legacy', category: 'Salary', amount: 800 },
+      ]);
+    });
+
+    it('rejects unavailable budgets and missing income sources', () => {
+      expect(() => editBudgetItem(emptyAppData(today), '2026-03', {
+        kind: 'line', category: 'Food',
+      }, { amount: 100 }, 'month', today)).toThrow('There is no budget to edit');
+
+      const data = withPlanAndMonth();
+      const missingIncome = { kind: 'income' as const, incomeId: 'missing', category: 'Salary' as const };
+      expect(() => editBudgetItem(data, '2026-03', missingIncome, {
+        amount: 100,
+      }, 'month', today)).toThrow('Budget income "missing" was not found');
+      expect(() => editBudgetItem(data, '2026-03', missingIncome, {
+        amount: 100,
+      }, 'following', today)).toThrow('Budget income "missing" was not found');
+    });
+
+    it('edits/removes income items and removes planned lines by scope', () => {
+      const before = withPlanAndMonth();
+      const editedIncome = editBudgetItem(before, '2026-03', {
+        kind: 'income', incomeId: 'salary', category: 'Salary',
+      }, { amount: 12_000 }, 'following', today);
+      expect(editedIncome.budgetPlan?.incomes[0]).toEqual({
+        id: 'salary', name: 'Salary', category: 'Salary', amount: 12_000,
+      });
+      expect(editedIncome.monthBudgets?.[0]?.incomes[0]).toEqual({
+        id: 'salary', name: 'Salary', category: 'Salary', amount: 12_000,
+      });
+      const removed = removeBudgetItem(editedIncome, '2026-03', {
+        kind: 'income', incomeId: 'salary', category: 'Salary',
+      }, 'following', today);
+      expect(removed.budgetPlan?.incomes.map((income) => income.id)).toEqual(['freelance']);
+      expect(removed.monthBudgets?.[0]?.incomes.map((income) => income.id)).toEqual(['freelance']);
+      const removedLine = removeBudgetItem(before, '2026-03', {
+        kind: 'line', category: 'Food',
+      }, 'month', today);
+      expect(removedLine.monthBudgets?.[0]?.lines.map((line) => line.category)).not.toContain('Food');
+      expect(removedLine.budgetPlan).toEqual(before.budgetPlan);
+    });
+
+    it('rejects invalid edit values', () => {
+      const before = withPlanAndMonth();
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: -1,
+      }, 'month', today)).toThrow(RangeError);
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 100, dueDay: 32,
+      }, 'month', today)).toThrow(RangeError);
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 1_000_000_001,
+      }, 'month', today)).toThrow(RangeError);
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 100, dueDay: 1.5,
+      }, 'month', today)).toThrow(RangeError);
+    });
   });
 
   it('undoes applying a changed plan and month snapshot to a deep-equal state', () => {

@@ -12,11 +12,14 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
+import { BudgetCategoryPicker, budgetCategoryHint } from '../src/components/BudgetCategoryPicker';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
-import { monthKey } from '../src/domain/dates';
+import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
+import { monthEndDate } from '../src/domain/cashFlow';
+import { budgetCategoryChoiceSections } from '../src/domain/budgetCategories';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { holdingValue } from '../src/domain/portfolio';
@@ -148,6 +151,7 @@ export default function TransactionFormScreen() {
   const selectedType = useWatch({ control, name: 'type' });
   const selectedCategory = useWatch({ control, name: 'category' });
   const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
+  const selectedDate = useWatch({ control, name: 'date' }) ?? today;
 
   useEffect(() => {
     if (!lastCreatedInstrumentId) return;
@@ -189,6 +193,21 @@ export default function TransactionFormScreen() {
   const derivedCategory = selectedInstrument
     ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
+  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
+  const categorySections = useMemo(
+    () => selectedType === 'income'
+      ? []
+      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType),
+    [data, selectedMonth, selectedType, today],
+  );
+  const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
+  const budgetHintCategory = selectedType === 'invest'
+    ? (selectedInstrument ? derivedCategory : selectedCategory)
+    : '';
+  const budgetHint = budgetHintCategory
+    ? categorySections.flatMap((section) => section.categories)
+      .find((choice) => choice.category === budgetHintCategory)
+    : undefined;
 
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, ...transactionValues } = values;
@@ -392,7 +411,17 @@ export default function TransactionFormScreen() {
                     />
                   )}
                 />
-                <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
+                <View>
+                  <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
+                  {budgetHint ? (
+                    <AppText
+                      testID="investment-category-budget-hint"
+                      accessibilityLabel={`${budgetHintCategory}, ${budgetCategoryHint(budgetHint.planned, budgetHint.actual)}`}
+                      style={[typography.meta, { color: colors.text3 }]}>
+                      {budgetCategoryHint(budgetHint.planned, budgetHint.actual)}
+                    </AppText>
+                  ) : null}
+                </View>
               </>
             ) : null}
             {!transaction?.source && selectedType !== 'invest' ? (
@@ -400,17 +429,44 @@ export default function TransactionFormScreen() {
                 control={control}
                 name="category"
                 render={({ field }) => (
-                  <ChoiceField
-                    label="Category"
-                    value={field.value}
-                    choices={choices}
-                    choiceLabels={Object.fromEntries(choices.map((category) => [category, transactionCategoryLabel(category, selectedType)]))}
-                    onChange={(value) => {
-                      field.onChange(value);
-                      if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                    }}
-                    error={errors.category?.message}
-                  />
+                  selectedType === 'expense' ? (
+                    <View>
+                      <AppText style={{ color: colors.text2 }}>Category</AppText>
+                      <BudgetCategoryPicker
+                        sections={categorySections}
+                        value={field.value}
+                        labels={Object.fromEntries(choices.map((category) => [
+                          category, transactionCategoryLabel(category, selectedType),
+                        ]))}
+                        extraCategories={choices.filter((category) =>
+                          !categorySections.some((section) =>
+                            section.categories.some((choice) => choice.category === category),
+                          ),
+                        )}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                        }}
+                      />
+                      {errors.category?.message ? (
+                        <AppText style={{ color: colors.err }}>{errors.category.message}</AppText>
+                      ) : null}
+                    </View>
+                  ) : (
+                    <ChoiceField
+                      label="Category"
+                      value={field.value}
+                      choices={choices}
+                      choiceLabels={Object.fromEntries(choices.map((category) => [
+                        category, transactionCategoryLabel(category, selectedType),
+                      ]))}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                      }}
+                      error={errors.category?.message}
+                    />
+                  )
                 )}
               />
             ) : null}
@@ -438,7 +494,7 @@ export default function TransactionFormScreen() {
               control={control}
               name="date"
               render={({ field }) => (
-                <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} />
+                <DateField value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
               )}
             />
           </>

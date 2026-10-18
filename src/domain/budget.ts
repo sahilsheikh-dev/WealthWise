@@ -351,6 +351,187 @@ export function effectiveMonthBudget(
   };
 }
 
+export type BudgetItemSource =
+  | { kind: 'line'; category: string }
+  | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory };
+
+export type BudgetItemScope = 'month' | 'following';
+
+export type BudgetItemValues = { amount: number; dueDay?: number };
+
+function validateBudgetItemValues(values: BudgetItemValues): BudgetItemValues {
+  if (!Number.isFinite(values.amount) || values.amount < 0 || values.amount > 1_000_000_000) {
+    throw new RangeError('Planned amount must be between 0 and 1,000,000,000.');
+  }
+  if (values.dueDay !== undefined
+    && (!Number.isInteger(values.dueDay) || values.dueDay < 1 || values.dueDay > 31)) {
+    throw new RangeError('Due day must be between 1 and 31.');
+  }
+  return {
+    amount: normalizeMoney(values.amount),
+    ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
+  };
+}
+
+function updateBudgetItemInMonth(
+  budget: MonthBudget,
+  source: BudgetItemSource,
+  values: BudgetItemValues,
+  remove: boolean,
+): MonthBudget {
+  if (source.kind === 'line') {
+    const exists = budget.lines.some((line) => line.category === source.category);
+    const nextLine = {
+      category: source.category,
+      planned: values.amount,
+      ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
+    };
+    const lines = remove
+      ? budget.lines.filter((line) => line.category !== source.category)
+      : exists
+        ? budget.lines.map((line) => line.category === source.category ? nextLine : line)
+        : [...budget.lines, nextLine];
+    return { ...budget, lines };
+  }
+
+  const existing = budget.incomes.find((income) => income.id === source.incomeId);
+  if (!existing) throw new Error(`Budget income "${source.incomeId}" was not found.`);
+  return {
+    ...budget,
+    incomes: remove
+      ? budget.incomes.filter((income) => income.id !== source.incomeId)
+      : budget.incomes.map((income) => income.id === source.incomeId
+        ? updateIncomeValues(income, values)
+        : income),
+  };
+}
+
+function updateIncomeValues(income: BudgetIncomeItem, values: BudgetItemValues): BudgetIncomeItem {
+  const updated = { ...income, amount: values.amount };
+  if (values.dueDay === undefined) {
+    const { day: removedDay, ...withoutDay } = updated;
+    void removedDay;
+    return withoutDay;
+  }
+  return { ...updated, day: values.dueDay };
+}
+
+function snapshotAsPlan(budget: MonthBudget): BudgetPlan {
+  return {
+    incomes: budget.incomes.map((income) => ({ ...income })),
+    lines: budget.lines.map((line) => ({
+      category: line.category,
+      mode: 'amount',
+      value: line.planned,
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+    })),
+    repeatMonthly: false,
+    repeatFrom: null,
+  };
+}
+
+function updateBudgetItemInPlan(
+  plan: BudgetPlan,
+  source: BudgetItemSource,
+  values: BudgetItemValues,
+  remove: boolean,
+  base: MonthBudget,
+): BudgetPlan {
+  if (source.kind === 'line') {
+    const exists = plan.lines.some((line) => line.category === source.category);
+    const nextLine = {
+      category: source.category,
+      mode: 'amount' as const,
+      value: values.amount,
+      ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
+    };
+    const lines = remove
+      ? plan.lines.filter((line) => line.category !== source.category)
+      : exists
+        ? plan.lines.map((line) => line.category === source.category ? nextLine : line)
+        : [...plan.lines, nextLine];
+    return { ...plan, lines };
+  }
+
+  const inPlan = plan.incomes.some((income) => income.id === source.incomeId);
+  const inBase = base.incomes.find((income) => income.id === source.incomeId);
+  if (!inPlan && !inBase) throw new Error(`Budget income "${source.incomeId}" was not found.`);
+  let incomes = plan.incomes.filter((income) => income.id !== source.incomeId);
+  if (!remove) {
+    const income = inPlan
+      ? plan.incomes.find((item) => item.id === source.incomeId)
+      : inBase;
+    if (!income) throw new Error(`Budget income "${source.incomeId}" was not found.`);
+    const updatedIncome = updateIncomeValues(income, values);
+    incomes = inPlan
+      ? plan.incomes.map((item) => item.id === source.incomeId ? updatedIncome : item)
+      : [...incomes, updatedIncome];
+  }
+  return { ...plan, incomes };
+}
+
+function updateBudgetItem(
+  data: AppData,
+  monthInput: string,
+  source: BudgetItemSource,
+  values: BudgetItemValues,
+  scope: BudgetItemScope,
+  today: ISODate,
+  remove: boolean,
+): AppData {
+  const month = monthOf(monthInput);
+  const normalizedValues = validateBudgetItemValues(values);
+  const stored = monthRows(data).find((row) => row.month === month);
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) throw new Error(`There is no budget to edit for ${month}.`);
+
+  if (scope === 'month') {
+    const edited = updateBudgetItemInMonth(
+      { ...budget, source: 'custom' },
+      source,
+      normalizedValues,
+      remove,
+    );
+    return replaceMonth(data, edited);
+  }
+
+  const plan = updateBudgetItemInPlan(
+    data.budgetPlan ?? snapshotAsPlan(budget),
+    source,
+    normalizedValues,
+    remove,
+    budget,
+  );
+  if (!stored) return { ...data, budgetPlan: plan };
+  const edited = updateBudgetItemInMonth(stored, source, normalizedValues, remove);
+  return {
+    ...data,
+    budgetPlan: plan,
+    monthBudgets: monthRows(data).map((row) => row.month === month ? edited : row),
+  };
+}
+
+export function editBudgetItem(
+  data: AppData,
+  month: string,
+  source: BudgetItemSource,
+  values: BudgetItemValues,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  return updateBudgetItem(data, month, source, values, scope, today, false);
+}
+
+export function removeBudgetItem(
+  data: AppData,
+  month: string,
+  source: BudgetItemSource,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  return updateBudgetItem(data, month, source, { amount: 0 }, scope, today, true);
+}
+
 export function saveAndApplyBudgetPlan(
   data: AppData,
   plan: BudgetPlan,
@@ -771,7 +952,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       planned: 0,
       actual: normalizeMoney(extra),
       kind: 'income',
-      editable: true,
+      editable: false,
       source: { kind: 'income', incomeId: `actual:${category}`, category },
     });
   }
