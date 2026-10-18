@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 90% (57/63)
+Overall progress █████████░ 91% (58/64)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (15/15)
+Phase 20         ██████████ 100% (16/16)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -132,6 +132,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-M | — | Done | CR-52–CR-55; categories, schema-v9 migration, future virtual budgets, income dues, projected cash flow and setup income items. 71 suites/820 tests; all six final gates pass. | 2026-10-18 |
 | P20-N | — | Done | CR-56/CR-57 overview model, charts, screen, demo, cleanup, and all automated gates complete; device checks remain unverified. | 2026-10-18 |
 | P20-O | — | Done | CR-58/CR-59 item edit sheet, scope-aware remove/Undo, grouped budget hints and editable demo override. 76 suites/848 tests; all six required gates pass. Device checks remain unverified. | 2026-10-18 |
+| P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -346,9 +347,11 @@ Premigration bytes are copied once and removed by erase-all.
 | v6 | Custom emergency-fund buckets and holding links, with v5→v6 migration. | CH-1 commit `c831fe6`; close-out `17f4748` |
 | v7 | Emergency fund becomes a goal funded by linked assets; legacy ledger/category removed with v6→v7 migration. | P21-A implementation and migration tests; final gates pass |
 | v8 | A single budget plan replaces templates; month snapshots record source and linked-item inclusion, with v7→v8 migration. | P20-G migration, strict backup and current-month apply tests; P20-H/I leave schema unchanged |
+| v9 | Budget plans and month snapshots store income items; schema-v8 data migrates and older backups import through the chain. | P20-M |
+| v10 | User-managed budget sections/items replace fixed budget lines; schema-v9 data migrates and backups through v9 import. | P20-P / CR-60 |
 
-Current schema is `SCHEMA_VERSION = 8`. P21-A is the explicit v6→v7 migration;
-P20-G advances to v8, and subsequent phases leave it unchanged.
+Current schema is `SCHEMA_VERSION = 10` (`src/domain/schemas.ts`). P21-A
+introduced v7, P20-G v8, P20-M v9 and P20-P v10.
 
 ### Financial and UI rules
 
@@ -449,12 +452,16 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   values unchanged and keeps all existing snapshots valid; the `budget` field
   continues to echo its stored input. Additive linked-total behavior is opt-in.
 - DEC-BUDGET-SPEC: P20-N changes only the Budget overview presentation and
-  pure model; the P20-M schema-v9 plan, frozen past/current snapshots,
-  read-only future months, income dues, and projection rules remain frozen.
+  pure model; its frozen past/current display, read-only future months, income
+  dues, and projection rules remain. The v9 fixed-line data model is
+  superseded by DEC-BUDGET-V10.
   The overview reports income, spending, investing and left as planned/actual
   figures, reconciles totals to ordered budget sections, and shows pace only
   for past/current months. Linked liability, investment-plan and policy rows
   remain automatically derived and are not editable from the overview.
+  DEC-BUDGET-V10 supersedes the fixed-category data constraint and the
+  section-card header-only/fixed-category setup constraints for the upcoming
+  management UI; P20-P does not rebuild those screens.
   P20-N preflight verified that the user-owned Cash flow labels are exactly
   “Opening balance” and “Closing balance”, and that Budget has no “Back to
   Transactions” or “Review” control. Preserve those labels and absences;
@@ -472,6 +479,32 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   include all past-month transactions, stop at injected today for the current
   month, and are empty in future months; linked entry transactions are assigned
   to their scheduled parent rows where possible.
+- DEC-BUDGET-V10: schema v10 replaces plan/snapshot budget lines with
+  user-managed sections and items. Defaults seed Survival (Needs), Savings and
+  Investments (invest), Wants, Festival/Donations/Culture and Unexpected Extras;
+  Income, Debt repayments and Insurance remain system sections. Built-in
+  category names stay exact. Item names are transaction category strings;
+  past/current snapshots freeze their own sections/items, while eligible
+  upcoming months derive from the plan. Section/item add, rename, type-change,
+  delete and edit actions apply to either the viewed month or the plan plus
+  viewed stored snapshot, preserving later custom snapshots. Limits are 12
+  sections, 40 items per section and 100 items total; names are trimmed,
+  1–30 characters and unique case-insensitively across items. Built-in names
+  cannot be placed in a different seeded section. Deleting a section removes
+  only its plan/snapshot items; transactions and their category strings remain
+  unchanged. Month views place unplanned transactions under Unbudgeted in the
+  mapped section, or Other (not in budget) when no section mapping remains.
+  CR-60/CR-61 supersede the fixed-category/flat-line data constraint in
+  DEC-BUDGET-SPEC. They also supersede the header-only section-card and
+  fixed-category setup-form constraints as future UI design constraints;
+  P20-P intentionally does not rebuild those screens. The next UI phase owns
+  section/item management controls. Assumed: a v9 category with no seeded
+  group maps to the first spend section, Survival, during migration. Unknown
+  investment transaction categories that are not built-in remain custom
+  category strings rather than collapsing into Other investments, so removing
+  their budget item does not rewrite their visible/filterable identity.
+  Device checks for persisted v9 recovery, custom section editing UX and
+  category/filter layout remain unverified.
 - DEC-P20G: schema v8 replaces all budget-template state with one nullable
   `budgetPlan`; applied month snapshots use `source: 'plan'`, hand-edited
   month snapshots use `source: 'custom'`, and v7 snapshots retain their lines
@@ -754,18 +787,20 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   text, while the unchanged Home control exposes that exact string as its
   accessibilityLabel and renders a numeric summary. The assertion now checks
   the existing accessible label directly; Home screen source is unchanged.
-- DEC-BUDGET-DIRECTION: Done. P20-N completed the planned visual overview and
-  P20-O completed the item editor and budget-aware category picker.
-  Budget is a forward-looking plan of recurring income, bills, investments,
-  and loans arranged in sections. It is created once from the Edit button and
+- DEC-BUDGET-DIRECTION: Done. P20-N completed the visual overview, P20-O the
+  item editor and budget-aware category picker, and P20-P user-managed
+  sections/items with custom transaction categories. Budget is a forward-
+  looking plan of recurring income, bills and investments arranged in
+  sections. It is created once from the Edit button and
   flows into future months and into Transactions as due items. Actual spending
   is recorded in Transactions by selecting a budget item. Budget is a visual
   plan-versus-actual overview, not a transaction list, with three charts and
   equivalent text: an income/spend/invest/left stacked bar, planned versus
-  actual bars per section, and a month-pace line. Loans, SIPs, and policies
+  actual bars per section, and a month-pace line. Liabilities, SIPs and policies
   appear automatically. The plan includes income items with name, amount,
-  and day of month that create "Received" dues. Fixed categories may be
-  extended now; custom items come later. Budget has no pay buttons; paying is
+  and day of month that create "Received" dues. Custom sections and items are
+  part of schema v10; this phase wires domain/store/transaction behavior, and
+  the next UI phase adds their management controls. Budget has no pay buttons; paying is
   done in Transactions and Home. Each item shows its title, spent/planned
   amount (for example, "1,000 / 12,000"), and an `edit-2` action opening a
   small sheet for planned amount, due day, and "this month only" or "this and
@@ -845,6 +880,24 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   (day 15) as its two plan incomes. A custom snapshot two months ahead changes
   the Food amount/day and Freelance amount/day, demonstrating month-only
   overrides without changing the continuing virtual plan.
+- DEC-P20P-CR60-61: v9 backups verify checksum over data as written, then pass
+  through the migration chain to schema v10; persisted v9 raw bytes are
+  archived once as `.premigration.v9`. Item/category names are exact strings,
+  with case-insensitive uniqueness and immutable transactions. Store mutations
+  use one pure data action, one Zustand `set`, and one persisted write; Undo
+  restores deep-equal state. Category choices use effective sections/items for
+  the selected month, with budgeted categories first. Transactions and Home
+  retain categories after an item is removed; unknown investment names are
+  treated as custom rather than folded into Other investments. Replaced
+  assertions: schema-v9 fixed `lines` snapshots become schema-v10 frozen
+  `sections`/`items`; fixed-category rejection becomes valid custom-category
+  validation; category mapping of unknown investment labels to Other
+  investments becomes retention as an unbudgeted custom string. Reasons:
+  v10 makes user-managed item names valid transaction categories and requires
+  deletion never to rewrite a recorded category. Device checks for true
+  persisted-v9 restoration and native category/filter layout remain unverified.
+- DEC-P20P-DEMO: Deterministic demo data contains a Pets section with Pet care,
+  a Domestic help item in Survival, and a transaction in each category.
 - DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
   and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
   trailer). File
@@ -996,6 +1049,10 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   - `6cb4fa0` — `app/month-review.tsx`: removed Back to transactions action.
   In particular, no Back to Transactions button, Review control, or other
   removed Budget items were restored.
+  P20-P final audit confirms its only Budget-screen change adapts the existing
+  due-day lookup from lines to items; the user-owned Cash flow labels and
+  absence of Back to Transactions/Review remain unchanged. `SortChip.tsx`,
+  `src/lib/sorting.ts`, and frozen form input components remain untouched.
   Re-verified for P20-L/P21-D with
   `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`:
   `3c644d3` changes Budget and removes menu/template workflow, without
@@ -1568,6 +1625,7 @@ evidence present in exports/checkpoints.
 | P20-M | Phase 20 | — | — | 2026-10-18 | Budget plan schema v9, v8 migration, derived future months, income dues, projected cash flow, and setup income editor (CR-52–CR-55). | Done; 71 suites/820 tests; all six final gates pass. Directory coverage: domain 99.04% lines/95.23% branches, data excluding hooks 95.34%/90.91%, lib 100%/100%. Real-device checks remain unverified. | Preflight `fabde34`; CR-52 `62d7a20`; CR-53–CR-55 `b5c6c7a`. | Assumed: see DEC-P20M-CR53-55. | current request |
 | P20-N | Phase 20 | — | — | 2026-10-18 | Rebuild Budget as a visual overview (CR-56–CR-57). | Done; 73 suites/828 tests; all six final gates exit 0. Device criteria remain unverified. | Preflight `9d72ab1`; model `e630a3d`; charts `cf876bb`; screen `530fccd`; cleanup `88154aa`; demo `d825c1e`; final closeout `9e48d83`. | Assumed: see DEC-BUDGET-SPEC. | current request |
 | P20-O | Phase 20 | — | — | 2026-10-18 | Budget item edit sheet and budget-aware category picker (CR-58–CR-59). | Done; 76 suites/848 tests; all six final gates exit 0. Domain 98.58% lines/93.61% branches, data excluding hooks 93.53%/87.57%, pure lib 100%/100%. Device checks remain unverified. | Preflight `c84215e`; CR-58 `509653e`; CR-59 `7a8a6cf`; demo/close-out commit included with this P20-O delivery. | Assumed: transaction dates extend through the 24-month budget horizon; see DEC-P20O-CR59. | current request |
+| P20-P | Phase 20 | — | — | 2026-10-18 | Schema-v10 user-managed budget sections/items, v9 migration, scoped actions and custom-category integration (CR-60–CR-61). | Done; 76 suites/865 tests; final coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. Device criteria remain unverified. | Preflight `1e4fdce`; implementation and ledger are included in this delivery. | Assumed: an ungrouped v9 category migrates into the first spend section; non-built-in investment category strings remain custom after item deletion. See DEC-BUDGET-V10 and DEC-P20P-CR60-61. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1643,6 +1701,8 @@ evidence present in exports/checkpoints.
 | CR-57 | Replace the Budget screen with stacked/section/pace charts, text equivalents, mode-specific edit routes and empty states while preserving user-owned labels and removals. | Done | Chart, screen, route, mode, demo and font-scale tests pass; all six final gates exit 0. Opening/Closing balance labels and absence of Budget Back/Review controls are preserved. |
 | CR-58 | Add a bottom-anchored budget-item edit sheet with month/following scope, amount/day validation, remove and Undo; materialize edited virtual months and preserve later custom snapshots. | Done | Domain, store single-write/deep-equal Undo, route and sheet tests cover both scopes, current/derived months, custom snapshots, income/line edits, removal and validation. |
 | CR-59 | Show budget-section grouped expense categories with selected-month remaining/over-budget hints; keep investments instrument-derived and show their hint. | Done | Grouping/order, no-budget/over-budget, date-change-to-future and derived-investment-hint tests pass; frozen ChoiceField and form components remain unchanged. |
+| CR-60 | Migrate schema v9 budget lines to v10 user-managed plan/month sections and items, preserving raw v9 bytes and importing older backups through the migration chain. | Done | `migrateV9ToV10`, v1-v9 checksum/migration tests, one-time `.premigration.v9` archive, schema-11 rejection and schema integrity validation pass. Unknown migrated categories fall back to the first spend section. |
+| CR-61 | Add scoped section/item domain and store mutations, then integrate custom categories through budget views, pending items, transaction validation/filtering/labels, Home summaries and category choices. | Done | Both scopes/current and derived months, later custom snapshot preservation, constraints, deletion without transaction mutation, one persisted write, Undo, dynamic category ordering and custom transaction round trips are covered. |
 
 ## 8. Known issues and risks
 
@@ -1983,6 +2043,98 @@ behavior on iOS/Android; category-picker spacing, readability and scrolling at
 font scales 1.3 and 2.0; screen-reader grouping/selection announcements; and
 the native date-picker experience through the 24-month horizon. TestRenderer
 checks props, tree content and callbacks only.
+
+#### P20-P final verification
+
+| Step | Status | Files / source evidence | Test / verification evidence |
+|---|---|---|---|
+| STEP 1 — Schema v10 and v9 migration (CR-60) | Done | `src/domain/types.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts` | `migrate.test.ts`: v9 plan lines and snapshots map to section items, unknown category falls back to Survival; `backup.test.ts`: checksum is verified on v9 bytes before migration and schema 11 is refused; `safeStorage.test.ts`/`createAppStore.test.ts`: raw v9 copy occurs once and erase removes it. |
+| STEP 2 — Scoped section/item domain actions (CR-60) | Done | `src/domain/budget.ts`, `src/domain/budgetGroups.ts` | `budget.test.ts`: frozen snapshots, virtual month materialization, both scopes, retained later custom snapshots, percent resolution, typed invalid-name/reserved-name/limit/value failures, cascade deletion and unchanged transactions. |
+| STEP 3 — Store and transaction integration (CR-61) | Done | `src/data/createAppStore.ts`, `src/domain/budget.ts`, `src/domain/budgetCategories.ts`, `src/domain/transactions.ts`, `src/domain/links.ts`, `src/domain/pending.ts`, `app/transaction-form.tsx`, `app/(tabs)/transactions.tsx`, `app/(tabs)/budget.tsx`, `app/budget-setup.tsx`, `app/budget-month-form.tsx` | `createAppStore.test.ts`: each managed mutation performs one persisted write and retains one-write/deep-equal Undo behavior; budget/category/selector/transaction tests cover user section order, custom category validation, linked rows, investment type inference, labels/filtering and retained categories after deleting their item. |
+| STEP 4 — Demo, ledger and gates | Done | `src/mock/demoData.ts`, `src/mock/data.ts`, demo and ledger tests, `docs/PROGRESS.md` | Demo carries Pets/Pet care and Survival/Domestic help transactions. Full suite 76/76, 865/865. All six final gates pass. |
+
+**Superseded assertions:** the v9 fixed `lines` snapshot shape is replaced by
+v10 section/item snapshots because user-defined items must persist by their
+category name; schema v10's former “newer version” rejection moves to v11;
+fixed transaction-category rejection is replaced by acceptance of item names
+in the effective transaction month; unknown investment names formerly grouped
+as “Other investments” remain custom/unbudgeted names so deleting a budget item
+never changes transaction identity. The P20-N section-card header-only and
+P20-M fixed-category setup constraints are superseded only as data/UI design
+constraints for the next screen-management part; this P20-P did not rebuild
+those screens.
+
+**Category-list/BUDGET_GROUPS grep audit (all 12 source/test hits):**
+
+- `app/budget-setup.tsx`: retained the existing setup surface; it still
+  presents seeded defaults, while custom-section/item management is explicitly
+  deferred to the next UI part.
+- `app/budget-month-form.tsx`: retained the existing month editor; its data
+  now uses item/section snapshots and preserves the P20-O scope behavior.
+- `app/transaction-form.tsx`: custom expense/invest item names in the selected
+  effective month validate; investment category remains instrument-derived.
+- `src/domain/budget.ts`: default sections, scoped mutations, effective
+  snapshots, totals and unbudgeted-category mapping use section/item records.
+- `src/domain/budgetCategories.ts`: groups choices from the effective month,
+  ordering planned item names first within each section.
+- `src/domain/budgetGroups.ts`: defines seeded defaults and category-to-section
+  mappings, including the v9 fallback.
+- `src/domain/schemas.ts`: validates built-ins plus unique, bounded budget
+  section/item names and valid stored snapshots.
+- `src/mock/demoData.ts`: demonstrates the Pets/Pet care custom category and
+  Domestic help in Survival, with a transaction for each.
+- `src/mock/__tests__/demoData.test.ts`: verifies custom demo sections/items
+  and associated transactions.
+- `src/data/__tests__/migrate.test.ts`: verifies v9 mapping and unmapped
+  category fallback.
+- `src/domain/__tests__/schemas.test.ts`: verifies built-in and selected-month
+  custom category validation and schema limits.
+- `src/domain/__tests__/budget.test.ts`: verifies scoped actions, categories,
+  reconciliation, custom deletion and fallback behavior.
+
+The first full-coverage run exited 1 because the ledger accidentally contained
+two P20-P prompt rows; the ledger was corrected without weakening assertions.
+The final required gates were then run sequentially:
+
+| Gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 76 suites / 865 tests passed; 95.93% statements, 92.43% branches, 97.64% functions, 97.79% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Per-directory coverage (covered/total; independent line and branch totals):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2,680/2,715 (98.71%) | 2,499/2,678 (93.32%) |
+| `src/data` excluding hooks | 542/582 (93.13%) | 504/581 (86.75%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Changed-source Istanbul summaries (statements / branches / functions / lines):
+
+| File | Statements | Branches | Functions | Lines |
+|---|---:|---:|---:|---:|
+| `src/data/createAppStore.ts` | 89.70% | 87.17% | 87.89% | 92.10% |
+| `src/data/migrate.ts` | 88.10% | 85.37% | 98.21% | 92.77% |
+| `src/data/safeStorage.ts` | 96.72% | 94.11% | 75.00% | 96.36% |
+| `src/domain/backup.ts` | 98.19% | 96.36% | 100.00% | 98.63% |
+| `src/domain/budget.ts` | 95.73% | 90.82% | 97.97% | 97.60% |
+| `src/domain/budgetCategories.ts` | 100.00% | 100.00% | 100.00% | 100.00% |
+| `src/domain/links.ts` | 96.35% | 92.41% | 100.00% | 96.85% |
+| `src/domain/pending.ts` | 96.55% | 95.00% | 91.66% | 98.48% |
+| `src/domain/schemas.ts` | 93.00% | 90.47% | 100.00% | 96.96% |
+| `src/domain/transactions.ts` | 100.00% | 100.00% | 100.00% | 100.00% |
+
+**P20-P acceptance criteria not verified on a real device:** hydrating an
+actual v9 file from device storage and confirming the archived bytes on both
+platforms; custom categories in the native transaction picker at font scales
+1.3 and 2.0, including scrolling and screen-reader announcements; and touch/
+layout behavior of section/item management UI, which is intentionally deferred
+to the next part. Automated tests cover schema, migration, props, data,
+callbacks and persistence behavior, not native device rendering.
 
 ### P18-R7 housekeeping
 

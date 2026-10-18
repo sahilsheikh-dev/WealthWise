@@ -8,6 +8,7 @@ import { filterTransactions, transactionCategoryLabel } from '../../domain/trans
 import { budgetMonthView } from '../../domain/budget';
 import { emptyAppData } from '../../domain/actions';
 import type { Holding, Transaction } from '../../domain/types';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 const mockData = { ...mockAppData, transactions: [] as Transaction[] };
 const mockState = { data: mockData, lastError: null as string | null };
@@ -264,12 +265,9 @@ describe('transaction add form', () => {
       mockData.holdings = [];
     }
     mockData.transactions = [];
-    mockData.monthBudgets = [{
-      month: '2026-10',
-      source: 'custom' as const,
+    mockData.monthBudgets = [monthBudgetFromLines('2026-10', [{ category, planned: 2_000 }], {
       incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
-      lines: [{ category, planned: 2_000 }],
-    }];
+    })];
     const base = emptyAppData('2026-10-01');
     mockData.efCustomBuckets = base.efCustomBuckets;
     mockData.efBucketLinks = base.efBucketLinks;
@@ -344,18 +342,14 @@ describe('transaction add form', () => {
       note: '',
       date: '2026-10-10',
     }];
-    mockData.budgetPlan = {
+    mockData.budgetPlan = budgetPlanFromLines([{ category: 'Rent', mode: 'amount', value: 1_500 }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Rent', mode: 'amount', value: 1_500 }],
       repeatMonthly: true,
       repeatFrom: '2026-11',
-    };
-    mockData.monthBudgets = [{
-      month: '2026-10',
-      source: 'custom',
+    });
+    mockData.monthBudgets = [monthBudgetFromLines('2026-10', [{ category: 'Rent', planned: 1_000 }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Rent', planned: 1_000 }],
-    }];
+    })];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
       await act(async () => { renderer = TestRenderer.create(<TransactionFormScreen />); });
@@ -412,18 +406,16 @@ describe('transaction add form', () => {
   it('keeps investment categories instrument-derived and shows the selected month budget hint', async () => {
     const previousPlan = mockData.budgetPlan;
     const previousBudgets = mockData.monthBudgets;
-    mockData.budgetPlan = {
+    mockData.budgetPlan = budgetPlanFromLines([{
+      category: 'Other investments', mode: 'amount', value: 5_000,
+    }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Other investments', mode: 'amount', value: 5_000 }],
-      repeatMonthly: false,
-      repeatFrom: null,
-    };
-    mockData.monthBudgets = [{
-      month: '2026-10',
-      source: 'custom',
+    });
+    mockData.monthBudgets = [monthBudgetFromLines('2026-10', [{
+      category: 'Other investments', planned: 5_000,
+    }], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      lines: [{ category: 'Other investments', planned: 5_000 }],
-    }];
+    })];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
       await act(async () => {

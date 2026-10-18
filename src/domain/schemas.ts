@@ -4,6 +4,7 @@ import { formatINR } from '../lib/format';
 import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
+import { budgetGroupFor } from './budgetGroups';
 import {
   EARNED_INCOME_CATEGORIES,
   THEME_IDS,
@@ -12,7 +13,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -50,7 +51,7 @@ const transactionSchema = z.object({
   id: idSchema,
   type: z.enum(['income', 'expense', 'invest']),
   amount: moneySchema.positive(),
-  category: z.string(),
+  category: z.string().max(60),
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
@@ -200,7 +201,6 @@ export const BUDGET_CATEGORIES = [
   'Other',
   ...investmentBudgetCategories,
 ] as const;
-const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
 const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
 const nonEarnedIncomeCategories = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 const budgetIncomeSchema = z.object({
@@ -211,72 +211,129 @@ const budgetIncomeSchema = z.object({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
-const budgetPlanLineSchema = z.object({
-  category: z.string().min(1).max(60),
+const budgetSectionSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(30).refine((name) => name === name.trim()),
+  type: z.enum(['spend', 'invest']),
+  system: z.enum(['income', 'debt', 'insurance']).optional(),
+}).superRefine((section, context) => {
+  const systemSections = {
+    income: { id: 'income', name: 'Income' },
+    debt: { id: 'debt-repayments', name: 'Debt repayments' },
+    insurance: { id: 'insurance', name: 'Insurance' },
+  } as const;
+  if (section.system) {
+    const expected = systemSections[section.system];
+    if (section.id !== expected.id || section.name !== expected.name || section.type !== 'spend') {
+      context.addIssue({ code: 'custom', path: [], message: 'System section identity and type cannot be changed' });
+    }
+  }
+});
+const budgetItemSchema = z.strictObject({
+  id: idSchema,
+  sectionId: idSchema,
+  name: z.string().min(1).max(30).refine((name) => name === name.trim()),
   mode: z.enum(['amount', 'percent']),
   value: moneySchema.min(0).max(1_000_000_000),
   dueDay: budgetDueDaySchema,
-}).superRefine((line, context) => {
-  if (line.mode === 'percent' && line.value > 100) {
+}).superRefine((item, context) => {
+  if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
   }
 });
 const budgetPlanSchema = z.object({
   incomes: z.array(budgetIncomeSchema).max(1000),
-  lines: z.array(budgetPlanLineSchema).max(1000),
+  sections: z.array(budgetSectionSchema).max(12),
+  items: z.array(budgetItemSchema).max(100),
   repeatMonthly: z.boolean(),
   repeatFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable(),
 }).superRefine((plan, context) => {
-  const seen = new Set<string>();
-  plan.lines.forEach((line, index) => {
-    if (line.category === 'EMI' || line.category === 'Insurance') {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Recurring liabilities and insurance are automatic budget items' });
-    }
-    if (!budgetCategorySet.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
-    if (seen.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
-    }
-    seen.add(line.category);
+  const sectionIds = new Set<string>();
+  const sectionNames = new Set<string>();
+  plan.sections.forEach((section, index) => {
+    if (sectionIds.has(section.id)) context.addIssue({ code: 'custom', path: ['sections', index, 'id'], message: 'Section IDs must be unique' });
+    if (sectionNames.has(section.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['sections', index, 'name'], message: 'Section names must be unique' });
+    sectionIds.add(section.id);
+    sectionNames.add(section.name.toLowerCase());
   });
+  const systemIds = new Set(plan.sections.filter((section) => section.system).map((section) => section.id));
+  const itemIds = new Set<string>();
+  const itemNames = new Set<string>();
+  const itemCounts = new Map<string, number>();
+  plan.items.forEach((item, index) => {
+    if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
+    if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
+    if (itemNames.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
+    if (systemIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
+    itemIds.add(item.id);
+    itemNames.add(item.name.toLowerCase());
+    itemCounts.set(item.sectionId, (itemCounts.get(item.sectionId) ?? 0) + 1);
+  });
+  for (const [sectionId, count] of itemCounts) {
+    if (count > 40) context.addIssue({ code: 'custom', path: ['items'], message: `Section ${sectionId} exceeds 40 items` });
+  }
+  const duplicateSystemSections = plan.sections.filter((section) => section.system)
+    .map((section) => section.system);
+  if (new Set(duplicateSystemSections).size !== duplicateSystemSections.length) {
+    context.addIssue({ code: 'custom', path: ['sections'], message: 'System sections must be unique' });
+  }
 });
 const monthBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   source: z.enum(['plan', 'custom']),
   incomes: z.array(budgetIncomeSchema).max(1000),
+  sections: z.array(budgetSectionSchema).max(12),
+  items: z.array(budgetItemSchema).max(100),
   linkedIncluded: z.boolean().optional(),
-  lines: z.array(z.object({
-    category: z.string().min(1).max(60),
-    planned: moneySchema.min(0).max(1_000_000_000),
-    dueDay: budgetDueDaySchema,
-  })).max(1000),
 }).superRefine((budget, context) => {
-  const seen = new Set<string>();
-  budget.lines.forEach((line, index) => {
-    if (!budgetCategorySet.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
-    if (seen.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
-    }
-    seen.add(line.category);
+  const sectionIds = new Set<string>();
+  const sectionNames = new Set<string>();
+  const sectionSystemIds = new Set<string>();
+  budget.sections.forEach((section, index) => {
+    if (sectionIds.has(section.id)) context.addIssue({ code: 'custom', path: ['sections', index, 'id'], message: 'Section IDs must be unique' });
+    if (sectionNames.has(section.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['sections', index, 'name'], message: 'Section names must be unique' });
+    sectionIds.add(section.id);
+    sectionNames.add(section.name.toLowerCase());
+    if (section.system) sectionSystemIds.add(section.id);
   });
+  const names = new Set<string>();
+  const ids = new Set<string>();
+  const itemCounts = new Map<string, number>();
+  budget.items.forEach((item, index) => {
+    if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
+    if (ids.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
+    if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
+    if (sectionSystemIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
+    }
+    ids.add(item.id);
+    names.add(item.name.toLowerCase());
+    itemCounts.set(item.sectionId, (itemCounts.get(item.sectionId) ?? 0) + 1);
+  });
+  for (const [sectionId, count] of itemCounts) {
+    if (count > 40) context.addIssue({ code: 'custom', path: ['items'], message: `Section ${sectionId} exceeds 40 items` });
+  }
+  const systems = budget.sections.filter((section) => section.system).map((section) => section.system);
+  if (new Set(systems).size !== systems.length) {
+    context.addIssue({ code: 'custom', path: ['sections'], message: 'System sections must be unique' });
+  }
 });
 const budgetSchema = z.object({
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
   lines: z.array(z.object({
-    category: z.string(),
+    category: z.string().min(1).max(60),
     planned: moneySchema.min(0).max(1_000_000_000),
     dueDay: budgetDueDaySchema,
   })).default([]),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
-  const allowed = new Set<string>(BUDGET_CATEGORIES);
   budget.lines.forEach((line, index) => {
-    if (!allowed.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
     if (seen.has(line.category)) {
       context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
     }
@@ -413,6 +470,7 @@ export function makeTransactionFormSchema(
     withdrawable: Record<string, number>;
     mode: 'create' | 'edit-unlinked' | 'edit-linked';
     allowUnlinkedInvestment?: boolean;
+    budgetCategoriesForMonth?: (type: 'expense' | 'invest', date: ISODate) => readonly string[];
   } = { instruments: [], withdrawable: {}, mode: 'create' },
 ) {
   const latestMonth = shiftMonth(monthKey(today), 24);
@@ -426,9 +484,13 @@ export function makeTransactionFormSchema(
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
   }).superRefine((value, context) => {
     const allowedCategories: readonly string[] = TRANSACTION_CATEGORIES[value.type];
+    const customBudgetCategories = value.type === 'income'
+      ? []
+      : options.budgetCategoriesForMonth?.(value.type, value.date) ?? [];
     if (
       !allowedCategories.includes(value.category) &&
-      !legacyCategories[value.type]?.includes(value.category)
+      !legacyCategories[value.type]?.includes(value.category) &&
+      !customBudgetCategories.includes(value.category)
     ) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
     }

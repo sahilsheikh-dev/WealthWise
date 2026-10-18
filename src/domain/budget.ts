@@ -6,9 +6,12 @@ import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import { EARNED_INCOME_CATEGORIES } from './types';
 import { formatINR } from '../lib/format';
+import { BUDGET_GROUPS, budgetGroupFor, type BudgetGroup } from './budgetGroups';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
+  BudgetItem,
+  BudgetSection,
   EarnedIncomeCategory,
   BudgetIncomeItem,
   BudgetLine,
@@ -18,6 +21,7 @@ import type {
   Transaction,
 } from './types';
 export { BUDGET_CATEGORIES };
+const BUILT_IN_BUDGET_CATEGORY_SET = new Set<string>(BUDGET_CATEGORIES);
 
 export type BudgetCommitment = {
   kind: 'plan' | 'liability' | 'policy';
@@ -42,51 +46,29 @@ export type LinkedRecurringRow = {
   status: BudgetCommitment['status'];
 };
 
-export type BudgetGroup = {
-  id: 'survival' | 'savings-investments' | 'wants' | 'festival-donations-culture' | 'unexpected-extras';
-  name: string;
-  hint: string;
-  weight: number;
-  categories: readonly string[];
-};
+export { BUDGET_GROUPS, budgetGroupFor };
+export type { BudgetGroup };
 
-export const BUDGET_GROUPS: readonly BudgetGroup[] = [
-  {
-    id: 'survival',
-    name: 'Survival (Needs)',
-    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education, EMI and insurance.',
-    weight: 50,
-    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
-  },
-  {
-    id: 'savings-investments',
-    name: 'Savings and Investments',
-    hint: 'Savings and every investment category.',
-    weight: 20,
-    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'],
-  },
-  {
-    id: 'wants',
-    name: 'Wants',
-    hint: 'Non-essential or lifestyle spending: subscriptions, personal spending, travel, eating out, online shopping, entertainment and fashion.',
-    weight: 15,
-    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel'],
-  },
-  {
-    id: 'festival-donations-culture',
-    name: 'Festival, Donations, Culture',
-    hint: 'Festival, donation, gifts and culture-related spending.',
-    weight: 5,
-    categories: ['Festival', 'Donation', 'Gifts', 'Culture'],
-  },
-  {
-    id: 'unexpected-extras',
-    name: 'Unexpected Extras',
-    hint: 'Surprises and emergencies: medical bills, home or vehicle repairs, or sudden gifts.',
-    weight: 10,
-    categories: ['Unexpected'],
-  },
+const SYSTEM_BUDGET_SECTIONS: readonly BudgetSection[] = [
+  { id: 'income', name: 'Income', type: 'spend', system: 'income' },
+  { id: 'debt-repayments', name: 'Debt repayments', type: 'spend', system: 'debt' },
+  { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
 ];
+
+export function defaultBudgetSections(): BudgetSection[] {
+  return [
+    ...BUDGET_GROUPS.map((group) => ({
+      id: group.id,
+      name: group.name,
+      type: group.id === 'savings-investments' ? 'invest' as const : 'spend' as const,
+    })),
+    ...SYSTEM_BUDGET_SECTIONS.map((section) => ({ ...section })),
+  ];
+}
+
+export function defaultBudgetSectionIdFor(category: string): string {
+  return budgetGroupFor(category)?.id ?? 'survival';
+}
 
 export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   survival: { Living: 20, Rent: 5, Utilities: 5, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 5, Insurance: 5 },
@@ -104,10 +86,6 @@ export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<st
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
-export function budgetGroupFor(category: string): BudgetGroup | undefined {
-  return BUDGET_GROUPS.find((group) => group.categories.includes(category));
-}
-
 function isEarnedIncomeCategory(category: string): category is EarnedIncomeCategory {
   return (EARNED_INCOME_CATEGORIES as readonly string[]).includes(category);
 }
@@ -116,10 +94,33 @@ function isInvestmentCategory(category: string): boolean {
   return INVESTMENT_CATEGORIES.has(category);
 }
 
-function budgetCategoryForTransaction(transaction: Transaction): string {
+function isInvestmentCategoryForBudget(
+  budget: Pick<MonthBudget, 'sections' | 'items'> | null,
+  category: string,
+): boolean {
+  const item = budget?.items.find((row) => row.name === category);
+  if (item) return budget?.sections.find((section) => section.id === item.sectionId)?.type === 'invest';
+  return defaultBudgetSectionIdFor(category) === 'savings-investments' || isInvestmentCategory(category);
+}
+
+function budgetCategoryForTransaction(transaction: Transaction, customCategories: ReadonlySet<string> = new Set()): string {
   return transaction.type === 'invest' && !INVESTMENT_CATEGORIES.has(transaction.category)
+    && !customCategories.has(transaction.category)
     ? 'Other investments'
     : transaction.category;
+}
+
+export function customBudgetCategories(data: AppData): ReadonlySet<string> {
+  return new Set([
+    ...(data.budgetPlan?.items.map((item) => item.name) ?? []),
+    ...(data.monthBudgets ?? []).flatMap((budget) => budget.items.map((item) => item.name)),
+    ...data.transactions
+      .filter((transaction) =>
+        (transaction.type === 'expense' || transaction.type === 'invest')
+        && !BUILT_IN_BUDGET_CATEGORY_SET.has(transaction.category),
+      )
+      .map((transaction) => transaction.category),
+  ]);
 }
 
 function monthOf(month: string): string {
@@ -237,10 +238,16 @@ export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] })
 }
 
 export function resolveBudgetPlan(
-  plan: Pick<BudgetPlan, 'incomes' | 'lines'>,
+  plan: Pick<BudgetPlan, 'incomes' | 'sections' | 'items'>,
   plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
 ): BudgetLine[] {
-  return plan.lines.map((line) => {
+  return plan.items.map((item) => {
+    const line = {
+      category: item.name,
+      mode: item.mode,
+      value: item.value,
+      dueDay: item.dueDay,
+    };
     if (line.mode === 'amount') {
       return {
         category: line.category,
@@ -313,9 +320,18 @@ export function applyBudgetPlanToMonth(
   const plan = data.budgetPlan;
   if (!plan) return data;
   const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
-  const lines = resolveBudgetPlan(plan, plannedIncome);
+  const lines = new Map(resolveBudgetPlan(plan, plannedIncome).map((line) => [line.category, line]));
   return replaceMonth(data, {
-    month, source: 'plan', incomes: plan.incomes.map((income) => ({ ...income })), lines, linkedIncluded: true,
+    month,
+    source: 'plan',
+    incomes: plan.incomes.map((income) => ({ ...income })),
+    sections: plan.sections.map((section) => ({ ...section })),
+    items: plan.items.map((item) => ({
+      ...item,
+      mode: 'amount' as const,
+      value: lines.get(item.name)?.planned ?? 0,
+    })),
+    linkedIncluded: true,
   });
 }
 
@@ -335,7 +351,7 @@ export function effectiveMonthBudget(
     || month <= currentMonth || month < plan.repeatFrom || monthDistance > 24) {
     return { budget: null, virtual: false };
   }
-  if (plan.incomes.length === 0 && plan.lines.some((line) => line.mode === 'percent')) {
+  if (plan.incomes.length === 0 && plan.items.some((item) => item.mode === 'percent')) {
     return { budget: null, virtual: false };
   }
   const lines = resolveBudgetPlan(plan);
@@ -344,7 +360,12 @@ export function effectiveMonthBudget(
       month,
       source: 'plan',
       incomes: plan.incomes.map((income) => ({ ...income })),
-      lines,
+      sections: plan.sections.map((section) => ({ ...section })),
+      items: plan.items.map((item) => ({
+        ...item,
+        mode: 'amount',
+        value: lines.find((line) => line.category === item.name)?.planned ?? 0,
+      })),
       linkedIncluded: true,
     },
     virtual: true,
@@ -380,18 +401,21 @@ function updateBudgetItemInMonth(
   remove: boolean,
 ): MonthBudget {
   if (source.kind === 'line') {
-    const exists = budget.lines.some((line) => line.category === source.category);
-    const nextLine = {
-      category: source.category,
-      planned: values.amount,
+    const existing = budget.items.find((item) => item.name === source.category);
+    const nextItem: BudgetItem = {
+      id: existing?.id ?? `item:${source.category}`,
+      sectionId: existing?.sectionId ?? defaultBudgetSectionIdFor(source.category),
+      name: source.category,
+      mode: 'amount',
+      value: values.amount,
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
-    const lines = remove
-      ? budget.lines.filter((line) => line.category !== source.category)
-      : exists
-        ? budget.lines.map((line) => line.category === source.category ? nextLine : line)
-        : [...budget.lines, nextLine];
-    return { ...budget, lines };
+    const items = remove
+      ? budget.items.filter((item) => item.name !== source.category)
+      : existing
+        ? budget.items.map((item) => item.name === source.category ? nextItem : item)
+        : [...budget.items, nextItem];
+    return { ...budget, items };
   }
 
   const existing = budget.incomes.find((income) => income.id === source.incomeId);
@@ -419,12 +443,8 @@ function updateIncomeValues(income: BudgetIncomeItem, values: BudgetItemValues):
 function snapshotAsPlan(budget: MonthBudget): BudgetPlan {
   return {
     incomes: budget.incomes.map((income) => ({ ...income })),
-    lines: budget.lines.map((line) => ({
-      category: line.category,
-      mode: 'amount',
-      value: line.planned,
-      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
-    })),
+    sections: budget.sections.map((section) => ({ ...section })),
+    items: budget.items.map((item) => ({ ...item })),
     repeatMonthly: false,
     repeatFrom: null,
   };
@@ -438,19 +458,21 @@ function updateBudgetItemInPlan(
   base: MonthBudget,
 ): BudgetPlan {
   if (source.kind === 'line') {
-    const exists = plan.lines.some((line) => line.category === source.category);
-    const nextLine = {
-      category: source.category,
-      mode: 'amount' as const,
+    const existing = plan.items.find((item) => item.name === source.category);
+    const nextItem: BudgetItem = {
+      id: existing?.id ?? `item:${source.category}`,
+      sectionId: existing?.sectionId ?? defaultBudgetSectionIdFor(source.category),
+      name: source.category,
+      mode: 'amount',
       value: values.amount,
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
-    const lines = remove
-      ? plan.lines.filter((line) => line.category !== source.category)
-      : exists
-        ? plan.lines.map((line) => line.category === source.category ? nextLine : line)
-        : [...plan.lines, nextLine];
-    return { ...plan, lines };
+    const items = remove
+      ? plan.items.filter((item) => item.name !== source.category)
+      : existing
+        ? plan.items.map((item) => item.name === source.category ? nextItem : item)
+        : [...plan.items, nextItem];
+    return { ...plan, items };
   }
 
   const inPlan = plan.incomes.some((income) => income.id === source.incomeId);
@@ -532,6 +554,284 @@ export function removeBudgetItem(
   return updateBudgetItem(data, month, source, { amount: 0 }, scope, today, true);
 }
 
+export type BudgetMutationErrorCode =
+  | 'invalid-name'
+  | 'duplicate-name'
+  | 'reserved-category'
+  | 'section-not-found'
+  | 'system-section'
+  | 'section-not-empty'
+  | 'item-not-found'
+  | 'item-limit'
+  | 'section-limit'
+  | 'invalid-item';
+
+export class BudgetMutationError extends Error {
+  constructor(readonly code: BudgetMutationErrorCode, message: string) {
+    super(message);
+    this.name = 'BudgetMutationError';
+  }
+}
+
+export type BudgetSectionInput = Pick<BudgetSection, 'name' | 'type'> & { id: string };
+export type BudgetItemInput = BudgetItem;
+export type BudgetItemPatch = {
+  name?: string;
+  mode?: BudgetItem['mode'];
+  value?: number;
+  dueDay?: number | null;
+};
+
+function validateStructuralItemValues(
+  mode: BudgetItem['mode'],
+  value: number,
+  dueDay: number | undefined,
+): number {
+  if (!Number.isFinite(value) || value < 0 || value > 1_000_000_000
+    || (mode === 'percent' && value > 100)
+    || (dueDay !== undefined && (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid amount, percentage, and due day.');
+  }
+  return normalizeMoney(value);
+}
+
+function validateBudgetName(name: string): string {
+  const trimmed = name.trim();
+  if (trimmed.length < 1 || trimmed.length > 30 || trimmed !== name) {
+    throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
+  }
+  return trimmed;
+}
+
+function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void {
+  if (sections.length > 12) throw new BudgetMutationError('section-limit', 'A budget can have at most 12 sections.');
+  if (items.length > 100) throw new BudgetMutationError('item-limit', 'A budget can have at most 100 items.');
+  const sectionIds = new Set<string>();
+  const sectionNames = new Set<string>();
+  for (const section of sections) {
+    if (!section.id || section.name.trim() !== section.name || section.name.length < 1 || section.name.length > 30) {
+      throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
+    }
+    if (sectionIds.has(section.id) || sectionNames.has(section.name.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Section names and IDs must be unique.');
+    }
+    sectionIds.add(section.id);
+    sectionNames.add(section.name.toLowerCase());
+  }
+  const itemNames = new Set<string>();
+  const itemIds = new Set<string>();
+  const itemCounts = new Map<string, number>();
+  for (const item of items) {
+    if (!item.id || item.name.trim() !== item.name || item.name.length < 1 || item.name.length > 30) {
+      throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
+    }
+    if (!sectionIds.has(item.sectionId)) {
+      throw new BudgetMutationError('section-not-found', 'Choose an existing section for each budget item.');
+    }
+    const section = sections.find((row) => row.id === item.sectionId);
+    if (section?.system) throw new BudgetMutationError('system-section', 'System sections cannot contain editable budget items.');
+    if (itemIds.has(item.id) || itemNames.has(item.name.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Budget item names and IDs must be unique.');
+    }
+    const builtInSection = budgetGroupFor(item.name);
+    if (builtInSection && builtInSection.id !== item.sectionId) {
+      throw new BudgetMutationError('reserved-category', `${item.name} belongs to ${builtInSection.name}.`);
+    }
+    itemIds.add(item.id);
+    itemNames.add(item.name.toLowerCase());
+    itemCounts.set(item.sectionId, (itemCounts.get(item.sectionId) ?? 0) + 1);
+  }
+  if ([...itemCounts.values()].some((count) => count > 40)) {
+    throw new BudgetMutationError('item-limit', 'A section can have at most 40 items.');
+  }
+}
+
+function mutateBudgetStructure(
+  data: AppData,
+  monthInput: string,
+  scope: BudgetItemScope,
+  today: ISODate,
+  update: (sections: BudgetSection[], items: BudgetItem[]) => { sections: BudgetSection[]; items: BudgetItem[] },
+): AppData {
+  const month = monthOf(monthInput);
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
+  const stored = monthRows(data).find((row) => row.month === month);
+  if (scope === 'month') {
+    const changed = update(budget.sections, budget.items);
+    validateStructure(changed.sections, changed.items);
+    return replaceMonth(data, { ...budget, ...changed, source: 'custom' });
+  }
+  const basePlan = data.budgetPlan ?? snapshotAsPlan(budget);
+  const planChange = update(basePlan.sections, basePlan.items);
+  validateStructure(planChange.sections, planChange.items);
+  if (!stored) return { ...data, budgetPlan: { ...basePlan, ...planChange } };
+  const snapshotChange = update(stored.sections, stored.items);
+  validateStructure(snapshotChange.sections, snapshotChange.items);
+  return {
+    ...data,
+    budgetPlan: { ...basePlan, ...planChange },
+    monthBudgets: monthRows(data).map((row) => row.month === month
+      ? { ...row, ...snapshotChange }
+      : row),
+  };
+}
+
+export function addSection(
+  data: AppData,
+  month: string,
+  input: BudgetSectionInput,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const name = validateBudgetName(input.name);
+  if (!input.id) throw new BudgetMutationError('invalid-name', 'A section ID is required.');
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    if (sections.some((section) => section.name.toLowerCase() === name.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Section names must be unique.');
+    }
+    return { sections: [...sections, { id: input.id, name, type: input.type }], items };
+  });
+}
+
+export function renameSection(
+  data: AppData,
+  month: string,
+  input: { sectionId: string; name: string },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const name = validateBudgetName(input.name);
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    const target = sections.find((section) => section.id === input.sectionId);
+    if (!target) throw new BudgetMutationError('section-not-found', 'The budget section no longer exists.');
+    if (target.system) throw new BudgetMutationError('system-section', 'System sections cannot be renamed.');
+    if (sections.some((section) => section.id !== target.id && section.name.toLowerCase() === name.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Section names must be unique.');
+    }
+    return { sections: sections.map((section) => section.id === target.id ? { ...section, name } : section), items };
+  });
+}
+
+export function changeSectionType(
+  data: AppData,
+  month: string,
+  input: { sectionId: string; type: BudgetSection['type'] },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    const target = sections.find((section) => section.id === input.sectionId);
+    if (!target) throw new BudgetMutationError('section-not-found', 'The budget section no longer exists.');
+    if (target.system) throw new BudgetMutationError('system-section', 'System section types cannot be changed.');
+    if (items.some((item) => item.sectionId === target.id)) {
+      throw new BudgetMutationError('section-not-empty', 'Change section type only after removing its items.');
+    }
+    return { sections: sections.map((section) => section.id === target.id ? { ...section, type: input.type } : section), items };
+  });
+}
+
+export function deleteSection(
+  data: AppData,
+  month: string,
+  input: { sectionId: string },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    const target = sections.find((section) => section.id === input.sectionId);
+    if (!target) throw new BudgetMutationError('section-not-found', 'The budget section no longer exists.');
+    if (target.system) throw new BudgetMutationError('system-section', 'System sections cannot be deleted.');
+    return {
+      sections: sections.filter((section) => section.id !== target.id),
+      items: items.filter((item) => item.sectionId !== target.id),
+    };
+  });
+}
+
+export function addItem(
+  data: AppData,
+  month: string,
+  input: BudgetItemInput,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const name = validateBudgetName(input.name);
+  const value = validateStructuralItemValues(input.mode, input.value, input.dueDay);
+  if (!input.id) throw new BudgetMutationError('invalid-item', 'An item ID is required.');
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    if (items.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
+    }
+    return { sections, items: [...items, { ...input, name, value }] };
+  });
+}
+
+export function editItem(
+  data: AppData,
+  month: string,
+  input: { itemId: string; patch: BudgetItemPatch },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const requestedItem = effectiveMonthBudget(data, month, today).budget?.items
+    .find((item) => item.id === input.itemId);
+  if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
+  const name = input.patch.name === undefined ? undefined : validateBudgetName(input.patch.name);
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    const target = items.find((item) => item.id === input.itemId)
+      ?? items.find((item) => item.name === requestedItem.name);
+    if (!target) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
+    const nextName = name ?? target.name;
+    const nextMode = input.patch.mode ?? target.mode;
+    const nextValue = input.patch.value ?? target.value;
+    const nextDueDay = input.patch.dueDay === null
+      ? undefined
+      : input.patch.dueDay ?? target.dueDay;
+    const normalizedValue = validateStructuralItemValues(nextMode, nextValue, nextDueDay);
+    if (items.some((item) => item.id !== target.id && item.name.toLowerCase() === nextName.toLowerCase())) {
+      throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
+    }
+    const section = sections.find((row) => row.id === target.sectionId);
+    const builtInSection = budgetGroupFor(nextName);
+    if (builtInSection && builtInSection.id !== section?.id) {
+      throw new BudgetMutationError('reserved-category', `${nextName} belongs to ${builtInSection.name}.`);
+    }
+    return {
+      sections,
+      items: items.map((item) => item.id !== target.id ? item : {
+        ...item,
+        ...(name === undefined ? {} : { name }),
+        ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
+        ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
+        ...(input.patch.dueDay === undefined ? {} : input.patch.dueDay === null
+          ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
+          : { dueDay: input.patch.dueDay }),
+      }),
+    };
+  });
+}
+
+export function deleteItem(
+  data: AppData,
+  month: string,
+  input: { itemId: string },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const requestedItem = effectiveMonthBudget(data, month, today).budget?.items
+    .find((item) => item.id === input.itemId);
+  if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
+  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    const target = items.find((item) => item.id === input.itemId)
+      ?? items.find((item) => item.name === requestedItem.name);
+    if (!target) {
+      throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
+    }
+    return { sections, items: items.filter((item) => item.name !== requestedItem.name) };
+  });
+}
+
 export function saveAndApplyBudgetPlan(
   data: AppData,
   plan: BudgetPlan,
@@ -545,16 +845,44 @@ export function customizeMonthBudget(
   data: AppData,
   monthInput: string,
   input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] },
+  today: ISODate,
 ): AppData {
   const month = monthOf(monthInput);
   const stored = monthRows(data).find((row) => row.month === month);
-  const baseLines = stored?.lines ?? [];
-  const base = stored ?? { month, source: 'custom' as const, incomes: input.incomes, lines: baseLines };
+  const base = stored ?? effectiveMonthBudget(data, month, today).budget ?? {
+    month,
+    source: 'custom' as const,
+    incomes: input.incomes,
+    sections: defaultBudgetSections(),
+    items: [],
+  };
+  const lines = input.lines ?? base.items.map((item) => ({
+    category: item.name,
+    planned: item.value,
+    ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+  }));
+  const lineCategories = new Set(lines.map((line) => line.category));
+  const retainedCustomItems = base.items.filter((item) =>
+    !lineCategories.has(item.name) && !BUILT_IN_BUDGET_CATEGORY_SET.has(item.name),
+  );
   return replaceMonth(data, {
     ...base,
     source: 'custom',
     incomes: input.incomes.map((income) => ({ ...income })),
-    lines: input.lines ?? baseLines,
+    items: [
+      ...lines.map((line) => {
+      const existing = base.items.find((item) => item.name === line.category);
+      return {
+        id: existing?.id ?? `item:${line.category}`,
+        sectionId: existing?.sectionId ?? defaultBudgetSectionIdFor(line.category),
+        name: line.category,
+        mode: 'amount' as const,
+        value: line.planned,
+        ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+      };
+      }),
+      ...retainedCustomItems,
+    ],
   });
 }
 
@@ -594,7 +922,7 @@ export function ensureCurrentMonthBudget(data: AppData, today: ISODate, newId: (
   const plan = data.budgetPlan;
   if (!plan || !plan.repeatMonthly || plan.repeatFrom === null || plan.repeatFrom > month
     || monthRows(data).some((row) => row.month === month)) return data;
-  if (plan.incomes.length === 0 && plan.lines.some((line) => line.mode === 'percent')) return data;
+  if (plan.incomes.length === 0 && plan.items.some((item) => item.mode === 'percent')) return data;
   return applyBudgetPlanToMonth(data, month, { newId, today });
 }
 
@@ -614,9 +942,10 @@ export function outstandingAt(data: AppData, asOf: ISODate): OutstandingSummary 
 }
 
 export function budgetLineActual(data: AppData, month: string, category: string): number {
+  const customCategories = customBudgetCategories(data);
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
-    && budgetCategoryForTransaction(row) === category
+    && budgetCategoryForTransaction(row, customCategories) === category
     && (row.type === 'expense' || row.type === 'invest'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }
@@ -636,10 +965,10 @@ export type BudgetMonthView = {
   };
   otherMoneyIn: number;
   lines: { category: string; planned: number; actual: number; remaining: number; usedPct: number | null; status: 'ok' | 'near' | 'over' }[];
-  unbudgetedByGroup: { groupId: BudgetGroup['id']; groupName: string; amount: number }[];
+  unbudgetedByGroup: { groupId: string; groupName: string; amount: number }[];
   commitments: BudgetCommitment[];
   linkedByCategory?: { category: string; rows: LinkedRecurringRow[] }[];
-  groupTotals?: { groupId: BudgetGroup['id']; groupName: string; planned: number }[];
+  groupTotals?: { groupId: string; groupName: string; planned: number }[];
   plannedSpend: number;
   actualSpend: number;
   plannedSave: number;
@@ -656,7 +985,10 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
   const commitments = monthlyCommitments(data, key);
   const includeLinked = budget?.linkedIncluded === true;
   const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
-  const planned = new Map((budget?.lines ?? []).map((line) => [line.category, line.planned]));
+  const plannedLines = budget
+    ? resolveBudgetPlan({ incomes: budget.incomes, sections: budget.sections, items: budget.items })
+    : [];
+  const planned = new Map(plannedLines.map((line) => [line.category, line.planned]));
   if (includeLinked) {
     for (const row of linkedRows) {
       planned.set(row.category, (planned.get(row.category) ?? 0) + row.amount);
@@ -668,10 +1000,12 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
         .reduce((sum, item) => sum + item.plannedAmount, 0);
       if (amount > 0) planned.set(category, amount);
     }
-    for (const category of INVESTMENT_CATEGORIES) {
-      const amount = commitments.filter((item) => item.category === category)
-        .reduce((sum, item) => sum + item.plannedAmount, 0);
-      if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+    for (const item of commitments) {
+      if (item.category === 'EMI' || item.category === 'Insurance'
+        || !isInvestmentCategoryForBudget(budget, item.category)) continue;
+      const amount = commitments.filter((row) => row.category === item.category)
+        .reduce((sum, row) => sum + row.plannedAmount, 0);
+      if (amount > 0) planned.set(item.category, Math.max(planned.get(item.category) ?? 0, amount));
     }
   }
   const lines = [...planned].map(([category, amount]) => {
@@ -688,39 +1022,57 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
   const actualSave = data.transactions.filter((row) =>
     monthKey(row.date) === key && row.type === 'invest',
   ).reduce((sum, row) => sum + row.amount, 0);
-  const plannedSpend = lines.filter((line) => !isInvestmentCategory(line.category))
+  const plannedSpend = lines.filter((line) => !isInvestmentCategoryForBudget(budget, line.category))
     .reduce((sum, line) => sum + line.planned, 0);
-  const plannedSave = lines.filter((line) => isInvestmentCategory(line.category))
+  const plannedSave = lines.filter((line) => isInvestmentCategoryForBudget(budget, line.category))
     .reduce((sum, line) => sum + line.planned, 0);
   const linkedByCategory = includeLinked
-    ? BUDGET_CATEGORIES.flatMap((category) => {
-      const rows = linkedRows.filter((row) => row.category === category);
-      return rows.length === 0 ? [] : [{ category, rows }];
-    })
+    ? [...new Set(linkedRows.map((row) => row.category))].map((category) => ({
+      category,
+      rows: linkedRows.filter((row) => row.category === category),
+    }))
     : [];
   const groupTotals = includeLinked
-    ? BUDGET_GROUPS.map((group) => ({
-      groupId: group.id,
-      groupName: group.name,
-      planned: lines.filter((line) => group.categories.includes(line.category))
+    ? budget.sections.filter((section) => section.system !== 'income').map((section) => ({
+      groupId: section.id,
+      groupName: section.name,
+      planned: lines.filter((line) => budget.items.some((item) => item.name === line.category && item.sectionId === section.id)
+        || (line.category === 'EMI' && section.system === 'debt')
+        || (line.category === 'Insurance' && section.system === 'insurance'))
         .reduce((sum, line) => sum + line.planned, 0),
     }))
     : [];
   const budgetCategories = new Set(lines.map((line) => line.category));
-  const unbudgetedAmounts = new Map<BudgetGroup['id'], number>();
+  const customCategories = customBudgetCategories(data);
+  const unbudgetedAmounts = new Map<string, number>();
   for (const row of data.transactions) {
     if (monthKey(row.date) !== key || (row.type !== 'expense' && row.type !== 'invest')) continue;
-    const category = budgetCategoryForTransaction(row);
+    const category = budgetCategoryForTransaction(row, customCategories);
     if (budgetCategories.has(category)) continue;
     const group = budgetGroupFor(category);
-    if (!group) throw new Error(`No budget group is defined for transaction category "${category}".`);
-    unbudgetedAmounts.set(group.id, (unbudgetedAmounts.get(group.id) ?? 0) + row.amount);
+    const itemSectionId = budget?.items.find((item) => item.name === category)?.sectionId
+      ?? data.budgetPlan?.items.find((item) => item.name === category)?.sectionId;
+    const sectionId = itemSectionId && budget?.sections.some((section) => section.id === itemSectionId)
+      ? itemSectionId
+      : group && budget?.sections.some((section) => section.id === group.id)
+        ? group.id
+        : 'other-not-in-budget';
+    unbudgetedAmounts.set(sectionId, (unbudgetedAmounts.get(sectionId) ?? 0) + row.amount);
   }
-  const unbudgetedByGroup = BUDGET_GROUPS.map((group) => ({
-    groupId: group.id,
-    groupName: group.name,
-    amount: unbudgetedAmounts.get(group.id) ?? 0,
-  }));
+  const unbudgetedByGroup = [
+    ...(budget?.sections ?? defaultBudgetSections())
+      .filter((section) => section.system === undefined || section.system === 'debt' || section.system === 'insurance')
+      .map((section) => ({
+    groupId: section.id,
+    groupName: section.name,
+    amount: unbudgetedAmounts.get(section.id) ?? 0,
+  })),
+    ...(unbudgetedAmounts.has('other-not-in-budget') ? [{
+      groupId: 'other-not-in-budget',
+      groupName: 'Other (not in budget)',
+      amount: unbudgetedAmounts.get('other-not-in-budget') ?? 0,
+    }] : []),
+  ];
   const unbudgeted = unbudgetedByGroup.reduce((sum, row) => sum + row.amount, 0);
   const currentPosition = monthPositionAt(data.transactions, key);
   const previousClosing = monthPositionAt(data.transactions, shiftMonth(key, -1)).closing;
@@ -844,23 +1196,20 @@ export type BudgetOverview = {
   summary: { stacked: string; sections: string; pace: string | null };
 };
 
-const OVERVIEW_SECTIONS = [
-  { id: 'income', name: 'Income' },
-  { id: 'survival', name: 'Survival (Needs)' },
-  { id: 'savings-investments', name: 'Savings and Investments' },
-  { id: 'wants', name: 'Wants' },
-  { id: 'festival-donations-culture', name: 'Festival, Donations, Culture' },
-  { id: 'unexpected-extras', name: 'Unexpected Extras' },
-  { id: 'debt-repayments', name: 'Debt repayments' },
-  { id: 'insurance', name: 'Insurance' },
-] as const;
-
-function overviewSectionFor(category: string): string {
-  if (category === 'EMI') return 'debt-repayments';
-  if (category === 'Insurance') return 'insurance';
+function overviewSectionFor(
+  category: string,
+  budget: MonthBudget,
+  plan: BudgetPlan | null,
+): string {
+  if (category === 'EMI') return budget.sections.find((section) => section.system === 'debt')?.id ?? 'debt-repayments';
+  if (category === 'Insurance') return budget.sections.find((section) => section.system === 'insurance')?.id ?? 'insurance';
+  const item = budget.items.find((row) => row.name === category)
+    ?? plan?.items.find((row) => row.name === category);
+  if (item && budget.sections.some((section) => section.id === item.sectionId)) return item.sectionId;
   const group = budgetGroupFor(category);
-  if (!group) throw new Error(`No budget group is defined for category "${category}".`);
-  return group.id;
+  return group && budget.sections.some((section) => section.id === group.id)
+    ? group.id
+    : 'other-not-in-budget';
 }
 
 function overviewSourceKind(
@@ -912,6 +1261,27 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
 
   const view = budgetMonthView(data, month, today);
   const actualTransactions = monthActualTransactions(data, month, today);
+  const overviewDefinitions = budget.sections.map((section) => ({ ...section }));
+  const incomeSectionId = budget.sections.find((section) => section.system === 'income')?.id ?? 'income';
+  if (!overviewDefinitions.some((section) => section.id === incomeSectionId)) {
+    overviewDefinitions.unshift({ id: incomeSectionId, name: 'Income', type: 'spend', system: 'income' });
+  }
+  overviewDefinitions.sort((left, right) =>
+    left.id === incomeSectionId ? -1 : right.id === incomeSectionId ? 1 : 0,
+  );
+  const sectionItems = new Map<string, BudgetOverviewItem[]>(
+    overviewDefinitions.map((section) => [section.id, []]),
+  );
+  const itemsForSection = (id: string): BudgetOverviewItem[] => {
+    let items = sectionItems.get(id);
+    if (!items) {
+      const definition = { id, name: 'Other (not in budget)', type: 'spend' as const };
+      overviewDefinitions.push(definition);
+      items = [];
+      sectionItems.set(id, items);
+    }
+    return items;
+  };
   const actualEarnedByCategory = new Map<EarnedIncomeCategory, number>();
   for (const transaction of actualTransactions) {
     if (transaction.type !== 'income'
@@ -924,16 +1294,13 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     );
   }
 
-  const sectionItems = new Map<string, BudgetOverviewItem[]>(
-    OVERVIEW_SECTIONS.map((section) => [section.id, []]),
-  );
   const remainingEarned = new Map(actualEarnedByCategory);
   for (const income of budget.incomes) {
     const actual = Math.min(income.amount, remainingEarned.get(income.category) ?? 0);
     remainingEarned.set(income.category, normalizeMoney(
       (remainingEarned.get(income.category) ?? 0) - actual,
     ));
-    sectionItems.get('income')?.push({
+    itemsForSection(incomeSectionId).push({
       id: `income:${income.id}`,
       title: income.name,
       planned: normalizeMoney(income.amount),
@@ -946,7 +1313,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   for (const category of EARNED_INCOME_CATEGORIES) {
     const extra = remainingEarned.get(category) ?? 0;
     if (extra <= 0) continue;
-    sectionItems.get('income')?.push({
+    itemsForSection(incomeSectionId).push({
       id: `income:actual:${category}`,
       title: category,
       planned: 0,
@@ -960,7 +1327,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   const actualByCategory = new Map<string, number>();
   for (const transaction of actualTransactions) {
     if (transaction.type !== 'expense' && transaction.type !== 'invest') continue;
-    const category = budgetCategoryForTransaction(transaction);
+    const category = budgetCategoryForTransaction(transaction, customBudgetCategories(data));
     actualByCategory.set(
       category,
       normalizeMoney((actualByCategory.get(category) ?? 0) + transaction.amount),
@@ -996,7 +1363,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       }
     }
     const category = row.category;
-    sectionItems.get(overviewSectionFor(category))?.push({
+    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
       id: row.id,
       title: row.name,
       planned: normalizeMoney(row.amount),
@@ -1035,7 +1402,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
         ? data.liabilities.find((liability) => liability.id === source.parentId)?.name ?? 'Liability'
         : data.policies.find((policy) => policy.id === source.parentId)?.name ?? 'Policy';
     const id = `linked:${kind}:${source.parentId}:${source.entryId}`;
-    sectionItems.get(overviewSectionFor(category))?.push({
+    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
       id,
       title,
       planned: 0,
@@ -1055,7 +1422,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     ...actualByCategory.keys(),
   ]);
   for (const category of categories) {
-    const sectionId = overviewSectionFor(category);
+    const sectionId = overviewSectionFor(category, budget, data.budgetPlan);
     const line = view.lines.find((row) => row.category === category);
     const planned = normalizeMoney(Math.max(
       0,
@@ -1066,7 +1433,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       (actualByCategory.get(category) ?? 0) - (linkedActualByCategory.get(category) ?? 0),
     ));
     if (planned === 0 && actual === 0) continue;
-    sectionItems.get(sectionId)?.push({
+    itemsForSection(sectionId).push({
       id: `line:${month}:${category}`,
       title: category,
       planned,
@@ -1077,7 +1444,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     });
   }
 
-  const sections = OVERVIEW_SECTIONS.map((definition) => {
+  const sections = overviewDefinitions.map((definition) => {
     const items = sectionItems.get(definition.id) ?? [];
     return {
       ...definition,
@@ -1086,28 +1453,27 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       items,
     };
   });
-  const sectionTotal = (ids: readonly string[], key: 'planned' | 'actual') => moneySum(
-    sections.filter((section) => ids.includes(section.id)).map((section) => section[key]),
+  const income = sections.find((section) => section.id === incomeSectionId);
+  const spendSections = sections.filter((section) =>
+    overviewDefinitions.find((definition) => definition.id === section.id)?.type === 'spend'
+      && section.id !== incomeSectionId,
   );
-  const income = sections[0];
-  const spendPlanned = sectionTotal(
-    ['survival', 'wants', 'festival-donations-culture', 'unexpected-extras', 'debt-repayments', 'insurance'],
-    'planned',
+  const spendPlanned = moneySum(spendSections.map((section) => section.planned));
+  const spendActual = moneySum(spendSections.map((section) => section.actual));
+  const investSections = sections.filter((section) =>
+    overviewDefinitions.find((definition) => definition.id === section.id)?.type === 'invest',
   );
-  const spendActual = sectionTotal(
-    ['survival', 'wants', 'festival-donations-culture', 'unexpected-extras', 'debt-repayments', 'insurance'],
-    'actual',
-  );
-  const invest = sections.find((section) => section.id === 'savings-investments');
+  const investPlanned = moneySum(investSections.map((section) => section.planned));
+  const investActual = moneySum(investSections.map((section) => section.actual));
   const plannedIncome = income?.planned ?? 0;
   const actualIncome = income?.actual ?? 0;
   const stacked = {
     income: { planned: plannedIncome, actual: actualIncome },
     spend: { planned: spendPlanned, actual: spendActual },
-    invest: { planned: invest?.planned ?? 0, actual: invest?.actual ?? 0 },
+    invest: { planned: investPlanned, actual: investActual },
     left: {
-      planned: normalizeMoney(plannedIncome - spendPlanned - (invest?.planned ?? 0)),
-      actual: normalizeMoney(actualIncome - spendActual - (invest?.actual ?? 0)),
+      planned: normalizeMoney(plannedIncome - spendPlanned - investPlanned),
+      actual: normalizeMoney(actualIncome - spendActual - investActual),
     },
   };
 

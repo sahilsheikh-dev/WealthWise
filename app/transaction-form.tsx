@@ -19,7 +19,8 @@ import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
-import { budgetCategoryChoiceSections } from '../src/domain/budgetCategories';
+import { customBudgetCategories } from '../src/domain/budget';
+import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { holdingValue } from '../src/domain/portfolio';
@@ -70,6 +71,7 @@ export default function TransactionFormScreen() {
   const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
   const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
+  const customCategories = useMemo(() => customBudgetCategories(data), [data]);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -111,8 +113,10 @@ export default function TransactionFormScreen() {
       withdrawable,
       mode,
       allowUnlinkedInvestment: pendingMode && !editing,
+      budgetCategoriesForMonth: (type, date) =>
+        budgetItemCategoriesForTransaction(data, date.slice(0, 7), today, type),
     }),
-    [editing, instruments, legacyCategories, mode, pendingMode, today, withdrawable],
+    [data, editing, instruments, legacyCategories, mode, pendingMode, today, withdrawable],
   );
   const submitting = useRef(false);
   const {
@@ -138,9 +142,13 @@ export default function TransactionFormScreen() {
       note: '',
       type: initialType,
       category: (() => {
-        const categories = initialType === 'invest'
-          ? INVESTMENT_FORM_CATEGORIES
-          : TRANSACTION_CATEGORIES[initialType];
+        const initialDate = requestedDate && isValidISO(requestedDate) ? requestedDate : today;
+        const categories = initialType === 'income'
+          ? TRANSACTION_CATEGORIES.income
+          : [
+            ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
+            ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
+          ];
         return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
           ? requestedCategoryParam
           : categories[0] ?? '';
@@ -344,7 +352,7 @@ export default function TransactionFormScreen() {
           <>
             <ReadOnlyRow label="Type" value={transaction.type} />
             <ReadOnlyRow label="Amount" value={formatAmount(transaction.amount, 'exact', 1)} />
-            <ReadOnlyRow label="Category" value={transactionCategoryLabel(linkedEditable ? derivedCategory : transaction.category, transaction.type)} />
+            <ReadOnlyRow label="Category" value={transactionCategoryLabel(linkedEditable ? derivedCategory : transaction.category, transaction.type, customCategories)} />
             <ReadOnlyRow label="Date" value={transaction.date} />
           </>
         ) : (
@@ -373,7 +381,7 @@ export default function TransactionFormScreen() {
             ) : (
               <>
                 <ReadOnlyRow label="Type" value={transaction.type} />
-                <ReadOnlyRow label="Category" value={transactionCategoryLabel(transaction.category, transaction.type)} />
+                <ReadOnlyRow label="Category" value={transactionCategoryLabel(transaction.category, transaction.type, customCategories)} />
               </>
             )}
             <Controller
@@ -436,7 +444,7 @@ export default function TransactionFormScreen() {
                         sections={categorySections}
                         value={field.value}
                         labels={Object.fromEntries(choices.map((category) => [
-                          category, transactionCategoryLabel(category, selectedType),
+                          category, transactionCategoryLabel(category, selectedType, customCategories),
                         ]))}
                         extraCategories={choices.filter((category) =>
                           !categorySections.some((section) =>
@@ -458,7 +466,7 @@ export default function TransactionFormScreen() {
                       value={field.value}
                       choices={choices}
                       choiceLabels={Object.fromEntries(choices.map((category) => [
-                        category, transactionCategoryLabel(category, selectedType),
+                        category, transactionCategoryLabel(category, selectedType, customCategories),
                       ]))}
                       onChange={(value) => {
                         field.onChange(value);

@@ -45,13 +45,13 @@ export default function BudgetMonthFormScreen() {
       ? suggestedIncome === null ? '' : String(suggestedIncome)
       : suggestedIncome === null ? '' : String(suggestedIncome),
     lines: (() => {
-    const lineValues = new Map((stored?.lines ?? []).map((line) => [line.category, line]));
+    const lineValues = new Map((stored?.items ?? []).map((item) => [item.name, item]));
       return BUDGET_CATEGORIES.map((category) => {
         const line = lineValues.get(category);
         return {
           category,
           mode: 'amount' as const,
-          planned: line ? String(line.planned) : '',
+        planned: line ? String(line.value) : '',
           ...(line?.dueDay === undefined ? {} : { dueDay: line.dueDay }),
         };
       });
@@ -94,7 +94,7 @@ export default function BudgetMonthFormScreen() {
         category: existingIncome?.category ?? 'Salary',
         amount: plannedIncome,
       }];
-      actions.customizeMonthBudget(month, { incomes, lines: budgetLines });
+      actions.customizeMonthBudget(month, { incomes, lines: budgetLines }, todayISO());
       const error = useAppStore.getState().lastError;
       if (error) Alert.alert('Could not save budget', error);
       else {

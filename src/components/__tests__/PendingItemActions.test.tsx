@@ -129,7 +129,7 @@ describe('pending item Pay navigation', () => {
   });
 
   it('opens a budget transaction with its category, amount, date, and pending-only investment mode', () => {
-    pressPay(item({ kind: 'budget', category: 'Other investments' }, 'Other investments'));
+    pressPay(item({ kind: 'budget', category: 'Other investments', type: 'invest' }, 'Other investments'));
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/transaction-form',
       params: {
@@ -178,7 +178,7 @@ describe('later due and planned item actions', () => {
   });
 
   it('supports the Received label for income dues', () => {
-    const due = item({ kind: 'budget', category: 'Food' });
+    const due = item({ kind: 'budget', category: 'Food', type: 'expense' });
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(
@@ -191,7 +191,7 @@ describe('later due and planned item actions', () => {
   });
 
   it('clears a compact budget row directly as Marked as paid and offers undo', () => {
-    const planned = item({ kind: 'budget', category: 'Food' });
+    const planned = item({ kind: 'budget', category: 'Food', type: 'expense' });
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" compact />); });
     if (!renderer) throw new Error('Compact budget actions did not render.');
@@ -318,7 +318,7 @@ describe('later due and planned item actions', () => {
   });
 
   it('clears a planned budget row as a transaction and offers undo', () => {
-    const planned = item({ kind: 'budget', category: 'Food' });
+    const planned = item({ kind: 'budget', category: 'Food', type: 'expense' });
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" />); });
     if (!renderer) throw new Error('Budget actions did not render.');

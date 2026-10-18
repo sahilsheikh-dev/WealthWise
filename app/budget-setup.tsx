@@ -19,13 +19,15 @@ import { useAppActions, useAppData } from '../src/data/useAppData';
 import {
   BUDGET_CATEGORIES,
   BUDGET_GROUPS,
+  defaultBudgetSections,
+  defaultBudgetSectionIdFor,
   linkedRecurringForMonth,
   monthlyCommitments,
   suggestBudgetSplit,
 } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
 import { pendingItems } from '../src/domain/pending';
-import { EARNED_INCOME_CATEGORIES, type BudgetIncomeItem, type BudgetPlanLine, type EarnedIncomeCategory } from '../src/domain/types';
+import { EARNED_INCOME_CATEGORIES, type BudgetIncomeItem, type BudgetItem, type BudgetSection, type EarnedIncomeCategory } from '../src/domain/types';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -61,7 +63,7 @@ export default function BudgetSetupScreen() {
   const linkedRows = useMemo(() => linkedRecurringForMonth(data, month, today), [data, month, today]);
   const defaultValues = useMemo<SetupForm>(() => {
     const plan = data.budgetPlan;
-    const byCategory = new Map((plan?.lines ?? []).map((line) => [line.category, line]));
+    const byCategory = new Map((plan?.items ?? []).map((item) => [item.name, item]));
     return {
       incomes: (plan?.incomes ?? []).map((income) => ({
         id: income.id,
@@ -98,19 +100,26 @@ export default function BudgetSetupScreen() {
       amount: Number(income.amount),
       ...(income.day.trim() === '' ? {} : { day: Number(income.day) }),
     }));
-    const planLines: BudgetPlanLine[] = values.lines.flatMap((line) => {
+    const configuredItems: BudgetItem[] = values.lines.flatMap((line, index) => {
       if (line.category === 'EMI' || line.category === 'Insurance' || line.value.trim() === '') return [];
       const value = Number(line.value);
       return [{
-        category: line.category,
+        id: data.budgetPlan?.items.find((item) => item.name === line.category)?.id ?? `budget-item-${index}`,
+        sectionId: data.budgetPlan?.items.find((item) => item.name === line.category)?.sectionId
+          ?? defaultBudgetSectionIdFor(line.category),
+        name: line.category,
         mode: line.mode,
         value,
         ...(line.dueDay.trim() !== '' ? { dueDay: Number(line.dueDay) } : {}),
       }];
     });
+    const visibleNames = new Set(values.lines.map((line) => line.category));
+    const retainedCustomItems = (data.budgetPlan?.items ?? []).filter((item) => !visibleNames.has(item.name));
+    const sections: BudgetSection[] = data.budgetPlan?.sections ?? defaultBudgetSections();
     return {
       incomes: incomeItems,
-      lines: planLines,
+      sections,
+      items: [...configuredItems, ...retainedCustomItems],
       repeatMonthly,
       repeatFrom: repeatMonthly ? shiftMonth(month, 1) : null,
     };
