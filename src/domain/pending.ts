@@ -1,7 +1,5 @@
 import {
-  BUDGET_GROUPS,
   budgetLineActual,
-  budgetGroupFor,
   effectiveMonthBudget,
 } from './budget';
 import { monthEndDate } from './cashFlow';
@@ -16,7 +14,7 @@ export type PendingSource =
   | { kind: 'plan'; parentId: string; slotId: string }
   | { kind: 'liability'; parentId: string; slotId: string; paymentKind: 'EMI' | 'Payment' }
   | { kind: 'policy'; parentId: string; slotId: string }
-  | { kind: 'budget'; category: string }
+  | { kind: 'budget'; category: string; type: 'expense' | 'invest' }
   | { kind: 'income'; incomeId: string };
 
 export type PendingItem = {
@@ -142,24 +140,27 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
         actionable: true,
       });
     }
-    for (const line of budget.lines) {
-      if (line.category === 'EMI' || line.category === 'Insurance'
-        || instrumentCategories.has(line.category)
-        || representedCategories.has(line.category)) continue;
-      const group = BUDGET_GROUPS.find((item) => item.categories.includes(line.category));
-      if (!group) throw new Error(`No budget group is defined for category "${line.category}".`);
-      const remaining = Math.max(0, line.planned - budgetLineActual(data, month, line.category));
+    for (const item of budget.items) {
+      const section = budget.sections.find((row) => row.id === item.sectionId);
+      if (section?.system) continue;
+      const type = section?.type === 'invest' ? 'invest' : 'expense';
+      const category = item.name;
+      if (instrumentCategories.has(category) || representedCategories.has(category)) continue;
+      const planned = item.mode === 'amount'
+        ? item.value
+        : Math.round(item.value * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
+      const remaining = Math.max(0, planned - budgetLineActual(data, month, category));
       if (remaining === 0) continue;
-      const dueDate = dueDateForLine(month, line.dueDay);
+      const dueDate = dueDateForLine(month, item.dueDay);
       items.push({
-        id: `budget:${month}:${line.category}`,
+        id: `budget:${month}:${item.id}`,
         kind: 'budget',
-        title: line.category,
-        category: line.category,
+        title: category,
+        category,
         amount: remaining,
         ...(dueDate === undefined ? {} : { dueDate }),
         status: dueDate === undefined ? 'planned' : dueStatus(dueDate, month, today),
-        source: { kind: 'budget', category: line.category },
+        source: { kind: 'budget', category, type },
         actionable: true,
       });
     }
@@ -178,9 +179,7 @@ export function pendingTransactionType(item: PendingItem): Transaction['type'] {
   if (item.source.kind === 'income') return 'income';
   if (item.source.kind === 'plan') return 'invest';
   if (item.source.kind === 'liability' || item.source.kind === 'policy') return 'expense';
-  const group = budgetGroupFor(item.category);
-  if (!group) throw new Error(`No budget group is defined for category "${item.category}".`);
-  return group.id === 'savings-investments' ? 'invest' : 'expense';
+  return item.source.type;
 }
 
 export function pendingActionLabel(type: Transaction['type']): 'Marked as paid' | 'Received' {

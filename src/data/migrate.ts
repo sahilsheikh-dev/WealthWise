@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
+import { budgetGroupFor, defaultBudgetSections, defaultBudgetSectionIdFor } from '../domain/budget';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -159,6 +160,77 @@ export type V6ToV7Options = {
   today: string;
   newId: () => string;
 };
+
+export function migrateV9ToV10(data: unknown, options: V6ToV7Options): unknown {
+  if (!isRecord(data)
+    || (data.budgetPlan !== null && !isRecord(data.budgetPlan))
+    || (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets))) {
+    throw new PersistedVersionError(9, 'unknown-version');
+  }
+  const sections = defaultBudgetSections();
+  const mapCategory = (category: unknown): string => {
+    if (typeof category !== 'string') throw new PersistedVersionError(9, 'unknown-version');
+    const mapped = budgetGroupFor(category);
+    return mapped?.id ?? defaultBudgetSectionIdFor(category);
+  };
+  const plan = data.budgetPlan;
+  const budgetPlan = plan === null ? null : (() => {
+    if (!isRecord(plan) || !Array.isArray(plan.incomes) || !Array.isArray(plan.lines)) {
+      throw new PersistedVersionError(9, 'unknown-version');
+    }
+    const items = plan.lines.map((line) => {
+      if (!isRecord(line) || typeof line.category !== 'string' || typeof line.value !== 'number'
+        || (line.mode !== 'amount' && line.mode !== 'percent')) {
+        throw new PersistedVersionError(9, 'unknown-version');
+      }
+      return {
+        id: options.newId(),
+        sectionId: mapCategory(line.category),
+        name: line.category,
+        mode: line.mode,
+        value: line.value,
+        ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}),
+      };
+    });
+    const { lines: _lines, ...planWithoutLines } = plan;
+    return { ...planWithoutLines, sections: sections.map((section) => ({ ...section })), items };
+  })();
+  const monthBudgets = data.monthBudgets?.map((snapshot) => {
+    if (!isRecord(snapshot) || typeof snapshot.month !== 'string'
+      || !Array.isArray(snapshot.incomes) || !Array.isArray(snapshot.lines)) {
+      throw new PersistedVersionError(9, 'unknown-version');
+    }
+    const items = snapshot.lines.map((line, index) => {
+      if (!isRecord(line) || typeof line.category !== 'string' || typeof line.planned !== 'number') {
+        throw new PersistedVersionError(9, 'unknown-version');
+      }
+      const sectionId = mapCategory(line.category);
+      if (!budgetGroupFor(line.category)) {
+        const firstSpend = sections.find((section) => section.type === 'spend' && section.system === undefined);
+        if (firstSpend) return { id: `v10-${snapshot.month}-${index}`, sectionId: firstSpend.id, name: line.category, mode: 'amount', value: line.planned, ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}) };
+      }
+      return {
+        id: `v10-${snapshot.month}-${index}`,
+        sectionId,
+        name: line.category,
+        mode: 'amount',
+        value: line.planned,
+        ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}),
+      };
+    });
+    const { lines: _lines, ...snapshotWithoutLines } = snapshot;
+    return {
+      ...snapshotWithoutLines,
+      sections: sections.map((section) => ({ ...section })),
+      items,
+    };
+  });
+  return {
+    ...data,
+    budgetPlan,
+    ...(monthBudgets === undefined ? {} : { monthBudgets }),
+  };
+}
 
 function migrateBudgetLines<T extends Record<string, unknown>>(
   container: T,
@@ -519,6 +591,10 @@ export function migratePersisted(
     if (fromVersion <= 8) {
       if (!options) throw new PersistedVersionError(8, 'unknown-version');
       result = migrateV8ToV9(result, options);
+    }
+    if (fromVersion <= 9) {
+      if (!options) throw new PersistedVersionError(9, 'unknown-version');
+      result = migrateV9ToV10(result, options);
     }
     return result;
   };

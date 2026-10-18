@@ -5,6 +5,7 @@ import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
 import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
+import { budgetPlanFromLines, monthBudgetFromLines } from './budgetFixtures';
 
 const base = () => emptyAppData('2026-01-01');
 
@@ -59,25 +60,22 @@ describe('pending item projection', () => {
   it('creates clamped income dues, allocates recorded earnings across same-category items, and supports future months', () => {
     const data = {
       ...base(),
-      budgetPlan: {
+      budgetPlan: budgetPlanFromLines([], {
         incomes: [
           { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
           { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
         ],
-        lines: [],
         repeatMonthly: true,
         repeatFrom: '2026-02',
-      },
-      monthBudgets: [{
-        month: '2026-02',
-        source: 'plan' as const,
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-02', [], {
         incomes: [
           { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
           { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
         ],
-        lines: [],
+        source: 'plan',
         linkedIncluded: true,
-      }],
+      })],
     };
     const future = pendingItems(data, '2026-02', '2026-01-20');
     expect(future.filter((item) => item.source.kind === 'income')).toEqual([
@@ -163,18 +161,15 @@ describe('pending item projection', () => {
     const data: AppData = {
       ...base(),
       holdings: [plan()],
-      monthBudgets: [{
-        month: '2026-02',
-        source: 'custom' as const,
+      monthBudgets: [monthBudgetFromLines('2026-02', [
+        { category: 'Food', planned: 300 },
+        { category: 'Fashion', planned: 250 },
+        { category: 'EMI', planned: 400 },
+        { category: 'Insurance', planned: 100 },
+        { category: 'Mutual fund / SIP', planned: 500 },
+      ], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
-        lines: [
-          { category: 'Food', planned: 300 },
-          { category: 'Fashion', planned: 250 },
-          { category: 'EMI', planned: 400 },
-          { category: 'Insurance', planned: 100 },
-          { category: 'Mutual fund / SIP', planned: 500 },
-        ],
-      }],
+      })],
       transactions: [
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: '2026-02-04' },
         { id: 'fashion', type: 'expense', amount: 250, category: 'Fashion', note: '', date: '2026-02-05' },
@@ -191,10 +186,7 @@ describe('pending item projection', () => {
     const dueOnLastDay = (month: string, today: string) => {
       const data = {
         ...base(),
-        monthBudgets: [{
-          month, source: 'custom' as const, incomes: [],
-          lines: [{ category: 'Bills', planned: 100, dueDay: 31 }],
-        }],
+        monthBudgets: [monthBudgetFromLines(month, [{ category: 'Bills', planned: 100, dueDay: 31 }], { incomes: [] })],
       };
       return pendingItems(data, month, today).find((item) => item.kind === 'budget');
     };
@@ -210,10 +202,7 @@ describe('pending item projection', () => {
     });
     const earlyDue = {
       ...base(),
-      monthBudgets: [{
-        month: '2026-05', source: 'custom' as const,
-        incomes: [], lines: [{ category: 'Bills', planned: 100, dueDay: 5 }],
-      }],
+      monthBudgets: [monthBudgetFromLines('2026-05', [{ category: 'Bills', planned: 100, dueDay: 5 }], { incomes: [] })],
     };
     expect(pendingItems(earlyDue, '2026-05', '2026-05-06').find((item) => item.kind === 'budget'))
       .toMatchObject({ dueDate: '2026-05-05', status: 'overdue' });
@@ -224,10 +213,9 @@ describe('pending item projection', () => {
       ...base(),
       holdings: [plan()],
       liabilities: [oneTime()],
-      monthBudgets: [{
-        month: '2026-02', source: 'custom' as const,
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }], lines: [{ category: 'Food', planned: 500 }],
-      }],
+      monthBudgets: [monthBudgetFromLines('2026-02', [{ category: 'Food', planned: 500 }], {
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
+      })],
       transactions: [
         { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: '2026-02-01' },
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: '2026-02-02' },

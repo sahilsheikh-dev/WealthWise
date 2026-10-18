@@ -18,8 +18,9 @@ export type TransactionMonthSummary = {
 export function transactionCategoryLabel(
   category: string,
   type?: Transaction['type'],
+  customCategories: ReadonlySet<string> = new Set(),
 ): string {
-  if (type === 'invest' && !INVESTMENT_CATEGORIES.has(category)) return 'Other investments';
+  if (type === 'invest' && !INVESTMENT_CATEGORIES.has(category) && !customCategories.has(category)) return 'Other investments';
   if (category === 'Unexpected') return 'Unexpected extras';
   return category;
 }

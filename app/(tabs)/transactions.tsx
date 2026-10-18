@@ -76,6 +76,10 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const customBudgetCategories = useMemo(() => new Set([
+    ...(data.budgetPlan?.items.map((item) => item.name) ?? []),
+    ...(data.monthBudgets ?? []).flatMap((budget) => budget.items.map((item) => item.name)),
+  ]), [data.budgetPlan, data.monthBudgets]);
   const monthPendingItems = useMemo(() => pendingItems(data, month, today), [data, month, today]);
   const visiblePendingItems = useMemo(() => monthPendingItems.filter((item) => {
     const type = pendingTransactionType(item);
@@ -145,7 +149,7 @@ export default function TransactionsScreen() {
               ))}
               {categoryFilter ? (
                 <Chip
-                  label={`Category: ${transactionCategoryLabel(categoryFilter)} ×`}
+                  label={`Category: ${transactionCategoryLabel(categoryFilter, undefined, customBudgetCategories)} ×`}
                   selected
                   onPress={() => setCategoryOverride('')}
                 />
@@ -306,7 +310,7 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
-                const categoryLabel = transactionCategoryLabel(item.category, item.type);
+                const categoryLabel = transactionCategoryLabel(item.category, item.type, customBudgetCategories);
                 return (
                   <ListItem
                     key={item.id}

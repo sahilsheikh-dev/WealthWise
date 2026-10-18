@@ -6,13 +6,18 @@ import {
   recordMoneyMovement,
   shortfallForMonth,
 } from '../domain/cashFlow';
-import { applyBudgetPlanToMonth, editBudgetItem } from '../domain/budget';
+import {
+  applyBudgetPlanToMonth,
+  defaultBudgetSectionIdFor,
+  defaultBudgetSections,
+  editBudgetItem,
+} from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
+  BudgetItem,
   BudgetPlan,
-  BudgetPlanLine,
   Goal,
   Holding,
   ISODate,
@@ -83,7 +88,7 @@ function generatedIdFactory(): () => string {
   return () => `demo-generated-${String(++index).padStart(5, '0')}`;
 }
 
-function makeBudgetPlanLines(): BudgetPlanLine[] {
+function makeBudgetPlanItems(): BudgetItem[] {
   const percentages: Record<string, number> = {
     Living: 18,
     Food: 8,
@@ -91,7 +96,7 @@ function makeBudgetPlanLines(): BudgetPlanLine[] {
     Shopping: 4,
     Unexpected: 3,
   };
-  return [
+  const builtInItems = [
     ...TRANSACTION_CATEGORIES.expense.filter((category) => category !== 'EMI' && category !== 'Insurance').map((category) => ({
       category,
       mode: percentages[category] === undefined ? 'amount' as const : 'percent' as const,
@@ -105,6 +110,30 @@ function makeBudgetPlanLines(): BudgetPlanLine[] {
       mode: category === 'Mutual fund / SIP' ? 'percent' as const : 'amount' as const,
       value: category === 'Mutual fund / SIP' ? 5 : Math.max(2_000, (INVESTMENT_AMOUNTS[category] ?? 1_000) * 1.5),
     })),
+  ];
+  return [
+    ...builtInItems.map((item, index) => ({
+      id: `demo-budget-item-${index + 1}`,
+      sectionId: defaultBudgetSectionIdFor(item.category),
+      name: item.category,
+      mode: item.mode,
+      value: item.value,
+      ...('dueDay' in item ? { dueDay: item.dueDay } : {}),
+    })),
+    {
+      id: 'demo-budget-item-domestic-help',
+      sectionId: 'survival',
+      name: 'Domestic help',
+      mode: 'amount',
+      value: 2_000,
+    },
+    {
+      id: 'demo-budget-item-pets',
+      sectionId: 'demo-section-pets',
+      name: 'Pet care',
+      mode: 'amount',
+      value: 3_000,
+    },
   ];
 }
 
@@ -313,7 +342,11 @@ export function buildDemoData(today: ISODate): AppData {
       { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
       { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15 },
     ],
-    lines: makeBudgetPlanLines(),
+    sections: [
+      ...defaultBudgetSections(),
+      { id: 'demo-section-pets', name: 'Pets', type: 'spend' },
+    ],
+    items: makeBudgetPlanItems(),
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
   };
@@ -392,6 +425,16 @@ export function buildDemoData(today: ISODate): AppData {
         category,
         note: exceptionalRepair > 0 ? 'Major emergency home repair' : `${category} spending`,
         date: monthDate(month, 12, today),
+      });
+    }
+    for (const [category, amount] of [['Domestic help', 1_500], ['Pet care', 2_000]] as const) {
+      data.transactions.push({
+        id: `demo-expense-${month}-${category.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`,
+        type: 'expense',
+        amount,
+        category,
+        note: `${category} spending`,
+        date: monthDate(month, 13, today),
       });
     }
   }
@@ -505,7 +548,7 @@ export function buildDemoData(today: ISODate): AppData {
   if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
   data.budget = {
     plannedIncome: linkedCurrentBudget.incomes.reduce((total, income) => total + income.amount, 0),
-    lines: linkedCurrentBudget.lines,
+    lines: linkedCurrentBudget.items.map((item) => ({ category: item.name, planned: item.value })),
   };
   const customMonth = shiftMonth(currentMonth, 2);
   data = editBudgetItem(data, customMonth, { kind: 'line', category: 'Food' }, {

@@ -264,27 +264,15 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     }
   }
   if (data.budgetPlan) {
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of data.budgetPlan.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetPlan', 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetPlan', 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
+    const sectionIds = new Set(data.budgetPlan.sections.map((section) => section.id));
+    for (const [itemIndex, item] of data.budgetPlan.items.entries()) {
+      if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['budgetPlan', 'items', itemIndex, 'sectionId']);
     }
   }
   for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of budget.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
+    const sectionIds = new Set(budget.sections.map((section) => section.id));
+    for (const [itemIndex, item] of budget.items.entries()) {
+      if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['monthBudgets', monthIndex, 'items', itemIndex, 'sectionId']);
     }
   }
   for (const policy of data.policies) {
@@ -295,8 +283,4 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
 
   }
   return issues;
-}
-
-function allowedBudgetCategory(category: string): boolean {
-  return (BUDGET_CATEGORIES as readonly string[]).includes(category);
 }

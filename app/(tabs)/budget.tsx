@@ -176,7 +176,7 @@ export default function BudgetScreen() {
     : null;
   const editingSource = editingItem?.source;
   const editingDay = editingSource?.kind === 'line'
-    ? editingBudget?.lines.find((line) => line.category === editingSource.category)?.dueDay
+    ? editingBudget?.items.find((item) => item.name === editingSource.category)?.dueDay
     : editingSource?.kind === 'income'
       ? editingBudget?.incomes.find((income) => income.id === editingSource.incomeId)?.day
       : undefined;

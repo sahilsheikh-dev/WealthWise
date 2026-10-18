@@ -45,13 +45,13 @@ export default function BudgetMonthFormScreen() {
       ? suggestedIncome === null ? '' : String(suggestedIncome)
       : suggestedIncome === null ? '' : String(suggestedIncome),
     lines: (() => {
-    const lineValues = new Map((stored?.lines ?? []).map((line) => [line.category, line]));
+    const lineValues = new Map((stored?.items ?? []).map((item) => [item.name, item]));
       return BUDGET_CATEGORIES.map((category) => {
         const line = lineValues.get(category);
         return {
           category,
           mode: 'amount' as const,
-          planned: line ? String(line.planned) : '',
+        planned: line ? String(line.value) : '',
           ...(line?.dueDay === undefined ? {} : { dueDay: line.dueDay }),
         };
       });
