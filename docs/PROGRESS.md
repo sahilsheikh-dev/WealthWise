@@ -753,7 +753,7 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   text, while the unchanged Home control exposes that exact string as its
   accessibilityLabel and renders a numeric summary. The assertion now checks
   the existing accessible label directly; Home screen source is unchanged.
-- DEC-BUDGET-DIRECTION: Planned, to be built only on the user's command.
+- DEC-BUDGET-DIRECTION: Done. P20-N completed the planned visual overview.
   Budget is a forward-looking plan of recurring income, bills, investments,
   and loans arranged in sections. It is created once from the Edit button and
   flows into future months and into Transactions as due items. Actual spending
@@ -925,6 +925,27 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
     and brought-forward amount placement/removal.
   - `6cb4fa0` — `app/month-review.tsx`: preserved no Back to Transactions.
   Worktree was clean and no checkpoint commit was needed.
+  P20-O start audit (`5bd3c41..HEAD`) reconfirmed seven commits without a
+  Copilot co-author trailer. Every changed file is recorded separately:
+  - `4cb6367` — `.claude/settings.json`: removed the local settings file.
+  - `4cb6367` — `.gitignore`: ignored `.claude` content.
+  - `c49cafd` — `app.json`: formatting adjustment.
+  - `b217a2a` — `app/(tabs)/transactions.tsx`: available-balance card margin.
+  - `268e4c7` — `app/(tabs)/index.tsx`: Home action wording and related UI.
+  - `268e4c7` — `src/components/IconButton.tsx`: allow the exact action label.
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: align label assertion.
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: allow the action text.
+  - `9a01941` — `app/goal-form.tsx`: blank initial Saved field for new goals.
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-owned Cash flow labels/layout and removed controls.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: exact “Edit allocation” title.
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot wiring.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed “Back to transactions” control.
+  The worktree was clean, so no user-manual checkpoint commit was needed.
+  The present Budget screen still preserves “Opening balance” and “Closing
+  balance” and has no “Back to Transactions” or “Review” control. The snapshot
+  `file_Untitled-2.txt` remains read-only. P20-O does not change the schema
+  (still v9) or any frozen form component.
   Re-verified for P20-L/P21-D with
   `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`:
   `3c644d3` changes Budget and removes menu/template workflow, without
