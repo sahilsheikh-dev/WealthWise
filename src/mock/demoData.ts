@@ -6,7 +6,7 @@ import {
   recordMoneyMovement,
   shortfallForMonth,
 } from '../domain/cashFlow';
-import { applyBudgetPlanToMonth } from '../domain/budget';
+import { applyBudgetPlanToMonth, editBudgetItem } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
@@ -507,5 +507,18 @@ export function buildDemoData(today: ISODate): AppData {
     plannedIncome: linkedCurrentBudget.incomes.reduce((total, income) => total + income.amount, 0),
     lines: linkedCurrentBudget.lines,
   };
+  const customMonth = shiftMonth(currentMonth, 2);
+  data = editBudgetItem(data, customMonth, { kind: 'line', category: 'Food' }, {
+    amount: 2_400,
+    dueDay: 17,
+  }, 'month', today);
+  data = editBudgetItem(data, customMonth, {
+    kind: 'income',
+    incomeId: 'demo-income-freelance',
+    category: 'Freelance',
+  }, {
+    amount: 8_000,
+    dueDay: 18,
+  }, 'month', today);
   return data;
 }

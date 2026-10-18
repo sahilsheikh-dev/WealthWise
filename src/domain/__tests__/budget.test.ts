@@ -103,6 +103,22 @@ describe('budget plans and monthly views', () => {
     expect(effectiveMonthBudget(data, '2026-03', '2026-01-15').budget).toBeNull();
   });
 
+  it('does not derive percentage budgets when the plan has no income', () => {
+    const data = {
+      ...emptyAppData('2026-01-15'),
+      budgetPlan: {
+        incomes: [],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 10 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+      },
+    };
+    expect(effectiveMonthBudget(data, '2026-02', '2026-01-15')).toEqual({
+      budget: null,
+      virtual: false,
+    });
+  });
+
   it('projects cash flow through the 24-month plan horizon without mutating data', () => {
     const data = emptyAppData('2026-01-15');
     data.transactions = [
@@ -414,6 +430,73 @@ describe('budget plans and monthly views', () => {
         .toContainEqual({ category: 'Food', planned: 2_000 });
     });
 
+    it('adds absent lines to both scopes and leaves other stored months unchanged', () => {
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: { ...planWithItems, lines: [] },
+        monthBudgets: [
+          { month: '2026-03', source: 'custom' as const, incomes: [], lines: [] },
+          { month: '2026-04', source: 'custom' as const, incomes: [], lines: [] },
+        ],
+      };
+      const monthOnly = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 250,
+      }, 'month', today);
+      expect(monthOnly.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 250 }]);
+      expect(monthOnly.budgetPlan).toEqual(data.budgetPlan);
+
+      const following = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 350,
+      }, 'following', today);
+      expect(following.budgetPlan?.lines).toEqual([
+        { category: 'Food', mode: 'amount', value: 350 },
+      ]);
+      expect(following.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 350 }]);
+      expect(following.monthBudgets?.[1]).toEqual(data.monthBudgets[1]);
+    });
+
+    it('uses the viewed snapshot as the base when a following-scope income is absent from the plan', () => {
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: { ...planWithItems, incomes: [], lines: [] },
+        monthBudgets: [{
+          month: '2026-03',
+          source: 'custom' as const,
+          incomes: [{ id: 'legacy-income', name: 'Legacy', category: 'Salary' as const, amount: 500 }],
+          lines: [],
+        }],
+      };
+      const edited = editBudgetItem(data, '2026-03', {
+        kind: 'income', incomeId: 'legacy-income', category: 'Salary',
+      }, { amount: 750, dueDay: 10 }, 'following', today);
+      expect(edited.budgetPlan?.incomes).toEqual([
+        { id: 'legacy-income', name: 'Legacy', category: 'Salary', amount: 750, day: 10 },
+      ]);
+      expect(edited.monthBudgets?.[0]?.incomes).toEqual(edited.budgetPlan?.incomes);
+
+      const withoutPlan = editBudgetItem({ ...data, budgetPlan: null }, '2026-03', {
+        kind: 'income', incomeId: 'legacy-income', category: 'Salary',
+      }, { amount: 800 }, 'following', today);
+      expect(withoutPlan.budgetPlan?.incomes).toEqual([
+        { id: 'legacy-income', name: 'Legacy', category: 'Salary', amount: 800 },
+      ]);
+    });
+
+    it('rejects unavailable budgets and missing income sources', () => {
+      expect(() => editBudgetItem(emptyAppData(today), '2026-03', {
+        kind: 'line', category: 'Food',
+      }, { amount: 100 }, 'month', today)).toThrow('There is no budget to edit');
+
+      const data = withPlanAndMonth();
+      const missingIncome = { kind: 'income' as const, incomeId: 'missing', category: 'Salary' as const };
+      expect(() => editBudgetItem(data, '2026-03', missingIncome, {
+        amount: 100,
+      }, 'month', today)).toThrow('Budget income "missing" was not found');
+      expect(() => editBudgetItem(data, '2026-03', missingIncome, {
+        amount: 100,
+      }, 'following', today)).toThrow('Budget income "missing" was not found');
+    });
+
     it('edits/removes income items and removes planned lines by scope', () => {
       const before = withPlanAndMonth();
       const editedIncome = editBudgetItem(before, '2026-03', {
@@ -444,6 +527,12 @@ describe('budget plans and monthly views', () => {
       }, 'month', today)).toThrow(RangeError);
       expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
         amount: 100, dueDay: 32,
+      }, 'month', today)).toThrow(RangeError);
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 1_000_000_001,
+      }, 'month', today)).toThrow(RangeError);
+      expect(() => editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
+        amount: 100, dueDay: 1.5,
       }, 'month', today)).toThrow(RangeError);
     });
   });
