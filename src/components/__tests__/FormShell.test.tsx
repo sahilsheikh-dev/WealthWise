@@ -1,4 +1,6 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import { FormShell } from '../FormShell';
@@ -65,5 +67,65 @@ describe('FormShell', () => {
     act(() => actions[1]?.props.onPress());
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([1.3, 2])('keeps header actions and the fixed footer available at simulated font scale %s', (fontScale) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <FormShell
+          title={`Form at ${fontScale}`}
+          leftAction={{ icon: 'arrow-left', label: 'Back', hint: 'Go back', onPress: jest.fn() }}
+          rightActions={[{ icon: 'x', label: 'Close', hint: 'Close form', onPress: jest.fn() }]}
+          footer={<button>Save</button>}>
+          {React.createElement('field')}
+        </FormShell>,
+      );
+    });
+    if (!renderer) throw new Error('FormShell renderer was not created.');
+    const header = renderer.root.findAll((node) =>
+      String(node.type) === 'view' && Array.isArray(node.props.style)
+      && JSON.stringify(node.props.style).includes('borderBottomColor'),
+    )[0];
+    const body = renderer.root.findByProps({ testID: 'form-shell-body' });
+    const footer = renderer.root.findByProps({ testID: 'form-shell-footer' });
+    expect(header).toBeDefined();
+    expect(header?.findByType('text').props.numberOfLines).toBeUndefined();
+    expect(JSON.stringify(header?.findByType('text').props.style)).toContain('"flex":1');
+    expect(body.findAll((node) => String(node.type) === 'field')).toHaveLength(1);
+    expect(footer.findByType('button')).toBeDefined();
+    expect(body.findAll((node) => node === footer)).toHaveLength(0);
+    for (const label of ['Back', 'Close']) {
+      const action = renderer.root.findByProps({ accessibilityLabel: label });
+      expect(JSON.stringify(action.props.style)).toContain('"width":44');
+      expect(JSON.stringify(action.props.style)).toContain('"height":44');
+    }
+  });
+
+  it('keeps the shared header, body and footer implementation in FormShell', () => {
+    const sourceRoot = join(process.cwd(), 'src/components');
+    const formScreen = readFileSync(join(sourceRoot, 'form/FormScreen.tsx'), 'utf8');
+    expect(formScreen).toContain('<FormShell');
+    expect(formScreen).not.toMatch(/<ScrollView|styles\.(?:header|content|footer)/);
+
+    const forms = [
+      'app/transaction-form.tsx',
+      'app/investment-form.tsx',
+      'app/liability-form.tsx',
+      'app/liability-payment-form.tsx',
+      'app/goal-form.tsx',
+      'app/ef-allocation-form.tsx',
+      'app/policy-form.tsx',
+      'app/investment-entry-form.tsx',
+      'app/clear-dues.tsx',
+      'app/profile-form.tsx',
+      'app/onboarding.tsx',
+      'app/erase-data.tsx',
+      'src/components/BudgetManagementSheet.tsx',
+    ];
+    for (const file of forms) {
+      const source = readFileSync(join(process.cwd(), file), 'utf8');
+      expect(source).toMatch(/<FormScreen|<FormShell/);
+    }
   });
 });

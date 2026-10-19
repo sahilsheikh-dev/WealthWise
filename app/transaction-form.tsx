@@ -291,7 +291,7 @@ export default function TransactionFormScreen() {
 
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );

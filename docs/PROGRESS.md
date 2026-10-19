@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 91% (61/67)
+Overall progress █████████░ 91% (62/68)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (19/19)
+Phase 20         ██████████ 100% (20/20)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -136,6 +136,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
 | P20-S | — | Done | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
+| P20-T | — | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -904,8 +905,10 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
 - DEC-P20T: the user explicitly authorizes changing only
   `src/components/form/FormScreen.tsx` among frozen inputs, and requires its
   updated SHA-256 in `frozen-manifest.json` and `formComponentsFrozen.test.ts`.
-  Baseline FormScreen SHA-256 before the authorized edit:
+  FormScreen SHA-256 before the authorized edit:
   `f454190b2efe6372b3c502af8581af5b7a3e1f8eb5ae4bb8f82dc9081ca3f5e0`.
+  Authorized implementation SHA-256:
+  `6ccd3d7863d28c00d4e63f51e0cafc5a847ff69739cf676e368ace15a8eb55f6`.
   Reason: FormScreen and FormShell must share one header/body/footer
   implementation. Every other frozen input stays byte-identical. Full-screen
   forms use a Back action on the left; sheet forms use Close as the rightmost
@@ -915,10 +918,38 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   footer actions use FormScreen; Budget management and the Goal asset picker
   use FormShell. `link-missing` is a bulk-action/selection screen rather than
   a data-entry form; its existing AppHeader, list and fixed action footer
-  remain. Secondary EF allocation dialogs are dialogs, not route forms.
+  remain. EF linked-investment selection remains a picker; EF custom-option
+  add/edit dialogs now use FormShell.
   Assumed: the shared shell preserves platform keyboard handling by keeping
   FormScreen's SafeAreaView/KeyboardAvoidingView around the shared core and
   TopAnchoredSheet around sheet forms.
+  Assumed: onboarding retains its original no-back/exit-app behavior; its
+  custom top content stays scrollable and Continue/Skip move into the shared
+  fixed footer. Erase-data retains its confirmation and destructive action,
+  with the action moved into the shared footer.
+  Assumed: invalid/missing-route states use the shared Back action without a
+  redundant footer Back button; non-form settings, list filters and pickers
+  remain outside the data-entry form shell.
+  Form inventory (previous structure → P20-T structure):
+  | Form surface | Previous | P20-T |
+  |---|---|---|
+  | `app/transaction-form.tsx` | `FormScreen` local layout | `FormScreen` adapter to shared core |
+  | `app/investment-form.tsx` | `FormScreen` local layout | `FormScreen` adapter; info modal remains informational |
+  | `app/liability-form.tsx` | `FormScreen` local layout | `FormScreen` adapter |
+  | `app/liability-payment-form.tsx` | `FormScreen` local layout | `FormScreen` adapter |
+  | `app/goal-form.tsx` | `FormScreen` plus asset-picker `FormShell` with left Close | shared core; picker Close moved to rightmost action |
+  | `app/ef-allocation-form.tsx` | `FormScreen` plus locally laid out custom-option modals | shared core; custom add/edit dialogs use `FormShell`; linked-investment modal remains a selection picker |
+  | `app/policy-form.tsx` | `FormScreen` local layout | `FormScreen` adapter |
+  | `app/investment-entry-form.tsx` | `FormScreen` local layout | `FormScreen` adapter |
+  | `app/clear-dues.tsx` | `FormScreen` local layout | `FormScreen` adapter; Done/Confirm remain footer actions |
+  | `app/profile-form.tsx` | `FormScreen` local layout | `FormScreen` adapter |
+  | `app/onboarding.tsx` | `Screen`, custom content and inline actions | `FormScreen` shared header/body/footer; retains no-back entry behavior |
+  | `app/erase-data.tsx` | `Screen`, `AppHeader`, inline destructive action | `FormScreen` shared header/body/footer |
+  | Budget management sheet | `FormShell` | shared core through `FormShell` inside `TopAnchoredSheet` |
+  | Goal asset picker | `FormShell` | shared core through `FormShell` inside `TopAnchoredSheet` |
+  | Security settings | `AppHeader` and setting controls | unchanged; settings surface, not a data-entry route form |
+  | `app/link-missing.tsx` | `AppHeader`, selection list and fixed action | unchanged; bulk-selection flow, not a data-entry form |
+  | Liability payments / investment entries lists | list headers and filters | unchanged; list/filter surfaces, not forms |
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
   prior user checkpoints were audited; each changed path is listed:
@@ -1803,6 +1834,7 @@ evidence present in exports/checkpoints.
 | P20-Q | Phase 20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
 | P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
 | P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; 76 suites/865 tests and all six required gates pass. Directory coverage: domain 98.76% lines/93.37% branches; data excluding hooks 93.14%/86.75%; pure lib 100%/100%. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
+| P20-T | Phase 20 | — | — | 2026-10-19 | Consolidate full-screen and sheet forms on one header/body/footer core; convert all data-entry forms (CR-76–CR-77). | Done; focused form/route tests and all six required gates pass; native keyboard and font-scale rendering remain unverified. | Preflight `b449d9d`; implementation and final verification commits recorded in DEC-P20T. | Assumed: see DEC-P20T; onboarding retains no-back exit behavior and selection/information surfaces remain non-forms. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1889,11 +1921,13 @@ evidence present in exports/checkpoints.
 | CR-68 | Render each Budget section in its own Card with responsive, accessible icon actions. | Done | Cards, per-section icon policy, item rows/dividers, responsive stacking, past-month read-only behavior, linked routes and unchanged Home summary are covered. All six gates exit 0. |
 | CR-69 | Cover top-sheet, card, deletion, accessibility and font-scale acceptance; close ledger and gates. | Done | Focused acceptance and store tests; full coverage and all six gates pass. Real-device checks remain listed in P20-R verification. |
 | CR-70 | Add accessible, grouped Dropdown control and convert specified transaction, holding, liability and Budget category choices. | Done | `Dropdown.test.tsx`, `TransactionForm.test.tsx`, `budgetCategories.test.ts`; category options are grouped titles-only and planned items sort first. |
-| CR-71 | Compose sheet forms with a shared FormShell while keeping frozen FormScreen and form inputs unchanged. | Done | `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx`, and `HomeThemeSmoke.test.tsx` pass; both converted sheets use the shared header/body/footer. |
+| CR-71 | Compose sheet forms with a shared FormShell while keeping frozen FormScreen and form inputs unchanged. | Done; FormScreen freeze superseded by CR-76 | `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx`, and `HomeThemeSmoke.test.tsx` pass; both converted sheets use the shared core. CR-76 explicitly authorizes the shared-core FormScreen edit; all other frozen inputs remain unchanged. |
 | CR-72 | Show Actual before Planned in paired Budget values and accessibility text. | Done | Budget overview table, section/item rows, pace/income labels, charts and accessibility equivalents use Actual-left/Planned-right; Home's existing wording is unchanged. |
 | CR-73 | Use category dropdowns with Custom-name flow in Budget item add/edit. | Done | Route and Dropdown tests cover section-specific choices, occupied-category exclusion, current edit selection and Custom validation. |
 | CR-74 | Add accessible Due day helper text without changing frozen IntegerField. | Done | Route tests assert exact helper copy and stacking at 1.0/1.3/2.0. |
 | CR-75 | Make transaction-derived unbudgeted rows manageable and permit manual Insurance items without linked-policy duplication. | Done | Budget/domain/schema/import/pending/store and route tests cover edit affordances, protected Insurance section, plan/snapshot mutations, due clearing, policy non-duplication, one write and deep-equal Undo. |
+| CR-76 | Unify full-screen and sheet forms on one shared header/body/footer implementation while preserving FormScreen behavior. | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, frozen hash test; dirty discard, validation summary, action slots, scrollable body and fixed footer remain covered. |
+| CR-77 | Convert every data-entry form to the common shell and enforce consistent Back/Close/delete/Save placement. | Done | Route parameter smoke test covers create/edit entry points; every route form plus onboarding, erase-data, Budget sheet, Goal picker and EF custom-option dialogs use the shared shell. Selection/information/list/settings surfaces remain deliberately unchanged. |
 
 ## 8. Known issues and risks
 
@@ -2155,6 +2189,9 @@ evidence for the fixes.
 | P20-R STEP 3 — Section Cards and icon actions (CR-68) | Done | `app/(tabs)/budget.tsx` | `RouteRenderSmoke.test.tsx` asserts one Card per section, item/divider structure, icon names/labels/targets, system/custom action policy, linked source routes, read-only past months, and stacked title/actions at 1.3/2.0. `HomeThemeSmoke.test.tsx` confirms Home's existing summary look. |
 | P20-R STEP 4 — Acceptance and final gates (CR-69) | Done | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/data/__tests__/createAppStore.test.ts`, `src/lib/__tests__/progressLedger.test.ts`, `docs/PROGRESS.md` | Focused route/Home/store tests: 3 suites/179 tests; full coverage: 75 suites/857 tests. All six gates exit 0. Expo Doctor output: `Running 21 checks on your project... 21/21 checks passed. No issues detected!` Directory coverage: domain 98.53% lines/93.15% branches; data excluding hooks 93.14%/86.75%; pure lib 100%/100%. |
 | P20-S STEP 5 — Insurance management and final gates (CR-75) | Done | `app/(tabs)/budget.tsx`, `src/components/BudgetManagementSheet.tsx`, `src/domain/budget.ts`, `src/domain/pending.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts` | Unbudgeted spending and income are editable; Insurance custom/manual items, protected system-section behavior, policy/manual actual reconciliation, non-duplicated budget due, Insurance expense clearing and store one-write/deep-equal Undo are covered. 76 suites/865 tests; all six required gates exit 0. Simulated layout only; physical-device checks remain. |
+| P20-T STEP 1 — Shared three-region form core (CR-76) | Done | `src/components/FormShell.tsx`, `src/components/form/FormScreen.tsx` | `FormScreen` delegates header/body/footer to `FormShell`; SafeAreaView, KeyboardAvoidingView, dirty discard and existing props remain. Structural tests confirm the adapter has no duplicate header/body/footer layout. |
+| P20-T STEP 2 — Convert every data-entry form (CR-77) | Done | app form routes, BudgetManagementSheet, Goal asset picker, EF allocation custom-option dialogs | Route parameter smoke test covers create/edit route params; shared Back-left/right-action/Save-footer rule applies. Onboarding retains no-back exit behavior. Settings, list filters, selection pickers and informational modals remain outside the data-entry shell. |
+| P20-T STEP 3 — Acceptance, freeze and final gates | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx`, `OnboardingForms.test.tsx`, `TransactionForm.test.tsx`, `EfAllocationForm.test.tsx`, `formComponentsFrozen.test.ts`, `docs/PROGRESS.md` | Dirty discard and validation summary remain; font-scale tests assert non-clipping structure; authorized FormScreen hash is frozen and all other input hashes unchanged. Replaced assertion: full-screen left “Close” becomes left “Back”; reason: CR-77 navigation rule. Redundant footer Back buttons on invalid/missing-route states are replaced by the header action; reason: one navigation affordance per the shared layout. |
 
 #### P20-O final verification
 
@@ -2600,6 +2637,99 @@ and P21-A/B/C with CR-8, CR-13, CR-14, CR-15, CR-20, CR-37 and CR-38 are Done.
 |---|---|---:|
 | `npm test -- --coverage` | 69 suites / 723 tests passed. Domain: 98.33% lines, 93.54% branches; data excluding hooks: 93.38% lines, 87.73% branches; pure lib: 100% lines and branches. | 0 |
 | `npx tsc --noEmit` | Typecheck passed. | 0 |
+
+#### P20-T final verification
+
+`npm test -- --coverage`: 76 suites / 873 tests passed; 95.93% statements,
+92.49% branches, 97.50% functions and 97.84% lines overall. The first
+coverage run exited 1 because the progress-ledger test still expected CR-71
+to be plain `Done`; its assertion now records CR-76's explicitly authorized
+FormScreen freeze supersession, and the complete coverage run passed on rerun.
+Focused form verification: 6 suites / 136 tests passed (FormScreen, FormShell,
+route render, onboarding, EF allocation and frozen-component tests).
+
+| Required gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 76 suites / 873 tests pass; 95.93% statements, 92.49% branches, 97.50% functions, 97.84% lines. | 0 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Passes. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Coverage aggregation from the final Istanbul counters:
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2,705/2,739 (98.76%) | 2,562/2,744 (93.37%) |
+| `src/data` excluding hooks | 543/583 (93.14%) | 504/581 (86.75%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Per-file Istanbul summaries for changed UI source: `FormShell.tsx` and
+`FormScreen.tsx` are not instrumented by the current Jest coverage config.
+No pure domain/data/lib implementation function changed in P20-T; the changed
+`progressLedger.test.ts` is test code, not an instrumented source module.
+The full run reported 95.93% statements / 92.49% branches / 97.50% functions /
+97.84% lines across instrumented source.
+
+The directory aggregation script used the final `coverage/coverage-final.json`:
+
+```js
+const coverage = require('./coverage/coverage-final.json');
+const groups = {
+  domain: (file) => file.includes('/src/domain/') && !file.includes('/__tests__/'),
+  data: (file) => file.includes('/src/data/') && !file.includes('/__tests__/') && !/\/use[^/]*\.[jt]sx?$/.test(file),
+  lib: (file) => file.includes('/src/lib/') && !file.includes('/__tests__/'),
+};
+for (const [name, include] of Object.entries(groups)) {
+  let linesHit = 0, linesTotal = 0, branchesHit = 0, branchesTotal = 0;
+  for (const [file, item] of Object.entries(coverage)) {
+    if (!include(file)) continue;
+    const lines = new Map();
+    for (const [id, statement] of Object.entries(item.statementMap)) {
+      const line = statement.start.line;
+      lines.set(line, (lines.get(line) ?? false) || item.s[id] > 0);
+    }
+    linesTotal += lines.size;
+    linesHit += [...lines.values()].filter(Boolean).length;
+    const branches = Object.values(item.b).flat();
+    branchesTotal += branches.length;
+    branchesHit += branches.filter((count) => count > 0).length;
+  }
+  console.log(name, {
+    lines: `${linesHit}/${linesTotal} (${(100 * linesHit / linesTotal).toFixed(2)}%)`,
+    branches: `${branchesHit}/${branchesTotal} (${(100 * branchesHit / branchesTotal).toFixed(2)}%)`,
+  });
+}
+```
+
+**Replaced assertions:** full-screen Close-on-left assertions now expect
+Back-on-left; reason: CR-77 assigns one navigation rule to full-screen forms.
+Redundant footer Back buttons on invalid/missing-route states are replaced by
+the header Back action; reason: the shared form has one navigation affordance.
+The previous CR-71 assertion that FormScreen remained frozen is superseded by
+the user's explicit CR-76 authorization; the baseline and authorized SHA-256
+are recorded in DEC-P20T, and all other frozen input hashes still match.
+FormShell titles no longer use a single-line-only constraint; layout
+assertions verify wrapping space and persistent 44×44 action/footer structure
+at simulated font scales 1.3 and 2.0.
+
+**Modal/form inventory:** Budget management and Goal asset selection remain
+inside TopAnchoredSheet and share FormShell. EF allocation's custom-option
+edit and add dialogs now use FormShell with KeyboardAvoidingView. Its linked
+investment chooser remains a selection picker, not a data-entry form.
+Investment-form's slide modal is informational. Other `Modal` uses in `app/`
+are these three EF dialogs and that informational investment modal; native
+date/dropdown pickers are unchanged. Security settings, link-missing
+bulk-selection, liability-payment/investment-entry lists and their filters
+remain non-form surfaces.
+
+**Not verified on a real device:** keyboard overlap with and reachability of
+the fixed footer; actual keyboard resizing on iOS/Android; safe-area positioning
+on notched/small phones; title and footer pixel clipping at system font scales
+1.3/2.0; centered EF dialog sizing while the keyboard is open; and onboarding
+hardware-back exit behavior. TestRenderer checks are simulated style and
+structure assertions only.
 | `npx expo lint` | Lint passed. | 0 |
 | `npx expo export --platform android` | Android export passed. | 0 |
 | `npx expo export --platform ios` | iOS export passed. | 0 |
