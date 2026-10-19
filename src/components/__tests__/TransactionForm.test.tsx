@@ -213,6 +213,25 @@ describe('transaction add form', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the validation summary in the fixed Save footer after an invalid submit', async () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+
+    await act(async () => {
+      renderer?.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const footerSummary = renderer.root.findAll((node) =>
+      String(node.type) === 'text' && node.children.join('').startsWith('Fix '),
+    );
+    expect(footerSummary).toHaveLength(1);
+    expect(renderer.root.findByProps({ label: 'Save' }).props.disabled).toBe(true);
+  });
+
   it.each(['Festival', 'Donation', 'Gifts'] as const)('creates an expense in the %s category', async (category) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {

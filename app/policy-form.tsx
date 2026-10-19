@@ -46,7 +46,7 @@ export default function PolicyFormScreen() {
 
   if (!policy) {
     return (
-      <FormScreen title="Policy" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Policy" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Policy not found" />
       </FormScreen>
     );

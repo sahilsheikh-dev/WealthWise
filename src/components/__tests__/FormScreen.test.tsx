@@ -50,21 +50,31 @@ jest.mock('react-native', () => {
   };
 });
 
-describe('FormScreen close behavior', () => {
+describe('FormScreen shared shell and close behavior', () => {
   beforeEach(() => {
     mockConfirmAsync.mockReset();
     mockHardwareBack = undefined;
   });
 
-  it('closes a clean form immediately with an accessible 44-point Close control', () => {
+  it('renders shared header, scrollable body and fixed footer with a 44-point Back action', () => {
     const onClose = jest.fn();
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
-      renderer = TestRenderer.create(<FormScreen title="Details" onClose={onClose} footer={null} />);
+      renderer = TestRenderer.create(
+        <FormScreen title="Details" onClose={onClose} footer={<button>Save</button>}>
+          {React.createElement('field')}
+        </FormScreen>,
+      );
     });
     if (!renderer) throw new Error('Form screen did not render.');
-    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
-    expect(close.props.style).toEqual(expect.objectContaining({ width: 44, height: 44 }));
+    expect(renderer.root.findAll((node) => node.type === 'text' && node.children.join('') === 'Details')).toHaveLength(1);
+    const body = renderer.root.findByProps({ testID: 'form-shell-body' });
+    expect(body.props.keyboardShouldPersistTaps).toBe('handled');
+    expect(body.findAll((node) => String(node.type) === 'field')).toHaveLength(1);
+    expect(renderer.root.findByProps({ testID: 'form-shell-footer' }).findByType('button')).toBeDefined();
+    const close = renderer.root.findByProps({ accessibilityLabel: 'Back' });
+    expect(JSON.stringify(close.props.style)).toContain('"width":44');
+    expect(JSON.stringify(close.props.style)).toContain('"height":44');
     act(() => close.props.onPress());
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockConfirmAsync).not.toHaveBeenCalled();
@@ -96,14 +106,28 @@ describe('FormScreen close behavior', () => {
       );
     });
     if (!renderer) throw new Error('Form screen did not render.');
-    const action = renderer.root.findByProps({ label: 'Add allocation item' });
-    expect(action.props).toMatchObject({
-      icon: 'plus',
-      label: 'Add allocation item',
-      variant: 'default',
-    });
+    const action = renderer.root.findByProps({ accessibilityLabel: 'Add allocation item' });
+    expect(action.props.accessibilityHint).toBe('Add allocation item');
+    expect(JSON.stringify(action.props.style)).toContain('"width":44');
+    expect(JSON.stringify(action.props.style)).toContain('"height":44');
     act(() => action.props.onPress());
     expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('supports an intentionally empty left slot and preserves custom hardware-back behavior', () => {
+    const onClose = jest.fn();
+    const onHardwareBack = jest.fn(() => true);
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <FormScreen title="Welcome" onClose={onClose} leftAction={null} onHardwareBack={onHardwareBack} footer={null} />,
+      );
+    });
+    if (!renderer) throw new Error('Form screen did not render.');
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Back' })).toHaveLength(0);
+    act(() => { mockHardwareBack?.(); });
+    expect(onHardwareBack).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('asks before discarding dirty changes and keeps the form when cancelled', async () => {
@@ -114,7 +138,7 @@ describe('FormScreen close behavior', () => {
       renderer = TestRenderer.create(<FormScreen title="Details" onClose={onClose} isDirty footer={null} />);
     });
     if (!renderer) throw new Error('Form screen did not render.');
-    await act(async () => renderer?.root.findByProps({ accessibilityLabel: 'Close' }).props.onPress());
+    await act(async () => renderer?.root.findByProps({ accessibilityLabel: 'Back' }).props.onPress());
     expect(mockConfirmAsync).toHaveBeenCalledWith({
       title: 'Discard changes?',
       message: 'Your unsaved changes will be lost.',

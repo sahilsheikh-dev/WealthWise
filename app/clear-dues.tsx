@@ -97,7 +97,7 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
