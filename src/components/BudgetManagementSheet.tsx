@@ -250,7 +250,6 @@ export function BudgetManagementSheet({
                     name="itemMode"
                     render={({ field }) => (
                       <SegmentedControl
-                        label="Value type"
                         value={field.value}
                         options={[
                           { label: '₹', value: 'amount' },
@@ -370,7 +369,7 @@ export function BudgetManagementSheet({
                         name="day"
                         render={({ field }) => (
                           <IntegerField
-                            label="Optional"
+                            label="Due day"
                             accessibilityLabel="Due day"
                             icon="calendar-outline"
                             value={field.value}
@@ -390,7 +389,6 @@ export function BudgetManagementSheet({
                 name="scope"
                 render={({ field }) => (
                   <SegmentedControl
-                    label="Apply changes to"
                     value={field.value}
                     options={[
                       { label: 'This month only', value: 'month' },
