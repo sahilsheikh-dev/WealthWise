@@ -523,7 +523,14 @@ describe('createAppStore persistence', () => {
     const addedItem = store.getState().data.monthBudgets?.[0]?.items.find((item) => item.name === 'Pet care');
     if (!addedItem) throw new Error('Added budget item missing.');
     runOnce(() => actions.editBudgetStructureItem(month, addedItem.id, { value: 200 }, 'month', today));
+    const beforeDeleteItem = store.getState().data;
     runOnce(() => actions.deleteBudgetStructureItem(month, addedItem.id, 'month', today));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeDeleteItem.budgetPlan,
+      month,
+      beforeDeleteItem.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeDeleteItem);
     runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
   });
 
