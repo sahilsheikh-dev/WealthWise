@@ -503,6 +503,20 @@ describe('createAppStore persistence', () => {
     if (!addedSection) throw new Error('Added budget section missing.');
     runOnce(() => actions.renameSection(month, addedSection.id, 'Trips', 'month', today));
     runOnce(() => actions.changeSectionType(month, addedSection.id, 'invest', 'month', today));
+    const beforeIncome = store.getState().data;
+    runOnce(() => actions.addBudgetIncome(month, {
+      name: 'Freelance', category: 'Freelance', amount: 500, day: 12,
+    }, 'following', today));
+    expect(store.getState().data.budgetPlan?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Freelance', amount: 500, day: 12 }));
+    expect(store.getState().data.monthBudgets?.[0]?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Freelance', amount: 500, day: 12 }));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeIncome.budgetPlan,
+      month,
+      beforeIncome.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeIncome);
     runOnce(() => actions.addBudgetItem(month, {
       sectionId: addedSection.id, name: 'Pet care', mode: 'amount', value: 100,
     }, 'month', today));

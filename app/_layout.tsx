@@ -51,7 +51,6 @@ function AppContent() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
                 <Stack.Screen name="liabilities" />
-                <Stack.Screen name="budget-setup" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="emergency-fund" />
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="link-missing" />
@@ -60,7 +59,6 @@ function AppContent() {
                 <Stack.Screen name="investment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entry-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="budget-month-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entries" />

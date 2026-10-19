@@ -54,6 +54,7 @@ import {
   clearMonthBudget,
   customizeMonthBudget,
   addSection as addBudgetSectionData,
+  addIncomeItem as addBudgetIncomeData,
   renameSection as renameBudgetSectionData,
   changeSectionType as changeBudgetSectionTypeData,
   deleteSection as deleteBudgetSectionData,
@@ -89,7 +90,13 @@ import { createStressTransactions } from '../domain/stressData';
 import type {
   AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
 } from '../domain/types';
-import type { BudgetItemPatch, BudgetItemScope, BudgetItemSource, BudgetItemValues } from '../domain/budget';
+import type {
+  BudgetIncomeInput,
+  BudgetItemPatch,
+  BudgetItemScope,
+  BudgetItemSource,
+  BudgetItemValues,
+} from '../domain/budget';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -155,6 +162,7 @@ export type AppActions = {
   changeSectionType: (month: string, sectionId: string, type: BudgetSection['type'], scope: BudgetItemScope, today: ISODate) => void;
   deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
   editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
   deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
@@ -464,6 +472,9 @@ export function createAppStore(
         },
         addBudgetItem(month, input, scope, today) {
           applyDataAction((data) => addBudgetItemData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        addBudgetIncome(month, input, scope, today) {
+          applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
         },
         editBudgetStructureItem(month, itemId, patch, scope, today) {
           applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));

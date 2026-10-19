@@ -66,23 +66,20 @@ export function defaultBudgetSections(): BudgetSection[] {
   ];
 }
 
+export function createDefaultBudgetPlan(monthInput: string): BudgetPlan {
+  const month = monthOf(monthInput);
+  return {
+    incomes: [],
+    sections: defaultBudgetSections(),
+    items: [],
+    repeatMonthly: true,
+    repeatFrom: month,
+  };
+}
+
 export function defaultBudgetSectionIdFor(category: string): string {
   return budgetGroupFor(category)?.id ?? 'survival';
 }
-
-export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  survival: { Living: 20, Rent: 5, Utilities: 5, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 5, Insurance: 5 },
-  'savings-investments': {
-    'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
-    'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 40,
-  },
-  wants: {
-    Shopping: 25, Other: 10, 'Eating out': 10, Entertainment: 10, Fashion: 10,
-    Subscriptions: 15, 'Personal spending': 10, Travel: 10,
-  },
-  'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },
-  'unexpected-extras': { Unexpected: 100 },
-};
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
@@ -262,35 +259,6 @@ export function resolveBudgetPlan(
       ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
-}
-
-export function suggestBudgetSplit(input: {
-  plannedIncome: number;
-  commitments: BudgetCommitment[];
-}): { lines: BudgetLine[]; warnings: string[] } {
-  const lines: BudgetLine[] = [];
-  const warnings: string[] = [];
-  for (const group of BUDGET_GROUPS) {
-    const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
-    if (!weights) throw new Error(`Missing category weights for ${group.id}.`);
-    const commitments = input.commitments.filter((item) => group.categories.includes(item.category));
-    const committed = commitments.reduce((sum, item) => sum + item.plannedAmount, 0);
-    const target = input.plannedIncome * group.weight / 100;
-    const remaining = Math.max(0, target - committed);
-    if (committed > target) {
-      warnings.push(`${group.name} commitments exceed its ${group.weight}% allocation.`);
-    }
-    const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-    for (const category of group.categories) {
-      const weight = weights[category];
-      if (weight === undefined) throw new Error(`Missing budget weight for ${category}.`);
-      const amount = Math.max(0, Math.round(remaining * weight / totalWeight / 100) * 100);
-      const categoryCommitment = commitments.filter((item) => item.category === category)
-        .reduce((sum, item) => sum + item.plannedAmount, 0);
-      lines.push({ category, planned: amount + categoryCommitment });
-    }
-  }
-  return { lines, warnings };
 }
 
 function monthRows(data: AppData): MonthBudget[] {
@@ -575,6 +543,7 @@ export class BudgetMutationError extends Error {
 
 export type BudgetSectionInput = Pick<BudgetSection, 'name' | 'type'> & { id: string };
 export type BudgetItemInput = BudgetItem;
+export type BudgetIncomeInput = Omit<BudgetIncomeItem, 'id'> & { id: string };
 export type BudgetItemPatch = {
   name?: string;
   mode?: BudgetItem['mode'];
@@ -673,6 +642,49 @@ function mutateBudgetStructure(
     budgetPlan: { ...basePlan, ...planChange },
     monthBudgets: monthRows(data).map((row) => row.month === month
       ? { ...row, ...snapshotChange }
+      : row),
+  };
+}
+
+export function addIncomeItem(
+  data: AppData,
+  monthInput: string,
+  input: BudgetIncomeInput,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const month = monthOf(monthInput);
+  const name = input.name.trim();
+  if (!input.id || !name || name.length > 40) {
+    throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
+  }
+  const normalizedAmount = normalizeMoney(input.amount);
+  if (!isEarnedIncomeCategory(input.category)
+    || !Number.isFinite(input.amount) || input.amount <= 0 || normalizedAmount <= 0 || input.amount > 1_000_000_000
+    || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
+  }
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
+  if (budget.incomes.some((income) => income.id === input.id)) {
+    throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
+  }
+  const income = { ...input, name, amount: normalizedAmount };
+  if (scope === 'month') {
+    return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
+  }
+  const stored = monthRows(data).find((row) => row.month === month);
+  const plan = data.budgetPlan ?? snapshotAsPlan(budget);
+  if (plan.incomes.some((row) => row.id === input.id)) {
+    throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
+  }
+  const updatedPlan = { ...plan, incomes: [...plan.incomes, income] };
+  if (!stored) return { ...data, budgetPlan: updatedPlan };
+  return {
+    ...data,
+    budgetPlan: updatedPlan,
+    monthBudgets: monthRows(data).map((row) => row.month === month
+      ? { ...row, incomes: [...row.incomes, income] }
       : row),
   };
 }

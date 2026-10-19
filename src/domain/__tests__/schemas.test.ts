@@ -1,6 +1,6 @@
 import { mockAppData } from '../../mock/data';
 import { validateImportData } from '../backup';
-import { BUDGET_CATEGORY_WEIGHTS, BUDGET_GROUPS } from '../budget';
+import { BUDGET_GROUPS } from '../budget';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import {
   appDataSchema,
@@ -644,7 +644,6 @@ describe('makeTransactionFormSchema', () => {
     const budgetCategories = [
       ...BUDGET_CATEGORIES,
       ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
-      ...Object.values(BUDGET_CATEGORY_WEIGHTS).flatMap((weights) => Object.keys(weights)),
     ];
     expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
     expect(INVESTMENT_FORM_CATEGORIES).not.toContain('Emergency fund');
