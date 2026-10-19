@@ -1,19 +1,19 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Feather } from '@expo/vector-icons';
-import { useForm, Controller, useWatch } from 'react-hook-form';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { EARNED_INCOME_CATEGORIES, type BudgetSection, type EarnedIncomeCategory } from '../domain/types';
-import { useTheme } from '../theme/useTheme';
 import { typography } from '../theme/tokens';
-import { AppText, Button } from './ui';
+import { useTheme } from '../theme/useTheme';
 import { ChoiceField } from './form/ChoiceField';
 import { IntegerField } from './form/IntegerField';
 import { MoneyField } from './form/MoneyField';
 import { SegmentedControl } from './form/SegmentedControl';
 import { TextField } from './form/TextField';
+import { TopAnchoredSheet } from './TopAnchoredSheet';
+import { AppText, Button } from './ui';
 
 export type BudgetManagementMode =
   | { kind: 'add-section' }
@@ -111,7 +111,6 @@ export function BudgetManagementSheet({
   onRemove?: () => void;
 }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const schema = makeFormSchema(mode);
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<
     z.input<typeof formSchema>,
@@ -159,42 +158,39 @@ export function BudgetManagementSheet({
   });
 
   return (
-    <Modal
+    <TopAnchoredSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-      testID="budget-management-modal">
-      <View style={styles.overlay} testID="budget-management-overlay">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close budget editor"
-          onPress={onClose}
-          style={StyleSheet.absoluteFill}
-          testID="budget-management-backdrop" />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoiding}>
-          <View
-            testID="budget-management-sheet"
-            style={[
-              styles.sheet,
-              { backgroundColor: colors.surface, borderColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) },
-            ]}>
-            <View style={styles.header}>
-              <AppText weight="bold" style={[typography.name, styles.heading]}>{titleFor(mode)}</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Close budget editor"
-                onPress={onClose}
-                style={styles.closeButton}>
-                <Feather name="x" size={20} color={colors.text2} />
-              </Pressable>
-            </View>
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.fields}>
+      onClose={onClose}
+      sheetTestID="budget-management-sheet"
+      contentStyle={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View testID="budget-management-header" style={styles.header}>
+        <AppText weight="bold" style={[typography.name, styles.heading]}>{titleFor(mode)}</AppText>
+        <View style={styles.headerActions}>
+          {canRemove ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Delete item"
+              accessibilityHint="Delete this item from the selected month range"
+              onPress={onRemove}
+              style={styles.headerButton}>
+              <Feather name="trash-2" size={18} color={colors.err} />
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={onClose}
+            style={styles.headerButton}>
+            <Feather name="x" size={20} color={colors.text2} />
+          </Pressable>
+        </View>
+      </View>
+      <ScrollView
+        style={styles.fieldsScroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.fields}>
               {mode.kind === 'add-section' || mode.kind === 'rename-section' ? (
                 <>
                   <Controller
@@ -218,7 +214,6 @@ export function BudgetManagementSheet({
                       name="sectionType"
                       render={({ field }) => (
                         <SegmentedControl
-                          label="Category type"
                           value={field.value}
                           options={[
                             { label: 'Spend', value: 'spend' },
@@ -293,16 +288,12 @@ export function BudgetManagementSheet({
                       />
                     </View>
                     <View style={styles.dueDay}>
-                      <View testID="budget-due-day-label" style={styles.dayLabel}>
-                        <Feather name="calendar" size={16} color={colors.text2} />
-                        <AppText style={typography.meta}>Due day</AppText>
-                      </View>
                       <Controller
                         control={control}
                         name="day"
                         render={({ field }) => (
                           <IntegerField
-                            label="Optional"
+                            label="Due day"
                             accessibilityLabel="Due day"
                             icon="calendar-outline"
                             value={field.value}
@@ -374,10 +365,6 @@ export function BudgetManagementSheet({
                       />
                     </View>
                     <View style={styles.dueDay}>
-                      <View testID="budget-due-day-label" style={styles.dayLabel}>
-                        <Feather name="calendar" size={16} color={colors.text2} />
-                        <AppText style={typography.meta}>Due day</AppText>
-                      </View>
                       <Controller
                         control={control}
                         name="day"
@@ -421,44 +408,29 @@ export function BudgetManagementSheet({
                     : `${laterCustomMonths} later months have their own values and are kept.`}
                 </AppText>
               ) : null}
-              {canRemove ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Remove item"
-                  onPress={onRemove}
-                  style={styles.removeButton}>
-                  <AppText weight="semibold" style={{ color: colors.err }}>Remove item</AppText>
-                </Pressable>
-              ) : null}
-              <Button
-                label={isSubmitting ? 'Saving' : 'Save'}
-                variant="primary"
-                disabled={isSubmitting}
-                onPress={save}
-                style={styles.saveButton}
-              />
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+        <Button
+          label={isSubmitting ? 'Saving' : 'Save'}
+          variant="primary"
+          disabled={isSubmitting}
+          onPress={save}
+          style={styles.saveButton}
+        />
+      </ScrollView>
+    </TopAnchoredSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
-  keyboardAvoiding: { justifyContent: 'flex-end' },
   sheet: {
-    maxHeight: '60%',
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
     paddingHorizontal: 20,
+    paddingBottom: 16,
+    alignSelf: 'stretch',
   },
-  header: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heading: { flex: 1 },
-  closeButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  fieldsScroll: { flexShrink: 1 },
   fields: { gap: 14, paddingBottom: 8 },
   itemFields: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   itemFieldsStacked: { flexDirection: 'column' },
@@ -466,6 +438,5 @@ const styles = StyleSheet.create({
   dueDay: { flex: 1, minWidth: 0, gap: 6 },
   dayLabel: { minHeight: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
   readOnly: { gap: 4 },
-  removeButton: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   saveButton: { alignSelf: 'stretch', justifyContent: 'center' },
 });
