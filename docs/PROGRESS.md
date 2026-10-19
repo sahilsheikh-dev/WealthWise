@@ -135,7 +135,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
-| P20-S | — | Pending | CR-70–CR-75: dropdowns, shared form shell, Actual/Planned ordering, custom budget category flow, and Insurance manual items. | 2026-10-19 |
+| P20-S | — | Pending | CR-70–CR-75: CR-70 and CR-71 complete; Actual/Planned ordering, custom budget category flow, and Insurance manual items remain. | 2026-10-19 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -2313,6 +2313,19 @@ callbacks and persistence behavior, not native device rendering.
 |---|---|---|
 | STEP 0 — Preflight and ownership audit | Done | Base `003fc4f`, preserved user checkpoint `ecc5c35`; clean preflight worktree. DEC-P20S records CR-59 supersessions, choices, assumptions and user-owned Cash flow/removal constraints. |
 | STEP 1 — Dropdown component and specified conversions (CR-70) | Done | `Dropdown.test.tsx`, `TransactionForm.test.tsx`, `budgetCategories.test.ts`; 3 suites/32 tests pass. TypeScript and lint exit 0. Hint function/component/test deleted; selected instrument still determines invest category. |
+| STEP 2 — Common sheet form shell (CR-71) | Done | Added `FormShell.tsx` and converted `BudgetManagementSheet` plus the Goal asset picker inside `TopAnchoredSheet`; `FormScreen` remains unchanged for route forms. `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx` (108 tests) and `HomeThemeSmoke.test.tsx` pass; `npx tsc --noEmit` and `npx expo lint` exit 0. |
+
+CR-71 replaces the earlier sheet-local header/body/footer layouts with one
+shared shell, including accessible 44×44 action slots and a fixed footer.
+Full-screen route forms continue using the existing `FormScreen`; no
+`FormScreen` changes were needed. The route smoke test's assertions for the
+removed visible “Apply changes to” and “Value type” labels now locate the
+existing controls by their option values, preserving scope and validation
+coverage without restoring the user-removed labels. The duplicated “Close”
+lookup now targets the full-screen form action (the test Modal mock renders
+children while hidden), and the investment informational Modal lookup now
+excludes the sheet Modal. The FormShell body assertion uses a stable host node
+instead of assuming its children are raw text.
 
 The first lint attempt found a synchronous state reset inside the shared
 wrapper effect. The reset was removed; keyboard state is now updated by native

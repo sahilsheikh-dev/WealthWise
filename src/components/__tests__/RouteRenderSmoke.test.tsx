@@ -561,6 +561,31 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
+function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
+  const scope = renderer.root.findAll((node) => {
+    const options = node.props.options;
+    return String(node.type) === 'segmentedcontrol'
+      && Array.isArray(options)
+      && options.some((option: unknown) => typeof option === 'object'
+        && option !== null && 'label' in option && option.label === 'This month only');
+  })[0];
+  if (!scope) throw new Error('Budget scope control was not rendered.');
+  return scope;
+}
+
+function budgetValueTypeControl(renderer: TestRenderer.ReactTestRenderer) {
+  const valueType = renderer.root.findAll((node) => {
+    const options = node.props.options;
+    return String(node.type) === 'segmentedcontrol'
+      && Array.isArray(options)
+      && options.some((option: unknown) => typeof option === 'object'
+        && option !== null && 'value' in option && option.value === 'percent');
+  })[0];
+  if (!valueType) throw new Error('Budget item value type control was not rendered.');
+  return valueType;
+}
+
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
@@ -1486,7 +1511,9 @@ describe('route render smoke audit', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Form route did not render.');
-    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
+    const close = renderer.root.findAllByProps({ accessibilityLabel: 'Close' })
+      .find((node) => typeof node.props.isDirty === 'boolean');
+    if (!close) throw new Error('The full-screen form Close action was not rendered.');
     expect(close.props.accessibilityRole).toBe('button');
     expect(close.props.onPress).toEqual(expect.any(Function));
     expect(typeof close.props.isDirty).toBe('boolean');
@@ -2230,7 +2257,10 @@ describe('route render smoke audit', () => {
       expect(sheetText.find((node) => node.props.accessibilityLabel)?.props.accessibilityLabel)
         .toContain('₹10,000');
       act(() => sheet.props.onRequestClose());
-      expect(renderer.root.find((node) => String(node.type) === 'modal').props.visible).toBe(false);
+      const infoModal = renderer.root.findAll((node) =>
+        String(node.type) === 'modal' && node.props.testID === undefined,
+      )[0];
+      expect(infoModal?.props.visible).toBe(false);
     } finally {
       if (renderer) act(() => renderer?.unmount());
       storeState.data.holdings = previousHoldings;
@@ -2550,10 +2580,10 @@ describe('route render smoke audit', () => {
         node.children.join('') === '1 later month has its own values and is kept.',
       )).toBe(false);
       await act(async () => {
-        renderer?.root.findByProps({ label: 'Apply changes to' }).props.onChange('following');
+        budgetScopeControl(renderer).props.onChange('following');
         await Promise.resolve();
       });
-      expect(renderer.root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(budgetScopeControl(renderer).props.value).toBe('following');
       expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
         .toContain('1 later month has its own values and is kept.');
       await act(async () => {
@@ -2665,7 +2695,7 @@ describe('route render smoke audit', () => {
 
       act(() => root.findByProps({ accessibilityLabel: 'Add category' }).props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add category')).toBe(true);
-      expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(budgetScopeControl(renderer).props.value).toBe('following');
       expect(root.findByProps({ testID: 'budget-management-header' })
         .findAll((node) => String(node.type) === 'pressable')
         .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
@@ -2680,7 +2710,7 @@ describe('route render smoke audit', () => {
       expect(root.findByProps({ testID: 'budget-management-header' })
         .findAll((node) => String(node.type) === 'pressable')
         .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
-      expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('month');
+      expect(budgetScopeControl(renderer).props.value).toBe('month');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Category name' }).props.onChangeText('Animal care');
         await saveSheet();
@@ -2697,7 +2727,7 @@ describe('route render smoke audit', () => {
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
-        root.findByProps({ label: 'Value type' }).props.onChange('percent');
+        budgetValueTypeControl(renderer).props.onChange('percent');
         await Promise.resolve();
       });
       await act(async () => {
@@ -2706,7 +2736,7 @@ describe('route render smoke audit', () => {
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
-        root.findByProps({ label: 'Value type' }).props.onChange('amount');
+        budgetValueTypeControl(renderer).props.onChange('amount');
         await Promise.resolve();
       });
       await act(async () => {

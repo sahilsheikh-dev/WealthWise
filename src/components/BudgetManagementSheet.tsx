@@ -1,13 +1,13 @@
-import { Feather } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { EARNED_INCOME_CATEGORIES, type BudgetSection, type EarnedIncomeCategory } from '../domain/types';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { ChoiceField } from './form/ChoiceField';
+import { FormShell, type FormShellAction } from './FormShell';
 import { IntegerField } from './form/IntegerField';
 import { MoneyField } from './form/MoneyField';
 import { SegmentedControl } from './form/SegmentedControl';
@@ -140,6 +140,16 @@ export function BudgetManagementSheet({
   const isItem = mode.kind === 'add-item' || mode.kind === 'edit-item';
   const isIncome = mode.kind === 'add-income' || mode.kind === 'edit-income';
   const canRemove = (mode.kind === 'edit-item' || mode.kind === 'edit-income') && onRemove !== undefined;
+  const rightActions: FormShellAction[] = [
+    ...(canRemove && onRemove ? [{
+      icon: 'trash-2' as const,
+      label: 'Delete item',
+      hint: 'Delete this item from the selected month range',
+      onPress: onRemove,
+      destructive: true,
+    }] : []),
+    { icon: 'x', label: 'Close', hint: 'Close this form', onPress: onClose },
+  ];
 
   const save = handleSubmit((values) => {
     const parsedDay = values.day === '' ? undefined : Number(values.day);
@@ -163,34 +173,20 @@ export function BudgetManagementSheet({
       onClose={onClose}
       sheetTestID="budget-management-sheet"
       contentStyle={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View testID="budget-management-header" style={styles.header}>
-        <AppText weight="bold" style={[typography.name, styles.heading]}>{titleFor(mode)}</AppText>
-        <View style={styles.headerActions}>
-          {canRemove ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Delete item"
-              accessibilityHint="Delete this item from the selected month range"
-              onPress={onRemove}
-              style={styles.headerButton}>
-              <Feather name="trash-2" size={18} color={colors.err} />
-            </Pressable>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={styles.headerButton}>
-            <Feather name="x" size={20} color={colors.text2} />
-          </Pressable>
-        </View>
-      </View>
-      <ScrollView
-        style={styles.fieldsScroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.fields}>
+      <FormShell
+        title={titleFor(mode)}
+        headerTestID="budget-management-header"
+        rightActions={rightActions}
+        footer={(
+          <Button
+            label={isSubmitting ? 'Saving' : 'Save'}
+            variant="primary"
+            disabled={isSubmitting}
+            onPress={save}
+            style={styles.saveButton}
+          />
+        )}
+        bodyTestID="budget-management-fields">
               {mode.kind === 'add-section' || mode.kind === 'rename-section' ? (
                 <>
                   <Controller
@@ -406,30 +402,15 @@ export function BudgetManagementSheet({
                     : `${laterCustomMonths} later months have their own values and are kept.`}
                 </AppText>
               ) : null}
-        <Button
-          label={isSubmitting ? 'Saving' : 'Save'}
-          variant="primary"
-          disabled={isSubmitting}
-          onPress={save}
-          style={styles.saveButton}
-        />
-      </ScrollView>
+      </FormShell>
     </TopAnchoredSheet>
   );
 }
 
 const styles = StyleSheet.create({
   sheet: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
     alignSelf: 'stretch',
   },
-  header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  heading: { flex: 1 },
-  headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  fieldsScroll: { flexShrink: 1 },
-  fields: { gap: 14, paddingBottom: 8 },
   itemFields: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   itemFieldsStacked: { flexDirection: 'column' },
   itemValue: { flex: 2, minWidth: 0 },
