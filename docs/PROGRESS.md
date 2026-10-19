@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 91% (60/66)
+Overall progress █████████░ 90% (60/67)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (18/18)
+Phase 20         █████████░ 95% (18/19)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -135,6 +135,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
+| P20-S | — | Pending | CR-70–CR-75: dropdowns, shared form shell, Actual/Planned ordering, custom budget category flow, and Insurance manual items. | 2026-10-19 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -872,6 +873,25 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   scope confirmation, one persisted write and Undo. The former bottom sheet's
   bottom anchoring / fixed `maxHeight: '60%'` expectation becomes top safe-area
   placement and a keyboard-adjusted window-height cap; reason: CR-66.
+- DEC-P20S: convert only transaction expense/invest category, investment
+  holding type, liability type, and Budget item category controls to the new
+  dropdown. Preserve other ChoiceField uses and frozen form components.
+  Compose FormShell inside the existing top-anchored sheet for Budget
+  management and the Goal asset picker; keep FormScreen unchanged for
+  full-screen route forms. Transaction-derived budget rows become manageable;
+  linked asset/liability rows remain read-only and route to their source forms.
+  CR-59's visible “Left X of Y” category hint is superseded by titles-only
+  dropdown options, and its unbudgeted read-only presentation is superseded
+  by edit affordances for transaction-derived unbudgeted expense/invest and
+  income rows. Insurance remains a protected system section but may contain
+  user-managed manual items; linked policy rows remain read-only and must not
+  duplicate manual dues or actuals.
+  Assumed: Dropdown follows the existing top-anchored sheet interaction
+  pattern, with group headings excluded from selectable/accessibility options
+  and a keyboard-safe scroll area capped at 60% of the window.
+  Assumed: a manual Insurance plan item contributes its own planned line and
+  due independently from linked policy rows, which retain their existing
+  linked commitment/actual treatment.
 - DEC-BUDGET-SPEC: Budget is a forward-looking plan of recurring income,
   bills, investments and loans arranged in sections. BudgetPlan income items
   are {id, name, category, amount, day?}; their amounts sum to planned income,
@@ -1115,6 +1135,10 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance
     placement/removal.
   - `6cb4fa0` — `app/month-review.tsx`: removed Back to transactions action.
+  - `ecc5c35` — `src/components/BudgetManagementSheet.tsx`: removed the
+    “Value type” and “Apply changes to” segmented-control labels; changed the
+    integer-field label to “Due day”. The checkpoint commit is verified and
+    these user edits remain preserved.
   In particular, no Back to Transactions button, Review control, or other
   removed Budget items were restored.
   P20-P final audit confirms its only Budget-screen change adapts the existing
@@ -1728,6 +1752,7 @@ evidence present in exports/checkpoints.
 | P20-P | Phase 20 | — | — | 2026-10-18 | Schema-v10 user-managed budget sections/items, v9 migration, scoped actions and custom-category integration (CR-60–CR-61). | Done; 76 suites/865 tests; final coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. Device criteria remain unverified. | Preflight `1e4fdce`; implementation and ledger are included in this delivery. | Assumed: an ungrouped v9 category migrates into the first spend section; non-built-in investment category strings remain custom after item deletion. See DEC-BUDGET-V10 and DEC-P20P-CR60-61. | current request |
 | P20-Q | Phase 20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
 | P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
+| P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Preflight complete; implementation and gates pending. | Base `003fc4f`; checkpoint `ecc5c35`. | Assumed: see DEC-P20S. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1802,7 +1827,7 @@ evidence present in exports/checkpoints.
 | CR-56 | Create a pure Budget overview model with ordered income/expense/investment sections, planned/actual totals, linked sources, cash-flow projection, pace, and accessible text summaries. | Done | `budgetOverview` covers empty, current, past, future, linked plan/liability/policy, shared-category and overspend cases; `budget.test.ts` and full coverage pass. |
 | CR-57 | Replace the Budget screen with stacked/section/pace charts, text equivalents, mode-specific edit routes and empty states while preserving user-owned labels and removals. | Done | Chart, screen, route, mode, demo and font-scale tests pass; all six final gates exit 0. Opening/Closing balance labels and absence of Budget Back/Review controls are preserved. |
 | CR-58 | Add a bottom-anchored budget-item edit sheet with month/following scope, amount/day validation, remove and Undo; materialize edited virtual months and preserve later custom snapshots. | Done | Domain, store single-write/deep-equal Undo, route and sheet tests cover both scopes, current/derived months, custom snapshots, income/line edits, removal and validation. |
-| CR-59 | Show budget-section grouped expense categories with selected-month remaining/over-budget hints; keep investments instrument-derived and show their hint. | Done | Grouping/order, no-budget/over-budget, date-change-to-future and derived-investment-hint tests pass; frozen ChoiceField and form components remain unchanged. |
+| CR-59 | Show budget-section grouped expense categories with selected-month remaining/over-budget hints; keep investments instrument-derived and show their hint. | Done; visible hints and unbudgeted read-only rule superseded by P20-S | Grouping/order and instrument-derived investment selection remain; P20-S replaces hints with titles-only Dropdown options and makes transaction-derived unbudgeted rows editable. |
 | CR-60 | Migrate schema v9 budget lines to v10 user-managed plan/month sections and items, preserving raw v9 bytes and importing older backups through the migration chain. | Done | `migrateV9ToV10`, v1-v9 checksum/migration tests, one-time `.premigration.v9` archive, schema-11 rejection and schema integrity validation pass. Unknown migrated categories fall back to the first spend section. |
 | CR-61 | Add scoped section/item domain and store mutations, then integrate custom categories through budget views, pending items, transaction validation/filtering/labels, Home summaries and category choices. | Done | Both scopes/current and derived months, later custom snapshot preservation, constraints, deletion without transaction mutation, one persisted write, Undo, dynamic category ordering and custom transaction round trips are covered. |
 | CR-62 | Replace the budget setup/month-form routes with direct Budget-screen plan creation, application, and one Add category header action. | Done | `createDefaultBudgetPlan` produces default sections/no items/repeating from the current month; Home and Budget create/apply it in one action with Undo. Both obsolete routes, screens, links and suggested-split logic are removed. Five targeted suites/204 tests pass; source/action sheet coverage continues through CR-64. |
@@ -1813,6 +1838,12 @@ evidence present in exports/checkpoints.
 | CR-67 | Put edit-mode trash and rightmost Close icons in the Budget sheet header; remove body Remove item link. | Done | Edit modes expose trash then Close; add/section modes only Close; confirmation choices, Undo callback and persisted delete/restore tests are covered. All six gates exit 0. |
 | CR-68 | Render each Budget section in its own Card with responsive, accessible icon actions. | Done | Cards, per-section icon policy, item rows/dividers, responsive stacking, past-month read-only behavior, linked routes and unchanged Home summary are covered. All six gates exit 0. |
 | CR-69 | Cover top-sheet, card, deletion, accessibility and font-scale acceptance; close ledger and gates. | Done | Focused acceptance and store tests; full coverage and all six gates pass. Real-device checks remain listed in P20-R verification. |
+| CR-70 | Add accessible, grouped Dropdown control and convert specified transaction, holding, liability and Budget category choices. | Pending | P20-S STEP 1. |
+| CR-71 | Compose sheet forms with a shared FormShell while keeping frozen FormScreen and form inputs unchanged. | Pending | P20-S STEP 2. |
+| CR-72 | Show Actual before Planned in paired Budget values and accessibility text. | Pending | P20-S STEP 3. |
+| CR-73 | Use category dropdowns with Custom-name flow in Budget item add/edit. | Pending | P20-S STEP 4. |
+| CR-74 | Add accessible Due day helper text without changing frozen IntegerField. | Pending | P20-S STEP 4. |
+| CR-75 | Make transaction-derived unbudgeted rows manageable and permit manual Insurance items without linked-policy duplication. | Pending | P20-S STEP 5. |
 
 ## 8. Known issues and risks
 
