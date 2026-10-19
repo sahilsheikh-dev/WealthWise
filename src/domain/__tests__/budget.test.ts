@@ -1430,5 +1430,149 @@ describe('budget plans and monthly views', () => {
         id: 'no-budget-item', sectionId: 'pets', name: 'No budget', mode: 'amount', value: 1,
       }, 'month', today), 'invalid-item');
     });
+
+    it('allows only manual Insurance items while keeping the system section protected', () => {
+      const before = fixture('2026-03', false);
+      const insuranceItem = {
+        id: 'manual-insurance',
+        sectionId: 'insurance',
+        name: 'Insurance',
+        mode: 'amount' as const,
+        value: 400,
+        dueDay: 20,
+      };
+      const added = addItem(before, '2026-03', insuranceItem, 'following', today);
+      expect(appDataSchema.safeParse(added).success).toBe(true);
+      expect(validateImportData(added).ok).toBe(true);
+      expect(added.budgetPlan?.items).toContainEqual(insuranceItem);
+      expect(added.monthBudgets?.[0]?.items).toContainEqual(insuranceItem);
+
+      const customInsurance = addItem(before, '2026-03', {
+        ...insuranceItem,
+        id: 'manual-custom-insurance',
+        name: 'Dental cover',
+      }, 'month', today);
+      expect(appDataSchema.safeParse(customInsurance).success).toBe(true);
+      expect(validateImportData(customInsurance).ok).toBe(true);
+      expect(customInsurance.monthBudgets?.[0]?.items)
+        .toContainEqual(expect.objectContaining({ name: 'Dental cover', sectionId: 'insurance' }));
+
+      const edited = editBudgetStructureItem(added, '2026-03', {
+        itemId: insuranceItem.id,
+        patch: { value: 500 },
+      }, 'month', today);
+      expect(edited.monthBudgets?.[0]?.items).toContainEqual({ ...insuranceItem, value: 500 });
+
+      const deleted = deleteItem(edited, '2026-03', { itemId: insuranceItem.id }, 'month', today);
+      expect(deleted.monthBudgets?.[0]?.items).not.toContainEqual(expect.objectContaining({ id: insuranceItem.id }));
+      expect(deleted.budgetPlan?.items).toContainEqual(insuranceItem);
+
+      const expectMutationError = (callback: () => unknown, code: string) => {
+        try {
+          callback();
+          throw new Error('Expected the budget mutation to fail.');
+        } catch (error) {
+          expect(error).toBeInstanceOf(BudgetMutationError);
+          expect(error).toMatchObject({ code });
+        }
+      };
+      expectMutationError(() => addItem(before, '2026-03', {
+        ...insuranceItem, id: 'invalid-insurance', name: 'Rent',
+      }, 'month', today), 'reserved-category');
+      const customEdited = editBudgetStructureItem(added, '2026-03', {
+        itemId: insuranceItem.id, patch: { name: 'Manual premium' },
+      }, 'month', today);
+      expect(customEdited.monthBudgets?.[0]?.items)
+        .toContainEqual(expect.objectContaining({ name: 'Manual premium', sectionId: 'insurance' }));
+      expectMutationError(() => renameSection(added, '2026-03', {
+        sectionId: 'insurance', name: 'Cover',
+      }, 'month', today), 'system-section');
+      expectMutationError(() => deleteSection(added, '2026-03', {
+        sectionId: 'insurance',
+      }, 'month', today), 'system-section');
+
+      const misplacedBuiltin = {
+        ...added,
+        budgetPlan: added.budgetPlan && {
+          ...added.budgetPlan,
+          items: added.budgetPlan.items.map((item) =>
+            item.id === insuranceItem.id ? { ...item, name: 'Rent' } : item),
+        },
+      };
+      expect(appDataSchema.safeParse(misplacedBuiltin).success).toBe(false);
+      expect(validateImportData(misplacedBuiltin).ok).toBe(false);
+    });
+
+    it('keeps manual Insurance actuals separate from linked policy rows and budget dues', () => {
+      const insuranceItem = {
+        id: 'manual-insurance',
+        sectionId: 'insurance',
+        name: 'Insurance',
+        mode: 'amount' as const,
+        value: 400,
+        dueDay: 20,
+      };
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: {
+          ...createDefaultBudgetPlan('2026-03'),
+          incomes: incomes(1_000),
+          repeatMonthly: true,
+          repeatFrom: '2026-03',
+          items: [insuranceItem],
+        },
+        policies: [{
+          ...policy,
+          payments: [{
+            id: 'premium-march',
+            date: '2026-03-05',
+            amount: 60,
+            note: '',
+          }],
+        }],
+        transactions: [
+          {
+            id: 'manual-insurance-payment',
+            type: 'expense' as const,
+            amount: 35,
+            category: 'Insurance',
+            note: '',
+            date: '2026-03-10',
+          },
+          {
+            id: 'linked-insurance-payment',
+            type: 'expense' as const,
+            amount: 60,
+            category: 'Insurance',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'premium-march' },
+          },
+        ],
+      };
+      const withMonth = applyBudgetPlanToMonth(data, '2026-03', { newId: () => 'unused', today });
+      expect(appDataSchema.safeParse(withMonth).success).toBe(true);
+
+      const line = budgetMonthView(withMonth, '2026-03', today).lines
+        .find(({ category }) => category === 'Insurance');
+      expect(line).toMatchObject({ planned: 460, actual: 95 });
+
+      const overviewItems = budgetOverview(withMonth, '2026-03', today)
+        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
+      expect(overviewItems).toEqual(expect.arrayContaining([
+        expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
+        expect.objectContaining({ title: 'Health cover', kind: 'linked', planned: 60, actual: 60 }),
+      ]));
+      expect(overviewItems.reduce((total, item) => total + item.planned, 0)).toBe(460);
+      expect(overviewItems.reduce((total, item) => total + item.actual, 0)).toBe(95);
+
+      const insuranceDues = pendingItems(withMonth, '2026-03', today)
+        .filter((item) => item.kind === 'budget' && item.category === 'Insurance');
+      expect(insuranceDues).toEqual([expect.objectContaining({
+        title: 'Insurance',
+        amount: 365,
+        source: { kind: 'budget', category: 'Insurance', type: 'expense' },
+      })]);
+    });
   });
 });

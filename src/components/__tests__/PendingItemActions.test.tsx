@@ -9,10 +9,26 @@ const mockConfirmAsync = jest.fn();
 const mockSetActionToast = jest.fn();
 const mockStoreState = {
   lastError: null as string | null,
-  data: { transactions: [] as { id: string; amount: number; date: string; source?: { kind: string; parentId: string; entryId: string } }[] },
+  data: {
+    transactions: [] as {
+      id: string;
+      amount: number;
+      date: string;
+      type?: 'income' | 'expense' | 'invest';
+      category?: string;
+      note?: string;
+      source?: { kind: string; parentId: string; entryId: string };
+    }[],
+  },
 };
 const mockActions = {
-  addTransaction: jest.fn((input: { amount: number; date: string }) => {
+  addTransaction: jest.fn((input: {
+    type: 'income' | 'expense' | 'invest';
+    amount: number;
+    category: string;
+    note: string;
+    date: string;
+  }) => {
     mockStoreState.data.transactions.push({ id: 'budget-transaction', ...input });
   }),
   deleteTransaction: jest.fn((id: string) => {
@@ -144,6 +160,32 @@ describe('pending item Pay navigation', () => {
 });
 
 describe('later due and planned item actions', () => {
+  it('clears a manual Insurance budget due as an expense in Insurance', () => {
+    const due = item({ kind: 'budget', category: 'Insurance', type: 'expense' }, 'Insurance');
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<PendingItemActions item={due} today="2026-10-12" />);
+    });
+    if (!renderer) throw new Error('Insurance budget actions did not render.');
+    const clearButton = renderer.root.findAllByType('button')
+      .find((button) => button.children.join('') === 'Clear due');
+    if (!clearButton) throw new Error('Insurance budget clear action was not rendered.');
+    act(() => clearButton.props.onPress());
+    expect(mockActions.addTransaction).toHaveBeenCalledWith({
+      type: 'expense',
+      amount: 125,
+      category: 'Insurance',
+      note: '',
+      date: '2026-10-12',
+    });
+    expect(mockStoreState.data.transactions.at(-1)).toMatchObject({
+      type: 'expense',
+      amount: 125,
+      category: 'Insurance',
+      date: '2026-10-12',
+    });
+  });
+
   it('uses the Transactions Paid label for a direct oldest-due clear and offers Undo', () => {
     mockActions.clearDue.mockImplementation(() => {
       mockStoreState.data.transactions = [{

@@ -487,14 +487,15 @@ describe('createAppStore persistence', () => {
     snapshot.sections = plan.sections.map((section) => ({ ...section }));
     const data = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
     storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 10 }));
-    const store = makeStore(storage, { today: () => today });
+    let newId = 0;
+    const store = makeStore(storage, { today: () => today, newId: () => `managed-${++newId}` });
     await waitForHydration(store);
     const actions = store.getState().actions;
     const runOnce = (action: () => void) => {
       const writesBefore = storage.calls.filter((call) => call === 'set:wealthwise.app.v1').length;
       action();
-      expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1').length - writesBefore).toBe(1);
       expect(store.getState().lastError).toBeNull();
+      expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1').length - writesBefore).toBe(1);
     };
 
     runOnce(() => actions.addSection(month, { name: 'Travel extras', type: 'spend' }, 'month', today));
@@ -531,6 +532,21 @@ describe('createAppStore persistence', () => {
       beforeDeleteItem.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeDeleteItem);
+    runOnce(() => actions.addBudgetItem(month, {
+      sectionId: 'insurance', name: 'Insurance', mode: 'amount', value: 400, dueDay: 20,
+    }, 'following', today));
+    const insuranceItem = store.getState().data.monthBudgets?.[0]?.items
+      .find((item) => item.sectionId === 'insurance');
+    if (!insuranceItem) throw new Error('Added Insurance budget item missing.');
+    runOnce(() => actions.editBudgetStructureItem(month, insuranceItem.id, { value: 500 }, 'month', today));
+    const beforeInsuranceDelete = store.getState().data;
+    runOnce(() => actions.deleteBudgetStructureItem(month, insuranceItem.id, 'month', today));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeInsuranceDelete.budgetPlan,
+      month,
+      beforeInsuranceDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeInsuranceDelete);
     runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
   });
 

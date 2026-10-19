@@ -2688,6 +2688,8 @@ describe('route render smoke audit', () => {
       addBudgetIncome: jest.Mock;
       editBudgetStructureItem: jest.Mock;
       editBudgetItem: jest.Mock;
+      deleteBudgetStructureItem: jest.Mock;
+      restoreBudgetPlanAndMonth: jest.Mock;
     };
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const month = monthKey(todayISO());
@@ -2695,6 +2697,7 @@ describe('route render smoke audit', () => {
       budgetPlan: data.budgetPlan,
       monthBudgets: data.monthBudgets,
       transactions: data.transactions,
+      policies: data.policies,
     };
     const income = { id: 'salary-row', name: 'Salary', category: 'Salary' as const, amount: 10_000 };
     const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
@@ -2712,7 +2715,11 @@ describe('route render smoke audit', () => {
     snapshot.items = plan.items.map((item) => ({ ...item }));
     data.budgetPlan = plan;
     data.monthBudgets = [snapshot];
-    data.transactions = [];
+    data.policies = [];
+    data.transactions = [
+      { id: 'extra-freelance', type: 'income', amount: 500, category: 'Freelance', note: '', date: todayISO() },
+      { id: 'vet-visit', type: 'expense', amount: 350, category: 'Vet visit', note: '', date: todayISO() },
+    ];
     routeParams.mockReturnValue({ month });
     for (const action of Object.values(actions)) action.mockClear();
     const alert = jest.requireMock('react-native').Alert.alert as jest.Mock;
@@ -2741,7 +2748,34 @@ describe('route render smoke audit', () => {
       expect(actionLabels('pets')).toEqual(['Rename section', 'Delete section', 'Add item']);
       expect(actionLabels('income')).toEqual(['Add income']);
       expect(actionLabels('debt-repayments')).toEqual([]);
-      expect(actionLabels('insurance')).toEqual([]);
+      expect(actionLabels('insurance')).toEqual(['Add item']);
+
+      const unbudgetedRow = root.findByProps({ testID: `budget-row-line:${month}:Vet visit` });
+      expect(unbudgetedRow.findByProps({ accessibilityLabel: 'Edit Vet visit' })).toBeDefined();
+      actions.addBudgetItem.mockClear();
+      act(() => unbudgetedRow.findByProps({ accessibilityLabel: 'Edit Vet visit' }).props.onPress());
+      expect(root.findByType(Dropdown).props.value).toBe('__custom_item_category__');
+      expect(root.findByProps({ accessibilityLabel: 'Item name' }).props.value).toBe('Vet visit');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('350');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'survival',
+        name: 'Vet visit',
+        mode: 'amount',
+        value: 350,
+      }, 'following', todayISO());
+
+      act(() => root.findByProps({ accessibilityLabel: 'Edit Freelance' }).props.onPress());
+      expect(root.findByProps({ accessibilityLabel: 'Income name' }).props.value).toBe('Freelance');
+      expect(root.findByProps({ accessibilityLabel: 'Planned income amount' }).props.value).toBe('500');
+      await act(async () => saveSheet());
+      expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
+        name: 'Freelance',
+        category: 'Freelance',
+        amount: 500,
+      }, 'following', todayISO());
 
       act(() => root.findByProps({ accessibilityLabel: 'Add category' }).props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add category')).toBe(true);
@@ -2836,6 +2870,25 @@ describe('route render smoke audit', () => {
         value: 300,
       }, 'following', todayISO());
 
+      act(() => sectionAction('insurance', 'Add item').props.onPress());
+      openDropdown(renderer, 'Item category');
+      const insuranceCategories = root.findByType(Dropdown).props.options
+        .map((option: { title: string }) => option.title);
+      expect(insuranceCategories).toEqual(['Insurance', 'Custom']);
+      selectDropdownOption(renderer, 'Item category', 'Insurance');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1200');
+        root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('20');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'insurance',
+        name: 'Insurance',
+        mode: 'amount',
+        value: 1_200,
+        dueDay: 20,
+      }, 'following', todayISO());
+
       act(() => sectionAction('income', 'Add income').props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add income')).toBe(true);
       await act(async () => {
@@ -2917,6 +2970,96 @@ describe('route render smoke audit', () => {
     } finally {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('edits and deletes manually planned Insurance items with scoped Undo', async () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      editBudgetStructureItem: jest.Mock;
+      deleteBudgetStructureItem: jest.Mock;
+      restoreBudgetPlanAndMonth: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const month = monthKey(todayISO());
+    const previous = {
+      budgetPlan: data.budgetPlan,
+      monthBudgets: data.monthBudgets,
+      transactions: data.transactions,
+      policies: data.policies,
+    };
+    const income = { id: 'insurance-test-income', name: 'Salary', category: 'Salary' as const, amount: 1_000 };
+    const insuranceItem = {
+      id: 'manual-insurance',
+      sectionId: 'insurance',
+      name: 'Insurance',
+      mode: 'amount' as const,
+      value: 400,
+      dueDay: 20,
+    };
+    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
+      incomes: [income],
+      repeatMonthly: true,
+      repeatFrom: month,
+    });
+    plan.items.push(insuranceItem);
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 100 }], {
+      source: 'plan',
+      incomes: [income],
+    });
+    snapshot.sections = plan.sections.map((section) => ({ ...section }));
+    snapshot.items = plan.items.map((item) => ({ ...item }));
+    data.budgetPlan = plan;
+    data.monthBudgets = [snapshot];
+    data.transactions = [];
+    data.policies = [];
+    routeParams.mockReturnValue({ month });
+    actions.editBudgetStructureItem.mockClear();
+    actions.deleteBudgetStructureItem.mockClear();
+    actions.restoreBudgetPlanAndMonth.mockClear();
+    useUIStore.getState().setActionToast(null);
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      const root = renderer.root;
+      const editInsurance = root.findByProps({ accessibilityLabel: 'Edit Insurance' });
+      act(() => editInsurance.props.onPress());
+      expect(root.findByType(Dropdown).props.value).toBe('Insurance');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
+        root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'manual-insurance', {
+        name: 'Insurance',
+        mode: 'amount',
+        value: 500,
+        dueDay: 20,
+      }, 'month', todayISO());
+
+      act(() => root.findByProps({ accessibilityLabel: 'Edit Insurance' }).props.onPress());
+      act(() => root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress());
+      const alert = jest.requireMock('react-native').Alert.alert as jest.Mock;
+      expect(alert.mock.calls.at(-1)?.[1]).toContain('Insurance');
+      const deleteButtons = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
+      const monthOnly = deleteButtons?.find((button) => button.text === 'This month only');
+      expect(deleteButtons?.map((button) => button.text)).toEqual([
+        'Cancel',
+        'This month only',
+        'This and following months',
+      ]);
+      if (!monthOnly?.onPress) throw new Error('Insurance item delete confirmation was not presented.');
+      act(() => monthOnly.onPress?.());
+      expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, 'manual-insurance', 'month', todayISO());
+      const toast = useUIStore.getState().actionToast;
+      expect(toast?.actionLabel).toBe('Undo');
+      act(() => toast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(data, previous);
+      routeParams.mockReturnValue({});
+      useUIStore.getState().setActionToast(null);
     }
   });
 

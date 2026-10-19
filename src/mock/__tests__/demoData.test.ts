@@ -67,17 +67,19 @@ describe('four-month demo data', () => {
     expect(data.budgetPlan?.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'Pet care', sectionId: 'demo-section-pets' }),
       expect.objectContaining({ name: 'Domestic help', sectionId: 'survival' }),
+      expect.objectContaining({ name: 'Insurance', sectionId: 'insurance', value: 1_200, dueDay: 20 }),
     ]));
     expect(data.transactions).toEqual(expect.arrayContaining([
       expect.objectContaining({ category: 'Pet care', type: 'expense' }),
       expect.objectContaining({ category: 'Domestic help', type: 'expense' }),
+      expect.objectContaining({ category: 'Vet visit', type: 'expense', amount: 650 }),
     ]));
     expect(data.budgetPlan).toMatchObject({
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),
     });
 
-    expect(data.budgetPlan?.items.some((item) => item.name === 'EMI' || item.name === 'Insurance')).toBe(false);
+    expect(data.budgetPlan?.items.some((item) => item.name === 'EMI')).toBe(false);
     expect(data).not.toHaveProperty('budgetTemplates');
     expect(data.monthBudgets?.find(({ month }) => month === monthKey(today)))
       .toMatchObject({
