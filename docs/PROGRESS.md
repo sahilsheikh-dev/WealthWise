@@ -901,6 +901,45 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   visible remaining/over-budget hints and unbudgeted read-only assertions are
   superseded by titles-only Dropdown options and transaction-derived edit
   affordances; reason: CR-70 and CR-75.
+- DEC-P20T: the user explicitly authorizes changing only
+  `src/components/form/FormScreen.tsx` among frozen inputs, and requires its
+  updated SHA-256 in `frozen-manifest.json` and `formComponentsFrozen.test.ts`.
+  Baseline FormScreen SHA-256 before the authorized edit:
+  `f454190b2efe6372b3c502af8581af5b7a3e1f8eb5ae4bb8f82dc9081ca3f5e0`.
+  Reason: FormScreen and FormShell must share one header/body/footer
+  implementation. Every other frozen input stays byte-identical. Full-screen
+  forms use a Back action on the left; sheet forms use Close as the rightmost
+  action; destructive actions appear to its left; Save remains in the fixed
+  footer. Preserve dirty-form discard, validation summary, defaults,
+  validation, field values and store calls. Form route pages with inputs and
+  footer actions use FormScreen; Budget management and the Goal asset picker
+  use FormShell. `link-missing` is a bulk-action/selection screen rather than
+  a data-entry form; its existing AppHeader, list and fixed action footer
+  remain. Secondary EF allocation dialogs are dialogs, not route forms.
+  Assumed: the shared shell preserves platform keyboard handling by keeping
+  FormScreen's SafeAreaView/KeyboardAvoidingView around the shared core and
+  TopAnchoredSheet around sheet forms.
+  P20-T preflight at base `e99c705` found a clean worktree; no new manual
+  checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
+  prior user checkpoints were audited; each changed path is listed:
+  - `4cb6367` — `.claude/settings.json`: removed local settings.
+  - `4cb6367` — `.gitignore`: ignored `.claude` content.
+  - `c49cafd` — `app.json`: formatting adjustment.
+  - `b217a2a` — `app/(tabs)/transactions.tsx`: available-balance card margin.
+  - `268e4c7` — `app/(tabs)/index.tsx`: Home action wording and UI.
+  - `268e4c7` — `src/components/IconButton.tsx`: exact action label allowance.
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: label assertion.
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: action allowance.
+  - `9a01941` — `app/goal-form.tsx`: blank initial Saved value for new goals.
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-owned Cash flow labels/layout and removed controls.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: exact “Edit allocation” title.
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot wiring.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance amount placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed “Back to Transactions” control.
+  - `75e9097` — `src/components/BudgetManagementSheet.tsx`: prior manual checkpoint snapshot; preserve as committed.
+  - `ecc5c35` — `src/components/BudgetManagementSheet.tsx`: P20-S manual checkpoint snapshot; preserve as committed.
+  The current Budget screen retains the user-selected Cash flow labels and
+  still has no “Back to Transactions” or review control.
 - DEC-BUDGET-SPEC: Budget is a forward-looking plan of recurring income,
   bills, investments and loans arranged in sections. BudgetPlan income items
   are {id, name, category, amount, day?}; their amounts sum to planned income,
