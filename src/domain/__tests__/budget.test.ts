@@ -10,6 +10,7 @@ import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import {
   BUDGET_GROUPS,
+  addIncomeItem,
   addItem,
   addSection,
   customBudgetCategories,
@@ -1280,6 +1281,38 @@ describe('budget plans and monthly views', () => {
       }
     });
 
+    it.each(contexts)('adds income with $label scope semantics', ({ month, scope }) => {
+      const before = fixture(month, false);
+      const laterCustom = before.monthBudgets?.find((budget) => budget.month === '2026-06');
+      const transactions = before.transactions;
+      const after = addIncomeItem(before, month, {
+        id: 'added-income',
+        name: '  Freelance  ',
+        category: 'Freelance',
+        amount: 1_250.125,
+        day: 20,
+      }, scope, today);
+      const effective = effectiveMonthBudget(after, month, today).budget;
+      expect(effective?.incomes).toContainEqual(expect.objectContaining({
+        id: 'added-income',
+        name: 'Freelance',
+        amount: 1_250.13,
+        day: 20,
+      }));
+      if (scope === 'following') {
+        expect(after.budgetPlan?.incomes).toContainEqual(expect.objectContaining({ id: 'added-income' }));
+      } else {
+        expect(after.budgetPlan).toEqual(before.budgetPlan);
+      }
+      if (scope === 'month') {
+        expect(after.monthBudgets?.find((budget) => budget.month === month)?.source).toBe('custom');
+      } else if (month === '2026-03') {
+        expect(after.monthBudgets?.find((budget) => budget.month === month)?.source).toBe('plan');
+      }
+      expect(after.monthBudgets?.find((budget) => budget.month === '2026-06')).toEqual(laterCustom);
+      expect(after.transactions).toEqual(transactions);
+    });
+
     it('returns typed validation failures for names, reserved categories, limits, and invalid values', () => {
       const data = fixture('2026-03', true);
       const expectMutationError = (callback: () => unknown, code: string) => {
@@ -1347,6 +1380,15 @@ describe('budget plans and monthly views', () => {
       }, 'month', today), 'invalid-item');
       expectMutationError(() => addItem(data, '2026-03', {
         id: 'invalid-amount', sectionId: 'pets', name: 'Too much', mode: 'amount', value: 1_000_000_001,
+      }, 'month', today), 'invalid-item');
+      expectMutationError(() => addIncomeItem(data, '2026-03', {
+        id: 'invalid-income', name: '  ', category: 'Salary', amount: 1,
+      }, 'month', today), 'invalid-name');
+      expectMutationError(() => addIncomeItem(data, '2026-03', {
+        id: 'invalid-income-amount', name: 'Consulting', category: 'Freelance', amount: 0,
+      }, 'month', today), 'invalid-item');
+      expectMutationError(() => addIncomeItem(data, '2026-03', {
+        id: 'rounds-to-zero-income', name: 'Consulting', category: 'Freelance', amount: 0.001,
       }, 'month', today), 'invalid-item');
 
       const tooManySections = fixture('2026-03', false);

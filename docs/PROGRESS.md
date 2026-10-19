@@ -133,7 +133,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-N | — | Done | CR-56/CR-57 overview model, charts, screen, demo, cleanup, and all automated gates complete; device checks remain unverified. | 2026-10-18 |
 | P20-O | — | Done | CR-58/CR-59 item edit sheet, scope-aware remove/Undo, grouped budget hints and editable demo override. 76 suites/848 tests; all six required gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
-| P20-Q | — | Pending | CR-62–CR-65: in-screen budget management and responsive overview layout. Preflight complete; implementation and gates pending. | 2026-10-18 |
+| P20-Q | — | Pending | CR-62–CR-65: in-screen budget management and responsive overview layout. Implementation and focused verification complete; final gates and close-out pending. | 2026-10-18 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -818,12 +818,23 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   category to the nearest hundred” are superseded because the UI no longer
   offers a suggested split; default section/category integrity remains tested.
   The P20-M setup-income-editor acceptance row is superseded by the integrated
-  Budget-screen sheet.
+  Budget-screen sheet. CR-63 replaces the standalone section-card presentation
+  and "Planned vs actual" card with collapsible section rows; rows start
+  collapsed, past months are read-only, linked rows retain source edit routes,
+  and unbudgeted categories are read-only. CR-64 consolidates section, item,
+  and income management into one scoped sheet; delete confirmation names the
+  affected item count, while Remove item remains the edit-sheet deletion
+  affordance. CR-65 uses one planned allocation stack, a four-row planned/
+  actual table, and short visible summaries; the longer summaries are
+  accessibility labels. Home's summary presentation is extracted without
+  changing its visible look.
   Assumed: Create budget atomically saves and applies the empty default plan
   to the current month, since current-month sections cannot otherwise be
   managed before a snapshot exists. The same one-write action has an Undo
   restoring the previous plan and month snapshot. Management controls remain
-  hidden in past months.
+  hidden in past months. Assumed: section rows begin collapsed on each screen
+  mount; the stacked bar visualizes planned allocation while actual values are
+  communicated in the adjacent table.
 - DEC-BUDGET-SPEC: Budget is a forward-looking plan of recurring income,
   bills, investments and loans arranged in sections. BudgetPlan income items
   are {id, name, category, amount, day?}; their amounts sum to planned income,
@@ -1752,9 +1763,9 @@ evidence present in exports/checkpoints.
 | CR-60 | Migrate schema v9 budget lines to v10 user-managed plan/month sections and items, preserving raw v9 bytes and importing older backups through the migration chain. | Done | `migrateV9ToV10`, v1-v9 checksum/migration tests, one-time `.premigration.v9` archive, schema-11 rejection and schema integrity validation pass. Unknown migrated categories fall back to the first spend section. |
 | CR-61 | Add scoped section/item domain and store mutations, then integrate custom categories through budget views, pending items, transaction validation/filtering/labels, Home summaries and category choices. | Done | Both scopes/current and derived months, later custom snapshot preservation, constraints, deletion without transaction mutation, one persisted write, Undo, dynamic category ordering and custom transaction round trips are covered. |
 | CR-62 | Replace the budget setup/month-form routes with direct Budget-screen plan creation, application, and one Add category header action. | Done | `createDefaultBudgetPlan` produces default sections/no items/repeating from the current month; Home and Budget create/apply it in one action with Undo. Both obsolete routes, screens, links and suggested-split logic are removed. Five targeted suites/204 tests pass; source/action sheet coverage continues through CR-64. |
-| CR-63 | Replace separate budget section cards with collapsible Home-styled section rows, editable item rows, and read-only past-month rendering. | Pending | P20-Q; preflight complete. |
-| CR-64 | Extend the existing budget item sheet into the scoped section/item/income management sheet and wire mutations with Undo. | Pending | P20-Q; preflight complete. |
-| CR-65 | Rework overview and pace cards for fixed-width responsive rows and compact visible summaries. | Pending | P20-Q; preflight complete. |
+| CR-63 | Replace separate budget section cards with collapsible Home-styled section rows, editable item rows, and read-only past-month rendering. | Done (focused tests; final gates pending) | `RouteRenderSmoke.test.tsx` covers collapsed/expanded rows and state, item edit affordances, source routes, unbudgeted rows and past-month read-only behavior; Home summary extraction retains its smoke assertions. |
+| CR-64 | Extend the existing budget item sheet into the scoped section/item/income management sheet and wire mutations with Undo. | Done (focused tests; final gates pending) | Six modes, scope defaults, inline amount/day form and 1.3/2.0 style contract are covered; domain/store tests cover scoped income, one persisted write and deep-equal Undo. |
+| CR-65 | Rework overview and pace cards for fixed-width responsive rows and compact visible summaries. | Done (focused tests; final gates pending) | `BudgetCharts.test.tsx` and screen tests cover planned-only stack, Planned/Actual header, four divided rows, short visible summary and long accessibility labels; full gates pending. |
 
 ## 8. Known issues and risks
 
@@ -2007,6 +2018,9 @@ evidence for the fixes.
 | P20-O STEP 3 — Demo, ledger and final gates | Done | `src/mock/demoData.ts`, `src/mock/__tests__/demoData.test.ts`, `docs/PROGRESS.md`, `src/lib/__tests__/progressLedger.test.ts` | Demo keeps Salary/day 1 and Freelance/day 15; a future custom snapshot overrides Food amount/day and Freelance amount/day. 76 suites/848 tests; all six required gates exit 0. Directory coverage: domain 98.58% lines/93.61% branches, data excluding hooks 93.53%/87.57%, pure lib 100%/100%. Expo Doctor reports 21/21 checks passed. UI layout remains simulated; device checks listed in P20-O close-out. |
 | P20-Q STEP 0 — Preflight and user-change audit | Done | `docs/PROGRESS.md`; `app/(tabs)/budget.tsx` read-only audit; protected attachment untouched | Clean tree at start; `git log` audit lists all seven non-Copilot commits and every changed path under DEC-USER-CHANGES; Cash flow labels and absence of Back/Review controls confirmed. Preflight commit `17f5ee4`. |
 | P20-Q STEP 1 — In-screen creation and route removal (CR-62) | Done (focused tests) | `src/domain/budget.ts`, `src/domain/schemas.ts`, `app/(tabs)/budget.tsx`, `app/(tabs)/index.tsx`, `app/_layout.tsx`, `src/lib/routeKinds.ts`; obsolete setup/month files deleted | `budget.test.ts`, `schemas.test.ts`, `HomeThemeSmoke.test.tsx`, `RouteRenderSmoke.test.tsx`, `routeKinds.test.ts`, `progressLedger.test.ts`: default current-month plan, direct Create budget, empty-state copy, absent routes, preserved Cash flow labels; 6 suites / 213 tests pass; TypeScript passes. |
+| P20-Q STEP 2 — Collapsible section list (CR-63) | Done (focused tests) | `app/(tabs)/budget.tsx`, `src/components/BudgetSummaryToggle.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx` | `RouteRenderSmoke.test.tsx`: collapsed/expanded text and accessibility state, section/item actions, linked-source routes, read-only past month and unbudgeted rows; Home smoke test retains its summary label and visual structure. |
+| P20-Q STEP 3 — Scoped management sheet and Undo (CR-64) | Done (focused tests) | `src/components/BudgetManagementSheet.tsx`, `src/domain/budget.ts`, `src/data/createAppStore.ts`, `app/(tabs)/budget.tsx` | `RouteRenderSmoke.test.tsx`: six sheet modes, scopes/defaults, inline amount/day row and validation at 1.3/2.0 font scales; `budget.test.ts` and `createAppStore.test.ts`: income scopes, one persisted write and deep-equal Undo; section/item actions retain P20-P scope coverage. |
+| P20-Q STEP 4 — Responsive overview and final gates (CR-65) | Implementation done; final gates pending | `src/components/BudgetCharts.tsx`, `app/(tabs)/budget.tsx`, `src/components/__tests__/BudgetCharts.test.tsx`, `docs/PROGRESS.md` | Focused chart/screen tests verify one planned stack, four table rows with dividers, short visible and full accessible summaries, and responsive styles. Full acceptance gates and final coverage aggregation to be recorded below. Schema remains v10; frozen inputs, `SortChip.tsx` and `src/lib/sorting.ts` remain unchanged. |
 
 #### P20-O final verification
 

@@ -543,6 +543,7 @@ export class BudgetMutationError extends Error {
 
 export type BudgetSectionInput = Pick<BudgetSection, 'name' | 'type'> & { id: string };
 export type BudgetItemInput = BudgetItem;
+export type BudgetIncomeInput = Omit<BudgetIncomeItem, 'id'> & { id: string };
 export type BudgetItemPatch = {
   name?: string;
   mode?: BudgetItem['mode'];
@@ -641,6 +642,49 @@ function mutateBudgetStructure(
     budgetPlan: { ...basePlan, ...planChange },
     monthBudgets: monthRows(data).map((row) => row.month === month
       ? { ...row, ...snapshotChange }
+      : row),
+  };
+}
+
+export function addIncomeItem(
+  data: AppData,
+  monthInput: string,
+  input: BudgetIncomeInput,
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const month = monthOf(monthInput);
+  const name = input.name.trim();
+  if (!input.id || !name || name.length > 40) {
+    throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
+  }
+  const normalizedAmount = normalizeMoney(input.amount);
+  if (!isEarnedIncomeCategory(input.category)
+    || !Number.isFinite(input.amount) || input.amount <= 0 || normalizedAmount <= 0 || input.amount > 1_000_000_000
+    || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
+  }
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
+  if (budget.incomes.some((income) => income.id === input.id)) {
+    throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
+  }
+  const income = { ...input, name, amount: normalizedAmount };
+  if (scope === 'month') {
+    return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
+  }
+  const stored = monthRows(data).find((row) => row.month === month);
+  const plan = data.budgetPlan ?? snapshotAsPlan(budget);
+  if (plan.incomes.some((row) => row.id === input.id)) {
+    throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
+  }
+  const updatedPlan = { ...plan, incomes: [...plan.incomes, income] };
+  if (!stored) return { ...data, budgetPlan: updatedPlan };
+  return {
+    ...data,
+    budgetPlan: updatedPlan,
+    monthBudgets: monthRows(data).map((row) => row.month === month
+      ? { ...row, incomes: [...row.incomes, income] }
       : row),
   };
 }
