@@ -59,6 +59,19 @@ export default function BudgetScreen() {
   const { fontScale } = useWindowDimensions();
   const today = todayISO();
   const overview = useMemo(() => budgetOverview(data, month, today), [data, month, today]);
+  const overviewAccessibility = [
+    `Income ${formatAmount(overview.stacked.income.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.income.planned, 'exact', 1)} planned`,
+    `Spending ${formatAmount(overview.stacked.spend.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.spend.planned, 'exact', 1)} planned`,
+    `Investing ${formatAmount(overview.stacked.invest.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.invest.planned, 'exact', 1)} planned`,
+    `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.left.planned, 'exact', 1)} planned`,
+  ].join('; ') + [
+    overview.stacked.left.actual < 0
+      ? ` Actual over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}.`
+      : '',
+    overview.stacked.left.planned < 0
+      ? ` Planned over by ${formatAmount(Math.abs(overview.stacked.left.planned), 'exact', 1)}.`
+      : '',
+  ].join('');
   const currentMonth = today.slice(0, 7);
   const lastAllowedMonth = shiftMonth(currentMonth, 24);
   const nextDisabled = month >= lastAllowedMonth;
@@ -410,12 +423,12 @@ export default function BudgetScreen() {
               <View testID="budget-overview-card">
                 <Card style={styles.overviewCard}>
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
-                  <StackedBar values={overview.stacked} summary={overview.summary.stacked} />
+                  <StackedBar values={overview.stacked} summary={overviewAccessibility} />
                   <View style={styles.metricTable}>
                     <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
                       <View style={styles.metricTableLabel} />
-                      <AppText style={[typography.label, styles.metricColumn]}>Planned</AppText>
                       <AppText style={[typography.label, styles.metricColumn]}>Actual</AppText>
+                      <AppText style={[typography.label, styles.metricColumn]}>Planned</AppText>
                     </View>
                     <OverviewMetricRow label="Income" planned={overview.stacked.income.planned} actual={overview.stacked.income.actual} stacked={stackMetrics} />
                     <OverviewMetricRow label="Spending" planned={overview.stacked.spend.planned} actual={overview.stacked.spend.actual} stacked={stackMetrics} />
@@ -425,7 +438,7 @@ export default function BudgetScreen() {
                   <AppText
                     testID="budget-overview-summary"
                     numberOfLines={1}
-                    accessibilityLabel={overview.summary.stacked}
+                    accessibilityLabel={overviewAccessibility}
                     style={[typography.meta, { color: colors.text2 }]}>
                     {overview.stacked.left.actual < 0
                       ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
@@ -634,10 +647,10 @@ function OverviewMetricRow({
       </View>
       <View style={[styles.overviewMetricValues, stacked && styles.overviewMetricValuesStacked]}>
         <View style={styles.metricValue}>
-          <AmountText value={planned} tier="row" weight="semibold" />
+          <AmountText value={actual} tier="row" weight="semibold" />
         </View>
         <View style={styles.metricValue}>
-          <AmountText value={actual} tier="row" weight="semibold" />
+          <AmountText value={planned} tier="row" weight="semibold" />
         </View>
       </View>
     </View>

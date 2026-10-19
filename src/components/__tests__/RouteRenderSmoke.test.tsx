@@ -574,7 +574,8 @@ function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined
   return scope;
 }
 
-function budgetValueTypeControl(renderer: TestRenderer.ReactTestRenderer) {
+function budgetValueTypeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
   const valueType = renderer.root.findAll((node) => {
     const options = node.props.options;
     return String(node.type) === 'segmentedcontrol'
@@ -2451,6 +2452,10 @@ describe('route render smoke audit', () => {
       const foodRowText = foodRow.findAllByType('text').map((node) => node.children.join('')).join(' ');
       expect(foodRowText).toContain('Food');
       expect(foodRowText).toContain('50');
+      expect(foodRow.findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([50, 200]);
+      expect(foodRow.findAll((node) => typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Food, '))[0]?.props.accessibilityLabel)
+        .toBe(`Food, ${formatAmount(50, 'exact', 1)} of ${formatAmount(200, 'exact', 1)}`);
       const transportRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Transport` });
       expect(JSON.stringify(foodRow.props.style)).toContain('"borderBottomWidth":1');
       expect(JSON.stringify(transportRow.props.style)).not.toContain('"borderBottomWidth":1');
@@ -2471,7 +2476,24 @@ describe('route render smoke audit', () => {
         .toEqual(expect.arrayContaining([expect.objectContaining({ height: 12, width: '100%' })]));
       const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
       expect(header.findAllByType('text').map((node) => node.children.join('')))
-        .toEqual(['Planned', 'Actual']);
+        .toEqual(['Actual', 'Planned']);
+      const overviewAccessibility = renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel;
+      for (const label of ['Income', 'Spending', 'Investing', 'Left']) {
+        const labelIndex = overviewAccessibility.indexOf(label);
+        const actualIndex = overviewAccessibility.indexOf(' actual and ', labelIndex);
+        const plannedIndex = overviewAccessibility.indexOf(' planned', actualIndex);
+        expect(labelIndex).toBeGreaterThanOrEqual(0);
+        expect(actualIndex).toBeGreaterThan(labelIndex);
+        expect(plannedIndex).toBeGreaterThan(actualIndex);
+      }
+      expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
+        .toBe(overviewAccessibility);
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([500, 1_000]);
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
+      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
+      expect(paceAccessibility.indexOf(' actual;')).toBeLessThan(paceAccessibility.indexOf(' planned'));
       expect(['income', 'spending', 'investing', 'left'].map((name) =>
         renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
       )).toHaveLength(4);
