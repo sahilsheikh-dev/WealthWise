@@ -2314,6 +2314,7 @@ callbacks and persistence behavior, not native device rendering.
 | STEP 0 — Preflight and ownership audit | Done | Base `003fc4f`, preserved user checkpoint `ecc5c35`; clean preflight worktree. DEC-P20S records CR-59 supersessions, choices, assumptions and user-owned Cash flow/removal constraints. |
 | STEP 1 — Dropdown component and specified conversions (CR-70) | Done | `Dropdown.test.tsx`, `TransactionForm.test.tsx`, `budgetCategories.test.ts`; 3 suites/32 tests pass. TypeScript and lint exit 0. Hint function/component/test deleted; selected instrument still determines invest category. |
 | STEP 2 — Common sheet form shell (CR-71) | Done | Added `FormShell.tsx` and converted `BudgetManagementSheet` plus the Goal asset picker inside `TopAnchoredSheet`; `FormScreen` remains unchanged for route forms. `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx` (108 tests) and `HomeThemeSmoke.test.tsx` pass; `npx tsc --noEmit` and `npx expo lint` exit 0. |
+| STEP 3 — Actual-left / Planned-right ordering (CR-72) | Done | Budget overview header and metric values, accessibility descriptions, and pace legend now read Actual then Planned. Section/item rows were already actual-first and are asserted. Home `BudgetSummaryToggle` already uses actual “spent of” planned and remains unchanged. Transactions due rows show a due amount only, not an Actual/Planned pair, so remain unchanged. `RouteRenderSmoke.test.tsx`, `BudgetCharts.test.tsx`, and `HomeThemeSmoke.test.tsx`: 3 suites/125 tests pass; TypeScript and lint exit 0. |
 
 CR-71 replaces the earlier sheet-local header/body/footer layouts with one
 shared shell, including accessible 44×44 action slots and a fixed footer.
@@ -2326,6 +2327,17 @@ lookup now targets the full-screen form action (the test Modal mock renders
 children while hidden), and the investment informational Modal lookup now
 excludes the sheet Modal. The FormShell body assertion uses a stable host node
 instead of assuming its children are raw text.
+
+CR-72 changes only the Budget overview pair order and chart legend. The table
+header and each row now place Actual in the left value column and Planned in
+the right; the stacked-chart and summary accessibility descriptions state
+actual before planned. The four section summary lines and item values already
+used actual before planned, and tests now assert their order and equivalent
+accessibility labels. Home's “spent of” summary was already compliant. A
+repository search found the Transactions due rows render the due amount only,
+not a planned/actual pair, so those rows are unchanged. The Budget pace legend
+now lists Actual before Planned pace; the pace accessibility description was
+already actual-first.
 
 The first lint attempt found a synchronous state reset inside the shared
 wrapper effect. The reset was removed; keyboard state is now updated by native
