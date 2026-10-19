@@ -601,7 +601,7 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
     const isInsuranceSection = section?.system === 'insurance';
     const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (section?.system && !isInsuranceSection) {
-      throw new BudgetMutationError('system-section', 'Only manual items can be added to the Insurance section.');
+      throw new BudgetMutationError('system-section', 'System sections cannot contain items, except manual Insurance items.');
     }
     if (itemIds.has(item.id) || itemNames.has(item.name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names and IDs must be unique.');
