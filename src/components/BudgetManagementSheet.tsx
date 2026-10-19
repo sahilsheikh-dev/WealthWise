@@ -1,19 +1,19 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Feather } from '@expo/vector-icons';
-import { useForm, Controller, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { EARNED_INCOME_CATEGORIES, type BudgetSection, type EarnedIncomeCategory } from '../domain/types';
-import { useTheme } from '../theme/useTheme';
 import { typography } from '../theme/tokens';
-import { AppText, Button } from './ui';
+import { useTheme } from '../theme/useTheme';
 import { ChoiceField } from './form/ChoiceField';
 import { IntegerField } from './form/IntegerField';
 import { MoneyField } from './form/MoneyField';
 import { SegmentedControl } from './form/SegmentedControl';
 import { TextField } from './form/TextField';
+import { AppText, Button } from './ui';
 
 export type BudgetManagementMode =
   | { kind: 'add-section' }
@@ -255,7 +255,6 @@ export function BudgetManagementSheet({
                     name="itemMode"
                     render={({ field }) => (
                       <SegmentedControl
-                        label="Value type"
                         value={field.value}
                         options={[
                           { label: '₹', value: 'amount' },
@@ -293,16 +292,12 @@ export function BudgetManagementSheet({
                       />
                     </View>
                     <View style={styles.dueDay}>
-                      <View testID="budget-due-day-label" style={styles.dayLabel}>
-                        <Feather name="calendar" size={16} color={colors.text2} />
-                        <AppText style={typography.meta}>Due day</AppText>
-                      </View>
                       <Controller
                         control={control}
                         name="day"
                         render={({ field }) => (
                           <IntegerField
-                            label="Optional"
+                            label="Due day"
                             accessibilityLabel="Due day"
                             icon="calendar-outline"
                             value={field.value}
@@ -374,10 +369,6 @@ export function BudgetManagementSheet({
                       />
                     </View>
                     <View style={styles.dueDay}>
-                      <View testID="budget-due-day-label" style={styles.dayLabel}>
-                        <Feather name="calendar" size={16} color={colors.text2} />
-                        <AppText style={typography.meta}>Due day</AppText>
-                      </View>
                       <Controller
                         control={control}
                         name="day"
@@ -403,7 +394,6 @@ export function BudgetManagementSheet({
                 name="scope"
                 render={({ field }) => (
                   <SegmentedControl
-                    label="Apply changes to"
                     value={field.value}
                     options={[
                       { label: 'This month only', value: 'month' },
