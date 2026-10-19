@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 89% (59/66)
+Overall progress █████████░ 91% (60/66)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         █████████░ 94% (17/18)
+Phase 20         ██████████ 100% (18/18)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
@@ -134,7 +134,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-O | — | Done | CR-58/CR-59 item edit sheet, scope-aware remove/Undo, grouped budget hints and editable demo override. 76 suites/848 tests; all six required gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
-| P20-R | — | Pending | CR-66–CR-69: top-anchored sheet forms, icon actions, and per-section Budget cards. | 2026-10-19 |
+| P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -846,7 +846,10 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   inset, constrained by the available window and keyboard, and use a shared
   wrapper also for the Goal screen's bottom-anchored asset picker. Other Modal
   uses are not sheet-style forms (or are frozen form inputs) and remain
-  unchanged. Section actions move to icon buttons in each section Card; edit
+  unchanged: the `SortChip` selection modal remains protected; `DateField`'s
+  native date-picker modal remains frozen; `HeaderMenu` is a fade menu;
+  `investment-form` is informational; `ef-allocation-form` uses centered
+  dialogs. Section actions move to icon buttons in each section Card; edit
   and delete are separated into labeled actions, and item deletion moves from
   the body text link to the edit sheet's trash icon. P20-R supersedes the
   collapsible-row portion of CR-63 with one Card per section, while preserving
@@ -858,6 +861,17 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   calculation provide a visible first field while retaining the 60%-of-window
   height cap; the shared wrapper is also used for the Goal asset picker because
   it is a bottom-anchored selection sheet launched from a full-screen form.
+  Assumed: React Native keyboard show/hide events report the available keyboard
+  height accurately on supported devices; tests simulate the event and verify
+  style contracts, not physical keyboard overlap.
+  Replaced assertions: the CR-63 collapsed/expanded state and chevron
+  assertions become one Card per section with no expanded state; reason:
+  P20-R explicitly removes collapsible rows. CR-64's text section actions and
+  body “Remove item” link become labeled 44×44 section icons and edit-mode
+  header trash; reason: P20-R moves deletion to the header while retaining
+  scope confirmation, one persisted write and Undo. The former bottom sheet's
+  bottom anchoring / fixed `maxHeight: '60%'` expectation becomes top safe-area
+  placement and a keyboard-adjusted window-height cap; reason: CR-66.
 - DEC-BUDGET-SPEC: Budget is a forward-looking plan of recurring income,
   bills, investments and loans arranged in sections. BudgetPlan income items
   are {id, name, category, amount, day?}; their amounts sum to planned income,
@@ -1713,7 +1727,7 @@ evidence present in exports/checkpoints.
 | P20-O | Phase 20 | — | — | 2026-10-18 | Budget item edit sheet and budget-aware category picker (CR-58–CR-59). | Done; 76 suites/848 tests; all six final gates exit 0. Domain 98.58% lines/93.61% branches, data excluding hooks 93.53%/87.57%, pure lib 100%/100%. Device checks remain unverified. | Preflight `c84215e`; CR-58 `509653e`; CR-59 `7a8a6cf`; demo/close-out commit included with this P20-O delivery. | Assumed: transaction dates extend through the 24-month budget horizon; see DEC-P20O-CR59. | current request |
 | P20-P | Phase 20 | — | — | 2026-10-18 | Schema-v10 user-managed budget sections/items, v9 migration, scoped actions and custom-category integration (CR-60–CR-61). | Done; 76 suites/865 tests; final coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. Device criteria remain unverified. | Preflight `1e4fdce`; implementation and ledger are included in this delivery. | Assumed: an ungrouped v9 category migrates into the first spend section; non-built-in investment category strings remain custom after item deletion. See DEC-BUDGET-V10 and DEC-P20P-CR60-61. | current request |
 | P20-Q | Phase 20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
-| P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Preflight complete; implementation and gates pending. | Preflight base `7d8fc7f`; user checkpoint `75e9097`. | Assumed: see DEC-P20R. | current request |
+| P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -1792,13 +1806,13 @@ evidence present in exports/checkpoints.
 | CR-60 | Migrate schema v9 budget lines to v10 user-managed plan/month sections and items, preserving raw v9 bytes and importing older backups through the migration chain. | Done | `migrateV9ToV10`, v1-v9 checksum/migration tests, one-time `.premigration.v9` archive, schema-11 rejection and schema integrity validation pass. Unknown migrated categories fall back to the first spend section. |
 | CR-61 | Add scoped section/item domain and store mutations, then integrate custom categories through budget views, pending items, transaction validation/filtering/labels, Home summaries and category choices. | Done | Both scopes/current and derived months, later custom snapshot preservation, constraints, deletion without transaction mutation, one persisted write, Undo, dynamic category ordering and custom transaction round trips are covered. |
 | CR-62 | Replace the budget setup/month-form routes with direct Budget-screen plan creation, application, and one Add category header action. | Done | `createDefaultBudgetPlan` produces default sections/no items/repeating from the current month; Home and Budget create/apply it in one action with Undo. Both obsolete routes, screens, links and suggested-split logic are removed. Five targeted suites/204 tests pass; source/action sheet coverage continues through CR-64. |
-| CR-63 | Replace separate budget section cards with collapsible Home-styled section rows, editable item rows, and read-only past-month rendering. | Done | `RouteRenderSmoke.test.tsx` covers collapsed/expanded rows and state, item edit affordances, source routes, unbudgeted rows and past-month read-only behavior; Home summary extraction retains its smoke assertions. |
-| CR-64 | Extend the existing budget item sheet into the scoped section/item/income management sheet and wire mutations with Undo. | Done | Six modes, scope defaults, inline amount/day form and 1.3/2.0 style contract are covered; domain/store tests cover scoped income, one persisted write and deep-equal Undo. |
+| CR-63 | Replace separate budget section cards with collapsible Home-styled section rows, editable item rows, and read-only past-month rendering. | Done; collapsible rows superseded by P20-R | P20-Q assertions for collapsed/expanded state and chevrons are superseded by CR-68's one-Card-per-section/no-expanded-state assertions; reason: P20-R replaces the collapsible rows with section Cards while retaining item rows, routes and past-month read-only behavior. |
+| CR-64 | Extend the existing budget item sheet into the scoped section/item/income management sheet and wire mutations with Undo. | Done; text-button affordances superseded by P20-R | P20-Q assertions for section text buttons and the body “Remove item” action are superseded by CR-67/68 icon-action and header-trash assertions; reason: deletion moves to edit-mode trash, while scoped confirmation, one write and Undo remain. |
 | CR-65 | Rework overview and pace cards for fixed-width responsive rows and compact visible summaries. | Done | `BudgetCharts.test.tsx` and screen tests cover planned-only stack, Planned/Actual header, four divided rows, short visible summary and long accessibility labels; all final gates pass. |
-| CR-66 | Move Budget management and other bottom-anchored sheet-style forms to a shared top-anchored, keyboard-aware wrapper. | Pending | P20-R; preserve a visible first field, safe-area placement, scroll and backdrop dismissal. |
-| CR-67 | Put edit-mode trash and rightmost Close icons in the Budget sheet header; remove body Remove item link. | Pending | P20-R; add modes have no trash, section deletion stays on its card, trash uses existing scope confirmation and Undo. |
-| CR-68 | Render each Budget section in its own Card with responsive, accessible icon actions. | Pending | P20-R; replace expandable rows and section text buttons while retaining read-only past months and item routes. |
-| CR-69 | Cover top-sheet, card, deletion, accessibility and font-scale acceptance; close ledger and gates. | Pending | P20-R final verification. |
+| CR-66 | Move Budget management and other bottom-anchored sheet-style forms to a shared top-anchored, keyboard-aware wrapper. | Done | `TopAnchoredSheet` is used by Budget management and the Goal asset picker; style tests cover safe-area, keyboard height, scroll and backdrop. All six gates exit 0. |
+| CR-67 | Put edit-mode trash and rightmost Close icons in the Budget sheet header; remove body Remove item link. | Done | Edit modes expose trash then Close; add/section modes only Close; confirmation choices, Undo callback and persisted delete/restore tests are covered. All six gates exit 0. |
+| CR-68 | Render each Budget section in its own Card with responsive, accessible icon actions. | Done | Cards, per-section icon policy, item rows/dividers, responsive stacking, past-month read-only behavior, linked routes and unchanged Home summary are covered. All six gates exit 0. |
+| CR-69 | Cover top-sheet, card, deletion, accessibility and font-scale acceptance; close ledger and gates. | Done | Focused acceptance and store tests; full coverage and all six gates pass. Real-device checks remain listed in P20-R verification. |
 
 ## 8. Known issues and risks
 
@@ -2055,6 +2069,10 @@ evidence for the fixes.
 | P20-Q STEP 3 — Scoped management sheet and Undo (CR-64) | Done | `src/components/BudgetManagementSheet.tsx`, `src/domain/budget.ts`, `src/data/createAppStore.ts`, `app/(tabs)/budget.tsx` | Integrated screen tests cover all six modes, scope defaults, inline amount/day row, validation, counted deletes and Remove item; `budget.test.ts` / `createAppStore.test.ts` cover scope rules, one persisted write and deep-equal restoration. Font-scale style contracts pass at 1.3 and 2.0. |
 | P20-Q STEP 4 — Responsive overview and final gates (CR-65) | Done | `src/components/BudgetCharts.tsx`, `app/(tabs)/budget.tsx`, `src/components/__tests__/BudgetCharts.test.tsx`, `docs/PROGRESS.md` | Chart tests cover the planned stack, four planned/actual rows, dividers, short visible text and full accessibility descriptions; whole-screen TestRenderer cases cover font scales 1, 1.3 and 2. Schema remains v10; frozen inputs, `SortChip.tsx` and `src/lib/sorting.ts` remain unchanged. All six required gates exit 0. |
 | P20-R STEP 0 — Preflight and checkpoint audit | Done | `docs/PROGRESS.md`, `app/(tabs)/budget.tsx`, modal/sheet source audit; protected attachment untouched | Starting tree had a user edit to `BudgetManagementSheet.tsx`; checkpointed exactly as `75e9097`. Re-audit finds seven earlier non-Copilot commits since `5bd3c41`; all eight file lists recorded in DEC-USER-CHANGES. Cash flow labels and absence of Back/Review controls confirmed. |
+| P20-R STEP 1 — Shared top-anchored sheets (CR-66) | Done | `src/components/TopAnchoredSheet.tsx`, `src/components/BudgetManagementSheet.tsx`, `app/goal-form.tsx` | `RouteRenderSmoke.test.tsx` asserts safe-area top placement, window/keyboard max-height, scrollable first field, backdrop dismissal, and the Goal asset picker wrapper. Other Modal inventory and dispositions are in DEC-P20R. |
+| P20-R STEP 2 — Budget sheet header actions (CR-67) | Done | `src/components/BudgetManagementSheet.tsx`, `app/(tabs)/budget.tsx` | `RouteRenderSmoke.test.tsx` asserts trash then rightmost Close in edit modes, Close only in add/section modes, 44×44 targets, native scope confirmation, Undo, and no body “Remove item” text. `createAppStore.test.ts` asserts one persisted write for delete and restore with deep-equal data. |
+| P20-R STEP 3 — Section Cards and icon actions (CR-68) | Done | `app/(tabs)/budget.tsx` | `RouteRenderSmoke.test.tsx` asserts one Card per section, item/divider structure, icon names/labels/targets, system/custom action policy, linked source routes, read-only past months, and stacked title/actions at 1.3/2.0. `HomeThemeSmoke.test.tsx` confirms Home's existing summary look. |
+| P20-R STEP 4 — Acceptance and final gates (CR-69) | Done | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/data/__tests__/createAppStore.test.ts`, `src/lib/__tests__/progressLedger.test.ts`, `docs/PROGRESS.md` | Focused route/Home/store tests: 3 suites/179 tests; full coverage: 75 suites/857 tests. All six gates exit 0. Expo Doctor output: `Running 21 checks on your project... 21/21 checks passed. No issues detected!` Directory coverage: domain 98.53% lines/93.15% branches; data excluding hooks 93.14%/86.75%; pure lib 100%/100%. |
 
 #### P20-O final verification
 
@@ -2247,6 +2265,40 @@ callbacks and persistence behavior, not native device rendering.
 | STEP 2 — Collapsible sections and Home summary extraction (CR-63) | Done | `app/(tabs)/budget.tsx`, `app/(tabs)/index.tsx`, `src/components/BudgetSummaryToggle.tsx` | `RouteRenderSmoke.test.tsx`: collapsed/expanded state, item edit affordances, linked-source routes, unbudgeted rows and past read-only behavior. `HomeThemeSmoke.test.tsx`: spending breakdown and existing Home presentation remain. |
 | STEP 3 — Unified scoped management and Undo (CR-64) | Done | `src/components/BudgetManagementSheet.tsx`, `src/domain/budget.ts`, `src/data/createAppStore.ts`, `app/(tabs)/budget.tsx` | `manages categories, items, and income through scoped sheets and counted deletes`, domain scope tests, and `applies each managed budget mutation with one persisted write`: six modes, defaults, amount/day validation, current/following scope, counted delete, Remove item, one write and deep-equal Undo. Simulated inline-row layout is checked at font scales 1.3/2.0. |
 | STEP 4 — Responsive overview and final gates (CR-65) | Done | `src/components/BudgetCharts.tsx`, `src/components/__tests__/BudgetCharts.test.tsx`, `docs/PROGRESS.md` | Chart tests cover the single planned stack, Planned/Actual header, four divided rows, compact visible summary and longer accessibility description. Whole-screen simulated font-scale coverage is 1.0/1.3/2.0. Demo requirements are met by the existing Pets/Pet care and Survival/Domestic help plan items and their transactions in `src/mock/demoData.ts`; `demoData.test.ts` covers them. |
+
+#### P20-R final verification
+
+| Step | Status | Files / source evidence | Test / verification evidence |
+|---|---|---|---|
+| STEP 0 — Preflight and ownership audit | Done | `docs/PROGRESS.md`, `app/(tabs)/budget.tsx` | Seven commits without a Copilot co-author trailer since `5bd3c41`, plus checkpoint `75e9097`, are listed one changed file per entry under DEC-USER-CHANGES. Cash flow labels and removed Back/Review controls were preserved. |
+| STEP 1 — Shared top-anchored sheets (CR-66) | Done | `src/components/TopAnchoredSheet.tsx`, `src/components/BudgetManagementSheet.tsx`, `app/goal-form.tsx` | Budget editor and Goal asset picker use the shared wrapper. TestRenderer asserts top safe-area inset, 60%-of-window maximum minus simulated keyboard height, scrollable form, visible first field, and tappable backdrop. |
+| STEP 2 — Sheet header actions (CR-67) | Done | `src/components/BudgetManagementSheet.tsx`, `app/(tabs)/budget.tsx` | Edit modes render Feather trash-2 then rightmost x with 44×44 targets; add and section modes render Close only. No body “Remove item” button remains. Native confirmation scope choices and Undo are tested; store delete/restore each perform one write and restore deep-equal data. |
+| STEP 3 — Section Cards (CR-68) | Done | `app/(tabs)/budget.tsx` | Each budget section has a separate Card; tests cover item rows/dividers, no chevron/expanded state, icon names/labels/hints/targets and system-section action policy, 1.3/2.0 stacked headers, linked source routes, and past-month read-only behavior. Home's summary look is unchanged (`HomeThemeSmoke.test.tsx`). |
+| STEP 4 — Acceptance and gates (CR-69) | Done | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/data/__tests__/createAppStore.test.ts`, `src/lib/__tests__/progressLedger.test.ts` | `npm test -- --coverage`: 75/75 suites, 857/857 tests. `npx tsc --noEmit`, `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`, and `npx expo export --platform ios` exit 0. |
+
+The first lint attempt found a synchronous state reset inside the shared
+wrapper effect. The reset was removed; keyboard state is now updated by native
+keyboard show/hide events only. The full six-gate sequence was rerun after the
+correction and passed. Standard Istanbul totals: 95.81% statements, 92.31%
+branches, 97.49% functions and 97.65% lines. Directory line/branch aggregation
+is provided in the P20-R completion report. The implementation commit is
+`391a227`; preflight ledger commit is `5049ab8`. Schema remains v10;
+`SortChip.tsx`, `src/lib/sorting.ts`, frozen form inputs and Home's
+`BudgetSummaryToggle` are unchanged.
+
+**Modal/sheet inventory:** `BudgetManagementSheet` now delegates to
+`TopAnchoredSheet`; the Goal asset picker in `app/goal-form.tsx` now uses the
+same wrapper. `SortChip.tsx` remains bottom-anchored and unchanged as a
+protected sort-options modal. `DateField.tsx` remains unchanged as a frozen
+native date picker. `HeaderMenu.tsx` is a fade menu, `investment-form.tsx`
+contains a bottom informational example modal, and `ef-allocation-form.tsx`
+contains centered dialogs; none is a bottom-anchored sheet-style form.
+
+**Not verified on a real device:** keyboard overlap/scroll behavior; safe-area
+placement on notched phones and Android edge-to-edge layouts; section collapse
+animation (removed); icon hit targets and screen-reader announcements; full
+font-scale text clipping and touch behavior. The layout assertions are
+simulated TestRenderer style contracts, not pixel-level renders.
 
 **Superseded assertions and implementation:** setup navigation to `/budget-setup`
 and `/budget-month-form`, the separate linked-recurring setup preview,

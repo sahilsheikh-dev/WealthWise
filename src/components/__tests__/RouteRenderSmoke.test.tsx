@@ -2407,6 +2407,14 @@ describe('route render smoke audit', () => {
           String(node.type) === 'pressable' && node.props.accessibilityLabel === label,
         )).toHaveLength(1);
       }
+      expect(sectionActions.findAll((node) => String(node.type) === 'pressable').every((button) => {
+        const style = JSON.stringify(button.props.style);
+        return style.includes('"width":44') && style.includes('"height":44')
+          && typeof button.props.accessibilityHint === 'string';
+      })).toBe(true);
+      expect(sectionActions.findAll((node) =>
+        node.props.name === 'edit-2' || node.props.name === 'trash-2' || node.props.name === 'plus',
+      ).map((node) => node.props.name)).toEqual(['edit-2', 'trash-2', 'plus']);
       expect(survival.findAll((node) => String(node.type) === 'pressable'
         && node.props.accessibilityState?.expanded !== undefined)).toHaveLength(0);
       expect(survival.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
@@ -2466,6 +2474,10 @@ describe('route render smoke audit', () => {
       expect(renderer.root.findAll((node) =>
         String(node.type) === 'pressable' && node.props.accessibilityLabel === 'Delete item',
       )).toHaveLength(1);
+      const sheetIcons = renderer.root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => node.props.name !== undefined)
+        .map((node) => node.props.name);
+      expect(sheetIcons).toEqual(['trash-2', 'x']);
       expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
         .not.toContain('Remove item');
       act(() => mockKeyboardListeners.keyboardDidShow?.({ endCoordinates: { height: 300 } }));
@@ -2665,6 +2677,9 @@ describe('route render smoke audit', () => {
 
       act(() => sectionAction('pets', 'Rename section').props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Rename category')).toBe(true);
+      expect(root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => String(node.type) === 'pressable')
+        .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
       expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('month');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Category name' }).props.onChangeText('Animal care');
@@ -2751,6 +2766,11 @@ describe('route render smoke audit', () => {
       act(() => sectionAction('pets', 'Delete section').props.onPress());
       expect(alert.mock.calls.at(-1)?.[1]).toContain('1 item');
       const deleteButtons = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
+      expect(deleteButtons?.map((button) => button.text)).toEqual([
+        'Cancel',
+        'This month only',
+        'This and following months',
+      ]);
       const followingButton = deleteButtons?.find((button) => button.text === 'This and following months');
       if (!followingButton?.onPress) throw new Error('Following-month section delete option not presented.');
       act(() => followingButton.onPress?.());
