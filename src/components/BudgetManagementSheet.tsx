@@ -19,9 +19,9 @@ import { AppText, Button } from './ui';
 export type BudgetManagementMode =
   | { kind: 'add-section' }
   | { kind: 'rename-section'; sectionId: string; name: string }
-  | { kind: 'add-item'; sectionId: string }
+  | { kind: 'add-item'; sectionId: string; category?: string }
   | { kind: 'edit-item'; sectionId: string; itemId: string; name: string; mode: 'amount' | 'percent'; value: number; day?: number }
-  | { kind: 'add-income' }
+  | { kind: 'add-income'; name?: string; category?: EarnedIncomeCategory; amount?: number }
   | { kind: 'edit-income'; itemId: string; name: string; category: EarnedIncomeCategory; amount: number; day?: number };
 
 export type BudgetManagementValues = {
@@ -125,6 +125,14 @@ export function BudgetManagementSheet({
 }) {
   const { colors } = useTheme();
   const schema = makeFormSchema(mode);
+  const suggestedItemCategory = mode.kind === 'edit-item' ? mode.name
+    : mode.kind === 'add-item' ? mode.category
+      : undefined;
+  const initialItemCategory = suggestedItemCategory
+    ? itemCategoryOptions.includes(suggestedItemCategory)
+      ? suggestedItemCategory
+      : CUSTOM_ITEM_CATEGORY
+    : '';
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<
     z.input<typeof formSchema>,
     undefined,
@@ -136,15 +144,21 @@ export function BudgetManagementSheet({
     defaultValues: {
       name: mode.kind === 'rename-section' || mode.kind === 'edit-item' || mode.kind === 'edit-income'
         ? mode.name
-        : '',
-      itemCategory: mode.kind === 'edit-item'
-        ? itemCategoryOptions.includes(mode.name) ? mode.name : CUSTOM_ITEM_CATEGORY
-        : '',
+        : mode.kind === 'add-item' && mode.category && !itemCategoryOptions.includes(mode.category)
+          ? mode.category
+          : mode.kind === 'add-income' ? mode.name ?? '' : '',
+      itemCategory: initialItemCategory,
       sectionType: 'spend',
-      category: mode.kind === 'edit-income' ? mode.category : 'Salary',
+      category: mode.kind === 'edit-income' || mode.kind === 'add-income'
+        ? mode.category ?? 'Salary'
+        : 'Salary',
       itemMode: mode.kind === 'edit-item' ? mode.mode : 'amount',
       value: mode.kind === 'edit-item' ? String(mode.value) : '',
-      amount: mode.kind === 'edit-income' ? String(mode.amount) : '',
+      amount: mode.kind === 'edit-income'
+        ? String(mode.amount)
+        : mode.kind === 'add-income' && mode.amount !== undefined
+          ? String(mode.amount)
+          : '',
       day: mode.kind === 'edit-item' || mode.kind === 'edit-income'
         ? mode.day === undefined ? '' : String(mode.day)
         : '',

@@ -598,12 +598,16 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
       throw new BudgetMutationError('section-not-found', 'Choose an existing section for each budget item.');
     }
     const section = sections.find((row) => row.id === item.sectionId);
-    if (section?.system) throw new BudgetMutationError('system-section', 'System sections cannot contain editable budget items.');
+    const isInsuranceSection = section?.system === 'insurance';
+    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
+    if (section?.system && !isInsuranceSection) {
+      throw new BudgetMutationError('system-section', 'Only manual items can be added to the Insurance section.');
+    }
     if (itemIds.has(item.id) || itemNames.has(item.name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names and IDs must be unique.');
     }
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId) {
+    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
       throw new BudgetMutationError('reserved-category', `${item.name} belongs to ${builtInSection.name}.`);
     }
     itemIds.add(item.id);
@@ -806,7 +810,8 @@ export function editItem(
     }
     const section = sections.find((row) => row.id === target.sectionId);
     const builtInSection = budgetGroupFor(nextName);
-    if (builtInSection && builtInSection.id !== section?.id) {
+    const isInsuranceItem = section?.system === 'insurance' && nextName === 'Insurance';
+    if (builtInSection && builtInSection.id !== section?.id && !isInsuranceItem) {
       throw new BudgetMutationError('reserved-category', `${nextName} belongs to ${builtInSection.name}.`);
     }
     return {
@@ -953,12 +958,18 @@ export function outstandingAt(data: AppData, asOf: ISODate): OutstandingSummary 
   };
 }
 
-export function budgetLineActual(data: AppData, month: string, category: string): number {
+export function budgetLineActual(
+  data: AppData,
+  month: string,
+  category: string,
+  options: { excludePolicyPayments?: boolean } = {},
+): number {
   const customCategories = customBudgetCategories(data);
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
     && budgetCategoryForTransaction(row, customCategories) === category
-    && (row.type === 'expense' || row.type === 'invest'),
+    && (row.type === 'expense' || row.type === 'invest')
+    && !(options.excludePolicyPayments && category === 'Insurance' && row.source?.kind === 'policy-payment'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }
 
@@ -1064,8 +1075,11 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
     const group = budgetGroupFor(category);
     const itemSectionId = budget?.items.find((item) => item.name === category)?.sectionId
       ?? data.budgetPlan?.items.find((item) => item.name === category)?.sectionId;
+    const insuranceSectionId = budget?.sections.find((section) => section.system === 'insurance')?.id;
     const sectionId = itemSectionId && budget?.sections.some((section) => section.id === itemSectionId)
       ? itemSectionId
+      : category === 'Insurance' && insuranceSectionId
+        ? insuranceSectionId
       : group && budget?.sections.some((section) => section.id === group.id)
         ? group.id
         : 'other-not-in-budget';
@@ -1331,7 +1345,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       planned: 0,
       actual: normalizeMoney(extra),
       kind: 'income',
-      editable: false,
+      editable: true,
       source: { kind: 'income', incomeId: `actual:${category}`, category },
     });
   }

@@ -15,6 +15,7 @@ import {
   BUDGET_GROUPS,
   budgetOverview,
   createDefaultBudgetPlan,
+  defaultBudgetSectionIdFor,
   effectiveMonthBudget,
 } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
@@ -155,15 +156,22 @@ export default function BudgetScreen() {
     void apply();
   }, [routeApply, apply]);
 
-  const openBudgetItem = (item: (typeof overview.sections)[number]['items'][number]) => {
+  const openBudgetItem = (
+    item: (typeof overview.sections)[number]['items'][number],
+    sectionId: string,
+  ) => {
     switch (item.source.kind) {
       case 'line':
         {
           const category = item.source.category;
-          const budgetItem = effectiveMonthBudget(data, month, today).budget?.items
+          const budget = effectiveMonthBudget(data, month, today).budget;
+          const budgetItem = budget?.items
             .find((candidate) => candidate.name === category);
           if (!budgetItem) {
-            Alert.alert('Could not edit item', 'This budget item is no longer available.');
+            const targetSectionId = budget?.sections.some((section) => section.id === sectionId)
+              ? sectionId
+              : defaultBudgetSectionIdFor(category);
+            setSheetMode({ kind: 'add-item', sectionId: targetSectionId, category });
             return;
           }
           setSheetMode({
@@ -178,8 +186,17 @@ export default function BudgetScreen() {
           return;
         }
       case 'income':
+        if (!item.editable && !item.source.incomeId.startsWith('actual:')) return;
+        if (item.source.incomeId.startsWith('actual:')) {
+          setSheetMode({
+            kind: 'add-income',
+            name: item.title,
+            category: item.source.category,
+            amount: item.actual,
+          });
+          return;
+        }
         {
-          if (!item.editable) return;
           const incomeId = item.source.incomeId;
           const income = effectiveMonthBudget(data, month, today).budget?.incomes
             .find((candidate) => candidate.id === incomeId);
@@ -491,7 +508,8 @@ export default function BudgetScreen() {
                   const canManageSection = !isPast && definition?.system === undefined && definition !== undefined
                     && section.id !== 'other-not-in-budget';
                   const canAddIncome = !isPast && definition?.system === 'income';
-                  const sectionActions = canManageSection || canAddIncome;
+                  const canAddInsurance = !isPast && definition?.system === 'insurance';
+                  const sectionActions = canManageSection || canAddIncome || canAddInsurance;
                   return (
                     <View key={section.id} testID={`budget-section-${section.id}`}>
                     <Card style={styles.sectionCard}>
@@ -539,6 +557,15 @@ export default function BudgetScreen() {
                                 style={styles.sectionActionButton}>
                                 <Feather name="plus" size={20} color={colors.primary} />
                               </Pressable>
+                            ) : canAddInsurance ? (
+                              <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Add item"
+                                accessibilityHint="Add a manual Insurance budget item"
+                                onPress={() => setSheetMode({ kind: 'add-item', sectionId: section.id })}
+                                style={styles.sectionActionButton}>
+                                <Feather name="plus" size={20} color={colors.primary} />
+                              </Pressable>
                             ) : null}
                           </View>
                         ) : null}
@@ -569,12 +596,12 @@ export default function BudgetScreen() {
                                   accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
                                   <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
                                 </AppText>
-                                {!isPast && section.id !== 'other-not-in-budget' && (item.kind === 'linked' || item.editable) ? (
+                                {!isPast && (item.kind === 'linked' || item.editable) ? (
                                   <Pressable
                                     accessibilityRole="button"
                                     accessibilityLabel={`Edit ${item.title}`}
                                     accessibilityHint={`Edit ${item.title}`}
-                                    onPress={() => openBudgetItem(item)}
+                                    onPress={() => openBudgetItem(item, section.id)}
                                     style={styles.editButton}>
                                     <Feather name="edit-2" size={16} color={colors.primary} />
                                   </Pressable>
