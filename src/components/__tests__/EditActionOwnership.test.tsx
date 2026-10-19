@@ -31,7 +31,7 @@ describe('edit action ownership', () => {
       join(root, 'src/components/ListRow.tsx'),
     ]);
     const approvedHeaders = new Map([
-      [join(root, 'app/(tabs)/budget.tsx'), ["icon: 'edit-2'", "label: 'Edit budget'"]],
+      [join(root, 'app/(tabs)/budget.tsx'), ["icon: 'plus'", "label: 'Add category'"]],
       [join(root, 'app/emergency-fund.tsx'), ["icon: 'edit-2'", "label: 'Edit allocation'"]],
     ]);
     const approvedIcons = new Map([

@@ -212,11 +212,11 @@ describe('Home screen theme smoke', () => {
         await Promise.resolve();
       });
       if (!renderer) throw new Error('Home did not render.');
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityState)
         .toEqual({ expanded: false });
-      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
+      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityLabel)
         .toBe('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);

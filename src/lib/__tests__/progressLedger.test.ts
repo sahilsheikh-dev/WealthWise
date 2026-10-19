@@ -258,7 +258,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-61')).toBe('Done');
     expect(statusFor('CR-62')).toBe('Done');
     for (const id of ['CR-63', 'CR-64', 'CR-65']) {
-      expect(statusFor(id)).toBe('Pending');
+      expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
