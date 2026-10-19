@@ -12,8 +12,10 @@ import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import {
+  BUDGET_GROUPS,
   budgetOverview,
   createDefaultBudgetPlan,
+  defaultBudgetSectionIdFor,
   effectiveMonthBudget,
 } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
@@ -30,6 +32,19 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+function budgetItemCategoriesForSection(
+  sectionId: string,
+  items: readonly { id: string; name: string }[],
+  currentItemId?: string,
+): string[] {
+  const categories = sectionId === 'insurance'
+    ? ['Insurance']
+    : BUDGET_GROUPS.find((group) => group.id === sectionId)?.categories ?? [];
+  return categories.filter((category) =>
+    !items.some((item) => item.name === category && item.id !== currentItemId),
+  );
 }
 
 export default function BudgetScreen() {
@@ -59,6 +74,19 @@ export default function BudgetScreen() {
   const { fontScale } = useWindowDimensions();
   const today = todayISO();
   const overview = useMemo(() => budgetOverview(data, month, today), [data, month, today]);
+  const overviewAccessibility = [
+    `Income ${formatAmount(overview.stacked.income.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.income.planned, 'exact', 1)} planned`,
+    `Spending ${formatAmount(overview.stacked.spend.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.spend.planned, 'exact', 1)} planned`,
+    `Investing ${formatAmount(overview.stacked.invest.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.invest.planned, 'exact', 1)} planned`,
+    `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.left.planned, 'exact', 1)} planned`,
+  ].join('; ') + [
+    overview.stacked.left.actual < 0
+      ? ` Actual over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}.`
+      : '',
+    overview.stacked.left.planned < 0
+      ? ` Planned over by ${formatAmount(Math.abs(overview.stacked.left.planned), 'exact', 1)}.`
+      : '',
+  ].join('');
   const currentMonth = today.slice(0, 7);
   const lastAllowedMonth = shiftMonth(currentMonth, 24);
   const nextDisabled = month >= lastAllowedMonth;
@@ -128,15 +156,22 @@ export default function BudgetScreen() {
     void apply();
   }, [routeApply, apply]);
 
-  const openBudgetItem = (item: (typeof overview.sections)[number]['items'][number]) => {
+  const openBudgetItem = (
+    item: (typeof overview.sections)[number]['items'][number],
+    sectionId: string,
+  ) => {
     switch (item.source.kind) {
       case 'line':
         {
           const category = item.source.category;
-          const budgetItem = effectiveMonthBudget(data, month, today).budget?.items
+          const budget = effectiveMonthBudget(data, month, today).budget;
+          const budgetItem = budget?.items
             .find((candidate) => candidate.name === category);
           if (!budgetItem) {
-            Alert.alert('Could not edit item', 'This budget item is no longer available.');
+            const targetSectionId = budget?.sections.some((section) => section.id === sectionId)
+              ? sectionId
+              : defaultBudgetSectionIdFor(category);
+            setSheetMode({ kind: 'add-item', sectionId: targetSectionId, category });
             return;
           }
           setSheetMode({
@@ -151,8 +186,17 @@ export default function BudgetScreen() {
           return;
         }
       case 'income':
+        if (!item.editable && !item.source.incomeId.startsWith('actual:')) return;
+        if (item.source.incomeId.startsWith('actual:')) {
+          setSheetMode({
+            kind: 'add-income',
+            name: item.title,
+            category: item.source.category,
+            amount: item.actual,
+          });
+          return;
+        }
         {
-          if (!item.editable) return;
           const incomeId = item.source.incomeId;
           const income = effectiveMonthBudget(data, month, today).budget?.incomes
             .find((candidate) => candidate.id === incomeId);
@@ -327,6 +371,13 @@ export default function BudgetScreen() {
   const activeBudget = effectiveMonthBudget(data, month, today).budget;
   const laterCustomMonths = (data.monthBudgets ?? [])
     .filter((budget) => budget.month > month && budget.source === 'custom').length;
+  const itemCategoryOptions = sheetMode?.kind === 'add-item' || sheetMode?.kind === 'edit-item'
+    ? budgetItemCategoriesForSection(
+      sheetMode.sectionId,
+      activeBudget?.items ?? [],
+      sheetMode.kind === 'edit-item' ? sheetMode.itemId : undefined,
+    )
+    : [];
 
   return (
     <Screen scroll={false}>
@@ -410,12 +461,12 @@ export default function BudgetScreen() {
               <View testID="budget-overview-card">
                 <Card style={styles.overviewCard}>
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
-                  <StackedBar values={overview.stacked} summary={overview.summary.stacked} />
+                  <StackedBar values={overview.stacked} summary={overviewAccessibility} />
                   <View style={styles.metricTable}>
                     <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
                       <View style={styles.metricTableLabel} />
-                      <AppText style={[typography.label, styles.metricColumn]}>Planned</AppText>
                       <AppText style={[typography.label, styles.metricColumn]}>Actual</AppText>
+                      <AppText style={[typography.label, styles.metricColumn]}>Planned</AppText>
                     </View>
                     <OverviewMetricRow label="Income" planned={overview.stacked.income.planned} actual={overview.stacked.income.actual} stacked={stackMetrics} />
                     <OverviewMetricRow label="Spending" planned={overview.stacked.spend.planned} actual={overview.stacked.spend.actual} stacked={stackMetrics} />
@@ -425,7 +476,7 @@ export default function BudgetScreen() {
                   <AppText
                     testID="budget-overview-summary"
                     numberOfLines={1}
-                    accessibilityLabel={overview.summary.stacked}
+                    accessibilityLabel={overviewAccessibility}
                     style={[typography.meta, { color: colors.text2 }]}>
                     {overview.stacked.left.actual < 0
                       ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
@@ -457,7 +508,8 @@ export default function BudgetScreen() {
                   const canManageSection = !isPast && definition?.system === undefined && definition !== undefined
                     && section.id !== 'other-not-in-budget';
                   const canAddIncome = !isPast && definition?.system === 'income';
-                  const sectionActions = canManageSection || canAddIncome;
+                  const canAddInsurance = !isPast && definition?.system === 'insurance';
+                  const sectionActions = canManageSection || canAddIncome || canAddInsurance;
                   return (
                     <View key={section.id} testID={`budget-section-${section.id}`}>
                     <Card style={styles.sectionCard}>
@@ -505,6 +557,15 @@ export default function BudgetScreen() {
                                 style={styles.sectionActionButton}>
                                 <Feather name="plus" size={20} color={colors.primary} />
                               </Pressable>
+                            ) : canAddInsurance ? (
+                              <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Add item"
+                                accessibilityHint="Add a manual Insurance budget item"
+                                onPress={() => setSheetMode({ kind: 'add-item', sectionId: section.id })}
+                                style={styles.sectionActionButton}>
+                                <Feather name="plus" size={20} color={colors.primary} />
+                              </Pressable>
                             ) : null}
                           </View>
                         ) : null}
@@ -535,12 +596,12 @@ export default function BudgetScreen() {
                                   accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
                                   <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
                                 </AppText>
-                                {!isPast && section.id !== 'other-not-in-budget' && (item.kind === 'linked' || item.editable) ? (
+                                {!isPast && (item.kind === 'linked' || item.editable) ? (
                                   <Pressable
                                     accessibilityRole="button"
                                     accessibilityLabel={`Edit ${item.title}`}
                                     accessibilityHint={`Edit ${item.title}`}
-                                    onPress={() => openBudgetItem(item)}
+                                    onPress={() => openBudgetItem(item, section.id)}
                                     style={styles.editButton}>
                                     <Feather name="edit-2" size={16} color={colors.primary} />
                                   </Pressable>
@@ -565,6 +626,7 @@ export default function BudgetScreen() {
             key={`${sheetMode.kind}-${'itemId' in sheetMode ? sheetMode.itemId : 'sectionId' in sheetMode ? sheetMode.sectionId : 'new'}`}
             visible
             mode={sheetMode}
+            itemCategoryOptions={itemCategoryOptions}
             fontScale={fontScale}
             defaultScope={
               sheetMode.kind.startsWith('add-')
@@ -634,10 +696,10 @@ function OverviewMetricRow({
       </View>
       <View style={[styles.overviewMetricValues, stacked && styles.overviewMetricValuesStacked]}>
         <View style={styles.metricValue}>
-          <AmountText value={planned} tier="row" weight="semibold" />
+          <AmountText value={actual} tier="row" weight="semibold" />
         </View>
         <View style={styles.metricValue}>
-          <AmountText value={actual} tier="row" weight="semibold" />
+          <AmountText value={planned} tier="row" weight="semibold" />
         </View>
       </View>
     </View>

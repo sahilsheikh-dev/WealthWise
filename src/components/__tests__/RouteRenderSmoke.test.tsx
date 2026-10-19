@@ -28,6 +28,7 @@ import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
+import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
@@ -559,6 +560,55 @@ function makeInvestmentTestPlan(): PlanHolding {
     actualValueDate: null,
     logs: [],
   };
+}
+
+function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
+  const scope = renderer.root.findAll((node) => {
+    const options = node.props.options;
+    return String(node.type) === 'segmentedcontrol'
+      && Array.isArray(options)
+      && options.some((option: unknown) => typeof option === 'object'
+        && option !== null && 'label' in option && option.label === 'This month only');
+  })[0];
+  if (!scope) throw new Error('Budget scope control was not rendered.');
+  return scope;
+}
+
+function budgetValueTypeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
+  const valueType = renderer.root.findAll((node) => {
+    const options = node.props.options;
+    return String(node.type) === 'segmentedcontrol'
+      && Array.isArray(options)
+      && options.some((option: unknown) => typeof option === 'object'
+        && option !== null && 'value' in option && option.value === 'percent');
+  })[0];
+  if (!valueType) throw new Error('Budget item value type control was not rendered.');
+  return valueType;
+}
+
+function selectDropdownOption(
+  renderer: TestRenderer.ReactTestRenderer | undefined,
+  fieldLabel: string,
+  optionTitle: string,
+) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
+  openDropdown(renderer, fieldLabel);
+  const option = renderer.root.findAllByProps({ accessibilityLabel: optionTitle })
+    .find((node) => node.props.accessibilityRole === 'radio');
+  if (!option) throw new Error(`Dropdown option ${optionTitle} was not rendered.`);
+  act(() => option.props.onPress());
+}
+
+function openDropdown(
+  renderer: TestRenderer.ReactTestRenderer,
+  fieldLabel: string,
+) {
+  const field = renderer.root.findAllByProps({ accessibilityLabel: fieldLabel })
+    .find((node) => typeof node.props.onPress === 'function');
+  if (!field) throw new Error(`Dropdown field ${fieldLabel} was not rendered.`);
+  act(() => field.props.onPress());
 }
 
 describe('route render smoke audit', () => {
@@ -1486,7 +1536,9 @@ describe('route render smoke audit', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Form route did not render.');
-    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
+    const close = renderer.root.findAllByProps({ accessibilityLabel: 'Close' })
+      .find((node) => typeof node.props.isDirty === 'boolean');
+    if (!close) throw new Error('The full-screen form Close action was not rendered.');
     expect(close.props.accessibilityRole).toBe('button');
     expect(close.props.onPress).toEqual(expect.any(Function));
     expect(typeof close.props.isDirty).toBe('boolean');
@@ -2230,7 +2282,10 @@ describe('route render smoke audit', () => {
       expect(sheetText.find((node) => node.props.accessibilityLabel)?.props.accessibilityLabel)
         .toContain('₹10,000');
       act(() => sheet.props.onRequestClose());
-      expect(renderer.root.find((node) => String(node.type) === 'modal').props.visible).toBe(false);
+      const infoModal = renderer.root.findAll((node) =>
+        String(node.type) === 'modal' && node.props.testID === undefined,
+      )[0];
+      expect(infoModal?.props.visible).toBe(false);
     } finally {
       if (renderer) act(() => renderer?.unmount());
       storeState.data.holdings = previousHoldings;
@@ -2421,6 +2476,10 @@ describe('route render smoke audit', () => {
       const foodRowText = foodRow.findAllByType('text').map((node) => node.children.join('')).join(' ');
       expect(foodRowText).toContain('Food');
       expect(foodRowText).toContain('50');
+      expect(foodRow.findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([50, 200]);
+      expect(foodRow.findAll((node) => typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Food, '))[0]?.props.accessibilityLabel)
+        .toBe(`Food, ${formatAmount(50, 'exact', 1)} of ${formatAmount(200, 'exact', 1)}`);
       const transportRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Transport` });
       expect(JSON.stringify(foodRow.props.style)).toContain('"borderBottomWidth":1');
       expect(JSON.stringify(transportRow.props.style)).not.toContain('"borderBottomWidth":1');
@@ -2441,7 +2500,24 @@ describe('route render smoke audit', () => {
         .toEqual(expect.arrayContaining([expect.objectContaining({ height: 12, width: '100%' })]));
       const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
       expect(header.findAllByType('text').map((node) => node.children.join('')))
-        .toEqual(['Planned', 'Actual']);
+        .toEqual(['Actual', 'Planned']);
+      const overviewAccessibility = renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel;
+      for (const label of ['Income', 'Spending', 'Investing', 'Left']) {
+        const labelIndex = overviewAccessibility.indexOf(label);
+        const actualIndex = overviewAccessibility.indexOf(' actual and ', labelIndex);
+        const plannedIndex = overviewAccessibility.indexOf(' planned', actualIndex);
+        expect(labelIndex).toBeGreaterThanOrEqual(0);
+        expect(actualIndex).toBeGreaterThan(labelIndex);
+        expect(plannedIndex).toBeGreaterThan(actualIndex);
+      }
+      expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
+        .toBe(overviewAccessibility);
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([500, 1_000]);
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
+      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
+      expect(paceAccessibility.indexOf(' actual;')).toBeLessThan(paceAccessibility.indexOf(' planned'));
       expect(['income', 'spending', 'investing', 'left'].map((name) =>
         renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
       )).toHaveLength(4);
@@ -2461,6 +2537,9 @@ describe('route render smoke audit', () => {
       expect(inlineFields.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ flexDirection: fontScale >= 1.3 ? 'column' : 'row' }),
       ]));
+      expect(renderer.root.findAllByType('text').some((node) =>
+        node.children.join('') === 'Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.',
+      )).toBe(true);
       expect(renderer.root.findAll((node) =>
         node.props.accessibilityLabel === 'Due day' && node.props.icon === 'calendar-outline',
       )).toHaveLength(1);
@@ -2484,7 +2563,8 @@ describe('route render smoke audit', () => {
       const resizedSheetStyle = JSON.stringify(renderer.root.findByProps({ testID: 'budget-management-sheet' }).props.style);
       const resizedMaxHeight = Number(resizedSheetStyle.match(/"maxHeight":([\d.]+)/)?.[1]);
       expect(resizedMaxHeight).toBeCloseTo(206.4, 1);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Item name' })).toBeDefined();
+      expect(renderer.root.findByType(Dropdown).props.value).toBe('Food');
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Item name' })).toHaveLength(0);
       act(() => renderer.root.findByProps({ testID: 'budget-management-sheet-backdrop' }).props.onPress());
     } finally {
       Object.assign(data, previous);
@@ -2550,10 +2630,10 @@ describe('route render smoke audit', () => {
         node.children.join('') === '1 later month has its own values and is kept.',
       )).toBe(false);
       await act(async () => {
-        renderer?.root.findByProps({ label: 'Apply changes to' }).props.onChange('following');
+        budgetScopeControl(renderer).props.onChange('following');
         await Promise.resolve();
       });
-      expect(renderer.root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(budgetScopeControl(renderer).props.value).toBe('following');
       expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
         .toContain('1 later month has its own values and is kept.');
       await act(async () => {
@@ -2608,6 +2688,8 @@ describe('route render smoke audit', () => {
       addBudgetIncome: jest.Mock;
       editBudgetStructureItem: jest.Mock;
       editBudgetItem: jest.Mock;
+      deleteBudgetStructureItem: jest.Mock;
+      restoreBudgetPlanAndMonth: jest.Mock;
     };
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const month = monthKey(todayISO());
@@ -2615,6 +2697,7 @@ describe('route render smoke audit', () => {
       budgetPlan: data.budgetPlan,
       monthBudgets: data.monthBudgets,
       transactions: data.transactions,
+      policies: data.policies,
     };
     const income = { id: 'salary-row', name: 'Salary', category: 'Salary' as const, amount: 10_000 };
     const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
@@ -2632,7 +2715,11 @@ describe('route render smoke audit', () => {
     snapshot.items = plan.items.map((item) => ({ ...item }));
     data.budgetPlan = plan;
     data.monthBudgets = [snapshot];
-    data.transactions = [];
+    data.policies = [];
+    data.transactions = [
+      { id: 'extra-freelance', type: 'income', amount: 500, category: 'Freelance', note: '', date: todayISO() },
+      { id: 'vet-visit', type: 'expense', amount: 350, category: 'Vet visit', note: '', date: todayISO() },
+    ];
     routeParams.mockReturnValue({ month });
     for (const action of Object.values(actions)) action.mockClear();
     const alert = jest.requireMock('react-native').Alert.alert as jest.Mock;
@@ -2661,11 +2748,38 @@ describe('route render smoke audit', () => {
       expect(actionLabels('pets')).toEqual(['Rename section', 'Delete section', 'Add item']);
       expect(actionLabels('income')).toEqual(['Add income']);
       expect(actionLabels('debt-repayments')).toEqual([]);
-      expect(actionLabels('insurance')).toEqual([]);
+      expect(actionLabels('insurance')).toEqual(['Add item']);
+
+      const unbudgetedRow = root.findByProps({ testID: `budget-row-line:${month}:Vet visit` });
+      expect(unbudgetedRow.findByProps({ accessibilityLabel: 'Edit Vet visit' })).toBeDefined();
+      actions.addBudgetItem.mockClear();
+      act(() => unbudgetedRow.findByProps({ accessibilityLabel: 'Edit Vet visit' }).props.onPress());
+      expect(root.findByType(Dropdown).props.value).toBe('__custom_item_category__');
+      expect(root.findByProps({ accessibilityLabel: 'Item name' }).props.value).toBe('Vet visit');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('350');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'survival',
+        name: 'Vet visit',
+        mode: 'amount',
+        value: 350,
+      }, 'following', todayISO());
+
+      act(() => root.findByProps({ accessibilityLabel: 'Edit Freelance' }).props.onPress());
+      expect(root.findByProps({ accessibilityLabel: 'Income name' }).props.value).toBe('Freelance');
+      expect(root.findByProps({ accessibilityLabel: 'Planned income amount' }).props.value).toBe('500');
+      await act(async () => saveSheet());
+      expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
+        name: 'Freelance',
+        category: 'Freelance',
+        amount: 500,
+      }, 'following', todayISO());
 
       act(() => root.findByProps({ accessibilityLabel: 'Add category' }).props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add category')).toBe(true);
-      expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(budgetScopeControl(renderer).props.value).toBe('following');
       expect(root.findByProps({ testID: 'budget-management-header' })
         .findAll((node) => String(node.type) === 'pressable')
         .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
@@ -2680,7 +2794,7 @@ describe('route render smoke audit', () => {
       expect(root.findByProps({ testID: 'budget-management-header' })
         .findAll((node) => String(node.type) === 'pressable')
         .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
-      expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('month');
+      expect(budgetScopeControl(renderer).props.value).toBe('month');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Category name' }).props.onChangeText('Animal care');
         await saveSheet();
@@ -2691,13 +2805,20 @@ describe('route render smoke audit', () => {
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add item')).toBe(true);
       actions.addBudgetItem.mockClear();
       await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      expect(root.findAllByType('text').some((node) => node.children.join('') === 'Choose a category')).toBe(true);
+      selectDropdownOption(renderer, 'Item category', 'Custom');
+      await act(async () => {
         root.findByProps({ accessibilityLabel: 'Item name' }).props.onChangeText('Pet sitting');
         root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1000000001');
         await saveSheet();
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
-        root.findByProps({ label: 'Value type' }).props.onChange('percent');
+        budgetValueTypeControl(renderer).props.onChange('percent');
         await Promise.resolve();
       });
       await act(async () => {
@@ -2706,7 +2827,7 @@ describe('route render smoke audit', () => {
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
-        root.findByProps({ label: 'Value type' }).props.onChange('amount');
+        budgetValueTypeControl(renderer).props.onChange('amount');
         await Promise.resolve();
       });
       await act(async () => {
@@ -2715,6 +2836,9 @@ describe('route render smoke audit', () => {
         await saveSheet();
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      expect(root.findAllByType('text').some((node) =>
+        node.children.join('') === 'Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.',
+      )).toBe(true);
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');
         await saveSheet();
@@ -2725,6 +2849,44 @@ describe('route render smoke audit', () => {
         mode: 'amount',
         value: 500,
         dueDay: 12,
+      }, 'following', todayISO());
+
+      act(() => sectionAction('survival', 'Add item').props.onPress());
+      openDropdown(renderer, 'Item category');
+      const availableCategories = root.findAll((node) => node.props.accessibilityRole === 'radio')
+        .map((node) => node.props.accessibilityLabel);
+      expect(availableCategories).toContain('Rent');
+      expect(availableCategories).not.toContain('Food');
+      expect(availableCategories.at(-1)).toBe('Custom');
+      selectDropdownOption(renderer, 'Item category', 'Rent');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('300');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'survival',
+        name: 'Rent',
+        mode: 'amount',
+        value: 300,
+      }, 'following', todayISO());
+
+      act(() => sectionAction('insurance', 'Add item').props.onPress());
+      openDropdown(renderer, 'Item category');
+      const insuranceCategories = root.findByType(Dropdown).props.options
+        .map((option: { title: string }) => option.title);
+      expect(insuranceCategories).toEqual(['Insurance', 'Custom']);
+      selectDropdownOption(renderer, 'Item category', 'Insurance');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1200');
+        root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('20');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'insurance',
+        name: 'Insurance',
+        mode: 'amount',
+        value: 1_200,
+        dueDay: 20,
       }, 'following', todayISO());
 
       act(() => sectionAction('income', 'Add income').props.onPress());
@@ -2808,6 +2970,96 @@ describe('route render smoke audit', () => {
     } finally {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('edits and deletes manually planned Insurance items with scoped Undo', async () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      editBudgetStructureItem: jest.Mock;
+      deleteBudgetStructureItem: jest.Mock;
+      restoreBudgetPlanAndMonth: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const month = monthKey(todayISO());
+    const previous = {
+      budgetPlan: data.budgetPlan,
+      monthBudgets: data.monthBudgets,
+      transactions: data.transactions,
+      policies: data.policies,
+    };
+    const income = { id: 'insurance-test-income', name: 'Salary', category: 'Salary' as const, amount: 1_000 };
+    const insuranceItem = {
+      id: 'manual-insurance',
+      sectionId: 'insurance',
+      name: 'Insurance',
+      mode: 'amount' as const,
+      value: 400,
+      dueDay: 20,
+    };
+    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
+      incomes: [income],
+      repeatMonthly: true,
+      repeatFrom: month,
+    });
+    plan.items.push(insuranceItem);
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 100 }], {
+      source: 'plan',
+      incomes: [income],
+    });
+    snapshot.sections = plan.sections.map((section) => ({ ...section }));
+    snapshot.items = plan.items.map((item) => ({ ...item }));
+    data.budgetPlan = plan;
+    data.monthBudgets = [snapshot];
+    data.transactions = [];
+    data.policies = [];
+    routeParams.mockReturnValue({ month });
+    actions.editBudgetStructureItem.mockClear();
+    actions.deleteBudgetStructureItem.mockClear();
+    actions.restoreBudgetPlanAndMonth.mockClear();
+    useUIStore.getState().setActionToast(null);
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      const root = renderer.root;
+      const editInsurance = root.findByProps({ accessibilityLabel: 'Edit Insurance' });
+      act(() => editInsurance.props.onPress());
+      expect(root.findByType(Dropdown).props.value).toBe('Insurance');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
+        root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'manual-insurance', {
+        name: 'Insurance',
+        mode: 'amount',
+        value: 500,
+        dueDay: 20,
+      }, 'month', todayISO());
+
+      act(() => root.findByProps({ accessibilityLabel: 'Edit Insurance' }).props.onPress());
+      act(() => root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress());
+      const alert = jest.requireMock('react-native').Alert.alert as jest.Mock;
+      expect(alert.mock.calls.at(-1)?.[1]).toContain('Insurance');
+      const deleteButtons = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
+      const monthOnly = deleteButtons?.find((button) => button.text === 'This month only');
+      expect(deleteButtons?.map((button) => button.text)).toEqual([
+        'Cancel',
+        'This month only',
+        'This and following months',
+      ]);
+      if (!monthOnly?.onPress) throw new Error('Insurance item delete confirmation was not presented.');
+      act(() => monthOnly.onPress?.());
+      expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, 'manual-insurance', 'month', todayISO());
+      const toast = useUIStore.getState().actionToast;
+      expect(toast?.actionLabel).toBe('Undo');
+      act(() => toast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(data, previous);
+      routeParams.mockReturnValue({});
+      useUIStore.getState().setActionToast(null);
     }
   });
 

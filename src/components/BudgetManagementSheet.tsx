@@ -1,13 +1,14 @@
-import { Feather } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { EARNED_INCOME_CATEGORIES, type BudgetSection, type EarnedIncomeCategory } from '../domain/types';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { ChoiceField } from './form/ChoiceField';
+import { Dropdown } from './Dropdown';
+import { FormShell, type FormShellAction } from './FormShell';
 import { IntegerField } from './form/IntegerField';
 import { MoneyField } from './form/MoneyField';
 import { SegmentedControl } from './form/SegmentedControl';
@@ -18,9 +19,9 @@ import { AppText, Button } from './ui';
 export type BudgetManagementMode =
   | { kind: 'add-section' }
   | { kind: 'rename-section'; sectionId: string; name: string }
-  | { kind: 'add-item'; sectionId: string }
+  | { kind: 'add-item'; sectionId: string; category?: string }
   | { kind: 'edit-item'; sectionId: string; itemId: string; name: string; mode: 'amount' | 'percent'; value: number; day?: number }
-  | { kind: 'add-income' }
+  | { kind: 'add-income'; name?: string; category?: EarnedIncomeCategory; amount?: number }
   | { kind: 'edit-income'; itemId: string; name: string; category: EarnedIncomeCategory; amount: number; day?: number };
 
 export type BudgetManagementValues = {
@@ -36,6 +37,7 @@ export type BudgetManagementValues = {
 
 const formSchema = z.object({
   name: z.string(),
+  itemCategory: z.string(),
   sectionType: z.enum(['spend', 'invest']),
   category: z.enum(EARNED_INCOME_CATEGORIES),
   itemMode: z.enum(['amount', 'percent']),
@@ -45,14 +47,23 @@ const formSchema = z.object({
   scope: z.enum(['month', 'following']),
 });
 
+const CUSTOM_ITEM_CATEGORY = '__custom_item_category__';
+
 function makeFormSchema(mode: BudgetManagementMode) {
   return formSchema.superRefine((value, context) => {
     const isIncome = mode.kind === 'add-income' || mode.kind === 'edit-income';
+    const isBudgetItem = mode.kind === 'add-item' || mode.kind === 'edit-item';
     const maxNameLength = isIncome ? 40 : 30;
     const name = value.name.trim();
-    if (mode.kind !== 'edit-income' && !name) {
+    if (isBudgetItem && !value.itemCategory) {
+      context.addIssue({ code: 'custom', path: ['itemCategory'], message: 'Choose a category' });
+    } else if (isBudgetItem && value.itemCategory === CUSTOM_ITEM_CATEGORY && !name) {
       context.addIssue({ code: 'custom', path: ['name'], message: 'Enter a name' });
-    } else if (name.length > maxNameLength) {
+    } else if (!isBudgetItem && mode.kind !== 'edit-income' && !name) {
+      context.addIssue({ code: 'custom', path: ['name'], message: 'Enter a name' });
+    } else if (isBudgetItem && value.itemCategory === CUSTOM_ITEM_CATEGORY && name.length > maxNameLength) {
+      context.addIssue({ code: 'custom', path: ['name'], message: `Keep the name under ${maxNameLength} characters` });
+    } else if (!isBudgetItem && name.length > maxNameLength) {
       context.addIssue({ code: 'custom', path: ['name'], message: `Keep the name under ${maxNameLength} characters` });
     }
 
@@ -97,6 +108,7 @@ export function BudgetManagementSheet({
   fontScale,
   defaultScope,
   laterCustomMonths,
+  itemCategoryOptions,
   onClose,
   onSave,
   onRemove,
@@ -106,12 +118,21 @@ export function BudgetManagementSheet({
   fontScale: number;
   defaultScope: 'month' | 'following';
   laterCustomMonths: number;
+  itemCategoryOptions: readonly string[];
   onClose: () => void;
   onSave: (values: BudgetManagementValues) => boolean;
   onRemove?: () => void;
 }) {
   const { colors } = useTheme();
   const schema = makeFormSchema(mode);
+  const suggestedItemCategory = mode.kind === 'edit-item' ? mode.name
+    : mode.kind === 'add-item' ? mode.category
+      : undefined;
+  const initialItemCategory = suggestedItemCategory
+    ? itemCategoryOptions.includes(suggestedItemCategory)
+      ? suggestedItemCategory
+      : CUSTOM_ITEM_CATEGORY
+    : '';
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<
     z.input<typeof formSchema>,
     undefined,
@@ -123,12 +144,21 @@ export function BudgetManagementSheet({
     defaultValues: {
       name: mode.kind === 'rename-section' || mode.kind === 'edit-item' || mode.kind === 'edit-income'
         ? mode.name
-        : '',
+        : mode.kind === 'add-item' && mode.category && !itemCategoryOptions.includes(mode.category)
+          ? mode.category
+          : mode.kind === 'add-income' ? mode.name ?? '' : '',
+      itemCategory: initialItemCategory,
       sectionType: 'spend',
-      category: mode.kind === 'edit-income' ? mode.category : 'Salary',
+      category: mode.kind === 'edit-income' || mode.kind === 'add-income'
+        ? mode.category ?? 'Salary'
+        : 'Salary',
       itemMode: mode.kind === 'edit-item' ? mode.mode : 'amount',
       value: mode.kind === 'edit-item' ? String(mode.value) : '',
-      amount: mode.kind === 'edit-income' ? String(mode.amount) : '',
+      amount: mode.kind === 'edit-income'
+        ? String(mode.amount)
+        : mode.kind === 'add-income' && mode.amount !== undefined
+          ? String(mode.amount)
+          : '',
       day: mode.kind === 'edit-item' || mode.kind === 'edit-income'
         ? mode.day === undefined ? '' : String(mode.day)
         : '',
@@ -137,16 +167,29 @@ export function BudgetManagementSheet({
   });
   const scope = useWatch({ control, name: 'scope' }) ?? defaultScope;
   const itemMode = useWatch({ control, name: 'itemMode' }) ?? 'amount';
+  const itemCategory = useWatch({ control, name: 'itemCategory' }) ?? '';
   const isItem = mode.kind === 'add-item' || mode.kind === 'edit-item';
   const isIncome = mode.kind === 'add-income' || mode.kind === 'edit-income';
   const canRemove = (mode.kind === 'edit-item' || mode.kind === 'edit-income') && onRemove !== undefined;
+  const rightActions: FormShellAction[] = [
+    ...(canRemove && onRemove ? [{
+      icon: 'trash-2' as const,
+      label: 'Delete item',
+      hint: 'Delete this item from the selected month range',
+      onPress: onRemove,
+      destructive: true,
+    }] : []),
+    { icon: 'x', label: 'Close', hint: 'Close this form', onPress: onClose },
+  ];
 
   const save = handleSubmit((values) => {
     const parsedDay = values.day === '' ? undefined : Number(values.day);
     const parsedValue = Number(values.value);
     const parsedAmount = Number(values.amount);
     if (onSave({
-      name: values.name.trim(),
+      name: isItem && values.itemCategory !== CUSTOM_ITEM_CATEGORY
+        ? values.itemCategory
+        : values.name.trim(),
       sectionType: values.sectionType,
       category: values.category,
       itemMode: values.itemMode,
@@ -163,34 +206,20 @@ export function BudgetManagementSheet({
       onClose={onClose}
       sheetTestID="budget-management-sheet"
       contentStyle={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View testID="budget-management-header" style={styles.header}>
-        <AppText weight="bold" style={[typography.name, styles.heading]}>{titleFor(mode)}</AppText>
-        <View style={styles.headerActions}>
-          {canRemove ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Delete item"
-              accessibilityHint="Delete this item from the selected month range"
-              onPress={onRemove}
-              style={styles.headerButton}>
-              <Feather name="trash-2" size={18} color={colors.err} />
-            </Pressable>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={styles.headerButton}>
-            <Feather name="x" size={20} color={colors.text2} />
-          </Pressable>
-        </View>
-      </View>
-      <ScrollView
-        style={styles.fieldsScroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.fields}>
+      <FormShell
+        title={titleFor(mode)}
+        headerTestID="budget-management-header"
+        rightActions={rightActions}
+        footer={(
+          <Button
+            label={isSubmitting ? 'Saving' : 'Save'}
+            variant="primary"
+            disabled={isSubmitting}
+            onPress={save}
+            style={styles.saveButton}
+          />
+        )}
+        bodyTestID="budget-management-fields">
               {mode.kind === 'add-section' || mode.kind === 'rename-section' ? (
                 <>
                   <Controller
@@ -232,19 +261,39 @@ export function BudgetManagementSheet({
                 <>
                   <Controller
                     control={control}
-                    name="name"
+                    name="itemCategory"
                     render={({ field }) => (
-                      <TextField
-                        label="Name"
-                        accessibilityLabel="Item name"
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Item category"
                         value={field.value}
-                        onChangeText={field.onChange}
-                        onBlur={field.onBlur}
-                        maxLength={30}
-                        error={errors.name?.message}
+                        options={[
+                          ...itemCategoryOptions.map((category) => ({ value: category, title: category })),
+                          { value: CUSTOM_ITEM_CATEGORY, title: 'Custom' },
+                        ]}
+                        onChange={field.onChange}
+                        placeholder="Select category"
+                        error={errors.itemCategory?.message}
                       />
                     )}
                   />
+                  {itemCategory === CUSTOM_ITEM_CATEGORY ? (
+                    <Controller
+                      control={control}
+                      name="name"
+                      render={({ field }) => (
+                        <TextField
+                          label="Name"
+                          accessibilityLabel="Item name"
+                          value={field.value}
+                          onChangeText={field.onChange}
+                          onBlur={field.onBlur}
+                          maxLength={30}
+                          error={errors.name?.message}
+                        />
+                      )}
+                    />
+                  ) : null}
                   <Controller
                     control={control}
                     name="itemMode"
@@ -302,6 +351,11 @@ export function BudgetManagementSheet({
                           />
                         )}
                       />
+                      <AppText
+                        testID="due-day-helper"
+                        style={[typography.meta, { color: colors.text3 }]}>
+                        Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.
+                      </AppText>
                     </View>
                   </View>
                 </>
@@ -406,30 +460,15 @@ export function BudgetManagementSheet({
                     : `${laterCustomMonths} later months have their own values and are kept.`}
                 </AppText>
               ) : null}
-        <Button
-          label={isSubmitting ? 'Saving' : 'Save'}
-          variant="primary"
-          disabled={isSubmitting}
-          onPress={save}
-          style={styles.saveButton}
-        />
-      </ScrollView>
+      </FormShell>
     </TopAnchoredSheet>
   );
 }
 
 const styles = StyleSheet.create({
   sheet: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
     alignSelf: 'stretch',
   },
-  header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  heading: { flex: 1 },
-  headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  fieldsScroll: { flexShrink: 1 },
-  fields: { gap: 14, paddingBottom: 8 },
   itemFields: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   itemFieldsStacked: { flexDirection: 'column' },
   itemValue: { flex: 2, minWidth: 0 },

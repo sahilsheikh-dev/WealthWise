@@ -128,6 +128,14 @@ function makeBudgetPlanItems(): BudgetItem[] {
       value: 2_000,
     },
     {
+      id: 'demo-budget-item-manual-insurance',
+      sectionId: 'insurance',
+      name: 'Insurance',
+      mode: 'amount',
+      value: 1_200,
+      dueDay: 20,
+    },
+    {
       id: 'demo-budget-item-pets',
       sectionId: 'demo-section-pets',
       name: 'Pet care',
@@ -435,6 +443,16 @@ export function buildDemoData(today: ISODate): AppData {
         category,
         note: `${category} spending`,
         date: monthDate(month, 13, today),
+      });
+    }
+    if (monthIndex === 3) {
+      data.transactions.push({
+        id: `demo-unbudgeted-vet-${month}`,
+        type: 'expense',
+        amount: 650,
+        category: 'Vet visit',
+        note: 'Unbudgeted veterinary visit',
+        date: monthDate(month, 16, today),
       });
     }
   }

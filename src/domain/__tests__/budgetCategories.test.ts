@@ -32,7 +32,7 @@ describe('budget-aware transaction categories', () => {
     const sections = budgetCategoryChoiceSections(data, '2026-03', '2026-03-15', 'expense');
     expect(sections.map((section) => section.name)).toContain('Survival (Needs)');
     const survival = sections.find((section) => section.id === 'survival');
-    expect(survival?.categories[0]?.category).toBe('Rent');
+    expect(survival?.categories.slice(0, 2).map((item) => item.category)).toEqual(['Food', 'Rent']);
     expect(survival?.categories.find((item) => item.category === 'Rent')).toMatchObject({
       planned: 1_000,
       actual: 1_200,
