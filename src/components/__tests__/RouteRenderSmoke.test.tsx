@@ -45,6 +45,7 @@ import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/bu
 
 let mockFontScale = 1;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+const mockKeyboardListeners: Record<string, (event: { endCoordinates: { height: number } }) => void> = {};
 const mockConfirmAsync = jest.fn(async (_options: {
   title: string;
   message: string;
@@ -508,6 +509,12 @@ jest.mock('react-native', () => {
     Alert: { alert: jest.fn() },
     BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
     FlatList,
+    Keyboard: {
+      addListener: (event: string, listener: (event: { endCoordinates: { height: number } }) => void) => {
+        mockKeyboardListeners[event] = listener;
+        return { remove: jest.fn() };
+      },
+    },
     KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Modal: node('modal'),
     Platform: { OS: 'ios' },
@@ -654,6 +661,12 @@ describe('route render smoke audit', () => {
       routeParams.mockReturnValue({ id: goal.id });
       form = renderScreen(React.createElement(GoalFormScreen));
       act(() => form?.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
+      const picker = form.root.findByProps({ testID: 'goal-asset-picker-sheet' });
+      expect(picker.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ maxHeight: 506.4 }),
+      ]));
+      expect(form.root.findByProps({ testID: 'goal-asset-picker-sheet-modal' }).props.visible).toBe(true);
+      expect(form.root.findByProps({ testID: 'goal-asset-picker-sheet-backdrop' })).toBeDefined();
 
       const availableAsset = form.root.findAll((node) =>
         String(node.type) === 'pressable'
@@ -2260,7 +2273,6 @@ describe('route render smoke audit', () => {
 
       try {
         const renderer = renderScreen(React.createElement(BudgetScreen));
-        act(() => renderer.root.findByProps({ testID: 'budget-section-toggle-festival-donations-culture' }).props.onPress());
         const categoryRows = renderer.root.findAll((node) =>
           String(node.type) === 'view'
           &&
@@ -2332,16 +2344,22 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it.each([1, 1.3, 2])('renders overview cards, section-only headings and edit rows at font scale %s', (fontScale) => {
+  it.each([1, 1.3, 2])('renders overview and section Cards with responsive edit rows at font scale %s', (fontScale) => {
     mockFontScale = fontScale;
+    const previousInsets = mockSafeAreaInsets;
+    mockSafeAreaInsets = { top: 24, right: 0, bottom: 0, left: 0 };
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previous = { monthBudgets: data.monthBudgets, transactions: data.transactions };
     const month = monthKey(todayISO());
     data.transactions = [
       { id: 'salary', type: 'income', amount: 500, category: 'Salary', note: '', date: todayISO() },
       { id: 'food', type: 'expense', amount: 50, category: 'Food', note: '', date: todayISO() },
+      { id: 'transport', type: 'expense', amount: 25, category: 'Transport', note: '', date: todayISO() },
     ];
-    data.monthBudgets = [monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
+    data.monthBudgets = [monthBudgetFromLines(month, [
+      { category: 'Food', planned: 200 },
+      { category: 'Transport', planned: 100 },
+    ], {
       incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
     })];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
@@ -2369,17 +2387,11 @@ describe('route render smoke audit', () => {
       ];
       const positions = order.map((id) => ids.indexOf(id));
       expect(positions.every((position, index) => index === 0 || position > (positions[index - 1] ?? -1))).toBe(true);
-      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(4);
+      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(11);
       expect(renderer.root.findByProps({ testID: 'budget-section-list' })).toBeDefined();
       const survival = renderer.root.findByProps({ testID: 'budget-section-survival' });
       expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Survival (Needs)');
-      const toggle = renderer.root.findByProps({ testID: 'budget-section-toggle-survival' });
-      expect(toggle.props.accessibilityLabel).toBe('Expand Survival (Needs)');
-      expect(renderer.root.findAllByProps({ testID: `budget-row-line:${month}:Food` })).toHaveLength(0);
-      act(() => toggle.props.onPress());
-      expect(renderer.root.findByProps({ testID: 'budget-section-toggle-survival' }).props.accessibilityLabel)
-        .toBe('Collapse Survival (Needs)');
       expect(renderer.root.findByProps({ testID: 'budget-row-line:' + month + ':Food' })).toBeDefined();
       const foodRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Food` });
       expect(foodRow.findByProps({ accessibilityLabel: 'Edit Food' })).toBeDefined();
@@ -2389,6 +2401,37 @@ describe('route render smoke audit', () => {
         ['badge', 'chip', 'progress'].includes(String(node.type)),
       )).toHaveLength(0);
       expect(renderer.root.findAllByProps({ testID: 'budget-plan-summary' })).toHaveLength(0);
+      const sectionActions = survival.findByProps({ testID: 'budget-section-actions-survival' });
+      for (const label of ['Rename section', 'Delete section', 'Add item']) {
+        expect(sectionActions.findAll((node) =>
+          String(node.type) === 'pressable' && node.props.accessibilityLabel === label,
+        )).toHaveLength(1);
+      }
+      expect(sectionActions.findAll((node) => String(node.type) === 'pressable').every((button) => {
+        const style = JSON.stringify(button.props.style);
+        return style.includes('"width":44') && style.includes('"height":44')
+          && typeof button.props.accessibilityHint === 'string';
+      })).toBe(true);
+      expect(sectionActions.findAll((node) =>
+        node.props.name === 'edit-2' || node.props.name === 'trash-2' || node.props.name === 'plus',
+      ).map((node) => node.props.name)).toEqual(['edit-2', 'trash-2', 'plus']);
+      expect(survival.findAll((node) => String(node.type) === 'pressable'
+        && node.props.accessibilityState?.expanded !== undefined)).toHaveLength(0);
+      expect(survival.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
+      const foodRowText = foodRow.findAllByType('text').map((node) => node.children.join('')).join(' ');
+      expect(foodRowText).toContain('Food');
+      expect(foodRowText).toContain('50');
+      const transportRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Transport` });
+      expect(JSON.stringify(foodRow.props.style)).toContain('"borderBottomWidth":1');
+      expect(JSON.stringify(transportRow.props.style)).not.toContain('"borderBottomWidth":1');
+      const sectionHeader = renderer.root.findByProps({ testID: 'budget-section-header-survival' });
+      expect(JSON.stringify(sectionHeader.props.style)).toContain(
+        `"flexDirection":"${fontScale >= 1.3 ? 'column' : 'row'}"`,
+      );
+      const sectionActionRow = renderer.root.findByProps({ testID: 'budget-section-actions-survival' });
+      if (fontScale >= 1.3) {
+        expect(JSON.stringify(sectionActionRow.props.style)).toContain('"alignSelf":"flex-end"');
+      }
       const overviewCard = renderer.root.findByProps({ testID: 'budget-overview-card' });
       const overviewStyleText = overviewCard.findAll((node) => node.props.style !== undefined)
         .map((node) => JSON.stringify(node.props.style))
@@ -2418,14 +2461,36 @@ describe('route render smoke audit', () => {
       expect(inlineFields.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ flexDirection: fontScale >= 1.3 ? 'column' : 'row' }),
       ]));
-      expect(renderer.root.findByProps({ testID: 'budget-due-day-label' })).toBeDefined();
+      expect(renderer.root.findAll((node) =>
+        node.props.accessibilityLabel === 'Due day' && node.props.icon === 'calendar-outline',
+      )).toHaveLength(1);
       const sheetStyle = renderer.root.findByProps({ testID: 'budget-management-sheet' }).props.style;
-      expect(JSON.stringify(sheetStyle)).toContain('"maxHeight":"60%"');
-      act(() => renderer.root.findByProps({ testID: 'budget-management-backdrop' }).props.onPress());
+      expect(JSON.stringify(sheetStyle)).toContain('"maxHeight":506.4');
+      expect(renderer.root.findByProps({ testID: 'budget-management-sheet-modal' }).props.visible).toBe(true);
+      const keyboardAvoidingStyle = JSON.stringify(renderer.root
+        .findAll((node) => String(node.type) === 'keyboard-avoiding-view')[0]?.props.style);
+      expect(keyboardAvoidingStyle).toContain('"paddingTop":24');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Close' })).toBeDefined();
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'pressable' && node.props.accessibilityLabel === 'Delete item',
+      )).toHaveLength(1);
+      const sheetIcons = renderer.root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => node.props.name !== undefined)
+        .map((node) => node.props.name);
+      expect(sheetIcons).toEqual(['trash-2', 'x']);
+      expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
+        .not.toContain('Remove item');
+      act(() => mockKeyboardListeners.keyboardDidShow?.({ endCoordinates: { height: 300 } }));
+      const resizedSheetStyle = JSON.stringify(renderer.root.findByProps({ testID: 'budget-management-sheet' }).props.style);
+      const resizedMaxHeight = Number(resizedSheetStyle.match(/"maxHeight":([\d.]+)/)?.[1]);
+      expect(resizedMaxHeight).toBeCloseTo(206.4, 1);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Item name' })).toBeDefined();
+      act(() => renderer.root.findByProps({ testID: 'budget-management-sheet-backdrop' }).props.onPress());
     } finally {
       Object.assign(data, previous);
       routeParams.mockReturnValue({});
       mockFontScale = 1;
+      mockSafeAreaInsets = previousInsets;
     }
   });
 
@@ -2469,12 +2534,18 @@ describe('route render smoke audit', () => {
     try {
       renderer = renderScreen(React.createElement(BudgetScreen));
       if (!renderer) throw new Error('Budget screen renderer was not created.');
-      act(() => renderer?.root.findByProps({ testID: 'budget-section-toggle-survival' }).props.onPress());
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Edit Food' }).props.onPress();
         await Promise.resolve();
       });
       expect(renderer.root.findByProps({ testID: 'budget-management-sheet' })).toBeDefined();
+      const sheetHeader = renderer.root.findByProps({ testID: 'budget-management-header' });
+      expect(sheetHeader.findAll((node) => String(node.type) === 'pressable').map((button) => button.props.accessibilityLabel))
+        .toEqual(['Delete item', 'Close']);
+      expect(sheetHeader.findAll((node) => String(node.type) === 'pressable').every((button) => {
+        const style = JSON.stringify(button.props.style);
+        return style.includes('"width":44') && style.includes('"height":44');
+      })).toBe(true);
       expect(renderer.root.findAllByType('text').some((node) =>
         node.children.join('') === '1 later month has its own values and is kept.',
       )).toBe(false);
@@ -2506,17 +2577,18 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Remove item' }).props.onPress();
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
         await Promise.resolve();
       });
+      expect(alert.mock.calls.at(-1)?.[0]).toBe('Delete item?');
       const buttons = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
       const currentMonthButton = buttons?.find((button) => button.text === 'This month only');
       if (!currentMonthButton?.onPress) throw new Error('Month-only delete option not presented.');
       act(() => currentMonthButton.onPress?.());
       expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, snapshotItemId, 'month', todayISO());
-      const removeToast = useUIStore.getState().actionToast;
-      expect(removeToast?.actionLabel).toBe('Undo');
-      act(() => removeToast?.onAction?.());
+      const deleteToast = useUIStore.getState().actionToast;
+      expect(deleteToast?.actionLabel).toBe('Undo');
+      act(() => deleteToast?.onAction?.());
       expect(actions.restoreBudgetPlanAndMonth).toHaveBeenLastCalledWith(originalPlan, month, snapshot);
     } finally {
       if (renderer) act(() => renderer?.unmount());
@@ -2572,27 +2644,42 @@ describe('route render smoke audit', () => {
       renderer = renderScreen(React.createElement(BudgetScreen));
       if (!renderer) throw new Error('Budget screen renderer was not created.');
       const root = renderer.root;
-      const pressTextButton = (label: string) => {
-        const button = root.findAll((candidate) => String(candidate.type) === 'pressable').find((candidate) =>
-          candidate.findAllByType('text').some((text) => text.children.join('') === label),
-        );
-        if (!button) throw new Error(`Budget action ${label} was not rendered.`);
-        return button;
-      };
       const saveSheet = () => root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      const actionLabels = (sectionId: string) => {
+        const actionsView = root.findAllByProps({ testID: `budget-section-actions-${sectionId}` })[0];
+        return actionsView?.findAll((node) => String(node.type) === 'pressable')
+          .map((button) => button.props.accessibilityLabel) ?? [];
+      };
+      const sectionAction = (sectionId: string, label: string) => {
+        const actionsView = root.findAllByProps({ testID: `budget-section-actions-${sectionId}` })[0];
+        const action = actionsView?.findAll((node) =>
+          String(node.type) === 'pressable' && node.props.accessibilityLabel === label,
+        )[0];
+        if (!action) throw new Error(`Budget section action ${label} was not rendered for ${sectionId}.`);
+        return action;
+      };
+      expect(actionLabels('pets')).toEqual(['Rename section', 'Delete section', 'Add item']);
+      expect(actionLabels('income')).toEqual(['Add income']);
+      expect(actionLabels('debt-repayments')).toEqual([]);
+      expect(actionLabels('insurance')).toEqual([]);
 
       act(() => root.findByProps({ accessibilityLabel: 'Add category' }).props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add category')).toBe(true);
       expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('following');
+      expect(root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => String(node.type) === 'pressable')
+        .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Category name' }).props.onChangeText('Trips');
         await saveSheet();
       });
       expect(actions.addSection).toHaveBeenCalledWith(month, { name: 'Trips', type: 'spend' }, 'following', todayISO());
 
-      act(() => root.findByProps({ testID: 'budget-section-toggle-pets' }).props.onPress());
-      act(() => pressTextButton('Rename').props.onPress());
+      act(() => sectionAction('pets', 'Rename section').props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Rename category')).toBe(true);
+      expect(root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => String(node.type) === 'pressable')
+        .map((button) => button.props.accessibilityLabel)).toEqual(['Close']);
       expect(root.findByProps({ label: 'Apply changes to' }).props.value).toBe('month');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Category name' }).props.onChangeText('Animal care');
@@ -2600,7 +2687,7 @@ describe('route render smoke audit', () => {
       });
       expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
 
-      act(() => pressTextButton('Add item').props.onPress());
+      act(() => sectionAction('pets', 'Add item').props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add item')).toBe(true);
       actions.addBudgetItem.mockClear();
       await act(async () => {
@@ -2640,8 +2727,7 @@ describe('route render smoke audit', () => {
         dueDay: 12,
       }, 'following', todayISO());
 
-      act(() => root.findByProps({ testID: 'budget-section-toggle-income' }).props.onPress());
-      act(() => pressTextButton('Add income').props.onPress());
+      act(() => sectionAction('income', 'Add income').props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add income')).toBe(true);
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
@@ -2656,6 +2742,9 @@ describe('route render smoke audit', () => {
 
       act(() => root.findByProps({ accessibilityLabel: 'Edit Salary' }).props.onPress());
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Edit income')).toBe(true);
+      expect(root.findByProps({ testID: 'budget-management-header' })
+        .findAll((node) => String(node.type) === 'pressable')
+        .map((button) => button.props.accessibilityLabel)).toEqual(['Delete item', 'Close']);
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Planned income amount' }).props.onChangeText('11000');
         await saveSheet();
@@ -2674,9 +2763,14 @@ describe('route render smoke audit', () => {
         name: 'Pet care', mode: 'amount', value: 650,
       }, 'month', todayISO());
 
-      act(() => pressTextButton('Delete section').props.onPress());
+      act(() => sectionAction('pets', 'Delete section').props.onPress());
       expect(alert.mock.calls.at(-1)?.[1]).toContain('1 item');
       const deleteButtons = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
+      expect(deleteButtons?.map((button) => button.text)).toEqual([
+        'Cancel',
+        'This month only',
+        'This and following months',
+      ]);
       const followingButton = deleteButtons?.find((button) => button.text === 'This and following months');
       if (!followingButton?.onPress) throw new Error('Following-month section delete option not presented.');
       act(() => followingButton.onPress?.());
@@ -2729,8 +2823,11 @@ describe('route render smoke audit', () => {
     routeParams.mockReturnValue({ month: past });
     try {
       const pastRenderer = renderScreen(React.createElement(BudgetScreen));
-      act(() => pastRenderer.root.findByProps({ testID: 'budget-section-toggle-survival' }).props.onPress());
       expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Edit Food' })).toHaveLength(0);
+      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Rename section' })).toHaveLength(0);
+      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Delete section' })).toHaveLength(0);
+      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Add item' })).toHaveLength(0);
+      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Add income' })).toHaveLength(0);
       act(() => pastRenderer.unmount());
 
       routeParams.mockReturnValue({ month: shiftMonth(current, 24) });
@@ -2809,13 +2906,10 @@ describe('route render smoke audit', () => {
     try {
       const activeRenderer = renderScreen(React.createElement(BudgetScreen));
       renderer = activeRenderer;
-      act(() => activeRenderer.root.findByProps({ testID: 'budget-section-toggle-savings-investments' }).props.onPress());
       act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Monthly SIP' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/investment-form', params: { id: 'overview-plan' } });
-      act(() => activeRenderer.root.findByProps({ testID: 'budget-section-toggle-debt-repayments' }).props.onPress());
       act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Friend loan' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/liability-form', params: { id: 'overview-liability' } });
-      act(() => activeRenderer.root.findByProps({ testID: 'budget-section-toggle-insurance' }).props.onPress());
       act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Health policy' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/policy-form', params: { id: 'overview-policy' } });
     } finally {

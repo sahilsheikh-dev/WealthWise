@@ -259,9 +259,9 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-60')).toBe('Done');
     expect(statusFor('CR-61')).toBe('Done');
     expect(statusFor('CR-62')).toBe('Done');
-    for (const id of ['CR-63', 'CR-64', 'CR-65']) {
-      expect(statusFor(id)).toBe('Done');
-    }
+    expect(statusFor('CR-63')).toBe('Done; collapsible rows superseded by P20-R');
+    expect(statusFor('CR-64')).toBe('Done; text-button affordances superseded by P20-R');
+    expect(statusFor('CR-65')).toBe('Done');
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
