@@ -66,23 +66,20 @@ export function defaultBudgetSections(): BudgetSection[] {
   ];
 }
 
+export function createDefaultBudgetPlan(monthInput: string): BudgetPlan {
+  const month = monthOf(monthInput);
+  return {
+    incomes: [],
+    sections: defaultBudgetSections(),
+    items: [],
+    repeatMonthly: true,
+    repeatFrom: month,
+  };
+}
+
 export function defaultBudgetSectionIdFor(category: string): string {
   return budgetGroupFor(category)?.id ?? 'survival';
 }
-
-export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  survival: { Living: 20, Rent: 5, Utilities: 5, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 5, Insurance: 5 },
-  'savings-investments': {
-    'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
-    'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 40,
-  },
-  wants: {
-    Shopping: 25, Other: 10, 'Eating out': 10, Entertainment: 10, Fashion: 10,
-    Subscriptions: 15, 'Personal spending': 10, Travel: 10,
-  },
-  'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },
-  'unexpected-extras': { Unexpected: 100 },
-};
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
@@ -262,35 +259,6 @@ export function resolveBudgetPlan(
       ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
-}
-
-export function suggestBudgetSplit(input: {
-  plannedIncome: number;
-  commitments: BudgetCommitment[];
-}): { lines: BudgetLine[]; warnings: string[] } {
-  const lines: BudgetLine[] = [];
-  const warnings: string[] = [];
-  for (const group of BUDGET_GROUPS) {
-    const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
-    if (!weights) throw new Error(`Missing category weights for ${group.id}.`);
-    const commitments = input.commitments.filter((item) => group.categories.includes(item.category));
-    const committed = commitments.reduce((sum, item) => sum + item.plannedAmount, 0);
-    const target = input.plannedIncome * group.weight / 100;
-    const remaining = Math.max(0, target - committed);
-    if (committed > target) {
-      warnings.push(`${group.name} commitments exceed its ${group.weight}% allocation.`);
-    }
-    const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-    for (const category of group.categories) {
-      const weight = weights[category];
-      if (weight === undefined) throw new Error(`Missing budget weight for ${category}.`);
-      const amount = Math.max(0, Math.round(remaining * weight / totalWeight / 100) * 100);
-      const categoryCommitment = commitments.filter((item) => item.category === category)
-        .reduce((sum, item) => sum + item.plannedAmount, 0);
-      lines.push({ category, planned: amount + categoryCommitment });
-    }
-  }
-  return { lines, warnings };
 }
 
 function monthRows(data: AppData): MonthBudget[] {

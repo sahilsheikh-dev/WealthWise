@@ -7,11 +7,17 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { PaceLine, SectionBars, StackedBar } from '../../src/components/BudgetCharts';
 import { BudgetItemEditSheet } from '../../src/components/BudgetItemEditSheet';
+import { BudgetSectionAddSheet } from '../../src/components/BudgetSectionAddSheet';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { budgetOverview, effectiveMonthBudget, type BudgetOverviewItem } from '../../src/domain/budget';
+import {
+  budgetOverview,
+  createDefaultBudgetPlan,
+  effectiveMonthBudget,
+  type BudgetOverviewItem,
+} from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { todayISO } from '../../src/lib/clock';
@@ -48,6 +54,7 @@ export default function BudgetScreen() {
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
   const [editingItem, setEditingItem] = useState<BudgetOverviewItem | null>(null);
+  const [addingSection, setAddingSection] = useState(false);
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -73,9 +80,25 @@ export default function BudgetScreen() {
     },
   }), [lastAllowedMonth, month, touchingHeader]);
 
+  const createBudget = useCallback(() => {
+    const currentMonthKey = today.slice(0, 7);
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === currentMonthKey) ?? null;
+    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(currentMonthKey), currentMonthKey);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not create budget', error);
+      return;
+    }
+    setActionToast({
+      message: 'Budget created',
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(null, currentMonthKey, previousMonth),
+    });
+  }, [actions, data.monthBudgets, setActionToast, today]);
+
   const apply = useCallback(async () => {
     if (!data.budgetPlan) {
-      router.push('/budget-setup');
+      createBudget();
       return;
     }
     const previous = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
@@ -100,7 +123,28 @@ export default function BudgetScreen() {
       actionLabel: 'Undo',
       onAction: () => actions.restoreMonthBudget(month, previous),
     });
-  }, [actions, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
+  }, [actions, createBudget, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
+
+  const saveSection = (values: {
+    name: string;
+    type: 'spend' | 'invest';
+    scope: 'month' | 'following';
+  }) => {
+    const previousPlan = data.budgetPlan;
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.addSection(month, { name: values.name, type: values.type }, values.scope, today);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not add category', error);
+      return false;
+    }
+    setActionToast({
+      message: `${values.name} added`,
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
+    });
+    return true;
+  };
 
   useEffect(() => {
     if (!routeApply || autoApplyStarted.current) return;
@@ -189,7 +233,9 @@ export default function BudgetScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <AppHeader
             title="Budget"
-            rightActions={[{ icon: 'edit-2', label: 'Edit budget', onPress: () => router.push('/budget-setup') }]}
+            rightActions={overview.mode === 'past'
+              ? []
+              : [{ icon: 'plus', label: 'Add category', onPress: () => setAddingSection(true) }]}
             showDefaultMenu={false}
           />
           <View
@@ -236,24 +282,26 @@ export default function BudgetScreen() {
             <View testID="budget-empty-state">
               <Card>
                 <AppText weight="bold" style={[typography.name, styles.cardTitle]}>
-                  {overview.mode === 'future' && data.budgetPlan ? 'Not planned' : 'No budget for this month'}
+                  {overview.mode === 'future' && data.budgetPlan ? 'Not planned' : !data.budgetPlan ? 'No budget yet' : 'Not planned'}
                 </AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   {overview.mode === 'future' && data.budgetPlan
                     ? 'This future month has no budget snapshot.'
-                    : 'Set up a budget to start planning this month.'}
+                    : !data.budgetPlan
+                      ? 'Create a budget to start planning.'
+                      : `Apply your plan to ${formatMonth(month)} to start planning this month.`}
                 </AppText>
-                <Button
-                  label={overview.mode === 'future' && data.budgetPlan
-                    ? `Apply plan to ${formatMonth(month)}`
-                    : 'Set up budget'}
-                  icon={overview.mode === 'future' && data.budgetPlan ? 'check' : 'plus'}
-                  variant="primary"
-                  onPress={() => {
-                    if (overview.mode === 'future' && data.budgetPlan) void apply();
-                    else router.push('/budget-setup');
-                  }}
-                />
+                {overview.mode !== 'past' ? (
+                  <Button
+                    label={!data.budgetPlan ? 'Create budget' : `Apply plan to ${formatMonth(month)}`}
+                    icon={!data.budgetPlan ? 'plus' : 'check'}
+                    variant="primary"
+                    onPress={() => {
+                      if (data.budgetPlan) void apply();
+                      else createBudget();
+                    }}
+                  />
+                ) : null}
               </Card>
             </View>
           ) : (
@@ -345,6 +393,14 @@ export default function BudgetScreen() {
             />
           )
           : null}
+        {addingSection && overview.mode !== 'past' ? (
+          <BudgetSectionAddSheet
+            visible
+            laterCustomMonths={laterCustomMonths}
+            onClose={() => setAddingSection(false)}
+            onSave={saveSection}
+          />
+        ) : null}
       </View>
     </Screen>
   );

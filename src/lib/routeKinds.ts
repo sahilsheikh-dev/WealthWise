@@ -7,8 +7,6 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   '(tabs)/budget': 'tab',
   assets: 'stack',
   backup: 'stack',
-  'budget-setup': 'form',
-  'budget-month-form': 'form',
   'clear-dues': 'form',
   'ef-allocation-form': 'form',
   'emergency-fund': 'stack',

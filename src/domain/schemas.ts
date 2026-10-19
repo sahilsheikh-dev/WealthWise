@@ -560,6 +560,14 @@ export function makeBudgetItemEditSchema() {
   });
 }
 
+export function makeBudgetSectionFormSchema() {
+  return z.object({
+    name: z.string().trim().min(1, 'Enter a section name').max(30, 'Keep the name under 30 characters'),
+    type: z.enum(['spend', 'invest']),
+    scope: z.enum(['month', 'following']),
+  });
+}
+
 export function makeMonthAllocationFormSchema(
   mode: 'shortfall' | 'surplus',
   options: { liabilityIds: string[]; instrumentIds: string[]; maximumAmount: number },

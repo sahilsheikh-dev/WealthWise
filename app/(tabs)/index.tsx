@@ -22,7 +22,7 @@ import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
-import { budgetMonthView } from '../../src/domain/budget';
+import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
@@ -84,6 +84,20 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
+  const createBudget = () => {
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(month), month);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not create budget', error);
+      return;
+    }
+    setActionToast({
+      message: 'Budget created',
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(null, month, previousMonth),
+    });
+  };
   const handleDuePress = async (item: PendingItem) => {
     if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
     if (!item.dueDate) {
@@ -259,10 +273,10 @@ export default function HomeScreen() {
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
         {!monthBudget.budget ? (
           <Button
-            label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
-            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            label={data.budgetPlan ? 'Apply budget' : 'Create budget'}
+            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Create budget'}
             onPress={() => {
-              if (!data.budgetPlan) router.push('/budget-setup');
+              if (!data.budgetPlan) createBudget();
               else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
             }}
           />

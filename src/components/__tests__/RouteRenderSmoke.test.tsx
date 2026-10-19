@@ -1,12 +1,9 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Switch } from 'react-native';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
 import BudgetScreen from '../../../app/(tabs)/budget';
-import BudgetMonthFormScreen from '../../../app/budget-month-form';
-import BudgetSetupScreen from '../../../app/budget-setup';
 import ClearDuesScreen from '../../../app/clear-dues';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
@@ -34,7 +31,6 @@ import { AmountText } from '../AmountText';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
-import { linkedRecurringForMonth } from '../../domain/budget';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
@@ -549,8 +545,6 @@ describe('route render smoke audit', () => {
     ['Security', React.createElement(SecurityScreen)],
     ['Home', React.createElement(HomeScreen)],
     ['Budget', React.createElement(BudgetScreen)],
-    ['Budget setup', React.createElement(BudgetSetupScreen)],
-    ['Budget month form', React.createElement(BudgetMonthFormScreen)],
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
     ['Backup', React.createElement(BackupScreen)],
@@ -581,35 +575,6 @@ describe('route render smoke audit', () => {
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
   ];
 
-  it.each([1, 1.3, 2])('renders the income-item setup and grouped inputs at font scale %s', async (fontScale) => {
-    mockFontScale = fontScale;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    try {
-      const setup = renderScreen(React.createElement(BudgetSetupScreen));
-      expect(setup.root.findAll((node) => node.type === 'text' && node.props.children === 'Budget plan')).toHaveLength(1);
-      for (const id of ['survival', 'savings-investments', 'wants', 'festival-donations-culture', 'unexpected-extras']) {
-        expect(setup.root.findByProps({ testID: `budget-category-group-${id}` }).props.accessibilityRole).toBe('button');
-      }
-      expect(setup.root.findAll((node) => node.type === 'text' && node.props.children === 'Income')).toHaveLength(1);
-      expect(setup.root.findAllByProps({ label: 'Add income' })).toHaveLength(1);
-      expect(setup.root.findAllByType(Switch)).toHaveLength(1);
-      expect(setup.root.findByType(Switch).props.accessibilityLabel).toBe('Repeat every month from next month');
-      expect(setup.root.findAllByProps({ label: 'Start from suggested split' })).toHaveLength(1);
-      expect(setup.root.findAllByProps({ label: `Apply to ${formatMonth(todayISO().slice(0, 7))}` })).toHaveLength(1);
-      expect(setup.root.findAllByProps({ label: 'Save only' })).toHaveLength(1);
-      expect(setup.root.findAllByProps({ accessibilityLabel: 'Food amount' })).toHaveLength(2);
-      act(() => setup.unmount());
-
-      routeParams.mockReturnValue({ month: todayISO().slice(0, 7) });
-      const monthForm = renderScreen(React.createElement(BudgetMonthFormScreen));
-      expect(monthForm.root.findByProps({ testID: 'budget-category-group-survival' }).props.accessibilityRole).toBe('button');
-      act(() => monthForm.unmount());
-    } finally {
-      routeParams.mockReturnValue({});
-      mockFontScale = 1;
-    }
-  });
-
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
@@ -618,45 +583,6 @@ describe('route render smoke audit', () => {
     });
     if (!renderer) throw new Error('Route did not render.');
     assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
-  });
-
-  it('groups linked recurring items with names, amounts, due dates and the source note', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const today = todayISO();
-    const demo = buildDemoData(today);
-    const original = {
-      holdings: routeData.holdings,
-      liabilities: routeData.liabilities,
-      policies: routeData.policies,
-      budgetPlan: routeData.budgetPlan,
-      monthBudgets: routeData.monthBudgets,
-      transactions: routeData.transactions,
-    };
-    Object.assign(routeData, {
-      holdings: demo.holdings,
-      liabilities: demo.liabilities,
-      policies: demo.policies,
-      budgetPlan: demo.budgetPlan,
-      monthBudgets: demo.monthBudgets,
-      transactions: demo.transactions,
-    });
-    try {
-      const setup = renderScreen(React.createElement(BudgetSetupScreen));
-      expect(setup.root.findAll((node) => node.type === 'text'
-        && node.props.children === 'Linked recurring items').length).toBeGreaterThan(0);
-      expect(setup.root.findAll((node) => node.type === 'text'
-        && typeof node.props.children === 'string'
-        && node.props.children.includes('These come from your assets, liabilities and insurance.')).length).toBeGreaterThan(0);
-      const expectedRow = linkedRecurringForMonth(demo, monthKey(today), today)[0];
-      if (!expectedRow) throw new Error('Demo data must include a current-month linked row.');
-      const visibleText = JSON.stringify(setup.toJSON());
-      expect(visibleText).toContain(expectedRow.name);
-      expect(visibleText).toContain(expectedRow.dueDate);
-      expect(visibleText).toContain(formatAmount(expectedRow.amount, 'exact', 1));
-      act(() => setup.unmount());
-    } finally {
-      Object.assign(routeData, original);
-    }
   });
 
   it('renders every registered screen with the four-month demo data', () => {
@@ -2339,6 +2265,7 @@ describe('route render smoke audit', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
       applyBudgetPlan: jest.Mock;
+      saveAndApplyBudgetPlan: jest.Mock;
     };
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
@@ -2363,9 +2290,12 @@ describe('route render smoke audit', () => {
       const empty = renderScreen(React.createElement(BudgetScreen));
       expect(empty.root.findByProps({ testID: 'budget-empty-state' })
         .findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('No budget for this month');
-      act(() => empty.root.findByProps({ accessibilityLabel: 'Set up budget' }).props.onPress());
-      expect(router.push).toHaveBeenCalledWith('/budget-setup');
+        .toContain('No budget yet');
+      act(() => empty.root.findByProps({ accessibilityLabel: 'Create budget' }).props.onPress());
+      expect(actions.saveAndApplyBudgetPlan).toHaveBeenCalledWith(
+        expect.objectContaining({ repeatMonthly: true, repeatFrom: monthKey(todayISO()), items: [] }),
+        monthKey(todayISO()),
+      );
       act(() => empty.unmount());
 
       data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
@@ -2542,7 +2472,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('preserves the routed month, the single edit header action, and the user-owned Cash flow labels', () => {
+  it('preserves the routed month, hides category management in past months, and keeps Cash flow labels', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previousBudgets = data.monthBudgets;
     const month = '2026-09';
@@ -2557,14 +2487,13 @@ describe('route render smoke audit', () => {
       const renderer = renderScreen(React.createElement(BudgetScreen));
       const header = renderer.root.findByType('header');
       expect(header.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
-      expect(header.findAllByProps({ accessibilityLabel: 'Edit budget' })).toHaveLength(1);
+      expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
       expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === formatMonth(month))).toBe(true);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Opening balance' })).toBeDefined();
       expect(renderer.root.findByProps({ accessibilityLabel: 'Closing balance' })).toBeDefined();
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Back to Transactions' })).toHaveLength(0);
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Review' })).toHaveLength(0);
-      act(() => header.findByProps({ accessibilityLabel: 'Edit budget' }).props.onPress());
-      expect(router.push).toHaveBeenCalledWith('/budget-setup');
+      expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
     } finally {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
@@ -2712,56 +2641,6 @@ describe('route render smoke audit', () => {
       if (renderer) act(() => renderer?.unmount());
       data.transactions = previousTransactions;
       routeParams.mockReturnValue({});
-    }
-  });
-
-  it('shows no tab bar on the Budget setup route', () => {
-    const setup = renderScreen(React.createElement(BudgetSetupScreen));
-    expect(setup.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
-  });
-
-  it('adds, removes, validates, and saves budget income items', async () => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      saveBudgetPlan: jest.Mock;
-    };
-    const previousPlan = data.budgetPlan;
-    data.budgetPlan = null;
-    actions.saveBudgetPlan.mockClear();
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(BudgetSetupScreen));
-      act(() => renderer?.root.findByProps({ label: 'Add income' }).props.onPress());
-      act(() => renderer?.root.findByProps({ label: 'Add income' }).props.onPress());
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Income 2 name' })).toHaveLength(2);
-      act(() => renderer?.root.findAllByProps({ label: 'Remove income' })[1]?.props.onPress());
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Income 2 name' })).toHaveLength(0);
-
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 name' }).props.onChangeText('Salary'));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 amount' }).props.onChangeText('0'));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 day' }).props.onChangeText('32'));
-      await act(async () => {
-        renderer?.root.findByProps({ label: 'Save only' }).props.onPress();
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-      expect(actions.saveBudgetPlan).not.toHaveBeenCalled();
-
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 amount' }).props.onChangeText('75000'));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 day' }).props.onChangeText('15'));
-      await act(async () => {
-        renderer?.root.findByProps({ label: 'Save only' }).props.onPress();
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-      expect(actions.saveBudgetPlan).toHaveBeenCalledWith(expect.objectContaining({
-        incomes: [{ id: expect.any(String), name: 'Salary', category: 'Salary', amount: 75_000, day: 15 }],
-        items: [],
-        sections: expect.any(Array),
-        repeatMonthly: false,
-        repeatFrom: null,
-      }));
-    } finally {
-      act(() => renderer?.unmount());
-      data.budgetPlan = previousPlan;
     }
   });
 

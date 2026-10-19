@@ -9,12 +9,12 @@ import {
 import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import {
-  BUDGET_CATEGORY_WEIGHTS,
   BUDGET_GROUPS,
   addItem,
   addSection,
   customBudgetCategories,
   budgetOverview,
+  createDefaultBudgetPlan,
   type BudgetItemScope,
   applyBudgetPlanToMonth,
   BudgetMutationError,
@@ -42,7 +42,6 @@ import {
   saveAndApplyBudgetPlan,
   setBudgetPlan,
   setBudgetRepeat,
-  suggestBudgetSplit,
 } from '../budget';
 import { validateImportData } from '../backup';
 import type {
@@ -195,53 +194,19 @@ describe('budget plans and monthly views', () => {
     ], { incomes: [] }))).toThrow(MissingPlannedIncomeError);
   });
 
-  it('suggests rounded five-group allocations, respects commitments, and warns on group overages', () => {
-    const ordinary = suggestBudgetSplit({ plannedIncome: 10_000, commitments: [] });
-    expect(ordinary.lines).toHaveLength(BUDGET_CATEGORIES.length);
-    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Food')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(400);
-    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(200);
-    expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(200);
-    expect(ordinary.lines.find((line) => line.category === 'Unexpected')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Other investments')?.planned).toBe(800);
-    expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(500);
-    expect(ordinary.warnings).toEqual([]);
-    const committed = suggestBudgetSplit({
-      plannedIncome: 10_000,
-      commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
-        dueDate: '2026-03-20', plannedAmount: 1_000, status: 'upcoming', paidAmount: 0 }],
+  it('creates a default plan for the current month without incomes or items', () => {
+    expect(createDefaultBudgetPlan('2026-10')).toEqual({
+      incomes: [],
+      sections: expect.arrayContaining([
+        expect.objectContaining({ id: 'survival', type: 'spend' }),
+        expect.objectContaining({ id: 'savings-investments', type: 'invest' }),
+        expect.objectContaining({ id: 'income', system: 'income' }),
+      ]),
+      items: [],
+      repeatMonthly: true,
+      repeatFrom: '2026-10',
     });
-    expect(committed.lines.find((line) => line.category === 'EMI')?.planned).toBe(1_200);
-    expect(committed.lines.find((line) => line.category === 'Food')?.planned).toBe(800);
-    const overspent = suggestBudgetSplit({
-      plannedIncome: 10_000,
-      commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
-        dueDate: '2026-03-20', plannedAmount: 6_000, status: 'overdue', paidAmount: 0 }],
-    });
-    expect(overspent.lines.find((line) => line.category === 'EMI')?.planned).toBe(6_000);
-    expect(overspent.warnings).toEqual(['Survival (Needs) commitments exceed its 50% allocation.']);
-    expect(overspent.lines.every((line) => line.planned >= 0)).toBe(true);
-    const savingsOver = suggestBudgetSplit({
-      plannedIncome: 10_000,
-      commitments: [{ kind: 'plan', id: 'p', name: 'Plan', category: 'Mutual fund / SIP',
-        dueDate: '2026-03-05', plannedAmount: 3_000, status: 'overdue', paidAmount: 0 }],
-    });
-    expect(savingsOver.warnings).toHaveLength(1);
-    expect(savingsOver.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(3_000);
-    expect(savingsOver.lines.every((line) => line.planned >= 0)).toBe(true);
-  });
-
-  it('keeps fixed within-group weights at 100% and rounds each category to the nearest hundred', () => {
-    for (const group of BUDGET_GROUPS) {
-      const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
-      if (!weights) throw new Error(`Missing weights for ${group.id}`);
-      expect(Object.values(weights).reduce((total, weight) => total + weight, 0)).toBe(100);
-    }
-    const { lines } = suggestBudgetSplit({ plannedIncome: 10_001, commitments: [] });
-    expect(lines.find(({ category }) => category === 'Living')?.planned).toBe(1_000);
-    expect(lines.find(({ category }) => category === 'Eating out')?.planned).toBe(200);
-    expect(lines.every(({ planned }) => planned >= 0 && planned % 100 === 0)).toBe(true);
+    expect(() => createDefaultBudgetPlan('2026-13')).toThrow('Invalid month key');
   });
 
   it('accepts the new expense categories in transactions, filters and budget schemas', () => {
