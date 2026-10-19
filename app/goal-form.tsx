@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -12,6 +12,7 @@ import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
 import { IconButton } from '../src/components/IconButton';
 import { TopAnchoredSheet } from '../src/components/TopAnchoredSheet';
+import { FormShell } from '../src/components/FormShell';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -22,7 +23,6 @@ import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -192,8 +192,17 @@ export default function GoalFormScreen() {
         sheetTestID="goal-asset-picker-sheet"
         contentStyle={[styles.picker, { backgroundColor: colors.surface }]}
       >
-        <AppText weight="bold" style={typography.h1}>Link an asset</AppText>
-        <ScrollView style={styles.pickerScroll}>
+        <FormShell
+          title="Link an asset"
+          titleAlignment="center"
+          leftAction={{
+            icon: 'x',
+            label: 'Close',
+            hint: 'Close the asset picker',
+            onPress: () => setPickerVisible(false),
+          }}
+          bodyTestID="goal-asset-picker-list"
+          footer={<Button label="Done" onPress={() => setPickerVisible(false)} />}>
           {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
             .map((instrument) => (
               <Pressable
@@ -216,8 +225,7 @@ export default function GoalFormScreen() {
                 </View>
               </Pressable>
             ))}
-        </ScrollView>
-        <Button label="Done" onPress={() => setPickerVisible(false)} />
+        </FormShell>
       </TopAnchoredSheet>
     </FormScreen>
   );
@@ -227,7 +235,6 @@ const styles = StyleSheet.create({
   linkSection: { gap: 8 },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   linkName: { flex: 1, gap: 2 },
-  picker: { paddingHorizontal: 20, paddingBottom: 16, gap: 12, alignSelf: 'stretch' },
-  pickerScroll: { flexShrink: 1 },
+  picker: { alignSelf: 'stretch' },
   pickerRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });
