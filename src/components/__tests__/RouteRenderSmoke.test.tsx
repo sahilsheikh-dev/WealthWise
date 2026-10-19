@@ -28,6 +28,7 @@ import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
+import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
@@ -585,6 +586,29 @@ function budgetValueTypeControl(renderer: TestRenderer.ReactTestRenderer | undef
   })[0];
   if (!valueType) throw new Error('Budget item value type control was not rendered.');
   return valueType;
+}
+
+function selectDropdownOption(
+  renderer: TestRenderer.ReactTestRenderer | undefined,
+  fieldLabel: string,
+  optionTitle: string,
+) {
+  if (!renderer) throw new Error('Budget screen renderer was not created.');
+  openDropdown(renderer, fieldLabel);
+  const option = renderer.root.findAllByProps({ accessibilityLabel: optionTitle })
+    .find((node) => node.props.accessibilityRole === 'radio');
+  if (!option) throw new Error(`Dropdown option ${optionTitle} was not rendered.`);
+  act(() => option.props.onPress());
+}
+
+function openDropdown(
+  renderer: TestRenderer.ReactTestRenderer,
+  fieldLabel: string,
+) {
+  const field = renderer.root.findAllByProps({ accessibilityLabel: fieldLabel })
+    .find((node) => typeof node.props.onPress === 'function');
+  if (!field) throw new Error(`Dropdown field ${fieldLabel} was not rendered.`);
+  act(() => field.props.onPress());
 }
 
 describe('route render smoke audit', () => {
@@ -2513,6 +2537,9 @@ describe('route render smoke audit', () => {
       expect(inlineFields.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ flexDirection: fontScale >= 1.3 ? 'column' : 'row' }),
       ]));
+      expect(renderer.root.findAllByType('text').some((node) =>
+        node.children.join('') === 'Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.',
+      )).toBe(true);
       expect(renderer.root.findAll((node) =>
         node.props.accessibilityLabel === 'Due day' && node.props.icon === 'calendar-outline',
       )).toHaveLength(1);
@@ -2536,7 +2563,8 @@ describe('route render smoke audit', () => {
       const resizedSheetStyle = JSON.stringify(renderer.root.findByProps({ testID: 'budget-management-sheet' }).props.style);
       const resizedMaxHeight = Number(resizedSheetStyle.match(/"maxHeight":([\d.]+)/)?.[1]);
       expect(resizedMaxHeight).toBeCloseTo(206.4, 1);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Item name' })).toBeDefined();
+      expect(renderer.root.findByType(Dropdown).props.value).toBe('Food');
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Item name' })).toHaveLength(0);
       act(() => renderer.root.findByProps({ testID: 'budget-management-sheet-backdrop' }).props.onPress());
     } finally {
       Object.assign(data, previous);
@@ -2743,6 +2771,13 @@ describe('route render smoke audit', () => {
       expect(root.findAllByType('text').some((node) => node.children.join('') === 'Add item')).toBe(true);
       actions.addBudgetItem.mockClear();
       await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      expect(root.findAllByType('text').some((node) => node.children.join('') === 'Choose a category')).toBe(true);
+      selectDropdownOption(renderer, 'Item category', 'Custom');
+      await act(async () => {
         root.findByProps({ accessibilityLabel: 'Item name' }).props.onChangeText('Pet sitting');
         root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1000000001');
         await saveSheet();
@@ -2767,6 +2802,9 @@ describe('route render smoke audit', () => {
         await saveSheet();
       });
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      expect(root.findAllByType('text').some((node) =>
+        node.children.join('') === 'Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.',
+      )).toBe(true);
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');
         await saveSheet();
@@ -2777,6 +2815,25 @@ describe('route render smoke audit', () => {
         mode: 'amount',
         value: 500,
         dueDay: 12,
+      }, 'following', todayISO());
+
+      act(() => sectionAction('survival', 'Add item').props.onPress());
+      openDropdown(renderer, 'Item category');
+      const availableCategories = root.findAll((node) => node.props.accessibilityRole === 'radio')
+        .map((node) => node.props.accessibilityLabel);
+      expect(availableCategories).toContain('Rent');
+      expect(availableCategories).not.toContain('Food');
+      expect(availableCategories.at(-1)).toBe('Custom');
+      selectDropdownOption(renderer, 'Item category', 'Rent');
+      await act(async () => {
+        root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('300');
+        await saveSheet();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
+        sectionId: 'survival',
+        name: 'Rent',
+        mode: 'amount',
+        value: 300,
       }, 'following', todayISO());
 
       act(() => sectionAction('income', 'Add income').props.onPress());

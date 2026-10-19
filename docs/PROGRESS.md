@@ -2315,6 +2315,7 @@ callbacks and persistence behavior, not native device rendering.
 | STEP 1 — Dropdown component and specified conversions (CR-70) | Done | `Dropdown.test.tsx`, `TransactionForm.test.tsx`, `budgetCategories.test.ts`; 3 suites/32 tests pass. TypeScript and lint exit 0. Hint function/component/test deleted; selected instrument still determines invest category. |
 | STEP 2 — Common sheet form shell (CR-71) | Done | Added `FormShell.tsx` and converted `BudgetManagementSheet` plus the Goal asset picker inside `TopAnchoredSheet`; `FormScreen` remains unchanged for route forms. `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx` (108 tests) and `HomeThemeSmoke.test.tsx` pass; `npx tsc --noEmit` and `npx expo lint` exit 0. |
 | STEP 3 — Actual-left / Planned-right ordering (CR-72) | Done | Budget overview header and metric values, accessibility descriptions, and pace legend now read Actual then Planned. Section/item rows were already actual-first and are asserted. Home `BudgetSummaryToggle` already uses actual “spent of” planned and remains unchanged. Transactions due rows show a due amount only, not an Actual/Planned pair, so remain unchanged. `RouteRenderSmoke.test.tsx`, `BudgetCharts.test.tsx`, and `HomeThemeSmoke.test.tsx`: 3 suites/125 tests pass; TypeScript and lint exit 0. |
+| STEP 4 — Category dropdown and Due day helper (CR-73/CR-74) | Done | Budget item forms use built-in categories from the section's group, exclude names already in the active plan while retaining the edit item's own value, and append Custom; Custom displays the existing 1–30 character Name validation. Due-day helper copy is present below the date field. `RouteRenderSmoke.test.tsx`: 108 tests pass, including category filtering, custom and built-in saves, existing invalid-value rejection, and helper rendering at 1.0/1.3/2.0. TypeScript and lint exit 0. |
 
 CR-71 replaces the earlier sheet-local header/body/footer layouts with one
 shared shell, including accessible 44×44 action slots and a fixed footer.
@@ -2338,6 +2339,15 @@ repository search found the Transactions due rows render the due amount only,
 not a planned/actual pair, so those rows are unchanged. The Budget pace legend
 now lists Actual before Planned pace; the pace accessibility description was
 already actual-first.
+
+CR-73 keeps income-category selection separate from budget-item category
+selection. Built-in choices come from the category group mapped to the current
+section, names already in the effective month are excluded except the item
+being edited, and the Insurance system section is prepared to offer its
+Insurance category when CR-75 enables manual Insurance items. Choosing Custom
+shows the existing Name field and its 1–30 character validation. CR-74 places
+the exact due-day helper below the unchanged frozen IntegerField; the existing
+row stacks at font scale 1.3 and above.
 
 The first lint attempt found a synchronous state reset inside the shared
 wrapper effect. The reset was removed; keyboard state is now updated by native
