@@ -22,10 +22,6 @@ export function TopAnchoredSheet({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    if (!visible) {
-      setKeyboardHeight(0);
-      return undefined;
-    }
     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
       setKeyboardHeight(event.endCoordinates.height);
     });
@@ -34,7 +30,7 @@ export function TopAnchoredSheet({
       shown.remove();
       hidden.remove();
     };
-  }, [visible]);
+  }, []);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} testID={`${sheetTestID}-modal`}>

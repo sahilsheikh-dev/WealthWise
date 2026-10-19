@@ -244,7 +244,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-O |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-P |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Q |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-R |'))).toContain('| Pending |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-R |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
@@ -262,6 +262,9 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-63')).toBe('Done; collapsible rows superseded by P20-R');
     expect(statusFor('CR-64')).toBe('Done; text-button affordances superseded by P20-R');
     expect(statusFor('CR-65')).toBe('Done');
+    for (const id of ['CR-66', 'CR-67', 'CR-68', 'CR-69']) {
+      expect(statusFor(id)).toBe('Done');
+    }
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
     expect(statusFor('CR-33')).toBe('Done');
@@ -288,8 +291,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 89% (59/66)');
-    expect(dashboard).toContain('Phase 20         █████████░ 94% (17/18)');
+    expect(dashboard).toContain('Overall progress █████████░ 91% (60/66)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (18/18)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
