@@ -7,6 +7,7 @@ import { EARNED_INCOME_CATEGORIES, type BudgetSection, type EarnedIncomeCategory
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { ChoiceField } from './form/ChoiceField';
+import { Dropdown } from './Dropdown';
 import { FormShell, type FormShellAction } from './FormShell';
 import { IntegerField } from './form/IntegerField';
 import { MoneyField } from './form/MoneyField';
@@ -36,6 +37,7 @@ export type BudgetManagementValues = {
 
 const formSchema = z.object({
   name: z.string(),
+  itemCategory: z.string(),
   sectionType: z.enum(['spend', 'invest']),
   category: z.enum(EARNED_INCOME_CATEGORIES),
   itemMode: z.enum(['amount', 'percent']),
@@ -45,14 +47,23 @@ const formSchema = z.object({
   scope: z.enum(['month', 'following']),
 });
 
+const CUSTOM_ITEM_CATEGORY = '__custom_item_category__';
+
 function makeFormSchema(mode: BudgetManagementMode) {
   return formSchema.superRefine((value, context) => {
     const isIncome = mode.kind === 'add-income' || mode.kind === 'edit-income';
+    const isBudgetItem = mode.kind === 'add-item' || mode.kind === 'edit-item';
     const maxNameLength = isIncome ? 40 : 30;
     const name = value.name.trim();
-    if (mode.kind !== 'edit-income' && !name) {
+    if (isBudgetItem && !value.itemCategory) {
+      context.addIssue({ code: 'custom', path: ['itemCategory'], message: 'Choose a category' });
+    } else if (isBudgetItem && value.itemCategory === CUSTOM_ITEM_CATEGORY && !name) {
       context.addIssue({ code: 'custom', path: ['name'], message: 'Enter a name' });
-    } else if (name.length > maxNameLength) {
+    } else if (!isBudgetItem && mode.kind !== 'edit-income' && !name) {
+      context.addIssue({ code: 'custom', path: ['name'], message: 'Enter a name' });
+    } else if (isBudgetItem && value.itemCategory === CUSTOM_ITEM_CATEGORY && name.length > maxNameLength) {
+      context.addIssue({ code: 'custom', path: ['name'], message: `Keep the name under ${maxNameLength} characters` });
+    } else if (!isBudgetItem && name.length > maxNameLength) {
       context.addIssue({ code: 'custom', path: ['name'], message: `Keep the name under ${maxNameLength} characters` });
     }
 
@@ -97,6 +108,7 @@ export function BudgetManagementSheet({
   fontScale,
   defaultScope,
   laterCustomMonths,
+  itemCategoryOptions,
   onClose,
   onSave,
   onRemove,
@@ -106,6 +118,7 @@ export function BudgetManagementSheet({
   fontScale: number;
   defaultScope: 'month' | 'following';
   laterCustomMonths: number;
+  itemCategoryOptions: readonly string[];
   onClose: () => void;
   onSave: (values: BudgetManagementValues) => boolean;
   onRemove?: () => void;
@@ -124,6 +137,9 @@ export function BudgetManagementSheet({
       name: mode.kind === 'rename-section' || mode.kind === 'edit-item' || mode.kind === 'edit-income'
         ? mode.name
         : '',
+      itemCategory: mode.kind === 'edit-item'
+        ? itemCategoryOptions.includes(mode.name) ? mode.name : CUSTOM_ITEM_CATEGORY
+        : '',
       sectionType: 'spend',
       category: mode.kind === 'edit-income' ? mode.category : 'Salary',
       itemMode: mode.kind === 'edit-item' ? mode.mode : 'amount',
@@ -137,6 +153,7 @@ export function BudgetManagementSheet({
   });
   const scope = useWatch({ control, name: 'scope' }) ?? defaultScope;
   const itemMode = useWatch({ control, name: 'itemMode' }) ?? 'amount';
+  const itemCategory = useWatch({ control, name: 'itemCategory' }) ?? '';
   const isItem = mode.kind === 'add-item' || mode.kind === 'edit-item';
   const isIncome = mode.kind === 'add-income' || mode.kind === 'edit-income';
   const canRemove = (mode.kind === 'edit-item' || mode.kind === 'edit-income') && onRemove !== undefined;
@@ -156,7 +173,9 @@ export function BudgetManagementSheet({
     const parsedValue = Number(values.value);
     const parsedAmount = Number(values.amount);
     if (onSave({
-      name: values.name.trim(),
+      name: isItem && values.itemCategory !== CUSTOM_ITEM_CATEGORY
+        ? values.itemCategory
+        : values.name.trim(),
       sectionType: values.sectionType,
       category: values.category,
       itemMode: values.itemMode,
@@ -228,19 +247,39 @@ export function BudgetManagementSheet({
                 <>
                   <Controller
                     control={control}
-                    name="name"
+                    name="itemCategory"
                     render={({ field }) => (
-                      <TextField
-                        label="Name"
-                        accessibilityLabel="Item name"
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Item category"
                         value={field.value}
-                        onChangeText={field.onChange}
-                        onBlur={field.onBlur}
-                        maxLength={30}
-                        error={errors.name?.message}
+                        options={[
+                          ...itemCategoryOptions.map((category) => ({ value: category, title: category })),
+                          { value: CUSTOM_ITEM_CATEGORY, title: 'Custom' },
+                        ]}
+                        onChange={field.onChange}
+                        placeholder="Select category"
+                        error={errors.itemCategory?.message}
                       />
                     )}
                   />
+                  {itemCategory === CUSTOM_ITEM_CATEGORY ? (
+                    <Controller
+                      control={control}
+                      name="name"
+                      render={({ field }) => (
+                        <TextField
+                          label="Name"
+                          accessibilityLabel="Item name"
+                          value={field.value}
+                          onChangeText={field.onChange}
+                          onBlur={field.onBlur}
+                          maxLength={30}
+                          error={errors.name?.message}
+                        />
+                      )}
+                    />
+                  ) : null}
                   <Controller
                     control={control}
                     name="itemMode"
@@ -298,6 +337,11 @@ export function BudgetManagementSheet({
                           />
                         )}
                       />
+                      <AppText
+                        testID="due-day-helper"
+                        style={[typography.meta, { color: colors.text3 }]}>
+                        Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.
+                      </AppText>
                     </View>
                   </View>
                 </>

@@ -12,6 +12,7 @@ import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import {
+  BUDGET_GROUPS,
   budgetOverview,
   createDefaultBudgetPlan,
   effectiveMonthBudget,
@@ -30,6 +31,19 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+function budgetItemCategoriesForSection(
+  sectionId: string,
+  items: readonly { id: string; name: string }[],
+  currentItemId?: string,
+): string[] {
+  const categories = sectionId === 'insurance'
+    ? ['Insurance']
+    : BUDGET_GROUPS.find((group) => group.id === sectionId)?.categories ?? [];
+  return categories.filter((category) =>
+    !items.some((item) => item.name === category && item.id !== currentItemId),
+  );
 }
 
 export default function BudgetScreen() {
@@ -340,6 +354,13 @@ export default function BudgetScreen() {
   const activeBudget = effectiveMonthBudget(data, month, today).budget;
   const laterCustomMonths = (data.monthBudgets ?? [])
     .filter((budget) => budget.month > month && budget.source === 'custom').length;
+  const itemCategoryOptions = sheetMode?.kind === 'add-item' || sheetMode?.kind === 'edit-item'
+    ? budgetItemCategoriesForSection(
+      sheetMode.sectionId,
+      activeBudget?.items ?? [],
+      sheetMode.kind === 'edit-item' ? sheetMode.itemId : undefined,
+    )
+    : [];
 
   return (
     <Screen scroll={false}>
@@ -578,6 +599,7 @@ export default function BudgetScreen() {
             key={`${sheetMode.kind}-${'itemId' in sheetMode ? sheetMode.itemId : 'sectionId' in sheetMode ? sheetMode.sectionId : 'new'}`}
             visible
             mode={sheetMode}
+            itemCategoryOptions={itemCategoryOptions}
             fontScale={fontScale}
             defaultScope={
               sheetMode.kind.startsWith('add-')
