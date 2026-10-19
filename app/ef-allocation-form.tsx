@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
@@ -12,6 +12,7 @@ import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { IconButton } from '../src/components/IconButton';
+import { FormShell } from '../src/components/FormShell';
 import { AppText, Button, Card } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -349,37 +350,53 @@ export default function EfAllocationFormScreen() {
         animationType="fade"
         onRequestClose={() => setEditingBucketId(null)}>
         <View style={styles.modalBackdrop}>
-          <Card style={styles.modalCard}>
-            <AppText weight="bold" style={typography.name}>Edit custom option</AppText>
-            <TextField
-              label="Custom option name"
-              accessibilityLabel="Custom option name"
-              value={editBucketName}
-              onChangeText={setEditBucketName}
-              maxLength={24}
-            />
-            <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
-            <SegmentedControl
-              value={editBucketAccess}
-              options={[
-                { label: 'Instant', value: 'instant' },
-                { label: 'Within days', value: 'days' },
-                { label: 'Slow', value: 'slow' },
-              ]}
-              onChange={setEditBucketAccess}
-            />
-            <SwitchRow
-              label="Market-linked"
-              value={editBucketMarketLinked}
-              onValueChange={setEditBucketMarketLinked}
-            />
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Market-linked: its value goes up and down with the market, for example stocks or equity funds
-            </AppText>
-            {formError ? <FormErrorBanner message={formError} /> : null}
-            <Button label="Save option" icon="check" variant="primary" onPress={saveBucketMetadata} />
-            <Button label="Cancel" icon="x" onPress={() => setEditingBucketId(null)} />
-          </Card>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKeyboard}>
+            <Card style={styles.modalCard}>
+              <FormShell
+                title="Edit custom option"
+                rightActions={[{
+                  icon: 'x',
+                  label: 'Close',
+                  hint: 'Close custom option editor',
+                  onPress: () => setEditingBucketId(null),
+                }]}
+                footer={(
+                  <>
+                    <Button label="Save option" icon="check" variant="primary" onPress={saveBucketMetadata} />
+                    <Button label="Cancel" icon="x" onPress={() => setEditingBucketId(null)} />
+                  </>
+                )}>
+                <TextField
+                  label="Custom option name"
+                  accessibilityLabel="Custom option name"
+                  value={editBucketName}
+                  onChangeText={setEditBucketName}
+                  maxLength={24}
+                />
+                <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
+                <SegmentedControl
+                  value={editBucketAccess}
+                  options={[
+                    { label: 'Instant', value: 'instant' },
+                    { label: 'Within days', value: 'days' },
+                    { label: 'Slow', value: 'slow' },
+                  ]}
+                  onChange={setEditBucketAccess}
+                />
+                <SwitchRow
+                  label="Market-linked"
+                  value={editBucketMarketLinked}
+                  onValueChange={setEditBucketMarketLinked}
+                />
+                <AppText style={[typography.meta, { color: colors.text3 }]}>
+                  Market-linked: its value goes up and down with the market, for example stocks or equity funds
+                </AppText>
+                {formError ? <FormErrorBanner message={formError} /> : null}
+              </FormShell>
+            </Card>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -389,77 +406,92 @@ export default function EfAllocationFormScreen() {
         animationType="fade"
         onRequestClose={() => setAddItemMode(null)}>
         <View style={styles.modalBackdrop}>
-          <Card style={styles.modalCard}>
-            {addItemMode === 'choices' ? (
-              <>
-                <AppText weight="bold" style={typography.name}>Add allocation item</AppText>
-                {availableFixedBuckets.map(({ id, label }) => (
-                  <Button key={id} label={label} onPress={() => addFixedBucket(id)} />
-                ))}
-                <Button
-                  label="Custom"
-                  disabled={customBuckets.length >= 8}
-                  onPress={() => setAddItemMode('custom')}
-                />
-              </>
-            ) : (
-              <>
-                <AppText weight="bold" style={typography.name}>Custom allocation item</AppText>
-                <Controller
-                  control={control}
-                  name="newBucketName"
-                  render={({ field }) => (
-                    <TextField
-                      label="New custom option"
-                      accessibilityLabel="New custom option name"
-                      value={field.value}
-                      onChangeText={field.onChange}
-                      maxLength={24}
-                      placeholder="For example, valuables"
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKeyboard}>
+            <Card style={styles.modalCard}>
+              <FormShell
+                title={addItemMode === 'choices' ? 'Add allocation item' : 'Custom allocation item'}
+                rightActions={[{
+                  icon: 'x',
+                  label: 'Close',
+                  hint: 'Close allocation item picker',
+                  onPress: () => setAddItemMode(null),
+                }]}
+                footer={addItemMode === 'custom' ? (
+                  <>
+                    <Button
+                      label="Add custom option"
+                      icon="plus"
+                      disabled={customBuckets.length >= 8}
+                      onPress={addCustomBucket}
                     />
-                  )}
-                />
-                <View style={styles.newBucketMetadata}>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
-                  <Controller
-                    control={control}
-                    name="newBucketAccess"
-                    render={({ field }) => (
-                      <SegmentedControl
-                        value={field.value}
-                        options={[
-                          { label: 'Instant', value: 'instant' },
-                          { label: 'Within days', value: 'days' },
-                          { label: 'Slow', value: 'slow' },
-                        ]}
-                        onChange={field.onChange}
+                    <Button label="Cancel" icon="x" onPress={() => setAddItemMode(null)} />
+                  </>
+                ) : <Button label="Cancel" icon="x" onPress={() => setAddItemMode(null)} />}>
+                {addItemMode === 'choices' ? (
+                  <>
+                    {availableFixedBuckets.map(({ id, label }) => (
+                      <Button key={id} label={label} onPress={() => addFixedBucket(id)} />
+                    ))}
+                    <Button
+                      label="Custom"
+                      disabled={customBuckets.length >= 8}
+                      onPress={() => setAddItemMode('custom')}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Controller
+                      control={control}
+                      name="newBucketName"
+                      render={({ field }) => (
+                        <TextField
+                          label="New custom option"
+                          accessibilityLabel="New custom option name"
+                          value={field.value}
+                          onChangeText={field.onChange}
+                          maxLength={24}
+                          placeholder="For example, valuables"
+                        />
+                      )}
+                    />
+                    <View style={styles.newBucketMetadata}>
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
+                      <Controller
+                        control={control}
+                        name="newBucketAccess"
+                        render={({ field }) => (
+                          <SegmentedControl
+                            value={field.value}
+                            options={[
+                              { label: 'Instant', value: 'instant' },
+                              { label: 'Within days', value: 'days' },
+                              { label: 'Slow', value: 'slow' },
+                            ]}
+                            onChange={field.onChange}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </View>
-                <Controller
-                  control={control}
-                  name="newBucketMarketLinked"
-                  render={({ field }) => (
-                    <>
-                      <SwitchRow label="Market-linked" value={field.value} onValueChange={field.onChange} />
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        Market-linked: its value goes up and down with the market, for example stocks or equity funds
-                      </AppText>
-                    </>
-                  )}
-                />
-                {formError ? <FormErrorBanner message={formError} /> : null}
-                <Button
-                  label="Add custom option"
-                  icon="plus"
-                  disabled={customBuckets.length >= 8}
-                  onPress={addCustomBucket}
-                />
-              </>
-            )}
-            <Button label="Cancel" icon="x" onPress={() => setAddItemMode(null)} />
-          </Card>
+                    </View>
+                    <Controller
+                      control={control}
+                      name="newBucketMarketLinked"
+                      render={({ field }) => (
+                        <>
+                          <SwitchRow label="Market-linked" value={field.value} onValueChange={field.onChange} />
+                          <AppText style={[typography.meta, { color: colors.text3 }]}>
+                            Market-linked: its value goes up and down with the market, for example stocks or equity funds
+                          </AppText>
+                        </>
+                      )}
+                    />
+                    {formError ? <FormErrorBanner message={formError} /> : null}
+                  </>
+                )}
+              </FormShell>
+            </Card>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </>
@@ -476,6 +508,7 @@ const styles = StyleSheet.create({
   newBucketMetadata: { gap: 4 },
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.45)' },
   modalCard: { maxHeight: '90%', gap: 12 },
+  modalKeyboard: { width: '100%' },
   holdingPickerList: { maxHeight: 360 },
   holdingPickerRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   holdingPickerText: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 },

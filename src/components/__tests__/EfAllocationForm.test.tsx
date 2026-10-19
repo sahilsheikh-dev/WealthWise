@@ -120,8 +120,11 @@ jest.mock('react-native', () => {
   const node = (type: string) => ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     ReactModule.createElement(type, props, children);
   return {
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Modal: node('modal'),
+    Platform: { OS: 'ios' },
     Pressable: node('pressable'),
+    ScrollView: node('scrollview'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     TextInput: node('textinput'),
     View: node('view'),
