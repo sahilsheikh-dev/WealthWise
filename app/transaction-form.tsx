@@ -12,7 +12,7 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
-import { BudgetCategoryPicker, budgetCategoryHint } from '../src/components/BudgetCategoryPicker';
+import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
@@ -209,13 +209,22 @@ export default function TransactionFormScreen() {
     [data, selectedMonth, selectedType, today],
   );
   const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
-  const budgetHintCategory = selectedType === 'invest'
-    ? (selectedInstrument ? derivedCategory : selectedCategory)
-    : '';
-  const budgetHint = budgetHintCategory
-    ? categorySections.flatMap((section) => section.categories)
-      .find((choice) => choice.category === budgetHintCategory)
-    : undefined;
+  const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
+    section.categories.map((choice) => ({
+      value: choice.category,
+      title: transactionCategoryLabel(choice.category, selectedType ?? 'expense', customCategories),
+      group: section.name,
+    })),
+  );
+  for (const category of choices) {
+    if (!categoryOptions.some((option) => option.value === category)) {
+      categoryOptions.push({
+        value: category,
+        title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
+        group: 'Other',
+      });
+    }
+  }
 
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, ...transactionValues } = values;
@@ -421,14 +430,6 @@ export default function TransactionFormScreen() {
                 />
                 <View>
                   <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
-                  {budgetHint ? (
-                    <AppText
-                      testID="investment-category-budget-hint"
-                      accessibilityLabel={`${budgetHintCategory}, ${budgetCategoryHint(budgetHint.planned, budgetHint.actual)}`}
-                      style={[typography.meta, { color: colors.text3 }]}>
-                      {budgetCategoryHint(budgetHint.planned, budgetHint.actual)}
-                    </AppText>
-                  ) : null}
                 </View>
               </>
             ) : null}
@@ -438,28 +439,17 @@ export default function TransactionFormScreen() {
                 name="category"
                 render={({ field }) => (
                   selectedType === 'expense' ? (
-                    <View>
-                      <AppText style={{ color: colors.text2 }}>Category</AppText>
-                      <BudgetCategoryPicker
-                        sections={categorySections}
-                        value={field.value}
-                        labels={Object.fromEntries(choices.map((category) => [
-                          category, transactionCategoryLabel(category, selectedType, customCategories),
-                        ]))}
-                        extraCategories={choices.filter((category) =>
-                          !categorySections.some((section) =>
-                            section.categories.some((choice) => choice.category === category),
-                          ),
-                        )}
-                        onChange={(value) => {
-                          field.onChange(value);
-                          setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                        }}
-                      />
-                      {errors.category?.message ? (
-                        <AppText style={{ color: colors.err }}>{errors.category.message}</AppText>
-                      ) : null}
-                    </View>
+                    <Dropdown
+                      label="Category"
+                      accessibilityLabel="Category"
+                      value={field.value}
+                      options={categoryOptions}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                      }}
+                      error={errors.category?.message}
+                    />
                   ) : (
                     <ChoiceField
                       label="Category"

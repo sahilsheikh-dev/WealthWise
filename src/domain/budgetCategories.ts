@@ -63,8 +63,8 @@ export function budgetCategoryChoiceSections(
           item.sectionId === section.id && item.name === category,
         );
         const builtInIndex = BUDGET_GROUPS.flatMap((group) => group.categories).indexOf(category);
-        if (itemIndex >= 0) return builtInIndex >= 0 ? builtInIndex : 100 + itemIndex;
-        return 200 + Math.max(0, builtInIndex);
+        if (itemIndex >= 0) return itemIndex;
+        return 1_000 + Math.max(0, builtInIndex);
       };
       categories.sort((left, right) => categoryOrder(left.category) - categoryOrder(right.category));
       return { id: section.id, name: section.name, categories };
