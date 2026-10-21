@@ -73,6 +73,7 @@ function AppContent() {
                 <Stack.Screen name="budget-section-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-item-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-income-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="ef-bucket-form" options={{ presentation: 'modal' }} />
               </Stack>
               <ActionToastHost />
               </>

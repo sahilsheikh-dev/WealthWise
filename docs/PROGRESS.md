@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 92% (67/73)
+Overall progress █████████░ 93% (68/73)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -69,7 +69,7 @@ Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (22/22)
-Phase 21         ████████░░ 83% (5/6)
+Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (3/3)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
@@ -144,7 +144,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
-| P21-E | — | In progress | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema stays v8; implementation and gates remain. | 2026-10-21 |
+| P21-E | — | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
@@ -702,9 +702,10 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   decimal places (`100.0%` → `100.00%`) so 99.99% does not appear complete.
 - DEC-P21D-CR51: Null allocations and repair fallbacks now use only Cash 10,
   Bank account 40, and FD / RD 50. The demo allocation follows that mix.
-  Mutual funds / Bonds remains available from the editor header's Add
-  allocation item action. Valid allocations already stored by users are
-  unchanged; the schema remains v8.
+  At P21-D delivery, Mutual funds / Bonds remained available from the editor
+  header; P21-E supersedes that picker. Valid allocations already stored by
+  users are unchanged. Schema v8 was current then; later work advanced it to
+  v13, which P21-E leaves unchanged.
   Superseded assertions: the old four-default `activeEfBucketMetadata(null)`
   list is replaced by the three requested defaults; form and demo expectations
   for 10/40/35/15 are replaced by 10/40/50; the empty-allocation hydration
@@ -714,16 +715,22 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   Assumed: this request supersedes only the default and repair-fallback mix
   from P21-C/P21-C1; it does not rewrite any valid persisted allocation.
 - DEC-P21E-CR90: Allocation item creation is direct and custom-only from the
-  Edit allocation plus action; the predefined add choices are removed. Add
-  and edit use a route form with title, access speed, and market-linked fields.
+  Edit allocation plus action; the predefined add choices and their separate
+  custom-option modal are removed. Add and edit use one route form with title,
+  access speed, and market-linked fields. Schema v13 is unchanged.
   New custom items begin at 0%, so the separate allocation editor continues to
   enforce a 100% total when saved. Deletion retains the existing confirmation
   and keeps assets linked to the Emergency fund goal while removing the bucket
   grouping.
+  The obsolete `addEfCustomBucket`, `renameEfCustomBucket`, and
+  `setEfCustomBucketAccess` mutations were removed; `saveEfPlan` is the only
+  form mutation path.
   Superseded assertions: the picker-choice test for Mutual funds / Bonds,
   Stock market, LIC / Insurance, Other, Custom and Cancel is replaced by
-  direct-route/add-form assertions; the custom-option modal creation and
-  metadata-edit tests are replaced by route-form validation/save tests.
+  direct-route/add-form assertions; custom-option modal creation and
+  metadata-edit tests are replaced by route-form validation/save tests; direct
+  custom-bucket add/rename/access domain-action tests are replaced by
+  saved-plan transformation and shared-form tests.
   Assumed: fixed bucket metadata remains canonical because this part explicitly
   makes no schema change; fixed items use the same edit route with an immutable
   title and read-only built-in access/market metadata.
@@ -2174,7 +2181,7 @@ evidence present in exports/checkpoints.
 | CR-49 | Add local case-insensitive, trimmed search to Assets, Liabilities and Goals; compose with filters and sorting. | Done | P20-L; all three screens cover matching, filters/sort composition, clear, empty results and remount reset; Transactions search remains unchanged; full gates pass. |
 | CR-50 | Add All/Recurring/One-time liability-kind filters in the Liabilities filter panel. | Done | P20-L; all three kinds filter correctly, selection is local/default All, active dot and No matches empty state are covered; full gates pass. |
 | CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Done | P21-D; default/resolver, empty repair hydration, UI, demo and schema-v8 tests pass; saved 10/40/35/15 allocation remains unchanged. CR-90 later removes the predefined add picker; full P21-D gates pass. |
-| CR-90 | Replace Emergency fund allocation-item picker and custom-option modal with direct shared-shell add/edit item route forms. | In progress | P21-E replaces predefined options with direct custom-item creation, preserves zero-percent insertion and 100% allocation-save validation, and moves metadata editing/deletion into the item form. Schema remains v8. |
+| CR-90 | Replace Emergency fund allocation-item picker and custom-option modal with direct shared-shell add/edit item route forms. | Done | P21-E replaces predefined options with direct custom-item creation, preserves zero-percent insertion and 100% allocation-save validation, and moves metadata editing/deletion into the item form. Schema v13 remains unchanged. |
 | CR-52 | Add Rent, Utilities, Subscriptions, Personal spending and Travel to expense categories, grouping them under Survival or Wants with normalized suggestions. | Done | P20-M; category schema, form options, group mapping/weights, import validation and demo amounts pass focused domain/schema/backup/demo tests. |
 | CR-53 | Replace scalar planned income with income items in plans and frozen month snapshots; migrate v8 and import backups v1-v8. | Done | P20-M; schema, backup, migration and premigration archive tests pass; schema version 9, version 10 refused. |
 | CR-54 | Derive repeated future month budgets on demand through 24 months; include income dues and undoable clearing without persisting views. | Done | P20-M; future snapshot/plan edits, repeat-off/horizon/no-write, income due remainder/category sharing, clearing and Undo tests pass. |
@@ -4333,3 +4340,64 @@ segmented control and income dropdown touch/announcements; delete confirmation
 and Undo toast presentation; and modal stack/tab-bar presentation on physical
 iOS and Android. Tests assert route calls, component/style props and callbacks
 in TestRenderer; exports are bundles, not device runs.
+
+### P21-E Emergency-fund allocation item route form (CR-90)
+
+Preflight decision and in-progress ledger entry are in `fca168b`. The
+implementation removes the predefined add-choice modal from Emergency fund
+allocation. The header plus now opens the `/ef-bucket-form` route directly;
+fixed and custom allocation rows open the same route for editing. The shared
+FormScreen shell provides the header, body and Save footer. Custom item title,
+access and market-linked fields validate and persist through `saveEfPlan` in a
+single store action; a new item is present at 0% without altering the existing
+100% allocation. Removing a custom item keeps the existing confirmation,
+removes it from the allocation/link grouping, normalizes remaining percentages,
+and preserves its emergency-fund goal asset links.
+
+The obsolete `addEfCustomBucket`, `renameEfCustomBucket`, and
+`setEfCustomBucketAccess` store/domain action paths were removed. Their former
+direct-action tests were superseded by saved-plan domain and route form tests.
+No source files were deleted; the previous picker and custom-option modal
+implementation was removed from `app/ef-allocation-form.tsx`.
+
+Superseded assertions and tests:
+
+| Previous assertion / implementation | Replacement | Reason |
+|---|---|---|
+| Header plus presented the missing fixed choices and Custom/Cancel picker. | Header plus calls the direct add route; source scan confirms the allocation screen contains no predefined picker. | CR-90 removes the add-option picker. |
+| Custom-option modal created and edited a custom bucket. | Shared-shell route tests cover title, access, market-linked state, uniqueness, length, add/edit and zero-percent insertion. | Item creation/editing moves to the route form. |
+| Allocation screen removed items locally and displayed a changed draft total. | Route form confirmation removes grouping through one `saveEfPlan` call; existing allocation screen tests still enforce 100% before saving percentages. | Delete now belongs to the item edit route; allocation percentage editing remains unchanged. |
+| Direct `addEfCustomBucket`, `renameEfCustomBucket`, and `setEfCustomBucketAccess` domain/store mutations. | One `saveEfPlan` path for form creation and editing, with one-write coverage. | Avoid parallel form mutation paths. |
+
+The custom allocation demo contains one item for each access speed and one
+market-linked item. Fixed bucket title/access/market metadata remain canonical
+and read-only in the shared route because P21-E makes no persisted-schema
+change. This is the recorded assumption in DEC-P21E-CR90.
+
+Focused acceptance verification: 6 suites / 233 tests pass:
+`EfAllocationForm.test.tsx`, `efAllocationCustom.test.ts`,
+`createAppStore.test.ts`, `RouteRenderSmoke.test.tsx`, `FormShell.test.tsx`,
+and `demoData.test.ts`.
+
+Final required gates, run sequentially:
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 950 tests pass; 95.99% statements, 92.20% branches, 98.12% functions, 97.60% lines. | 0 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Passes without warnings. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported to `dist`. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported to `dist`. | 0 |
+
+Directory coverage is computed from Istanbul per-file summaries (excluding
+tests and hooks): domain 98.26% lines / 92.92% branches; data 94.23% / 87.75%;
+pure lib 100% / 100%.
+
+**P21-E acceptance criteria not verified on a real device:** OS font scaling,
+clipping and touch-target behavior at 1.3/2.0; native keyboard avoidance,
+scrolling and footer reachability; Dropdown and Switch interaction/announcements;
+navigation, hardware back and dirty-form discard; delete-confirmation
+presentation; and screen-reader behavior on physical iOS and Android. These
+tests use TestRenderer to inspect structure, props and callbacks; bundle exports
+are not device runs.
