@@ -48,12 +48,9 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
-  addEfCustomBucket,
-  renameEfCustomBucket,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
-  setEfCustomBucketAccess,
   type EfPlanDraft,
 } from '../domain/efAllocationActions';
 import {
@@ -97,7 +94,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -189,9 +186,6 @@ export type AppActions = {
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
-  addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
-  renameEfCustomBucket: (bucketId: string, name: string) => void;
-  setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -583,15 +577,6 @@ export function createAppStore(
         },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
-        },
-        addEfCustomBucket(input) {
-          applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
-        },
-        renameEfCustomBucket(bucketId, name) {
-          applyDataAction((data) => renameEfCustomBucket(data, bucketId, name));
-        },
-        setEfCustomBucketAccess(bucketId, access) {
-          applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
         },
         setEfBucketLinks(bucketId, holdingIds) {
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));

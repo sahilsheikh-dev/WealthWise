@@ -499,7 +499,26 @@ export function buildDemoData(today: ISODate): AppData {
       bank: 40,
       'fd-rd': 50,
     },
-    efCustomBuckets: [],
+    efCustomBuckets: [
+      {
+        id: 'demo-ef-instant-access',
+        name: 'Home cash reserve',
+        access: 'instant',
+        marketLinked: false,
+      },
+      {
+        id: 'demo-ef-days-access',
+        name: 'Liquid fund reserve',
+        access: 'days',
+        marketLinked: true,
+      },
+      {
+        id: 'demo-ef-slow-access',
+        name: 'Stored valuables',
+        access: 'slow',
+        marketLinked: false,
+      },
+    ],
     efBucketLinks: {
       cash: ['demo-holding-emergency-cash'],
       bank: ['demo-holding-emergency-bank'],

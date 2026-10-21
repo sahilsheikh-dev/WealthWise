@@ -44,6 +44,12 @@ describe('four-month demo data', () => {
       bank: 40,
       'fd-rd': 50,
     });
+    expect(data.efCustomBuckets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ access: 'instant' }),
+      expect.objectContaining({ access: 'days', marketLinked: true }),
+      expect.objectContaining({ access: 'slow' }),
+    ]));
+    expect(data.efCustomBuckets).toHaveLength(3);
   });
 
   it('includes the required active and lapsed policy demo records', () => {
@@ -306,7 +312,11 @@ describe('four-month demo data', () => {
       bank: 40,
       'fd-rd': 50,
     });
-    expect(data.efCustomBuckets).toEqual([]);
+    expect(data.efCustomBuckets.map(({ access, marketLinked }) => ({ access, marketLinked }))).toEqual([
+      { access: 'instant', marketLinked: false },
+      { access: 'days', marketLinked: true },
+      { access: 'slow', marketLinked: false },
+    ]);
     const emergency = data.goals.find((goal) => goal.auto === 'ef');
     if (!emergency) throw new Error('Emergency goal missing from demo data.');
     expect(emergency.links.map(({ instrumentId }) => instrumentId)).toEqual([

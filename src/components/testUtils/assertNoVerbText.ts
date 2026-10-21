@@ -30,7 +30,6 @@ const HOME_QUICK_ACTIONS = new Set([
   'New Investment',
   'New Liability',
   'Log Emergency Fund',
-  'Add custom option',
 ]);
 
 export function assertNoVerbText(
