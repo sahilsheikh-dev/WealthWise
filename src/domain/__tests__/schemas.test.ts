@@ -369,6 +369,19 @@ describe('makeTransactionFormSchema', () => {
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
   });
 
+  it('accepts legacy and typed insurance expense categories in the transaction form', () => {
+    for (const category of [
+      'Insurance',
+      'Insurance premium',
+      'Term life premium',
+      'Health premium',
+      'Motor premium',
+      'Home premium',
+    ]) {
+      expect(schema.safeParse({ ...validInput, category }).success).toBe(true);
+    }
+  });
+
   it('accepts a custom category only in the selected month budget', () => {
     const customSchema = makeTransactionFormSchema('2026-10-10', {}, {
       instruments: [],

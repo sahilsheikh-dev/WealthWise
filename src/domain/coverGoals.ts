@@ -1,4 +1,3 @@
-import { addDays } from './dates';
 import { normalizeMoney } from './cashFlow';
 import { policySchedule } from './policySchedule';
 import { policySummary } from './policySummary';
@@ -142,7 +141,7 @@ export function suggestPolicyForTransaction(
   data: AppData,
   transaction: Transaction,
 ): Policy | null {
-  if (transaction.type !== 'expense') return null;
+  if (transaction.type !== 'expense' || transaction.source !== undefined) return null;
   const type = coverTypeForPremiumCategory(transaction.category);
   if (!type) return null;
   const matches = data.policies.filter((policy) =>

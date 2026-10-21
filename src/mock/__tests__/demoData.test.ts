@@ -2,6 +2,7 @@ import { BUDGET_GROUPS, budgetMonthView, budgetOverview } from '../../domain/bud
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
+import { coverGoalSummaries } from '../../domain/coverGoals';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
@@ -44,7 +45,15 @@ describe('four-month demo data', () => {
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-home', kind: 'home', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
+    ]));
+    expect(coverGoalSummaries(data, today)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'term-life', state: 'gap' }),
+      expect.objectContaining({ type: 'health', target: 2_000_000 }),
+      expect.objectContaining({ type: 'motor', state: 'covered' }),
+      expect.objectContaining({ type: 'home', state: 'covered' }),
+      expect.objectContaining({ type: 'other', state: 'missing' }),
     ]));
     expect(data.transactions.filter((transaction) => transaction.source?.kind === 'policy-payment')
       .map((transaction) => transaction.category)).toEqual(expect.arrayContaining([

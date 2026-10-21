@@ -118,6 +118,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     const category = policyPremiumCategory(policy.kind);
     for (const row of rows) {
       if (row.status === 'paid' || monthKey(row.dueDate) !== month) continue;
+      representedCategories.add(category);
       items.push({
         id: `due:policy:${policy.id}:${row.id}`,
         kind: 'due',

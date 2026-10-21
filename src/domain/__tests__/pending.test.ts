@@ -216,8 +216,31 @@ describe('pending item projection', () => {
     const rows = pendingItems(data, '2026-02', '2026-02-15');
     expect(rows.filter((row) => row.kind === 'budget')).toEqual([
       expect.objectContaining({ title: 'Food', amount: 200, status: 'planned', actionable: true }),
+      expect.objectContaining({ title: 'Insurance', amount: 100, status: 'planned', actionable: true }),
     ]);
     expect(rows.find((row) => row.title === 'Food')).not.toHaveProperty('dueDate');
+  });
+
+  it('does not duplicate an active policy due with a manual budget line in the same typed category', () => {
+    const data: AppData = {
+      ...base(),
+      policies: [policy()],
+      monthBudgets: [monthBudgetFromLines('2026-02', [
+        { category: 'Health premium', planned: 100, dueDay: 20 },
+      ], {
+        incomes: [],
+        linkedIncluded: true,
+      })],
+    };
+    const rows = pendingItems(data, '2026-02', '2026-02-15');
+    expect(rows.filter((row) => row.category === 'Health premium')).toEqual([
+      expect.objectContaining({
+        kind: 'due',
+        title: 'Health cover',
+        amount: 60,
+        source: { kind: 'policy', parentId: 'policy', slotId: 'policy:0' },
+      }),
+    ]);
   });
 
   it('clamps budget due days to the month length, including leap February', () => {

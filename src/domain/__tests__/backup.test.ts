@@ -51,6 +51,22 @@ describe('backup validation and serialization', () => {
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
   });
 
+  it('round-trips typed insurance premium categories through current backups', async () => {
+    const transaction = {
+      id: 'typed-premium',
+      type: 'expense' as const,
+      amount: 1_000,
+      category: 'Health premium',
+      note: 'Health policy premium',
+      date: '2026-10-10',
+    };
+    const data = { ...mockAppData, transactions: [...mockAppData.transactions, transaction] };
+    const text = await createBackup(data, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
+    const imported = await parseBackup(text, { digest });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.transactions).toContainEqual(transaction);
+  });
+
   it('verifies v7 checksums before migrating backups to schema nine', async () => {
     const { budgetPlan, monthBudgets, ...rest } = mockAppData;
     const oldData = {

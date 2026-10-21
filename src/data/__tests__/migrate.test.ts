@@ -188,6 +188,57 @@ describe('schema migration', () => {
     expect(migrated.data.coverGoals).toHaveLength(5);
   });
 
+  it('moves legacy manual Insurance items into the current Insurance system section', () => {
+    const legacy = makeV11Fixture();
+    const insuranceItem = {
+      id: 'legacy-insurance',
+      sectionId: 'survival',
+      name: 'Insurance',
+      mode: 'amount',
+      value: 200,
+    };
+    const migrated = migrateV11ToV12({
+      ...legacy,
+      budgetPlan: {
+        sections: [
+          { id: 'survival', name: 'Needs', type: 'spend' },
+          { id: 'insurance', name: 'Legacy section', type: 'invest' },
+        ],
+        items: [insuranceItem],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        sections: [{ id: 'survival', name: 'Needs', type: 'spend' }],
+        items: [insuranceItem],
+      }],
+    });
+    expect(migrated).toMatchObject({
+      budgetPlan: {
+        sections: [
+          { id: 'survival', name: 'Needs', type: 'spend' },
+          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
+        ],
+        items: [{ ...insuranceItem, sectionId: 'insurance' }],
+      },
+      monthBudgets: [{
+        sections: expect.arrayContaining([
+          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
+        ]),
+        items: [{ ...insuranceItem, sectionId: 'insurance' }],
+      }],
+    });
+
+    const malformedBudget = { sections: [], items: null, preserved: true };
+    expect(migrateV11ToV12({
+      ...legacy,
+      budgetPlan: malformedBudget,
+      monthBudgets: 'not-an-array',
+    })).toMatchObject({
+      budgetPlan: malformedBudget,
+      monthBudgets: 'not-an-array',
+    });
+  });
+
   it('migrates v10 policy kinds, status, metadata, date fallbacks and legacy frequency', () => {
     const policy = makeV10Fixture().policies[0];
     if (!policy) throw new Error('Expected a v10 policy fixture.');

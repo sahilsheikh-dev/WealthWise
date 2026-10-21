@@ -1398,15 +1398,25 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       }
     }
     const category = row.category;
-    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
-      id: row.id,
-      title: row.name,
-      planned: normalizeMoney(row.amount),
-      actual: normalizeMoney(linkedActual),
-      kind: 'linked',
-      editable: false,
-      source: { kind: row.kind, parentId: row.parentId },
-    });
+    const sectionRows = itemsForSection(overviewSectionFor(category, budget, data.budgetPlan));
+    const itemId = row.kind === 'policy' ? `linked:policy:${category}` : row.id;
+    const existingPolicyItem = row.kind === 'policy'
+      ? sectionRows.find((item) => item.id === itemId)
+      : undefined;
+    if (existingPolicyItem) {
+      existingPolicyItem.planned = normalizeMoney(existingPolicyItem.planned + row.amount);
+      existingPolicyItem.actual = normalizeMoney(existingPolicyItem.actual + linkedActual);
+    } else {
+      sectionRows.push({
+        id: itemId,
+        title: row.kind === 'policy' ? category : row.name,
+        planned: normalizeMoney(row.amount),
+        actual: normalizeMoney(linkedActual),
+        kind: 'linked',
+        editable: false,
+        source: { kind: row.kind, parentId: row.parentId },
+      });
+    }
     linkedPlannedByCategory.set(
       category,
       normalizeMoney((linkedPlannedByCategory.get(category) ?? 0) + row.amount),
@@ -1446,16 +1456,26 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       : kind === 'liability'
         ? data.liabilities.find((liability) => liability.id === source.parentId)?.name ?? 'Liability'
         : data.policies.find((policy) => policy.id === source.parentId)?.name ?? 'Policy';
-    const id = `linked:${kind}:${source.parentId}:${source.entryId}`;
-    itemsForSection(overviewSectionFor(category, budget, data.budgetPlan)).push({
-      id,
-      title,
-      planned: 0,
-      actual: normalizeMoney(transaction.amount),
-      kind: 'linked',
-      editable: false,
-      source: { kind, parentId: source.parentId },
-    });
+    const sectionRows = itemsForSection(overviewSectionFor(category, budget, data.budgetPlan));
+    const id = kind === 'policy'
+      ? `linked:policy:${category}`
+      : `linked:${kind}:${source.parentId}:${source.entryId}`;
+    const existingPolicyItem = kind === 'policy'
+      ? sectionRows.find((item) => item.id === id)
+      : undefined;
+    if (existingPolicyItem) {
+      existingPolicyItem.actual = normalizeMoney(existingPolicyItem.actual + transaction.amount);
+    } else {
+      sectionRows.push({
+        id,
+        title: kind === 'policy' ? category : title,
+        planned: 0,
+        actual: normalizeMoney(transaction.amount),
+        kind: 'linked',
+        editable: false,
+        source: { kind, parentId: source.parentId },
+      });
+    }
     const actualCategory = budgetCategoryForTransaction(transaction, customBudgetCategories(data));
     linkedActualByCategory.set(
       actualCategory,

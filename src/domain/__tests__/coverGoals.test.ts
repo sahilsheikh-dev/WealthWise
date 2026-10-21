@@ -110,6 +110,10 @@ describe('insurance cover goals', () => {
     };
     const data = { ...emptyAppData('2026-10-15'), policies: [active] };
     expect(suggestPolicyForTransaction(data, transaction)).toEqual(active);
+    expect(suggestPolicyForTransaction(data, {
+      ...transaction,
+      source: { kind: 'policy-payment', parentId: active.id, entryId: 'existing-payment' },
+    })).toBeNull();
     expect(suggestPolicyForTransaction({
       ...data,
       policies: [active, policy('health-two', 'health')],

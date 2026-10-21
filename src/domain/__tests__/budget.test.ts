@@ -1114,7 +1114,8 @@ describe('budget plans and monthly views', () => {
     );
     expect(overview.sections.find(({ id }) => id === 'insurance')?.items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: 'Health cover', planned: 0, actual: 20, kind: 'linked' }),
+        expect.objectContaining({ title: 'Health premium', planned: 60, actual: 0, kind: 'linked' }),
+        expect.objectContaining({ title: 'Insurance', planned: 0, actual: 20, kind: 'linked' }),
       ]),
     );
     expect(overview.stacked.left.actual).toBe(-40);
@@ -1570,7 +1571,7 @@ describe('budget plans and monthly views', () => {
         .sections.find(({ id }) => id === 'insurance')?.items ?? [];
       expect(overviewItems).toEqual(expect.arrayContaining([
         expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
-        expect.objectContaining({ title: 'Health cover', kind: 'linked', planned: 60, actual: 60 }),
+        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
       ]));
       expect(overviewItems.reduce((total, item) => total + item.planned, 0)).toBe(460);
       expect(overviewItems.reduce((total, item) => total + item.actual, 0)).toBe(95);
@@ -1642,10 +1643,60 @@ describe('budget plans and monthly views', () => {
       expect(overviewItems).toEqual(expect.arrayContaining([
         expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
         expect.objectContaining({ title: 'Health premium', kind: 'line', planned: 25, actual: 20 }),
-        expect.objectContaining({ title: 'Health cover', kind: 'linked', planned: 60, actual: 60 }),
+        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
       ]));
       expect(overviewItems.reduce((sum, item) => sum + item.planned, 0)).toBe(485);
       expect(overviewItems.reduce((sum, item) => sum + item.actual, 0)).toBe(115);
+    });
+
+    it('shows one read-only Insurance row per cover type when multiple policies are active', () => {
+      const secondPolicy: Policy = {
+        ...policy,
+        id: 'health-policy-two',
+        name: 'Second health cover',
+        premium: 90,
+        payments: [{ id: 'health-payment-two', date: '2026-03-05', amount: 90, note: '' }],
+      };
+      const data = {
+        ...emptyAppData(today),
+        policies: [
+          { ...policy, payments: [{ id: 'health-payment-one', date: '2026-03-05', amount: 60, note: '' }] },
+          secondPolicy,
+        ],
+        transactions: [
+          {
+            id: 'health-transaction-one',
+            type: 'expense' as const,
+            amount: 60,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'health-payment-one' },
+          },
+          {
+            id: 'health-transaction-two',
+            type: 'expense' as const,
+            amount: 90,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: secondPolicy.id, entryId: 'health-payment-two' },
+          },
+        ],
+        monthBudgets: [monthBudgetFromLines('2026-03', [], {
+          incomes: incomes(1_000),
+          linkedIncluded: true,
+        })],
+      };
+      const items = budgetOverview(data, '2026-03', today)
+        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
+      const policyRows = items.filter((item) => item.source.kind === 'policy');
+      expect(policyRows).toEqual([expect.objectContaining({
+        title: 'Health premium',
+        planned: 150,
+        actual: 150,
+        editable: false,
+      })]);
     });
 
     it('keeps inactive policy history but excludes it from linked dues and budget commitments', () => {
