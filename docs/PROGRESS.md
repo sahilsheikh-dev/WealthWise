@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (63/68)
+Overall progress █████████░ 91% (63/69)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (20/20)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ██████████ 100% (1/1)
+Phase 23         █████░░░░░ 50% (1/2)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
@@ -144,6 +144,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
+| P23-B | — | In progress | CR-80/CR-81: schema v12 cover goals, insurance categories and pure summaries/actions; the former screen-only plan is cancelled. | 2026-10-21 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -1026,6 +1027,28 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   the last three months of earned income annualized, otherwise `null`.
   No UI/screen files were changed. Physical-device behavior for existing policy
   routes and native accessibility remains unverified.
+  DEC-P23-COVER (P23-B, CR-80/CR-81): cover goals are separate from savings
+  goals and are excluded from net worth, saved totals, savings-goal progress,
+  and Emergency Fund calculations. One non-deletable cover goal exists for
+  each of term-life, health, motor, home, and other. Defaults are term-life
+  income-multiple 10, health amount with no target value, and active-only for
+  motor/home/other. Income-multiple targets allow 1–50; amount targets allow
+  values >= 0. Cover summaries distinguish covered, gap, no-target, and
+  missing; active-only is satisfied by at least one active policy.
+  Only active policies contribute cover, yearly premium and renewal. Savings
+  policies (life-savings and ULIP) are excluded from cover goals. The five
+  insurance expense categories coexist with historical Insurance records and
+  map to the protected Insurance Budget section. Manual Insurance budget
+  entries remain manageable; linked policy rows remain read-only; actual
+  category totals must reconcile without duplicate counting. Recording a
+  scheduled policy premium uses its type category; manual typed premiums may
+  suggest a policy only when exactly one active policy has that type.
+  P23-B scope is schema v12/migration/archive and pure domain, store, budget,
+  category, demo and test changes only; no new screens. The earlier planned
+  screen-only P23-B is cancelled and superseded by this scope.
+  Preflight at base `501956a` found a clean worktree; no manual checkpoint
+  was needed. The user-owned Budget cash-flow labels and removed actions remain
+  protected.
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
   prior user checkpoints were audited; each changed path is listed:
@@ -1717,9 +1740,11 @@ P22-A (CR-12) implementation and acceptance tests are complete, and its final
 required gates are green. Spreadsheet import is out of scope and is not
 tracked as a Phase 22 part.
 
-### Phase 23 — Insurance
+### Phase 23 — Insurance and cover goals
 
-Planned P23-A [P15-F].
+P23-A [P15-F] is complete. P23-B [CR-80/CR-81] replaces the earlier
+screen-only plan with schema-v12 cover goals and domain/category integration;
+no new screens are in scope.
 
 ### Phase 24 — Reminders and notifications
 
@@ -1875,6 +1900,7 @@ evidence present in exports/checkpoints.
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
+| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Step 0 done; implementation in progress. The prior screen-only plan is cancelled. | Preflight base `501956a`; spec/decision ledger pending its commit. | Assumed: none beyond DEC-P23-COVER; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
