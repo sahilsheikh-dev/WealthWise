@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (64/69)
+Overall progress █████████░ 91% (64/70)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (20/20)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ██████████ 100% (2/2)
+Phase 23         ███████░░░ 67% (2/3)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
@@ -145,6 +145,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
+| P23-C | — | In progress | CR-82–CR-85: insurance cover and policy screens, premium linking, and Goals/Budget/Home entry points. This screen phase follows P23-B and supersedes the former screen-only P23-B plan. | 2026-10-21 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -1064,6 +1065,31 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   missing states are represented.
   The direct source/test audit of the legacy `'Insurance'` category is recorded
   below; no legacy category or transaction history was removed.
+  DEC-P23-C-SCREENS (P23-C, CR-82–CR-85): add the Insurance cover stack route
+  without changing the four tabs or schema v12. Goals links from its Emergency
+  Fund card, Budget's Insurance section, and a compact Home gap/missing row all
+  open that route. Insurance cover cards are detail-first with the progress bar
+  last; target editing and policy editing use the shared FormScreen. Policy
+  card bodies open edit, while Paid and Schedule remain separate actions below
+  the card details. The Insurance list uses local All/Active/Lapsed/Matured/
+  Cancelled and kind filters plus case-insensitive name, insurer, policy-number
+  and kind search. The premium category switch defaults on only when the domain
+  suggestion identifies exactly one active matching policy; saving uses the
+  existing policy-payment domain path. No savings-goal, Emergency Fund, or net
+  worth calculations change.
+  P23-C preflight on 2026-10-21 found a clean worktree at `b2a3d7c`; no manual
+  checkpoint was required. `git log` re-confirmed the same seven non-Copilot
+  commits since `5bd3c41` and the two user checkpoints already itemized one
+  changed file per line under DEC-USER-CHANGES above; no newer user-owned commit
+  or path was present. The Cash flow labels and removed Budget controls remain
+  protected.
+  Assumed: the existing `policy-form` route is retained for create and edit,
+  expanded to the full P23-C policy fields; a separate `cover-goal-form` route
+  edits the non-deletable target record. Policy dues use the existing clearDue
+  flow and Undo toast rather than a second payment implementation.
+  Assumed: a policy with no `sumAssured` contributes zero cover, and the policy
+  number search is exact to the policy record's stored value (case-insensitive
+  substring across searchable fields).
 
 #### P23-B legacy Insurance literal audit
 
@@ -1787,9 +1813,9 @@ tracked as a Phase 22 part.
 
 ### Phase 23 — Insurance and cover goals
 
-P23-A [P15-F] is complete. P23-B [CR-80/CR-81] replaces the earlier
-screen-only plan with schema-v12 cover goals and domain/category integration;
-no new screens are in scope.
+P23-A [P15-F] and P23-B [CR-80/CR-81] are complete. P23-C [CR-82–CR-85]
+implements the insurance cover and policy screens, and replaces the earlier
+screen-only P23-B plan.
 
 ### Phase 24 — Reminders and notifications
 
@@ -1946,6 +1972,7 @@ evidence present in exports/checkpoints.
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
 | P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Done; 78 suites/914 tests pass; all six gates exit 0. | Preflight/decision `04bf7f0`; schema/migration `1f9917e`; domain/tests `8893bf9`; coverage correction `b9cb4f6`; lint cleanup `c443191`. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
+| P23-C | Phase 23 | — | 2 | 2026-10-21 | Insurance cover and policy screens, with cover goal forms and transaction/Budget/Home integration (CR-82–CR-85). | In progress; preflight clean; implementation and gates pending. | Preflight audit at `b2a3d7c`. | Assumed: see DEC-P23-C-SCREENS; preserve schema v12 and all P23-B domain behavior. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2079,6 +2106,10 @@ evidence present in exports/checkpoints.
 | CR-79 | Add pure policy actions and summary; enforce active-only dues/Budget rows and deletion cleanup with Undo. | Done | Typed policy actions, active-only/end-date schedule, policy summary, store one-write/Undo, linked transaction retention, integrity and Insurance reconciliation tests pass. |
 | CR-80 | Add cover-goal schema v12, one goal per cover type, migration/archive and backup support. | Done | `migrateV11ToV12`, exact-byte once-only `.premigration.v11`, erase behavior, v11 backup migration, checksum-before-migration, and v13 refusal pass focused and full coverage tests. |
 | CR-81 | Add cover goal summaries/target action, typed policy suggestion, insurance categories and reconciliation. | Done | Cover-state/income/policy/category/pending/Budget/demo/backup/one-write/Undo acceptance tests pass; no new screens. All six required gates exit 0. |
+| CR-82 | Add an Insurance cover stack screen with Goals, Budget, and Home entry points, ordered header actions, filters, and search. | In progress | P23-C implementation pending. |
+| CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | In progress | P23-C implementation pending. |
+| CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | In progress | P23-C implementation pending. |
+| CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | In progress | P23-C implementation pending. |
 
 ## 8. Known issues and risks
 
