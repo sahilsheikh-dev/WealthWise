@@ -128,23 +128,24 @@ const policySchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
-  kind: z.enum(['term', 'health', 'life-savings', 'ulip', 'vehicle', 'home', 'other']),
+  kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.number().finite().positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'single']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: dateSchema,
-  premiumYears: z.number().int().min(1).max(80).nullable(),
+  status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
+  policyNumber: z.string().max(30).optional(),
+  sumAssured: z.number().finite().min(0).max(100_000_000_000).optional(),
+  endDate: dateSchema.optional(),
+  nominee: z.string().max(40).optional(),
+  note: z.string().max(120).optional(),
+  premiumYears: z.number().int().min(1).max(80),
   trackFrom: dateSchema,
-  coverAmount: z.number().finite().positive().max(100_000_000_000).nullable(),
   currentValue: z.number().finite().min(0).max(100_000_000_000).nullable(),
   valueAsOf: dateSchema.nullable(),
-  maturityDate: dateSchema.nullable(),
   payments: z.array(policyPaymentSchema).max(100_000),
 }).superRefine((policy, context) => {
-  if ((policy.frequency === 'single') !== (policy.premiumYears === null)) {
-    context.addIssue({ code: 'custom', path: ['premiumYears'], message: 'Premium term does not match policy frequency' });
-  }
-  if (policy.maturityDate !== null && policy.maturityDate < policy.startDate) {
-    context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Maturity date cannot be before policy start' });
+  if (policy.endDate !== undefined && policy.endDate <= policy.startDate) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must be after policy start' });
   }
   const savingsKind = policy.kind === 'life-savings' || policy.kind === 'ulip';
   if (!savingsKind && policy.currentValue !== null) {

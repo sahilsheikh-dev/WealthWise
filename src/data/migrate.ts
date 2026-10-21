@@ -564,6 +564,63 @@ export function migrateV8ToV9(data: unknown, options: V6ToV7Options): unknown {
   };
 }
 
+export function migrateV10ToV11(data: unknown, options: Pick<V6ToV7Options, 'today'>): unknown {
+  if (!isRecord(data) || !Array.isArray(data.policies)) {
+    throw new PersistedVersionError(10, 'unknown-version');
+  }
+  const policies = data.policies.map((value) => {
+    if (!isRecord(value) || !Array.isArray(value.payments)) {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const payments = value.payments;
+    if (!payments.every(isRecord)) throw new PersistedVersionError(10, 'unknown-version');
+    const paymentDates = payments.flatMap((payment) =>
+      typeof payment.date === 'string' ? [payment.date] : [],
+    ).sort();
+    const startDate = typeof value.startDate === 'string'
+      ? value.startDate
+      : paymentDates[0] ?? options.today;
+    const legacyKind = value.kind;
+    const kind = legacyKind === 'term'
+      ? 'term-life'
+      : legacyKind === 'vehicle'
+        ? 'motor'
+        : legacyKind;
+    if (kind !== 'term-life' && kind !== 'health' && kind !== 'life-savings'
+      && kind !== 'ulip' && kind !== 'motor' && kind !== 'home' && kind !== 'other') {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const frequency = value.frequency === 'single'
+      ? 'yearly'
+      : value.frequency === 'monthly' || value.frequency === 'quarterly'
+        || value.frequency === 'half-yearly' || value.frequency === 'yearly'
+        ? value.frequency
+        : 'yearly';
+    const premiumYears = value.frequency === 'single'
+      ? 1
+      : typeof value.premiumYears === 'number' ? value.premiumYears : 1;
+    const sumAssured = typeof value.coverAmount === 'number' && value.coverAmount >= 0
+      ? value.coverAmount
+      : undefined;
+    const endDate = typeof value.maturityDate === 'string' && value.maturityDate > startDate
+      ? value.maturityDate
+      : undefined;
+    const { coverAmount: _coverAmount, maturityDate: _maturityDate, ...rest } = value;
+    return {
+      ...rest,
+      kind,
+      frequency,
+      startDate,
+      trackFrom: typeof value.trackFrom === 'string' ? value.trackFrom : startDate,
+      premiumYears,
+      status: 'active',
+      ...(sumAssured === undefined ? {} : { sumAssured }),
+      ...(endDate === undefined ? {} : { endDate }),
+    };
+  });
+  return { ...data, policies };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -593,6 +650,10 @@ export function migratePersisted(
     if (fromVersion <= 9) {
       if (!options) throw new PersistedVersionError(9, 'unknown-version');
       result = migrateV9ToV10(result, options);
+    }
+    if (fromVersion <= 10) {
+      if (!options) throw new PersistedVersionError(10, 'unknown-version');
+      result = migrateV10ToV11(result, options);
     }
     return result;
   };

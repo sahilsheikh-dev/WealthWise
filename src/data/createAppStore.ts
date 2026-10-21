@@ -17,7 +17,13 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
-import { updatePolicy, type PolicyPatch } from '../domain/policyActions';
+import {
+  addPolicy as addPolicyData,
+  deletePolicy as deletePolicyData,
+  setPolicyStatus as setPolicyStatusData,
+  updatePolicy,
+  type PolicyPatch,
+} from '../domain/policyActions';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -88,7 +94,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -134,6 +140,9 @@ export type AppActions = {
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
   updatePolicy: (id: string, patch: PolicyPatch) => void;
+  addPolicy: (input: AddPolicyInput) => void;
+  setPolicyStatus: (id: string, status: PolicyStatus) => void;
+  deletePolicy: (id: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -385,7 +394,36 @@ export function createAppStore(
           }).data);
         },
         updatePolicy(id, patch) {
-          applyDataAction((data) => updatePolicy(data, id, patch));
+          applyDataAction((data) => updatePolicy(data, { id, patch }));
+        },
+        addPolicy(input) {
+          applyDataAction((data) => addPolicyData(data, {
+            ...input,
+            id: deps.newId(),
+            payments: [],
+          }));
+        },
+        setPolicyStatus(id, status) {
+          const previous = get().data;
+          applyDataAction((data) => setPolicyStatusData(data, { id, status }));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy status updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        deletePolicy(id) {
+          const previous = get().data;
+          applyDataAction((data) => deletePolicyData(data, { id }));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy deleted.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
@@ -637,6 +675,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

@@ -31,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version ten', () => {
+  it('accepts the typed mock app data and exports schema version eleven', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(10);
+    expect(SCHEMA_VERSION).toBe(11);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {
@@ -211,7 +211,7 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      policies: [{ ...policy, kind: 'term', currentValue: 1 }],
+      policies: [{ ...policy, kind: 'term-life', currentValue: 1 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
@@ -253,11 +253,27 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      policies: [{ ...policy, frequency: 'single' }],
+      policies: [{ ...policy, policyNumber: 'P'.repeat(31) }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      policies: [{ ...policy, maturityDate: '2000-01-01' }],
+      policies: [{ ...policy, nominee: 'N'.repeat(41) }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, note: 'N'.repeat(121) }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, sumAssured: -1 }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, sumAssured: 0 }],
+    }).success).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, endDate: policy.startDate }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,

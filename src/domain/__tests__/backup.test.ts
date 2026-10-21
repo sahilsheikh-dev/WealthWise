@@ -15,6 +15,7 @@ import { SCHEMA_VERSION } from '../schemas';
 import { addInvestmentEntry } from '../investmentActions';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { makeV9Fixture } from '../../data/testFixtures/v9';
+import { makeV10Fixture } from '../../data/testFixtures/v10';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -40,7 +41,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 10 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 11 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -135,6 +136,29 @@ describe('backup validation and serialization', () => {
       expect.objectContaining({ name: 'Income', category: 'Business', amount: 12_000 }),
     ]);
     const tampered = { ...envelope, data: { ...data, settings: { ...data.settings, name: 'changed' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v10 checksums as written before migrating policy fields', async () => {
+    const oldData = makeV10Fixture();
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 10,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(oldData)) },
+      data: oldData,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.policies[0]).toMatchObject({
+      kind: 'life-savings',
+      status: 'active',
+      sumAssured: 500_000,
+      endDate: '2042-01-15',
+    });
+    const tampered = { ...envelope, data: { ...oldData, settings: { ...oldData.settings, name: 'changed' } } };
     await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
@@ -241,7 +265,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(10);
+    expect(SCHEMA_VERSION).toBe(11);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -303,7 +327,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 11;
+    future.schemaVersion = 12;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -346,9 +370,9 @@ describe('backup validation and serialization', () => {
           ? { ...oneTime, dueDate: '2026-08-31' }
           : item),
       },
-      { ...mockAppData, policies: [{ ...policy, frequency: 'single' as const, premiumYears: 1 }] },
-      { ...mockAppData, policies: [{ ...policy, maturityDate: '2021-01-01' }] },
-      { ...mockAppData, policies: [{ ...policy, kind: 'term' as const, currentValue: 1 }] },
+      { ...mockAppData, policies: [{ ...policy, policyNumber: 'P'.repeat(31) }] },
+      { ...mockAppData, policies: [{ ...policy, endDate: policy.startDate }] },
+      { ...mockAppData, policies: [{ ...policy, kind: 'term-life' as const, currentValue: 1 }] },
       { ...mockAppData, policies: [{ ...policy, kind: 'ulip' as const, valueAsOf: null }] },
       { ...mockAppData, budget: { plannedIncome: null, lines: [
         { category: 'Food', planned: 1 }, { category: 'Food', planned: 2 },
@@ -430,7 +454,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 11;
+    newer.schemaVersion = 12;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
