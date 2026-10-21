@@ -12,6 +12,7 @@ import type { ScheduleRow } from './schedule';
 import type {
   AppData,
   BudgetItem,
+  BudgetItemFrequency,
   BudgetSection,
   EarnedIncomeCategory,
   BudgetIncomeItem,
@@ -128,6 +129,54 @@ function monthOf(month: string): string {
   return month;
 }
 
+function frequencyStep(frequency: BudgetItemFrequency): number {
+  if (frequency === 'quarterly') return 3;
+  if (frequency === 'half-yearly') return 6;
+  if (frequency === 'yearly') return 12;
+  return 1;
+}
+
+function monthOrdinal(month: string): number {
+  const key = monthOf(month);
+  return Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7)) - 1;
+}
+
+function monthFromOrdinal(ordinal: number): string {
+  const year = Math.floor(ordinal / 12);
+  const month = ordinal % 12 + 1;
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+}
+
+export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
+  const monthIndex = monthOrdinal(month);
+  const frequency = item.frequency ?? 'monthly';
+  if (frequency === 'monthly') return true;
+  if (!item.firstDueMonth) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
+  }
+  const firstDueIndex = monthOrdinal(item.firstDueMonth);
+  const difference = monthIndex - firstDueIndex;
+  return difference >= 0 && difference % frequencyStep(frequency) === 0;
+}
+
+export function plannedForMonth(item: BudgetItem, month: string): number {
+  return isItemDueInMonth(item, month) ? item.value : 0;
+}
+
+export function nextDueMonth(item: BudgetItem, month: string): string {
+  const currentIndex = monthOrdinal(month);
+  const frequency = item.frequency ?? 'monthly';
+  if (frequency === 'monthly') return monthFromOrdinal(currentIndex + 1);
+  if (!item.firstDueMonth) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
+  }
+  const firstDueIndex = monthOrdinal(item.firstDueMonth);
+  if (currentIndex < firstDueIndex) return item.firstDueMonth;
+  const step = frequencyStep(frequency);
+  const elapsed = currentIndex - firstDueIndex;
+  return monthFromOrdinal(firstDueIndex + (Math.floor(elapsed / step) + 1) * step);
+}
+
 function orderedRows<T extends { dueDate: ISODate }>(rows: T[]): T[] {
   return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
@@ -238,12 +287,17 @@ export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] })
 export function resolveBudgetPlan(
   plan: Pick<BudgetPlan, 'incomes' | 'sections' | 'items'>,
   plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
+  month?: string,
+  frozenSnapshot = false,
 ): BudgetLine[] {
   return plan.items.map((item) => {
+    const itemValue = month === undefined
+      ? item.value
+      : plannedForMonth(frozenSnapshot ? { ...item, frequency: 'monthly' } : item, month);
     const line = {
       category: item.name,
       mode: item.mode,
-      value: item.value,
+      value: itemValue,
       dueDay: item.dueDay,
     };
     if (line.mode === 'amount') {
@@ -289,7 +343,7 @@ export function applyBudgetPlanToMonth(
   const plan = data.budgetPlan;
   if (!plan) return data;
   const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
-  const lines = new Map(resolveBudgetPlan(plan, plannedIncome).map((line) => [line.category, line]));
+  const lines = new Map(resolveBudgetPlan(plan, plannedIncome, month).map((line) => [line.category, line]));
   return replaceMonth(data, {
     month,
     source: 'plan',
@@ -323,7 +377,7 @@ export function effectiveMonthBudget(
   if (plan.incomes.length === 0 && plan.items.some((item) => item.mode === 'percent')) {
     return { budget: null, virtual: false };
   }
-  const lines = resolveBudgetPlan(plan);
+  const lines = resolveBudgetPlan(plan, undefined, month);
   return {
     budget: {
       month,
@@ -377,6 +431,8 @@ function updateBudgetItemInMonth(
       name: source.category,
       mode: 'amount',
       value: values.amount,
+      frequency: existing?.frequency ?? 'monthly',
+      ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
@@ -434,6 +490,8 @@ function updateBudgetItemInPlan(
       name: source.category,
       mode: 'amount',
       value: values.amount,
+      frequency: existing?.frequency ?? 'monthly',
+      ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
@@ -533,7 +591,9 @@ export type BudgetMutationErrorCode =
   | 'item-not-found'
   | 'item-limit'
   | 'section-limit'
-  | 'invalid-item';
+  | 'invalid-item'
+  | 'invalid-frequency'
+  | 'percent-only-monthly';
 
 export class BudgetMutationError extends Error {
   constructor(readonly code: BudgetMutationErrorCode, message: string) {
@@ -551,7 +611,31 @@ export type BudgetItemPatch = {
   mode?: BudgetItem['mode'];
   value?: number;
   dueDay?: number | null;
+  frequency?: BudgetItemFrequency;
+  firstDueMonth?: string | null;
 };
+
+function validateItemFrequency(
+  mode: BudgetItem['mode'],
+  frequency: BudgetItemFrequency | undefined,
+  firstDueMonth: string | undefined,
+): { frequency: BudgetItemFrequency; firstDueMonth?: string } {
+  const resolvedFrequency = frequency ?? 'monthly';
+  if (!(['monthly', 'quarterly', 'half-yearly', 'yearly'] as const).includes(resolvedFrequency)) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose a valid payment frequency.');
+  }
+  if (mode === 'percent' && resolvedFrequency !== 'monthly') {
+    throw new BudgetMutationError('percent-only-monthly', 'Percent items can only be monthly.');
+  }
+  if (resolvedFrequency === 'monthly') return { frequency: resolvedFrequency };
+  if (firstDueMonth === undefined) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
+  }
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(firstDueMonth)) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose a valid first due month.');
+  }
+  return { frequency: resolvedFrequency, firstDueMonth };
+}
 
 function validateStructuralItemValues(
   mode: BudgetItem['mode'],
@@ -593,6 +677,7 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
   const itemIds = new Set<string>();
   const itemCounts = new Map<string, number>();
   for (const item of items) {
+    validateItemFrequency(item.mode, item.frequency, item.firstDueMonth);
     if (!item.id || item.name.trim() !== item.name || item.name.length < 1 || item.name.length > 30) {
       throw new BudgetMutationError('invalid-name', 'Names must be 1 to 30 characters and trimmed.');
     }
@@ -840,12 +925,13 @@ export function addItem(
 ): AppData {
   const name = validateBudgetName(input.name);
   const value = validateStructuralItemValues(input.mode, input.value, input.dueDay);
+  const schedule = validateItemFrequency(input.mode, input.frequency, input.firstDueMonth);
   if (!input.id) throw new BudgetMutationError('invalid-item', 'An item ID is required.');
   return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
     if (items.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
-    return { sections, items: [...items, { ...input, name, value }] };
+    return { sections, items: [...items, { ...input, ...schedule, name, value }] };
   });
 }
 
@@ -871,6 +957,12 @@ export function editItem(
       ? undefined
       : input.patch.dueDay ?? target.dueDay;
     const normalizedValue = validateStructuralItemValues(nextMode, nextValue, nextDueDay);
+    const nextFrequency = input.patch.frequency ?? target.frequency ?? 'monthly';
+    const nextFirstDueMonth = input.patch.firstDueMonth === null
+      || (input.patch.frequency === 'monthly' && input.patch.firstDueMonth === undefined)
+      ? undefined
+      : input.patch.firstDueMonth ?? target.firstDueMonth;
+    const schedule = validateItemFrequency(nextMode, nextFrequency, nextFirstDueMonth);
     if (items.some((item) => item.id !== target.id && item.name.toLowerCase() === nextName.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
@@ -882,13 +974,17 @@ export function editItem(
     return {
       sections,
       items: items.map((item) => item.id !== target.id ? item : {
-        ...item,
+        ...(() => {
+          const { firstDueMonth: _firstDueMonth, ...withoutFirstDueMonth } = item;
+          return withoutFirstDueMonth;
+        })(),
         ...(name === undefined ? {} : { name }),
         ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
         ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
         ...(input.patch.dueDay === undefined ? {} : input.patch.dueDay === null
           ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
           : { dueDay: input.patch.dueDay }),
+        ...schedule,
       }),
     };
   });
@@ -940,7 +1036,7 @@ export function customizeMonthBudget(
   };
   const lines = input.lines ?? base.items.map((item) => ({
     category: item.name,
-    planned: item.value,
+    planned: plannedForMonth({ ...item, frequency: 'monthly' }, month),
     ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
   }));
   const lineCategories = new Set(lines.map((line) => line.category));
@@ -1069,12 +1165,17 @@ export type BudgetMonthView = {
 
 export function budgetMonthView(data: AppData, month: string, today: ISODate = `${month}-01`): BudgetMonthView {
   const key = monthOf(month);
-  const { budget } = effectiveMonthBudget(data, key, today);
+  const { budget, virtual } = effectiveMonthBudget(data, key, today);
   const commitments = monthlyCommitments(data, key);
   const includeLinked = budget?.linkedIncluded === true;
   const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
   const plannedLines = budget
-    ? resolveBudgetPlan({ incomes: budget.incomes, sections: budget.sections, items: budget.items })
+    ? resolveBudgetPlan(
+      { incomes: budget.incomes, sections: budget.sections, items: budget.items },
+      undefined,
+      key,
+      !virtual,
+    )
     : [];
   const planned = new Map(plannedLines.map((line) => [line.category, line.planned]));
   if (includeLinked) {
@@ -1267,6 +1368,8 @@ export type BudgetOverviewItem = {
   title: string;
   planned: number;
   actual: number;
+  frequency?: BudgetItemFrequency;
+  nextDueMonth?: string;
   kind: 'line' | 'linked' | 'income';
   editable: boolean;
   source: { kind: 'line'; category: string }
@@ -1564,12 +1667,19 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       0,
       (actualByCategory.get(category) ?? 0) - (linkedActualByCategory.get(category) ?? 0),
     ));
-    if (planned === 0 && actual === 0) continue;
+    const budgetItem = budget.items.find((item) => item.name === category);
+    const frequency = budgetItem?.frequency ?? 'monthly';
+    const isRecurringBudgetItem = budgetItem !== undefined && frequency !== 'monthly';
+    if (planned === 0 && actual === 0 && !isRecurringBudgetItem) continue;
     itemsForSection(sectionId).push({
       id: `line:${month}:${category}`,
       title: category,
       planned,
       actual,
+      ...(isRecurringBudgetItem ? {
+        frequency,
+        ...(isItemDueInMonth(budgetItem, month) ? {} : { nextDueMonth: nextDueMonth(budgetItem, month) }),
+      } : {}),
       kind: 'line',
       editable: true,
       source: { kind: 'line', category },
