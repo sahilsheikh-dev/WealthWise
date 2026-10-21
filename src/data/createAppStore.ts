@@ -24,6 +24,7 @@ import {
   updatePolicy,
   type PolicyPatch,
 } from '../domain/policyActions';
+import { setCoverGoalTarget as setCoverGoalTargetData } from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -94,7 +95,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -143,6 +144,7 @@ export type AppActions = {
   addPolicy: (input: AddPolicyInput) => void;
   setPolicyStatus: (id: string, status: PolicyStatus) => void;
   deletePolicy: (id: string) => void;
+  setCoverGoalTarget: (input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number }) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -420,6 +422,17 @@ export function createAppStore(
           if (get().lastError === null && get().data !== previous) {
             useUIStore.getState().setActionToast({
               message: 'Policy deleted.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        setCoverGoalTarget(input) {
+          const previous = get().data;
+          applyDataAction((data) => setCoverGoalTargetData(data, input));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Cover goal updated.',
               actionLabel: 'Undo',
               onAction: () => set({ data: previous, lastError: null }),
             });

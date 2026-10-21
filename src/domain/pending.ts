@@ -5,6 +5,8 @@ import {
 import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
 import { investCategoryFor } from './links';
+import { isInsuranceBudgetCategory, policyPremiumCategory } from './policyCategories';
+import { policySchedule } from './policySchedule';
 import { liabilitySchedule, planSchedule } from './schedule';
 import type { AppData, ISODate, Transaction } from './types';
 
@@ -109,6 +111,28 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     }
   }
 
+  for (const policy of data.policies) {
+    if (policy.status !== 'active') continue;
+    const rows = policySchedule(policy, today).rows;
+    const firstUnpaid = rows.find((row) => row.status !== 'paid');
+    const category = policyPremiumCategory(policy.kind);
+    for (const row of rows) {
+      if (row.status === 'paid' || monthKey(row.dueDate) !== month) continue;
+      representedCategories.add(category);
+      items.push({
+        id: `due:policy:${policy.id}:${row.id}`,
+        kind: 'due',
+        title: policy.name,
+        category,
+        amount: row.amount,
+        dueDate: row.dueDate,
+        status: dueStatus(row.dueDate, month, today),
+        source: { kind: 'policy', parentId: policy.id, slotId: row.id },
+        actionable: row.id === firstUnpaid?.id,
+      });
+    }
+  }
+
   const budget = effectiveMonthBudget(data, month, today).budget;
   if (budget) {
     const earnedByCategory = new Map<string, number>();
@@ -143,7 +167,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     for (const item of budget.items) {
       const section = budget.sections.find((row) => row.id === item.sectionId);
       const manualInsurance = section?.system === 'insurance';
-      if (item.name === 'EMI' || (item.name === 'Insurance' && !manualInsurance)) continue;
+      if (item.name === 'EMI' || (isInsuranceBudgetCategory(item.name) && !manualInsurance)) continue;
       if (section?.system && !manualInsurance) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;

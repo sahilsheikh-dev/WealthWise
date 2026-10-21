@@ -216,7 +216,8 @@ const coverGoalsSchema = z.array(coverGoalSchema).length(COVER_POLICY_TYPES.leng
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
-  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+  'EMI', 'Insurance', 'Insurance premium', 'Term life premium', 'Health premium',
+  'Motor premium', 'Home premium', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
   'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
   'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
@@ -288,13 +289,12 @@ const budgetPlanSchema = z.object({
   plan.items.forEach((item, index) => {
     const section = plan.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (itemNames.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (systemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     itemIds.add(item.id);
@@ -334,13 +334,12 @@ const monthBudgetSchema = z.object({
   budget.items.forEach((item, index) => {
     const section = budget.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (ids.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (sectionSystemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     ids.add(item.id);

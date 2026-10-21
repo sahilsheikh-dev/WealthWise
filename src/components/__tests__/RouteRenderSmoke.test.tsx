@@ -2961,7 +2961,15 @@ describe('route render smoke audit', () => {
       openDropdown(renderer, 'Item category');
       const insuranceCategories = root.findByType(Dropdown).props.options
         .map((option: { title: string }) => option.title);
-      expect(insuranceCategories).toEqual(['Insurance', 'Custom']);
+      expect(insuranceCategories).toEqual([
+        'Insurance',
+        'Insurance premium',
+        'Term life premium',
+        'Health premium',
+        'Motor premium',
+        'Home premium',
+        'Custom',
+      ]);
       selectDropdownOption(renderer, 'Item category', 'Insurance');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1200');
@@ -3179,7 +3187,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('opens the source edit routes for linked plans, liabilities and policies', () => {
+  it('opens plan and liability source routes while keeping policy rows read-only', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previous = {
       monthBudgets: data.monthBudgets,
@@ -3248,8 +3256,7 @@ describe('route render smoke audit', () => {
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/investment-form', params: { id: 'overview-plan' } });
       act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Friend loan' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/liability-form', params: { id: 'overview-liability' } });
-      act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Health policy' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({ pathname: '/policy-form', params: { id: 'overview-policy' } });
+      expect(activeRenderer.root.findAllByProps({ accessibilityLabel: 'Edit Health premium' })).toHaveLength(0);
     } finally {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(data, previous);
