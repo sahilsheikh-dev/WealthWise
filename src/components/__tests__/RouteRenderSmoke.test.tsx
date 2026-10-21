@@ -904,7 +904,7 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
           .toContain(form.title);
         if (form.name.startsWith('item')) {
-          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(0);
+          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
             .not.toContain('Custom');
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
@@ -969,7 +969,14 @@ describe('route render smoke audit', () => {
     try {
       routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(0);
+      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Budget item frequency' }).props.options)
+        .toEqual([
+          { value: 'monthly', title: 'Monthly' },
+          { value: 'quarterly', title: 'Quarterly' },
+          { value: 'half-yearly', title: 'Half-yearly' },
+          { value: 'yearly', title: 'Yearly' },
+        ]);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
@@ -977,12 +984,56 @@ describe('route render smoke audit', () => {
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
-        sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 500,
+        sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 500, frequency: 'monthly',
       }, 'month', todayISO());
       const itemSaveToast = useUIStore.getState().actionToast;
       expect(itemSaveToast?.actionLabel).toBe('Undo');
       act(() => itemSaveToast?.onAction?.());
       expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
+      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      const frequencyDropdown = renderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'Frequency');
+      if (!frequencyDropdown) throw new Error('Budget item frequency control missing.');
+      const frequencyControl = renderer.root.findAllByProps({
+        accessibilityLabel: 'Budget item frequency',
+      }).find((node) => typeof node.props.onPress === 'function');
+      if (!frequencyControl) throw new Error('Budget item frequency button missing.');
+      act(() => frequencyControl.props.onPress());
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Quarterly' }).props.onPress());
+      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
+      const firstDueMonth = shiftMonth(month, 3);
+      const firstDueDropdown = renderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'First due month');
+      if (!firstDueDropdown) throw new Error('First due month control missing.');
+      expect(firstDueDropdown.props.options).toHaveLength(12);
+      expect(firstDueDropdown.props.options[0]).toMatchObject({ value: month });
+      const firstDueControl = renderer.root.findAllByProps({
+        accessibilityLabel: 'Budget item first due month',
+      }).find((node) => typeof node.props.onPress === 'function');
+      if (!firstDueControl) throw new Error('First due month button missing.');
+      act(() => firstDueControl.props.onPress());
+      act(() => renderer?.root.findByProps({ accessibilityLabel: formatMonth(firstDueMonth) }).props.onPress());
+      const valueTypeControl = renderer.root.findAll((node) =>
+        String(node.type) === 'segmentedcontrol' && node.props.label === 'Value type',
+      )[0];
+      expect(valueTypeControl?.props.options).toEqual([{ label: 'Amount', value: 'amount' }]);
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Quarterly pet care');
+        renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('700');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(actions.addBudgetItem).toHaveBeenLastCalledWith(month, {
+        sectionId: 'pets',
+        name: 'Quarterly pet care',
+        mode: 'amount',
+        value: 700,
+        frequency: 'quarterly',
+        firstDueMonth,
+      }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
 
@@ -997,6 +1048,7 @@ describe('route render smoke audit', () => {
       });
       expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', {
         name: 'Pet boarding', mode: 'amount', value: 300, dueDay: 12,
+        frequency: 'monthly', firstDueMonth: null,
       }, 'month', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -3226,6 +3278,18 @@ describe('route render smoke audit', () => {
     ];
     data.monthBudgets = [monthBudgetFromLines(month, [
       { category: 'Food', planned: 200 },
+      {
+        category: 'Quarterly maintenance',
+        planned: 0,
+        frequency: 'quarterly',
+        firstDueMonth: month,
+      },
+      {
+        category: 'Annual renewal',
+        planned: 0,
+        frequency: 'yearly',
+        firstDueMonth: shiftMonth(month, -1),
+      },
       { category: 'Transport', planned: 100 },
     ], {
       incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
@@ -3293,6 +3357,16 @@ describe('route render smoke audit', () => {
       expect(foodRow.findAll((node) => typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Food, '))[0]?.props.accessibilityLabel)
         .toBe(`Food, ${formatAmount(50, 'exact', 1)} of ${formatAmount(200, 'exact', 1)}`);
+      const quarterlyRow = renderer.root.findByProps({
+        testID: `budget-row-line:${month}:Quarterly maintenance`,
+      });
+      expect(quarterlyRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Quarterly maintenance · Quarterly');
+      const annualRow = renderer.root.findByProps({
+        testID: `budget-row-line:${month}:Annual renewal`,
+      });
+      expect(annualRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain(`Next due ${formatDate(`${shiftMonth(month, 11)}-01`).slice(2)}`);
       const transportRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Transport` });
       expect(JSON.stringify(foodRow.props.style)).toContain('"borderBottomWidth":1');
       expect(JSON.stringify(transportRow.props.style)).not.toContain('"borderBottomWidth":1');

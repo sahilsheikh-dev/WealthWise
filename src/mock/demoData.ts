@@ -11,6 +11,8 @@ import {
   defaultBudgetSectionIdFor,
   defaultBudgetSections,
   editBudgetItem,
+  isItemDueInMonth,
+  plannedForMonth,
 } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { defaultCoverGoals } from '../domain/coverGoals';
@@ -54,6 +56,7 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
   Unexpected: 700,
   Rent: 15_000,
   Utilities: 2_500,
+  Recharge: 500,
   Subscriptions: 800,
   'Personal spending': 1_200,
   Travel: 1_500,
@@ -95,7 +98,7 @@ function generatedIdFactory(): () => string {
   return () => `demo-generated-${String(++index).padStart(5, '0')}`;
 }
 
-function makeBudgetPlanItems(): BudgetItem[] {
+function makeBudgetPlanItems(currentMonth: string): BudgetItem[] {
   const percentages: Record<string, number> = {
     Living: 18,
     Food: 8,
@@ -109,8 +112,10 @@ function makeBudgetPlanItems(): BudgetItem[] {
       mode: percentages[category] === undefined ? 'amount' as const : 'percent' as const,
       value: category === 'Festival'
         ? EXPENSE_AMOUNTS.Festival
+        : category === 'Recharge'
+          ? EXPENSE_AMOUNTS.Recharge
         : percentages[category] ?? Math.max(1_500, (EXPENSE_AMOUNTS[category] ?? 1_000) * 1.5),
-      ...(category === 'Bills' ? { dueDay: 5 } : {}),
+      ...(category === 'Bills' || category === 'Recharge' ? { dueDay: 5 } : {}),
     })),
     ...INVESTMENT_FORM_CATEGORIES.map((category) => ({
       category,
@@ -125,6 +130,7 @@ function makeBudgetPlanItems(): BudgetItem[] {
       name: item.category,
       mode: item.mode,
       value: item.value,
+      frequency: 'monthly' as const,
       ...('dueDay' in item ? { dueDay: item.dueDay } : {}),
     })),
     {
@@ -133,6 +139,7 @@ function makeBudgetPlanItems(): BudgetItem[] {
       name: 'Domestic help',
       mode: 'amount',
       value: 2_000,
+      frequency: 'monthly' as const,
     },
     {
       id: 'demo-budget-item-manual-insurance',
@@ -140,6 +147,7 @@ function makeBudgetPlanItems(): BudgetItem[] {
       name: 'Insurance',
       mode: 'amount',
       value: 1_200,
+      frequency: 'monthly' as const,
       dueDay: 20,
     },
     {
@@ -148,6 +156,37 @@ function makeBudgetPlanItems(): BudgetItem[] {
       name: 'Pet care',
       mode: 'amount',
       value: 3_000,
+      frequency: 'monthly' as const,
+    },
+    {
+      id: 'demo-budget-item-streaming',
+      sectionId: 'wants',
+      name: 'Streaming subscription',
+      mode: 'amount',
+      value: 1_500,
+      frequency: 'quarterly' as const,
+      firstDueMonth: shiftMonth(currentMonth, -2),
+      dueDay: 20,
+    },
+    {
+      id: 'demo-budget-item-domain',
+      sectionId: 'survival',
+      name: 'Domain renewal',
+      mode: 'amount',
+      value: 2_400,
+      frequency: 'yearly' as const,
+      firstDueMonth: shiftMonth(currentMonth, -12),
+      dueDay: 22,
+    },
+    {
+      id: 'demo-budget-item-maintenance',
+      sectionId: 'survival',
+      name: 'Maintenance',
+      mode: 'amount',
+      value: 6_000,
+      frequency: 'half-yearly' as const,
+      firstDueMonth: shiftMonth(currentMonth, -2),
+      dueDay: 25,
     },
   ];
 }
@@ -436,7 +475,7 @@ export function buildDemoData(today: ISODate): AppData {
       ...defaultBudgetSections(),
       { id: 'demo-section-pets', name: 'Pets', type: 'spend' },
     ],
-    items: makeBudgetPlanItems(),
+    items: makeBudgetPlanItems(currentMonth),
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
   };
@@ -519,7 +558,20 @@ export function buildDemoData(today: ISODate): AppData {
         amount: base + exceptionalRepair,
         category,
         note: exceptionalRepair > 0 ? 'Major emergency home repair' : `${category} spending`,
-        date: monthDate(month, 12, today),
+        date: monthDate(month, category === 'Recharge' ? 5 : 12, today),
+      });
+    }
+    for (const item of data.budgetPlan?.items.filter((row) =>
+      ['Streaming subscription', 'Domain renewal', 'Maintenance'].includes(row.name),
+    ) ?? []) {
+      if (!isItemDueInMonth(item, month)) continue;
+      data.transactions.push({
+        id: `demo-recurring-${month}-${item.id}`,
+        type: 'expense',
+        amount: item.value,
+        category: item.name,
+        note: `${item.name} payment`,
+        date: monthDate(month, item.dueDay ?? 1, today),
       });
     }
     for (const [category, amount] of [['Domestic help', 1_500], ['Pet care', 2_000]] as const) {
@@ -673,7 +725,10 @@ export function buildDemoData(today: ISODate): AppData {
   if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
   data.budget = {
     plannedIncome: linkedCurrentBudget.incomes.reduce((total, income) => total + income.amount, 0),
-    lines: linkedCurrentBudget.items.map((item) => ({ category: item.name, planned: item.value })),
+    lines: linkedCurrentBudget.items.map((item) => ({
+      category: item.name,
+      planned: plannedForMonth({ ...item, frequency: 'monthly' }, currentMonth),
+    })),
   };
   const customMonth = shiftMonth(currentMonth, 2);
   data = editBudgetItem(data, customMonth, { kind: 'line', category: 'Food' }, {

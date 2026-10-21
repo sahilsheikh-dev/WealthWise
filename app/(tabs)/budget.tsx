@@ -21,12 +21,19 @@ import { pendingItems } from '../../src/domain/pending';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
-import { formatMonth } from '../../src/lib/format';
+import { formatDate, formatMonth } from '../../src/lib/format';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
+
+const budgetFrequencyLabels = {
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  'half-yearly': 'Half-yearly',
+  yearly: 'Yearly',
+} as const;
 
 function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
@@ -481,7 +488,19 @@ export default function BudgetScreen() {
                             ];
                             const contents = (
                               <>
-                                <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                                <View style={styles.rowTitleContainer}>
+                                  <AppText style={[typography.meta, styles.rowTitle]}>
+                                    {item.title}
+                                    {item.frequency && !item.nextDueMonth
+                                      ? ` · ${budgetFrequencyLabels[item.frequency]}`
+                                      : ''}
+                                  </AppText>
+                                  {item.nextDueMonth ? (
+                                    <AppText style={[typography.meta, { color: colors.text3 }]}>
+                                      Next due {formatDate(`${item.nextDueMonth}-01`).slice(2)}
+                                    </AppText>
+                                  ) : null}
+                                </View>
                                 <View style={styles.rowValueAndAction}>
                                   <AppText
                                     style={typography.meta}
@@ -629,7 +648,8 @@ const styles = StyleSheet.create({
   overviewRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 6 },
   overviewRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
   rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
-  rowTitle: { flex: 1, minWidth: 0 },
+  rowTitleContainer: { flex: 1, minWidth: 0 },
+  rowTitle: { minWidth: 0 },
   rowValueAndAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
   editButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
