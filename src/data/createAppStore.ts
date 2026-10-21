@@ -82,6 +82,7 @@ import {
   addLiabilityWithHistory,
   addPlanWithHistory,
   addPolicyWithHistory,
+  addPolicyPayment as addPolicyPaymentData,
   clearDue,
   clearDuesThrough,
   clearPastDues,
@@ -95,7 +96,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -140,6 +141,7 @@ export type AppActions = {
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
+  addPolicyPayment: (policyId: string, payment: Omit<PolicyPayment, 'id'>) => void;
   updatePolicy: (id: string, patch: PolicyPatch) => void;
   addPolicy: (input: AddPolicyInput) => void;
   setPolicyStatus: (id: string, status: PolicyStatus) => void;
@@ -395,8 +397,21 @@ export function createAppStore(
             newId: deps.newId,
           }).data);
         },
+        addPolicyPayment(policyId, payment) {
+          applyDataAction((data) => addPolicyPaymentData(data, { policyId, payment }, deps.newId).data);
+        },
         updatePolicy(id, patch) {
+          const previous = get().data;
           applyDataAction((data) => updatePolicy(data, { id, patch }));
+          const previousPolicy = previous.policies.find((policy) => policy.id === id);
+          if (get().lastError === null && get().data !== previous
+            && previousPolicy && patch.status !== undefined && patch.status !== previousPolicy.status) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy status updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
         },
         addPolicy(input) {
           applyDataAction((data) => addPolicyData(data, {

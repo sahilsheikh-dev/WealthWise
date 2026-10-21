@@ -11,6 +11,7 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
+import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { AppText, Button, EmptyState } from '../src/components/ui';
@@ -23,6 +24,7 @@ import { customBudgetCategories } from '../src/domain/budget';
 import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
+import { suggestPolicyForTransaction } from '../src/domain/coverGoals';
 import { holdingValue } from '../src/domain/portfolio';
 import {
   INVESTMENT_FORM_CATEGORIES,
@@ -136,6 +138,7 @@ export default function TransactionFormScreen() {
       type: transaction.type,
       category: transaction.category,
       instrumentId: transaction.source?.kind === 'holding-entry' ? transaction.source.parentId : undefined,
+      linkToPolicy: false,
     } : {
       amount: requestedAmount ?? '',
       date: requestedDate ?? today,
@@ -154,12 +157,30 @@ export default function TransactionFormScreen() {
           : categories[0] ?? '';
       })(),
       instrumentId: undefined,
+      linkToPolicy: false,
     },
   });
   const selectedType = useWatch({ control, name: 'type' });
   const selectedCategory = useWatch({ control, name: 'category' });
   const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
   const selectedDate = useWatch({ control, name: 'date' }) ?? today;
+  const selectedAmount = useWatch({ control, name: 'amount' }) ?? '';
+  const selectedNote = useWatch({ control, name: 'note' }) ?? '';
+  const suggestionTransaction: Transaction = {
+    id: transaction?.id ?? 'policy-premium-draft',
+    type: selectedType ?? 'expense',
+    amount: Number(selectedAmount) || 0,
+    category: selectedCategory ?? '',
+    date: selectedDate,
+    note: selectedNote,
+    ...(transaction?.source ? { source: transaction.source } : {}),
+  };
+  const suggestedPolicy = suggestPolicyForTransaction(data, suggestionTransaction);
+  const showPolicyLink = !transactionId && suggestedPolicy !== null;
+
+  useEffect(() => {
+    setValue('linkToPolicy', showPolicyLink, { shouldDirty: false });
+  }, [setValue, showPolicyLink, suggestedPolicy?.id]);
 
   useEffect(() => {
     if (!lastCreatedInstrumentId) return;
@@ -227,7 +248,7 @@ export default function TransactionFormScreen() {
   }
 
   const save = async (values: TransactionFormOutput) => {
-    const { instrumentId, ...transactionValues } = values;
+    const { instrumentId, linkToPolicy: shouldLinkPolicy, ...transactionValues } = values;
     const input: Omit<Transaction, 'id'> = transactionValues;
     if (transactionId && linkedEditable) {
       actions.updateLinkedTransaction(transactionId, {
@@ -242,6 +263,12 @@ export default function TransactionFormScreen() {
       actions.linkExistingTransaction(transactionId, instrumentId, values.note);
     } else if (transactionId) {
       actions.updateTransaction(transactionId, input);
+    } else if (shouldLinkPolicy && suggestedPolicy) {
+      actions.addPolicyPayment(suggestedPolicy.id, {
+        date: values.date,
+        amount: values.amount,
+        note: values.note,
+      });
     } else if (instrumentId && (values.type === 'invest' || values.type === 'income' && values.category === 'Withdrawal')) {
       actions.addInstrumentTransaction({
         kind: values.type === 'invest' ? 'deposit' : 'withdrawal',
@@ -465,6 +492,19 @@ export default function TransactionFormScreen() {
                       error={errors.category?.message}
                     />
                   )
+                )}
+              />
+            ) : null}
+            {showPolicyLink && suggestedPolicy ? (
+              <Controller
+                control={control}
+                name="linkToPolicy"
+                render={({ field }) => (
+                  <SwitchRow
+                    label={`Link to ${suggestedPolicy.name}?`}
+                    value={field.value ?? false}
+                    onValueChange={field.onChange}
+                  />
                 )}
               />
             ) : null}

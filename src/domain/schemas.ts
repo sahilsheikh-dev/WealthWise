@@ -514,6 +514,7 @@ export function makeTransactionFormSchema(
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
+    linkToPolicy: z.boolean().optional(),
   }).superRefine((value, context) => {
     const allowedCategories: readonly string[] = TRANSACTION_CATEGORIES[value.type];
     const customBudgetCategories = value.type === 'income'
