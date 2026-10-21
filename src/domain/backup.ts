@@ -205,6 +205,8 @@ const budgetSectionSchema = z.strictObject({
   type: z.enum(['spend', 'invest']),
   system: z.enum(['income', 'debt', 'insurance']).optional(),
 });
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetItemSchema = z.strictObject({
   id: idSchema,
   sectionId: idSchema,
@@ -212,9 +214,17 @@ const budgetItemSchema = z.strictObject({
   mode: z.enum(['amount', 'percent']),
   value: z.number().finite().min(0).max(1_000_000_000),
   dueDay: z.number().int().min(1).max(31).optional(),
+  frequency: budgetItemFrequencySchema,
+  firstDueMonth: budgetFirstDueMonthSchema,
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
+  }
+  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
+  }
+  if (item.mode === 'percent' && (item.frequency ?? 'monthly') !== 'monthly') {
+    context.addIssue({ code: 'custom', path: ['frequency'], message: 'Percent items can only be monthly.' });
   }
 });
 const budgetPlanSchema = z.strictObject({

@@ -14,7 +14,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -218,7 +218,7 @@ const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
   'EMI', 'Insurance', 'Insurance premium', 'Term life premium', 'Health premium',
   'Motor premium', 'Home premium', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities', 'Recharge',
   'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
@@ -237,6 +237,23 @@ const budgetIncomeSchema = z.object({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
+const budgetItemSchedulingFields = {
+  frequency: budgetItemFrequencySchema,
+  firstDueMonth: budgetFirstDueMonthSchema,
+};
+function validateBudgetItemScheduling(
+  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly'; firstDueMonth?: string },
+  context: z.RefinementCtx,
+): void {
+  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
+  }
+  if (item.mode === 'percent' && (item.frequency ?? 'monthly') !== 'monthly') {
+    context.addIssue({ code: 'custom', path: ['frequency'], message: 'Percent items can only be monthly.' });
+  }
+}
 const budgetSectionSchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(30).refine((name) => name === name.trim()),
@@ -262,10 +279,12 @@ const budgetItemSchema = z.strictObject({
   mode: z.enum(['amount', 'percent']),
   value: moneySchema.min(0).max(1_000_000_000),
   dueDay: budgetDueDaySchema,
+  ...budgetItemSchedulingFields,
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
   }
+  validateBudgetItemScheduling(item, context);
 });
 const budgetPlanSchema = z.object({
   incomes: z.array(budgetIncomeSchema).max(1000),
@@ -443,7 +462,7 @@ export const TRANSACTION_CATEGORIES = {
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
     'Insurance premium', 'Term life premium', 'Health premium', 'Motor premium', 'Home premium',
     'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities', 'Recharge',
     'Subscriptions', 'Personal spending', 'Travel',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
