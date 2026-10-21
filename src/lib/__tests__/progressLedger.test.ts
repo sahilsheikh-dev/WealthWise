@@ -280,7 +280,7 @@ describe('permanent progress ledger', () => {
       expect(statusFor(id)).toBe('Done');
     }
     for (const id of ['CR-82', 'CR-83', 'CR-84', 'CR-85']) {
-      expect(statusFor(id)).toBe('In progress');
+      expect(statusFor(id)).toBe('Done');
     }
     expect(statusFor('CR-30')).toBe('Done');
     expect(statusFor('CR-32')).toBe('Done');
@@ -308,11 +308,11 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 91% (64/70)');
+    expect(dashboard).toContain('Overall progress █████████░ 93% (65/70)');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (20/20)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
-    expect(dashboard).toContain('Phase 23         ███████░░░ 67% (2/3)');
+    expect(dashboard).toContain('Phase 23         ██████████ 100% (3/3)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
     expect(ledger).toContain('DEC-P20E-CR27');
     expect(ledger).toContain('DEC-P20E-CR31');

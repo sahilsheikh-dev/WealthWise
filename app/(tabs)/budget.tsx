@@ -517,7 +517,18 @@ export default function BudgetScreen() {
                       <View
                         testID={`budget-section-header-${section.id}`}
                         style={[styles.sectionHeader, stackMetrics && styles.sectionHeaderStacked]}>
-                        <AppText weight="semibold" style={[typography.name, styles.sectionTitle]}>{label}</AppText>
+                        <View style={styles.sectionHeading}>
+                          <AppText weight="semibold" style={[typography.name, styles.sectionTitle]}>{label}</AppText>
+                          {canAddInsurance ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel="Manage policies"
+                              onPress={() => router.push('/insurance')}
+                              style={styles.managePolicies}>
+                              <AppText style={[typography.meta, { color: colors.primary }]}>Manage policies</AppText>
+                            </Pressable>
+                          ) : null}
+                        </View>
                         {sectionActions ? (
                           <View
                             testID={`budget-section-actions-${section.id}`}
@@ -579,37 +590,54 @@ export default function BudgetScreen() {
                       </AppText>
                       {section.items.length > 0 ? (
                         <View style={styles.sectionItems}>
-                          {section.items.map((item, index) => (
-                            <View
-                              key={item.id}
-                              testID={`budget-row-${item.id}`}
-                              style={[
-                                styles.overviewRow,
-                                stackMetrics && styles.overviewRowStacked,
-                                index < section.items.length - 1
-                                  ? [styles.rowDivider, { borderBottomColor: colors.border }]
-                                  : undefined,
-                              ]}>
-                              <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
-                              <View style={styles.rowValueAndAction}>
-                                <AppText
-                                  style={typography.meta}
-                                  accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
-                                  <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
-                                </AppText>
-                                {!isPast && item.source.kind !== 'policy' && (item.kind === 'linked' || item.editable) ? (
-                                  <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Edit ${item.title}`}
-                                    accessibilityHint={`Edit ${item.title}`}
-                                    onPress={() => openBudgetItem(item, section.id)}
-                                    style={styles.editButton}>
-                                    <Feather name="edit-2" size={16} color={colors.primary} />
-                                  </Pressable>
-                                ) : null}
+                          {section.items.map((item, index) => {
+                            const rowStyle = [
+                              styles.overviewRow,
+                              stackMetrics && styles.overviewRowStacked,
+                              index < section.items.length - 1
+                                ? [styles.rowDivider, { borderBottomColor: colors.border }]
+                                : undefined,
+                            ];
+                            const contents = (
+                              <>
+                                <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                                <View style={styles.rowValueAndAction}>
+                                  <AppText
+                                    style={typography.meta}
+                                    accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
+                                    <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
+                                  </AppText>
+                                  {!isPast && item.source.kind !== 'policy' && (item.kind === 'linked' || item.editable) ? (
+                                    <Pressable
+                                      accessibilityRole="button"
+                                      accessibilityLabel={`Edit ${item.title}`}
+                                      accessibilityHint={`Edit ${item.title}`}
+                                      onPress={() => openBudgetItem(item, section.id)}
+                                      style={styles.editButton}>
+                                      <Feather name="edit-2" size={16} color={colors.primary} />
+                                    </Pressable>
+                                  ) : null}
+                                </View>
+                              </>
+                            );
+                            const policyId = item.source.kind === 'policy' ? item.source.parentId : undefined;
+                            return policyId ? (
+                              <Pressable
+                                key={item.id}
+                                testID={`budget-row-${item.id}`}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Edit ${item.title}`}
+                                accessibilityHint="Opens the linked policy for editing"
+                                onPress={() => router.push({ pathname: '/policy-form', params: { id: policyId } })}
+                                style={rowStyle}>
+                                {contents}
+                              </Pressable>
+                            ) : (
+                              <View key={item.id} testID={`budget-row-${item.id}`} style={rowStyle}>
+                                {contents}
                               </View>
-                            </View>
-                          ))}
+                            );
+                          })}
                         </View>
                       ) : section.id === 'other-not-in-budget' ? null : (
                         <AppText style={[typography.meta, { color: colors.text3 }]}>No items yet.</AppText>
@@ -735,6 +763,8 @@ const styles = StyleSheet.create({
   sectionHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   sectionHeaderStacked: { flexDirection: 'column', alignItems: 'stretch' },
   sectionTitle: { flex: 1, minWidth: 0 },
+  sectionHeading: { flex: 1, minWidth: 0 },
+  managePolicies: { alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' },
   sectionIconActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sectionIconActionsStacked: { alignSelf: 'flex-end' },
   sectionActionButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

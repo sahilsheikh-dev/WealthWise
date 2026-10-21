@@ -1,4 +1,4 @@
-import { addDays } from './dates';
+import { addDays, isValidISO } from './dates';
 import { NotFoundError } from './actions';
 import { addLiability, addLiabilityPayment, deleteLiabilityPayment } from './liabilityActions';
 import { addInvestmentEntry, deleteInvestmentEntry } from './investmentActions';
@@ -148,7 +148,7 @@ function createPolicyPayment(
     type: 'expense',
     amount: payment.amount,
     category: policyPremiumCategory(policy.kind),
-    note: `${policy.name} premium`,
+    note: payment.note || `${policy.name} premium`,
     date: payment.date,
     source: { kind: 'policy-payment', parentId: policy.id, entryId },
   };
@@ -162,6 +162,22 @@ function createPolicyPayment(
       transactions: [...data.transactions, transaction],
     },
   };
+}
+
+export function addPolicyPayment(
+  data: AppData,
+  input: { policyId: string; payment: Omit<PolicyPayment, 'id'> },
+  newId: () => string,
+): { data: AppData; entryId: string } {
+  const policy = data.policies.find((item) => item.id === input.policyId);
+  if (!policy) throw new NotFoundError('Policy', input.policyId);
+  if (!Number.isFinite(input.payment.amount) || input.payment.amount <= 0) {
+    throw new RangeError('Policy payment amount must be greater than zero.');
+  }
+  if (!isValidISO(input.payment.date)) {
+    throw new RangeError('Policy payment date must be a valid ISO date.');
+  }
+  return createPolicyPayment(data, policy, input.payment, newId);
 }
 
 export function clearDue(
