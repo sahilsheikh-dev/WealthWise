@@ -370,7 +370,7 @@ export default function HomeScreen() {
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
                   <Button
-                    label={item.source.kind === 'policy' ? 'Marked as paid' : 'Paid'}
+                    label={'Paid'}
                     accessibilityHint="Confirms whether this scheduled item was paid."
                     style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
