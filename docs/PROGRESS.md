@@ -990,6 +990,23 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     No schema or protected input/sorting files change. The sheet's
     `CUSTOM_ITEM_CATEGORY` sentinel is removed because item names are direct
     text input and the requested item form has no category or Custom control.
+  - DEC-P20V (CR-88/CR-89): Budget items support monthly, quarterly,
+    half-yearly, and yearly recurrence. Monthly remains the default and requires
+    no first-due month; non-monthly items require a valid first-due month and
+    percent mode is prohibited. One pure `plannedForMonth(item, month)` helper
+    governs monthly planned values and item-derived dues across Budget views,
+    totals, pace, projected cash flow, dropdowns, and Insurance reconciliation.
+    Existing month snapshots remain frozen. Schema v12 migrates to v13 by
+    explicitly marking plan and snapshot items monthly; v14 imports are refused.
+    Premigration v12 bytes are archived once and cleared by erase-all. Income
+    behavior and existing category validity stay unchanged; Recharge is added
+    as an expense in Utilities. P20-V supersedes monthly-only assumptions for
+    item planning and any assertions that expected each plan item to contribute
+    in every month; test assertions now distinguish due and non-due months.
+    Assumed: when adding a recurring item, the selected Budget month is the
+    default first-due month; the first-due month chooser offers that month and
+    the next eleven calendar months because the frozen field set has no
+    MonthField.
   DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
   `0774e51`, the worktree was clean;
   no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
