@@ -2381,6 +2381,24 @@ P23-B final gates, run sequentially at commit `c443191`:
 | `npx expo export --platform android` | Android bundle exported. | 0 |
 | `npx expo export --platform ios` | iOS bundle exported. | 0 |
 
+Final verification was rerun sequentially after `17a3efd` and the progress-ledger
+test update. The first coverage attempt exposed only a stale progress assertion:
+`Overall progress █████████░ 91% (63/69)` was replaced with
+`Overall progress █████████░ 93% (64/69)`, and the Phase 23 `2/2` assertion was
+added, matching the current dashboard. The rerun passed 78 suites / 914 tests;
+typecheck, lint, Doctor, Android export and iOS export all exited 0. Coverage
+remained at the values above. The test assertion change does not alter product
+behavior.
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 914 tests; 95.93% statements, 92.39% branches, 97.59% functions, 97.70% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed without warnings. | 0 |
+| `npx expo-doctor` | 21/21 checks passed; no issues detected. | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
 Per-directory coverage is aggregated independently from Istanbul's per-file
 summary using the `coverage/coverage-final.json` counters:
 

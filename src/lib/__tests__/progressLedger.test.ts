@@ -302,10 +302,11 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 91% (63/69)');
+    expect(dashboard).toContain('Overall progress █████████░ 93% (64/69)');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (20/20)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
+    expect(dashboard).toContain('Phase 23         ██████████ 100% (2/2)');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
     expect(ledger).toContain('DEC-P20E-CR27');
     expect(ledger).toContain('DEC-P20E-CR31');
