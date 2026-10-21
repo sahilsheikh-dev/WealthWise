@@ -545,6 +545,7 @@ export class BudgetMutationError extends Error {
 export type BudgetSectionInput = Pick<BudgetSection, 'name' | 'type'> & { id: string };
 export type BudgetItemInput = BudgetItem;
 export type BudgetIncomeInput = Omit<BudgetIncomeItem, 'id'> & { id: string };
+export type BudgetIncomeUpdateInput = Omit<BudgetIncomeItem, 'id'>;
 export type BudgetItemPatch = {
   name?: string;
   mode?: BudgetItem['mode'];
@@ -689,6 +690,71 @@ export function addIncomeItem(
     budgetPlan: updatedPlan,
     monthBudgets: monthRows(data).map((row) => row.month === month
       ? { ...row, incomes: [...row.incomes, income] }
+      : row),
+  };
+}
+
+export function editBudgetIncome(
+  data: AppData,
+  monthInput: string,
+  input: { incomeId: string; values: BudgetIncomeUpdateInput },
+  scope: BudgetItemScope,
+  today: ISODate,
+): AppData {
+  const month = monthOf(monthInput);
+  const name = input.values.name.trim();
+  if (!name || name.length > 40) {
+    throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
+  }
+  if (!isEarnedIncomeCategory(input.values.category)
+    || !Number.isFinite(input.values.amount) || input.values.amount <= 0
+    || input.values.amount > 1_000_000_000
+    || (input.values.day !== undefined
+      && (!Number.isInteger(input.values.day) || input.values.day < 1 || input.values.day > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
+  }
+  const normalizedAmount = normalizeMoney(input.values.amount);
+  if (normalizedAmount <= 0) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
+  }
+
+  const { budget } = effectiveMonthBudget(data, month, today);
+  if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
+  const currentIncome = budget.incomes.find((income) => income.id === input.incomeId);
+  if (!currentIncome) throw new BudgetMutationError('item-not-found', 'The budget income no longer exists.');
+  const updatedIncome: BudgetIncomeItem = {
+    ...input.values,
+    id: input.incomeId,
+    name,
+    amount: normalizedAmount,
+  };
+
+  if (scope === 'month') {
+    return replaceMonth(data, {
+      ...budget,
+      source: 'custom',
+      incomes: budget.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+    });
+  }
+
+  const stored = monthRows(data).find((row) => row.month === month);
+  const plan = data.budgetPlan ?? snapshotAsPlan(budget);
+  const planHasIncome = plan.incomes.some((income) => income.id === input.incomeId);
+  const updatedPlan: BudgetPlan = {
+    ...plan,
+    incomes: planHasIncome
+      ? plan.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income)
+      : [...plan.incomes, updatedIncome],
+  };
+  if (!stored) return { ...data, budgetPlan: updatedPlan };
+  return {
+    ...data,
+    budgetPlan: updatedPlan,
+    monthBudgets: monthRows(data).map((row) => row.month === month
+      ? {
+        ...row,
+        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+      }
       : row),
   };
 }

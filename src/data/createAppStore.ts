@@ -69,6 +69,7 @@ import {
   editItem as editBudgetItemStructureData,
   deleteItem as deleteBudgetItemData,
   editBudgetItem as editBudgetItemData,
+  editBudgetIncome as editBudgetIncomeData,
   ensureCurrentMonthBudget,
   removeBudgetItem as removeBudgetItemData,
   restoreMonthBudget,
@@ -100,6 +101,7 @@ import type {
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
+  BudgetIncomeUpdateInput,
   BudgetItemPatch,
   BudgetItemScope,
   BudgetItemSource,
@@ -176,6 +178,7 @@ export type AppActions = {
   deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  editBudgetIncome: (month: string, incomeId: string, values: BudgetIncomeUpdateInput, scope: BudgetItemScope, today: ISODate) => void;
   editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
   deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
@@ -541,6 +544,9 @@ export function createAppStore(
         },
         addBudgetIncome(month, input, scope, today) {
           applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        editBudgetIncome(month, incomeId, values, scope, today) {
+          applyDataAction((data) => editBudgetIncomeData(data, month, { incomeId, values }, scope, today));
         },
         editBudgetStructureItem(month, itemId, patch, scope, today) {
           applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));

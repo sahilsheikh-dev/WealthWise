@@ -6,13 +6,11 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { PaceLine, StackedBar } from '../../src/components/BudgetCharts';
-import { BudgetManagementSheet, type BudgetManagementMode, type BudgetManagementValues } from '../../src/components/BudgetManagementSheet';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import {
-  BUDGET_GROUPS,
   budgetOverview,
   createDefaultBudgetPlan,
   defaultBudgetSectionIdFor,
@@ -20,7 +18,6 @@ import {
 } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
-import { INSURANCE_BUDGET_CATEGORIES } from '../../src/domain/policyCategories';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
@@ -33,19 +30,6 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
-}
-
-function budgetItemCategoriesForSection(
-  sectionId: string,
-  items: readonly { id: string; name: string }[],
-  currentItemId?: string,
-): string[] {
-  const categories = sectionId === 'insurance'
-    ? [...INSURANCE_BUDGET_CATEGORIES]
-    : BUDGET_GROUPS.find((group) => group.id === sectionId)?.categories ?? [];
-  return categories.filter((category) =>
-    !items.some((item) => item.name === category && item.id !== currentItemId),
-  );
 }
 
 export default function BudgetScreen() {
@@ -67,7 +51,6 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
-  const [sheetMode, setSheetMode] = useState<BudgetManagementMode | null>(null);
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -157,64 +140,58 @@ export default function BudgetScreen() {
     void apply();
   }, [routeApply, apply]);
 
+  const scopeFor = (adding: boolean): 'month' | 'following' => (
+    !adding && overview.mode === 'current'
+      && data.monthBudgets?.some((budget) => budget.month === month)
+      ? 'month'
+      : 'following'
+  );
+
   const openBudgetItem = (
     item: (typeof overview.sections)[number]['items'][number],
     sectionId: string,
   ) => {
     switch (item.source.kind) {
-      case 'line':
-        {
-          const category = item.source.category;
-          const budget = effectiveMonthBudget(data, month, today).budget;
-          const budgetItem = budget?.items
-            .find((candidate) => candidate.name === category);
-          if (!budgetItem) {
-            const targetSectionId = budget?.sections.some((section) => section.id === sectionId)
-              ? sectionId
-              : defaultBudgetSectionIdFor(category);
-            setSheetMode({ kind: 'add-item', sectionId: targetSectionId, category });
-            return;
-          }
-          setSheetMode({
-            kind: 'edit-item',
-            sectionId: budgetItem.sectionId,
-            itemId: budgetItem.id,
-            name: budgetItem.name,
-            mode: budgetItem.mode,
-            value: budgetItem.value,
-            ...(budgetItem.dueDay === undefined ? {} : { day: budgetItem.dueDay }),
+      case 'line': {
+        const category = item.source.category;
+        const budget = effectiveMonthBudget(data, month, today).budget;
+        const budgetItem = budget?.items.find((candidate) => candidate.name === category);
+        if (!budgetItem) {
+          const targetSectionId = budget?.sections.some((section) => section.id === sectionId)
+            ? sectionId
+            : defaultBudgetSectionIdFor(category);
+          router.push({
+            pathname: '/budget-item-form',
+            params: { month, sectionId: targetSectionId, name: item.title, scope: scopeFor(true) },
           });
           return;
         }
+        router.push({
+          pathname: '/budget-item-form',
+          params: { month, sectionId: budgetItem.sectionId, itemId: budgetItem.id, scope: scopeFor(false) },
+        });
+        return;
+      }
       case 'income':
         if (!item.editable && !item.source.incomeId.startsWith('actual:')) return;
         if (item.source.incomeId.startsWith('actual:')) {
-          setSheetMode({
-            kind: 'add-income',
-            name: item.title,
-            category: item.source.category,
-            amount: item.actual,
+          router.push({
+            pathname: '/budget-income-form',
+            params: {
+              month,
+              name: item.title,
+              category: item.source.category,
+              amount: String(item.actual),
+              scope: scopeFor(true),
+            },
           });
           return;
         }
-        {
-          const incomeId = item.source.incomeId;
-          const income = effectiveMonthBudget(data, month, today).budget?.incomes
-            .find((candidate) => candidate.id === incomeId);
-          if (!income) {
-            Alert.alert('Could not edit income', 'This income item is no longer available.');
-            return;
-          }
-          setSheetMode({
-            kind: 'edit-income',
-            itemId: income.id,
-            name: income.name,
-            category: income.category,
-            amount: income.amount,
-            ...(income.day === undefined ? {} : { day: income.day }),
-          });
-          return;
-        }
+        router.push({
+          pathname: '/budget-income-form',
+          params: { month, incomeId: item.source.incomeId, scope: scopeFor(false) },
+        });
+        return;
       case 'plan':
         router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
         return;
@@ -224,118 +201,6 @@ export default function BudgetScreen() {
       case 'policy':
         return;
     }
-  };
-
-  const saveManagement = (values: BudgetManagementValues) => {
-    if (!sheetMode) return false;
-    const previousPlan = data.budgetPlan;
-    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    switch (sheetMode.kind) {
-      case 'add-section':
-        actions.addSection(month, { name: values.name, type: values.sectionType }, values.scope, today);
-        break;
-      case 'rename-section':
-        actions.renameSection(month, sheetMode.sectionId, values.name, values.scope, today);
-        break;
-      case 'add-item':
-        actions.addBudgetItem(month, {
-          sectionId: sheetMode.sectionId,
-          name: values.name,
-          mode: values.itemMode,
-          value: values.value,
-          ...(values.day === undefined ? {} : { dueDay: values.day }),
-        }, values.scope, today);
-        break;
-      case 'edit-item':
-        actions.editBudgetStructureItem(month, sheetMode.itemId, {
-          name: values.name,
-          mode: values.itemMode,
-          value: values.value,
-          ...(values.day === undefined ? {} : { dueDay: values.day }),
-        }, values.scope, today);
-        break;
-      case 'add-income':
-        actions.addBudgetIncome(month, {
-          name: values.name,
-          category: values.category,
-          amount: values.amount,
-          ...(values.day === undefined ? {} : { day: values.day }),
-        }, values.scope, today);
-        break;
-      case 'edit-income':
-        actions.editBudgetItem(month, {
-          kind: 'income',
-          incomeId: sheetMode.itemId,
-          category: sheetMode.category,
-        }, {
-          amount: values.amount,
-          ...(values.day === undefined ? {} : { dueDay: values.day }),
-        }, values.scope, today);
-        break;
-    }
-    const error = useAppStore.getState().lastError;
-    if (error) {
-      Alert.alert('Could not save budget changes', error);
-      return false;
-    }
-    setActionToast({
-      message: sheetMode.kind === 'add-section' || sheetMode.kind === 'add-item' || sheetMode.kind === 'add-income'
-        ? `${values.name} added`
-        : sheetMode.kind === 'rename-section' || sheetMode.kind === 'edit-item'
-          ? `${values.name} updated`
-          : `${sheetMode.name} updated`,
-      actionLabel: 'Undo',
-      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
-    });
-    return true;
-  };
-
-  const removeBudgetItem = (mode: Extract<BudgetManagementMode, { kind: 'edit-item' | 'edit-income' }>, scope: 'month' | 'following') => {
-    const previousPlan = data.budgetPlan;
-    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    if (mode.kind === 'edit-item') {
-      actions.deleteBudgetStructureItem(month, mode.itemId, scope, today);
-    } else {
-      actions.removeBudgetItem(month, {
-        kind: 'income',
-        incomeId: mode.itemId,
-        category: mode.category,
-      }, scope, today);
-    }
-    const error = useAppStore.getState().lastError;
-    if (error) {
-      Alert.alert('Could not remove budget item', error);
-      return false;
-    }
-    setActionToast({
-      message: `${mode.name} deleted`,
-      actionLabel: 'Undo',
-      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
-    });
-    return true;
-  };
-
-  const confirmRemoveItem = (mode: Extract<BudgetManagementMode, { kind: 'edit-item' | 'edit-income' }>) => {
-    Alert.alert(
-      'Delete item?',
-      `Delete ${mode.name} from the selected month range? Transactions will remain unchanged.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'This month only',
-          onPress: () => {
-            if (removeBudgetItem(mode, 'month')) setSheetMode(null);
-          },
-        },
-        {
-          text: 'This and following months',
-          style: 'destructive',
-          onPress: () => {
-            if (removeBudgetItem(mode, 'following')) setSheetMode(null);
-          },
-        },
-      ],
-    );
   };
 
   const confirmDeleteSection = (sectionId: string, sectionName: string) => {
@@ -370,15 +235,6 @@ export default function BudgetScreen() {
   };
 
   const activeBudget = effectiveMonthBudget(data, month, today).budget;
-  const laterCustomMonths = (data.monthBudgets ?? [])
-    .filter((budget) => budget.month > month && budget.source === 'custom').length;
-  const itemCategoryOptions = sheetMode?.kind === 'add-item' || sheetMode?.kind === 'edit-item'
-    ? budgetItemCategoriesForSection(
-      sheetMode.sectionId,
-      activeBudget?.items ?? [],
-      sheetMode.kind === 'edit-item' ? sheetMode.itemId : undefined,
-    )
-    : [];
 
   return (
     <Screen scroll={false}>
@@ -388,7 +244,14 @@ export default function BudgetScreen() {
             title="Budget"
             rightActions={overview.mode === 'past'
               ? []
-              : [{ icon: 'plus', label: 'Add category', onPress: () => setSheetMode({ kind: 'add-section' }) }]}
+              : [{
+                icon: 'plus',
+                label: 'Add category',
+                onPress: () => router.push({
+                  pathname: '/budget-section-form',
+                  params: { month, type: 'spend', scope: scopeFor(true) },
+                }),
+              }]}
             showDefaultMenu={false}
           />
           <View
@@ -539,7 +402,16 @@ export default function BudgetScreen() {
                                   accessibilityRole="button"
                                   accessibilityLabel="Rename section"
                                   accessibilityHint={`Rename ${label}`}
-                                  onPress={() => setSheetMode({ kind: 'rename-section', sectionId: section.id, name: section.name })}
+                                  onPress={() => router.push({
+                                    pathname: '/budget-section-form',
+                                    params: {
+                                      month,
+                                      sectionId: section.id,
+                                      name: section.name,
+                                      type: definition?.type ?? 'spend',
+                                      scope: scopeFor(false),
+                                    },
+                                  })}
                                   style={styles.sectionActionButton}>
                                   <Feather name="edit-2" size={18} color={colors.primary} />
                                 </Pressable>
@@ -555,7 +427,10 @@ export default function BudgetScreen() {
                                   accessibilityRole="button"
                                   accessibilityLabel="Add item"
                                   accessibilityHint={`Add an item to ${label}`}
-                                  onPress={() => setSheetMode({ kind: 'add-item', sectionId: section.id })}
+                                  onPress={() => router.push({
+                                    pathname: '/budget-item-form',
+                                    params: { month, sectionId: section.id, scope: scopeFor(true) },
+                                  })}
                                   style={styles.sectionActionButton}>
                                   <Feather name="plus" size={20} color={colors.primary} />
                                 </Pressable>
@@ -565,7 +440,10 @@ export default function BudgetScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel="Add income"
                                 accessibilityHint="Add an income item"
-                                onPress={() => setSheetMode({ kind: 'add-income' })}
+                                onPress={() => router.push({
+                                  pathname: '/budget-income-form',
+                                  params: { month, scope: scopeFor(true) },
+                                })}
                                 style={styles.sectionActionButton}>
                                 <Feather name="plus" size={20} color={colors.primary} />
                               </Pressable>
@@ -574,7 +452,10 @@ export default function BudgetScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel="Add item"
                                 accessibilityHint="Add a manual Insurance budget item"
-                                onPress={() => setSheetMode({ kind: 'add-item', sectionId: section.id })}
+                                onPress={() => router.push({
+                                  pathname: '/budget-item-form',
+                                  params: { month, sectionId: section.id, scope: scopeFor(true) },
+                                })}
                                 style={styles.sectionActionButton}>
                                 <Feather name="plus" size={20} color={colors.primary} />
                               </Pressable>
@@ -650,30 +531,6 @@ export default function BudgetScreen() {
             </>
           )}
         </ScrollView>
-        {sheetMode && overview.mode !== 'past' ? (
-          <BudgetManagementSheet
-            key={`${sheetMode.kind}-${'itemId' in sheetMode ? sheetMode.itemId : 'sectionId' in sheetMode ? sheetMode.sectionId : 'new'}`}
-            visible
-            mode={sheetMode}
-            itemCategoryOptions={itemCategoryOptions}
-            fontScale={fontScale}
-            defaultScope={
-              sheetMode.kind.startsWith('add-')
-                ? 'following'
-                : overview.mode === 'current' && data.monthBudgets?.some((budget) => budget.month === month)
-                  ? 'month'
-                  : 'following'
-            }
-            laterCustomMonths={laterCustomMonths}
-            onClose={() => setSheetMode(null)}
-            onSave={saveManagement}
-            onRemove={
-              sheetMode.kind === 'edit-item' || sheetMode.kind === 'edit-income'
-                ? () => confirmRemoveItem(sheetMode)
-                : undefined
-            }
-          />
-        ) : null}
       </View>
     </Screen>
   );
