@@ -7,6 +7,7 @@ import type {
   Transaction,
 } from '../domain/types';
 import { defaultBudgetSections, defaultBudgetSectionIdFor } from '../domain/budget';
+import { defaultCoverGoals } from '../domain/coverGoals';
 
 const mockBudgetSections = defaultBudgetSections();
 const mockBudgetPlanItems = [
@@ -190,6 +191,7 @@ export const mockAppData: AppData = {
   holdings,
   liabilities,
   policies,
+  coverGoals: defaultCoverGoals(),
   budget: {
     plannedIncome: 50_000,
     lines: [

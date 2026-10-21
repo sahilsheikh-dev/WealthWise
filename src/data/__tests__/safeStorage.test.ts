@@ -3,6 +3,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV10Fixture } from '../testFixtures/v10';
+import { makeV11Fixture } from '../testFixtures/v11';
 import { createSafeStorage } from '../safeStorage';
 import { utf8ByteLength } from '../../lib/storageGuard';
 
@@ -28,7 +29,7 @@ class MemoryStorage implements StateStorage {
 
 const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
 
-function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10): unknown {
+function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11): unknown {
   if (version === 1) return makeV1Fixture();
   if (version === 4) return makeV4Fixture();
   if (version === 5) return makeV5Fixture();
@@ -86,6 +87,7 @@ function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10): unknow
     };
   }
   if (version === 10) return makeV10Fixture();
+  if (version === 11) return makeV11Fixture();
   const v2 = makeV2Fixture();
   if (version === 2) return v2;
   return {
@@ -110,7 +112,7 @@ describe('createSafeStorage', () => {
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
     ['invalid-schema', blob({ transactions: [] }, 0), 'corrupt'],
-    ['newer-version', blob(mockAppData, 12), 'newer-version'],
+    ['newer-version', blob(mockAppData, 13), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
@@ -191,11 +193,11 @@ describe('createSafeStorage', () => {
     expect(onWriteSuccess).not.toHaveBeenCalled();
   });
 
-  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
     const name = 'wealthwise.app.v1';
     const base = new MemoryStorage();
     const raw = blob(makeLegacyData(version), version);
-    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 11 });
+    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 12 });
     const premigrationKey = `${name}.premigration.v${version}`;
     base.values.set(name, raw);
     const safe = createSafeStorage(

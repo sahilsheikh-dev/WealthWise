@@ -1,6 +1,7 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
 import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
+import { defaultCoverGoals } from '../domain/coverGoals';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -621,6 +622,11 @@ export function migrateV10ToV11(data: unknown, options: Pick<V6ToV7Options, 'tod
   return { ...data, policies };
 }
 
+export function migrateV11ToV12(data: unknown): unknown {
+  if (!isRecord(data)) throw new PersistedVersionError(11, 'unknown-version');
+  return { ...data, coverGoals: defaultCoverGoals() };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -655,6 +661,7 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(10, 'unknown-version');
       result = migrateV10ToV11(result, options);
     }
+    if (fromVersion <= 11) result = migrateV11ToV12(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {
