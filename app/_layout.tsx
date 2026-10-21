@@ -70,6 +70,9 @@ function AppContent() {
                 <Stack.Screen name="security" />
                 <Stack.Screen name="erase-data" />
                 <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-section-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-item-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-income-form" options={{ presentation: 'modal' }} />
               </Stack>
               <ActionToastHost />
               </>
