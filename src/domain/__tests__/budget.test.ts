@@ -24,6 +24,7 @@ import {
   changeSectionType,
   deleteItem,
   deleteSection,
+  editBudgetIncome,
   editItem as editBudgetStructureItem,
   editBudgetItem,
   budgetGroupFor,
@@ -1321,6 +1322,86 @@ describe('budget plans and monthly views', () => {
       }
       expect(after.monthBudgets?.find((budget) => budget.month === '2026-06')).toEqual(laterCustom);
       expect(after.transactions).toEqual(transactions);
+    });
+
+    it.each<BudgetItemScope>(['month', 'following'])('edits income details and category for %s scope', (scope) => {
+      const before = fixture('2026-03', false);
+      const original = before.monthBudgets?.[0]?.incomes[0];
+      if (!original) throw new Error('Income edit fixture missing.');
+      const updated = editBudgetIncome(before, '2026-03', {
+        incomeId: original.id,
+        values: { name: 'Contract work', category: 'Freelance', amount: 2_500.25, day: 17 },
+      }, scope, today);
+      const expected = {
+        id: original.id,
+        name: 'Contract work',
+        category: 'Freelance',
+        amount: 2_500.25,
+        day: 17,
+      };
+      expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
+      if (scope === 'following') {
+        expect(updated.budgetPlan?.incomes).toContainEqual(expected);
+      } else {
+        expect(updated.budgetPlan).toEqual(before.budgetPlan);
+      }
+      expect(updated.transactions).toEqual(before.transactions);
+    });
+
+    it('validates income edits and handles a virtual or snapshot-only income', () => {
+      const before = fixture('2026-03', false);
+      const original = before.monthBudgets?.[0]?.incomes[0];
+      if (!original) throw new Error('Income edit fixture missing.');
+      const values = { name: 'Contract work', category: 'Freelance' as const, amount: 2_500 };
+      const expectError = (callback: () => unknown, code: string) => {
+        try {
+          callback();
+          throw new Error('Expected an income edit to fail.');
+        } catch (error) {
+          expect(error).toBeInstanceOf(BudgetMutationError);
+          expect(error).toMatchObject({ code });
+        }
+      };
+      expectError(() => editBudgetIncome(before, '2026-03', {
+        incomeId: original.id, values: { ...values, name: ' ' },
+      }, 'month', today), 'invalid-name');
+      expectError(() => editBudgetIncome(before, '2026-03', {
+        incomeId: original.id, values: { ...values, name: 'x'.repeat(41) },
+      }, 'month', today), 'invalid-name');
+      expectError(() => editBudgetIncome(before, '2026-03', {
+        incomeId: original.id, values: { ...values, category: 'Invalid' as never },
+      }, 'month', today), 'invalid-item');
+      for (const amount of [Number.POSITIVE_INFINITY, 0, 0.001, 1_000_000_001]) {
+        expectError(() => editBudgetIncome(before, '2026-03', {
+          incomeId: original.id, values: { ...values, amount },
+        }, 'month', today), 'invalid-item');
+      }
+      expectError(() => editBudgetIncome(before, '2026-03', {
+        incomeId: original.id, values: { ...values, day: 1.5 },
+      }, 'month', today), 'invalid-item');
+      expectError(() => editBudgetIncome(emptyAppData(today), '2026-03', {
+        incomeId: original.id, values,
+      }, 'following', today), 'invalid-item');
+      expectError(() => editBudgetIncome(before, '2026-03', {
+        incomeId: 'missing-income', values,
+      }, 'month', today), 'item-not-found');
+
+      const virtualEdit = editBudgetIncome(before, '2026-04', {
+        incomeId: original.id, values,
+      }, 'following', today);
+      expect(virtualEdit.monthBudgets).toEqual(before.monthBudgets);
+      expect(virtualEdit.budgetPlan?.incomes).toContainEqual(expect.objectContaining(values));
+
+      const snapshotOnly = fixture('2026-03', false);
+      if (!snapshotOnly.budgetPlan) throw new Error('Budget plan fixture missing.');
+      snapshotOnly.budgetPlan.incomes = [];
+      const snapshotEdit = editBudgetIncome(snapshotOnly, '2026-03', {
+        incomeId: original.id, values,
+      }, 'following', today);
+      expect(snapshotEdit.budgetPlan?.incomes).toContainEqual(expect.objectContaining({
+        ...values, id: original.id,
+      }));
+      expect(snapshotEdit.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining(values));
     });
 
     it('returns typed validation failures for names, reserved categories, limits, and invalid values', () => {

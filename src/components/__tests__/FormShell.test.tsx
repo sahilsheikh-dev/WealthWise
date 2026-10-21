@@ -121,7 +121,9 @@ describe('FormShell', () => {
       'app/profile-form.tsx',
       'app/onboarding.tsx',
       'app/erase-data.tsx',
-      'src/components/BudgetManagementSheet.tsx',
+      'app/budget-section-form.tsx',
+      'app/budget-item-form.tsx',
+      'app/budget-income-form.tsx',
     ];
     for (const file of forms) {
       const source = readFileSync(join(process.cwd(), file), 'utf8');
