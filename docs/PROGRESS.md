@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (67/72)
+Overall progress █████████░ 92% (67/73)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -69,7 +69,7 @@ Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (22/22)
-Phase 21         ██████████ 100% (5/5)
+Phase 21         ████████░░ 83% (5/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (3/3)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
@@ -144,6 +144,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
+| P21-E | — | In progress | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema stays v8; implementation and gates remain. | 2026-10-21 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
@@ -712,6 +713,20 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   allocations remain in tests and must resolve without repair.
   Assumed: this request supersedes only the default and repair-fallback mix
   from P21-C/P21-C1; it does not rewrite any valid persisted allocation.
+- DEC-P21E-CR90: Allocation item creation is direct and custom-only from the
+  Edit allocation plus action; the predefined add choices are removed. Add
+  and edit use a route form with title, access speed, and market-linked fields.
+  New custom items begin at 0%, so the separate allocation editor continues to
+  enforce a 100% total when saved. Deletion retains the existing confirmation
+  and keeps assets linked to the Emergency fund goal while removing the bucket
+  grouping.
+  Superseded assertions: the picker-choice test for Mutual funds / Bonds,
+  Stock market, LIC / Insurance, Other, Custom and Cancel is replaced by
+  direct-route/add-form assertions; the custom-option modal creation and
+  metadata-edit tests are replaced by route-form validation/save tests.
+  Assumed: fixed bucket metadata remains canonical because this part explicitly
+  makes no schema change; fixed items use the same edit route with an immutable
+  title and read-only built-in access/market metadata.
 - DEC-P20I-CR35-36: Initial Home due confirmation and goal-status layout,
   subsequently corrected/superseded by P20-J; see DEC-P20J-CR40-43 below.
 - DEC-P20J-CR40-43: Home due rows remain non-interactive and show title,
@@ -2158,7 +2173,8 @@ evidence present in exports/checkpoints.
 | CR-48 | Move existing sort/type controls on Transactions, Assets, Liabilities and Goals into an inline header filter panel with ordered filter/plus actions and active indicator. | Done | P20-L; closed-by-default and toggle/content/order/active-filter tests pass; SortChip and sorting implementation remain unchanged; full gates pass. |
 | CR-49 | Add local case-insensitive, trimmed search to Assets, Liabilities and Goals; compose with filters and sorting. | Done | P20-L; all three screens cover matching, filters/sort composition, clear, empty results and remount reset; Transactions search remains unchanged; full gates pass. |
 | CR-50 | Add All/Recurring/One-time liability-kind filters in the Liabilities filter panel. | Done | P20-L; all three kinds filter correctly, selection is local/default All, active dot and No matches empty state are covered; full gates pass. |
-| CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Done | P21-D; default/resolver, empty repair hydration, UI, demo and schema-v8 tests pass; saved 10/40/35/15 allocation remains unchanged and Mutual funds / Bonds is still addable; full gates pass. |
+| CR-51 | Set only null/default/repair emergency-fund allocation to Cash 10, Bank account 40, FD / RD 50; preserve saved allocations. | Done | P21-D; default/resolver, empty repair hydration, UI, demo and schema-v8 tests pass; saved 10/40/35/15 allocation remains unchanged. CR-90 later removes the predefined add picker; full P21-D gates pass. |
+| CR-90 | Replace Emergency fund allocation-item picker and custom-option modal with direct shared-shell add/edit item route forms. | In progress | P21-E replaces predefined options with direct custom-item creation, preserves zero-percent insertion and 100% allocation-save validation, and moves metadata editing/deletion into the item form. Schema remains v8. |
 | CR-52 | Add Rent, Utilities, Subscriptions, Personal spending and Travel to expense categories, grouping them under Survival or Wants with normalized suggestions. | Done | P20-M; category schema, form options, group mapping/weights, import validation and demo amounts pass focused domain/schema/backup/demo tests. |
 | CR-53 | Replace scalar planned income with income items in plans and frozen month snapshots; migrate v8 and import backups v1-v8. | Done | P20-M; schema, backup, migration and premigration archive tests pass; schema version 9, version 10 refused. |
 | CR-54 | Derive repeated future month budgets on demand through 24 months; include income dues and undoable clearing without persisting views. | Done | P20-M; future snapshot/plan edits, repeat-off/horizon/no-write, income due remainder/category sharing, clearing and Undo tests pass. |
