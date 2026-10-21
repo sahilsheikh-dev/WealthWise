@@ -144,7 +144,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
-| P21-E | — | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
+| P21-E | `c199c8e` | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
@@ -4343,9 +4343,10 @@ in TestRenderer; exports are bundles, not device runs.
 
 ### P21-E Emergency-fund allocation item route form (CR-90)
 
-Preflight decision and in-progress ledger entry are in `fca168b`. The
-implementation removes the predefined add-choice modal from Emergency fund
-allocation. The header plus now opens the `/ef-bucket-form` route directly;
+Preflight decision and in-progress ledger entry are in `fca168b`;
+implementation and closeout are in `c199c8e`. The implementation removes the
+predefined add-choice modal from Emergency fund allocation. The header plus
+now opens the `/ef-bucket-form` route directly;
 fixed and custom allocation rows open the same route for editing. The shared
 FormScreen shell provides the header, body and Save footer. Custom item title,
 access and market-linked fields validate and persist through `saveEfPlan` in a
