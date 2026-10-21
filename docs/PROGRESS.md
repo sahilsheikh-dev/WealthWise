@@ -954,6 +954,31 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   | Security settings | `AppHeader` and setting controls | unchanged; settings surface, not a data-entry route form |
   | `app/link-missing.tsx` | `AppHeader`, selection list and fixed action | unchanged; bulk-selection flow, not a data-entry form |
   | Liability payments / investment entries lists | list headers and filters | unchanged; list/filter surfaces, not forms |
+  - DEC-P20U (CR-86/CR-87): replace the BudgetManagementSheet editor with
+    full-screen `FormScreen` routes for budget sections, items and income;
+    keep the existing domain/store actions and scoped Undo behavior. Item
+    names become user-entered names with no category chooser or Custom option;
+    section identity is implicit in the route and visible as read-only context.
+    Keep the section Spend/Invest choice because `addSection` requires a type
+    and the prior flow exposed both choices. Add/edit route forms retain the
+    existing month/following scope semantics, validators and default scope.
+    Section delete remains an immediate counted confirmation from Budget.
+    `TopAnchoredSheet` remains because the Goal asset picker and `Dropdown`
+    still use it. Supersede the BudgetManagementSheet design from CR-64,
+    CR-66, CR-67 and CR-73: its modes, in-sheet validation/form implementation,
+    header action arrangement and sheet-layout contracts are replaced by route
+    forms with the shared FormScreen header/body/footer.
+    Superseded functions: `makeFormSchema`, `titleFor`, and
+    `BudgetManagementSheet`; its exported mode/value types move to the route
+    form module as route state/value types. Superseded sheet-only tests and
+    assertions: inline sheet header/backdrop/top-anchor/font styling and the
+    embedded sheet editing flows in `RouteRenderSmoke.test.tsx`; replacements
+    exercise add/edit routes, scoped values, Budget entry points, validation,
+    one-write Undo, and font-scale layout contracts. No standalone
+    BudgetManagementSheet test file exists. Assumed: added sections default
+    to Spend unless the form's preserved Spend/Invest selector is changed;
+    route forms receive an explicit scope default from the selected Budget
+    month and existing later-custom-month context. Schema remains v12.
   DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
   `0774e51`, the worktree was clean;
   no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
@@ -975,6 +1000,7 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   - `6cb4fa0` — `app/month-review.tsx`: removed Back to Transactions control.
   - `75e9097` — `src/components/BudgetManagementSheet.tsx`: user checkpoint; removed Value type / Apply changes to labels and renamed due-day label.
   - `ecc5c35` — `src/components/BudgetManagementSheet.tsx`: user checkpoint preserving the sheet edits above.
+  - `7af5abe` — `app/(tabs)/index.tsx`: user-owned Home due-button label changed to `Paid`.
   The Budget screen's Cash flow labels and user-removed controls remain
   unchanged. The attached `file_Untitled-2.txt` is read-only. P23-A changes
   schema v10 to v11 only after inventory is committed.
