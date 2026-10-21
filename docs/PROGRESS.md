@@ -979,6 +979,13 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     to Spend unless the form's preserved Spend/Invest selector is changed;
     route forms receive an explicit scope default from the selected Budget
     month and existing later-custom-month context. Schema remains v12.
+    CR-86 implementation adds `/budget-section-form`, `/budget-item-form`,
+    and `/budget-income-form`, registered in the root stack and form-route
+    map; Budget entry points now route to these forms, and the old sheet path
+    is deleted. The only new pure domain operation is `editBudgetIncome`,
+    required so the income edit form can update all visible fields under the
+    existing month/following scope rules; it is wired through one store action.
+    No schema or protected input/sorting files change.
   DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
   `0774e51`, the worktree was clean;
   no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
