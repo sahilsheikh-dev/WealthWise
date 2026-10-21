@@ -1,5 +1,7 @@
+import { INSURANCE_BUDGET_CATEGORIES } from './policyCategories';
+
 export type BudgetGroup = {
-  id: 'survival' | 'savings-investments' | 'wants' | 'festival-donations-culture' | 'unexpected-extras';
+  id: 'survival' | 'savings-investments' | 'wants' | 'festival-donations-culture' | 'unexpected-extras' | 'insurance';
   name: string;
   hint: string;
   weight: number;
@@ -10,9 +12,9 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   {
     id: 'survival',
     name: 'Survival (Needs)',
-    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education, EMI and insurance.',
+    hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education and EMI.',
     weight: 50,
-    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
+    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI'],
   },
   {
     id: 'savings-investments',
@@ -44,7 +46,18 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
   },
 ];
 
+const INSURANCE_GROUP: BudgetGroup = {
+  id: 'insurance',
+  name: 'Insurance',
+  hint: 'Insurance premiums and policy cover.',
+  weight: 0,
+  categories: INSURANCE_BUDGET_CATEGORIES,
+};
+
 export function budgetGroupFor(category: string): BudgetGroup | undefined {
+  if (INSURANCE_BUDGET_CATEGORIES.some((item) => item.toLowerCase() === category.toLowerCase())) {
+    return INSURANCE_GROUP;
+  }
   const normalized = category.toLowerCase();
   return BUDGET_GROUPS.find((group) =>
     group.categories.some((item) => item.toLowerCase() === normalized),

@@ -7,6 +7,7 @@ import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import { EARNED_INCOME_CATEGORIES } from './types';
 import { formatINR } from '../lib/format';
 import { BUDGET_GROUPS, budgetGroupFor, type BudgetGroup } from './budgetGroups';
+import { isInsuranceBudgetCategory, policyPremiumCategory } from './policyCategories';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
@@ -165,7 +166,7 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
     for (const row of policySchedule(policy, asOf).rows) {
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
-        kind: 'policy', id: policy.id, name: policy.name, category: 'Insurance',
+        kind: 'policy', id: policy.id, name: policy.name, category: policyPremiumCategory(policy.kind),
         dueDate: row.dueDate, plannedAmount: row.amount, status: row.status,
         paidAmount: row.paidAmount ?? 0,
       });
@@ -214,7 +215,7 @@ export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISOD
   }
   for (const policy of data.policies) {
     rows.push(...linkedRowsFor(
-      'policy', policy.id, policy.name, 'Insurance', key, policySchedule(policy, asOf).rows,
+      'policy', policy.id, policy.name, policyPremiumCategory(policy.kind), key, policySchedule(policy, asOf).rows,
     ));
   }
   return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
@@ -599,7 +600,6 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
     }
     const section = sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (section?.system && !isInsuranceSection) {
       throw new BudgetMutationError('system-section', 'System sections cannot contain items, except manual Insurance items.');
     }
@@ -607,7 +607,7 @@ function validateStructure(sections: BudgetSection[], items: BudgetItem[]): void
       throw new BudgetMutationError('duplicate-name', 'Budget item names and IDs must be unique.');
     }
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       throw new BudgetMutationError('reserved-category', `${item.name} belongs to ${builtInSection.name}.`);
     }
     itemIds.add(item.id);
@@ -810,8 +810,7 @@ export function editItem(
     }
     const section = sections.find((row) => row.id === target.sectionId);
     const builtInSection = budgetGroupFor(nextName);
-    const isInsuranceItem = section?.system === 'insurance' && nextName === 'Insurance';
-    if (builtInSection && builtInSection.id !== section?.id && !isInsuranceItem) {
+    if (builtInSection && builtInSection.id !== section?.id) {
       throw new BudgetMutationError('reserved-category', `${nextName} belongs to ${builtInSection.name}.`);
     }
     return {
@@ -969,7 +968,7 @@ export function budgetLineActual(
     monthKey(row.date) === month
     && budgetCategoryForTransaction(row, customCategories) === category
     && (row.type === 'expense' || row.type === 'invest')
-    && !(options.excludePolicyPayments && category === 'Insurance' && row.source?.kind === 'policy-payment'),
+    && !(options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }
 
@@ -1018,10 +1017,19 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
     }
 
   } else {
-    for (const category of ['EMI', 'Insurance']) {
+    const linkedCategories = new Set([
+      'EMI',
+      ...commitments.filter((item) => isInsuranceBudgetCategory(item.category))
+        .map((item) => item.category),
+    ]);
+    for (const category of linkedCategories) {
       const amount = commitments.filter((item) => item.category === category)
         .reduce((sum, item) => sum + item.plannedAmount, 0);
-      if (amount > 0) planned.set(category, amount);
+      if (amount > 0) {
+        planned.set(category, isInsuranceBudgetCategory(category)
+          ? (planned.get(category) ?? 0) + amount
+          : amount);
+      }
     }
     for (const item of commitments) {
       if (item.category === 'EMI' || item.category === 'Insurance'
@@ -1061,7 +1069,7 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
       groupName: section.name,
       planned: lines.filter((line) => budget.items.some((item) => item.name === line.category && item.sectionId === section.id)
         || (line.category === 'EMI' && section.system === 'debt')
-        || (line.category === 'Insurance' && section.system === 'insurance'))
+        || (isInsuranceBudgetCategory(line.category) && section.system === 'insurance'))
         .reduce((sum, line) => sum + line.planned, 0),
     }))
     : [];
@@ -1228,7 +1236,7 @@ function overviewSectionFor(
   plan: BudgetPlan | null,
 ): string {
   if (category === 'EMI') return budget.sections.find((section) => section.system === 'debt')?.id ?? 'debt-repayments';
-  if (category === 'Insurance') return budget.sections.find((section) => section.system === 'insurance')?.id ?? 'insurance';
+  if (isInsuranceBudgetCategory(category)) return budget.sections.find((section) => section.system === 'insurance')?.id ?? 'insurance';
   const item = budget.items.find((row) => row.name === category)
     ?? plan?.items.find((row) => row.name === category);
   if (item && budget.sections.some((section) => section.id === item.sectionId)) return item.sectionId;
@@ -1365,19 +1373,20 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   const linkedPlannedByCategory = new Map<string, number>();
   const linkedActualByCategory = new Map<string, number>();
   for (const row of linkedRows) {
-    const linkedActual = row.kind === 'liability'
+    const linkedActualTransactions = row.kind === 'liability'
       && data.liabilities.find((item) => item.id === row.parentId)?.kind === 'one-time'
       ? actualTransactions.filter((transaction) =>
         transaction.source?.kind === 'liability-payment'
         && transaction.source.parentId === row.parentId,
-      ).reduce((sum, transaction) => sum + transaction.amount, 0)
+      )
       : row.entryId
         ? actualTransactions.filter((transaction) =>
           overviewSourceKind(transaction.source?.kind ?? 'liability-origin') === row.kind
           && transaction.source?.parentId === row.parentId
           && transaction.source.entryId === row.entryId,
-        ).reduce((sum, transaction) => sum + transaction.amount, 0)
-        : 0;
+        )
+        : [];
+    const linkedActual = linkedActualTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
     if (row.entryId) matchedEntryIds.add(row.entryId);
     if (row.kind === 'liability'
       && data.liabilities.find((item) => item.id === row.parentId)?.kind === 'one-time') {
@@ -1402,10 +1411,16 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       category,
       normalizeMoney((linkedPlannedByCategory.get(category) ?? 0) + row.amount),
     );
-    linkedActualByCategory.set(
-      category,
-      normalizeMoney((linkedActualByCategory.get(category) ?? 0) + linkedActual),
-    );
+    for (const transaction of linkedActualTransactions) {
+      const actualCategory = budgetCategoryForTransaction(
+        transaction,
+        customBudgetCategories(data),
+      );
+      linkedActualByCategory.set(
+        actualCategory,
+        normalizeMoney((linkedActualByCategory.get(actualCategory) ?? 0) + transaction.amount),
+      );
+    }
   }
 
   for (const transaction of actualTransactions) {
@@ -1421,7 +1436,11 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     if (!isKnownParent) continue;
     const category = kind === 'plan'
       ? investCategoryFor(data.holdings.find((holding) => holding.id === source.parentId)?.type ?? 'Other')
-      : kind === 'liability' ? 'EMI' : 'Insurance';
+      : kind === 'liability'
+        ? 'EMI'
+        : isInsuranceBudgetCategory(transaction.category)
+          ? transaction.category
+          : policyPremiumCategory(data.policies.find((policy) => policy.id === source.parentId)?.kind ?? 'other');
     const title = kind === 'plan'
       ? data.holdings.find((holding) => holding.id === source.parentId)?.name ?? 'Investment'
       : kind === 'liability'
@@ -1437,9 +1456,10 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       editable: false,
       source: { kind, parentId: source.parentId },
     });
+    const actualCategory = budgetCategoryForTransaction(transaction, customBudgetCategories(data));
     linkedActualByCategory.set(
-      category,
-      normalizeMoney((linkedActualByCategory.get(category) ?? 0) + transaction.amount),
+      actualCategory,
+      normalizeMoney((linkedActualByCategory.get(actualCategory) ?? 0) + transaction.amount),
     );
   }
 

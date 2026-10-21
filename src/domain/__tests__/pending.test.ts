@@ -4,7 +4,7 @@ import { pendingActionLabel, pendingItems } from '../pending';
 import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
-import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
+import type { AppData, OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 const base = () => emptyAppData('2026-01-01');
@@ -52,6 +52,23 @@ const oneTime = (changes: Partial<OneTimeLiability> = {}): OneTimeLiability => (
   ratePct: 0,
   startDate: '2026-01-01',
   dueDate: '2026-02-15',
+  payments: [],
+  ...changes,
+});
+
+const policy = (changes: Partial<Policy> = {}): Policy => ({
+  id: 'policy',
+  name: 'Health cover',
+  insurer: 'Insurer',
+  kind: 'health',
+  premium: 60,
+  frequency: 'monthly',
+  startDate: '2026-02-05',
+  status: 'active',
+  premiumYears: 1,
+  trackFrom: '2026-02-05',
+  currentValue: null,
+  valueAsOf: null,
   payments: [],
   ...changes,
 });
@@ -155,6 +172,27 @@ describe('pending item projection', () => {
     };
     expect(pendingItems(withHistory, '2026-03', '2026-02-15')
       .find((item) => item.source.kind === 'plan')).toMatchObject({ actionable: true });
+  });
+
+  it('projects active policy dues with their typed insurance category and excludes inactive policies', () => {
+    const data = {
+      ...base(),
+      policies: [
+        policy(),
+        policy({ id: 'lapsed-policy', kind: 'motor', status: 'lapsed' }),
+      ],
+    };
+    const rows = pendingItems(data, '2026-02', '2026-02-15')
+      .filter((item) => item.source.kind === 'policy');
+    expect(rows).toEqual([
+      expect.objectContaining({
+        title: 'Health cover',
+        category: 'Health premium',
+        amount: 60,
+        dueDate: '2026-02-05',
+        source: { kind: 'policy', parentId: 'policy', slotId: 'policy:0' },
+      }),
+    ]);
   });
 
   it('projects remaining budget lines once and suppresses commitments and represented investment dues', () => {

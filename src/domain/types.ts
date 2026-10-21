@@ -184,6 +184,16 @@ export type Policy = {
   payments: PolicyPayment[];
 };
 
+export const COVER_POLICY_TYPES = ['term-life', 'health', 'motor', 'home', 'other'] as const;
+export type CoverPolicyType = (typeof COVER_POLICY_TYPES)[number];
+export type CoverGoalTargetMode = 'income-multiple' | 'amount' | 'active-only';
+
+export type CoverGoal = {
+  type: CoverPolicyType;
+  targetMode: CoverGoalTargetMode;
+  targetValue?: number;
+};
+
 export type BudgetLine = {
   category: string;
   planned: number;
@@ -272,6 +282,7 @@ export type AppData = {
   holdings: Holding[];
   liabilities: Liability[];
   policies: Policy[];
+  coverGoals: CoverGoal[];
   budget: Budget | null;
   budgetPlan: BudgetPlan | null;
   monthBudgets?: MonthBudget[];

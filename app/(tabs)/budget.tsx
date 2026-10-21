@@ -20,6 +20,7 @@ import {
 } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
+import { INSURANCE_BUDGET_CATEGORIES } from '../../src/domain/policyCategories';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
@@ -40,7 +41,7 @@ function budgetItemCategoriesForSection(
   currentItemId?: string,
 ): string[] {
   const categories = sectionId === 'insurance'
-    ? ['Insurance']
+    ? [...INSURANCE_BUDGET_CATEGORIES]
     : BUDGET_GROUPS.find((group) => group.id === sectionId)?.categories ?? [];
   return categories.filter((category) =>
     !items.some((item) => item.name === category && item.id !== currentItemId),

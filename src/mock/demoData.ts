@@ -13,6 +13,8 @@ import {
   editBudgetItem,
 } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
+import { defaultCoverGoals } from '../domain/coverGoals';
+import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
@@ -32,6 +34,11 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
   Family: 2_500,
   EMI: 1_500,
   Insurance: 900,
+  'Insurance premium': 900,
+  'Term life premium': 2_200,
+  'Health premium': 1_800,
+  'Motor premium': 600,
+  'Home premium': 500,
   Shopping: 1_100,
   Health: 1_200,
   Bills: 1_500,
@@ -425,6 +432,7 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
+    coverGoals: defaultCoverGoals(),
     budget: null,
     budgetPlan,
     monthBudgets: [],
@@ -590,12 +598,17 @@ export function buildDemoData(today: ISODate): AppData {
   for (const month of months.slice(0, 3)) {
     const paymentDate = addMonths(currentPolicy.startDate, months.indexOf(month) + 1);
     const paymentId = id();
-    currentPolicy.payments.push({ id: paymentId, date: paymentDate, amount: currentPolicy.premium, note: 'Monthly premium' });
+    currentPolicy.payments.push({
+      id: paymentId,
+      date: paymentDate,
+      amount: currentPolicy.premium,
+      note: 'Monthly premium',
+    });
     data.transactions.push({
       id: id(),
       type: 'expense',
       amount: currentPolicy.premium,
-      category: 'Insurance',
+      category: policyPremiumCategory(currentPolicy.kind),
       note: `${currentPolicy.name} premium`,
       date: paymentDate,
       source: { kind: 'policy-payment', parentId: currentPolicy.id, entryId: paymentId },

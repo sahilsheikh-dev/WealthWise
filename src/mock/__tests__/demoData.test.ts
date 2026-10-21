@@ -46,6 +46,16 @@ describe('four-month demo data', () => {
       expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
     ]));
+    expect(data.transactions.filter((transaction) => transaction.source?.kind === 'policy-payment')
+      .map((transaction) => transaction.category)).toEqual(expect.arrayContaining([
+      'Health premium',
+    ]));
+    expect(data.transactions.map((transaction) => transaction.category)).toEqual(expect.arrayContaining([
+      'Term life premium',
+      'Health premium',
+      'Motor premium',
+      'Home premium',
+    ]));
   });
 
   it('has four complete months and a custom upcoming override for the item editor demo', () => {
