@@ -286,14 +286,15 @@ export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] })
 
 export function resolveBudgetPlan(
   plan: Pick<BudgetPlan, 'incomes' | 'sections' | 'items'>,
+  month: string,
   plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
-  month?: string,
   frozenSnapshot = false,
 ): BudgetLine[] {
   return plan.items.map((item) => {
-    const itemValue = month === undefined
-      ? item.value
-      : plannedForMonth(frozenSnapshot ? { ...item, frequency: 'monthly' } : item, month);
+    const itemValue = plannedForMonth(
+      frozenSnapshot ? { ...item, frequency: 'monthly' } : item,
+      month,
+    );
     const line = {
       category: item.name,
       mode: item.mode,
@@ -343,7 +344,7 @@ export function applyBudgetPlanToMonth(
   const plan = data.budgetPlan;
   if (!plan) return data;
   const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
-  const lines = new Map(resolveBudgetPlan(plan, plannedIncome, month).map((line) => [line.category, line]));
+  const lines = new Map(resolveBudgetPlan(plan, month, plannedIncome).map((line) => [line.category, line]));
   return replaceMonth(data, {
     month,
     source: 'plan',
@@ -377,7 +378,7 @@ export function effectiveMonthBudget(
   if (plan.incomes.length === 0 && plan.items.some((item) => item.mode === 'percent')) {
     return { budget: null, virtual: false };
   }
-  const lines = resolveBudgetPlan(plan, undefined, month);
+  const lines = resolveBudgetPlan(plan, month);
   return {
     budget: {
       month,
@@ -1172,8 +1173,8 @@ export function budgetMonthView(data: AppData, month: string, today: ISODate = `
   const plannedLines = budget
     ? resolveBudgetPlan(
       { incomes: budget.incomes, sections: budget.sections, items: budget.items },
-      undefined,
       key,
+      undefined,
       !virtual,
     )
     : [];

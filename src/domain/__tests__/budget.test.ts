@@ -293,13 +293,13 @@ describe('budget plans and monthly views', () => {
         { category: 'Food', mode: 'amount', value: 500 },
         { category: 'Bills', mode: 'percent', value: 12.5 },
       ], { incomes: incomes(12_345) });
-    expect(resolveBudgetPlan(amountPlan)).toEqual([
+    expect(resolveBudgetPlan(amountPlan, '2026-10')).toEqual([
       { category: 'Food', planned: 500 },
       { category: 'Bills', planned: 1543 },
     ]);
     expect(() => resolveBudgetPlan(budgetPlanFromLines([
       { category: 'Bills', mode: 'percent', value: 10 },
-    ], { incomes: [] }))).toThrow(MissingPlannedIncomeError);
+    ], { incomes: [] }), '2026-10')).toThrow(MissingPlannedIncomeError);
   });
 
   it('creates a default plan for the current month without incomes or items', () => {
