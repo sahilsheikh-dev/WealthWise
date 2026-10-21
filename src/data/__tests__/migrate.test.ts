@@ -10,12 +10,14 @@ import {
   migrateV9ToV10,
   migrateV10ToV11,
   migrateV11ToV12,
+  migrateV12ToV13,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV9Fixture } from '../testFixtures/v9';
 import { makeV10Fixture } from '../testFixtures/v10';
 import { makeV11Fixture } from '../testFixtures/v11';
+import { makeV12Fixture } from '../testFixtures/v12';
 import { validateImportData } from '../../domain/backup';
 import { netWorth } from '../../domain/summary';
 import { goalSavedFor } from '../../domain/goalLinks';
@@ -109,7 +111,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 13)).toThrow(
+    expect(() => migratePersisted({}, 14)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -167,8 +169,40 @@ describe('schema migration', () => {
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version12: true } };
-    expect(migratePersisted(persisted, 12)).toBe(persisted);
+    const persisted = { data: { version13: true } };
+    expect(migratePersisted(persisted, 13)).toBe(persisted);
+  });
+
+  it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {
+    const legacy = makeV12Fixture();
+    const expected = {
+      ...legacy,
+      budgetPlan: legacy.budgetPlan && {
+        ...legacy.budgetPlan,
+        items: legacy.budgetPlan.items.map((item) => ({ ...item, frequency: 'monthly' })),
+      },
+      monthBudgets: legacy.monthBudgets?.map((budget) => ({
+        ...budget,
+        items: budget.items.map((item) => ({ ...item, frequency: 'monthly' })),
+      })),
+    };
+    expect(migrateV12ToV13(legacy)).toEqual(expected);
+    expect(() => migrateV12ToV13(null)).toThrow(PersistedVersionError);
+    expect(migrateV12ToV13({
+      settings: {},
+      budgetPlan: { items: 'malformed', retained: true },
+      monthBudgets: [{ items: [null] }],
+    })).toEqual({
+      settings: {},
+      budgetPlan: { items: 'malformed', retained: true },
+      monthBudgets: [{ items: [null] }],
+    });
+    expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
+      data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
+    });
+    expect(() => migratePersisted({}, 14)).toThrow(
+      expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
+    );
   });
 
   it('seeds every v12 cover goal while preserving v11 data', () => {

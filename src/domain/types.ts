@@ -220,6 +220,8 @@ export type BudgetSection = {
   system?: 'income' | 'debt' | 'insurance';
 };
 
+export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
+
 export type BudgetItem = {
   id: string;
   sectionId: string;
@@ -227,6 +229,8 @@ export type BudgetItem = {
   mode: 'amount' | 'percent';
   value: number;
   dueDay?: number;
+  frequency?: BudgetItemFrequency;
+  firstDueMonth?: string;
 };
 
 export type BudgetPlan = {

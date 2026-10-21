@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (66/71)
+Overall progress █████████░ 93% (67/72)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (21/21)
+Phase 20         ██████████ 100% (22/22)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (3/3)
@@ -138,6 +138,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-S | — | Done | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
 | P20-U | `02bfbb1` | Done | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
+| P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -990,6 +991,30 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     No schema or protected input/sorting files change. The sheet's
     `CUSTOM_ITEM_CATEGORY` sentinel is removed because item names are direct
     text input and the requested item form has no category or Custom control.
+  - DEC-P20V (CR-88/CR-89): Budget items support monthly, quarterly,
+    half-yearly, and yearly recurrence. Monthly remains the default and requires
+    no first-due month; non-monthly items require a valid first-due month and
+    percent mode is prohibited. One pure `plannedForMonth(item, month)` helper
+    governs monthly planned values and item-derived dues across Budget views,
+    totals, pace, projected cash flow, dropdowns, and Insurance reconciliation.
+    Existing month snapshots remain frozen. Schema v12 migrates to v13 by
+    explicitly marking plan and snapshot items monthly; v14 imports are refused.
+    Premigration v12 bytes are archived once and cleared by erase-all. Income
+    behavior and existing category validity stay unchanged; Recharge is added
+    as an expense in Utilities. P20-V supersedes monthly-only assumptions for
+    item planning and any assertions that expected each plan item to contribute
+    in every month; test assertions now distinguish due and non-due months.
+    `resolveBudgetPlan` requires an explicit month so no caller can bypass
+    `plannedForMonth`; the old monthless amount/percent resolver assertions now
+    pass the month under test.
+    Assumed: when adding a recurring item, the selected Budget month is the
+    default first-due month; the first-due month chooser offers that month and
+    the next eleven calendar months because the frozen field set has no
+    MonthField. Assumed: because the frozen SegmentedControl has no disabled
+    option API, Percent is omitted for non-monthly items and the helper text
+    explains the restriction rather than rendering an inert Percent option.
+    Assumed: the monthly demo item named `Recharge` represents the requested
+    Mobile recharge example and uses the newly added built-in category name.
   DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
   `0774e51`, the worktree was clean;
   no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
@@ -1838,7 +1863,18 @@ design. P20-H closes CR-32–CR-34; Budget group cards show paid, overdue,
 partial and linked rows. The 9/9 count was the phase status at that historical
 checkpoint; P20-I through P20-T subsequently completed CR-35–CR-77.
 P20-U completes CR-86/CR-87 by replacing the Budget management sheet with
-shared-shell route forms; the current Phase 20 status is 21/21.
+shared-shell route forms. P20-V completes CR-88/CR-89: schema STEP 1 is
+committed as `6d3feab`, recurrence-aware planning/dues as `82793e8`, and UI,
+demo and acceptance coverage are complete. All six required gates pass:
+coverage 78 suites/944 tests, TypeScript, lint, Expo Doctor 21/21, Android
+export, and iOS export. Directory coverage: domain 98.27% lines/92.91%
+branches; data excluding hooks 93.81%/87.75%; pure lib 100%/100%. Existing
+monthly-only planned-total expectations and the route payload expecting no
+frequency were replaced with due/non-due monthly totals and explicit monthly
+frequency, because recurrence is now part of the stored plan. The demo uses
+the new built-in `Recharge` category as the mobile-recharge example. Plan
+resolution takes a required month, ensuring every planned amount is evaluated
+through `plannedForMonth`. Phase 20 is 22/22.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
@@ -2159,6 +2195,8 @@ evidence present in exports/checkpoints.
 | CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
 | CR-86 | Replace BudgetManagementSheet with full-screen route forms for budget sections, items and income; keep scope, validation, Save and edit/delete behavior. | Done | P20-U adds three shared FormScreen routes, removes the sheet, routes all Budget entry points and adds the full-field `editBudgetIncome` domain/store action. Focused route/domain/store tests pass. |
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
+| CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
+| CR-89 | Add recurrence-aware Budget forms, rows, dues, projections, categories, demo data and tests. | Done | Route form, row frequency/next-due copy, category choices, demo and route/domain acceptance tests complete; full suite and all six gates pass. Simulated layout only; native-device checks remain. |
 
 ## 8. Known issues and risks
 
