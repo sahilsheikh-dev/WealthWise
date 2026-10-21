@@ -2363,6 +2363,13 @@ P23-B replaced assertions and reasons:
 | Budget linked policy rows were named after individual policies and exposed edit-route buttons. | Active schedule rows aggregate under one type category and policy rows have no edit button. | CR-81 requires one row per cover type and read-only policy rows; manual Budget items remain editable. |
 | Migration coverage exercised only default v11 fixtures, leaving the new branch under the per-file coverage threshold. | Tests cover legacy item relocation into existing and missing Insurance sections and malformed budget inputs. | Exercise every new migration branch while keeping the existing coverage threshold unchanged. |
 
+Gate iteration: the first full coverage run found the empty-data exact-shape
+assertion missing the new schema-v12 goals and `src/data/migrate.ts` at 84.27%
+branch coverage. Commit `b9cb4f6` adds the exact defaults and migration branch
+tests; the rerun passes. The first `npx expo lint` exited 0 with one unused
+`addDays` import warning in `coverGoals.ts`; that import was removed before the
+final sequential gates.
+
 #### P20-O final verification
 
 Focused acceptance tests include:
