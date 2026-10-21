@@ -14,6 +14,7 @@ import {
 } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { defaultCoverGoals } from '../domain/coverGoals';
+import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
@@ -385,6 +386,21 @@ function makePolicies(today: ISODate, firstMonth: string): Policy[] {
     valueAsOf: null,
     payments: [],
   }, {
+    id: 'demo-policy-home',
+    name: 'Home protection',
+    insurer: 'Demo General',
+    kind: 'home',
+    premium: 6_000,
+    frequency: 'yearly',
+    startDate: `${firstMonth}-22`,
+    status: 'active',
+    premiumYears: 20,
+    trackFrom: `${firstMonth}-22`,
+    sumAssured: 5_000_000,
+    currentValue: null,
+    valueAsOf: null,
+    payments: [],
+  }, {
     id: 'demo-policy-lapsed',
     name: 'Old personal cover',
     insurer: 'Demo General',
@@ -431,7 +447,11 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
-    coverGoals: defaultCoverGoals(),
+    coverGoals: defaultCoverGoals().map((goal) => goal.type === 'term-life'
+      ? { ...goal, targetValue: 12 }
+      : goal.type === 'health'
+        ? { ...goal, targetValue: 2_000_000 }
+        : goal),
     budget: null,
     budgetPlan,
     monthBudgets: [],
@@ -597,12 +617,17 @@ export function buildDemoData(today: ISODate): AppData {
   for (const month of months.slice(0, 3)) {
     const paymentDate = addMonths(currentPolicy.startDate, months.indexOf(month) + 1);
     const paymentId = id();
-    currentPolicy.payments.push({ id: paymentId, date: paymentDate, amount: currentPolicy.premium, note: 'Monthly premium' });
+    currentPolicy.payments.push({
+      id: paymentId,
+      date: paymentDate,
+      amount: currentPolicy.premium,
+      note: 'Monthly premium',
+    });
     data.transactions.push({
       id: id(),
       type: 'expense',
       amount: currentPolicy.premium,
-      category: 'Insurance',
+      category: policyPremiumCategory(currentPolicy.kind),
       note: `${currentPolicy.name} premium`,
       date: paymentDate,
       source: { kind: 'policy-payment', parentId: currentPolicy.id, entryId: paymentId },
@@ -622,6 +647,21 @@ export function buildDemoData(today: ISODate): AppData {
     date: monthEnd(surplusMonth),
     allocations: [{ kind: 'liability', liabilityId: recurringLiability.id, amount: 5_000 }],
   }, id, today);
+
+  for (const [category, amount] of [
+    ['Term life premium', 800],
+    ['Motor premium', 600],
+    ['Home premium', 400],
+  ] as const) {
+    data.transactions.push({
+      id: id(),
+      type: 'expense',
+      amount,
+      category,
+      note: 'Demo premium payment',
+      date: `${currentMonth}-10`,
+    });
+  }
 
   for (const month of months.slice(0, 3)) {
     data = applyBudgetPlanToMonth(data, month, { newId: id, today });

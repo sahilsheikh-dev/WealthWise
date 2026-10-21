@@ -260,12 +260,14 @@ describe('transaction selectors', () => {
       tx('festival', 'expense', 1_500, '2026-10-01', 'Festival', 'Festival'),
       tx('donation', 'expense', 500, '2026-10-02', 'Donation', 'Donation'),
       tx('gifts', 'expense', 1_000, '2026-10-03', 'Gifts', 'Gifts'),
+      tx('health-premium', 'expense', 750, '2026-10-03', 'Health premium', 'Health premium'),
       tx('food', 'expense', 250, '2026-10-04', 'Food', 'Food'),
       tx('last-month', 'expense', 5_000, '2026-09-30', 'Festival', 'Festival'),
       tx('income', 'income', 20_000, '2026-10-05', 'Festival', 'Festival'),
     ], '2026-10')).toEqual([
       { category: 'Festival', amount: 1_500 },
       { category: 'Gifts', amount: 1_000 },
+      { category: 'Health premium', amount: 750 },
       { category: 'Donation', amount: 500 },
       { category: 'Food', amount: 250 },
     ]);

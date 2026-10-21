@@ -20,6 +20,7 @@ import {
 } from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
+import { INSURANCE_BUDGET_CATEGORIES } from '../../src/domain/policyCategories';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
@@ -40,7 +41,7 @@ function budgetItemCategoriesForSection(
   currentItemId?: string,
 ): string[] {
   const categories = sectionId === 'insurance'
-    ? ['Insurance']
+    ? [...INSURANCE_BUDGET_CATEGORIES]
     : BUDGET_GROUPS.find((group) => group.id === sectionId)?.categories ?? [];
   return categories.filter((category) =>
     !items.some((item) => item.name === category && item.id !== currentItemId),
@@ -221,7 +222,7 @@ export default function BudgetScreen() {
         router.push({ pathname: '/liability-form', params: { id: item.source.parentId } });
         return;
       case 'policy':
-        router.push({ pathname: '/policy-form', params: { id: item.source.parentId } });
+        return;
     }
   };
 
@@ -596,7 +597,7 @@ export default function BudgetScreen() {
                                   accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
                                   <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
                                 </AppText>
-                                {!isPast && (item.kind === 'linked' || item.editable) ? (
+                                {!isPast && item.source.kind !== 'policy' && (item.kind === 'linked' || item.editable) ? (
                                   <Pressable
                                     accessibilityRole="button"
                                     accessibilityLabel={`Edit ${item.title}`}

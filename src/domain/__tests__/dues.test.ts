@@ -359,7 +359,7 @@ describe('one-tap dues and undo', () => {
     });
     expect(policyResult.data.transactions.find((transaction) => transaction.source?.kind === 'policy-payment')).toMatchObject({
       type: 'expense',
-      category: 'Insurance',
+      category: 'Health premium',
       note: 'Health cover premium',
       amount: 50,
       source: { kind: 'policy-payment', parentId: 'policy', entryId: 'policy-1' },

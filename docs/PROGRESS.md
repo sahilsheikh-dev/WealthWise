@@ -1049,6 +1049,51 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   Preflight at base `501956a` found a clean worktree; no manual checkpoint
   was needed. The user-owned Budget cash-flow labels and removed actions remain
   protected.
+  Assumed: the generic `Insurance premium` category applies to `other`,
+  `life-savings`, and `ulip`, because those kinds have no dedicated typed
+  category. Assumed: the demo uses a term-life income multiple of 12 and a
+  health target of 2,000,000 solely to demonstrate the required term gap and
+  an editable health target; schema and empty-data defaults remain unchanged.
+  Assumed: an active home demo policy is added to satisfy P23-B's required
+  home-covered example, even though the P23-A demo fixture did not contain one.
+  Linked policy schedule rows in Budget aggregate by premium category (one row
+  per cover type); manual planned items remain separate/editable.
+  DEC-DEMO (P23-B): preserves the P23-A term, health, motor and lapsed records;
+  adds active home cover, demo-only term/health targets, and typed-premium
+  transactions so the term gap, health target, motor/home covered and other
+  missing states are represented.
+  The direct source/test audit of the legacy `'Insurance'` category is recorded
+  below; no legacy category or transaction history was removed.
+
+#### P23-B legacy Insurance literal audit
+
+Case-sensitive `rg -n "'Insurance'" app src` returned 64 matches in 20 files.
+The existing `Insurance` spelling remains valid for legacy history; each
+source/test hit and its disposition is listed here:
+
+| File | Matching lines | Disposition |
+|---|---|---|
+| `src/domain/policyCategories.ts` | 19 | Preserved as the legacy transaction category alongside the new premium categories. |
+| `src/domain/budget.ts` | 56, 1035, 1089 | Preserved Insurance section identity and compatibility handling for legacy budget/history categories. |
+| `src/mock/demoData.ts` | 107, 140 | Excludes the legacy category from generated generic transaction rows; retains the manual Insurance demo budget item. |
+| `src/domain/__tests__/backup.test.ts` | 249 | Keeps a legacy linked premium backup fixture to verify import compatibility. |
+| `src/domain/schemas.ts` | 219, 249, 443 | Keeps Insurance valid in budget and transaction schemas and retains the Insurance section definition. |
+| `src/mock/__tests__/demoData.test.ts` | 98, 165 | Verifies the manual legacy Insurance budget item remains and reconciles. |
+| `src/domain/budgetGroups.ts` | 51 | Names the existing protected Budget group Insurance. |
+| `src/domain/__tests__/budgetCategories.test.ts` | 15 | Verifies the transaction dropdown group title remains Insurance. |
+| `src/domain/__tests__/pending.test.ts` | 206, 219 | Exercises a manually planned legacy Insurance item and its due row. |
+| `src/data/migrate.ts` | 468, 632, 642, 652 | Preserves old items and moves legacy Insurance budget items into the current Insurance system section when needed. |
+| `src/domain/__tests__/v5Integrity.test.ts` | 17, 83, 84 | Retains old-format linked policy transactions in migration/integrity fixtures. |
+| `src/data/__tests__/createAppStore.test.ts` | 664 | Retains a legacy manual Insurance budget item in the store test. |
+| `src/data/__tests__/migrate.test.ts` | 301 | Retains legacy Insurance in the migration fixture. |
+| `src/domain/__tests__/policyActions.test.ts` | 42, 51, 142, 150, 173, 180 | Preserves legacy linked Insurance transactions in policy delete/update tests. |
+| `src/components/__tests__/RecurringItemsSummary.test.tsx` | 47 | Preserves a legacy Insurance category in the recurring summary fixture. |
+| `src/domain/__tests__/budget.test.ts` | 714, 1040, 1102, 1118, 1449, 1520, 1548, 1556, 1567, 1573, 1580, 1582, 1584, 1596, 1607, 1635, 1644, 1711, 1721 | Retains coverage for legacy category grouping, history, manual items, linked transactions and no-double-counting. |
+| `src/domain/__tests__/schemas.test.ts` | 324, 374 | Asserts legacy Insurance remains schema-valid alongside typed premium categories. |
+| `src/domain/links.ts` | 189 | Allows previously linked policy payments whose stored category is Insurance. |
+| `src/components/__tests__/PendingItemActions.test.tsx` | 164, 177, 184 | Keeps legacy manual Insurance due-action fixtures. |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 2965, 2973, 2981, 3090, 3123, 3129, 3138 | Keeps Budget management route assertions for existing Insurance items and category selection. |
+
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
   prior user checkpoints were audited; each changed path is listed:
@@ -1900,7 +1945,7 @@ evidence present in exports/checkpoints.
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
-| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Step 0 and schema/migration/archive step done; domain and acceptance work in progress. The prior screen-only plan is cancelled. | Preflight base `501956a`; decision ledger `04bf7f0`. | Assumed: none beyond DEC-P23-COVER; preserve all policy screens and all existing Insurance transaction history. | current request |
+| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Step 0, schema/migration/archive and focused domain implementation complete; final gates pending. The prior screen-only plan is cancelled. | Preflight base `501956a`; decision ledger `04bf7f0`; schema `1f9917e`; domain implementation commit recorded at closeout. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2032,8 +2077,8 @@ evidence present in exports/checkpoints.
 | CR-77 | Convert every data-entry form to the common shell and enforce consistent Back/Close/delete/Save placement. | Done | Route parameter smoke test covers create/edit entry points; every route form plus onboarding, erase-data, Budget sheet, Goal picker and EF custom-option dialogs use the shared shell. Selection/information/list/settings surfaces remain deliberately unchanged. |
 | CR-78 | Migrate policy data to schema v11 with lifecycle/metadata, schedule compatibility and backup support. | Done | v10→v11 migration, exact one-time `.premigration.v10` archive, schema/backup chain and migration branch tests pass; v12 is rejected. |
 | CR-79 | Add pure policy actions and summary; enforce active-only dues/Budget rows and deletion cleanup with Undo. | Done | Typed policy actions, active-only/end-date schedule, policy summary, store one-write/Undo, linked transaction retention, integrity and Insurance reconciliation tests pass. |
-| CR-80 | Add cover-goal schema v12, one goal per cover type, migration/archive and backup support. | In progress | P23-B DEC-P23-COVER; defaults, target constraints, v11 migration/archive and v13 refusal tests pass. |
-| CR-81 | Add cover goal summaries/target action, typed policy suggestion, insurance categories and reconciliation. | In progress | P23-B DEC-P23-COVER; domain/store/category/Budget/demo acceptance work in progress. |
+| CR-80 | Add cover-goal schema v12, one goal per cover type, migration/archive and backup support. | Done (focused tests; final gates pending) | P23-B DEC-P23-COVER; defaults, target constraints, v11 migration/archive and v13 refusal tests pass. |
+| CR-81 | Add cover goal summaries/target action, typed policy suggestion, insurance categories and reconciliation. | In progress | P23-B DEC-P23-COVER; focused domain/store/category/Budget/demo acceptance tests pass; final gates pending. |
 
 ## 8. Known issues and risks
 
@@ -2304,6 +2349,8 @@ evidence for the fixes.
 | P23-A STEP 4 — Tests, ledger and final gates | Done | 77 suites/894 tests; `docs/PROGRESS.md` | `npm test -- --coverage` passed (lines 95.99%, branches 92.57%, functions 97.58%, statements 97.87%). Source-directory coverage: domain 97.12% lines/93.45% branches; data excluding hooks 90.24%/87.37%; pure lib 100%/100%. All six required gates exit 0; Expo Doctor reports 21/21. |
 | P23-B STEP 0 — Preflight and cover-goal decision | Done | `docs/PROGRESS.md` DEC-P23-COVER; clean base `501956a` | No manual checkpoint was needed. Cancelled the former screen-only P23-B plan and recorded v12 cover-goal semantics, category behavior, Budget reconciliation, defaults, and no-screen scope. |
 | P23-B STEP 1 — Schema v12 and migration (CR-80) | Done | Types, schemas, backup import, `migrateV11ToV12`, safe-storage archive | Targeted gates: migration, safe-storage archive, store hydration, schema and backup tests; 5 suites/151 tests pass. v11 archive is exact-byte, once-only and erased with app data; schema v13 is refused; backups preserve checksum-before-migration. |
+| P23-B STEP 2 — Cover-goal domain, categories, Budget and demo (CR-81) | Done (focused tests) | `src/domain/coverGoals.ts`, `src/domain/policyCategories.ts`, `src/domain/budget.ts`, `src/domain/pending.ts`, `src/domain/links.ts`, `src/data/createAppStore.ts`, `app/(tabs)/budget.tsx`, demo data | Focused acceptance: 12 suites/394 tests pass, including all cover states, no-income target, multiple and inactive policies, policy suggestions, schema/dropdown category validity, v11 backup chain, typed-category backup round trip, single-write/Undo, Home spending breakdown, typed pending dues and Budget aggregation. Existing policy rows aggregate by type and are read-only; manual legacy items remain manageable. |
+| P23-B STEP 3 — Demo, ledger and final gates | In progress | `src/mock/demoData.ts`, P23-B DEC-P23-COVER audit and final gate record | Final sequential six-gate run and directory/per-file coverage report pending. Device-only keyboard, native layout, and OS font scaling are not verified by Jest. |
 
 #### P20-O final verification
 

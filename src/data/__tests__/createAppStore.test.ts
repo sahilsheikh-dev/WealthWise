@@ -76,6 +76,32 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists a cover-goal target change once and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    let writes = storage.setItemCalls;
+
+    store.getState().actions.setCoverGoalTarget({
+      type: 'health',
+      targetMode: 'amount',
+      targetValue: 1_000_000,
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.coverGoals.find((goal) => goal.type === 'health'))
+      .toEqual({ type: 'health', targetMode: 'amount', targetValue: 1_000_000 });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Cover-goal Undo was not set.');
+    writes = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(before);
+    useUIStore.getState().setActionToast(null);
+  });
+
   it('persists policy add, status, and delete atomically and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage, { newId: () => 'created-policy' });
