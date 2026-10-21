@@ -703,15 +703,18 @@ export function editBudgetIncome(
 ): AppData {
   const month = monthOf(monthInput);
   const name = input.values.name.trim();
-  const normalizedAmount = normalizeMoney(input.values.amount);
   if (!name || name.length > 40) {
     throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
   }
   if (!isEarnedIncomeCategory(input.values.category)
     || !Number.isFinite(input.values.amount) || input.values.amount <= 0
-    || normalizedAmount <= 0 || input.values.amount > 1_000_000_000
+    || input.values.amount > 1_000_000_000
     || (input.values.day !== undefined
       && (!Number.isInteger(input.values.day) || input.values.day < 1 || input.values.day > 31))) {
+    throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
+  }
+  const normalizedAmount = normalizeMoney(input.values.amount);
+  if (normalizedAmount <= 0) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
   }
 

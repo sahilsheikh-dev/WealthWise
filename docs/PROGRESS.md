@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (65/70)
+Overall progress █████████░ 93% (66/71)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,7 +68,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (20/20)
+Phase 20         ██████████ 100% (21/21)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (3/3)
@@ -137,6 +137,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
 | P20-S | — | Done | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
+| P20-U | `02bfbb1` | Done | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -969,8 +970,9 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     header action arrangement and sheet-layout contracts are replaced by route
     forms with the shared FormScreen header/body/footer.
     Superseded functions: `makeFormSchema`, `titleFor`, and
-    `BudgetManagementSheet`; its exported mode/value types move to the route
-    form module as route state/value types. Superseded sheet-only tests and
+    `BudgetManagementSheet`; `BudgetManagementMode` and
+    `BudgetManagementValues` are replaced by each route's local typed schema
+    and form values. Superseded sheet-only tests and
     assertions: inline sheet header/backdrop/top-anchor/font styling and the
     embedded sheet editing flows in `RouteRenderSmoke.test.tsx`; replacements
     exercise add/edit routes, scoped values, Budget entry points, validation,
@@ -985,7 +987,9 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     is deleted. The only new pure domain operation is `editBudgetIncome`,
     required so the income edit form can update all visible fields under the
     existing month/following scope rules; it is wired through one store action.
-    No schema or protected input/sorting files change.
+    No schema or protected input/sorting files change. The sheet's
+    `CUSTOM_ITEM_CATEGORY` sentinel is removed because item names are direct
+    text input and the requested item form has no category or Custom control.
   DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
   `0774e51`, the worktree was clean;
   no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
@@ -1832,8 +1836,9 @@ P20-F budget groundwork and P20-G single-plan replacement (CR-29) are complete
 after final gates. P20-G also supersedes CR-24 with CR-30's explicit no-menu
 design. P20-H closes CR-32–CR-34; Budget group cards show paid, overdue,
 partial and linked rows. The 9/9 count was the phase status at that historical
-checkpoint; P20-I through P20-S subsequently completed CR-35–CR-75, and the
-current Phase 20 status is 19/19.
+checkpoint; P20-I through P20-T subsequently completed CR-35–CR-77.
+P20-U completes CR-86/CR-87 by replacing the Budget management sheet with
+shared-shell route forms; the current Phase 20 status is 21/21.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
@@ -2050,6 +2055,7 @@ evidence present in exports/checkpoints.
 | P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
 | P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; 76 suites/865 tests and all six required gates pass. Directory coverage: domain 98.76% lines/93.37% branches; data excluding hooks 93.14%/86.75%; pure lib 100%/100%. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
 | P20-T | Phase 20 | — | — | 2026-10-19 | Consolidate full-screen and sheet forms on one header/body/footer core; convert all data-entry forms (CR-76–CR-77). | Done; 76 suites/873 tests, focused form/route tests, and all six required gates pass; native keyboard and font-scale rendering remain unverified. | Preflight `b449d9d`; implementation `e432034`. | Assumed: see DEC-P20T; onboarding retains no-back exit behavior and selection/information surfaces remain non-forms. | current request |
+| P20-U | Phase 20 | — | 2 | 2026-10-21 | Replace the Budget management sheet with route forms for sections, items and income (CR-86/CR-87). | Done; 6 focused suites / 264 tests pass; full suite and final gates pass as recorded below. | Preflight/spec `47a2bd8`; route implementation `02bfbb1`; tests and final ledger are in the close-out commit. | Assumed: preserve the Spend/Invest selector on section creation; use explicit month/following scope from Budget context. Schema v12 and protected files remain unchanged. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund header edit action, detail-first allocation display without status labels, all-item editor and four defaults (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. The four-default assumption is superseded by P21-D/CR-51. | `d43be28`; revised acceptance implementation recorded at close-out | Assumed at delivery: the fourth default was Mutual funds / Bonds. Stored zero-percent unlinked items count as deleted. | current request |
@@ -2151,6 +2157,8 @@ evidence present in exports/checkpoints.
 | CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | Done | RouteRenderSmoke asserts five-type order, progress-last layout, term income line/null helper, and all target modes; targets remain non-deletable. |
 | CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | Done | RouteRenderSmoke asserts create/edit fields, edit-only status, date bound, delete confirmation, Paid/Undo and large-font style props; store tests assert deep-equal delete/status Undo. |
 | CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
+| CR-86 | Replace BudgetManagementSheet with full-screen route forms for budget sections, items and income; keep scope, validation, Save and edit/delete behavior. | Done | P20-U adds three shared FormScreen routes, removes the sheet, routes all Budget entry points and adds the full-field `editBudgetIncome` domain/store action. Focused route/domain/store tests pass. |
+| CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 
 ## 8. Known issues and risks
 
@@ -2344,14 +2352,16 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 1. **Phase 19 — Budget model and sync** (Done): P19-A five-group setup (CR-5),
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
-2. **Phase 20 — Pending items, Home and navigation** (P20-A through P20-G
-   Done): P20-A pending
+2. **Phase 20 — Pending items, Home, navigation and Budget management**
+   (P20-A through P20-U Done): P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
    balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
    CR-31), P20-F due-day and linked schedule groundwork, and P20-G schema-v8
    single-plan setup/apply/repeat behavior (CR-29) with no Budget header menu
-   (CR-30 supersedes CR-24).
+   (CR-30 supersedes CR-24). Later parts complete the overview, user-managed
+   sections/items, shared form shell, and P20-U route-form replacement of the
+   Budget management sheet (CR-86/CR-87).
 3. **Phase 21 — Emergency fund as a goal-linked model** (Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
    allocation table (CR-14, CR-15); P21-C normal-mode presentation and
@@ -4175,3 +4185,97 @@ screen-reader announcements for nested card buttons/body edit targets; and
 liability progress/action spacing, due clearing and Undo toast on physical
 iOS/Android. TestRenderer verifies structure, styles, accessibility props
 and callbacks only.
+
+### P20-U Budget route forms close-out (CR-86/CR-87)
+
+STEP 0 preflight: the worktree was clean at `7af5abe`; no manual checkpoint
+was needed. `DEC-USER-CHANGES` already records the user-owned `Paid` Home label
+and the earlier manual changes. The Budget Cash flow labels remain exactly
+“Opening balance” and “Closing balance”; no removed Budget control was restored.
+The P20-U decision was committed in `47a2bd8`.
+
+STEP 1 implementation: `02bfbb1` adds route forms for sections, items and
+income, registers them in the Expo Router stack and route-kind map, routes the
+Budget entry points to them, and deletes `src/components/BudgetManagementSheet.tsx`.
+`editBudgetIncome` adds full name/amount/day/category updates using the existing
+month/following scope semantics; the store action applies the change through
+one data action. The existing domain/store mutation and snapshot Undo model is
+retained. `TopAnchoredSheet` stays because Goal asset picking and `Dropdown`
+still use it. No schema or demo change was needed; `SCHEMA_VERSION` remains 12.
+
+**Replaced assertions and removed sheet behavior:**
+
+| Previous assertion / implementation | Replacement | Reason |
+|---|---|---|
+| `BudgetManagementSheet.tsx`: `makeFormSchema`, `titleFor`, and `BudgetManagementSheet`, plus `BudgetManagementMode`, `BudgetManagementValues`, and the `CUSTOM_ITEM_CATEGORY` sentinel. | Separate typed route schemas and the three route screens; item name is direct text, with no category dropdown or Custom item. | CR-86 explicitly replaces the modes/single-sheet form with section, item and income route forms. |
+| `edits and removes plan lines in the sheet, with a snapshot-aware Undo callback` | `opens plan item editing as a scoped budget-item route`, plus route save/Undo and store one-write/deep-equal restore tests. | The edit is now a route and continues to use the same month snapshot Undo behavior. |
+| `manages categories, items, and income through scoped sheets and counted deletes` | `renders Budget route forms in the shared shell at font scale 1.3/2`, `saves Budget route forms with scope, Undo, validation and edit-only delete actions`, and `wires Budget section, item, income and unbudgeted entry points to routes`. | Each former sheet mode now has a route and is tested for its shell, fields, route params, scope and entry point. Counted section deletion remains on Budget. |
+| `edits and deletes manually planned Insurance items with scoped Undo` | Insurance manual-item add/edit route entry, item save/delete confirmation, and one-write/Undo coverage. | Manual Insurance items remain manageable but now use the same route form as other section items. |
+| Sheet backdrop, top-anchor, keyboard-height and sheet-only font assertions. | Shared FormScreen header/body/footer contracts and 1.3/2.0 simulated route-form layout tests; the shared FormShell component test remains. | The sheet is removed; native route/keyboard/layout behavior is separately listed as unverified. |
+
+No standalone BudgetManagementSheet test file existed. `TopAnchoredSheet`
+remains in use. The frozen input test, `SortChip.tsx`, `src/lib/sorting.ts`,
+Cash flow labels and schema v12 were not changed.
+
+Focused verification: 6 suites / 264 tests pass:
+`budget.test.ts`, `createAppStore.test.ts`, `RouteRenderSmoke.test.tsx`,
+`FormShell.test.tsx`, `routeKinds.test.ts`, and `progressLedger.test.ts`.
+The full coverage run passes 78 suites / 934 tests (95.93% statements, 92.37%
+branches, 97.69% functions, 97.67% lines overall).
+
+Required gates, run sequentially:
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 934 tests pass; 95.93% statements, 92.37% branches, 97.69% functions, 97.67% lines. | 0 |
+| `npx tsc --noEmit` | TypeScript passes. An initial check caught a test-mock type omission; adding the typed Undo mock and rerunning passed. | 0 |
+| `npx expo lint` | Passes without warnings. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported to `dist`. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported to `dist`. | 0 |
+
+Directory coverage independently summed from Istanbul per-file summaries:
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2895/2940 (98.47%) | 2778/2982 (93.16%) |
+| `src/data` excluding hooks | 611/652 (93.71%) | 607/693 (87.59%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Changed-file per-file Istanbul summaries (separate from the directory totals):
+
+| File | Statements | Branches | Functions | Lines |
+|---|---:|---:|---:|---:|
+| `src/domain/budget.ts` | 96.16% | 91.06% | 97.69% | 97.79% |
+| `src/data/createAppStore.ts` | 90.74% | 86.59% | 89.20% | 92.91% |
+
+Coverage aggregation script:
+
+```js
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(require('./coverage/coverage-final.json'));
+for (const [name, match] of Object.entries({
+  domain: (file) => /\/src\/domain\//.test(file) && !/\/__tests__\//.test(file),
+  data: (file) => /\/src\/data\//.test(file) && !/\/__tests__\//.test(file) && !/\/hooks?\//.test(file),
+  lib: (file) => /\/src\/lib\//.test(file) && !/\/__tests__\//.test(file),
+})) {
+  let lc = 0, lt = 0, bc = 0, bt = 0;
+  for (const file of map.files()) {
+    if (!match(file)) continue;
+    const summary = map.fileCoverageFor(file).toSummary();
+    lc += summary.lines.covered;
+    lt += summary.lines.total;
+    bc += summary.branches.covered;
+    bt += summary.branches.total;
+  }
+  console.log(`${name}: lines ${lc}/${lt} (${(100 * lc / lt).toFixed(2)}%); branches ${bc}/${bt} (${(100 * bc / bt).toFixed(2)}%)`);
+}
+```
+
+**P20-U acceptance criteria not verified on a real device:** route navigation
+and hardware-back/dirty-discard behavior; native keyboard avoidance, field
+scrolling and footer reachability; OS font scaling and clipping at 1.3/2.0;
+segmented control and income dropdown touch/announcements; delete confirmation
+and Undo toast presentation; and modal stack/tab-bar presentation on physical
+iOS and Android. Tests assert route calls, component/style props and callbacks
+in TestRenderer; exports are bundles, not device runs.

@@ -708,6 +708,23 @@ describe('createAppStore persistence', () => {
       beforeIncome.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeIncome);
+    const beforeIncomeEdit = store.getState().data;
+    runOnce(() => actions.editBudgetIncome(month, 'salary', {
+      name: 'Contract work',
+      category: 'Freelance',
+      amount: 1_250,
+      day: 18,
+    }, 'following', today));
+    expect(store.getState().data.budgetPlan?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    expect(store.getState().data.monthBudgets?.[0]?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeIncomeEdit.budgetPlan,
+      month,
+      beforeIncomeEdit.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeIncomeEdit);
     runOnce(() => actions.addBudgetItem(month, {
       sectionId: addedSection.id, name: 'Pet care', mode: 'amount', value: 100,
     }, 'month', today));
@@ -737,7 +754,14 @@ describe('createAppStore persistence', () => {
       beforeInsuranceDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeInsuranceDelete);
+    const beforeSectionDelete = store.getState().data;
     runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeSectionDelete.budgetPlan,
+      month,
+      beforeSectionDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeSectionDelete);
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {
