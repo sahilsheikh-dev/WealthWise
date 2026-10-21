@@ -1004,6 +1004,9 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
     as an expense in Utilities. P20-V supersedes monthly-only assumptions for
     item planning and any assertions that expected each plan item to contribute
     in every month; test assertions now distinguish due and non-due months.
+    `resolveBudgetPlan` requires an explicit month so no caller can bypass
+    `plannedForMonth`; the old monthless amount/percent resolver assertions now
+    pass the month under test.
     Assumed: when adding a recurring item, the selected Budget month is the
     default first-due month; the first-due month chooser offers that month and
     the next eleven calendar months because the frozen field set has no
@@ -1864,13 +1867,14 @@ shared-shell route forms. P20-V completes CR-88/CR-89: schema STEP 1 is
 committed as `6d3feab`, recurrence-aware planning/dues as `82793e8`, and UI,
 demo and acceptance coverage are complete. All six required gates pass:
 coverage 78 suites/944 tests, TypeScript, lint, Expo Doctor 21/21, Android
-export, and iOS export. Directory coverage: domain 98.27% lines/92.92%
+export, and iOS export. Directory coverage: domain 98.27% lines/92.91%
 branches; data excluding hooks 93.81%/87.75%; pure lib 100%/100%. Existing
 monthly-only planned-total expectations and the route payload expecting no
 frequency were replaced with due/non-due monthly totals and explicit monthly
 frequency, because recurrence is now part of the stored plan. The demo uses
-the new built-in `Recharge` category as the mobile-recharge example. Phase 20
-is 22/22.
+the new built-in `Recharge` category as the mobile-recharge example. Plan
+resolution takes a required month, ensuring every planned amount is evaluated
+through `plannedForMonth`. Phase 20 is 22/22.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
