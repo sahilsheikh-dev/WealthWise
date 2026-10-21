@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 91% (62/68)
+Overall progress █████████░ 93% (63/68)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (20/20)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ░░░░░░░░░░ 0% (0/1)
+Phase 23         ██████████ 100% (1/1)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
@@ -143,7 +143,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
-| P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
+| P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -952,6 +952,80 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   | Security settings | `AppHeader` and setting controls | unchanged; settings surface, not a data-entry route form |
   | `app/link-missing.tsx` | `AppHeader`, selection list and fixed action | unchanged; bulk-selection flow, not a data-entry form |
   | Liability payments / investment entries lists | list headers and filters | unchanged; list/filter surfaces, not forms |
+  DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
+  `0774e51`, the worktree was clean;
+  no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
+  seven non-Copilot commits and two prior manual checkpoints; all paths are
+  listed one per entry:
+  - `4cb6367` — `.claude/settings.json`: removed local settings.
+  - `4cb6367` — `.gitignore`: ignored `.claude` content.
+  - `c49cafd` — `app.json`: formatting adjustment.
+  - `b217a2a` — `app/(tabs)/transactions.tsx`: available-balance card margin.
+  - `268e4c7` — `app/(tabs)/index.tsx`: Home action label and UI.
+  - `268e4c7` — `src/components/IconButton.tsx`: exact action label support.
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: label test.
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: action text allowance.
+  - `9a01941` — `app/goal-form.tsx`: blank initial Saved field.
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-owned cash flow labels/layout and removed controls.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: exact Edit allocation title.
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot wiring.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed Back to Transactions control.
+  - `75e9097` — `src/components/BudgetManagementSheet.tsx`: user checkpoint; removed Value type / Apply changes to labels and renamed due-day label.
+  - `ecc5c35` — `src/components/BudgetManagementSheet.tsx`: user checkpoint preserving the sheet edits above.
+  The Budget screen's Cash flow labels and user-removed controls remain
+  unchanged. The attached `file_Untitled-2.txt` is read-only. P23-A changes
+  schema v10 to v11 only after inventory is committed.
+- DEC-P23-INVENTORY: pre-change inventory and gaps against CR-78/CR-79:
+
+  | Area | Exists in schema v10/source | Missing against spec; planned gap |
+  |---|---|---|
+  | Policy fields | `id`, `name`, `insurer`, `kind`, `premium`, `frequency`, `startDate`, `premiumYears`, `trackFrom`, `coverAmount`, `currentValue`, `valueAsOf`, `maturityDate`, `payments` | Lifecycle `status`, `policyNumber`, `sumAssured`, `endDate`, `nominee`, `note`; policy summary and annualized cover/income metrics |
+  | Kinds/frequency | Kinds `term`, `health`, `life-savings`, `ulip`, `vehicle`, `home`, `other`; frequencies monthly/quarterly/half-yearly/yearly plus `single` | Frozen target names: `term-life`, `health`, `life-savings`, `ulip`, `motor`, `home`, `other`; explicit v10 mappings and four recurring frequencies |
+  | Schedule | `policySchedule` derives finite slots using startDate, frequency, premiumYears and trackFrom; FIFO-matches payment history; `addMonths` gives month-end clamping | Policy endDate cap and active-only dues; recurring frequency schedule tests across all four frequencies |
+  | Payment history | Policy payments have id/date/positive amount/note and create linked Insurance expenses | Existing records and links need retained history; policy deletion must unlink source but retain transaction |
+  | Goal links | `goalLinks.ts` permits only `life-savings` and `ulip` policy assets; current savings value/payment history contribute | Kind changes must preserve valid links or throw typed error naming linked goals; policy deletion removes its links |
+  | Integrity | `links.ts` validates policy-payment source parent/entry and linked expense fields; Goal validation checks linkable instruments | Deleted policy links must be removed atomically while transaction integrity remains valid |
+  | Pending/Home | `upcomingDue` in `schedule.ts` includes policy next due; `clear-dues.tsx` clears dues; Home renders common due rows | Exclude inactive policy dues while retaining payment history |
+  | Budget | `budget.ts` adds all policy schedules to monthly commitments and linked recurring rows; manual Insurance actual reconciliation excludes linked policy payments where requested | Inactive policies must contribute no planned rows/amounts; active policy rows must not double count manual Insurance items |
+  | Actions/store | `policyActions.ts` only updates name/insurer/premium; `createAppStore.ts` only exposes `updatePolicy` and historical add | Add/update/status/delete, single persisted write per action, delete/status Undo and deep-equal restoration |
+  | Summary | None | Add active count/cover/yearly premium, next renewal, 60-day upcoming rows, term cover, annual income estimate and cover multiple |
+  | Screens | `app/policy-form.tsx` edits name/insurer/premium; no policy list route. Budget/Home dues route to policy edit; clear dues uses `app/clear-dues.tsx`. | This part explicitly adds no screens; existing screen behavior should remain compatible with extended data. |
+  | Fixtures/demo | Mock data has one life-savings policy; demo data has one health policy; tests cover schedule/payment/link/budget/backup paths | Update fixtures to v11; add term-life, yearly health, motor and lapsed demo policies; test migration, backup, actions, summary and reconciliation |
+
+  Migration maps existing `term` to `term-life` and `vehicle` to `motor`;
+  `health`, `life-savings`, `ulip`, `home`, and `other` keep their names.
+  Legacy `single` maps to yearly with one premium period, preserving its
+  single scheduled due. Existing `premiumYears`, `trackFrom`, `currentValue`,
+  `valueAsOf` and `payments` remain to preserve schedule and savings history.
+  `coverAmount` migrates to the new `sumAssured`; `maturityDate` migrates to
+  `endDate` where no explicit endDate exists.
+  DEC-P23-A: Schema v11 extends policy lifecycle and metadata without adding
+  policy screens. Existing names map explicitly (`term` → `term-life`,
+  `vehicle` → `motor`); already-valid names remain unchanged. Legacy `single`
+  frequency becomes `yearly` with one premium period, and missing `startDate`
+  falls back to the earliest payment date, then injected `today`. A missing or
+  unknown recurring frequency defaults to yearly; invalid policy kinds fail
+  migration rather than being silently coerced. Existing schedule/payment and
+  savings-history fields are retained.
+  Assumed: the v10 single-premium representation is equivalent to one yearly
+  period for the existing schedule engine; there is no explicit once-only
+  frequency in schema v11.
+  Assumed: when no schedule or payment date exists, the migration's injected
+  `today` is the correct deterministic start date.
+  Replaced assertion: the v10 `single` frequency expectation was changed from
+  a `single` schedule to `yearly` with one period; reason: `single` is not a
+  v11 frequency, while preserving the one scheduled due is required.
+  Policy deletion removes policy-payment source links and policy goal/EF
+  bucket references while retaining the linked transaction as an ordinary
+  Insurance expense. Status changes and deletion are undoable; all policy
+  lifecycle actions use one persisted write, and Undo restores deep-equal data.
+  Active policies alone contribute premium dues, Budget commitments, cover,
+  and premium summary values; inactive payment history is retained.
+  Annual income uses the effective planned budget when available, otherwise
+  the last three months of earned income annualized, otherwise `null`.
+  No UI/screen files were changed. Physical-device behavior for existing policy
+  routes and native accessibility remains unverified.
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
   prior user checkpoints were audited; each changed path is listed:
@@ -1800,7 +1874,7 @@ evidence present in exports/checkpoints.
 | P15-C | Phase 15 | — | 2 | 2026-10-12 | SIP date clarity and goal-card behavior. | Done. | `e155bcd` | Exact review unavailable. | reconstructed |
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
-| P23-A | Phase 23 | P15-F | 2 | unknown | Insurance management. | Planned; no delivery claimed. | none identified | Prompt details unknown. | unknown |
+| P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -1930,6 +2004,8 @@ evidence present in exports/checkpoints.
 | CR-75 | Make transaction-derived unbudgeted rows manageable and permit manual Insurance items without linked-policy duplication. | Done | Budget/domain/schema/import/pending/store and route tests cover edit affordances, protected Insurance section, plan/snapshot mutations, due clearing, policy non-duplication, one write and deep-equal Undo. |
 | CR-76 | Unify full-screen and sheet forms on one shared header/body/footer implementation while preserving FormScreen behavior. | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, frozen hash test; dirty discard, validation summary, action slots, scrollable body and fixed footer remain covered. |
 | CR-77 | Convert every data-entry form to the common shell and enforce consistent Back/Close/delete/Save placement. | Done | Route parameter smoke test covers create/edit entry points; every route form plus onboarding, erase-data, Budget sheet, Goal picker and EF custom-option dialogs use the shared shell. Selection/information/list/settings surfaces remain deliberately unchanged. |
+| CR-78 | Migrate policy data to schema v11 with lifecycle/metadata, schedule compatibility and backup support. | Done | v10→v11 migration, exact one-time `.premigration.v10` archive, schema/backup chain and migration branch tests pass; v12 is rejected. |
+| CR-79 | Add pure policy actions and summary; enforce active-only dues/Budget rows and deletion cleanup with Undo. | Done | Typed policy actions, active-only/end-date schedule, policy summary, store one-write/Undo, linked transaction retention, integrity and Insurance reconciliation tests pass. |
 
 ## 8. Known issues and risks
 
@@ -2194,6 +2270,10 @@ evidence for the fixes.
 | P20-T STEP 1 — Shared three-region form core (CR-76) | Done | `src/components/FormShell.tsx`, `src/components/form/FormScreen.tsx` | `FormScreen` delegates header/body/footer to `FormShell`; SafeAreaView, KeyboardAvoidingView, dirty discard and existing props remain. Structural tests confirm the adapter has no duplicate header/body/footer layout. |
 | P20-T STEP 2 — Convert every data-entry form (CR-77) | Done | app form routes, BudgetManagementSheet, Goal asset picker, EF allocation custom-option dialogs | Route parameter smoke test covers create/edit route params; shared Back-left/right-action/Save-footer rule applies. Onboarding retains no-back exit behavior. Settings, list filters, selection pickers and informational modals remain outside the data-entry shell. |
 | P20-T STEP 3 — Acceptance, freeze and final gates | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx`, `OnboardingForms.test.tsx`, `TransactionForm.test.tsx`, `EfAllocationForm.test.tsx`, `formComponentsFrozen.test.ts`, `docs/PROGRESS.md` | Dirty discard and validation summary remain; font-scale tests assert non-clipping structure; authorized FormScreen hash is frozen and all other input hashes unchanged. Replaced assertion: full-screen left “Close” becomes left “Back”; reason: CR-77 navigation rule. Redundant footer Back buttons on invalid/missing-route states are replaced by the header action; reason: one navigation affordance per the shared layout. |
+| P23-A STEP 0 — Preflight and STEP 1 — Policy inventory | Done | `docs/PROGRESS.md` DEC-USER-CHANGES and DEC-P23-INVENTORY | Clean tree at base `0774e51`; seven no-Copilot commits and both earlier manual checkpoints re-audited with one line per changed file. Inventory records current fields, kind/frequency mapping, schedule/payment logic, goal links, integrity, dues/Budget behavior, mock/demo state, and existing policy screens; identifies CR-78/79 gaps. No source code or screens changed in the inventory step. |
+| P23-A STEP 2 — Schema v11, migration and backup (CR-78) | Done | `src/domain/types.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts` | v10 migration branches, v1–v10 backup chain, checksum-before-migration, schema v12 refusal, raw-byte archive/no-recopy/erase and schema bounds are covered by `migrate.test.ts`, `safeStorage.test.ts`, `backup.test.ts`, and `schemas.test.ts`. |
+| P23-A STEP 3 — Policy domain, schedule, store and demo (CR-79) | Done | `src/domain/policyActions.ts`, `src/domain/policySchedule.ts`, `src/domain/policySummary.ts`, `src/data/createAppStore.ts`, mock data | Four-frequency schedule/month-end/end-date/status cases; typed goal-link errors; linked transaction retention and integrity; status/delete one-write/Undo deep equality; summary fallbacks; active-only dues and Budget reconciliation; and demo records are covered. No policy screen changes. |
+| P23-A STEP 4 — Tests, ledger and final gates | Done | 77 suites/894 tests; `docs/PROGRESS.md` | `npm test -- --coverage` passed (lines 95.99%, branches 92.57%, functions 97.58%, statements 97.87%). Source-directory coverage: domain 97.12% lines/93.45% branches; data excluding hooks 90.24%/87.37%; pure lib 100%/100%. All six required gates exit 0; Expo Doctor reports 21/21. |
 
 #### P20-O final verification
 

@@ -13,7 +13,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -151,7 +151,7 @@ const oneTimeLiabilitySchema = z.strictObject({
   }
 });
 
-const policyKindSchema = z.enum(['term', 'health', 'life-savings', 'ulip', 'vehicle', 'home', 'other']);
+const policyKindSchema = z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']);
 const policyPaymentSchema = z.object({
   id: idSchema,
   date: isoDateSchema,
@@ -164,21 +164,22 @@ const policySchema = z.object({
   insurer: z.string().max(40),
   kind: policyKindSchema,
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'single']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: isoDateSchema,
-  premiumYears: z.number().int().min(1).max(80).nullable(),
+  status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
+  policyNumber: z.string().max(30).optional(),
+  sumAssured: moneySchema.min(0).max(100_000_000_000).optional(),
+  endDate: isoDateSchema.optional(),
+  nominee: z.string().max(40).optional(),
+  note: z.string().max(120).optional(),
+  premiumYears: z.number().int().min(1).max(80),
   trackFrom: isoDateSchema,
-  coverAmount: moneySchema.positive().max(100_000_000_000).nullable(),
   currentValue: moneySchema.min(0).max(100_000_000_000).nullable(),
   valueAsOf: isoDateSchema.nullable(),
-  maturityDate: isoDateSchema.nullable(),
   payments: z.array(policyPaymentSchema),
 }).superRefine((policy, context) => {
-  if ((policy.frequency === 'single') !== (policy.premiumYears === null)) {
-    context.addIssue({ code: 'custom', path: ['premiumYears'], message: 'Single policies have no premium term; recurring policies require a term' });
-  }
-  if (policy.maturityDate !== null && policy.maturityDate < policy.startDate) {
-    context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Maturity date cannot be before the policy started' });
+  if (policy.endDate !== undefined && policy.endDate <= policy.startDate) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must be after the policy started' });
   }
   const savingsKind = policy.kind === 'life-savings' || policy.kind === 'ulip';
   if (!savingsKind && policy.currentValue !== null) {

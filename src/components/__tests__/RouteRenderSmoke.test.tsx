@@ -3229,12 +3229,11 @@ describe('route render smoke audit', () => {
       premium: 60,
       frequency: 'monthly',
       startDate: `${month}-05`,
+      status: 'active',
       premiumYears: 1,
       trackFrom: `${month}-05`,
-      coverAmount: null,
       currentValue: null,
       valueAsOf: null,
-      maturityDate: null,
       payments: [],
     }];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;

@@ -39,6 +39,15 @@ describe('four-month demo data', () => {
     });
   });
 
+  it('includes the required active and lapsed policy demo records', () => {
+    expect(data.policies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
+    ]));
+  });
+
   it('has four complete months and a custom upcoming override for the item editor demo', () => {
     const customMonth = shiftMonth(monthKey(today), 2);
     expect(data.monthBudgets?.map(({ month }) => month)).toEqual([...months, customMonth]);

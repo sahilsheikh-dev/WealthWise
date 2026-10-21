@@ -143,7 +143,7 @@ describe('schema v5 cross-record integrity', () => {
         ...mockAppData.policies[0]!,
         id: 'policy-protection',
         name: 'Protection only',
-        kind: 'term',
+        kind: 'term-life',
         currentValue: null,
         valueAsOf: null,
       }],

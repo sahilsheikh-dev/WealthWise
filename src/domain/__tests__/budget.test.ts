@@ -74,9 +74,8 @@ const liability: Liability = {
 };
 const policy: Policy = {
   id: 'policy', name: 'Health cover', insurer: '', kind: 'health', premium: 60,
-  frequency: 'monthly', startDate: '2026-03-05', premiumYears: 1,
-  trackFrom: '2026-03-05', coverAmount: null, currentValue: null, valueAsOf: null,
-  maturityDate: null, payments: [],
+  frequency: 'monthly', startDate: '2026-03-05', status: 'active', premiumYears: 1,
+  trackFrom: '2026-03-05', currentValue: null, valueAsOf: null, payments: [],
 };
 const recurringLiability: Liability = {
   id: 'recurring', kind: 'recurring', name: 'Monthly loan', type: 'Personal loan',
@@ -1573,6 +1572,31 @@ describe('budget plans and monthly views', () => {
         amount: 365,
         source: { kind: 'budget', category: 'Insurance', type: 'expense' },
       })]);
+    });
+
+    it('keeps inactive policy history but excludes it from linked dues and budget commitments', () => {
+      const data = {
+        ...emptyAppData(today),
+        policies: [{
+          ...policy,
+          status: 'lapsed' as const,
+          payments: [{ id: 'historic-premium', date: '2026-02-05', amount: 60, note: '' }],
+        }],
+        monthBudgets: [monthBudgetFromLines('2026-03', [{
+          category: 'Insurance', planned: 400,
+        }], {
+          incomes: incomes(1_000),
+          linkedIncluded: true,
+        })],
+      };
+      expect(data.policies[0]?.payments).toHaveLength(1);
+      expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')).toEqual([]);
+      expect(monthlyCommitments(data, '2026-03')).toEqual([]);
+      expect(budgetMonthView(data, '2026-03', today).lines)
+        .toEqual([expect.objectContaining({ category: 'Insurance', planned: 400, actual: 0 })]);
+      expect(budgetOverview(data, '2026-03', today).sections
+        .find((section) => section.id === 'insurance')?.items)
+        .not.toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'linked' })]));
     });
   });
 });
