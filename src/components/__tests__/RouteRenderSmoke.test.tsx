@@ -10,6 +10,7 @@ import BudgetSectionFormScreen from '../../../app/budget-section-form';
 import ClearDuesScreen from '../../../app/clear-dues';
 import CoverGoalFormScreen from '../../../app/cover-goal-form';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
+import EfBucketFormScreen from '../../../app/ef-bucket-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
@@ -661,6 +662,7 @@ describe('route render smoke audit', () => {
     ['Insurance', React.createElement(InsuranceScreen)],
     ['Cover goal form', React.createElement(CoverGoalFormScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
+    ['Emergency fund allocation item form', React.createElement(EfBucketFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
@@ -797,6 +799,9 @@ describe('route render smoke audit', () => {
       ['Clear dues from Home/Transactions', { kind: 'plan', id: plan.id },
         React.createElement(ClearDuesScreen)],
       ['Emergency fund allocation', {}, React.createElement(EfAllocationFormScreen)],
+      ['Emergency fund allocation item create', {}, React.createElement(EfBucketFormScreen)],
+      ['Emergency fund allocation item edit', { id: demoData.efCustomBuckets[0]?.id ?? '' },
+        React.createElement(EfBucketFormScreen)],
     ];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
 

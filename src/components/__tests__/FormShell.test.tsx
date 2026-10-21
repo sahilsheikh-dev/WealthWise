@@ -115,6 +115,7 @@ describe('FormShell', () => {
       'app/liability-payment-form.tsx',
       'app/goal-form.tsx',
       'app/ef-allocation-form.tsx',
+      'app/ef-bucket-form.tsx',
       'app/policy-form.tsx',
       'app/investment-entry-form.tsx',
       'app/clear-dues.tsx',
