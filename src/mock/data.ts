@@ -170,12 +170,16 @@ export const policies: Policy[] = [{
   premium: 18_000,
   frequency: 'yearly',
   startDate: '2022-01-15',
+  status: 'active',
+  policyNumber: 'WL-2022-014',
   premiumYears: 20,
   trackFrom: '2026-01-15',
-  coverAmount: 500_000,
+  sumAssured: 500_000,
   currentValue: 82_500,
   valueAsOf: '2026-09-30',
-  maturityDate: '2042-01-15',
+  endDate: '2042-01-15',
+  nominee: 'Family',
+  note: 'Savings plan',
   payments: [],
 }];
 

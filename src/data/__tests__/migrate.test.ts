@@ -8,10 +8,12 @@ import {
   migrateV7ToV8,
   migrateV8ToV9,
   migrateV9ToV10,
+  migrateV10ToV11,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV9Fixture } from '../testFixtures/v9';
+import { makeV10Fixture } from '../testFixtures/v10';
 import { validateImportData } from '../../domain/backup';
 import { netWorth } from '../../domain/summary';
 import { goalSavedFor } from '../../domain/goalLinks';
@@ -105,7 +107,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 11)).toThrow(
+    expect(() => migratePersisted({}, 12)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -163,8 +165,70 @@ describe('schema migration', () => {
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version10: true } };
-    expect(migratePersisted(persisted, 10)).toBe(persisted);
+    const persisted = { data: { version11: true } };
+    expect(migratePersisted(persisted, 11)).toBe(persisted);
+  });
+
+  it('migrates v10 policy kinds, status, metadata, date fallbacks and legacy frequency', () => {
+    const policy = makeV10Fixture().policies[0];
+    if (!policy) throw new Error('Expected a v10 policy fixture.');
+    const migrated = migrateV10ToV11({
+      policies: [
+        { ...policy, id: 'term', kind: 'term', frequency: 'single', premiumYears: null },
+        { ...policy, id: 'motor', kind: 'vehicle', frequency: 'quarterly' },
+        {
+          ...policy,
+          id: 'payment-start',
+          kind: 'health',
+          startDate: undefined,
+          trackFrom: undefined,
+          frequency: undefined,
+          premiumYears: undefined,
+          payments: [{ id: 'paid', date: '2021-04-06', amount: 2, note: '' }],
+        },
+        {
+          ...policy,
+          id: 'today-start',
+          kind: 'other',
+          startDate: undefined,
+          trackFrom: undefined,
+          frequency: undefined,
+          premiumYears: undefined,
+          payments: [],
+          coverAmount: null,
+          maturityDate: null,
+        },
+      ],
+    }, { today: '2026-10-10' }) as { policies: Record<string, unknown>[] };
+    expect(migrated.policies).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'term', kind: 'term-life', frequency: 'yearly', premiumYears: 1, status: 'active',
+        sumAssured: policy.coverAmount, endDate: policy.maturityDate,
+      }),
+      expect.objectContaining({ id: 'motor', kind: 'motor', frequency: 'quarterly', status: 'active' }),
+      expect.objectContaining({
+        id: 'payment-start', startDate: '2021-04-06', trackFrom: '2021-04-06',
+        frequency: 'yearly', premiumYears: 1, status: 'active',
+      }),
+      expect.objectContaining({
+        id: 'today-start', startDate: '2026-10-10', trackFrom: '2026-10-10',
+        frequency: 'yearly', premiumYears: 1, status: 'active',
+      }),
+    ]));
+    const migratedTerm = migrated.policies.find((item) => item.id === 'term');
+    expect(migratedTerm).not.toHaveProperty('coverAmount');
+    expect(migratedTerm).not.toHaveProperty('maturityDate');
+    expect(migratedTerm).not.toHaveProperty('policyNumber');
+    expect(migratedTerm).not.toHaveProperty('nominee');
+    expect(migratedTerm).not.toHaveProperty('note');
+  });
+
+  it('rejects malformed v10 policy data', () => {
+    expect(() => migrateV10ToV11(null, { today: '2026-10-10' })).toThrow(PersistedVersionError);
+    expect(() => migrateV10ToV11({ policies: null }, { today: '2026-10-10' })).toThrow(PersistedVersionError);
+    expect(() => migrateV10ToV11({ policies: [null] }, { today: '2026-10-10' })).toThrow(PersistedVersionError);
+    expect(() => migrateV10ToV11({ policies: [{ payments: [null] }] }, { today: '2026-10-10' }))
+      .toThrow(PersistedVersionError);
   });
 
   it('migrates v9 plan lines and snapshots into section items with unmapped items in Survival', () => {

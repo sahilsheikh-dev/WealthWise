@@ -14,7 +14,9 @@ import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
+import { useUIStore } from '../uiStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
+import { makeV10Fixture } from '../testFixtures/v10';
 import { emptyAppData } from '../../domain/actions';
 import type { ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -73,6 +75,83 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists policy add, status, and delete atomically and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => 'created-policy' });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    let writes = storage.setItemCalls;
+    actions.addPolicy({
+      name: 'Policy',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 100,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-01-01',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const created = store.getState().data.policies.find((policy) => policy.id === 'created-policy');
+    if (!created) throw new Error('Policy was not created.');
+    const initial = store.getState().data;
+
+    writes = storage.setItemCalls;
+    actions.setPolicyStatus(created.id, 'lapsed');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.policies[0]?.status).toBe('lapsed');
+    const statusUndo = useUIStore.getState().actionToast?.onAction;
+    if (!statusUndo) throw new Error('Policy status Undo was not set.');
+    writes = storage.setItemCalls;
+    statusUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(initial);
+
+    const beforeDelete = store.getState().data;
+    writes = storage.setItemCalls;
+    actions.deletePolicy(created.id);
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.policies).toEqual([]);
+    const deleteUndo = useUIStore.getState().actionToast?.onAction;
+    if (!deleteUndo) throw new Error('Policy deletion Undo was not set.');
+    writes = storage.setItemCalls;
+    deleteUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(beforeDelete);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('hydrates v10 policy data, archives the exact original bytes once, and never recopies them', async () => {
+    const storage = new MemoryStorage();
+    const originalData = makeV10Fixture();
+    const originalBytes = JSON.stringify({ state: { data: originalData }, version: 10 });
+    storage.values.set('wealthwise.app.v1', originalBytes);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.policies[0]).toMatchObject({
+      kind: 'life-savings',
+      status: 'active',
+      sumAssured: 500_000,
+      endDate: '2042-01-15',
+    });
+    const archiveKey = 'wealthwise.app.v1.premigration.v10';
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+    expect(archiveWrites).toBe(1);
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has(archiveKey)).toBe(false);
+  });
+
   it('updates linked policy details with one persisted write', async () => {
     const storage = new MemoryStorage();
     const policy = {
@@ -333,7 +412,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 10 });
+    const raw = JSON.stringify({ state: { data }, version: 11 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -370,7 +449,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 10 });
+    const raw = JSON.stringify({ state: { data }, version: 11 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -876,12 +955,11 @@ describe('createAppStore persistence', () => {
       premium: 50,
       frequency: 'monthly',
       startDate: '2026-08-10',
+      status: 'active',
       premiumYears: 1,
       trackFrom: '2026-08-10',
-      coverAmount: null,
       currentValue: null,
       valueAsOf: null,
-      maturityDate: null,
     }, 'settle'));
   });
 
