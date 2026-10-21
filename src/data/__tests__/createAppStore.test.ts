@@ -138,6 +138,23 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls - writes).toBe(1);
     expect(store.getState().data).toEqual(initial);
 
+    useUIStore.getState().setActionToast(null);
+    writes = storage.setItemCalls;
+    actions.updatePolicy(created.id, { status: 'lapsed' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const updateStatusUndo = useUIStore.getState().actionToast?.onAction;
+    if (!updateStatusUndo) throw new Error('Policy form status change did not expose Undo.');
+    writes = storage.setItemCalls;
+    updateStatusUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(initial);
+
+    useUIStore.getState().setActionToast(null);
+    writes = storage.setItemCalls;
+    actions.updatePolicy(created.id, { status: 'active' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
     const beforeDelete = store.getState().data;
     writes = storage.setItemCalls;
     actions.deletePolicy(created.id);
@@ -151,6 +168,51 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data).toEqual(beforeDelete);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
     useUIStore.getState().setActionToast(null);
+  });
+
+  it('records a manual policy premium and linked transaction in one persisted write', async () => {
+    let sequence = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `policy-payment-${++sequence}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addPolicy({
+      name: 'Health cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 100,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-01-01',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies.find((item) => item.id === 'policy-payment-1');
+    if (!policy) throw new Error('Policy fixture was not created.');
+    const before = storage.setItemCalls;
+
+    actions.addPolicyPayment(policy.id, {
+      date: '2026-10-10',
+      amount: 125,
+      note: 'Paid at renewal',
+    });
+
+    expect(storage.setItemCalls - before).toBe(1);
+    const entry = store.getState().data.policies.find((item) => item.id === policy.id)?.payments[0];
+    expect(entry).toMatchObject({ id: 'policy-payment-2', date: '2026-10-10', amount: 125 });
+    const transaction = store.getState().data.transactions.find((item) =>
+      item.source?.kind === 'policy-payment' && item.source.entryId === 'policy-payment-2',
+    );
+    expect(transaction).toMatchObject({
+      type: 'expense',
+      amount: 125,
+      category: 'Health premium',
+      note: 'Paid at renewal',
+      source: { kind: 'policy-payment', parentId: policy.id, entryId: 'policy-payment-2' },
+    });
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
   it('hydrates v10 policy data, archives the exact original bytes once, and never recopies them', async () => {
