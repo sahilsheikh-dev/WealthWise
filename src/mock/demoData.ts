@@ -13,6 +13,7 @@ import {
   editBudgetItem,
 } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
+import { defaultCoverGoals } from '../domain/coverGoals';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
@@ -32,6 +33,11 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
   Family: 2_500,
   EMI: 1_500,
   Insurance: 900,
+  'Insurance premium': 900,
+  'Term life premium': 2_200,
+  'Health premium': 1_800,
+  'Motor premium': 600,
+  'Home premium': 500,
   Shopping: 1_100,
   Health: 1_200,
   Bills: 1_500,
@@ -425,6 +431,7 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
+    coverGoals: defaultCoverGoals(),
     budget: null,
     budgetPlan,
     monthBudgets: [],

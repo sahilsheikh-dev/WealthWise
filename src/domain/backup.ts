@@ -10,7 +10,7 @@ import {
   EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
-import { THEME_IDS, type AppData, type ISODate } from './types';
+import { COVER_POLICY_TYPES, THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -155,6 +155,27 @@ const policySchema = z.strictObject({
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and date must be set together' });
   }
 });
+const coverGoalsSchema = z.array(z.strictObject({
+  type: z.enum(COVER_POLICY_TYPES),
+  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
+  targetValue: z.number().finite().min(0).max(100_000_000_000).optional(),
+}).superRefine((goal, context) => {
+  if (goal.targetMode === 'income-multiple'
+    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
+  }
+  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
+  }
+})).length(COVER_POLICY_TYPES.length).superRefine((goals, context) => {
+  const seen = new Set<string>();
+  goals.forEach((goal, index) => {
+    if (seen.has(goal.type)) {
+      context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+    }
+    seen.add(goal.type);
+  });
+});
 const budgetSchema = z.strictObject({
   plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
   lines: z.array(z.strictObject({
@@ -258,6 +279,7 @@ export const importDataSchema = z.strictObject({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   policies: z.array(policySchema).max(100_000),
+  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),

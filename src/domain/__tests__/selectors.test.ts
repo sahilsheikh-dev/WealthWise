@@ -27,6 +27,7 @@ import {
 } from '../index';
 import type { AppData, Goal, Holding, HoldingType, ManualHolding, PlanHolding, RecurringLiability, Transaction } from '../types';
 import { goalSavedFor } from '../goalLinks';
+import { defaultCoverGoals } from '../coverGoals';
 
 const tx = (
   id: string,
@@ -49,6 +50,7 @@ const baseData = (changes: Partial<AppData> = {}): AppData => ({
   efCustomBuckets: [],
   efBucketLinks: {},
   ...changes,
+  coverGoals: changes.coverGoals ?? defaultCoverGoals(),
 });
 
 describe('income baseline selection', () => {

@@ -144,7 +144,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
-| P23-B | — | In progress | CR-80/CR-81: schema v12 cover goals, insurance categories and pure summaries/actions; the former screen-only plan is cancelled. | 2026-10-21 |
+| P23-B | — | In progress | CR-80/CR-81: schema v12 cover goals, insurance categories and pure summaries/actions; the former screen-only plan is cancelled. Step 1 migration/schema/archive tests pass. | 2026-10-21 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -1900,7 +1900,7 @@ evidence present in exports/checkpoints.
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
-| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Step 0 done; implementation in progress. The prior screen-only plan is cancelled. | Preflight base `501956a`; spec/decision ledger pending its commit. | Assumed: none beyond DEC-P23-COVER; preserve all policy screens and all existing Insurance transaction history. | current request |
+| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Step 0 and schema/migration/archive step done; domain and acceptance work in progress. The prior screen-only plan is cancelled. | Preflight base `501956a`; decision ledger `04bf7f0`. | Assumed: none beyond DEC-P23-COVER; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2032,6 +2032,8 @@ evidence present in exports/checkpoints.
 | CR-77 | Convert every data-entry form to the common shell and enforce consistent Back/Close/delete/Save placement. | Done | Route parameter smoke test covers create/edit entry points; every route form plus onboarding, erase-data, Budget sheet, Goal picker and EF custom-option dialogs use the shared shell. Selection/information/list/settings surfaces remain deliberately unchanged. |
 | CR-78 | Migrate policy data to schema v11 with lifecycle/metadata, schedule compatibility and backup support. | Done | v10→v11 migration, exact one-time `.premigration.v10` archive, schema/backup chain and migration branch tests pass; v12 is rejected. |
 | CR-79 | Add pure policy actions and summary; enforce active-only dues/Budget rows and deletion cleanup with Undo. | Done | Typed policy actions, active-only/end-date schedule, policy summary, store one-write/Undo, linked transaction retention, integrity and Insurance reconciliation tests pass. |
+| CR-80 | Add cover-goal schema v12, one goal per cover type, migration/archive and backup support. | In progress | P23-B DEC-P23-COVER; defaults, target constraints, v11 migration/archive and v13 refusal tests pass. |
+| CR-81 | Add cover goal summaries/target action, typed policy suggestion, insurance categories and reconciliation. | In progress | P23-B DEC-P23-COVER; domain/store/category/Budget/demo acceptance work in progress. |
 
 ## 8. Known issues and risks
 
@@ -2300,6 +2302,8 @@ evidence for the fixes.
 | P23-A STEP 2 — Schema v11, migration and backup (CR-78) | Done | `src/domain/types.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts` | v10 migration branches, v1–v10 backup chain, checksum-before-migration, schema v12 refusal, raw-byte archive/no-recopy/erase and schema bounds are covered by `migrate.test.ts`, `safeStorage.test.ts`, `backup.test.ts`, and `schemas.test.ts`. |
 | P23-A STEP 3 — Policy domain, schedule, store and demo (CR-79) | Done | `src/domain/policyActions.ts`, `src/domain/policySchedule.ts`, `src/domain/policySummary.ts`, `src/data/createAppStore.ts`, mock data | Four-frequency schedule/month-end/end-date/status cases; typed goal-link errors; linked transaction retention and integrity; status/delete one-write/Undo deep equality; summary fallbacks; active-only dues and Budget reconciliation; and demo records are covered. No policy screen changes. |
 | P23-A STEP 4 — Tests, ledger and final gates | Done | 77 suites/894 tests; `docs/PROGRESS.md` | `npm test -- --coverage` passed (lines 95.99%, branches 92.57%, functions 97.58%, statements 97.87%). Source-directory coverage: domain 97.12% lines/93.45% branches; data excluding hooks 90.24%/87.37%; pure lib 100%/100%. All six required gates exit 0; Expo Doctor reports 21/21. |
+| P23-B STEP 0 — Preflight and cover-goal decision | Done | `docs/PROGRESS.md` DEC-P23-COVER; clean base `501956a` | No manual checkpoint was needed. Cancelled the former screen-only P23-B plan and recorded v12 cover-goal semantics, category behavior, Budget reconciliation, defaults, and no-screen scope. |
+| P23-B STEP 1 — Schema v12 and migration (CR-80) | Done | Types, schemas, backup import, `migrateV11ToV12`, safe-storage archive | Targeted gates: migration, safe-storage archive, store hydration, schema and backup tests; 5 suites/151 tests pass. v11 archive is exact-byte, once-only and erased with app data; schema v13 is refused; backups preserve checksum-before-migration. |
 
 #### P20-O final verification
 

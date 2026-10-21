@@ -31,9 +31,45 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version eleven', () => {
+  it('accepts the typed mock app data and exports schema version twelve', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(11);
+    expect(SCHEMA_VERSION).toBe(12);
+  });
+
+  it('validates cover goal uniqueness and target-mode bounds', () => {
+    const goals = mockAppData.coverGoals;
+    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: goals.slice(1) }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'term-life'
+        ? { ...goal, targetValue: 51 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'term-life'
+        ? { ...goal, targetValue: 0 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'health'
+        ? { ...goal, targetMode: 'amount', targetValue: -1 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'health'
+        ? { ...goal, targetMode: 'income-multiple' }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'motor'
+        ? { ...goal, targetValue: 1 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: undefined }).success).toBe(false);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {

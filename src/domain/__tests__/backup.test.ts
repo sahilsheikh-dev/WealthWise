@@ -16,6 +16,7 @@ import { addInvestmentEntry } from '../investmentActions';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { makeV9Fixture } from '../../data/testFixtures/v9';
 import { makeV10Fixture } from '../../data/testFixtures/v10';
+import { makeV11Fixture } from '../../data/testFixtures/v11';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -41,7 +42,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 11 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 12 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -158,7 +159,31 @@ describe('backup validation and serialization', () => {
       sumAssured: 500_000,
       endDate: '2042-01-15',
     });
+
     const tampered = { ...envelope, data: { ...oldData, settings: { ...oldData.settings, name: 'changed' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v11 backup bytes and imports seeded cover goals', async () => {
+    const data = makeV11Fixture();
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 11,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
+      data,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    expect(imported).toMatchObject({
+      ok: true,
+      data: { coverGoals: expect.arrayContaining([
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+      ]) },
+    });
+    const tampered = { ...envelope, data: { ...data, settings: { ...data.settings, name: 'Tampered' } } };
     await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
@@ -265,7 +290,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(11);
+    expect(SCHEMA_VERSION).toBe(12);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -327,7 +352,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 12;
+    future.schemaVersion = 13;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -454,7 +479,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 12;
+    newer.schemaVersion = 13;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
