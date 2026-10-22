@@ -1023,7 +1023,7 @@ describe('route render smoke audit', () => {
       act(() => firstDueControl.props.onPress());
       act(() => renderer?.root.findByProps({ accessibilityLabel: formatMonth(firstDueMonth) }).props.onPress());
       const valueTypeControl = renderer.root.findAll((node) =>
-        String(node.type) === 'segmentedcontrol' && node.props.label === 'Value type',
+        String(node.type) === 'segmentedcontrol' && node.props.value === 'amount',
       )[0];
       expect(valueTypeControl?.props.options).toEqual([{ label: 'Amount', value: 'amount' }]);
       await act(async () => {
@@ -1265,7 +1265,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('wires Insurance entry points and keeps the insurance screen usable at large font scales', async () => {
+  it('keeps Budget as the other Insurance entry point and removes Insurance from Goals', async () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const storeState = useAppStore((state) => state);
     const previousRouteData = { ...routeData };
@@ -1296,9 +1296,19 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, demoData);
       storeState.data = demoData;
       router.push.mockClear();
-      assertInsuranceLink(React.createElement(GoalsScreen), 'Insurance cover');
       assertInsuranceLink(React.createElement(BudgetScreen), 'Manage policies');
-      assertInsuranceLink(React.createElement(HomeScreen), '', 'home-insurance-cover-link');
+      renderer = renderScreen(React.createElement(GoalsScreen));
+      expect(renderer.root.findAll((node) => node.props.accessibilityLabel === 'Insurance cover')).toHaveLength(0);
+      expect(renderer.root.findAllByType('text')
+        .map((node) => node.children.join('')).join(' ').toLowerCase()).not.toContain('insurance');
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      renderer = renderScreen(React.createElement(HomeScreen));
+      const homeInsuranceCard = renderer.root.findByProps({ testID: 'home-insurance-card' });
+      act(() => homeInsuranceCard.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/insurance');
+      act(() => renderer?.unmount());
+      renderer = undefined;
       const duePolicy = demoData.policies.find((policy) => policy.status === 'active');
       if (!duePolicy) throw new Error('Demo data has no policy due fixture.');
       const dueData = {
