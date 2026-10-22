@@ -12,6 +12,7 @@ import {
   AppText,
   Button,
   Card,
+  EmptyState,
   Screen,
   StatPill,
   StatPillRow,
@@ -28,6 +29,7 @@ import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
+import { policySummary } from '../../src/domain/policySummary';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -57,8 +59,9 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const coverGaps = coverGoalSummaries(data, today)
-    .filter((goal) => goal.state === 'gap' || goal.state === 'missing');
+  const coverGoals = coverGoalSummaries(data, today);
+  const termLifeGoal = coverGoals.find((goal) => goal.type === 'term-life');
+  const insuranceSummary = policySummary(data, today);
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
@@ -225,23 +228,70 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
-      {coverGaps.length > 0 ? (
-        <Pressable
-          testID="home-insurance-cover-link"
-          accessibilityRole="button"
-          accessibilityLabel={`Insurance cover, ${coverGaps.length} goals need review`}
-          accessibilityHint="Opens insurance cover goals and policies"
-          onPress={() => router.push('/insurance')}
-          style={[styles.coverLink, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.coverLinkText}>
-            <AppText weight="semibold">Insurance cover</AppText>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              {coverGaps.length} {coverGaps.length === 1 ? 'cover goal' : 'cover goals'} to review
-            </AppText>
-          </View>
-          <AppText style={[typography.meta, { color: colors.primary }]}>View</AppText>
-        </Pressable>
-      ) : null}
+      <Pressable
+        testID="home-insurance-card"
+        accessibilityRole="button"
+        accessibilityLabel="Open Insurance"
+        accessibilityHint="Opens insurance policies and cover goals"
+        onPress={() => router.push('/insurance')}>
+        <Card style={styles.insuranceCard}>
+          {data.policies.length === 0 ? (
+            <>
+              <AppText weight="semibold">Insurance</AppText>
+              <EmptyState title="No policies yet" />
+              <Button
+                label="Add policy"
+                icon="plus"
+                variant="primary"
+                onPress={(event) => {
+                  event.stopPropagation();
+                  router.push('/policy-form');
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <AppText weight="semibold">Insurance</AppText>
+              <View
+                testID="home-insurance-row-total-cover"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
+                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
+                </View>
+              </View>
+              <View
+                testID="home-insurance-row-yearly-premium"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
+                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
+                </View>
+              </View>
+              {insuranceSummary.nextRenewal ? (
+                <View
+                  testID="home-insurance-row-next-renewal"
+                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
+                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                    <View style={styles.insuranceRenewalDetails}>
+                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
+                      </AppText>
+                    </View>
+                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
+                  </View>
+                </View>
+              ) : null}
+              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
+                <View testID="home-insurance-term-progress">
+                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
+                </View>
+              ) : null}
+            </>
+          )}
+        </Card>
+      </Pressable>
 
       <View style={styles.quickActions}>
         {HOME_QUICK_ACTIONS.map((action) => (
@@ -492,6 +542,12 @@ const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
   categoryBreakdown: { gap: 10 },
+  insuranceCard: { gap: 10 },
+  insuranceRow: { minHeight: 42, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
+  insuranceRowContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  insuranceRowStacked: { alignItems: 'flex-start', flexDirection: 'column' },
+  insuranceRenewalRow: { paddingVertical: 6 },
+  insuranceRenewalDetails: { flex: 1, minWidth: 0, gap: 2 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -516,18 +572,4 @@ const styles = StyleSheet.create({
   goalAmounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   goalMinimum: { marginTop: 7 },
   emergencyGoalActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  coverLink: {
-    minHeight: 60,
-    marginHorizontal: 20,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  coverLinkText: { flex: 1, minWidth: 0 },
 });
