@@ -3,22 +3,22 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { Dropdown } from '../src/components/Dropdown';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
-import { Dropdown } from '../src/components/Dropdown';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
-import { formatMonth } from '../src/lib/format';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -214,7 +214,6 @@ export default function BudgetItemFormScreen() {
         name="mode"
         render={({ field }) => (
           <SegmentedControl
-            label="Value type"
             value={field.value}
             options={frequency === 'monthly' ? [
               { label: 'Amount', value: 'amount' },
@@ -313,7 +312,6 @@ export default function BudgetItemFormScreen() {
         name="scope"
         render={({ field }) => (
           <SegmentedControl
-            label="Apply changes to"
             value={field.value}
             options={[
               { label: 'This month only', value: 'month' },

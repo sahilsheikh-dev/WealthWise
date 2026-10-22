@@ -233,7 +233,6 @@ export default function BudgetIncomeFormScreen() {
         name="scope"
         render={({ field }) => (
           <SegmentedControl
-            label="Apply changes to"
             value={field.value}
             options={[
               { label: 'This month only', value: 'month' },
