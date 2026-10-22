@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (68/73)
+Overall progress █████████░ 92% (68/74)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (22/22)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ██████████ 100% (3/3)
+Phase 23         ████████░░ 75% (3/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
@@ -148,7 +148,8 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
-| P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. | 2026-10-21 |
+| P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
+| P23-D | — | In progress | CR-91: replace the Goals Insurance link and conditional compact Home cover row with a detail-first Home Insurance Card. No schema change. | 2026-10-22 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -1179,6 +1180,42 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   Assumed: when an explicitly linked manual premium includes a note, that note
   is retained in both payment history and the linked transaction; an empty
   note keeps the existing `{policy name} premium` transaction label.
+  DEC-P23D (P23-D, CR-91): replace the Goals tab's `Insurance cover` text link
+  and P23-C's gap/missing-only compact Home row with one Home Insurance Card.
+  The card reuses `Card`, hairline-separated detail rows and `GoalProgressRow`;
+  active policy summary supplies Total cover, Yearly premium and Next renewal,
+  with a term-life progress bar only for a known target. It opens `/insurance`;
+  with no policy records it displays the shared No policies yet empty state and
+  routes Add policy to `/policy-form`. Budget's Manage policies entry and all
+  Insurance and cover-goal screens/forms remain unchanged; Goals contains no
+  Insurance content. Schema v12 and the four tabs remain unchanged.
+  Assumed: “immediately after the Emergency fund card” means directly after
+  the existing top Home summary Card, whose Emergency fund StatPill is the
+  current Home emergency-fund summary; Home has no standalone Emergency fund
+  Card. The Home Goal Progress Card remains in its existing position and
+  unchanged. A policy-free state means `data.policies.length === 0`.
+  Home Emergency fund inspection (STEP 1):
+
+  | Surface | Existing structure, order and behavior |
+  |---|---|
+  | Emergency fund summary | The first Home `Card` contains Net Worth followed by Assets, Liabilities and Emergency fund StatPills; the EF StatPill is third and opens `/emergency-fund`. |
+  | Goal Progress | Later on Home, one shared `Card` contains ordered goal rows with hairline dividers; each row is a `Pressable`, and the emergency goal includes details/actions followed by `GoalProgressRow`. There is no separate EF Card or EF-specific empty state. |
+  | Empty state | Home does not render an EF-specific empty state; the emergency goal is ensured by the domain summary. Empty policy state is explicitly handled by the Insurance policy list with `No policies yet` and `Add policy`. |
+  | Card style | The shared `Card` component applies themed surface/border, horizontal margin, padding and rounded border; row divider uses `StyleSheet.hairlineWidth`. The new Insurance card reuses `Card` and `GoalProgressRow`, without changing the Emergency fund or Goal Progress layout. |
+  P23-D preflight on 2026-10-22 found a clean tree at `211e514`; no checkpoint
+  was needed. The only later commit was the user's committed `5558bf4` with no
+  Copilot trailer; its edits remain untouched:
+  - `5558bf4` — `app/budget-income-form.tsx`: removed the scope SegmentedControl label.
+  - `5558bf4` — `app/budget-item-form.tsx`: import ordering and removed Value type / Apply changes to labels.
+  - `5558bf4` — `app/budget-section-form.tsx`: removed the scope SegmentedControl label.
+  The Cash flow labels and removed Budget controls remain protected.
+  Superseded by P23-D: P23-C's Goals-tab `Insurance cover` link (CR-82) and
+  the gap/missing-only compact Home cover row (CR-82). The Budget `Manage
+  policies` link remains the non-Home Insurance entry point.
+  Replaced assertions: the Goals Insurance-link assertion becomes a no-
+  Insurance-content assertion; the conditional compact-row/route assertion
+  becomes Home Card ordering, detail ordering, target-gated final progress bar,
+  empty-state Add policy route, and always-available Insurance navigation.
   Assumed: TestRenderer font-scale checks at 1.3 and 2.0 verify responsive style
   props only; native wrapping, clipping, keyboard, safe-area and touch behavior
   still require physical-device validation.
@@ -2077,6 +2114,7 @@ evidence present in exports/checkpoints.
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
 | P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Done; 78 suites/914 tests pass; all six gates exit 0. | Preflight/decision `04bf7f0`; schema/migration `1f9917e`; domain/tests `8893bf9`; coverage correction `b9cb4f6`; lint cleanup `c443191`. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P23-C | Phase 23 | — | 2 | 2026-10-21 | Insurance cover and policy screens, with cover goal forms and transaction/Budget/Home integration (CR-82–CR-85). | Done; final gates and tests recorded below. | Preflight `1858997`; implementation `69a16ec`. | Assumed: see DEC-P23-C-SCREENS; preserve schema v12 and all P23-B domain behavior. | current request |
+| P23-D | Phase 23 | — | 2 | 2026-10-22 | Replace Goals Insurance link and conditional compact Home row with a policy summary Insurance Card (CR-91). | In progress; preflight inventory and decision recorded; implementation/tests/gates pending. | Base `211e514`; user-owned commit `5558bf4` audited. | Assumed: see DEC-P23D; schema v12 and remaining P23-C behavior stay unchanged. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2216,6 +2254,7 @@ evidence present in exports/checkpoints.
 | CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | Done | RouteRenderSmoke asserts five-type order, progress-last layout, term income line/null helper, and all target modes; targets remain non-deletable. |
 | CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | Done | RouteRenderSmoke asserts create/edit fields, edit-only status, date bound, delete confirmation, Paid/Undo and large-font style props; store tests assert deep-equal delete/status Undo. |
 | CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
+| CR-91 | Replace Goals Insurance link and conditional Home cover row with an Insurance Card after the Home Emergency fund summary. | In progress | P23-D reuses shared Card/GoalProgressRow, shows policy totals and a target-gated term-life bar, routes card/Add policy actions, removes Insurance from Goals, and preserves Budget Manage policies. |
 | CR-86 | Replace BudgetManagementSheet with full-screen route forms for budget sections, items and income; keep scope, validation, Save and edit/delete behavior. | Done | P20-U adds three shared FormScreen routes, removes the sheet, routes all Budget entry points and adds the full-field `editBudgetIncome` domain/store action. Focused route/domain/store tests pass. |
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
