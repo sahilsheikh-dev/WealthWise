@@ -368,6 +368,7 @@ export default function HomeScreen() {
         </>
       ) : null}
 
+      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Insurance</AppText>
       <Pressable
         testID="home-insurance-card"
         accessibilityRole="button"
@@ -377,7 +378,6 @@ export default function HomeScreen() {
         <Card style={styles.insuranceCard}>
           {data.policies.length === 0 ? (
             <>
-              <AppText weight="semibold">Insurance</AppText>
               <EmptyState title="No policies yet" />
               <Button
                 label="Add policy"
@@ -391,7 +391,6 @@ export default function HomeScreen() {
             </>
           ) : (
             <>
-              <AppText weight="semibold">Insurance</AppText>
               <View
                 testID="home-insurance-row-total-cover"
                 style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
