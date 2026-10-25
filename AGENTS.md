@@ -1,3 +1,6 @@
+> AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
+> finishing, update `status.md` and `open-items.md` there.
+
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 24.3.0+ in the Node 24 LTS line;
 routes are in `app/`, not `src/app/`.
@@ -6,6 +9,9 @@ routes are in `app/`, not `src/app/`.
 
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and
   verification records with the same task commit.
+- Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
+  authorization. Preserve the separately hashed files listed in
+  `docs/memory/rules.md`.
 - Keep `src/domain/` pure: no React/Expo imports, clock reads or randomness.
   Inject dates and identifiers.
 - A multi-entity action must be one pure domain action and one Zustand store

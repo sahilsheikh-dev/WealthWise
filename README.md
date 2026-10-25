@@ -1,3 +1,5 @@
+> AI agent context and durable project memory: [docs/memory/README.md](docs/memory/README.md).
+
 # WealthWise
 
 WealthWise is an offline-first personal finance app built with Expo and React

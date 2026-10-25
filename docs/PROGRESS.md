@@ -1,3 +1,5 @@
+> AI working memory index: [memory/README.md](memory/README.md). This file remains the complete canonical progress and decision ledger.
+
 # Wealth Wise master progress ledger
 
 ## Contents
@@ -1404,6 +1406,30 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   placeholder remain unchanged; no EAS build was run.
   **Needs the owner:** confirm the MIT copyright holder. Screenshots and EAS
   build remain deferred as directed; the slug was confirmed by the owner.
+
+  **P25-C STEP 4 — AI memory inventory:** source and hidden-file inventory at
+  the repository root found:
+
+  | Existing source or tool file | Decision |
+  |---|---|
+  | `AGENTS.md` | Keep as the only instruction entry point; move durable detail to `docs/memory/` and point agents to the index first. |
+  | `docs/PROGRESS.md` | Keep complete and unrenamed as the canonical ledger; added a top pointer. Memory pages link here instead of copying tables. |
+  | `README.md` | Keep as user-facing app/setup documentation; added a pointer to the memory index. |
+  | `CHANGELOG.md` | Keep as release history; added a pointer to the memory index. |
+  | `design.html` | Keep as existing design reference; not an agent instruction or memory source. |
+  | `.cursorrules`, `.cursor/`, `GEMINI.md`, existing `CLAUDE.md`, existing `.github/copilot-instructions.md` | None existed at preflight. Cursor/Gemini files were not added because those tools were not requested. |
+  | `docs/prompts/`, notes and prior memory files | No source directories/files found; no source document was deleted. |
+  | New `CLAUDE.md`, `.github/copilot-instructions.md`, `CHATGPT.md` | Tool-specific one-line pointers to `AGENTS.md`; Codex uses `AGENTS.md` directly. |
+  | New `docs/memory/{README,project,architecture,rules,decisions,status,open-items,working-style}.md` | Create the requested shared memory set; summarized repository facts and linked to the full ledger rather than copying its history. |
+  | New `src/lib/__tests__/memoryDocs.test.ts` | Verify all memory files/headers/index links, AGENTS entry-point reference, schema version from source and synchronized documented test counts. |
+
+  Memory facts were cross-checked against `src/domain/schemas.ts`,
+  `src/data/safeStorage.ts`, `src/data/createAppStore.ts`,
+  `src/domain/backup.ts`, shared form/Dropdown components and the current
+  issue register. `decisions.md` indexes every current `DEC-*` identifier
+  found in the ledger. No financial data, credentials or tokens were added.
+  `SCHEMA_VERSION` remains 13. The memory-document test and progress-ledger
+  test both pass (10 tests total).
 
 #### P23-B legacy Insurance literal audit
 
