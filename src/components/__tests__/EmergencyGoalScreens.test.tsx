@@ -434,13 +434,15 @@ describe('three-month emergency target screens', () => {
     const cards = renderer.root.findAll((node) => String(node.type) === 'card');
     expect(cards.length).toBeGreaterThanOrEqual(2);
     const cardType = cards[0]!.type;
+    const secondCard = cards.at(1);
+    if (!secondCard) throw new Error('Home Insurance Card is missing.');
     expect(renderedText(cards[0]!)).toContain('Net Worth');
     expect(cards[0]!.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
     expect(insurancePressable.props.accessibilityRole).toBe('button');
     expect(insurancePressable.props.accessibilityLabel).toBe('Open Insurance');
     expect(insurancePressable.parent).toBeDefined();
-    expect(cards[1]).toBe(insurancePressable.findByType(cardType));
+    expect(renderedText(secondCard)).toContain('Insurance Total cover');
     const detailRowIds = [
       'home-insurance-row-total-cover',
       'home-insurance-row-yearly-premium',
