@@ -228,70 +228,6 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
-      <Pressable
-        testID="home-insurance-card"
-        accessibilityRole="button"
-        accessibilityLabel="Open Insurance"
-        accessibilityHint="Opens insurance policies and cover goals"
-        onPress={() => router.push('/insurance')}>
-        <Card style={styles.insuranceCard}>
-          {data.policies.length === 0 ? (
-            <>
-              <AppText weight="semibold">Insurance</AppText>
-              <EmptyState title="No policies yet" />
-              <Button
-                label="Add policy"
-                icon="plus"
-                variant="primary"
-                onPress={(event) => {
-                  event.stopPropagation();
-                  router.push('/policy-form');
-                }}
-              />
-            </>
-          ) : (
-            <>
-              <AppText weight="semibold">Insurance</AppText>
-              <View
-                testID="home-insurance-row-total-cover"
-                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
-                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
-                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
-                </View>
-              </View>
-              <View
-                testID="home-insurance-row-yearly-premium"
-                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
-                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
-                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
-                </View>
-              </View>
-              {insuranceSummary.nextRenewal ? (
-                <View
-                  testID="home-insurance-row-next-renewal"
-                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
-                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                    <View style={styles.insuranceRenewalDetails}>
-                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
-                      </AppText>
-                    </View>
-                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
-                  </View>
-                </View>
-              ) : null}
-              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
-                <View testID="home-insurance-term-progress">
-                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
-                </View>
-              ) : null}
-            </>
-          )}
-        </Card>
-      </Pressable>
 
       <View style={styles.quickActions}>
         {HOME_QUICK_ACTIONS.map((action) => (
@@ -431,6 +367,70 @@ export default function HomeScreen() {
           </Card>
         </>
       ) : null}
+
+      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Insurance</AppText>
+      <Pressable
+        testID="home-insurance-card"
+        accessibilityRole="button"
+        accessibilityLabel="Open Insurance"
+        accessibilityHint="Opens insurance policies and cover goals"
+        onPress={() => router.push('/insurance')}>
+        <Card style={styles.insuranceCard}>
+          {data.policies.length === 0 ? (
+            <>
+              <EmptyState title="No policies yet" />
+              <Button
+                label="Add policy"
+                icon="plus"
+                variant="primary"
+                onPress={(event) => {
+                  event.stopPropagation();
+                  router.push('/policy-form');
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <View
+                testID="home-insurance-row-total-cover"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
+                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
+                </View>
+              </View>
+              <View
+                testID="home-insurance-row-yearly-premium"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
+                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
+                </View>
+              </View>
+              {insuranceSummary.nextRenewal ? (
+                <View
+                  testID="home-insurance-row-next-renewal"
+                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
+                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                    <View style={styles.insuranceRenewalDetails}>
+                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
+                      </AppText>
+                    </View>
+                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
+                  </View>
+                </View>
+              ) : null}
+              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
+                <View testID="home-insurance-term-progress">
+                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
+                </View>
+              ) : null}
+            </>
+          )}
+        </Card>
+      </Pressable>
 
       <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Goal Progress</AppText>
       <View testID="home-goals-section">
