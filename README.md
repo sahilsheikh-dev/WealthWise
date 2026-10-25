@@ -1,3 +1,5 @@
+> AI agent context and durable project memory: [docs/memory/README.md](docs/memory/README.md).
+
 # WealthWise
 
 WealthWise is an offline-first personal finance app built with Expo and React
@@ -14,6 +16,7 @@ no cloud or network requests at runtime.
 - [Architecture and data](#architecture-and-data)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
+- [License](#license)
 - [Brand assets](#brand-assets)
 
 ## Features
@@ -40,9 +43,8 @@ no cloud or network requests at runtime.
 
 ## Getting started
 
-This repository uses npm and includes `package-lock.json`. No project-level
-minimum Node.js version is declared in `package.json` or `.nvmrc`; the Node
-version used for the release-preparation audit was v26.10.0.
+This repository uses npm and includes `package-lock.json`. Use Node.js 24 LTS
+(24.3.0 or newer within the 24.x major); `.nvmrc` selects 24.22.1.
 
 ```bash
 npm ci
@@ -131,6 +133,12 @@ include app data according to platform settings.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
+
+## License
+
+This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
+Sheikh. The license holder is based on the locally configured account name and
+should be confirmed by the owner.
 
 ## Brand assets
 

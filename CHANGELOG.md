@@ -1,3 +1,5 @@
+> AI working memory index: [docs/memory/README.md](docs/memory/README.md).
+
 # Changelog
 
 ## [0.1.0] - 2026-10-25

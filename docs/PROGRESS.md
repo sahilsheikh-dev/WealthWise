@@ -1,3 +1,5 @@
+> AI working memory index: [memory/README.md](memory/README.md). This file remains the complete canonical progress and decision ledger.
+
 # Wealth Wise master progress ledger
 
 ## Contents
@@ -48,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 92% (69/75)
+Overall progress █████████░ 93% (71/76)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,9 +73,9 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (22/22)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ████████░░ 75% (3/4)
+Phase 23         ██████████ 100% (4/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         █████░░░░░ 50% (1/2)
+Phase 25         ███████░░░ 67% (2/3)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -149,10 +151,11 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
-| P23-D | — | In progress | CR-91 implementation exists, but the 2026-10-25 release audit found the Home Insurance Card renders after spending and dues, not immediately after the Emergency fund summary. No UI change is in scope for P25-A; ordering follow-up remains. | 2026-10-25 |
+| P23-D | — | Done | CR-91 Home Insurance Card tests now assert the user-owned Home order: after Upcoming and due when present and before Goal Progress, with Insurance content excluded from Goals. | 2026-10-26 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
 | P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
+| P25-C | — | Done | Expo Doctor 21/21; Node 24 LTS and MIT metadata; shared AI memory; user-order CR-91 tests; all six final gates pass. `npm audit` advisories and physical-device/owner checks remain open. | 2026-10-26 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -360,9 +363,12 @@ Premigration bytes are copied once and removed by erase-all.
 | v8 | A single budget plan replaces templates; month snapshots record source and linked-item inclusion, with v7→v8 migration. | P20-G migration, strict backup and current-month apply tests; P20-H/I leave schema unchanged |
 | v9 | Budget plans and month snapshots store income items; schema-v8 data migrates and older backups import through the chain. | P20-M |
 | v10 | User-managed budget sections/items replace fixed budget lines; schema-v9 data migrates and backups through v9 import. | P20-P / CR-60 |
+| v11 | Insurance policy model, lifecycle and premium schedules; v10 policy records migrate into the current model. | P23-A / DEC-P23-A |
+| v12 | Typed cover goals and insurance categories with migration and backup compatibility. | P23-B / DEC-P23-COVER |
+| v13 | Recurring Budget item frequencies and first due month, with migration of prior plan/snapshot items. | P20-V / DEC-P20V |
 
-Current schema is `SCHEMA_VERSION = 10` (`src/domain/schemas.ts`). P21-A
-introduced v7, P20-G v8, P20-M v9 and P20-P v10.
+Current schema is `SCHEMA_VERSION = 13` (`src/domain/schemas.ts`); the
+persisted migration chain and backup importer cover v1 through v13.
 
 ### Financial and UI rules
 
@@ -1271,8 +1277,7 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   must not be run on this application. The README lists the useful scripts and
   warns about this reset script.
 
-  DEC-USER-CHANGES: preflight was clean, so no manual checkpoint commit was
-  needed. The following commits after `5bd3c41` have no Copilot
+  DEC-USER-CHANGES: the following commits after `5bd3c41` have no Copilot
   `Co-authored-by` trailer. Each line identifies one changed file; all listed
   changes were preserved:
 
@@ -1301,6 +1306,16 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   | `f1cdb1e` | `app/(tabs)/index.tsx` |
   | `f1cdb1e` | `src/components/ui.tsx` |
   | `0066166` | `app/(tabs)/index.tsx` |
+  | `ff349515887dae09ac5ebc34776ec2754ed80dbe` | `package.json` |
+  | `ff349515887dae09ac5ebc34776ec2754ed80dbe` | `package-lock.json` |
+
+  P25-C preflight (2026-10-26): the worktree contained only the user's
+  `package.json` and `package-lock.json` SDK patch update. It was committed
+  unchanged as `ff349515887dae09ac5ebc34776ec2754ed80dbe`
+  (`chore: user manual changes (checkpoint)`), and both changed paths are
+  included above. All earlier non-Copilot commit paths listed above were
+  re-audited; the user-owned Home order and Budget cash-flow labels remain
+  untouched.
 
   **Needs the owner:** confirm that the existing MIT `LICENSE` is intended to
   cover WealthWise and identify the correct copyright holder; choose and
@@ -1337,6 +1352,107 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   Coverage was emitted despite the test-gate failure: `src/domain/` 96.83%
   lines / 92.92% branches, `src/data/` 91.58% / 87.75%, and `src/lib/` 100% /
   100%. The focused progress-ledger test passed (9 tests).
+
+  DEC-P25C (2026-10-26): P25-C is the next unused Phase 25 ID; P25-B remains
+  reserved for encrypted backups. This task makes no feature or schema changes.
+  The user's Home screen is user-owned and frozen. Its intended order is the
+  Net Worth summary (Assets, Liabilities, Emergency fund pills), quick actions,
+  spending summary, backup nudge, storage warning, Upcoming and due when
+  present, Insurance heading/card, then Goal Progress.
+
+  Superseded CR-91 placement: the requirement to put Insurance immediately
+  after the Emergency fund summary card is superseded by the user's Home order.
+  Replaced assertions:
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | The Insurance Card must be the second Home Card / directly after Emergency fund. | Insurance heading and pressable card follow Upcoming and due when present and precede Goal Progress at font scales 1.3 and 2.0. | The Home order is user-owned and frozen; the card is after the spending, backup and storage areas. |
+  | The prior P25-A assertion compared independently retrieved ReactTestInstance wrappers by identity, then checked second-card Insurance text. | The test traverses rendered headings and card marker in order, while separately asserting rows, final target-gated bar, styles, navigation and empty state. | Object identity was not a reliable order assertion, and the second card is not the Insurance card in the user's design. |
+
+  Focused validation: `EmergencyGoalScreens.test.tsx` passes all 38 tests,
+  including both font-scale order cases. The current P23-D/CR-91 implementation
+  remains unchanged; the Home screen source was not edited.
+  The full coverage suite completed 79 suites/955 tests. Its initial typecheck
+  found that `findByType('card')` was not accepted by the renderer types; the
+  test now finds the card by a typed predicate and guards the missing result.
+  The focused Home/memory/ledger suites (48 tests) and TypeScript then pass.
+
+  **P25-C STEP 2 — Expo patch versions and audit:** the user checkpoint commit
+  `ff349515887dae09ac5ebc34776ec2754ed80dbe` contains the completed SDK patch
+  update. `package.json`, lockfile package entries, and installed packages now
+  agree on `@expo/ui` 57.0.26, `expo` 57.0.31, `expo-router` 57.0.29, and
+  `expo-sharing` 57.0.24; package, lockfile root and Expo app versions remain
+  0.1.0. `npx expo-doctor` passes 21/21.
+  `npm audit --json` exits 1: 8 advisories (0 critical, 5 high, 3 moderate).
+  Reported packages: high — `@expo/cli`, `@expo/code-signing-certificates`,
+  `expo`, `node-forge`, `zod`; moderate — `decode-uri-component`, `expo-router`,
+  `query-string`. Audit fix suggestions require Expo 54 or Router 58 and a
+  major SDK change; this release task does not apply them.
+  **Needs the owner:** decide how to address the audited dependency findings;
+  do not run `npm audit fix --force` or approve install scripts without owner
+  direction. No install scripts were approved or run by this task.
+
+  **P25-C STEP 3 — license and Node:** the MIT text is unchanged except for
+  the requested holder line, `Copyright (c) 2026 Sahil Aspak Sheikh`. This name
+  was taken from the local account name and requires owner confirmation.
+  Node.js is pinned to 24.22.1 in `.nvmrc`; `package.json` and
+  `package-lock.json` declare `>=24.3.0 <25`. Source evidence: the app uses
+  React Native 0.86.3; the installed `react-native/package.json` supports
+  `^24.3.0`; the React Native 0.86 environment setup page says Node 22.11.0 or
+  newer; and the Node.js release page lists 24.22.1 as the current Node 24 LTS
+  release while Node 26 is Current. The machine reports Node v26.10.0.
+  **Assumed:** Node 24.22.1 is the highest even LTS major/release that meets
+  this app's installed React Native engine requirement; `engines` allows the
+  compatible Node 24 range while `.nvmrc` selects the documented current
+  patch. Sources:
+  [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/),
+  [React Native 0.86 setup](https://reactnative.dev/docs/0.86/set-up-your-environment),
+  [Node.js releases](https://nodejs.org/en/about/previous-releases).
+  The lockfile was synced for the Node engine using
+  `npm install --package-lock-only --ignore-scripts --offline`; lifecycle
+  scripts were explicitly ignored and not approved or run.
+  README and AGENTS now state the Node requirement and the README identifies
+  the MIT license. Slug, bundle identifier, Android package and screenshot
+  placeholder remain unchanged; no EAS build was run.
+  **Needs the owner:** confirm the MIT copyright holder. Screenshots and EAS
+  build remain deferred as directed; the slug was confirmed by the owner.
+
+  **P25-C STEP 4 — AI memory inventory:** source and hidden-file inventory at
+  the repository root found:
+
+  | Existing source or tool file | Decision |
+  |---|---|
+  | `AGENTS.md` | Keep as the only instruction entry point; move durable detail to `docs/memory/` and point agents to the index first. |
+  | `docs/PROGRESS.md` | Keep complete and unrenamed as the canonical ledger; added a top pointer. Memory pages link here instead of copying tables. |
+  | `README.md` | Keep as user-facing app/setup documentation; added a pointer to the memory index. |
+  | `CHANGELOG.md` | Keep as release history; added a pointer to the memory index. |
+  | `design.html` | Keep as existing design reference; not an agent instruction or memory source. |
+  | `.cursorrules`, `.cursor/`, `GEMINI.md`, existing `CLAUDE.md`, existing `.github/copilot-instructions.md` | None existed at preflight. Cursor/Gemini files were not added because those tools were not requested. |
+  | `docs/prompts/`, notes and prior memory files | No source directories/files found; no source document was deleted. |
+  | New `CLAUDE.md`, `.github/copilot-instructions.md`, `CHATGPT.md` | Tool-specific one-line pointers to `AGENTS.md`; Codex uses `AGENTS.md` directly. |
+  | New `docs/memory/{README,project,architecture,rules,decisions,status,open-items,working-style}.md` | Create the requested shared memory set; summarized repository facts and linked to the full ledger rather than copying its history. |
+  | New `src/lib/__tests__/memoryDocs.test.ts` | Verify all memory files/headers/index links, AGENTS entry-point reference, schema version from source and synchronized documented test counts. |
+
+  Memory facts were cross-checked against `src/domain/schemas.ts`,
+  `src/data/safeStorage.ts`, `src/data/createAppStore.ts`,
+  `src/domain/backup.ts`, shared form/Dropdown components and the current
+  issue register. `decisions.md` indexes every current `DEC-*` identifier
+  found in the ledger. No financial data, credentials or tokens were added.
+  `SCHEMA_VERSION` remains 13. The memory-document test and progress-ledger
+  test both pass (10 tests total).
+
+  **P25-C final gates (2026-10-26):** all six commands were run sequentially
+  after the final implementation, test, memory-count and ledger updates.
+  `npm test -- --coverage` exit 0 (79 suites, 955 tests); `npx tsc --noEmit`
+  exit 0; `npx expo lint` exit 0; `npx expo-doctor` exit 0 (21/21); Android
+  export exit 0; iOS export exit 0.
+  An earlier gate pass exposed the renderer type error documented above; it was
+  fixed before this final all-green sequence. `npm audit --json` is a separate
+  audit and exits 1 with 8 advisories; see STEP 2. No EAS build or physical
+  device validation was run.
+  Final Istanbul directory totals: `src/domain/` 98.26% lines / 92.92%
+  branches; `src/data/` excluding hooks 94.23% lines / 87.75% branches; pure
+  `src/lib/` 100% lines / 100% branches. All coverage floors are met.
 
 #### P23-B legacy Insurance literal audit
 
@@ -2083,7 +2199,9 @@ Planned P24-A, including CR-1 [P15-K].
 ### Phase 25 — Release preparation and encrypted backups
 
 P25-A (v0.1.0 release-preparation documentation and metadata) is complete.
-P25-B encrypted backups [P15-L] remain planned.
+P25-B encrypted backups [P15-L] remain planned. P25-C release blockers,
+license/Node metadata, and shared AI memory are complete; no feature or schema
+changes were made.
 
 ### Phase 26 — Accessibility, performance and final gates
 
@@ -2239,7 +2357,7 @@ evidence present in exports/checkpoints.
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
 | P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Done; 78 suites/914 tests pass; all six gates exit 0. | Preflight/decision `04bf7f0`; schema/migration `1f9917e`; domain/tests `8893bf9`; coverage correction `b9cb4f6`; lint cleanup `c443191`. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P23-C | Phase 23 | — | 2 | 2026-10-21 | Insurance cover and policy screens, with cover goal forms and transaction/Budget/Home integration (CR-82–CR-85). | Done; final gates and tests recorded below. | Preflight `1858997`; implementation `69a16ec`. | Assumed: see DEC-P23-C-SCREENS; preserve schema v12 and all P23-B domain behavior. | current request |
-| P23-D | Phase 23 | — | 2 | 2026-10-22 | Replace Goals Insurance link and conditional compact Home row with a policy summary Insurance Card (CR-91). | In progress; 2026-10-25 release audit found current card order does not meet CR-91; P25-A records the focused test and defers the UI fix. | Preflight/decision `9dedb6f`; implementation `20cf7b9`. Base `211e514`; user-owned commit `5558bf4` audited. | Assumed: see DEC-P23D; schema v13 and remaining P23-C behavior stay unchanged. | current request |
+| P23-D | Phase 23 | — | 2 | 2026-10-22 | Replace Goals Insurance link and conditional compact Home row with a policy summary Insurance Card (CR-91). | Done; P25-C's 38 focused screen tests confirm the user-owned Home order, ordered details, final goal bar, empty state, navigation and no Insurance content on Goals. | Preflight/decision `9dedb6f`; implementation `20cf7b9`; P25-C tests. Base `211e514`; user-owned commit `5558bf4` audited. | Assumed: see DEC-P23D and DEC-P25C; schema v13 and remaining P23-C behavior stay unchanged. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2284,8 +2402,9 @@ evidence present in exports/checkpoints.
 | P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | Done; full suite and all six required gates exit 0; schema remains v8. | `cd2c746` | Assumed: only null/default/fallback values change; existing valid stored allocations stay byte-for-byte unchanged. Mutual funds / Bonds remains addable. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
-| P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | Single documentation/metadata commit; see Git history. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
+| P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
 | P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
+| P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. npm audit findings and physical-device/owner checks are explicitly open. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded in the P25-C verification section below. | Assumed: P25-C is the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2380,7 +2499,7 @@ evidence present in exports/checkpoints.
 | CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | Done | RouteRenderSmoke asserts five-type order, progress-last layout, term income line/null helper, and all target modes; targets remain non-deletable. |
 | CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | Done | RouteRenderSmoke asserts create/edit fields, edit-only status, date bound, delete confirmation, Paid/Undo and large-font style props; store tests assert deep-equal delete/status Undo. |
 | CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
-| CR-91 | Replace Goals Insurance link and conditional Home cover row with an Insurance Card after the Home Emergency fund summary. | In progress | P23-D has the card, content and routes, but the release audit found it currently follows spending and dues instead of the Home summary. P25-A leaves this UI behavior unchanged and records it as a release follow-up. |
+| CR-91 | Replace Goals Insurance link and conditional Home cover row with an Insurance Card in the user's Home order. | Done | P23-D adds the card/content/routes; P25-C replaces the superseded immediate-after-Emergency-fund placement assertion with tests for the user-owned order after Upcoming and due (when present), before Goal Progress. |
 | CR-86 | Replace BudgetManagementSheet with full-screen route forms for budget sections, items and income; keep scope, validation, Save and edit/delete behavior. | Done | P20-U adds three shared FormScreen routes, removes the sheet, routes all Budget entry points and adds the full-field `editBudgetIncome` domain/store action. Focused route/domain/store tests pass. |
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
@@ -2595,12 +2714,12 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    repair (CR-39), with schema v8 unchanged.
 4. **Phase 22 — Demo data** (Done): P22-A four months of linked demo data
    (CR-12).
-5. **Phase 23 — Insurance** (Planned) [P15-F].
+5. **Phase 23 — Insurance** (Done) [P15-F].
 6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
 7. **Phase 25 — Release preparation and encrypted backups**: P25-A v0.1.0
    release-preparation documentation (Done); P25-B encrypted backups (Planned)
-   [P15-L].
+   [P15-L]; P25-C release blockers and shared AI memory (Done).
 8. **Phase 26 — Accessibility, performance and final gates** (Planned)
    [P15-M].
 9. **Phase 27 — Cleanup** (Planned): dead-code audit (including whether
@@ -4570,3 +4689,23 @@ navigation, hardware back and dirty-form discard; delete-confirmation
 presentation; and screen-reader behavior on physical iOS and Android. These
 tests use TestRenderer to inspect structure, props and callbacks; bundle exports
 are not device runs.
+
+### P25-C Release blockers and shared AI memory
+
+| Step | Status | Evidence | Verification |
+|---|---|---|---|
+| STEP 0 — Preflight and user-change audit | Done | `docs/PROGRESS.md` DEC-USER-CHANGES; checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe` | Required date/log/status run; only package manifests were dirty. Checkpoint content was preserved exactly and added one path row per file. |
+| STEP 1 — CR-91 Home order follow-up | Done | `src/components/__tests__/EmergencyGoalScreens.test.tsx`; Home source unchanged | `renders the Home Insurance section after upcoming dues and before Goal Progress at font scale 1.3/2`; 38 focused screen tests pass. |
+| STEP 2 — Expo patch versions and dependency audit | Done | User-updated `package.json`/lockfile in checkpoint; `docs/PROGRESS.md` records audit | Expo Doctor 21/21. `npm audit --json` reports 8 advisories (5 high, 3 moderate); requires owner decision, no force fix or install-script approval. |
+| STEP 3 — License and Node metadata | Done | `LICENSE`, `.nvmrc`, package engines, README, AGENTS | Holder specified as `Sahil Aspak Sheikh`, subject to confirmation. Node 24.22.1 chosen from official Node 24 LTS and React Native 0.86 requirements; no EAS build. |
+| STEP 4 — Shared AI memory | Done | `docs/memory/`, `AGENTS.md`, `CLAUDE.md`, `CHATGPT.md`, `.github/copilot-instructions.md` | `shared AI memory documents` and `permanent progress ledger`; memory pages/header/index/schema/count checks pass. |
+| STEP 5 — Final gates | Done | Current task source/docs and this ledger | 79 suites / 955 tests; six ordered gates all exit 0; Expo Doctor 21/21. |
+
+**P25-C acceptance criteria not verified on a real device:** dynamic type and
+clipping at system font scales 1.3/2.0; Insurance-card native touch and
+navigation; keyboard/safe-area behavior; VoiceOver/TalkBack and accessibility
+activation; local storage and backup interactions on physical devices.
+Screenshots and EAS build are explicitly deferred to the owner. Full test and
+coverage results are recorded in DEC-P25C; see
+[`docs/memory/open-items.md`](../memory/open-items.md) for outstanding owner
+decisions and device checks.
