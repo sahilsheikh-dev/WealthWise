@@ -31,6 +31,10 @@ describe('shared AI memory documents', () => {
 
     const agents = readFileSync(join(root, 'AGENTS.md'), 'utf8');
     expect(agents).toContain('docs/memory/README.md');
+    expect(agents).toContain('single instruction entry point for every');
+    for (const toolFile of ['CHATGPT.md', 'CLAUDE.md', join('.github', 'copilot-instructions.md')]) {
+      expect(existsSync(join(root, toolFile))).toBe(false);
+    }
 
     const schemaSource = readFileSync(join(root, 'src', 'domain', 'schemas.ts'), 'utf8');
     const schemaMatch = schemaSource.match(/SCHEMA_VERSION\s*=\s*(\d+)/);
