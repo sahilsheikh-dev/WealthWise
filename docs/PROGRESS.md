@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (69/74)
+Overall progress █████████░ 92% (69/75)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,9 +71,9 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (22/22)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ██████████ 100% (4/4)
+Phase 23         ████████░░ 75% (3/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         ░░░░░░░░░░ 0% (0/1)
+Phase 25         █████░░░░░ 50% (1/2)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -149,11 +149,12 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
-| P23-D | — | Done | CR-91: replace the Goals Insurance link and conditional compact Home cover row with a detail-first Home Insurance Card. 78 suites/954 tests pass; TypeScript, lint and both exports pass; Expo Doctor reports four SDK patch mismatches (no dependencies changed in P23-D). Schema v13 unchanged; native-device checks remain unverified. | 2026-10-22 |
+| P23-D | — | In progress | CR-91 implementation exists, but the 2026-10-25 release audit found the Home Insurance Card renders after spending and dues, not immediately after the Emergency fund summary. No UI change is in scope for P25-A; ordering follow-up remains. | 2026-10-25 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
-| P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
+| P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
+| P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
-| P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, README, robust schedule benchmark. | 2026-10-15 |
+| P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
 
 ### Unchanged fix, change, and request IDs
@@ -1241,6 +1242,102 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   actual navigation behavior. Tests simulate font scale and assert component
   props/styles only.
 
+  DEC-P25A (v0.1.0 release preparation): documentation and app/package version
+  metadata only; no feature, persisted schema or runtime behavior changes.
+  The audit below is against the checked-in source and configuration as of
+  2026-10-25.
+
+  | File/resource | Exists | Audit | Finding / action |
+  |---|---|---|---|
+  | `README.md` | Yes | Stale | Described Expo starter creation rather than this app, omitted current features and privacy limitations, named only three tabs, and used an obsolete structure and incomplete commands. Rewritten to match the app. |
+  | `LICENSE` | Yes | Needs owner confirmation | MIT text is dated `2015-present` and names `650 Industries, Inc. (aka Expo)`, not WealthWise. Preserved unchanged; repository evidence cannot establish intended copyright holder or licensing scope. |
+  | `AGENTS.md` | Yes | Stale | Pointed routes to `src/app/` (actual routes are in `app/`) and did not reflect current schema, protected files or required gates. Updated with verified project rules. |
+  | `CONTRIBUTING` / `CONTRIBUTING.md` | No | Missing | No contribution instructions found. |
+  | `CHANGELOG.md` | No | Missing | Added a v0.1.0 summary from completed project work and current schema/migration support. |
+  | `docs/PROGRESS.md` | Yes | Project history and schema record are useful; release plan stale | Old P25-A was reserved for encrypted backups. This request assigns release preparation to P25-A and retains encryption as planned P25-B. The release audit also records an unresolved CR-91 Home card-order discrepancy and reopens P23-D. |
+  | `package.json` | Yes | Version stale before this task | Package name `wealthwise`, scripts and Expo SDK 57 were set; package version was 1.0.0. Updated only the version to 0.1.0. No project `engines` field. |
+  | `package-lock.json` | Yes | Version stale before this task | Lockfile and root package metadata were 1.0.0; synced to 0.1.0. |
+  | `app.json` | Yes | Version stale before this task | Expo name/slug are `WealthWise`; version was 1.0.0. iOS bundle ID and Android package are both set to `com.begawo.WealthWise`; scheme is `wealthwise`; EAS project ID is configured. Updated only version to 0.1.0. |
+  | `app.config.*` | No | Not applicable | Static `app.json` is the Expo config. |
+  | `eas.json` | Yes | Accurate | Development, preview and production profiles are present; EAS `appVersionSource` is `remote`. No app-build script exists in `package.json`. |
+  | Node version pin (`.nvmrc` / `engines`) | No | Missing | No supported Node version is declared. The audit environment reported Node v26.10.0; this does not establish the project's supported range. |
+  | `docs/` | Yes | Current inventory | `PROGRESS.md` is the only tracked documentation file before this task; this record adds the release audit and decisions. |
+  | Runtime source | Yes | Core README claims match; CR-91 ordering gap found | Expo Router tabs are Home, Transactions, Goals and Budget; `SCHEMA_VERSION` is 13 and `migrate.ts` contains the v1-to-v13 chain. No `fetch`, Axios, XMLHttpRequest or WebSocket use was found in `app/` or `src/`. The Home Insurance Card currently appears after spending and due sections rather than directly after the Home summary's Emergency fund StatPill. |
+  | Tests / project structure | Yes | Verified at preflight | Jest reported 78 suites / 954 tests at the P23-D close-out. Routes live in `app/`; domain, data, components, hooks, libraries, mocks, themes and constants live under `src/`. |
+
+  Package scripts audited from `package.json`: `start`, `reset-project`,
+  `android`, `ios`, `web`, `lint`, `test`, `typecheck`, `build:branding`, and
+  `check:assets`. `reset-project` is the destructive Expo starter reset and
+  must not be run on this application. The README lists the useful scripts and
+  warns about this reset script.
+
+  DEC-USER-CHANGES: preflight was clean, so no manual checkpoint commit was
+  needed. The following commits after `5bd3c41` have no Copilot
+  `Co-authored-by` trailer. Each line identifies one changed file; all listed
+  changes were preserved:
+
+  | Commit | Changed file |
+  |---|---|
+  | `6cb4fa0` | `app/(tabs)/budget.tsx` |
+  | `6cb4fa0` | `app/(tabs)/transactions.tsx` |
+  | `6cb4fa0` | `app/month-review.tsx` |
+  | `64ffb5d` | `app/(tabs)/budget.tsx` |
+  | `64ffb5d` | `app/ef-allocation-form.tsx` |
+  | `9a01941` | `app/goal-form.tsx` |
+  | `268e4c7` | `app/(tabs)/index.tsx` |
+  | `268e4c7` | `src/components/IconButton.tsx` |
+  | `268e4c7` | `src/components/__tests__/HomeThemeSmoke.test.tsx` |
+  | `268e4c7` | `src/components/testUtils/assertNoVerbText.ts` |
+  | `b217a2a` | `app/(tabs)/transactions.tsx` |
+  | `c49cafd` | `app.json` |
+  | `4cb6367` | `.claude/settings.json` |
+  | `4cb6367` | `.gitignore` |
+  | `75e9097` | `src/components/BudgetManagementSheet.tsx` |
+  | `ecc5c35` | `src/components/BudgetManagementSheet.tsx` |
+  | `7af5abe` | `app/(tabs)/index.tsx` |
+  | `5558bf4` | `app/budget-income-form.tsx` |
+  | `5558bf4` | `app/budget-item-form.tsx` |
+  | `5558bf4` | `app/budget-section-form.tsx` |
+  | `f1cdb1e` | `app/(tabs)/index.tsx` |
+  | `f1cdb1e` | `src/components/ui.tsx` |
+  | `0066166` | `app/(tabs)/index.tsx` |
+
+  **Needs the owner:** confirm that the existing MIT `LICENSE` is intended to
+  cover WealthWise and identify the correct copyright holder; choose and
+  document a supported Node.js version; confirm ownership/availability of the
+  configured Expo slug, iOS bundle ID, Android package and EAS project before
+  publishing; provide approved screenshots if desired; schedule the CR-91 Home
+  Insurance Card ordering fix before treating P23-D as complete. The repository
+  does not establish those ownership or release-account facts.
+
+  **P25-A changes:** README now documents verified features, npm commands,
+  folder layout, SDK 57, Zustand/AsyncStorage, schema v13, migrations, local
+  data and backup limits, missing notifications, device-verification limits
+  and the requested financial/legal/insurance disclaimer. Added
+  `CHANGELOG.md`; corrected `AGENTS.md`; set package, lockfile and Expo app
+  versions to 0.1.0. License and identifiers were not changed. The
+  `app/(tabs)/budget.tsx` cash-flow labels remain exactly as user-authored.
+  Replaced assertion: P23-D's Card-order test compared two independently
+  retrieved ReactTestInstance wrappers by object identity; it now checks the
+  required second-Card Insurance content directly. The focused test shows that
+  the actual second Card is the spending summary (`This month`), so CR-91 order
+  is not satisfied. This feature fix is outside P25-A's documentation/metadata
+  scope and remains a release follow-up; the failure is not suppressed.
+
+  **P25-A gates (2026-10-25), run sequentially:** `npm test -- --coverage`
+  exit 1 (78 suites; 952 passed, 2 failed), both font-scale variants of the
+  P23-D Insurance Card ordering test. They report the second Card is `This
+  month`, not Insurance, confirming the CR-91 discrepancy above;
+  `npx tsc --noEmit` exit 0; `npx expo lint` exit 0; `npx expo-doctor` exit 1
+  (20/21 checks: patch-version mismatches for `@expo/ui`, `expo`,
+  `expo-router`, and `expo-sharing`); Android export exit 0; iOS export exit 0.
+  These SDK package mismatches predate the documentation task and were not
+  changed. No physical-device, store-signing, submission or publishing checks
+  were performed.
+  Coverage was emitted despite the test-gate failure: `src/domain/` 96.83%
+  lines / 92.92% branches, `src/data/` 91.58% / 87.75%, and `src/lib/` 100% /
+  100%. The focused progress-ledger test passed (9 tests).
+
 #### P23-B legacy Insurance literal audit
 
 Case-sensitive `rg -n "'Insurance'" app src` returned 67 matches in 20 files.
@@ -1983,9 +2080,10 @@ screen-only P23-B plan.
 
 Planned P24-A, including CR-1 [P15-K].
 
-### Phase 25 — Encrypted backups
+### Phase 25 — Release preparation and encrypted backups
 
-Planned P25-A [P15-L].
+P25-A (v0.1.0 release-preparation documentation and metadata) is complete.
+P25-B encrypted backups [P15-L] remain planned.
 
 ### Phase 26 — Accessibility, performance and final gates
 
@@ -2001,6 +2099,12 @@ bundle audit, README and a robust schedule benchmark.
 
 Planned P28-A: property tests, QA checklist, release engineering and local
 diagnostics.
+
+**Assumed:** this task explicitly assigns the release-preparation work to
+P25-A, which the prior ledger had reserved for encrypted backups. To preserve
+the unimplemented feature in the roadmap without claiming it shipped, encrypted
+backups move to P25-B [P15-L]. This task does not implement encryption or
+perform a store release.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -2135,7 +2239,7 @@ evidence present in exports/checkpoints.
 | P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
 | P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Done; 78 suites/914 tests pass; all six gates exit 0. | Preflight/decision `04bf7f0`; schema/migration `1f9917e`; domain/tests `8893bf9`; coverage correction `b9cb4f6`; lint cleanup `c443191`. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
 | P23-C | Phase 23 | — | 2 | 2026-10-21 | Insurance cover and policy screens, with cover goal forms and transaction/Budget/Home integration (CR-82–CR-85). | Done; final gates and tests recorded below. | Preflight `1858997`; implementation `69a16ec`. | Assumed: see DEC-P23-C-SCREENS; preserve schema v12 and all P23-B domain behavior. | current request |
-| P23-D | Phase 23 | — | 2 | 2026-10-22 | Replace Goals Insurance link and conditional compact Home row with a policy summary Insurance Card (CR-91). | Done; 78 suites/954 tests pass; final gates and device limitations recorded in DEC-P23D. | Preflight/decision `9dedb6f`; implementation `20cf7b9`. Base `211e514`; user-owned commit `5558bf4` audited. | Assumed: see DEC-P23D; schema v13 and remaining P23-C behavior stay unchanged. | current request |
+| P23-D | Phase 23 | — | 2 | 2026-10-22 | Replace Goals Insurance link and conditional compact Home row with a policy summary Insurance Card (CR-91). | In progress; 2026-10-25 release audit found current card order does not meet CR-91; P25-A records the focused test and defers the UI fix. | Preflight/decision `9dedb6f`; implementation `20cf7b9`. Base `211e514`; user-owned commit `5558bf4` audited. | Assumed: see DEC-P23D; schema v13 and remaining P23-C behavior stay unchanged. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -2180,7 +2284,8 @@ evidence present in exports/checkpoints.
 | P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | Done; full suite and all six required gates exit 0; schema remains v8. | `cd2c746` | Assumed: only null/default/fallback values change; existing valid stored allocations stay byte-for-byte unchanged. Mutual funds / Bonds remains addable. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
-| P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
+| P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | Single documentation/metadata commit; see Git history. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
+| P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2275,7 +2380,7 @@ evidence present in exports/checkpoints.
 | CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | Done | RouteRenderSmoke asserts five-type order, progress-last layout, term income line/null helper, and all target modes; targets remain non-deletable. |
 | CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | Done | RouteRenderSmoke asserts create/edit fields, edit-only status, date bound, delete confirmation, Paid/Undo and large-font style props; store tests assert deep-equal delete/status Undo. |
 | CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
-| CR-91 | Replace Goals Insurance link and conditional Home cover row with an Insurance Card after the Home Emergency fund summary. | Done | P23-D reuses shared Card/GoalProgressRow, shows policy totals and a target-gated term-life bar, routes card/Add policy actions, removes Insurance from Goals, and preserves Budget Manage policies. |
+| CR-91 | Replace Goals Insurance link and conditional Home cover row with an Insurance Card after the Home Emergency fund summary. | In progress | P23-D has the card, content and routes, but the release audit found it currently follows spending and dues instead of the Home summary. P25-A leaves this UI behavior unchanged and records it as a release follow-up. |
 | CR-86 | Replace BudgetManagementSheet with full-screen route forms for budget sections, items and income; keep scope, validation, Save and edit/delete behavior. | Done | P20-U adds three shared FormScreen routes, removes the sheet, routes all Budget entry points and adds the full-field `editBudgetIncome` domain/store action. Focused route/domain/store tests pass. |
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
@@ -2493,7 +2598,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 5. **Phase 23 — Insurance** (Planned) [P15-F].
 6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
-7. **Phase 25 — Encrypted backups** (Planned) [P15-L].
+7. **Phase 25 — Release preparation and encrypted backups**: P25-A v0.1.0
+   release-preparation documentation (Done); P25-B encrypted backups (Planned)
+   [P15-L].
 8. **Phase 26 — Accessibility, performance and final gates** (Planned)
    [P15-M].
 9. **Phase 27 — Cleanup** (Planned): dead-code audit (including whether
@@ -3409,7 +3516,8 @@ was resolved in CR-26. No schema change was made; `SCHEMA_VERSION` remains 7.
 | P17-B budgets | Done | `src/domain/budget.ts`, `app/budget.tsx`, `app/budget-template-form.tsx`, `app/budget-history.tsx` | `src/domain/__tests__/budget.test.ts`, `src/data/__tests__/createAppStore.test.ts`, route and Transactions screen suites |
 | P17-C sorting | Done | `src/lib/sorting.ts`, `src/data/useSort.ts`, `src/components/SortChip.tsx`, sortable `app/` lists | `src/lib/__tests__/sorting.test.ts`, `src/data/__tests__/metaStore.test.ts`, screen and route smoke suites |
 | P24-A reminders / CR-1 [P15-K] | Planned | No verified planner, prefs, notification adapter or screen | No reminder tests |
-| P25-A encrypted backup [P15-L] | Planned | `src/domain/backup.ts` is unencrypted | No encryption tests |
+| P25-A release preparation | Done | `README.md`, `CHANGELOG.md`, `AGENTS.md`, package/app version metadata and this ledger | Release gates recorded in DEC-P25A; store deployment and device QA remain outside this task |
+| P25-B encrypted backup [P15-L] | Planned | `src/domain/backup.ts` is unencrypted | No encryption tests |
 | P26-A accessibility/performance [P15-M] | Planned | No final audit artifact | No comprehensive device/accessibility suite |
 | P27-A cleanup | Planned | Dead-code/dependency, bundle, README and schedule benchmark audit pending | Cleanup gates pending |
 | P28-A QA and release | Planned | QA and release work not started | Release checklist pending |
