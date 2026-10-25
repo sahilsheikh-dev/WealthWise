@@ -477,7 +477,8 @@ describe('three-month emergency target screens', () => {
       'home-insurance-row-yearly-premium',
       'home-insurance-row-next-renewal',
     ]);
-    const insuranceCard = insurancePressable.findByType('card');
+    const insuranceCard = insurancePressable.findAll((node) => String(node.type) === 'card').at(0);
+    if (!insuranceCard) throw new Error('Home Insurance card is missing.');
     expect(lastChildTestID(insuranceCard)).toBe('home-insurance-term-progress');
     expect(insurancePressable.findByProps({ testID: 'home-insurance-term-progress' })
       .findByProps({ testID: 'goal-progress-row' })).toBeDefined();

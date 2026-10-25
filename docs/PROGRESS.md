@@ -1369,6 +1369,10 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   Focused validation: `EmergencyGoalScreens.test.tsx` passes all 38 tests,
   including both font-scale order cases. The current P23-D/CR-91 implementation
   remains unchanged; the Home screen source was not edited.
+  The full coverage suite completed 79 suites/955 tests. Its initial typecheck
+  found that `findByType('card')` was not accepted by the renderer types; the
+  test now finds the card by a typed predicate and guards the missing result.
+  The focused Home/memory/ledger suites (48 tests) and TypeScript then pass.
 
   **P25-C STEP 2 — Expo patch versions and audit:** the user checkpoint commit
   `ff349515887dae09ac5ebc34776ec2754ed80dbe` contains the completed SDK patch
