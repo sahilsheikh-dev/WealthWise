@@ -1368,6 +1368,21 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   including both font-scale order cases. The current P23-D/CR-91 implementation
   remains unchanged; the Home screen source was not edited.
 
+  **P25-C STEP 2 — Expo patch versions and audit:** the user checkpoint commit
+  `ff349515887dae09ac5ebc34776ec2754ed80dbe` contains the completed SDK patch
+  update. `package.json`, lockfile package entries, and installed packages now
+  agree on `@expo/ui` 57.0.26, `expo` 57.0.31, `expo-router` 57.0.29, and
+  `expo-sharing` 57.0.24; package, lockfile root and Expo app versions remain
+  0.1.0. `npx expo-doctor` passes 21/21.
+  `npm audit --json` exits 1: 8 advisories (0 critical, 5 high, 3 moderate).
+  Reported packages: high — `@expo/cli`, `@expo/code-signing-certificates`,
+  `expo`, `node-forge`, `zod`; moderate — `decode-uri-component`, `expo-router`,
+  `query-string`. Audit fix suggestions require Expo 54 or Router 58 and a
+  major SDK change; this release task does not apply them.
+  **Needs the owner:** decide how to address the audited dependency findings;
+  do not run `npm audit fix --force` or approve install scripts without owner
+  direction. No install scripts were approved or run by this task.
+
 #### P23-B legacy Insurance literal audit
 
 Case-sensitive `rg -n "'Insurance'" app src` returned 67 matches in 20 files.
