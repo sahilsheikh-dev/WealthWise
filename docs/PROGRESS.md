@@ -1383,6 +1383,28 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   do not run `npm audit fix --force` or approve install scripts without owner
   direction. No install scripts were approved or run by this task.
 
+  **P25-C STEP 3 — license and Node:** the MIT text is unchanged except for
+  the requested holder line, `Copyright (c) 2026 Sahil Aspak Sheikh`. This name
+  was taken from the local account name and requires owner confirmation.
+  Node.js is pinned to 24.22.1 in `.nvmrc`; `package.json` and
+  `package-lock.json` declare `>=24.3.0 <25`. Source evidence: the app uses
+  React Native 0.86.3; the installed `react-native/package.json` supports
+  `^24.3.0`; the React Native 0.86 environment setup page says Node 22.11.0 or
+  newer; and the Node.js release page lists 24.22.1 as the current Node 24 LTS
+  release while Node 26 is Current. The machine reports Node v26.10.0.
+  **Assumed:** Node 24.22.1 is the highest even LTS major/release that meets
+  this app's installed React Native engine requirement; `engines` allows the
+  compatible Node 24 range while `.nvmrc` selects the documented current
+  patch. Sources:
+  [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/),
+  [React Native 0.86 setup](https://reactnative.dev/docs/0.86/set-up-your-environment),
+  [Node.js releases](https://nodejs.org/en/about/previous-releases).
+  README and AGENTS now state the Node requirement and the README identifies
+  the MIT license. Slug, bundle identifier, Android package and screenshot
+  placeholder remain unchanged; no EAS build was run.
+  **Needs the owner:** confirm the MIT copyright holder. Screenshots and EAS
+  build remain deferred as directed; the slug was confirmed by the owner.
+
 #### P23-B legacy Insurance literal audit
 
 Case-sensitive `rg -n "'Insurance'" app src` returned 67 matches in 20 files.

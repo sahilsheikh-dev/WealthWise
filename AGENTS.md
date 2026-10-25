@@ -1,5 +1,6 @@
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
-(`package-lock.json` is present); routes are in `app/`, not `src/app/`.
+(`package-lock.json` is present) and Node.js 24.3.0+ in the Node 24 LTS line;
+routes are in `app/`, not `src/app/`.
 
 ## Project rules
 
