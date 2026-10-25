@@ -1,6 +1,10 @@
 > AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
 > finishing, update `status.md` and `open-items.md` there.
 
+This `AGENTS.md` is the repository's single instruction entry point for every
+AI tool. Keep tool-specific instruction files out of the repository; update
+these shared instructions instead.
+
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 24.3.0+ in the Node 24 LTS line;
 routes are in `app/`, not `src/app/`.

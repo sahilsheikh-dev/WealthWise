@@ -1429,7 +1429,7 @@ persisted migration chain and backup importer cover v1 through v13.
   | `design.html` | Keep as existing design reference; not an agent instruction or memory source. |
   | `.cursorrules`, `.cursor/`, `GEMINI.md`, existing `CLAUDE.md`, existing `.github/copilot-instructions.md` | None existed at preflight. Cursor/Gemini files were not added because those tools were not requested. |
   | `docs/prompts/`, notes and prior memory files | No source directories/files found; no source document was deleted. |
-  | New `CLAUDE.md`, `.github/copilot-instructions.md`, `CHATGPT.md` | Tool-specific one-line pointers to `AGENTS.md`; Codex uses `AGENTS.md` directly. |
+  | New `CLAUDE.md`, `.github/copilot-instructions.md`, `CHATGPT.md` | Initially created as tool-specific one-line pointers; removed in the user-requested P25-C follow-up. All AI guidance now lives in root `AGENTS.md`. |
   | New `docs/memory/{README,project,architecture,rules,decisions,status,open-items,working-style}.md` | Create the requested shared memory set; summarized repository facts and linked to the full ledger rather than copying its history. |
   | New `src/lib/__tests__/memoryDocs.test.ts` | Verify all memory files/headers/index links, AGENTS entry-point reference, schema version from source and synchronized documented test counts. |
 
@@ -1453,6 +1453,17 @@ persisted migration chain and backup importer cover v1 through v13.
   Final Istanbul directory totals: `src/domain/` 98.26% lines / 92.92%
   branches; `src/data/` excluding hooks 94.23% lines / 87.75% branches; pure
   `src/lib/` 100% lines / 100% branches. All coverage floors are met.
+
+#### P25-C follow-up — Single AI instruction file
+
+The user requested one shared AI instruction file rather than per-tool
+Markdown pointers. `AGENTS.md` is now the only AI instruction entry point.
+Removed `CHATGPT.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`;
+the themed `docs/memory/` pages remain project-memory references, not
+tool-specific instructions. `memoryDocs.test.ts` asserts those pointer files
+remain absent and that `AGENTS.md` identifies itself as the shared entry point.
+`status.md` and `open-items.md` were updated; unresolved owner/device items are
+unchanged.
 
 #### P23-B legacy Insurance literal audit
 
@@ -4698,7 +4709,7 @@ are not device runs.
 | STEP 1 — CR-91 Home order follow-up | Done | `src/components/__tests__/EmergencyGoalScreens.test.tsx`; Home source unchanged | `renders the Home Insurance section after upcoming dues and before Goal Progress at font scale 1.3/2`; 38 focused screen tests pass. |
 | STEP 2 — Expo patch versions and dependency audit | Done | User-updated `package.json`/lockfile in checkpoint; `docs/PROGRESS.md` records audit | Expo Doctor 21/21. `npm audit --json` reports 8 advisories (5 high, 3 moderate); requires owner decision, no force fix or install-script approval. |
 | STEP 3 — License and Node metadata | Done | `LICENSE`, `.nvmrc`, package engines, README, AGENTS | Holder specified as `Sahil Aspak Sheikh`, subject to confirmation. Node 24.22.1 chosen from official Node 24 LTS and React Native 0.86 requirements; no EAS build. |
-| STEP 4 — Shared AI memory | Done | `docs/memory/`, `AGENTS.md`, `CLAUDE.md`, `CHATGPT.md`, `.github/copilot-instructions.md` | `shared AI memory documents` and `permanent progress ledger`; memory pages/header/index/schema/count checks pass. |
+| STEP 4 — Shared AI memory | Done | `docs/memory/`, `AGENTS.md`; tool-specific pointer files were initially created and removed in the P25-C follow-up | `shared AI memory documents` and `permanent progress ledger`; memory pages/header/index/schema/count checks pass, and the follow-up test requires a single `AGENTS.md` instruction entry point. |
 | STEP 5 — Final gates | Done | Current task source/docs and this ledger | 79 suites / 955 tests; six ordered gates all exit 0; Expo Doctor 21/21. |
 
 **P25-C acceptance criteria not verified on a real device:** dynamic type and
