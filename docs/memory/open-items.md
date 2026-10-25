@@ -29,6 +29,8 @@
 
 ## Documented assumptions and constraints
 
+- AI guidance is maintained only in the root `AGENTS.md`; no tool-specific
+  instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but
   retain their built-in title and metadata; fixed titles are read-only.
 - The P20-V form omits the Percent option for non-monthly schedules because the

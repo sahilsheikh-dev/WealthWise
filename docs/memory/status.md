@@ -3,7 +3,8 @@
 # Status
 
 - Current task: Phase 25 part C (P25-C), release blockers and shared AI memory.
-- Current task state: Complete. Home order tests, Expo package alignment,
+- Current task state: Complete, with a follow-up consolidating AI instructions
+  into the single root `AGENTS.md`. Home order tests, Expo package alignment,
   license/Node metadata, shared memory and all six automated release gates
   pass; `npm audit` findings and device checks remain open.
 - Last implementation/test commit at final verification:

@@ -2,10 +2,10 @@
 
 # Shared AI memory
 
-This folder is the compact, repo-based long-term memory for ChatGPT, Copilot,
-Claude and Codex. [AGENTS.md](../../AGENTS.md) is the single instruction entry
-point; every tool-specific file points there. This memory complements, but
-does not replace or shorten, the canonical [progress ledger](../PROGRESS.md).
+This folder is the compact, repo-based long-term project memory. The root
+[AGENTS.md](../../AGENTS.md) is the only AI instruction file for every tool;
+do not add tool-specific instruction or pointer files. This memory complements,
+but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md).
 
 ## Reading order
 
