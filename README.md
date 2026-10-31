@@ -39,7 +39,8 @@ no cloud or network requests at runtime.
 
 ## Screenshots
 
-<!-- Add current app screenshots here. -->
+Release screenshots were prepared by the owner; image files are not included
+in this repository.
 
 ## Getting started
 
@@ -127,9 +128,15 @@ include app data according to platform settings.
 
 ## Limitations and disclaimer
 
-- Reminders and notifications are not implemented.
-- The interface has not been verified on physical iOS or Android devices;
-  automated layout tests simulate font scales and inspect component props.
+- Reminders and notifications are not implemented; they are planned for the
+  next release phase.
+- The owner reports that the app works on a physical device. Device model and
+  operating system were not recorded; this is owner verification, not
+  automated device evidence.
+- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
+  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
+  production-dependency-tree and development/build-tool findings; see the
+  progress ledger for package lists.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.

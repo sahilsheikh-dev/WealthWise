@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 93% (71/76)
+Overall progress █████████░ 94% (72/77)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -75,7 +75,7 @@ Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         ███████░░░ 67% (2/3)
+Phase 25         ████████░░ 75% (3/4)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -155,7 +155,8 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
 | P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
-| P25-C | — | Done | Expo Doctor 21/21; Node 24 LTS and MIT metadata; shared AI memory; user-order CR-91 tests; all six final gates pass. `npm audit` advisories and physical-device/owner checks remain open. | 2026-10-26 |
+| P25-C | — | Done | Expo Doctor 21/21; Node 24 LTS and MIT metadata; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync and current audit/device state are recorded in P25-D. | 2026-10-26 |
+| P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -1383,7 +1384,8 @@ persisted migration chain and backup importer cover v1 through v13.
   agree on `@expo/ui` 57.0.26, `expo` 57.0.31, `expo-router` 57.0.29, and
   `expo-sharing` 57.0.24; package, lockfile root and Expo app versions remain
   0.1.0. `npx expo-doctor` passes 21/21.
-  `npm audit --json` exits 1: 8 advisories (0 critical, 5 high, 3 moderate).
+  Historical audit on 2026-10-26 exited 1: 8 advisories (0 critical, 5 high,
+  3 moderate); superseded by the P25-D audit below.
   Reported packages: high — `@expo/cli`, `@expo/code-signing-certificates`,
   `expo`, `node-forge`, `zod`; moderate — `decode-uri-component`, `expo-router`,
   `query-string`. Audit fix suggestions require Expo 54 or Router 58 and a
@@ -1412,10 +1414,10 @@ persisted migration chain and backup importer cover v1 through v13.
   `npm install --package-lock-only --ignore-scripts --offline`; lifecycle
   scripts were explicitly ignored and not approved or run.
   README and AGENTS now state the Node requirement and the README identifies
-  the MIT license. Slug, bundle identifier, Android package and screenshot
-  placeholder remain unchanged; no EAS build was run.
-  **Needs the owner:** confirm the MIT copyright holder. Screenshots and EAS
-  build remain deferred as directed; the slug was confirmed by the owner.
+  the MIT license. At P25-C, screenshots and EAS build had not been performed
+  by the agent; the owner later reported completing both, recorded in P25-D.
+  Slug, bundle identifier and Android package remain unchanged.
+  **Needs the owner:** confirm the MIT copyright holder; the slug was confirmed.
 
   **P25-C STEP 4 — AI memory inventory:** source and hidden-file inventory at
   the repository root found:
@@ -1447,9 +1449,10 @@ persisted migration chain and backup importer cover v1 through v13.
   exit 0; `npx expo lint` exit 0; `npx expo-doctor` exit 0 (21/21); Android
   export exit 0; iOS export exit 0.
   An earlier gate pass exposed the renderer type error documented above; it was
-  fixed before this final all-green sequence. `npm audit --json` is a separate
-  audit and exits 1 with 8 advisories; see STEP 2. No EAS build or physical
-  device validation was run.
+  fixed before this final all-green sequence. The historical
+  `npm audit --json` result was 8 advisories; current results are recorded in
+  P25-D. No physical-device validation was performed by the agent during
+  P25-C; the owner subsequently reported a successful device test in P25-D.
   Final Istanbul directory totals: `src/domain/` 98.26% lines / 92.92%
   branches; `src/data/` excluding hooks 94.23% lines / 87.75% branches; pure
   `src/lib/` 100% lines / 100% branches. All coverage floors are met.
@@ -1464,6 +1467,70 @@ tool-specific instructions. `memoryDocs.test.ts` asserts those pointer files
 remain absent and that `AGENTS.md` identifies itself as the shared entry point.
 `status.md` and `open-items.md` were updated; unresolved owner/device items are
 unchanged.
+
+### P25-D Release sync (2026-10-31)
+
+Documentation-only release sync; no application code, persisted schema or
+dependency manifests changed.
+
+- **Release:** owner reports that v0.1.0 is a GitHub pre-release under tag
+  `v0.1.0`, and that its EAS build and screenshots are complete.
+- **Physical device:** owner reports the app works after a physical-device
+  test. Device model and operating system were not recorded. This is
+  owner-verified, not automated evidence or an independently observed test.
+  Earlier statements in P25-C describe the agent's verification state at that
+  time and are superseded for the current release by this owner report.
+- **Node:** `.nvmrc` remains `24.22.1`; `package.json` still declares
+  `>=24.3.0 <25`. The owner reports `npm install` and all 955 tests completed
+  on Node v26.10.0, with only an `EBADENGINE` warning. No pin or engine-range
+  change was made. Owner choices remain: keep the current Node 24 pin, test
+  again on Node 24, or relax the engine range to `>=24.3.0`.
+- **Audit:** both requested commands exited 1 because advisories remain.
+  `npm audit --omit=dev` reported 27 advisories: 6 high, 20 moderate, 1 low,
+  0 critical. Affected package names in the production dependency graph:
+  `@expo/cli`, `@expo/config`, `@expo/config-plugins`, `@expo/fingerprint`,
+  `@expo/inline-modules`, `@expo/local-build-cache-provider`,
+  `@expo/metro-config`, `@expo/prebuild-config`, `@jest/transform`,
+  `@react-native-community/datetimepicker`, `@react-native/jest-preset`,
+  `@react-native/virtualized-lists`, `babel-jest`, `babel-plugin-istanbul`,
+  `decode-uri-component`, `deepmerge`, `expo`, `expo-router`, `expo-sharing`,
+  `expo-splash-screen`, `glob`, `minimatch`, `node-forge`, `query-string`,
+  `react-native`, `test-exclude`, `zod`.
+  The direct app/runtime packages among those findings are
+  `@react-native-community/datetimepicker`, `expo`, `expo-router`,
+  `expo-sharing`, `expo-splash-screen`, and `react-native`. The same
+  production dependency graph also includes Expo CLI/config/build and
+  transitive tooling packages; their appearance here reflects npm's
+  production-tree reachability, not a claim that each ships in the app binary.
+- `npm audit` reported 55 advisories: 6 high, 44 moderate, 5 low, 0 critical.
+  This includes the 27 production-tree advisories above plus 28 advisories
+  across development-only build/test tooling. The additional package names
+  are `@eslint-community/eslint-utils`, `@eslint/config-array`,
+  `@eslint/eslintrc`, `@jest/core`, `@jest/expect`, `@jest/globals`,
+  `@jest/reporters`, `@typescript-eslint/eslint-plugin`,
+  `@typescript-eslint/parser`, `@typescript-eslint/type-utils`,
+  `@typescript-eslint/typescript-estree`, `@typescript-eslint/utils`,
+  `create-jest`, `eslint`, `eslint-config-expo`, `eslint-plugin-expo`,
+  `eslint-plugin-import`, `eslint-plugin-react`, `jest`, `jest-circus`,
+  `jest-cli`, `jest-config`, `jest-expo`, `jest-resolve-dependencies`,
+  `jest-runner`, `jest-runtime`, `jest-snapshot`, `jest-watch-typeahead`.
+  No audit fix was applied.
+- **Next release:** Phase 24 reminders and notifications remain unimplemented
+  and are planned for the next release. Insurance cover multiples and similar
+  figures remain guidelines, not advice or adequacy judgments.
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 1, then 0 on one required retry | First run: only `builds a fifty-year daily schedule within two seconds` failed at 2,411 ms (threshold 2,000 ms). The same command was rerun once; 79 suites / 955 tests passed. The benchmark was not edited. |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed. |
+| `npx expo-doctor` | 0 | 21/21 checks passed. |
+| `npx expo export --platform android` | 0 | Export passed. |
+| `npx expo export --platform ios` | 0 | Export passed. |
+
+The other five gates exited 0 in the initial sequential run. The one-time test
+retry then passed with 79 suites/955 tests; no code or test was changed in
+response to the wall-clock result.
 
 #### P23-B legacy Insurance literal audit
 
@@ -2209,10 +2276,13 @@ Planned P24-A, including CR-1 [P15-K].
 
 ### Phase 25 — Release preparation and encrypted backups
 
-P25-A (v0.1.0 release-preparation documentation and metadata) is complete.
-P25-B encrypted backups [P15-L] remain planned. P25-C release blockers,
-license/Node metadata, and shared AI memory are complete; no feature or schema
-changes were made.
+P25-A v0.1.0 release-preparation documentation and metadata, P25-C release
+blockers/license/Node metadata/shared AI memory, and P25-D release sync are
+complete. v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L]
+remain planned. P25-D records the owner's report that the EAS build, screenshots
+and physical-device test are complete; device/OS details were not recorded.
+Phase 24 reminders and notifications are planned for the next release. No
+feature, schema or dependency changes were made by P25-D.
 
 ### Phase 26 — Accessibility, performance and final gates
 
@@ -2415,7 +2485,8 @@ evidence present in exports/checkpoints.
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
 | P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
-| P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. npm audit findings and physical-device/owner checks are explicitly open. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded in the P25-C verification section below. | Assumed: P25-C is the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
+| P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
+| P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | P25-D documentation close-out commit; hash verified in Git. | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -4712,11 +4783,10 @@ are not device runs.
 | STEP 4 — Shared AI memory | Done | `docs/memory/`, `AGENTS.md`; tool-specific pointer files were initially created and removed in the P25-C follow-up | `shared AI memory documents` and `permanent progress ledger`; memory pages/header/index/schema/count checks pass, and the follow-up test requires a single `AGENTS.md` instruction entry point. |
 | STEP 5 — Final gates | Done | Current task source/docs and this ledger | 79 suites / 955 tests; six ordered gates all exit 0; Expo Doctor 21/21. |
 
-**P25-C acceptance criteria not verified on a real device:** dynamic type and
-clipping at system font scales 1.3/2.0; Insurance-card native touch and
-navigation; keyboard/safe-area behavior; VoiceOver/TalkBack and accessibility
-activation; local storage and backup interactions on physical devices.
-Screenshots and EAS build are explicitly deferred to the owner. Full test and
-coverage results are recorded in DEC-P25C; see
+P25-C's simulated layout tests did not establish physical-device behavior.
+In P25-D the owner reported that physical-device testing works; device model
+and operating system were not recorded. This is owner-verified, not automated
+evidence. The owner also reports the EAS build and screenshots are complete.
+Full automated test and coverage results are recorded in DEC-P25C; see
 [`docs/memory/open-items.md`](../memory/open-items.md) for outstanding owner
-decisions and device checks.
+decisions and the source of the owner-reported verification.
