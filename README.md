@@ -44,8 +44,8 @@ in this repository.
 
 ## Getting started
 
-This repository uses npm and includes `package-lock.json`. Use Node.js 24 LTS
-(24.3.0 or newer within the 24.x major); `.nvmrc` selects 24.22.1.
+This repository uses npm and includes `package-lock.json`. Use Node.js 26;
+`.nvmrc` selects 26.13.0 and `package.json` permits `>=26.0.0 <27`.
 
 ```bash
 npm ci

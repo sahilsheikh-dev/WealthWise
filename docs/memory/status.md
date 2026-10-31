@@ -2,22 +2,21 @@
 
 # Status
 
-- Current task: Phase 25 part D (P25-D), release sync.
-- Current task state: Complete. v0.1.0 is a GitHub pre-release (tag `v0.1.0`);
-  the owner reports the EAS build, screenshots and physical-device testing are
-  complete and working. Device model and OS were not recorded; this is
-  owner-verified, not automated evidence.
-- Last implementation/test commit at final verification:
-  `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`
-  (`fix: type Home card test lookup`); verify later documentation commits with
-  `git log`.
+- Current task: Phase 25 part E (P25-E), Node engine and test stability.
+- Current task state: Complete. All six final gates passed on Node 26.13.0;
+  Expo Doctor reports 21/21 checks passed. Node 24.22.2 still fails 13 suites
+  after a clean Jest cache due to Expo Modules Core `Platform.select`
+  initialization through incomplete React Native test mocks; the version-
+  specific trigger is not established.
 - Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: 79 suites, 955 tests passed in the latest required coverage run;
-  date and current gate results are recorded in the P25-D ledger entry.
+- Test counts: 79 suites, 955 tests passed on Node 26.13.0 in the P25-E
+  coverage run. TypeScript, lint and Android/iOS exports also passed; exact
+  exit codes and directory coverage are in the P25-E ledger entry.
 - Open release items: latest `npm audit --omit=dev` reports 27 advisories and
   `npm audit` reports 55; counts and affected packages are recorded in the
-  P25-D ledger entry. The Node 24 pin remains unchanged despite the owner's
-  Node v26.10.0 install/test run with an `EBADENGINE` warning.
+  P25-D ledger entry. Node 26.13.0 is now pinned based on the P25-E test
+  comparison; Node 24's Jest mock/platform initialization issue is documented
+  in the same ledger.
 - Next release phase: Phase 24 reminders and notifications (CR-1); later accessibility,
   performance, cleanup and release work remain in their planned phases.
 
