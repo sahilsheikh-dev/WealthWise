@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
 
 # Project
 
@@ -8,7 +8,8 @@ runtime synchronization.
 
 - Stack: Expo SDK 57, React Native 0.86.3, TypeScript, Expo Router, Zustand,
   AsyncStorage, Zod, React Hook Form and Jest.
-- Runtime: Node.js 24.3.0+ within Node 24; `.nvmrc` selects 24.22.1.
+- Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
+  `>=26.0.0 <27`.
 - Schema version: v13 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Tabs: Home, Transactions, Goals and Budget.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
@@ -16,8 +17,8 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 79 suites, 955 tests passed in the 2026-10-26 P25-C final
-  coverage run; see
+- Test counts: 79 suites, 955 tests passed on Node 26.13.0 in the 2026-10-31
+  P25-E final coverage run; see
   [status.md](status.md) for the run date and exact gate results.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
