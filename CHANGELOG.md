@@ -2,10 +2,12 @@
 
 # Changelog
 
-## [0.1.0] - 2026-10-25
+## [0.1.0]
 
-Initial release-preparation record. Feature work and physical-device release QA
-remain separate from this documentation and metadata update.
+Released on GitHub as a pre-release with tag `v0.1.0`. The owner reports the
+EAS build and release screenshots are complete and that physical-device
+testing works; device model and operating system were not recorded. This
+owner-reported verification is not automated device evidence.
 
 ### App and navigation
 
@@ -35,6 +37,10 @@ remain separate from this documentation and metadata update.
 
 ### Known limitations
 
-- Reminders and notifications are not implemented.
-- Physical iOS/Android device behavior has not been comprehensively verified.
+- Reminders and notifications are not implemented; they are planned for the
+  next release phase.
+- npm reports open advisories in both production and full dependency audits;
+  see the progress ledger for current counts and affected packages.
 - The app is not financial, tax, legal or insurance advice.
+- Insurance cover multiples and similar figures are guidelines only, not
+  recommendations or judgments of adequacy.

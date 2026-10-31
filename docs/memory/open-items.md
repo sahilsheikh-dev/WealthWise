@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -8,24 +8,30 @@
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
   still open for `profile-form.tsx` and `transaction-form.tsx`.
-- `npm audit --json` reports 8 advisories: five high
-  (`@expo/cli`, `@expo/code-signing-certificates`, `expo`, `node-forge`,
-  `zod`) and three moderate (`decode-uri-component`, `expo-router`,
-  `query-string`). Owner direction is required; do not use
+- Latest audit: `npm audit --omit=dev` reports 27 advisories (6 high,
+  20 moderate, 1 low) across the production dependency tree. `npm audit`
+  reports 55 (6 high, 44 moderate, 5 low); the 28 additional advisories are
+  dev-only build/test tooling. Exact affected package lists are in the P25-D
+  entry in `docs/PROGRESS.md`. Owner direction is required; do not use
   `npm audit fix --force` or approve install scripts.
 - Confirm the MIT copyright holder, currently written as
   `Sahil Aspak Sheikh` from the local account name.
-- Screenshots and an EAS build are deferred to the owner’s later release work.
-  The app slug was confirmed by the owner and was not changed.
+- **Node compatibility choice:** the declared engine remains `>=24.3.0 <25`
+  and `.nvmrc` remains 24.22.1. The owner reports running `npm install` and
+  all 955 tests on Node v26.10.0 with only an `EBADENGINE` warning. Owner
+  options: keep the Node 24 pin, test again on Node 24, or relax the engine
+  range to `>=24.3.0`. No change without owner instruction.
+- The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
+  and screenshots complete. The slug was confirmed by the owner and was not
+  changed.
 
-## Device checks not verified
+## Physical-device verification
 
-- iOS and Android physical-device rendering, clipping, dynamic type and safe
-  areas, including the Insurance card at font scales 1.3 and 2.0.
-- Native nested touch behavior, router navigation, accessibility
-  announcements/activation, keyboard behavior and screen-reader operation.
-- App lock, persistence/archive behavior, backup file interaction and native
-  builds on physical devices. Automated tests simulate components and props.
+- Owner-verified: the owner reports that everything works in a physical-device
+  test. Device model and operating system were not recorded. This is owner
+  report, not automated test evidence or an independently observed device run.
+- Automated layout tests still simulate component props and font scales; do
+  not present them as physical-device evidence.
 
 ## Documented assumptions and constraints
 
