@@ -16,11 +16,16 @@
   `npm audit fix --force` or approve install scripts.
 - Confirm the MIT copyright holder, currently written as
   `Sahil Aspak Sheikh` from the local account name.
-- **Node compatibility choice:** the declared engine remains `>=24.3.0 <25`
-  and `.nvmrc` remains 24.22.1. The owner reports running `npm install` and
-  all 955 tests on Node v26.10.0 with only an `EBADENGINE` warning. Owner
-  options: keep the Node 24 pin, test again on Node 24, or relax the engine
-  range to `>=24.3.0`. No change without owner instruction.
+- **Node 24 Jest issue:** on Node 24.22.2, after clearing Jest cache, 13 suites
+  fail because `expo-modules-core` reads `ReactNativePlatform.select` while
+  `react-native` is mocked without a `Platform` export in affected test files.
+  The full suite passes on Node 26.13.0. React Native 0.86.3's declared engine
+  supports Node `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0`; therefore the
+  test difference does not prove that the SDK itself rejects Node 24.
+  Project Node is pinned to 26.13.0 and the allowed engine is `>=26.0.0 <27`
+  based on the observed test results. Node 24/Jest mock behavior remains
+  unresolved and can be revisited if test mocks are corrected in a future
+  authorized task.
 - The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
   and screenshots complete. The slug was confirmed by the owner and was not
   changed.
@@ -42,7 +47,9 @@
 - The P20-V form omits the Percent option for non-monthly schedules because the
   frozen SegmentedControl has no disabled option API; validation rejects
   non-monthly percent items as well.
-- Node 24.22.1 is selected from the Node 24 LTS line, meeting React Native
-  0.86.3's `^24.3.0` engine requirement; see P25-C in the ledger.
+- **Assumed:** use stable Node 26.13.0 because the full suite passed on it and
+  the clean-cache full run failed on Node 24.22.2. Expo SDK 57 uses React
+  Native 0.86; see SDK and RN engine evidence in P25-E of the ledger. Node
+  26.13.0 is a stable release, not a pre-release.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.

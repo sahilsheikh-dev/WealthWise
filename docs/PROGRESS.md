@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 94% (72/77)
+Overall progress █████████░ 94% (73/78)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -75,7 +75,7 @@ Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         ████████░░ 75% (3/4)
+Phase 25         ████████░░ 80% (4/5)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -155,8 +155,9 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
 | P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
-| P25-C | — | Done | Expo Doctor 21/21; Node 24 LTS and MIT metadata; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync and current audit/device state are recorded in P25-D. | 2026-10-26 |
+| P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
 | P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
+| P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -1532,6 +1533,65 @@ The other five gates exited 0 in the initial sequential run. The one-time test
 retry then passed with 79 suites/955 tests; no code or test was changed in
 response to the wall-clock result.
 
+### P25-E Node engine and test stability (2026-10-31)
+
+**Assumed:** set the project to stable Node `26.13.0`, with
+`engines.node` `>=26.0.0 <27`, because the full test suite passed on Node
+26.13.0 and failed after a clean Jest cache on Node 24.22.2. This records
+observed project test behavior; it does not claim that Expo SDK 57 or React
+Native 0.86 rejects Node 24.
+
+- Current machine default: Node `v26.10.0`; comparison runs used installed
+  stable Node `v26.13.0` and `v24.22.2`.
+- Node `v26.13.0`: `npm test` passed 79 suites / 955 tests. After clearing
+  Jest's cache, the previously failing `AppHeader.test.tsx` passed all 10
+  tests.
+- Node `v24.22.2`: `npx jest --clearCache` exited 0, then `npm test` had 13
+  failing suites, 66 passing suites, and 880 passing tests. Failures report
+  `Cannot read properties of undefined (reading 'select')` from
+  `expo-modules-core/src/Platform.ts`.
+- Installed versions are Expo `57.0.31`, React Native `0.86.3`, and
+  `expo-modules-core` `57.0.24`. React Native 0.86.3 declares Node
+  `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0`; this includes Node 24.
+  Expo SDK 57 release notes identify React Native 0.86, and the versioned SDK
+  57 docs are at https://docs.expo.dev/versions/v57.0.0/. React Native 0.86
+  environment setup says Node 22.11.0 or newer:
+  https://reactnative.dev/docs/0.86/set-up-your-environment.
+- The observed error path is reproducible from repository/package code:
+  Expo Modules Core evaluates `ReactNativePlatform.select` in
+  `src/Platform.ts`; multiple test-local `jest.mock('react-native', ...)`
+  factories omit `Platform`. This explains the thrown access when that path
+  initializes, but the repository evidence does not establish why Node 24
+  activates the path while Node 26 does not. No test mock was changed in this
+  task.
+- `.nvmrc`, `package.json` and the lockfile root engine metadata now agree on
+  `26.13.0` / `>=26.0.0 <27`. No dependency versions or app/schema behavior
+  changed.
+
+Replaced assertions:
+
+| Old assertion | New assertion | Reason |
+|---|---|---|
+| Fifty-year daily schedule had to finish in `< 2_000` ms; test name said “within two seconds.” | Retain exact 18,250-row assertion and require elapsed time `< 10_000` ms; test says “within ten seconds.” | A previous full test run took 2,411 ms on shared execution; the original strict wall-clock ceiling was unstable. The wider bound preserves a finite performance check without changing schedule correctness assertions. |
+| Progress-ledger test expected 72/77 overall and Phase 25 3/4. | It now requires 73/78 overall and Phase 25 4/5, and explicitly checks P25-E is Done in dashboard and prompt log. | P25-D and P25-E are recorded as additional completed Phase 25 items; counts must derive from the current dashboard rather than stale totals. |
+
+Focused validation on Node 26.13.0: `schedule.test.ts` and
+`progressLedger.test.ts`, 2 suites / 19 tests passed.
+
+Final sequential gates, all on Node `v26.13.0`:
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 79 suites / 955 tests passed. |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed. |
+| `npx expo-doctor` | 0 | 21/21 checks passed. |
+| `npx expo export --platform android` | 0 | Export passed. |
+| `npx expo export --platform ios` | 0 | Export passed. |
+
+Coverage from this run: `src/domain/` 99.04% lines / 95.23% branches;
+`src/data/` excluding hooks 95.34% / 90.91%; pure `src/lib/` 100% / 100%.
+
 #### P23-B legacy Insurance literal audit
 
 Case-sensitive `rg -n "'Insurance'" app src` returned 67 matches in 20 files.
@@ -2277,12 +2337,13 @@ Planned P24-A, including CR-1 [P15-K].
 ### Phase 25 — Release preparation and encrypted backups
 
 P25-A v0.1.0 release-preparation documentation and metadata, P25-C release
-blockers/license/Node metadata/shared AI memory, and P25-D release sync are
-complete. v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L]
-remain planned. P25-D records the owner's report that the EAS build, screenshots
-and physical-device test are complete; device/OS details were not recorded.
-Phase 24 reminders and notifications are planned for the next release. No
-feature, schema or dependency changes were made by P25-D.
+blockers/license/shared AI memory, P25-D release sync, and P25-E Node engine
+and test stability are complete. P25-E changed only Node metadata and the
+existing schedule timing test; it made no app, schema or dependency changes.
+v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L] remain
+planned. P25-D records the owner's report that the EAS build, screenshots and
+physical-device test are complete; device/OS details were not recorded. Phase
+24 reminders and notifications are planned for the next release.
 
 ### Phase 26 — Accessibility, performance and final gates
 
@@ -2486,7 +2547,8 @@ evidence present in exports/checkpoints.
 | P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
 | P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
-| P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | P25-D documentation close-out commit; hash verified in Git. | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
+| P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
+| P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |

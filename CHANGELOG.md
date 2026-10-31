@@ -41,6 +41,7 @@ owner-reported verification is not automated device evidence.
   next release phase.
 - npm reports open advisories in both production and full dependency audits;
   see the progress ledger for current counts and affected packages.
+- Development and test commands use Node.js 26 (`.nvmrc`: 26.13.0).
 - The app is not financial, tax, legal or insurance advice.
 - Insurance cover multiples and similar figures are guidelines only, not
   recommendations or judgments of adequacy.
