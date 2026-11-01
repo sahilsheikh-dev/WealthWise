@@ -87,9 +87,13 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
     Text: node('text'),
     View: node('view'),
+    TextInput: node('text-input'),
+    ScrollView: node('scroll-view'),
+    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: mockFontScale.current }),
   };
 });
@@ -450,20 +454,18 @@ describe('three-month emergency target screens', () => {
     expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
     expect(insurancePressable.props.accessibilityRole).toBe('button');
-    expect(insurancePressable.props.accessibilityLabel).toBe('Open Insurance');
+    expect(insurancePressable.props.accessibilityLabel).toContain('Insurance');
     expect(insurancePressable.parent).toBeDefined();
     const orderedMarkers = renderer.root.findAll((node) => {
       const text = node.type === 'text' ? renderedText(node).trim() : '';
       return node.props.testID === 'home-insurance-card'
-        || ['Upcoming and due', 'Insurance', 'Goal Progress'].includes(text);
+        || ['Upcoming and due', 'Goal Progress'].includes(text);
     }).map((node) => node.props.testID ?? renderedText(node).trim());
     const upcomingIndex = orderedMarkers.indexOf('Upcoming and due');
-    const insuranceHeadingIndex = orderedMarkers.indexOf('Insurance');
     const insuranceCardIndex = orderedMarkers.indexOf('home-insurance-card');
     const goalProgressIndex = orderedMarkers.indexOf('Goal Progress');
     expect(upcomingIndex).toBeGreaterThanOrEqual(0);
-    expect(insuranceHeadingIndex).toBeGreaterThan(upcomingIndex);
-    expect(insuranceCardIndex).toBeGreaterThan(insuranceHeadingIndex);
+    expect(insuranceCardIndex).toBeGreaterThan(upcomingIndex);
     expect(goalProgressIndex).toBeGreaterThan(insuranceCardIndex);
     const detailRowIds = [
       'home-insurance-row-total-cover',

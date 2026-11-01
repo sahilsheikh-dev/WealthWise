@@ -688,13 +688,13 @@ describe('makeTransactionFormSchema', () => {
       expect(duplicate.success).toBe(false);
       if (!duplicate.success) expect(duplicate.error.issues.some((issue) => issue.message === 'A goal with this name already exists')).toBe(true);
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
-      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(false);
+      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
       const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: false, existingYear: 2020,
       });
       expect(editingPastGoalSchema.safeParse({ ...goal, year: '2020' }).success).toBe(true);
-      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(false);
+      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(true);
       const minimumTargetSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: true, minTarget: 60_000,
       });

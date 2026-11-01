@@ -34,7 +34,6 @@ import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
-import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -120,76 +119,7 @@ export default function HomeScreen() {
       Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
       return;
     }
-    const clearThrough = preview !== null && preview.count > 1;
-    const extra = clearThrough && preview
-      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
-      : '';
     setHomePayment(item);
-    return;
-
-    if (clearThrough && preview) {
-      const entryIds = actions.clearDuesThrough(target, item.dueDate);
-      if (!entryIds || useAppStore.getState().lastError) {
-        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
-        return;
-      }
-      const sourceKind = target.kind === 'plan'
-        ? 'holding-entry'
-        : target.kind === 'liability' ? 'liability-payment' : 'policy-payment';
-      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
-        transaction.source?.kind === sourceKind
-        && transaction.source.parentId === target.id
-        && transaction.source.entryId === entryId,
-      ));
-      if (transactions.some((transaction) => transaction === undefined)) {
-        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
-        return;
-      }
-      let total = 0;
-      for (const transaction of transactions) {
-        if (!transaction) {
-          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
-          return;
-        }
-        total += transaction.amount;
-      }
-      setActionToast({
-        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
-        actionLabel: 'Undo',
-        onAction: () => {
-          actions.undoClearDuesThrough(target, entryIds);
-          const error = useAppStore.getState().lastError;
-          if (error) Alert.alert('Unable to undo', error);
-        },
-      });
-      return;
-    }
-
-    const entryId = actions.clearDue(target, item.source.slotId);
-    if (!entryId || useAppStore.getState().lastError) {
-      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
-      return;
-    }
-    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
-      (candidate.source?.kind === 'holding-entry'
-        || candidate.source?.kind === 'liability-payment'
-        || candidate.source?.kind === 'policy-payment')
-      && candidate.source.parentId === target.id
-      && candidate.source.entryId === entryId,
-    );
-    if (!transaction) {
-      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
-      return;
-    }
-    setActionToast({
-      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
-      actionLabel: 'Undo',
-      onAction: () => {
-        actions.undoClearDue(target, entryId);
-        const error = useAppStore.getState().lastError;
-        if (error) Alert.alert('Unable to undo', error);
-      },
-    });
   };
   const saveHomePayment = (actualAmount: number) => {
     const item = homePayment;
@@ -506,6 +436,14 @@ export default function HomeScreen() {
           })}
         </Card>
       </View>
+      <PaidAmountDialog
+        visible={homePayment !== null}
+        title={homePayment?.title ?? ''}
+        dueAmount={homePayment?.amount ?? 0}
+        dueDate={homePayment?.dueDate}
+        onPaid={saveHomePayment}
+        onNotPaid={() => setHomePayment(null)}
+      />
     </Screen>
   );
 }
@@ -533,7 +471,7 @@ const styles = StyleSheet.create({
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dueActionsStacked: { justifyContent: 'flex-end' },
-  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
+  markPaidButton: { minHeight: 44, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goalsCard: { paddingVertical: 4 },
   goalRow: { paddingVertical: 14 },

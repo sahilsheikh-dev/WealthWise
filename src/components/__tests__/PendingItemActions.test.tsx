@@ -79,10 +79,21 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
-    StyleSheet: { create: (styles: object) => styles },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
     View: node('view'),
+    TextInput: node('text-input'),
+    ScrollView: node('scroll-view'),
+    Modal: node('modal'),
+    Pressable: node('pressable'),
+    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
+    Platform: { OS: 'ios' },
+    useWindowDimensions: () => ({ height: 800, fontScale: 1 }),
   };
 });
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 
 function item(source: PendingItem['source'], category = 'Food'): PendingItem {
   return {
