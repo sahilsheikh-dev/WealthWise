@@ -10,6 +10,7 @@ authoritative rationale and history.
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-PLAN](../PROGRESS.md#4-architecture-and-decisions)
+- [DEC-BUDGET-HISTORICAL-ACTUALS](../PROGRESS.md#2026-11-01-historical-actual-based-budgets-cr-94)
 - [DEC-BUDGET-SCREEN](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-SPEC](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-V10](../PROGRESS.md#4-architecture-and-decisions)

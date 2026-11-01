@@ -17,8 +17,10 @@
   financial values in repository memory.
 - **Local app/backup mismatch:** the note-edited backup has a valid recalculated
   checksum and imports, but it does not contain the separate transaction
-  deletion/addition described for current app data. Export a fresh backup from
-  the app if that edit should be included.
+  deletion/addition described for current app data. Historical custom budget
+  snapshots were added through October 2026 using the transactions in this
+  backup; those snapshots do not resolve the missing app transaction edit.
+  Export a fresh backup from the app if that edit should be included.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
