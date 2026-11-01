@@ -152,7 +152,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
 | P23-D | — | Done | CR-91 Home Insurance Card tests now assert the user-owned Home order: after Upcoming and due when present and before Goal Progress, with Insurance content excluded from Goals. | 2026-10-26 |
-| P24-A | P15-K | In progress | DEC-P24A research complete; implementing local-only reminders and notification confirmation. No push or schema change. | 2026-11-01 |
+| P24-A | P15-K | Done | DEC-P24A; CR-1 local reminders, lock-gated confirmation, privacy controls and 60-item scheduler complete. Research commit `372476c`; implementation commit `f5a1a38`; all six gates pass. No push or schema change. | 2026-11-01 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
 | P25-B | P15-L | Done | DEC-P25B; encrypted backup implementation, tests, documentation and all six ordered gates complete. No schema or native build change. | 2026-11-01 |
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
@@ -1614,79 +1614,6 @@ source/test hit and its disposition is listed here:
 | `src/domain/budgetGroups.ts` | 51 | Names the existing protected Budget group Insurance. |
 | `src/domain/__tests__/budgetCategories.test.ts` | 15 | Verifies the transaction dropdown group title remains Insurance. |
 | `src/domain/__tests__/pending.test.ts` | 206, 219 | Exercises a manually planned legacy Insurance item and its due row. |
-
-### DEC-P24A (2026-11-01)
-
-- Frozen scope: local-only reminders from `pendingItems()` and budget income
-  Received dues; two independently enabled reminders per dated unpaid due,
-  at a configurable local time (default 09:00). The pure domain plans only;
-  native scheduling, permission prompts, channels, response handling and
-  settings remain at the app boundary. No push token, network request, schema
-  migration or persisted app-data change.
-- Planning target: deterministic IDs; day-before and same-day local calendar
-triggers; omit fire times already passed; sort nearest-first and cap the
-scheduled rolling window at 60. The requested iOS platform ceiling of 64 is
-not documented in the consulted SDK 57 notifications page; the 60 cap is
-retained as the frozen requirement, not represented as Expo documentation.
-Reminders refresh only when the app opens/returns to foreground or relevant
-local state changes; a long unopened gap may exhaust the window.
-- Notification privacy: amounts are omitted unless explicitly enabled;
-existing `hidePreviews` overrides that choice and produces generic text
-without names or amounts. The due name/date/amount is shown only in the
-in-app confirmation route after the app lock has allowed protected screens
-to mount. Paid and no-date items are never planned.
-- Settings are UI-only fields inside `wealthwise.meta.v1`; `eraseAllData`
-already removes that key. The erase action will also cancel scheduled
-notifications. Changing dues (including import and Undo) will debounce a
-serialized cancel-all then reschedule pass.
-- Source inventory: `app/_layout.tsx` currently registers routes inside
-`LockGate` and mounts `ActionToastHost` only after hydration; no notification
-listener or reminders route exists. `src/lib/appMenu.ts` builds the global
-header menu and `src/components/useAppMenu.ts` maps labels to Expo Router
-destinations. `src/data/metaStore.ts` uses a strict Zod schema in the
-UI-only metadata key; `src/data/createAppStore.ts` already clears metadata
-during erase and owns import/Undo/erase actions. `src/components/LockGate.tsx`
-does not mount its children while locked; `hidePreviews` is stored separately
-in SecureStore and exposed by `SecurityProvider`. `pendingItems()` in
-`src/domain/pending.ts` includes unpaid plan, liability (including dated
-one-time), active policy, budget due-day items, and budget earned-income
-dues; it is scoped to one month and excludes paid and undated budget items.
-`PendingItemActions` already calls clear-due/add-transaction store actions,
-displays the existing Undo toast, and supports `Received` for income.
-- SDK 57 documentation consulted before implementation:
-[expo-notifications](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/)
-and [app config](https://docs.expo.dev/versions/v57.0.0/config/app/).
-`expo-notifications@57.0.24` was installed with
-`npm_config_ignore_scripts=true npx expo install expo-notifications`. It is
-the Expo SDK-matched notification API needed for local channel, permission,
-scheduling and response handling; its installed package is approximately
-3.4 MB unpacked. It has no `preinstall`, `install` or `postinstall` scripts;
-its package build/test scripts are not lifecycle install hooks. Audit stayed
-at 55 advisories (6 high, 44 moderate, 5 low), delta zero.
-- The Expo config plugin is added to `app.json` with no options. The SDK docs
-list build-time options for Android icon/color/default FCM channel/sounds
-and iOS background *remote* notifications; none is needed for local reminder
-scheduling. The package automatically includes Android
-`RECEIVE_BOOT_COMPLETED` support for rescheduling after device restart.
-Android 13+ requires user notification permission; create the runtime
-notification channel before requesting. SDK docs say exact alarms on
-Android 12+ require `SCHEDULE_EXACT_ALARM`; do not add/request that
-permission, so Android delivery may be inexact.
-- **Spec conflict — Expo Go:** the SDK 57 docs explicitly say local
-notifications remain available in Expo Go; only remote push is unavailable
-there on Android. Therefore “a development build is required” is not true
-for the local-only feature. Keep local notifications usable in Expo Go where
-supported, and require a development/production build only to validate
-generated native configuration and real-device behavior.
-- **Spec conflict — documented iOS cap:** the consulted Expo SDK 57 page does
-not state an iOS pending-local-notification maximum. Apply the spec's 60
-nearest-first rolling cap, but mark the claimed OS limit as not independently
-verified from Expo's documentation.
-- **Spec conflict — exact timing on Android:** the frozen local-time setting
-cannot guarantee exact Android alarm timing without adding the platform's
-exact-alarm permission, which the spec excludes. Schedule local date triggers
-without requesting exact alarms; document and physically verify delivery
-behavior.test.ts` | 206, 219 | Exercises a manually planned legacy Insurance item and its due row. |
 | `src/data/migrate.ts` | 468, 632, 642, 652 | Preserves old items and moves legacy Insurance budget items into the current Insurance system section when needed. |
 | `src/domain/__tests__/v5Integrity.test.ts` | 17, 83, 84 | Retains old-format linked policy transactions in migration/integrity fixtures. |
 | `src/data/__tests__/createAppStore.test.ts` | 664 | Retains a legacy manual Insurance budget item in the store test. |
@@ -1698,6 +1625,104 @@ behavior.test.ts` | 206, 219 | Exercises a manually planned legacy Insurance ite
 | `src/domain/links.ts` | 189 | Allows previously linked policy payments whose stored category is Insurance. |
 | `src/components/__tests__/PendingItemActions.test.tsx` | 164, 177, 184 | Keeps legacy manual Insurance due-action fixtures. |
 | `src/components/__tests__/RouteRenderSmoke.test.tsx` | 2965, 2973, 2981, 3090, 3123, 3129, 3138 | Keeps Budget management route assertions for existing Insurance items and category selection. |
+
+### DEC-P24A (2026-11-01)
+
+- Frozen scope: local-only reminders from `pendingItems()` and budget income
+  Received dues; two independently enabled reminders per dated unpaid due,
+  at a configurable local time (default 09:00). The pure domain plans only;
+  native scheduling, permission prompts, channels, response handling and
+  settings remain at the app boundary. No push token, network request, schema
+  migration or persisted app-data change.
+- Planning target: deterministic IDs; day-before and same-day local calendar
+  triggers; omit fire times already passed; sort nearest-first and cap the
+  scheduled rolling window at 60. The requested iOS platform ceiling of 64 is
+  not documented in the consulted SDK 57 notifications page; the 60 cap is
+  retained as the frozen requirement, not represented as Expo documentation.
+  Reminders refresh only when the app opens/returns to foreground or relevant
+  local state changes; a long unopened gap may exhaust the window.
+- Notification privacy: amounts are omitted unless explicitly enabled;
+  existing `hidePreviews` overrides that choice and produces generic text
+  without names or amounts. The due name/date/amount is shown only in the
+  in-app confirmation route after the app lock has allowed protected screens
+  to mount. Paid and no-date items are never planned.
+- Settings are UI-only fields inside `wealthwise.meta.v1`; `eraseAllData`
+  already removes that key. The erase action will also cancel scheduled
+  notifications. Changing dues (including import and Undo) will debounce a
+  serialized cancel-all then reschedule pass.
+- Source inventory: `app/_layout.tsx` currently registers routes inside
+  `LockGate` and mounts `ActionToastHost` only after hydration; no notification
+  listener or reminders route exists. `src/lib/appMenu.ts` builds the global
+  header menu and `src/components/useAppMenu.ts` maps labels to Expo Router
+  destinations. `src/data/metaStore.ts` uses a strict Zod schema in the
+  UI-only metadata key; `src/data/createAppStore.ts` already clears metadata
+  during erase and owns import/Undo/erase actions. `src/components/LockGate.tsx`
+  does not mount its children while locked; `hidePreviews` is stored separately
+  in SecureStore and exposed by `SecurityProvider`. `pendingItems()` in
+  `src/domain/pending.ts` includes unpaid plan, liability (including dated
+  one-time), active policy, budget due-day items, and budget earned-income
+  dues; it is scoped to one month and excludes paid and undated budget items.
+  `PendingItemActions` already calls clear-due/add-transaction store actions,
+  displays the existing Undo toast, and supports `Received` for income.
+- SDK 57 documentation consulted before implementation:
+  [expo-notifications](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/)
+  and [app config](https://docs.expo.dev/versions/v57.0.0/config/app/).
+  `expo-notifications@57.0.24` was installed with
+  `npm_config_ignore_scripts=true npx expo install expo-notifications`. It is
+  the Expo SDK-matched notification API needed for local channel, permission,
+  scheduling and response handling; its installed package is approximately
+  3.4 MB unpacked. It has no `preinstall`, `install` or `postinstall` scripts;
+  its package build/test scripts are not lifecycle install hooks. Audit stayed
+  at 55 advisories (6 high, 44 moderate, 5 low), delta zero.
+- The Expo config plugin is added to `app.json` with no options. The SDK docs
+  list build-time options for Android icon/color/default FCM channel/sounds
+  and iOS background *remote* notifications; none is needed for local reminder
+  scheduling. The package automatically includes Android
+  `RECEIVE_BOOT_COMPLETED` support for rescheduling after device restart.
+  Android 13+ requires user notification permission; create the runtime
+  notification channel before requesting. SDK docs say exact alarms on
+  Android 12+ require `SCHEDULE_EXACT_ALARM`; do not add/request that
+  permission, so Android delivery may be inexact.
+- **Spec conflict — Expo Go:** the SDK 57 docs explicitly say local
+  notifications remain available in Expo Go; only remote push is unavailable
+  there on Android. Therefore “a development build is required” is not true
+  for the local-only feature. Keep local notifications usable in Expo Go where
+  supported, and require a development/production build only to validate
+  generated native configuration and real-device behavior.
+- **Spec conflict — documented iOS cap:** the consulted Expo SDK 57 page does
+  not state an iOS pending-local-notification maximum. Apply the spec's 60
+  nearest-first rolling cap, but mark the claimed OS limit as not independently
+  verified from Expo's documentation.
+- **Spec conflict — exact timing on Android:** the frozen local-time setting
+  cannot guarantee exact Android alarm timing without adding the platform's
+  exact-alarm permission, which the spec excludes. Schedule local date triggers
+  without requesting exact alarms; document and physically verify delivery
+  behavior.
+
+#### P24-A implementation and verification close-out (2026-11-01)
+
+- **Verdict:** complete. Added the pure reminder planner, serialized scheduler,
+  Expo notification adapter, UI-only metadata settings, Reminders screen,
+  lock-gated notification response routing and payment-confirmation route.
+  No persisted app schema or migration changed; `app/(tabs)/index.tsx` and
+  Budget cash-flow labels were not edited.
+- Research commit: `372476c6c6185e926de57ead1d52bb0bdc57974a` (verified
+  `commit` object). Implementation commit: `f5a1a38` (verify the full hash with
+  `git cat-file -t f5a1a38`).
+- Dependency: `expo-notifications@57.0.24` (`~57.0.24`), approximately 3.4 MB
+  unpacked, with no lifecycle install scripts. Audit delta: zero.
+- Coverage gate: 83 suites / 1006 tests pass; total line coverage 98.46%,
+  branch 94.98%, function 99.35%, statement 97.84%. Pure reminder planner
+  coverage: 100% line, 94.11% branch in the focused run.
+- Replaced assertions: none. The demo-data reminder assertion was moved out of
+  a nested test body after implementation; it asserts today, tomorrow and
+  later demo dues and was not weakened.
+- Gate exit codes: coverage tests 0; TypeScript 0; Expo lint 0 after removing
+  an unused planner value and a synchronous effect state initialization;
+  Expo Doctor 0 with 21/21 checks; Android export 0; iOS export 0.
+- Physical-device checks not verified: notification delivery/timing, granted/
+  denied/blocked permission flows, reboot restoration, lock-screen text,
+  cold-start and locked notification taps, and layouts at font scales 1.3/2.0.
 
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
