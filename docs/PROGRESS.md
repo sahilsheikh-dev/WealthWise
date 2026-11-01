@@ -158,6 +158,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
 | P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
 | P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
+| CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -2188,6 +2189,21 @@ source/test hit and its disposition is listed here:
   balances as expenses and used the wrong adjustment dates. The replacement
   verification covers every month from July 2022 through October 2026.
 
+### DEC-TRANSACTIONS-CLOSING-BALANCE (2026-11-01)
+
+- Always render the selected month's balance amount, even when the previous
+  month's closing balance was zero. This applies to positive, zero and
+  negative amounts for both current-month Available balance and past-month
+  Closing balance.
+- The monthly overspend warning compares that month's total expenses and
+  investments with that month's income; the balance card separately includes
+  the carried-forward balance. Currency display rounds paise to whole rupees,
+  so a fractional overspend can appear rounded in the warning.
+- The current local JSON backup's notes were edited without updating its
+  checksum. The checksum was recalculated and the backup passed importer
+  validation. The separate transaction deletion/addition described in the
+  current app was not present in this backup snapshot and was not invented.
+
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -2567,6 +2583,7 @@ evidence present in exports/checkpoints.
 | P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
 | CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
+| CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2667,6 +2684,7 @@ evidence present in exports/checkpoints.
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
 | CR-89 | Add recurrence-aware Budget forms, rows, dues, projections, categories, demo data and tests. | Done | Route form, row frequency/next-due copy, category choices, demo and route/domain acceptance tests complete; full suite and all six gates pass. Simulated layout only; native-device checks remain. |
 | CR-92 | Reconcile the local backup against monthly income, expenses, loan and emergency-fund tracker data; remove duplicate points; add month-end deficit/surplus adjustments. | Done | Temporary focused reconciliation test passed; all 52 monthly cash-flow totals, duplicate signatures, adjustment dates, checksum and `parseBackup` import were verified. The private backup remains a local deliverable and is not committed. |
+| CR-93 | Show Transactions Available/Closing balance amounts for positive, zero and negative values; validate current backup notes and reported transaction changes. | Done | The amount now renders regardless of brought-forward balance. Zero and negative UI tests pass. The edited local backup checksum was recalculated and `parseBackup` passed. The backup snapshot does not contain the separate transaction deletion/addition reported for app data. |
 
 ## 8. Known issues and risks
 
@@ -4960,6 +4978,40 @@ schema/import integrity, unique transaction IDs, snapshots, links and monthly
 cash flow (1/1). `npx tsc --noEmit` exited 0. Temporary tests were removed.
 The full project gates were not rerun for this backup-data-only update. No
 commit was created.
+
+### 2026-11-01 Transactions closing balance and local backup validation (CR-93)
+
+The Transactions card hid the balance amount whenever the brought-forward
+balance was zero, even when the selected month had a zero or negative closing
+balance. The amount is now always rendered; negative amounts retain the
+existing danger tone and shortfall label. Added route tests for zero and
+negative balances and updated the route smoke assertion to require a visible
+negative value.
+
+The edited local schema-v13 backup had a stale SHA-256 checksum after note
+changes. Recalculated only the checksum, then verified that the backup imports.
+The tagged backup still contains its month-end balancing record and does not
+include the separate transaction deletion/addition described for current app
+data, so no financial transaction was changed in the file. The monthly
+overspend warning measures the selected month's expenses plus investments
+against that month's income; the balance card also includes carried-forward
+amounts. Existing currency formatting rounds paise to whole rupees, which can
+make the warning display round a fractional difference.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| Zero/negative balance focused tests | `TransactionsScreen.test.tsx` verifies zero and negative balances; the route smoke test verifies the negative amount is present. | 0 |
+| Edited local backup | Recalculated canonical checksum; schema-v13 `parseBackup` accepts the result. | 0 |
+| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 957 tests fail in the pre-existing `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` cases. | 1 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Lint passes. | 0 |
+| `npx expo-doctor` | 21/21 checks pass. | 0 |
+| `npx expo export --platform android` | Android bundle export passes. | 0 |
+| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
+
+Temporary backup validation test was removed. The local backup remains ignored
+user data; only its checksum was updated. The pre-existing `backup.ts` change
+was preserved.
 
 ### 2026-11-01 complete tracker reconciliation (CR-92)
 

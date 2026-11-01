@@ -2,23 +2,20 @@
 
 # Status
 
-- Current task: complete the restored local backup with the owner's historical
-  income, expenses, loan transactions and emergency-fund activity.
-- Current task state: the local schema-v13 backup is reconciled against the
-  supplied monthly income, expense, loan and emergency-fund trackers. All 52
-  monthly cash-flow totals balance; deficit withdrawals and surplus expenses
-  use month-end dates. Duplicate points were checked, existing asset snapshots
-  and linked loan payments were preserved, and the canonical checksum was
-  recalculated.
-- Verification: the focused reconciliation/import test passed (1/1);
-  `progressLedger.test.ts` and `backup.test.ts` passed (34 tests total);
-  TypeScript, lint, Expo Doctor (21/21), and Android/iOS exports exited 0.
-  Full coverage exited 1: 77/79 suites pass and 9 tests fail in
-  `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx`, matching the
-  pre-existing failures recorded before this task. The final backup imports
-  successfully. Temporary tests were removed. The earlier first-of-month
-  balancing claim is superseded by the corrected month-end check; evidence is
-  in the 2026-11-01 ledger entries.
+- Current task: fix and validate Transactions available/closing-balance
+  visibility, and validate the user's note-edited local backup.
+- Current task state: the selected-month balance amount now appears for zero
+  and negative balances even when the brought-forward balance is zero. The
+  local backup checksum was recalculated after note edits and the file passed
+  importer validation. The backup does not contain the separately described
+  app transaction deletion/addition.
+- Verification: focused zero/negative balance tests and backup import passed.
+  TypeScript, lint, Expo Doctor (21/21), and Android/iOS exports passed. Full
+  coverage exited 1: 77/79 suites pass and 9 tests fail in the existing
+  `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` cases. The
+  overspend warning compares only the selected month's flows and rounds paise
+  to whole rupees; the balance includes the carried-forward amount. Details
+  and exact gate results are recorded in the 2026-11-01 ledger entries.
 - The prior full coverage run had unrelated TransactionsScreen and
   RouteRenderSmoke failures; see the ledger.
 - Schema version: v13 (`src/domain/schemas.ts`).

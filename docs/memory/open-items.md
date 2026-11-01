@@ -15,6 +15,10 @@
   detail have no dedicated schema fields. The local backup is a supported
   snapshot, not a complete workbook migration. Do not retain the user's
   financial values in repository memory.
+- **Local app/backup mismatch:** the note-edited backup has a valid recalculated
+  checksum and imports, but it does not contain the separate transaction
+  deletion/addition described for current app data. Export a fresh backup from
+  the app if that edit should be included.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
