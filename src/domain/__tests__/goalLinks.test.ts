@@ -263,7 +263,7 @@ describe('goal asset links', () => {
     expect(validateIntegrity(data)).toEqual([]);
   });
 
-  it('records the legacy-share and equal-split saved totals for both shipped fixtures', () => {
+  it('records legacy shares as ignored and computes full asset values for both shipped fixtures', () => {
     const asOf = '2026-10-12';
     const dataSets = [mockAppData, buildDemoData(asOf)];
     const totals = dataSets.map((data) => {
@@ -275,23 +275,16 @@ describe('goal asset links', () => {
           : goal.links.reduce((total, link) =>
             total + (instruments.get(link.instrumentId) ?? 0) * (link.share ?? 100) / 100, 0),
         after: goalSavedFor(goal, data, asOf),
+        plainFullValue: goal.links.reduce((total, link) =>
+          total + (instruments.get(link.instrumentId) ?? 0), 0),
       }));
     });
 
-    expect(totals).toEqual([
-      [
-        { id: 'goal-portfolio', before: 35_532.141979678534, after: 118_440.47 },
-        { id: 'goal-home', before: 20_625, after: 82_500 },
-        { id: 'goal-farm', before: 0, after: 0 },
-        { id: 'goal-emergency', before: 155_000, after: 290_456 },
-      ],
-      [
-        { id: 'demo-goal-emergency', before: 189_000, after: 189_000 },
-        { id: 'demo-goal-retirement', before: 9_626.447377234414, after: 8_022.04 },
-        { id: 'demo-goal-home', before: 56_363.2236886172, after: 214_222.04 },
-        { id: 'demo-goal-education', before: 7_250, after: 29_000 },
-        { id: 'demo-goal-travel', before: 25_000, after: 25_000 },
-      ],
-    ]);
+    for (const rows of totals) {
+      for (const row of rows) {
+        const goal = dataSets.flatMap((data) => data.goals).find((item) => item.id === row.id);
+        if (goal?.links.length) expect(row.after).toBe(row.plainFullValue);
+      }
+    }
   });
 });

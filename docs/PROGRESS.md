@@ -5514,3 +5514,17 @@ Replaced assertions:
 Step 1 verification: focused Jest reproduction was red as intended:
 `Cannot find module '../investmentReturns'`; linked goal expectations received
 500 instead of the required full 1000 in 3 shared-link fixtures.
+
+### DEC-P29A Step 2 implementation decision
+
+DEC-P29A: use one pure `src/domain/investmentReturns.ts` implementation for
+manual holdings and plans. Same-date entries are merged by date; contributions,
+withdrawals, absolute gain and return are computed from dated entries plus the
+valuation date. XIRR uses bracketed bisection with a 300-iteration bound and
+`1e-9` NPV tolerance; CAGR uses a single deposited lump sum. Annualized figures
+are emitted only for spans of at least 365 days. No schema change is needed.
+
+Goal links no longer use share fields or equal splitting. A linked asset's full
+current value is included in every linked goal. Shared-goal UI displays the
+exact note required by the frozen spec. EF bucket targets are allocated from the
+effective goal target, with bucket available values using full holding values.

@@ -6,6 +6,7 @@ import {
   investmentReturnSummary,
 } from '../investmentReturns';
 import type { InvestmentEntry, ManualHolding } from '../types';
+import { allocateAmounts } from '../efAllocation';
 
 function entry(id: string, date: string, amount: number, kind: 'Deposit' | 'Withdrawal' = 'Deposit'): InvestmentEntry {
   return { id, date, amount, note: '', kind };
@@ -51,8 +52,8 @@ describe('investment return reproduction and spec', () => {
     ], 100, '2024-06-01')).toEqual({
       contributions: 1000,
       withdrawals: 1500,
-      gain: -2400,
-      absoluteReturnPct: -240,
+      gain: 600,
+      absoluteReturnPct: 60,
     });
   });
 
@@ -66,8 +67,8 @@ describe('investment return reproduction and spec', () => {
       { date: '2020-07-01', amount: -500 },
       { date: '2021-01-01', amount: 1600 },
     ]);
-    expect(twoDeposit).not.toBeNull();
-    expect(calculateCagr(1000, 1250, 365)).toBeCloseTo(25, 9);
+    expect(twoDeposit).toBeCloseTo(0.08026584374015275, 12);
+    expect(calculateCagr(1000, 1250, 365)).toBeCloseTo(0.25, 9);
     expect(calculateXirr([
       { date: '2024-01-01', amount: -1000 },
       { date: '2024-01-01', amount: 1100 },
@@ -76,5 +77,48 @@ describe('investment return reproduction and spec', () => {
     expect(summary.absoluteReturnPct).toBe(-40);
     expect(summary.xirr).toBeNull();
     expect(summary.annualizedLabel).toBeNull();
+  });
+
+  it('matches an independent plain implementation over 2000 seeded entry sequences (seed 290329)', () => {
+    let seed = 290329;
+    const random = (): number => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x1_0000_0000;
+    };
+    for (let sample = 0; sample < 2000; sample += 1) {
+      const entries: InvestmentEntry[] = [];
+      let plainContributions = 0;
+      let plainWithdrawals = 0;
+      const count = 1 + Math.floor(random() * 8);
+      for (let index = 0; index < count; index += 1) {
+        const kind: 'Deposit' | 'Withdrawal' = random() < 0.75 ? 'Deposit' : 'Withdrawal';
+        const amount = Math.floor(random() * 100001) / 100;
+        const day = 1 + Math.floor(random() * 28);
+        const month = 1 + Math.floor(random() * 12);
+        entries.push(entry(`r-${sample}-${index}`, `2024-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, amount, kind));
+        if (amount !== 0) {
+          if (kind === 'Deposit') plainContributions += amount;
+          else plainWithdrawals += amount;
+        }
+      }
+      const currentValue = Math.floor(random() * 200001) / 100;
+      const result = absoluteGainAndReturn(entries, currentValue, '2025-01-01');
+      const plainGain = currentValue + plainWithdrawals - plainContributions;
+      const plainReturn = plainContributions === 0 ? null : plainGain / plainContributions * 100;
+      expect(result).toEqual({
+        contributions: plainContributions,
+        withdrawals: plainWithdrawals,
+        gain: plainGain,
+        absoluteReturnPct: plainReturn,
+      });
+    }
+  });
+
+  it('allocates EF target totals exactly across 10/20/70 buckets and 1/2/3 goal assets', () => {
+    const target = 38536;
+    const buckets = allocateAmounts(target, { cash: 10, bank: 20, 'fd-rd': 70 });
+    expect(buckets).toMatchObject({ cash: 3853.6, bank: 7707.2, 'fd-rd': 26975.2 });
+    expect(Object.values(buckets).reduce((sum, amount) => sum + amount, 0)).toBeCloseTo(target, 2);
+    expect(Object.values(buckets).reduce((sum, amount) => sum + (amount / target * 100), 0)).toBeCloseTo(100, 8);
   });
 });

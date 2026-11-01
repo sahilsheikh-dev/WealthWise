@@ -110,6 +110,15 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     : stale.stale
       ? `Value not updated in ${stale.days ?? 0} days`
       : `Updated ${formatDate(holding.valueAsOf)}`;
+  const summary = row.returnSummary;
+  const annualized = summary?.annualizedLabel === 'XIRR'
+    ? summary?.xirr
+    : summary?.cagr;
+  const returnText = summary?.annualizedLabel && annualized !== null && annualized !== undefined
+    ? ` (${summary.annualizedLabel} ${(annualized * 100).toFixed(1)}%)`
+    : summary?.absoluteReturnPct == null
+      ? ' (No return yet)'
+      : ` (${summary.absoluteReturnPct.toFixed(1)}% absolute)`;
   return {
     kind: 'manual',
     name: holding.name,
@@ -124,7 +133,7 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     description: [
       { text: `${row.gain >= 0 ? 'Gain' : 'Loss'} ` },
       { amount: Math.abs(row.gain) },
-      { text: row.gainPct === null ? '' : ` (${row.gainPct.toFixed(1)}%)` },
+      { text: returnText },
     ],
     statuses: stale.stale ? [{ label: 'Stale value', tone: 'neutral' }] : [],
     headerAction: { id: 'edit', label: 'Edit' },

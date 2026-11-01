@@ -1,4 +1,5 @@
 import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
+import { investmentReturnSummary, type InvestmentReturnSummary } from './investmentReturns';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -11,6 +12,7 @@ export type PortfolioRow = {
   gain: number;
   gainPct: number | null;
   holding?: Holding;
+  returnSummary?: InvestmentReturnSummary;
 };
 
 export function holdingInvested(holding: Holding): number {
@@ -35,8 +37,27 @@ function row(
   type: PortfolioRow['type'],
   invested: number,
   value: number,
+  asOf: ISODate,
   holding?: Holding,
 ): PortfolioRow {
+  const returnSummary = holding
+    ? investmentReturnSummary(
+      holding.kind === 'manual'
+        ? holding.logs
+        : [
+          {
+            id: `${holding.id}-opening`,
+            date: holding.trackFrom,
+            amount: Math.max(0, holding.opening),
+            note: '',
+            kind: 'Deposit',
+          },
+          ...holding.logs,
+        ],
+      value,
+      asOf,
+    )
+    : investmentReturnSummary([], value, asOf);
   return {
     id,
     kind,
@@ -44,8 +65,9 @@ function row(
     type,
     invested,
     value,
-    gain: value - invested,
-    gainPct: invested === 0 ? null : (value - invested) / invested * 100,
+    gain: returnSummary.gain,
+    gainPct: returnSummary.absoluteReturnPct,
+    returnSummary,
     ...(holding ? { holding } : {}),
   };
 }
@@ -59,6 +81,7 @@ export function buildPortfolioRows(data: AppData, asOf: ISODate): PortfolioRow[]
       holding.type,
       holdingInvested(holding),
       holdingValue(holding, asOf),
+      asOf,
       holding,
     ),
   );
@@ -82,8 +105,10 @@ export function portfolioTotals(rows: PortfolioRow[]): {
 } {
   const invested = rows.reduce((sum, item) => sum + item.invested, 0);
   const value = rows.reduce((sum, item) => sum + item.value, 0);
-  const gain = value - invested;
-  return { invested, value, gain, gainPct: invested === 0 ? null : gain / invested * 100 };
+  const gain = rows.reduce((sum, item) => sum + (item.returnSummary?.gain ?? item.gain), 0);
+  const contributions = rows.reduce((sum, item) =>
+    sum + (item.returnSummary?.contributions ?? item.invested), 0);
+  return { invested, value, gain, gainPct: contributions === 0 ? null : gain / contributions * 100 };
 }
 
 export function monthlyCommitment(holdings: Holding[]): number {
