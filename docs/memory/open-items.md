@@ -1,9 +1,20 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
+- **Spreadsheet backup scope:** supplied monthly income and expense items,
+  historical loan payments, and the provided emergency-fund activity are
+  represented in the local schema-v13 backup. Non-earned inflows remain
+  separate from earned income; unmatched source movements and expense
+  differences are labeled rather than inferred. Monthly cash-flow totals were
+  rebalanced with month-end withdrawals/extra expenses and verified against
+  the trackers. Emergency-fund records are mapped to linked holdings and
+  transactions, but arbitrary workbook comments and every source-level tracker
+  detail have no dedicated schema fields. The local backup is a supported
+  snapshot, not a complete workbook migration. Do not retain the user's
+  financial values in repository memory.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
