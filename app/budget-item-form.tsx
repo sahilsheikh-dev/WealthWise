@@ -19,7 +19,6 @@ import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';

@@ -685,18 +685,6 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
-function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  const scope = renderer.root.findAll((node) => {
-    const options = node.props.options;
-    return String(node.type) === 'segmentedcontrol'
-      && Array.isArray(options)
-      && options.some((option: unknown) => typeof option === 'object'
-        && option !== null && 'label' in option && option.label === 'This month only');
-  })[0];
-  if (!scope) throw new Error('Budget scope control was not rendered.');
-  return scope;
-}
 
 function selectDropdownOption(
   renderer: TestRenderer.ReactTestRenderer | undefined,
