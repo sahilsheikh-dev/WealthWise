@@ -14,7 +14,7 @@ import {
   isItemDueInMonth,
   plannedForMonth,
 } from '../domain/budget';
-import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
+import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { defaultCoverGoals } from '../domain/coverGoals';
 import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
@@ -189,6 +189,23 @@ function makeBudgetPlanItems(currentMonth: string): BudgetItem[] {
       dueDay: 25,
     },
   ];
+}
+
+function makeReminderDemoItems(today: ISODate): BudgetItem[] {
+  return [
+    { id: 'demo-reminder-today', name: 'Demo payment due today', date: today },
+    { id: 'demo-reminder-tomorrow', name: 'Demo payment due tomorrow', date: addDays(today, 1) },
+    { id: 'demo-reminder-later', name: 'Demo payment due later', date: addDays(today, 7) },
+  ].map(({ id, name, date }) => ({
+    id,
+    sectionId: defaultBudgetSectionIdFor('Bills'),
+    name,
+    mode: 'amount',
+    value: 250,
+    frequency: 'monthly',
+    dueDay: Number(date.slice(8, 10)),
+    firstDueMonth: monthKey(date),
+  }));
 }
 
 function makeHoldings(today: ISODate, months: string[]): Holding[] {
@@ -475,7 +492,7 @@ export function buildDemoData(today: ISODate): AppData {
       ...defaultBudgetSections(),
       { id: 'demo-section-pets', name: 'Pets', type: 'spend' },
     ],
-    items: makeBudgetPlanItems(currentMonth),
+    items: [...makeBudgetPlanItems(currentMonth), ...makeReminderDemoItems(today)],
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
   };

@@ -12,6 +12,7 @@ import { coverGoalSummaries } from '../../domain/coverGoals';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
+import { planReminders } from '../../domain/reminders';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -35,6 +36,23 @@ describe('four-month demo data', () => {
       monthlySalary: 75_000,
       theme: 'system',
       onboarded: true,
+    });
+
+    it('includes planner dues for today, tomorrow, and later', () => {
+      const reminders = planReminders(data, {
+        enabled: true,
+        localTime: '09:00',
+        dayBefore: true,
+        sameDay: true,
+        showAmounts: false,
+        hidePreviews: false,
+      }, new Date(2026, 9, 16, 8), 60);
+      const dueDates = new Set(reminders.map((reminder) => reminder.target.dueDate));
+      expect([...dueDates]).toEqual(expect.arrayContaining([
+        '2026-10-16',
+        '2026-10-17',
+        '2026-10-23',
+      ]));
     });
   });
 
