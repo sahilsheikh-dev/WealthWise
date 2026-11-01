@@ -100,6 +100,12 @@ export default function GoalsScreen() {
         const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         const coverMonths = goal.auto === 'ef' ? monthsCovered(saved, emergencyBaseline.amount) : null;
+        const sharedGoalCount = new Set(
+          goal.links.flatMap((link) =>
+            data.goals
+              .filter((other) => other.id !== goal.id && other.links.some((candidate) => candidate.instrumentId === link.instrumentId))
+              .map((other) => other.id)),
+        ).size;
         return (
           <Pressable
             key={goal.id}
@@ -122,6 +128,11 @@ export default function GoalsScreen() {
                     {goal.links.length > 0 ? (
                       <AppText style={[typography.meta, { color: colors.text3 }]}>
                         Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
+                      </AppText>
+                    ) : null}
+                    {sharedGoalCount > 0 ? (
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        Also counted in {sharedGoalCount} other goal(s)
                       </AppText>
                     ) : null}
               </View>
