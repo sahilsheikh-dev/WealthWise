@@ -5531,3 +5531,36 @@ Goal links no longer use share fields or equal splitting. A linked asset's full
 current value is included in every linked goal. Shared-goal UI displays the
 exact note required by the frozen spec. EF bucket targets are allocated from the
 effective goal target, with bucket available values using full holding values.
+
+### P29-A verification
+
+**Gate table**
+
+| Gate | Exit |
+|---|---:|
+| `npm test -- --coverage` | 0 |
+| `npx tsc --noEmit` | 0 |
+| `npx expo lint` | 0 |
+| `npx expo-doctor` | 0 |
+| `npx expo export --platform android` | 0 |
+| `npx expo export --platform ios` | 0 |
+
+**Assumed:** `record Phase 29 as an implementation assumption`; Phase 29 is new
+and recorded as completed after repository verification.
+
+**Verification commits:** Step 1 `01069e149e3447b938aa8ff233227869d238b19e`,
+Step 2 `39b0c4f9bcba863a75e15fe1fb532d23a27bc43d`, Step 3
+`a60c30aef...`, Gate 2 fixture fix `5d4871c...`. Final ledger commit is recorded
+after verification.
+
+**Coverage method:** one method only, sum Jest covered and total line/branch
+counters for every file under each directory, then divide covered by total.
+`src/data/` 95.34% lines / 90.91% branches; `src/domain/` 99.04% lines /
+95.23% branches; `src/lib/` 100% lines / 100% branches.
+
+| User pattern / EF example | Old | New |
+|---|---:|---:|
+| Manual pattern, current value 5400 | -40% | -40% absolute; no XIRR until 365-day span |
+| Manual pattern, current value 81000 | +800% | +800% absolute |
+| EF bucket targets at target 38536 / 10/20/70 | 3854 / 7707 / 26975 based on wrong current balance | 3853.60 / 7707.20 / 26975.20 based on effective target |
+| EF bucket available, demo Cash/Bank/FD-RD | split or stale balances | full linked holding values |
