@@ -333,7 +333,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-94')).toBe('Done');
     expect(statusFor('CR-95')).toBe('Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| In progress |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-D |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
