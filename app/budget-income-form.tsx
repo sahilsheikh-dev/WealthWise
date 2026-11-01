@@ -228,21 +228,6 @@ export default function BudgetIncomeFormScreen() {
           />
         )}
       />
-      <Controller
-        control={control}
-        name="scope"
-        render={({ field }) => (
-          <SegmentedControl
-            value={field.value}
-            options={[
-              { label: 'This month only', value: 'month' },
-              { label: 'This and following months', value: 'following' },
-            ]}
-            onChange={field.onChange}
-            error={errors.scope?.message}
-          />
-        )}
-      />
       {submitCount > 0 && errorCount > 0 ? (
         <AppText style={[typography.meta, { color: colors.err }]}>
           Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}

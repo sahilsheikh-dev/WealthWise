@@ -49,7 +49,7 @@ const transactionSchema = z.strictObject({
   }).optional(),
 });
 const goalSchema = z.strictObject({
-  id: idSchema, name, target: money, saved: money, year: z.number().int(),
+  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1990).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
@@ -223,6 +223,7 @@ const budgetItemSchema = z.strictObject({
   dueDay: z.number().int().min(1).max(31).optional(),
   frequency: budgetItemFrequencySchema,
   firstDueMonth: budgetFirstDueMonthSchema,
+  holdingId: z.string().min(1).optional(),
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });

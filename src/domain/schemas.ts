@@ -15,7 +15,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -68,7 +68,7 @@ const goalSchema = z.object({
   name: z.string(),
   target: moneySchema,
   saved: moneySchema,
-  year: z.number().int().finite(),
+  year: z.number().int().finite().min(1990).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.object({
     instrumentId: idSchema,
@@ -287,6 +287,7 @@ const budgetItemSchema = z.strictObject({
   value: moneySchema.min(0).max(1_000_000_000),
   dueDay: budgetDueDaySchema,
   ...budgetItemSchedulingFields,
+  holdingId: idSchema.optional(),
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
@@ -860,10 +861,7 @@ export function makeGoalFormSchema(
   today: ISODate,
   ctx: { otherNames: string[]; locked: boolean; existingYear?: number; minTarget?: number },
 ) {
-  const year = Number(today.slice(0, 4));
-  const yearMessage = `Enter a year between ${year} and ${year + 60}`;
-  const isAllowedYear = (value: number) =>
-    (value >= year && value <= year + 60) || value === ctx.existingYear;
+  const yearMessage = 'Enter a year between 1990 and 2100';
   return z.object({
     name: z.string().transform((name) => name.trim())
       .refine((name) => ctx.locked || (name.length >= 1 && name.length <= 40), 'Enter a name up to 40 characters')
@@ -876,7 +874,7 @@ export function makeGoalFormSchema(
       instrumentId: idSchema,
     })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
-      .transform(Number).refine(isAllowedYear, yearMessage),
+        .transform(Number).refine((value) => value >= 1990 && value <= 2100, yearMessage),
   }).superRefine((value, context) => {
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });

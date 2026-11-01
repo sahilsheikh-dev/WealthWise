@@ -143,21 +143,6 @@ export default function BudgetSectionFormScreen() {
           )}
         />
       ) : null}
-      <Controller
-        control={control}
-        name="scope"
-        render={({ field }) => (
-          <SegmentedControl
-            value={field.value}
-            options={[
-              { label: 'This month only', value: 'month' },
-              { label: 'This and following months', value: 'following' },
-            ]}
-            onChange={field.onChange}
-            error={errors.scope?.message}
-          />
-        )}
-      />
     </FormScreen>
   );
 }

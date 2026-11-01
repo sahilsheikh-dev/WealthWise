@@ -221,6 +221,19 @@ export default function TransactionsScreen() {
             style={[styles.monthButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name="chevron-right" size={18} color={colors.text2} />
           </Pressable>
+          {month !== today.slice(0, 7) ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go to current month"
+              onPress={() => {
+                const currentMonth = today.slice(0, 7);
+                setTxMonth(currentMonth);
+                router.setParams({ month: currentMonth });
+              }}
+              style={[styles.todayButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <AppText weight="semibold">Today</AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.metrics}>
@@ -337,6 +350,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   monthRow: { minHeight: 48, marginHorizontal: 20, marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
+  todayButton: { minWidth: 44, height: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },

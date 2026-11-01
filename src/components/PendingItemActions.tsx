@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
 
 import { useAppStore } from '../data/store';
 import { useAppActions } from '../data/useAppData';
@@ -10,6 +11,7 @@ import { formatDate } from '../lib/format';
 import { confirmAsync } from '../lib/confirm';
 import { useUIStore } from '../data/uiStore';
 import { Button } from './ui';
+import { PaidAmountDialog } from './PaidAmountDialog';
 
 export function PendingItemActions({
   item,
@@ -28,6 +30,7 @@ export function PendingItemActions({
 }) {
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
+  const [paidDialogVisible, setPaidDialogVisible] = useState(false);
 
   const pay = () => {
     onClose?.();
@@ -67,14 +70,14 @@ export function PendingItemActions({
     });
   };
 
-  const clear = () => {
+  const clear = (actualAmount = item.amount) => {
     if (!item.actionable) return;
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
     if (item.source.kind === 'budget' || item.source.kind === 'income') {
       actions.addTransaction({
         type: pendingTransactionType(item),
-        amount: item.amount,
+        amount: actualAmount,
         category: item.category,
         note: item.source.kind === 'income' ? item.title : '',
         date: today,
@@ -99,7 +102,7 @@ export function PendingItemActions({
       const source = item.source;
       if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
       const target: DueTarget = { kind: source.kind, id: source.parentId };
-      const entryId = actions.clearDue(target, source.slotId);
+      const entryId = actions.clearDue(target, source.slotId, actualAmount);
       const state = useAppStore.getState();
       if (!entryId || state.lastError) {
         Alert.alert('Could not clear due', state.lastError ?? 'The due could not be recorded.');
@@ -135,7 +138,7 @@ export function PendingItemActions({
     onClose?.();
   };
 
-  const clearThrough = async () => {
+  const clearThrough = async (actualAmount = item.amount) => {
     if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
     if (!item.dueDate) {
       Alert.alert('Could not clear due', 'This due does not have a scheduled date.');
@@ -154,7 +157,7 @@ export function PendingItemActions({
     });
     if (!confirmed) return;
 
-    const entryIds = actions.clearDuesThrough(target, item.dueDate);
+    const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
     const state = useAppStore.getState();
     if (!entryIds || state.lastError) {
       Alert.alert('Could not clear due', state.lastError ?? 'The dues could not be recorded.');
@@ -188,34 +191,67 @@ export function PendingItemActions({
 
   if (compact) {
     return (
-      <View style={styles.actions}>
+      <>
+        <PaidAmountDialog
+          visible={paidDialogVisible}
+          title={item.title}
+          dueAmount={item.amount}
+          dueDate={item.dueDate}
+          onPaid={(amount) => {
+            setPaidDialogVisible(false);
+            if (item.actionable) clear(amount);
+            else void clearThrough(amount);
+          }}
+          onNotPaid={() => setPaidDialogVisible(false)}
+        />
+        <View style={styles.actions}>
         <Button
           label={actionLabel ?? pendingActionLabel(pendingTransactionType(item))}
           icon={actionLabel ? undefined : 'check'}
           onPress={() => {
-            if (item.actionable) clear();
-            else void clearThrough();
+            setPaidDialogVisible(true);
           }}
           style={comfortable ? styles.comfortableCompactButton : styles.compactButton}
         />
-      </View>
+        </View>
+      </>
     );
   }
 
-  return item.kind === 'budget' ? (
+  const dialog = (
+    <PaidAmountDialog
+      visible={paidDialogVisible}
+      title={item.title}
+      dueAmount={item.amount}
+      dueDate={item.dueDate}
+      onPaid={(amount) => {
+        setPaidDialogVisible(false);
+        if (item.actionable) clear(amount);
+        else void clearThrough(amount);
+      }}
+      onNotPaid={() => setPaidDialogVisible(false)}
+    />
+  );
+
+  return (
+    <>
+      {dialog}
+      {item.kind === 'budget' ? (
     <View style={styles.actions}>
       <Button label="Pay" icon="credit-card" onPress={pay} />
-      <Button label="Clear due" icon="check" onPress={clear} style={styles.compactButton} />
+      <Button label="Clear due" icon="check" onPress={() => setPaidDialogVisible(true)} style={styles.compactButton} />
     </View>
   ) : item.actionable ? (
     <View style={styles.actions}>
       <Button label="Pay" icon="credit-card" onPress={pay} />
-      <Button label="Clear due" icon="check" onPress={clear} style={styles.compactButton} />
+      <Button label="Clear due" icon="check" onPress={() => setPaidDialogVisible(true)} style={styles.compactButton} />
     </View>
   ) : (
     <View style={styles.actions}>
-      <Button label="Clear due" icon="check" onPress={() => { void clearThrough(); }} style={styles.compactButton} />
+      <Button label="Clear due" icon="check" onPress={() => setPaidDialogVisible(true)} style={styles.compactButton} />
     </View>
+      )}
+    </>
   );
 }
 
