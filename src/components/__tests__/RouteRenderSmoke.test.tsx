@@ -2273,6 +2273,9 @@ describe('route render smoke audit', () => {
   });
 
   it('announces exact large amounts in screen-level accessibility labels', () => {
+    const today = todayISO();
+    const month = monthKey(today);
+    const previousMonth = shiftMonth(month, -1);
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
     const previousRouteData = { ...routeData };
     const store = useAppStore((state) => state);
@@ -2280,9 +2283,9 @@ describe('route render smoke audit', () => {
     const data = {
       ...emptyAppData(todayISO()),
       transactions: [
-        { id: 'large-income', type: 'income' as const, amount: 123_456_789, category: 'Salary', note: 'Salary', date: '2026-10-10' },
-        { id: 'large-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-10-11' },
-        { id: 'prior-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-09-11' },
+        { id: 'large-income', type: 'income' as const, amount: 123_456_789, category: 'Salary', note: 'Salary', date: today },
+        { id: 'large-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: today },
+        { id: 'prior-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: `${previousMonth}-11` },
       ],
       goals: [{
         id: 'large-goal',
@@ -2346,7 +2349,7 @@ describe('route render smoke audit', () => {
         plannedIncome: 123_456_789,
         lines: [{ category: 'Food', planned: 123_456_789 }],
       },
-      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 123_456_789 }], {
+      monthBudgets: [monthBudgetFromLines(month, [{ category: 'Food', planned: 123_456_789 }], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 123_456_789 }],
       })],
     };

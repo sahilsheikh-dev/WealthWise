@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 94% (73/78)
+Overall progress █████████░ 94% (74/79)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -75,7 +75,7 @@ Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         ████████░░ 80% (4/5)
+Phase 25         ████████░░ 83% (5/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -158,6 +158,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
 | P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
 | P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
+| P25-F | — | Done | Restore green baseline on Node 26.13.0: 79 suites / 958 tests; six ordered gates pass. No features or schema changes. | 2026-11-01 |
 | CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
 | CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
@@ -2372,9 +2373,10 @@ Planned P24-A, including CR-1 [P15-K].
 ### Phase 25 — Release preparation and encrypted backups
 
 P25-A v0.1.0 release-preparation documentation and metadata, P25-C release
-blockers/license/shared AI memory, P25-D release sync, and P25-E Node engine
-and test stability are complete. P25-E changed only Node metadata and the
-existing schedule timing test; it made no app, schema or dependency changes.
+blockers/license/shared AI memory, P25-D release sync, P25-E Node engine and
+test stability, and P25-F green test baseline are complete. P25-E changed
+only Node metadata and the existing schedule timing test; P25-F changes tests
+and documentation only, with no app, schema or dependency changes.
 v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L] remain
 planned. P25-D records the owner's report that the EAS build, screenshots and
 physical-device test are complete; device/OS details were not recorded. Phase
@@ -2584,6 +2586,7 @@ evidence present in exports/checkpoints.
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
+| P25-F | Phase 25 | — | — | 2026-11-01 | Restore a green test baseline without features or schema changes. | Done; 79 suites / 958 tests pass on Node 26.13.0. Baseline failures, replacements and final gates are documented in the P25-F verification entry. | `f99445790f44a20e022201452ddd4755ecc9d243` (verified Git commit). | The baseline exposed stale user-owned balance-label expectations, date-bound test fixtures, and an outdated memory test count. Protected source labels were not edited; assertions and exact-amount checks were retained. | current request |
 | CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
 | CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
 | CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
@@ -5127,3 +5130,58 @@ would remain outside planned income rows. CR-95 replaces that display rule for
 historical snapshots by adding separate non-earned rows so historical planned
 and actual totals reconcile; earned-income calculations and future projections
 remain unchanged.
+
+### P25-F green test baseline (2026-11-01)
+
+No features or schema changes. The required baseline run used Node
+`v26.13.0`: 79 suites (76 passed, 3 failed), 948 tests passed and 10 failed
+(958 total), exit 1. The requested nine UI failures and the additional stale
+memory-count failure were:
+
+| File | Test | Expected | Received |
+|---|---|---|---|
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the system theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the light theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the dark theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the sky theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the mint theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the blush theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the midnight theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | `keeps the Review action and routes its selected month to Budget` | Cash-card labels contain `Available balance`. | Labels are `Closing balance`, `₹830`, and `Review October 2026`. |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | `announces exact large amounts in screen-level accessibility labels` | A Budget accessibility label includes `₹1,23,45,678 spent of ₹12,34,56,789` (`true`). | No matching label (`false`); the hard-coded October dates were future-dated relative to the 2026-11-01 current-month cutoff. |
+| `src/lib/__tests__/memoryDocs.test.ts` | `keeps all memory pages indexed, headed and aligned with source schema/test records` | A `Test counts: <suites> suites, <tests> tests` record is present (`not null`). | `null`; the status record used a different format and the remembered 955-test total was stale. |
+
+**Assertion decisions and replacements:**
+
+| Old assertion / fixture | Replacement | Reason |
+|---|---|---|
+| Eight Transactions cases required the October card label `Available balance`. | Keep checking the label, now `Closing balance`; keep the always-visible amount, no-toggle, and Review action/routing assertions. | DEC-USER-CHANGES preserves the user's compact balance card and amount; DEC-TRANSACTIONS-CLOSING-BALANCE distinguishes current-month Available from past-month Closing. The selected October month is past on November 1, so changing app text or removing an assertion would contradict the recorded decisions. |
+| Review test fixed transactions to September/October 2026 and expected Review September. | Derive the selected month as the most recently completed month, use month-relative transaction dates, preserve the ₹830 closing-balance assertion, and route Review to that derived month. | The original test became stale as the calendar advanced; this still tests a past-month amount and selected-month routing. |
+| Large-amount smoke fixture fixed transactions to October 10/11 and required an exact Budget label. | Keep the exact accessibility-label assertion; put the current-month income/expense on `todayISO()` and derive the budget snapshot month from that date. | The actuals selector correctly excludes future dates in the current month. October 10/11 became future-dated when the system date changed to November 1; this was a fixture issue, not a Budget source regression. |
+| Memory test fixed the repository total at 955 tests. | Update the expected total to 958; keep the exact suite count and cross-check of both memory pages. | The checked-in suite now contains 958 tests. The assertion remains exact and requires the project and status records to agree. |
+
+The TransactionsScreen and RouteRenderSmoke focused run passes 155/155 tests;
+the memory and ledger tests pass 10/10.
+
+The first ordered gate run had a shared-runner timeout in
+`TransactionForm.test.tsx`: `saves a new expense transaction` exceeded the
+5-second test timeout, then `saves a new income transaction` observed two Back
+calls instead of one. The isolated file passed 25/25; the exact full coverage
+command then passed all 79 suites / 958 tests in 15.093 seconds. No timeout or
+assertion was changed.
+
+Final ordered gates on Node `v26.13.0`:
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 1, then 0 on retry | First full run had only the two `TransactionForm.test.tsx` timeout/follow-on failures; isolated file passed 25/25. Retry: 79 suites / 958 tests passed. |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed. |
+| `npx expo-doctor` | 0 | 21/21 checks passed; no issues detected. |
+| `npx expo export --platform android` | 0 | Android export completed successfully. |
+| `npx expo export --platform ios` | 0 | iOS export completed successfully. |
+
+Coverage from the passing full run: `src/data/` 94.23% lines / 87.74%
+branches; `src/domain/` 98.26% / 92.88%; pure `src/lib/` 100% / 100%.
+All documented directory floors pass. No physical-device check was performed
+for P25-F; these route/accessibility checks are simulated.
