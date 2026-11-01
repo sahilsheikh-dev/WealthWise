@@ -12,7 +12,6 @@ import {
   AppText,
   Button,
   Card,
-  EmptyState,
   Screen,
   StatPill,
   StatPillRow,
@@ -24,7 +23,6 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
-import { coverGoalSummaries } from '../../src/domain/coverGoals';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
@@ -59,8 +57,6 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const coverGoals = coverGoalSummaries(data, today);
-  const termLifeGoal = coverGoals.find((goal) => goal.type === 'term-life');
   const insuranceSummary = policySummary(data, today);
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);

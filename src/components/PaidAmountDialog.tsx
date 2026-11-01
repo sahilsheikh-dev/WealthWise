@@ -28,10 +28,12 @@ export function PaidAmountDialog({
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (visible) {
+    if (!visible) return;
+    const timer = setTimeout(() => {
       setAmount(String(dueAmount));
       setError(undefined);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [dueAmount, visible]);
 
   const paid = () => {

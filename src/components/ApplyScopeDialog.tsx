@@ -24,7 +24,9 @@ export function ApplyScopeDialog({
 }) {
   const [scope, setScope] = useState<'month' | 'following' | null>(null);
   useEffect(() => {
-    if (visible) setScope(null);
+    if (!visible) return;
+    const timer = setTimeout(() => setScope(null), 0);
+    return () => clearTimeout(timer);
   }, [visible]);
 
   return (

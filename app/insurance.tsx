@@ -15,7 +15,6 @@ import { policySummary } from '../src/domain/policySummary';
 import type { CoverPolicyType, Policy, PolicyKind, PolicyStatus } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
