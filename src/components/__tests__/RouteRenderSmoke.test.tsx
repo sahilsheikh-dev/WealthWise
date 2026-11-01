@@ -685,18 +685,6 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
-function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  const scope = renderer.root.findAll((node) => {
-    const options = node.props.options;
-    return String(node.type) === 'segmentedcontrol'
-      && Array.isArray(options)
-      && options.some((option: unknown) => typeof option === 'object'
-        && option !== null && 'label' in option && option.label === 'This month only');
-  })[0];
-  if (!scope) throw new Error('Budget scope control was not rendered.');
-  return scope;
-}
 
 function selectDropdownOption(
   renderer: TestRenderer.ReactTestRenderer | undefined,
@@ -1134,8 +1122,6 @@ describe('route render smoke audit', () => {
             accessibilityLabel: form.name.startsWith('item') ? 'Delete item' : 'Delete income',
           })).toBeDefined();
         }
-        expect(budgetScopeControl(renderer).props.value)
-          .toBe(form.params.scope === 'month' ? 'month' : 'following');
         act(() => renderer.unmount());
       }
     } finally {
@@ -1199,7 +1185,6 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
-        budgetScopeControl(renderer).props.onChange('month');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
@@ -1259,7 +1244,6 @@ describe('route render smoke audit', () => {
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
       expect(renderer.root.findByProps({ accessibilityLabel: 'Delete item' })).toBeDefined();
-      expect(budgetScopeControl(renderer).props.value).toBe('month');
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet boarding');
         renderer?.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');

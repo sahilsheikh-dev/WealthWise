@@ -87,6 +87,9 @@ jest.mock('../AppHeader', () => ({
   },
 }));
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   const node = (name: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
@@ -98,9 +101,12 @@ jest.mock('react-native', () => {
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     View: node('view'),
+    TextInput: node('text-input'),
+    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Modal: ({ visible, children, ...props }: { visible: boolean; children?: React.ReactNode; [key: string]: unknown }) =>
       visible ? ReactModule.createElement('modal', props, children) : null,
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
     useWindowDimensions: () => ({ fontScale: mockFontScale }),
   };
 });

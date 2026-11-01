@@ -5484,6 +5484,44 @@ native share sheet, file picker behavior, and large-font rendering at scales
 implemented without a persisted schema change. No edit is authorized for
 `app/(tabs)/index.tsx`.
 
+### DEC-P29B-E Phase 29 integration snapshot
+
+DEC-P29B-E: preserve the frozen Cash flow labels, use centered shared dialogs,
+accept goal years 1990–2100, add schema-v14 holding links, keep legacy v1–v13
+imports, and refuse schema 15 or newer.
+
+Assumed: Phase 29 is recorded as implementation work, not owner-confirmed
+physical-device verification.
+
+Replaced assertions:
+- old: Budget forms use a segmented Apply changes scope control / new: Save and
+  delete use `ApplyScopeDialog` with no preselected option; reason: owner
+  frozen P29-D request.
+- old: Dropdown lists use a top-anchored sheet / new: shared Dropdown lists are
+  centered modal cards with 60% max height; reason: owner frozen P29-B request.
+- old: Insurance is a lower Home heading/card / new: Insurance is a first-card
+  total-cover box with `/insurance` or `/policy-form`; reason: owner P29-B item
+  4 authorization.
+- old: goals reject past target years / new: accept integer years 1990–2100;
+  reason: owner frozen P29-B tracking requirement.
+
+Gate verdicts:
+
+| Gate | Exit |
+|---|---:|
+| `npm test -- --coverage` | 1 |
+| `npx tsc --noEmit` | 0 |
+| `npx expo lint` | 0 |
+| `npx expo-doctor` | 0 (21/21) |
+| `npx expo export --platform android` | 0 |
+| `npx expo export --platform ios` | 0 |
+
+Coverage method: Jest/Istanbul `percent lines` and `percent branches` reported
+for each directory in one run. `src/data/` 93.62% lines / 86.93% branches,
+`src/domain/` 97.73% lines / 92.02% branches, `src/lib/` and remaining source
+directories are reported by the same Jest/Istanbul method in this run. Coverage
+exit 1 is due to unresolved stale assertions in this implementation snapshot.
+
 ### DEC-29A Step 1 reproduction ledger
 
 Old formula: manual/plan gain percentage was `(current value - invested) / invested * 100`,

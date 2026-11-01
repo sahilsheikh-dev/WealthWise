@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 29
+
+- Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
+  for 1990–2100, the Home Insurance box and actual due-payment amounts.
+- Added Budget start-month handling, schema-v14 holding links, plan/manual
+  linked asset behavior, demo coverage and holding-link integrity.
+
 ### Investments and goals
 
 - Added shared pure return calculations for holdings and plans: absolute gain

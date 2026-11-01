@@ -110,7 +110,7 @@ in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
 validate persisted and imported data.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 13 is
+Zustand persists app data through AsyncStorage. Persisted schema version 14 is
 the current version. The migration chain upgrades supported data from schema
 versions 1 through 13. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.

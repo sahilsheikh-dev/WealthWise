@@ -150,7 +150,9 @@ function monthFromOrdinal(ordinal: number): string {
 export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
   const monthIndex = monthOrdinal(month);
   const frequency = item.frequency ?? 'monthly';
-  if (frequency === 'monthly') return true;
+  if (frequency === 'monthly') {
+    return !item.firstDueMonth || monthIndex >= monthOrdinal(item.firstDueMonth);
+  }
   if (!item.firstDueMonth) {
     throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
   }
@@ -166,7 +168,13 @@ export function plannedForMonth(item: BudgetItem, month: string): number {
 export function nextDueMonth(item: BudgetItem, month: string): string {
   const currentIndex = monthOrdinal(month);
   const frequency = item.frequency ?? 'monthly';
-  if (frequency === 'monthly') return monthFromOrdinal(currentIndex + 1);
+  if (frequency === 'monthly') {
+    if (item.firstDueMonth) {
+      const firstIndex = monthOrdinal(item.firstDueMonth);
+      if (currentIndex < firstIndex) return item.firstDueMonth;
+    }
+    return monthFromOrdinal(currentIndex + 1);
+  }
   if (!item.firstDueMonth) {
     throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
   }
@@ -594,7 +602,9 @@ export type BudgetMutationErrorCode =
   | 'section-limit'
   | 'invalid-item'
   | 'invalid-frequency'
-  | 'percent-only-monthly';
+  | 'percent-only-monthly'
+  | 'invalid-holding-link'
+  | 'holding-link-duplicate';
 
 export class BudgetMutationError extends Error {
   constructor(readonly code: BudgetMutationErrorCode, message: string) {
@@ -614,6 +624,7 @@ export type BudgetItemPatch = {
   dueDay?: number | null;
   frequency?: BudgetItemFrequency;
   firstDueMonth?: string | null;
+  holdingId?: string | null;
 };
 
 function validateItemFrequency(
@@ -929,6 +940,18 @@ export function addItem(
   const schedule = validateItemFrequency(input.mode, input.frequency, input.firstDueMonth);
   if (!input.id) throw new BudgetMutationError('invalid-item', 'An item ID is required.');
   return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+    if (input.holdingId) {
+      const section = sections.find((candidate) => candidate.id === input.sectionId);
+      if (!section || section.type !== 'invest' || section.system) {
+        throw new BudgetMutationError('invalid-holding-link', 'A holding can only be linked from a non-system investment section.');
+      }
+      if (!data.holdings.some((holding) => holding.id === input.holdingId)) {
+        throw new BudgetMutationError('invalid-holding-link', 'Linked asset does not exist.');
+      }
+      if (items.some((item) => item.holdingId === input.holdingId)) {
+        throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+      }
+    }
     if (items.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
@@ -964,10 +987,24 @@ export function editItem(
       ? undefined
       : input.patch.firstDueMonth ?? target.firstDueMonth;
     const schedule = validateItemFrequency(nextMode, nextFrequency, nextFirstDueMonth);
+    const section = sections.find((row) => row.id === target.sectionId);
+    const nextHoldingId = input.patch.holdingId === null
+      ? undefined
+      : input.patch.holdingId ?? target.holdingId;
+    if (nextHoldingId) {
+      if (!section || section.type !== 'invest' || section.system) {
+        throw new BudgetMutationError('invalid-holding-link', 'A holding can only be linked from a non-system investment section.');
+      }
+      if (!data.holdings.some((holding) => holding.id === nextHoldingId)) {
+        throw new BudgetMutationError('invalid-holding-link', 'Linked asset does not exist.');
+      }
+      if (items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId)) {
+        throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+      }
+    }
     if (items.some((item) => item.id !== target.id && item.name.toLowerCase() === nextName.toLowerCase())) {
       throw new BudgetMutationError('duplicate-name', 'Budget item names must be unique.');
     }
-    const section = sections.find((row) => row.id === target.sectionId);
     const builtInSection = budgetGroupFor(nextName);
     if (builtInSection && builtInSection.id !== section?.id) {
       throw new BudgetMutationError('reserved-category', `${nextName} belongs to ${builtInSection.name}.`);
@@ -986,6 +1023,9 @@ export function editItem(
           ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
           : { dueDay: input.patch.dueDay }),
         ...schedule,
+        ...(input.patch.holdingId === null
+          ? (() => { const { holdingId: _holdingId, ...withoutHolding } = item; return withoutHolding; })()
+          : nextHoldingId ? { holdingId: nextHoldingId } : {}),
       }),
     };
   });
@@ -1127,10 +1167,21 @@ export function budgetLineActual(
   options: { excludePolicyPayments?: boolean } = {},
 ): number {
   const customCategories = customBudgetCategories(data);
+  const linkedHoldingIds = new Set(
+    [
+      ...(data.budgetPlan?.items ?? []),
+      ...(data.monthBudgets?.filter((snapshot) => snapshot.month === month).flatMap((snapshot) => snapshot.items) ?? []),
+    ]
+      .filter((item) => item.name === category && item.holdingId)
+      .map((item) => item.holdingId),
+  );
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
-    && budgetCategoryForTransaction(row, customCategories) === category
     && (row.type === 'expense' || row.type === 'invest')
+    && (
+      (row.source?.kind === 'holding-entry' && linkedHoldingIds.has(row.source.parentId))
+      || budgetCategoryForTransaction(row, customCategories) === category
+    )
     && !(options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }

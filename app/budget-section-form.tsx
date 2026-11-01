@@ -2,16 +2,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useState } from 'react';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
+import { ApplyScopeDialog } from '../src/components/ApplyScopeDialog';
 import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { todayISO } from '../src/lib/clock';
+import { confirmAsync } from '../src/lib/confirm';
 
 const budgetSectionFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter a section name.').max(30, 'Keep the name under 30 characters.'),
@@ -69,6 +72,9 @@ export default function BudgetSectionFormScreen() {
     },
   });
   const today = todayISO();
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
+  const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.output<typeof budgetSectionFormSchema> | null>(null);
 
   if (editing && !section) {
     return (
@@ -78,13 +84,48 @@ export default function BudgetSectionFormScreen() {
     );
   }
 
+  const remove = async () => {
+    if (!section) return;
+    const count = data.budgetPlan?.items.filter((item) => item.sectionId === section.id).length ?? 0;
+    const confirmed = await confirmAsync({
+      title: 'Delete category?',
+      message: `This category contains ${count} budget item${count === 1 ? '' : 's'}.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (confirmed) setDeleteScopeDialogOpen(true);
+  };
+
+  const applyDelete = (selectedScope: 'month' | 'following') => {
+    if (!section) return;
+    setDeleteScopeDialogOpen(false);
+    const previousPlan = data.budgetPlan;
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.deleteSection(month, section.id, selectedScope, today);
+    if (useAppStore.getState().lastError) return;
+    setActionToast({
+      message: `${section.name} deleted`,
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
+    });
+    router.back();
+  };
+
   const save = handleSubmit((values) => {
+    setPendingValues(values);
+    setScopeDialogOpen(true);
+  });
+
+  const applySave = (selectedScope: 'month' | 'following') => {
+    setScopeDialogOpen(false);
+    const values = pendingValues;
+    if (!values) return;
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
     if (section) {
-      actions.renameSection(month, section.id, values.name, values.scope, today);
+      actions.renameSection(month, section.id, values.name, selectedScope, today);
     } else {
-      actions.addSection(month, { name: values.name, type: values.type }, values.scope, today);
+      actions.addSection(month, { name: values.name, type: values.type }, selectedScope, today);
     }
     if (useAppStore.getState().lastError) return;
     setActionToast({
@@ -93,14 +134,16 @@ export default function BudgetSectionFormScreen() {
       onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
     });
     router.back();
-  });
+  };
   const errorCount = Object.keys(errors).length;
 
   return (
+    <>
     <FormScreen
       title={section ? 'Rename category' : 'Add category'}
       onClose={() => router.back()}
       isDirty={isDirty}
+      headerAction={section ? { label: 'Delete category', onPress: () => { void remove(); } } : undefined}
       footer={
         <Button
           label="Save"
@@ -143,21 +186,9 @@ export default function BudgetSectionFormScreen() {
           )}
         />
       ) : null}
-      <Controller
-        control={control}
-        name="scope"
-        render={({ field }) => (
-          <SegmentedControl
-            value={field.value}
-            options={[
-              { label: 'This month only', value: 'month' },
-              { label: 'This and following months', value: 'following' },
-            ]}
-            onChange={field.onChange}
-            error={errors.scope?.message}
-          />
-        )}
-      />
     </FormScreen>
+    <ApplyScopeDialog visible={scopeDialogOpen} onCancel={() => setScopeDialogOpen(false)} onApply={applySave} />
+    <ApplyScopeDialog visible={deleteScopeDialogOpen} title="Apply to" onCancel={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
+    </>
   );
 }

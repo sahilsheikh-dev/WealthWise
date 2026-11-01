@@ -7,8 +7,8 @@
   commit `f5a1a38...` are recorded in [PROGRESS.md](../PROGRESS.md) and
   verified as commit objects; the abbreviated implementation hash must be
   expanded by `git cat-file`.
-- Schema version: v13. No native module or persisted schema change was
-  introduced.
+- Schema version: v14. P29-E adds optional `holdingId` links to Budget items
+  with migration support. v15 and newer data is refused.
 - Current task: P29-A investment returns, emergency-fund buckets and full-value
   linked goals is implemented and under final verification.
 - Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
@@ -23,6 +23,10 @@
 - P29-A coverage is computed by summing covered/total lines and branches per
   directory: `src/data/` 95.34%/90.91%, `src/domain/` 99.04%/95.23%, pure
   `src/lib/` 100%/100%.
+- P29-B through P29-E gate snapshot on 2026-11-02: coverage exit 1 (pending
+  stale paid/dialog assertions and migration/archive assertions), TypeScript
+  exit 0, Expo lint exit 0 after Phase 29 fixes, Expo Doctor exit 0 (21/21),
+  Android export exit 0, iOS export exit 0.
 - Encrypted backups protect exported files only. On-device data remains
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - Open release items: source-workbook records that do not map faithfully to
