@@ -2525,7 +2525,7 @@ describe('route render smoke audit', () => {
         invested: 123_456_789,
         value: 246_913_578,
         valueAsOf: '2026-10-10',
-        logs: [{ id: 'large-deposit', date: '2025-10-10', amount: 123_456_789, note: '', kind: 'Deposit' }],
+        logs: [{ id: 'large-deposit', date: '2025-10-10', amount: 123_456_789, note: '', kind: 'Deposit' as const }],
       }, {
         id: 'second-large-holding',
         kind: 'manual' as const,
