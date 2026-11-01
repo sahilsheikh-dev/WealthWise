@@ -23,11 +23,6 @@
   non-earned inflows; those snapshots do not resolve the missing app
   transaction edit. Export a fresh backup from the app if that edit should be
   included.
-- **Full coverage gate:** the 2026-11-01 run exits 1 with 9 failed tests in
-  `TransactionsScreen.test.tsx` (available-balance theme/action expectations)
-  and `RouteRenderSmoke.test.tsx` (large-amount accessibility expectation).
-  Focused historical Budget tests pass; these failures remain unresolved and
-  are outside the Budget assertions for CR-95.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
@@ -61,6 +56,9 @@
   report, not automated test evidence or an independently observed device run.
 - Automated layout tests still simulate component props and font scales; do
   not present them as physical-device evidence.
+- P25-F did not repeat physical-device checks. Its screen-reader label and
+  month-routing assertions run in TestRenderer and do not establish native
+  announcements or rendering behavior.
 
 ## Documented assumptions and constraints
 

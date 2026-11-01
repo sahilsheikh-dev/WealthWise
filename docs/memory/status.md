@@ -2,24 +2,18 @@
 
 # Status
 
-- Current task: complete historical Budget income and reconcile planned and
-  actual amounts to all transaction categories through October 2026.
-- Current task state: the local schema-v13 backup contains 52 custom,
-  month-specific budgets from July 2022 through October 2026. Earned and
-  non-earned income rows are represented separately; planned and actual
-  income, expenses and investments match by month/category. All 716
-  transactions and their explicit source links were preserved.
-- Verification: focused budget/schema/backup and Budget route tests passed;
-  TypeScript, Expo lint, Expo Doctor (21/21), and Android/iOS exports pass.
-  The local backup checksum and schema-v13 import are valid. Full coverage
-  exits 1: 77 suites passed, 2 failed; 949 tests passed, 9 failed (958 total).
-  Failures are Transactions available-balance theme/action expectations and a
-  RouteRenderSmoke large-amount accessibility expectation; no historical
-  Budget assertions failed. See the CR-95 ledger entry.
+- Current task: restore a green test baseline with no feature or schema
+  changes (P25-F).
+- Current task state: corrected stale past-month balance-label expectations,
+  made the Review and large-amount smoke fixtures date-relative, and updated
+  the memory test count. The TransactionsScreen and RouteRenderSmoke focused
+  suites pass (155/155); all six full project gates are recorded in
+  [PROGRESS.md](../PROGRESS.md).
 - Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: latest full coverage run has 79 suites and 958 tests; the last
-  fully passing run had 79 suites and 955 tests.
-- Latest complete project gate results remain in the P25-E ledger entry.
+- Test counts: 79 suites, 958 tests passed on Node 26.13.0 in the P25-F final
+  coverage run.
+- Coverage for `src/domain/`, `src/data/` and pure `src/lib/` is above the
+  documented floors; see P25-F in the ledger for the exact percentages.
 - Open release items: source-workbook records that do not map faithfully to
   the current app schema are not imported; see [open-items.md](open-items.md).
 - Next release phase: Phase 24 reminders and notifications (CR-1); later accessibility,

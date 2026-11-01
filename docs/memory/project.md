@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Project
 
@@ -17,8 +17,8 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 79 suites, 955 tests passed on Node 26.13.0 in the 2026-10-31
-  P25-E final coverage run; see
+- Test counts: 79 suites, 958 tests passed on Node 26.13.0 in the 2026-11-01
+  P25-F final coverage run; see
   [status.md](status.md) for the run date and exact gate results.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
