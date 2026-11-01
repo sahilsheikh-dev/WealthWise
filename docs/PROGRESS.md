@@ -161,6 +161,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
+| CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
 
@@ -2171,6 +2172,22 @@ source/test hit and its disposition is listed here:
 | P18-R5 detail-tab-bar behavior | Superseded by DEC-TABS; tabs appear only on the four main screens, effective P20-C. |
 | P19-B Budget body action row (CR-16) | Superseded by CR-17: History, Month review and Templates are right-side Budget header icons. |
 
+### DEC-BACKUP-RECONCILIATION (2026-11-01)
+
+- Reconcile the supplied monthly income and expense totals, loan subtotals,
+  emergency-fund activity and existing transactions without duplicating
+  source movements.
+- Remove stale cash-flow balancing transactions and represent remaining
+  month-end deficits as linked Bank withdrawals and surpluses as `Other`
+  expenses, dated on each month's final calendar day.
+- Preserve the 18 existing linked ICICI RD deposits and linked HDFC liability
+  payments; account for their loan-tracker rounding differences in comparison
+  checks rather than changing the source-linked records.
+- **Supersedes the earlier claim** that the prior first-of-month balancing
+  entries constituted a complete reconciliation. That pass omitted positive
+  balances as expenses and used the wrong adjustment dates. The replacement
+  verification covers every month from July 2022 through October 2026.
+
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -2549,6 +2566,7 @@ evidence present in exports/checkpoints.
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
+| CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2648,6 +2666,7 @@ evidence present in exports/checkpoints.
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
 | CR-89 | Add recurrence-aware Budget forms, rows, dues, projections, categories, demo data and tests. | Done | Route form, row frequency/next-due copy, category choices, demo and route/domain acceptance tests complete; full suite and all six gates pass. Simulated layout only; native-device checks remain. |
+| CR-92 | Reconcile the local backup against monthly income, expenses, loan and emergency-fund tracker data; remove duplicate points; add month-end deficit/surplus adjustments. | Done | Temporary focused reconciliation test passed; all 52 monthly cash-flow totals, duplicate signatures, adjustment dates, checksum and `parseBackup` import were verified. The private backup remains a local deliverable and is not committed. |
 
 ## 8. Known issues and risks
 
@@ -4852,3 +4871,123 @@ evidence. The owner also reports the EAS build and screenshots are complete.
 Full automated test and coverage results are recorded in DEC-P25C; see
 [`docs/memory/open-items.md`](../memory/open-items.md) for outstanding owner
 decisions and the source of the owner-reported verification.
+
+### 2026-11-01 backup revalidation
+
+The restored local schema-v13 backup was parsed and validated by the app
+importer with a temporary Jest smoke test (1/1 passed); the temporary test was
+removed. Its existing checksum matches its data. The revised envelope shown in
+the owner's message does not match the file currently at the tagged path, so
+no entries were changed or inferred and the existing file was left intact.
+The owner then supplied the complete data, matching `sahil_wealthwise_import.json`
+(31 transactions, 28 goals, 5 holdings and 1 liability). The supplied checksum
+does not match the app's canonical JSON digest. Recomputing it in a temporary
+test exposed three importer constraints: a goal name exceeds the 40-character
+limit, the plan includes an unrecognized derived `invested` field, and a
+non-null actual value has no snapshot date. A diagnostic normalization using a
+shortened goal name, removing the derived field and setting the snapshot date
+to the export date passed importer validation (1/1). The owner approved those
+minimal adjustments. Created `wealthwise-backup-20261101-complete.json` from
+the complete supplied data, recalculated its checksum using the app's canonical
+JSON, and verified the resulting backup imports successfully (1/1 temporary
+smoke test). The temporary test was removed. The original source and earlier
+dated backup remain intact. No commit was created.
+
+### 2026-11-01 monthly income added to backup
+
+Added the owner's July 2022–October 2026 income details to
+`wealthwise-backup-20261101-complete.json` as 115 separate source-level income
+transactions, each dated on the first of its month. Mapped salary to Salary,
+freelancing/agency to Freelance, other income to Other, savings withdrawals to
+Withdrawal, friends/family help to Borrowed, and loan/credit-card proceeds to
+Loan proceeds. Notes preserve the supplied source labels where category names
+are normalized. Monthly totals were used as reconciliation checks, not added
+again as duplicate transactions. A temporary Jest test confirmed that all 52
+component sums equal the supplied totals, then recalculated the canonical
+checksum and verified importer success (1/1); the temporary test was removed.
+The original source and dated prior backup remain unchanged. No commit was
+created.
+
+### 2026-11-01 monthly expenses and loan logs added to backup
+
+Added the owner's July 2022–October 2026 monthly expense components and
+November 2022–October 2026 loan payment breakdowns to
+`wealthwise-backup-20261101-complete.json`. Non-loan expense items are dated
+on each month's first day. Savings and investments are `invest` transactions
+in the unlinked `Other investments` category; other expense labels use the
+nearest supported category and retain the original label in the note. Loan
+components already match each month's Loans subtotal; they are represented
+once, with historical non-HDFC components as EMI transactions and the HDFC
+payments linked to the existing recurring liability. The missing September
+2025 HDFC payment was added on its due date using the existing liability EMI.
+Existing HDFC payments through October 2026 remain unchanged. Future
+installments through the liability term remain scheduled, not marked paid.
+No separate settled liabilities were invented for the old loans, as their
+individual creditors and original principals were not supplied. Income
+transactions from the previous update were not duplicated.
+
+Five expense months had itemized amounts below their stated totals. Per owner
+approval, the differences were added as distinct `Other` expenses on the first
+of each month with notes identifying them as unitemized differences; no
+categories were inferred. A temporary Jest test confirmed the monthly expense
+totals and loan subtotals, updated the checksum, and verified importer success
+(1/1); the temporary test was removed. The full project gates were not rerun
+for this backup-data-only update. No commit was created.
+
+### 2026-11-01 emergency-fund logs and cash-flow reconciliation
+
+Updated `wealthwise-backup-20261101-complete.json` with the supplied emergency-
+fund activity for January 2025 through October 2026. Existing linked ICICI RD
+deposits were reused, and 18 duplicate unlinked investment transactions were
+removed. Other deposits and withdrawals were mapped to linked holding entries
+and transactions; existing savings, investment and withdrawal transactions
+were reused or split where amounts matched. A zero-current-value Bachat Gat
+holding was added and linked to the FD/RD emergency-fund bucket and Emergency
+Fund goal. Existing Cash, Bank and HDFC FD values were preserved with snapshot
+dates at the backup export date.
+
+The supplied net movements reconcile to their itemized entries except for
+unitemized deposit/withdrawal differences, which remain explicitly labeled.
+Monthly tracker net, target and cumulative metadata are retained in notes.
+Per the owner's request, cash-flow deficits were covered with linked Bank
+withdrawals in 16 months; all 52 transaction months now reconcile. Future HDFC
+loan installments remain scheduled rather than marked paid, and existing
+income, sale and loan proceeds were not duplicated.
+
+A temporary updater test reconciled the emergency-fund activity and passed
+(1/1), and a separate temporary final-file test verified canonical checksum,
+schema/import integrity, unique transaction IDs, snapshots, links and monthly
+cash flow (1/1). `npx tsc --noEmit` exited 0. Temporary tests were removed.
+The full project gates were not rerun for this backup-data-only update. No
+commit was created.
+
+### 2026-11-01 complete tracker reconciliation (CR-92)
+
+Re-tallied the local schema-v13 backup against the supplied income, monthly
+expense, loan and emergency-fund trackers. Removed the 16 stale cash-flow
+balancing transactions and their linked holding logs. Added a linked Bank
+withdrawal on the final calendar day for each remaining deficit month, and an
+`Other` expense on the final calendar day for each surplus month. The resulting
+backup contains 716 transactions across all 52 tracker months; each month's
+income equals its recorded outflows. The 48 supplied loan months, emergency-
+fund tracker metadata, unique transaction IDs/signatures, and the 18 existing
+linked RD deposits were checked. Existing HDFC payments and holding snapshots
+were preserved.
+
+**Superseded assertion:** the previous close-out said the 52 transaction
+months reconciled, but its balancing rows were placed on the first of each
+month, and positive balances were not recorded as extra expenses. The new
+assertion requires month-end dates, separate deficit withdrawals and surplus
+expenses, no duplicate points, and zero net cash flow for every supplied
+month. This corrects the earlier claim without changing the source tracker
+amounts.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| `npm test -- --runInBand src/domain/__tests__/reconcileBackupTransactions.test.ts` | 1 suite / 1 test passed; monthly totals, loan totals, emergency-fund logs, duplicate detection, adjustment counts/dates and importer integrity verified. | 0 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| Schema-v13 backup | Canonical SHA-256 recalculated; `parseBackup` accepts the final file. | 0 |
+| Full project gates | Not rerun; this task changes only the local backup data and documentation. | — |
+
+The temporary test was removed after verification. The full backup is kept as
+a local user-data deliverable and is not committed to the repository.

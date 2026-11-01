@@ -1,22 +1,29 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: Phase 25 part E (P25-E), Node engine and test stability.
-- Current task state: Complete. All six final gates passed on Node 26.13.0;
-  Expo Doctor reports 21/21 checks passed. Node 24.22.2 still fails 13 suites
-  after a clean Jest cache due to Expo Modules Core `Platform.select`
-  initialization through incomplete React Native test mocks; the version-
-  specific trigger is not established.
+- Current task: complete the restored local backup with the owner's historical
+  income, expenses, loan transactions and emergency-fund activity.
+- Current task state: the local schema-v13 backup is reconciled against the
+  supplied monthly income, expense, loan and emergency-fund trackers. All 52
+  monthly cash-flow totals balance; deficit withdrawals and surplus expenses
+  use month-end dates. Duplicate points were checked, existing asset snapshots
+  and linked loan payments were preserved, and the canonical checksum was
+  recalculated.
+- Verification: the focused reconciliation/import Jest test passed (1/1), and
+  `npx tsc --noEmit` exited 0. The final backup imports successfully.
+  Temporary tests were removed. Full project gates were not rerun for this
+  local backup-data update. The earlier first-of-month balancing claim is
+  superseded by the corrected month-end check; evidence is in the 2026-11-01
+  ledger entries.
+- The prior full coverage run had unrelated TransactionsScreen and
+  RouteRenderSmoke failures; see the ledger.
 - Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: 79 suites, 955 tests passed on Node 26.13.0 in the P25-E
-  coverage run. TypeScript, lint and Android/iOS exports also passed; exact
-  exit codes and directory coverage are in the P25-E ledger entry.
-- Open release items: latest `npm audit --omit=dev` reports 27 advisories and
-  `npm audit` reports 55; counts and affected packages are recorded in the
-  P25-D ledger entry. Node 26.13.0 is now pinned based on the P25-E test
-  comparison; Node 24's Jest mock/platform initialization issue is documented
-  in the same ledger.
+- Test counts: 79 suites, 955 tests in the last fully passing run; the
+  2026-11-01 run has 9 failures in TransactionsScreen and RouteRenderSmoke.
+- Latest complete project gate results remain in the P25-E ledger entry.
+- Open release items: source-workbook records that do not map faithfully to
+  the current app schema are not imported; see [open-items.md](open-items.md).
 - Next release phase: Phase 24 reminders and notifications (CR-1); later accessibility,
   performance, cleanup and release work remain in their planned phases.
 
