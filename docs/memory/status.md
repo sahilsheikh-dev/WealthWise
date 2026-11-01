@@ -3,7 +3,9 @@
 # Status
 
 - Current task: P25-B encrypted backups is complete. The research/decision
-  commit and implementation close-out are recorded in [PROGRESS.md](../PROGRESS.md).
+  commit and implementation commit `c90a8f323e355348b1fd17d7589d8a4cd505f7d4`
+  are recorded in [PROGRESS.md](../PROGRESS.md) and verified as Git commit
+  objects.
 - Schema version: v13. No native module or persisted schema change was
   introduced.
 - Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the final
