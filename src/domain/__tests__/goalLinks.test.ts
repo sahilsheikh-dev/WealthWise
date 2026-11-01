@@ -8,6 +8,7 @@ import {
   goalAssetValueFor,
   goalProjection,
   goalSavedFor,
+  goalSharedAssetCount,
   linkableInstruments,
   setGoalLinks,
 } from '../goalLinks';
@@ -261,6 +262,30 @@ describe('goal asset links', () => {
       { instrumentId: 'policy', share: 75 },
     ]);
     expect(validateIntegrity(data)).toEqual([]);
+  });
+
+  it('reports zero and multiple other goals for shared assets', () => {
+    const shared = {
+      ...baseData(),
+      goals: [
+        { id: 'one', name: 'One', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+        { id: 'two', name: 'Two', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+        { id: 'three', name: 'Three', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+      ],
+    };
+    expect(goalSharedAssetCount(shared, 'one', 'manual')).toBe(2);
+    expect(goalSharedAssetCount(shared, 'one', 'missing')).toBe(0);
+  });
+
+  it('demo data covers full emergency assets and shared recurring deposits', () => {
+    const data = buildDemoData('2026-10-12');
+    const emergency = data.goals.find((goal) => goal.auto === 'ef');
+    const retirement = data.goals.find((goal) => goal.id === 'demo-goal-retirement');
+    const home = data.goals.find((goal) => goal.id === 'demo-goal-home');
+    if (!emergency || !retirement || !home) throw new Error('Demo goal fixtures missing');
+    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(189_000);
+    expect(goalSavedFor(retirement, data, '2026-10-12')).toBeGreaterThan(0);
+    expect(goalSavedFor(home, data, '2026-10-12')).toBeGreaterThan(0);
   });
 
   it('records legacy shares as ignored and computes full asset values for both shipped fixtures', () => {

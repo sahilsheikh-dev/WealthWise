@@ -9,8 +9,10 @@
   expanded by `git cat-file`.
 - Schema version: v13. No native module or persisted schema change was
   introduced.
-- Test counts: 83 suites, 1006 tests passed on Node 26.13.0 in the final
-  coverage run.
+- Current task: P29-A investment returns, emergency-fund buckets and full-value
+  linked goals is implemented and under final verification.
+- Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
+  P29-A coverage run.
 - Coverage: `src/data/` 94.23% lines / 87.74% branches; `src/domain/` 98.32%
   lines / 93.05% branches; pure `src/lib/` 100% / 100%. The new
   `src/domain/backupCrypto.ts` has 100% line and branch coverage.

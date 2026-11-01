@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Investments and goals
+
+- Added shared pure return calculations for holdings and plans: absolute gain
+  and return, dated XIRR, single-lump CAGR, and short-span absolute-only
+  labeling.
+- Goals now count the full current value of every linked asset, including assets
+  shared by multiple goals. Emergency-fund bucket targets now use the set goal
+  target, while bucket available values use full linked holding values.
+
 ### Data and privacy
 
 - Encrypted backup export is now the default, with passphrase-protected
