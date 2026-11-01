@@ -82,7 +82,7 @@ export function planReminders(
     throw new RangeError('Reminder limit must be a non-negative integer.');
   }
   const today = localDate(now);
-  const fireTime = localFireTime(today, settings.localTime);
+  localFireTime(today, settings.localTime);
   if (!settings.enabled || limit === 0 || (!settings.dayBefore && !settings.sameDay)) return [];
 
   const reminders: PlannedReminder[] = [];

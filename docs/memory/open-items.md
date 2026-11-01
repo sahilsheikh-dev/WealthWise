@@ -23,8 +23,6 @@
   non-earned inflows; those snapshots do not resolve the missing app
   transaction edit. Export a fresh backup from the app if that edit should be
   included.
-- **CR-1:** reminders/notifications, permission behavior and tests remain held
-  for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
   still open for `profile-form.tsx` and `transaction-form.tsx`.
 - Latest audit: `npm audit --omit=dev` reports 27 advisories (6 high,
@@ -51,6 +49,10 @@
 
 ## Physical-device verification
 
+- **P24-A:** verify local-notification delivery and timing, permission and
+  blocked-settings flows, reboot restoration behavior, lock-screen text,
+  cold-start and app-locked notification taps, and large-font rendering at
+  scales 1.3 and 2.0. Automated layout and Expo exports are not device proof.
 - **P25-B:** verify key-derivation time on a real phone, the native share
   sheet, file picker, and large-font rendering at scales 1.3 and 2.0. The
   current 247.4 ms KDF benchmark is from the development machine only.

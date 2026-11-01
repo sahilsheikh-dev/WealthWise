@@ -2,13 +2,14 @@
 
 # Status
 
-- Current task: P25-B encrypted backups is complete. The research/decision
-  commit and implementation commit `c90a8f323e355348b1fd17d7589d8a4cd505f7d4`
-  are recorded in [PROGRESS.md](../PROGRESS.md) and verified as Git commit
-  objects.
+- Current task: P24-A CR-1 local reminders is complete. DEC-P24A and both the
+  research commit `372476c6c6185e926de57ead1d52bb0bdc57974a` and implementation
+  commit `f5a1a38...` are recorded in [PROGRESS.md](../PROGRESS.md) and
+  verified as commit objects; the abbreviated implementation hash must be
+  expanded by `git cat-file`.
 - Schema version: v13. No native module or persisted schema change was
   introduced.
-- Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the final
+- Test counts: 83 suites, 1006 tests passed on Node 26.13.0 in the final
   coverage run.
 - Coverage: `src/data/` 94.23% lines / 87.74% branches; `src/domain/` 98.32%
   lines / 93.05% branches; pure `src/lib/` 100% / 100%. The new

@@ -14,6 +14,15 @@
   remains unencrypted, app lock is not encryption, and lost passphrases cannot
   be recovered.
 
+### Reminders
+
+- Added local-only payment reminders for dated unpaid dues, with day-before
+  and due-day schedules at a user-selected local time.
+- Added privacy-aware notification text, permission and settings controls,
+  a 60-reminder rolling window, and a lock-gated paid/not-paid confirmation
+  route. Android delivery may be inexact and physical-device behavior still
+  requires owner verification.
+
 ## [0.1.0]
 
 Released on GitHub as a pre-release with tag `v0.1.0`. The owner reports the

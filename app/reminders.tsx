@@ -48,11 +48,10 @@ export default function RemindersScreen() {
   const [permission, setPermission] = useState<ReminderPermissionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
     let active = true;
-    setNow(new Date());
     void metaStore.getMeta().then((meta) => {
       if (active) setPreferences(meta.reminders ?? DEFAULT_REMINDER_PREFERENCES);
     }).catch((error: unknown) => {
