@@ -158,9 +158,12 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
 | P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
 | P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
+| CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
+| CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
+| CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
 
@@ -2171,6 +2174,37 @@ source/test hit and its disposition is listed here:
 | P18-R5 detail-tab-bar behavior | Superseded by DEC-TABS; tabs appear only on the four main screens, effective P20-C. |
 | P19-B Budget body action row (CR-16) | Superseded by CR-17: History, Month review and Templates are right-side Budget header icons. |
 
+### DEC-BACKUP-RECONCILIATION (2026-11-01)
+
+- Reconcile the supplied monthly income and expense totals, loan subtotals,
+  emergency-fund activity and existing transactions without duplicating
+  source movements.
+- Remove stale cash-flow balancing transactions and represent remaining
+  month-end deficits as linked Bank withdrawals and surpluses as `Other`
+  expenses, dated on each month's final calendar day.
+- Preserve the 18 existing linked ICICI RD deposits and linked HDFC liability
+  payments; account for their loan-tracker rounding differences in comparison
+  checks rather than changing the source-linked records.
+- **Supersedes the earlier claim** that the prior first-of-month balancing
+  entries constituted a complete reconciliation. That pass omitted positive
+  balances as expenses and used the wrong adjustment dates. The replacement
+  verification covers every month from July 2022 through October 2026.
+
+### DEC-TRANSACTIONS-CLOSING-BALANCE (2026-11-01)
+
+- Always render the selected month's balance amount, even when the previous
+  month's closing balance was zero. This applies to positive, zero and
+  negative amounts for both current-month Available balance and past-month
+  Closing balance.
+- The monthly overspend warning compares that month's total expenses and
+  investments with that month's income; the balance card separately includes
+  the carried-forward balance. Currency display rounds paise to whole rupees,
+  so a fractional overspend can appear rounded in the warning.
+- The current local JSON backup's notes were edited without updating its
+  checksum. The checksum was recalculated and the backup passed importer
+  validation. The separate transaction deletion/addition described in the
+  current app was not present in this backup snapshot and was not invented.
+
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -2549,6 +2583,9 @@ evidence present in exports/checkpoints.
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
+| CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
+| CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
+| CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2648,6 +2685,9 @@ evidence present in exports/checkpoints.
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
 | CR-89 | Add recurrence-aware Budget forms, rows, dues, projections, categories, demo data and tests. | Done | Route form, row frequency/next-due copy, category choices, demo and route/domain acceptance tests complete; full suite and all six gates pass. Simulated layout only; native-device checks remain. |
+| CR-92 | Reconcile the local backup against monthly income, expenses, loan and emergency-fund tracker data; remove duplicate points; add month-end deficit/surplus adjustments. | Done | Temporary focused reconciliation test passed; all 52 monthly cash-flow totals, duplicate signatures, adjustment dates, checksum and `parseBackup` import were verified. The private backup remains a local deliverable and is not committed. |
+| CR-93 | Show Transactions Available/Closing balance amounts for positive, zero and negative values; validate current backup notes and reported transaction changes. | Done | The amount now renders regardless of brought-forward balance. Zero and negative UI tests pass. The edited local backup checksum was recalculated and `parseBackup` passed. The backup snapshot does not contain the separate transaction deletion/addition reported for app data. |
+| CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
 
 ## 8. Known issues and risks
 
@@ -4860,5 +4900,182 @@ importer with a temporary Jest smoke test (1/1 passed); the temporary test was
 removed. Its existing checksum matches its data. The revised envelope shown in
 the owner's message does not match the file currently at the tagged path, so
 no entries were changed or inferred and the existing file was left intact.
-Await the complete revised JSON before regenerating the deliverable. No commit
-was created, per owner direction.
+The owner then supplied the complete data, matching `sahil_wealthwise_import.json`
+(31 transactions, 28 goals, 5 holdings and 1 liability). The supplied checksum
+does not match the app's canonical JSON digest. Recomputing it in a temporary
+test exposed three importer constraints: a goal name exceeds the 40-character
+limit, the plan includes an unrecognized derived `invested` field, and a
+non-null actual value has no snapshot date. A diagnostic normalization using a
+shortened goal name, removing the derived field and setting the snapshot date
+to the export date passed importer validation (1/1). The owner approved those
+minimal adjustments. Created `wealthwise-backup-20261101-complete.json` from
+the complete supplied data, recalculated its checksum using the app's canonical
+JSON, and verified the resulting backup imports successfully (1/1 temporary
+smoke test). The temporary test was removed. The original source and earlier
+dated backup remain intact. No commit was created.
+
+### 2026-11-01 monthly income added to backup
+
+Added the owner's July 2022–October 2026 income details to
+`wealthwise-backup-20261101-complete.json` as 115 separate source-level income
+transactions, each dated on the first of its month. Mapped salary to Salary,
+freelancing/agency to Freelance, other income to Other, savings withdrawals to
+Withdrawal, friends/family help to Borrowed, and loan/credit-card proceeds to
+Loan proceeds. Notes preserve the supplied source labels where category names
+are normalized. Monthly totals were used as reconciliation checks, not added
+again as duplicate transactions. A temporary Jest test confirmed that all 52
+component sums equal the supplied totals, then recalculated the canonical
+checksum and verified importer success (1/1); the temporary test was removed.
+The original source and dated prior backup remain unchanged. No commit was
+created.
+
+### 2026-11-01 monthly expenses and loan logs added to backup
+
+Added the owner's July 2022–October 2026 monthly expense components and
+November 2022–October 2026 loan payment breakdowns to
+`wealthwise-backup-20261101-complete.json`. Non-loan expense items are dated
+on each month's first day. Savings and investments are `invest` transactions
+in the unlinked `Other investments` category; other expense labels use the
+nearest supported category and retain the original label in the note. Loan
+components already match each month's Loans subtotal; they are represented
+once, with historical non-HDFC components as EMI transactions and the HDFC
+payments linked to the existing recurring liability. The missing September
+2025 HDFC payment was added on its due date using the existing liability EMI.
+Existing HDFC payments through October 2026 remain unchanged. Future
+installments through the liability term remain scheduled, not marked paid.
+No separate settled liabilities were invented for the old loans, as their
+individual creditors and original principals were not supplied. Income
+transactions from the previous update were not duplicated.
+
+Five expense months had itemized amounts below their stated totals. Per owner
+approval, the differences were added as distinct `Other` expenses on the first
+of each month with notes identifying them as unitemized differences; no
+categories were inferred. A temporary Jest test confirmed the monthly expense
+totals and loan subtotals, updated the checksum, and verified importer success
+(1/1); the temporary test was removed. The full project gates were not rerun
+for this backup-data-only update. No commit was created.
+
+### 2026-11-01 emergency-fund logs and cash-flow reconciliation
+
+Updated `wealthwise-backup-20261101-complete.json` with the supplied emergency-
+fund activity for January 2025 through October 2026. Existing linked ICICI RD
+deposits were reused, and 18 duplicate unlinked investment transactions were
+removed. Other deposits and withdrawals were mapped to linked holding entries
+and transactions; existing savings, investment and withdrawal transactions
+were reused or split where amounts matched. A zero-current-value Bachat Gat
+holding was added and linked to the FD/RD emergency-fund bucket and Emergency
+Fund goal. Existing Cash, Bank and HDFC FD values were preserved with snapshot
+dates at the backup export date.
+
+The supplied net movements reconcile to their itemized entries except for
+unitemized deposit/withdrawal differences, which remain explicitly labeled.
+Monthly tracker net, target and cumulative metadata are retained in notes.
+Per the owner's request, cash-flow deficits were covered with linked Bank
+withdrawals in 16 months; all 52 transaction months now reconcile. Future HDFC
+loan installments remain scheduled rather than marked paid, and existing
+income, sale and loan proceeds were not duplicated.
+
+A temporary updater test reconciled the emergency-fund activity and passed
+(1/1), and a separate temporary final-file test verified canonical checksum,
+schema/import integrity, unique transaction IDs, snapshots, links and monthly
+cash flow (1/1). `npx tsc --noEmit` exited 0. Temporary tests were removed.
+The full project gates were not rerun for this backup-data-only update. No
+commit was created.
+
+### 2026-11-01 Transactions closing balance and local backup validation (CR-93)
+
+The Transactions card hid the balance amount whenever the brought-forward
+balance was zero, even when the selected month had a zero or negative closing
+balance. The amount is now always rendered; negative amounts retain the
+existing danger tone and shortfall label. Added route tests for zero and
+negative balances and updated the route smoke assertion to require a visible
+negative value.
+
+The edited local schema-v13 backup had a stale SHA-256 checksum after note
+changes. Recalculated only the checksum, then verified that the backup imports.
+The tagged backup still contains its month-end balancing record and does not
+include the separate transaction deletion/addition described for current app
+data, so no financial transaction was changed in the file. The monthly
+overspend warning measures the selected month's expenses plus investments
+against that month's income; the balance card also includes carried-forward
+amounts. Existing currency formatting rounds paise to whole rupees, which can
+make the warning display round a fractional difference.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| Zero/negative balance focused tests | `TransactionsScreen.test.tsx` verifies zero and negative balances; the route smoke test verifies the negative amount is present. | 0 |
+| Edited local backup | Recalculated canonical checksum; schema-v13 `parseBackup` accepts the result. | 0 |
+| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 957 tests fail in the pre-existing `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` cases. | 1 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Lint passes. | 0 |
+| `npx expo-doctor` | 21/21 checks pass. | 0 |
+| `npx expo export --platform android` | Android bundle export passes. | 0 |
+| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
+
+Temporary backup validation test was removed. The local backup remains ignored
+user data; only its checksum was updated. The pre-existing `backup.ts` change
+was preserved.
+
+### 2026-11-01 complete tracker reconciliation (CR-92)
+
+Re-tallied the local schema-v13 backup against the supplied income, monthly
+expense, loan and emergency-fund trackers. Removed the 16 stale cash-flow
+balancing transactions and their linked holding logs. Added a linked Bank
+withdrawal on the final calendar day for each remaining deficit month, and an
+`Other` expense on the final calendar day for each surplus month. The resulting
+backup contains 716 transactions across all 52 tracker months; each month's
+income equals its recorded outflows. The 48 supplied loan months, emergency-
+fund tracker metadata, unique transaction IDs/signatures, and the 18 existing
+linked RD deposits were checked. Existing HDFC payments and holding snapshots
+were preserved.
+
+**Superseded assertion:** the previous close-out said the 52 transaction
+months reconciled, but its balancing rows were placed on the first of each
+month, and positive balances were not recorded as extra expenses. The new
+assertion requires month-end dates, separate deficit withdrawals and surplus
+expenses, no duplicate points, and zero net cash flow for every supplied
+month. This corrects the earlier claim without changing the source tracker
+amounts.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| `npm test -- --runInBand src/domain/__tests__/reconcileBackupTransactions.test.ts` | 1 suite / 1 test passed; monthly totals, loan totals, emergency-fund logs, duplicate detection, adjustment counts/dates and importer integrity verified. | 0 |
+| Schema-v13 backup | Canonical SHA-256 recalculated; `parseBackup` accepts the final file. | 0 |
+| `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts src/domain/__tests__/backup.test.ts` | 2 suites / 34 tests passed. | 0 |
+| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 955 tests fail in `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` (the same baseline failures recorded before this data-only task). | 1 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Lint passes. | 0 |
+| `npx expo-doctor` | 21/21 checks pass. | 0 |
+| `npx expo export --platform android` | Android bundle export passes. | 0 |
+| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
+
+The temporary test was removed after verification. The full backup is kept as
+a local user-data deliverable and is not committed to the repository.
+
+### 2026-11-01 historical actual-based budgets (CR-94)
+
+The owner selected monthly custom snapshots that match each completed month's
+transaction actuals. Added 52 snapshots for July 2022 through October 2026.
+Each expense/investment category's planned amount is aligned to the recorded
+transactions, including linked schedule rows, so historical budget views
+reflect what was logged rather than imposing new limits on immutable past
+transactions. Earned-income rows follow the logged earned-income categories;
+borrowed funds, loan proceeds and withdrawals remain non-earned inflows in the
+app's existing model.
+
+Transactions, holdings, linked records, the legacy `budget` object, and the
+null repeating `budgetPlan` were preserved. All snapshots are custom and
+month-specific; no future recurring budget was created.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| Temporary focused budget/import test | 1 suite / 1 test passed; all 52 months have category-level planned/actual agreement, the transaction array is unchanged, and the schema-v13 backup imports. The temporary test was removed. | 0 |
+| Local backup checksum and coverage | Canonical SHA-256 is valid; 52 consecutive month snapshots span July 2022 through October 2026. | 0 |
+| `git diff --check` | Passed. | 0 |
+| Full application gates | Not rerun; this was a local backup data-only update. | — |
+
+**Decision — DEC-BUDGET-HISTORICAL-ACTUALS:** preserve past transactions as
+immutable facts and store month-specific editable budget snapshots whose
+planned categories match those facts. Keep planned income limited to the
+app's earned-income model and do not invent non-earned-income classifications.
+The user backup remains local ignored data and is intentionally not committed.

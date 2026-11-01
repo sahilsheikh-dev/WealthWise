@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { migratePersisted } from '../data/migrate';
-import { budgetGroupFor } from './budgetGroups';
-import { EF_BUCKET_META, EF_BUCKETS } from './efAllocation';
 import { ensureEfGoal } from './goals';
 import { validateIntegrity } from './links';
+import { budgetGroupFor } from './budgetGroups';
+import { migratePersisted } from '../data/migrate';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import {
   appDataSchema,
   EARNED_INCOME_CATEGORIES,

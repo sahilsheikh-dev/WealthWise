@@ -5,7 +5,7 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { monthSummary } from '../../domain/transactions';
 import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
 import { shiftMonth } from '../../domain/dates';
-import { formatMonth } from '../../lib/format';
+import { formatINR, formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
@@ -453,6 +453,31 @@ describe('Transactions available-balance card', () => {
       expect(text).toContain('Closing balance');
       expect(text).not.toContain('Available balance');
     } finally {
+      mockTxMonth = previousMonth;
+    }
+  });
+
+  it.each([
+    { income: 100, expense: 100, closing: 0 },
+    { income: 100, expense: 102, closing: -2 },
+  ])('shows a zero or negative closing balance ($closing)', ({ income, expense, closing }) => {
+    const previousMonth = mockTxMonth;
+    const previousTransactions = mockData.transactions;
+    const month = shiftMonth(todayISO().slice(0, 7), -1);
+    mockTxMonth = month;
+    mockData.transactions = [
+      { id: 'balance-income', type: 'income', amount: income, category: 'Salary', note: '', date: `${month}-01` },
+      { id: 'balance-expense', type: 'expense', amount: expense, category: 'Food', note: '', date: `${month}-02` },
+    ];
+    try {
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const balanceCard = renderer.root.findByProps({ testID: 'available-balance-card' });
+      expect(balanceCard.findByProps({ accessibilityLabel: formatINR(closing) })).toBeDefined();
+      expect(renderedText(balanceCard)).toContain('Closing balance');
+    } finally {
+      mockData.transactions = previousTransactions;
       mockTxMonth = previousMonth;
     }
   });

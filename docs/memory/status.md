@@ -2,15 +2,19 @@
 
 # Status
 
-- Current task: validate the restored local backup and incorporate the owner's
-  latest edits.
-- Current task state: the file at the backup path is the earlier schema-v13
-  snapshot, not the revised data shown in the latest message. The restored file
-  passes the app importer; no backup edits or commits were made. The complete
-  revised input is still needed before it can be safely rebuilt.
-- Verification: temporary importer smoke test passed (1/1) against the file
-  currently at the path and was removed. The prior full coverage run had
-  unrelated TransactionsScreen and RouteRenderSmoke failures; see the ledger.
+- Current task: create flexible historical budget snapshots from transaction
+  logs through October 2026.
+- Current task state: the local schema-v13 backup contains 52 custom,
+  month-specific budgets from July 2022 through October 2026. Category-level
+  planned expenses and investments match transaction actuals. The transaction
+  records, legacy budget and null repeating plan were preserved; no future
+  recurring budget was added.
+- Verification: focused 52-month budget matching and schema-v13 import passed;
+  the backup checksum is valid. The local backup remains ignored and was not
+  committed. Prior Transactions balance fix and its full gate results remain
+  recorded in the 2026-11-01 ledger entries.
+- The prior full coverage run had unrelated TransactionsScreen and
+  RouteRenderSmoke failures; see the ledger.
 - Schema version: v13 (`src/domain/schemas.ts`).
 - Test counts: 79 suites, 955 tests in the last fully passing run; the
   2026-11-01 run has 9 failures in TransactionsScreen and RouteRenderSmoke.
