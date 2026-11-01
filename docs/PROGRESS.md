@@ -5472,3 +5472,45 @@ as `app/backup.tsx`; its import/export behavior is exercised by route tests.
 **Physical-device checks not verified:** scrypt timing on an actual phone,
 native share sheet, file picker behavior, and large-font rendering at scales
 1.3 and 2.0. Layout tests are simulated.
+
+## Phase 29 - Investment returns, emergency fund and linked amounts (2026-11-02)
+
+**Task:** P29-A.
+
+**Assumed:** record Phase 29 as an implementation assumption; the frozen spec is
+implemented without a persisted schema change. No edit is authorized for
+`app/(tabs)/index.tsx`.
+
+### DEC-29A Step 1 reproduction ledger
+
+Old formula: manual/plan gain percentage was `(current value - invested) / invested * 100`,
+where invested was the opening amount plus deposit/withdrawal net activity and
+current value was the stored valuation plus later entry adjustments. There was
+no dated XIRR/CAGR calculation shared across screens.
+
+| Reproduction | Minimal old output | Cause |
+|---|---:|---|
+| Manual pattern deposits 1000, 3000, 0, 0, 5000; current value 5400 | -40% | old denominator is invested 9000 and old numerator is value minus invested |
+| Same ledger-style pattern with current value 81000 and invested 9000 | +800% | old formula `(81000 - 9000) / 9000 * 100` |
+| Emergency balance/linked current balance 38536 with allocation 10/20/70 | targets 3854, 7707, 26975 | old `allocateAmounts(balance, allocation)` used the displayed/current saved balance instead of the set effective goal target |
+| Cash asset 30000 shared across goals | each goal could show 5000 | old equal split divided by the linked-goal count |
+| Bank asset 35000 shared across goals | each goal could show 5000 | old equal split divided by the linked-goal count |
+| FD/RD asset 28000 shared across goals | each goal could show a split share | old equal split divided by the linked-goal count |
+
+Replaced assertions:
+
+- Old: `goalAssetValueFor` and `goalSavedFor` divide an asset equally among linked
+  goals using deterministic paise remainder.
+- New: `goalAssetValueFor`/`goalSavedFor` count the full current value of an asset
+  in every goal; `share` fields remain ignored.
+- Reason: the frozen P29-A requirement reverses the P20-J equal-split rule and
+  explicitly permits one asset to be counted in several goals.
+
+- Old: emergency bucket targets came from `allocateAmounts(balance, ...)`.
+- New: emergency bucket targets come from `allocateAmounts(effective goal target, ...)`.
+- Reason: bucket targets must equal the user's emergency goal target, while
+  bucket available values use full linked asset values.
+
+Step 1 verification: focused Jest reproduction was red as intended:
+`Cannot find module '../investmentReturns'`; linked goal expectations received
+500 instead of the required full 1000 in 3 shared-link fixtures.

@@ -102,10 +102,10 @@ describe('goal asset links', () => {
     expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(0);
     const linkedEmergency = setGoalLinks(data, emergency.id, [{ instrumentId: 'manual' }]);
     const linkedGoal = linkedEmergency.goals.find((item) => item.auto === 'ef')!;
-    expect(goalSavedFor(linkedGoal, linkedEmergency, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(linkedGoal, linkedEmergency, '2026-10-12')).toBe(1_000);
   });
 
-  it('splits an asset equally across one, two and three goals with deterministic paise remainder', () => {
+  it('supersedes equal splitting: one asset is counted in full by every linked goal', () => {
     let data = baseData();
     data = setGoalLinks(data, 'goal', [{ instrumentId: 'manual', share: 30 }]);
     let goal = data.goals.find(({ id }) => id === 'goal');
@@ -121,15 +121,14 @@ describe('goal asset links', () => {
     goal = data.goals.find(({ id }) => id === 'goal');
     const second = data.goals.find(({ id }) => id === 'second');
     if (!goal || !second) throw new Error('Shared goal fixtures missing');
-    expect(goalSavedFor(goal, data, '2026-10-12')).toBe(500);
-    expect(goalSavedFor(second, data, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(goal, data, '2026-10-12')).toBe(1_000);
+    expect(goalSavedFor(second, data, '2026-10-12')).toBe(1_000);
 
     data = setGoalLinks(data, 'third', [{ instrumentId: 'manual' }]);
-    const shares = data.goals
+    const values = data.goals
       .filter((item) => item.links.some((link) => link.instrumentId === 'manual'))
       .map((item) => goalAssetValueFor(item, data, 'manual', 1_000.01));
-    expect(shares).toEqual([333.34, 333.34, 333.33]);
-    expect(shares.reduce((sum, value) => sum + value, 0)).toBe(1_000.01);
+    expect(values).toEqual([1_000.01, 1_000.01, 1_000.01]);
   });
 
   it('rebalance links after unlinking, accepts legacy shares and rejects duplicates', () => {
@@ -143,8 +142,8 @@ describe('goal asset links', () => {
     const first = data.goals.find(({ id }) => id === 'goal');
     const second = data.goals.find(({ id }) => id === 'second');
     if (!first || !second) throw new Error('Shared goal fixtures missing');
-    expect(goalSavedFor(first, data, '2026-10-12')).toBe(500);
-    expect(goalSavedFor(second, data, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(first, data, '2026-10-12')).toBe(1_000);
+    expect(goalSavedFor(second, data, '2026-10-12')).toBe(1_000);
     data = setGoalLinks(data, 'second', []);
     const unlinkedFirst = data.goals.find(({ id }) => id === 'goal');
     if (!unlinkedFirst) throw new Error('Goal fixture missing');
