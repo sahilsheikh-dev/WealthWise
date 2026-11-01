@@ -51,6 +51,9 @@
 
 ## Physical-device verification
 
+- **P25-B:** verify key-derivation time on a real phone, the native share
+  sheet, file picker, and large-font rendering at scales 1.3 and 2.0. The
+  current 247.4 ms KDF benchmark is from the development machine only.
 - Owner-verified: the owner reports that everything works in a physical-device
   test. Device model and operating system were not recorded. This is owner
   report, not automated test evidence or an independently observed device run.
@@ -73,5 +76,12 @@
   the clean-cache full run failed on Node 24.22.2. Expo SDK 57 uses React
   Native 0.86; see SDK and RN engine evidence in P25-E of the ledger. Node
   26.13.0 is a stable release, not a pre-release.
+- **P25-B platform constraint:** Expo SDK 57's cross-platform share sheet and
+  picked-file reading use temporary cache files. The explicit plain-export
+  option therefore briefly writes plaintext to cache, and plain picked files
+  are copied there for reading, then removed. Encrypted export cache files
+  contain ciphertext only; decrypted encrypted payloads remain in memory.
+  Satisfying the literal no-plaintext-temp rule for the plain paths would
+  require a different platform-specific file destination design.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.

@@ -121,10 +121,21 @@ under `app/`.
 
 Application data is stored locally on the device; there are no user accounts or
 runtime cloud synchronization. Backup files are created only when the user
-exports them. Backups contain readable financial data: the SHA-256 integrity
-check is not encryption or authentication. App lock uses device authentication
-and does not encrypt data stored on the device. Operating-system backups may
-include app data according to platform settings.
+exports them. Encrypted export is the default and protects the exported file
+with a passphrase; the passphrase is never stored, and a lost passphrase cannot
+be recovered. The optional plain-export choice is unencrypted and clearly
+warns before sharing. SHA-256 in the original backup JSON checks integrity; it
+is not encryption or authentication.
+
+Backup encryption protects exported files only. App data stored on this device
+remains unencrypted; an app lock or device authentication is not encryption.
+Encrypted backups are decrypted in memory before the existing integrity,
+validation and migration checks. Picked files use a temporary cache copy for
+reading and are removed afterward. The explicit plain-export choice also uses
+a temporary cache file for the system share sheet and removes it afterward.
+The plaintext result of decrypting an encrypted backup is never written to a
+temporary file. Operating-system backups may include app data according to
+platform settings.
 
 ## Limitations and disclaimer
 

@@ -476,3 +476,7 @@ export function backupFileName(exportedAt: string): string {
   const iso = date.toISOString();
   return `wealthwise-backup-${iso.slice(0, 10).replaceAll('-', '')}-${iso.slice(11, 16).replaceAll(':', '')}Z.json`;
 }
+
+export function encryptedBackupFileName(exportedAt: string): string {
+  return backupFileName(exportedAt).replace('.json', '-encrypted.json');
+}

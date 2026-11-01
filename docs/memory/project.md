@@ -11,14 +11,16 @@ runtime synchronization.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
 - Schema version: v13 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Backup encryption protects exported files only; app data on device remains
+  unencrypted and a lost backup passphrase cannot be recovered.
 - Tabs: Home, Transactions, Goals and Budget.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 79 suites, 958 tests passed on Node 26.13.0 in the 2026-11-01
-  P25-F final coverage run; see
+- Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the 2026-11-01
+  P25-B final coverage run; see
   [status.md](status.md) for the run date and exact gate results.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,

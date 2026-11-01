@@ -7,6 +7,7 @@ Each entry links to the architecture/decision section in the complete
 authoritative rationale and history.
 
 - [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
+- [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-PLAN](../PROGRESS.md#4-architecture-and-decisions)

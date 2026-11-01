@@ -317,12 +317,12 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 94% (74/79)');
+    expect(dashboard).toContain('Overall progress █████████░ 95% (75/79)');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (22/22)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (6/6)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(dashboard).toContain('Phase 23         ██████████ 100% (4/4)');
-    expect(dashboard).toContain('Phase 25         ████████░░ 83% (5/6)');
+    expect(dashboard).toContain('Phase 25         ██████████ 100% (6/6)');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-E |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P25-E |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-F |'))).toContain('| Done |');
@@ -333,7 +333,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-94')).toBe('Done');
     expect(statusFor('CR-95')).toBe('Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-D |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
