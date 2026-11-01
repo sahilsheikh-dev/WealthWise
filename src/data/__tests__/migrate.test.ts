@@ -111,7 +111,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 14)).toThrow(
+    expect(() => migratePersisted({}, 15)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -200,7 +200,7 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 14)).toThrow(
+    expect(() => migratePersisted({}, 15)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });

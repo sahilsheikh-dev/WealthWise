@@ -10,6 +10,7 @@ import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
@@ -19,6 +20,7 @@ import { effectiveMonthBudget } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -112,7 +114,8 @@ export default function BudgetItemFormScreen() {
   });
   const mode = useWatch({ control, name: 'mode' }) ?? 'amount';
   const frequency = useWatch({ control, name: 'frequency' }) ?? 'monthly';
-  const scope = useWatch({ control, name: 'scope' }) ?? (requestedScope === 'month' ? 'month' : 'following');
+  const holdingId = useWatch({ control, name: 'holdingId' }) ?? '';
+  const linkedHolding = data.holdings.find((holding) => holding.id === holdingId);
   const firstDueMonths = Array.from({ length: 25 }, (_, index) => shiftMonth(month, index));
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
@@ -164,26 +167,36 @@ export default function BudgetItemFormScreen() {
     }
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((row) => row.month === month) ?? null;
+    const resolvedLinkedHolding = data.holdings.find((holding) => holding.id === values.holdingId);
+    const linkedPlan = resolvedLinkedHolding?.kind === 'plan' ? resolvedLinkedHolding : undefined;
+    const resolvedName = values.name;
+    const resolvedMode = linkedPlan ? 'amount' : values.mode;
+    const resolvedValue = linkedPlan ? linkedPlan.amount : Number(values.value);
+    const resolvedFrequency = linkedPlan ? 'monthly' : values.frequency;
+    const resolvedFirstDueMonth = linkedPlan ? linkedPlan.trackFrom.slice(0, 7) : values.firstDueMonth;
+    const resolvedDueDay = linkedPlan
+      ? Number(linkedPlan.trackFrom.slice(8, 10))
+      : values.day === '' ? null : Number(values.day);
     if (item) {
       actions.editBudgetStructureItem(month, item.id, {
-        name: values.name,
-        mode: values.mode,
-        value: Number(values.value),
-        dueDay: values.day === '' ? null : Number(values.day),
-        frequency: values.frequency,
-        firstDueMonth: values.firstDueMonth,
+        name: resolvedName,
+        mode: resolvedMode,
+        value: resolvedValue,
+        dueDay: resolvedDueDay,
+        frequency: resolvedFrequency,
+        firstDueMonth: resolvedFirstDueMonth,
         holdingId: values.holdingId || null,
       }, selectedScope, today);
     } else {
       actions.addBudgetItem(month, {
         sectionId,
-        name: values.name,
-        mode: values.mode,
-        value: Number(values.value),
-        frequency: values.frequency,
-        firstDueMonth: values.firstDueMonth,
+        name: resolvedName,
+        mode: resolvedMode,
+        value: resolvedValue,
+        frequency: resolvedFrequency,
+        firstDueMonth: resolvedFirstDueMonth,
         ...(values.holdingId ? { holdingId: values.holdingId } : {}),
-        ...(values.day === '' ? {} : { dueDay: Number(values.day) }),
+        ...(resolvedDueDay === null ? {} : { dueDay: resolvedDueDay }),
       }, selectedScope, today);
     }
     if (useAppStore.getState().lastError) return;
@@ -253,6 +266,18 @@ export default function BudgetItemFormScreen() {
           }}
         />
       ) : null}
+      {linkedHolding?.kind === 'plan' ? (
+        <>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            The plan schedule is the source. Amount, frequency, due day and start month are read-only.
+          </AppText>
+          <AppText weight="semibold" style={typography.name}>
+            Amount {formatAmount(linkedHolding.amount, 'exact', 1)} · {linkedHolding.frequency} · Starts {formatMonth(linkedHolding.trackFrom.slice(0, 7))}
+          </AppText>
+        </>
+      ) : null}
+      {linkedHolding?.kind !== 'plan' ? (
+        <>
       <Controller
         control={control}
         name="mode"
@@ -329,6 +354,8 @@ export default function BudgetItemFormScreen() {
       <AppText style={[typography.meta, { color: colors.text3 }]}>
         Earlier months are not offered because past months are frozen.
       </AppText>
+        </>
+      ) : null}
       <Controller
         control={control}
         name="day"

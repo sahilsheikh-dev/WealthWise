@@ -7,8 +7,8 @@
   commit `f5a1a38...` are recorded in [PROGRESS.md](../PROGRESS.md) and
   verified as commit objects; the abbreviated implementation hash must be
   expanded by `git cat-file`.
-- Schema version: v13. No native module or persisted schema change was
-  introduced.
+- Schema version: v14. P29-E adds optional `holdingId` links to Budget items
+  with migration support. v15 and newer data is refused.
 - Current task: P29-A investment returns, emergency-fund buckets and full-value
   linked goals is implemented and under final verification.
 - Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
