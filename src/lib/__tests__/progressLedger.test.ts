@@ -76,6 +76,7 @@ describe('permanent progress ledger', () => {
       'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A',
+      'P29-A',
       'CR-92', 'CR-93', 'CR-94', 'CR-95',
     ];
 
@@ -101,6 +102,7 @@ describe('permanent progress ledger', () => {
       'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A',
+      'P29-A',
     ];
 
     for (const id of newPartIds) {
@@ -151,7 +153,7 @@ describe('permanent progress ledger', () => {
     const done = [...counts.values()].reduce((sum, count) => sum + count.done, 0);
     const expected: [string, number, number][] = [
       ['Overall progress', done, total],
-      ...Array.from({ length: 28 }, (_, index): [string, number, number] => {
+      ...Array.from({ length: 29 }, (_, index): [string, number, number] => {
         const phase = index + 1;
         const count = counts.get(phase) ?? { done: 0, total: 0 };
         return [`Phase ${phase}`, count.done, count.total];
@@ -317,7 +319,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 95% (75/79)');
+    expect(dashboard).toContain('Overall progress ██████████ 96% (77/80)');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (22/22)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (6/6)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');

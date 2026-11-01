@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 95% (75/79)
+Overall progress ██████████ 96% (77/80)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -74,11 +74,12 @@ Phase 20         ██████████ 100% (22/22)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
-Phase 24         ░░░░░░░░░░ 0% (0/1)
+Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
+Phase 29         ██████████ 100% (1/1)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -165,6 +166,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
+| P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2773,6 +2775,7 @@ evidence present in exports/checkpoints.
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
 
 ## 7. Change-request register
 
@@ -5472,3 +5475,92 @@ as `app/backup.tsx`; its import/export behavior is exercised by route tests.
 **Physical-device checks not verified:** scrypt timing on an actual phone,
 native share sheet, file picker behavior, and large-font rendering at scales
 1.3 and 2.0. Layout tests are simulated.
+
+## Phase 29 - Investment returns, emergency fund and linked amounts (2026-11-02)
+
+**Task:** P29-A.
+
+**Assumed:** record Phase 29 as an implementation assumption; the frozen spec is
+implemented without a persisted schema change. No edit is authorized for
+`app/(tabs)/index.tsx`.
+
+### DEC-29A Step 1 reproduction ledger
+
+Old formula: manual/plan gain percentage was `(current value - invested) / invested * 100`,
+where invested was the opening amount plus deposit/withdrawal net activity and
+current value was the stored valuation plus later entry adjustments. There was
+no dated XIRR/CAGR calculation shared across screens.
+
+| Reproduction | Minimal old output | Cause |
+|---|---:|---|
+| Manual pattern deposits 1000, 3000, 0, 0, 5000; current value 5400 | -40% | old denominator is invested 9000 and old numerator is value minus invested |
+| Same ledger-style pattern with current value 81000 and invested 9000 | +800% | old formula `(81000 - 9000) / 9000 * 100` |
+| Emergency balance/linked current balance 38536 with allocation 10/20/70 | targets 3854, 7707, 26975 | old `allocateAmounts(balance, allocation)` used the displayed/current saved balance instead of the set effective goal target |
+| Cash asset 30000 shared across goals | each goal could show 5000 | old equal split divided by the linked-goal count |
+| Bank asset 35000 shared across goals | each goal could show 5000 | old equal split divided by the linked-goal count |
+| FD/RD asset 28000 shared across goals | each goal could show a split share | old equal split divided by the linked-goal count |
+
+Replaced assertions:
+
+- Old: `goalAssetValueFor` and `goalSavedFor` divide an asset equally among linked
+  goals using deterministic paise remainder.
+- New: `goalAssetValueFor`/`goalSavedFor` count the full current value of an asset
+  in every goal; `share` fields remain ignored.
+- Reason: the frozen P29-A requirement reverses the P20-J equal-split rule and
+  explicitly permits one asset to be counted in several goals.
+
+- Old: emergency bucket targets came from `allocateAmounts(balance, ...)`.
+- New: emergency bucket targets come from `allocateAmounts(effective goal target, ...)`.
+- Reason: bucket targets must equal the user's emergency goal target, while
+  bucket available values use full linked asset values.
+
+Step 1 verification: focused Jest reproduction was red as intended:
+`Cannot find module '../investmentReturns'`; linked goal expectations received
+500 instead of the required full 1000 in 3 shared-link fixtures.
+
+### DEC-P29A Step 2 implementation decision
+
+DEC-P29A: use one pure `src/domain/investmentReturns.ts` implementation for
+manual holdings and plans. Same-date entries are merged by date; contributions,
+withdrawals, absolute gain and return are computed from dated entries plus the
+valuation date. XIRR uses bracketed bisection with a 300-iteration bound and
+`1e-9` NPV tolerance; CAGR uses a single deposited lump sum. Annualized figures
+are emitted only for spans of at least 365 days. No schema change is needed.
+
+Goal links no longer use share fields or equal splitting. A linked asset's full
+current value is included in every linked goal. Shared-goal UI displays the
+exact note required by the frozen spec. EF bucket targets are allocated from the
+effective goal target, with bucket available values using full holding values.
+
+### P29-A verification
+
+**Gate table**
+
+| Gate | Exit |
+|---|---:|
+| `npm test -- --coverage` | 0 |
+| `npx tsc --noEmit` | 0 |
+| `npx expo lint` | 0 |
+| `npx expo-doctor` | 0 |
+| `npx expo export --platform android` | 0 |
+| `npx expo export --platform ios` | 0 |
+
+**Assumed:** `record Phase 29 as an implementation assumption`; Phase 29 is new
+and recorded as completed after repository verification.
+
+**Verification commits:** Step 1 `01069e149e3447b938aa8ff233227869d238b19e`,
+Step 2 `39b0c4f9bcba863a75e15fe1fb532d23a27bc43d`, Step 3
+`a60c30aef...`, Gate 2 fixture fix `5d4871c...`. Final ledger commit is recorded
+after verification.
+
+**Coverage method:** one method only, sum Jest covered and total line/branch
+counters for every file under each directory, then divide covered by total.
+`src/data/` 95.34% lines / 90.91% branches; `src/domain/` 99.04% lines /
+95.23% branches; `src/lib/` 100% lines / 100% branches.
+
+| User pattern / EF example | Old | New |
+|---|---:|---:|
+| Manual pattern, current value 5400 | -40% | -40% absolute; no XIRR until 365-day span |
+| Manual pattern, current value 81000 | +800% | +800% absolute |
+| EF bucket targets at target 38536 / 10/20/70 | 3854 / 7707 / 26975 based on wrong current balance | 3853.60 / 7707.20 / 26975.20 based on effective target |
+| EF bucket available, demo Cash/Bank/FD-RD | split or stale balances | full linked holding values |

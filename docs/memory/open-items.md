@@ -49,6 +49,11 @@
 
 ## Physical-device verification
 
+- **P29-A:** verify investment XIRR/CAGR labels, absolute-only short spans,
+  linked full-value saved totals, shared-goal notes and Emergency Fund bucket
+  targets on iOS and Android devices. Automated Jest and exports do not prove
+  native rendering.
+
 - **P24-A:** verify local-notification delivery and timing, permission and
   blocked-settings flows, reboot restoration behavior, lock-screen text,
   cold-start and app-locked notification taps, and large-font rendering at
