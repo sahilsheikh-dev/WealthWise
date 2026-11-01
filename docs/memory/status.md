@@ -2,25 +2,23 @@
 
 # Status
 
-- Current task: encrypted backups without a schema change or native build
-  change (P25-B).
-- Current task state: preflight and research are complete and DEC-P25B is
-  recorded in [PROGRESS.md](../PROGRESS.md). The selected portable-JavaScript
-  path is Noble AES-256-GCM and asynchronous scrypt, with Expo SDK 57 secure
-  random bytes at the app boundary. Implementation, installation, tests and
-  gates have not started.
-- Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: 79 suites, 958 tests passed on Node 26.13.0 in the P25-F final
+- Current task: P25-B encrypted backups is complete. The research/decision
+  commit and implementation close-out are recorded in [PROGRESS.md](../PROGRESS.md).
+- Schema version: v13. No native module or persisted schema change was
+  introduced.
+- Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the final
   coverage run.
-- Coverage for `src/domain/`, `src/data/` and pure `src/lib/` is above the
-  documented floors; see P25-F in the ledger for the exact percentages.
-- P25-B research benchmark: scrypt `N=2^16, r=8, p=1` took 247.4 ms on Node
-  26.13.0; the owner still needs to measure key-derivation time on a real
-  phone after implementation.
+- Coverage: `src/data/` 94.23% lines / 87.74% branches; `src/domain/` 98.32%
+  lines / 93.05% branches; pure `src/lib/` 100% / 100%. The new
+  `src/domain/backupCrypto.ts` has 100% line and branch coverage.
+- KDF: scrypt `N=2^16, r=8, p=1` took 247.4 ms on the Node 26.13.0 development
+  machine. Real-phone timing remains unverified.
+- All six final gates pass: coverage tests, TypeScript, Expo lint, Expo Doctor
+  21/21, Android export and iOS export. Exact exit codes are in the ledger.
+- Encrypted backups protect exported files only. On-device data remains
+  unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - Open release items: source-workbook records that do not map faithfully to
   the current app schema are not imported; see [open-items.md](open-items.md).
-- Next release phase: Phase 24 reminders and notifications (CR-1); later accessibility,
-  performance, cleanup and release work remain in their planned phases.
 
 The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth for
 step verdicts, coverage, device checks and release records. Simulated UI tests
