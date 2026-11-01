@@ -38,6 +38,7 @@ import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
+import { PaidAmountDialog } from '../../src/components/PaidAmountDialog';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -73,6 +74,7 @@ export default function HomeScreen() {
   }
   const spendingExpanded = spendingState.expanded;
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
+  const [homePayment, setHomePayment] = useState<PendingItem | null>(null);
   const persistedBytes = useUIStore((state) => state.persistedBytes);
   const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
@@ -122,13 +124,8 @@ export default function HomeScreen() {
     const extra = clearThrough && preview
       ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
       : '';
-    const confirmed = await confirmAsync({
-      title: 'Was this paid?',
-      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
-      confirmLabel: 'Paid',
-      cancelLabel: 'Not paid',
-    });
-    if (!confirmed) return;
+    setHomePayment(item);
+    return;
 
     if (clearThrough && preview) {
       const entryIds = actions.clearDuesThrough(target, item.dueDate);
@@ -194,6 +191,33 @@ export default function HomeScreen() {
       },
     });
   };
+  const saveHomePayment = (actualAmount: number) => {
+    const item = homePayment;
+    if (!item || !item.dueDate) return;
+    const source = item.source;
+    if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
+    const target: DueTarget = { kind: source.kind, id: source.parentId };
+    if (!item.actionable) {
+      const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
+      if (!entryIds || useAppStore.getState().lastError) {
+        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+        return;
+      }
+      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
+        actions.undoClearDuesThrough(target, entryIds);
+      } });
+    } else {
+      const entryId = actions.clearDue(target, source.slotId, actualAmount);
+      if (!entryId || useAppStore.getState().lastError) {
+        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+        return;
+      }
+      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
+        actions.undoClearDue(target, entryId);
+      } });
+    }
+    setHomePayment(null);
+  };
   return (
     <Screen>
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
@@ -225,6 +249,18 @@ export default function HomeScreen() {
             }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
+          />
+          <StatPill
+            label="Insurance"
+            value={data.policies.length === 0
+              ? 'No policies yet'
+              : <AmountText value={insuranceSummary.totalCover} tier="tile" />}
+            accessibilityLabel={data.policies.length === 0
+              ? 'Insurance, No policies yet'
+              : `Insurance, total cover ${formatAmount(insuranceSummary.totalCover, 'exact', 1)}`}
+            tone="primary"
+            onPress={() => router.push(data.policies.length === 0 ? '/policy-form' : '/insurance')}
+            testID="home-insurance-card"
           />
         </StatPillRow>
       </Card>
@@ -367,70 +403,6 @@ export default function HomeScreen() {
           </Card>
         </>
       ) : null}
-
-      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Insurance</AppText>
-      <Pressable
-        testID="home-insurance-card"
-        accessibilityRole="button"
-        accessibilityLabel="Open Insurance"
-        accessibilityHint="Opens insurance policies and cover goals"
-        onPress={() => router.push('/insurance')}>
-        <Card style={styles.insuranceCard}>
-          {data.policies.length === 0 ? (
-            <>
-              <EmptyState title="No policies yet" />
-              <Button
-                label="Add policy"
-                icon="plus"
-                variant="primary"
-                onPress={(event) => {
-                  event.stopPropagation();
-                  router.push('/policy-form');
-                }}
-              />
-            </>
-          ) : (
-            <>
-              <View
-                testID="home-insurance-row-total-cover"
-                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
-                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
-                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
-                </View>
-              </View>
-              <View
-                testID="home-insurance-row-yearly-premium"
-                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
-                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
-                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
-                </View>
-              </View>
-              {insuranceSummary.nextRenewal ? (
-                <View
-                  testID="home-insurance-row-next-renewal"
-                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
-                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
-                    <View style={styles.insuranceRenewalDetails}>
-                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
-                      </AppText>
-                    </View>
-                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
-                  </View>
-                </View>
-              ) : null}
-              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
-                <View testID="home-insurance-term-progress">
-                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
-                </View>
-              ) : null}
-            </>
-          )}
-        </Card>
-      </Pressable>
 
       <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Goal Progress</AppText>
       <View testID="home-goals-section">

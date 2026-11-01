@@ -58,6 +58,7 @@ export function Dropdown({
         visible={open}
         onClose={() => setOpen(false)}
         sheetTestID="dropdown-sheet"
+        centered
         contentStyle={styles.sheet}>
         <ScrollView
           keyboardShouldPersistTaps="handled"

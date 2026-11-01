@@ -33,7 +33,7 @@ const validInput = {
 describe('appDataSchema', () => {
   it('accepts the typed mock app data and exports schema version thirteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(13);
+    expect(SCHEMA_VERSION).toBe(14);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 

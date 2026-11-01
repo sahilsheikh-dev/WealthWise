@@ -241,6 +241,7 @@ export type BudgetItem = {
   dueDay?: number;
   frequency?: BudgetItemFrequency;
   firstDueMonth?: string;
+  holdingId?: string;
 };
 
 export type BudgetPlan = {
