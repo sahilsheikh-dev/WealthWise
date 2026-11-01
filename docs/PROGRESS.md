@@ -4985,9 +4985,14 @@ amounts.
 | Verification | Result | Exit |
 |---|---|---:|
 | `npm test -- --runInBand src/domain/__tests__/reconcileBackupTransactions.test.ts` | 1 suite / 1 test passed; monthly totals, loan totals, emergency-fund logs, duplicate detection, adjustment counts/dates and importer integrity verified. | 0 |
-| `npx tsc --noEmit` | TypeScript passes. | 0 |
 | Schema-v13 backup | Canonical SHA-256 recalculated; `parseBackup` accepts the final file. | 0 |
-| Full project gates | Not rerun; this task changes only the local backup data and documentation. | — |
+| `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts src/domain/__tests__/backup.test.ts` | 2 suites / 34 tests passed. | 0 |
+| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 955 tests fail in `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` (the same baseline failures recorded before this data-only task). | 1 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Lint passes. | 0 |
+| `npx expo-doctor` | 21/21 checks pass. | 0 |
+| `npx expo export --platform android` | Android bundle export passes. | 0 |
+| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
 
 The temporary test was removed after verification. The full backup is kept as
 a local user-data deliverable and is not committed to the repository.
