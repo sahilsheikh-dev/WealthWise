@@ -10,12 +10,15 @@
   use month-end dates. Duplicate points were checked, existing asset snapshots
   and linked loan payments were preserved, and the canonical checksum was
   recalculated.
-- Verification: the focused reconciliation/import Jest test passed (1/1), and
-  `npx tsc --noEmit` exited 0. The final backup imports successfully.
-  Temporary tests were removed. Full project gates were not rerun for this
-  local backup-data update. The earlier first-of-month balancing claim is
-  superseded by the corrected month-end check; evidence is in the 2026-11-01
-  ledger entries.
+- Verification: the focused reconciliation/import test passed (1/1);
+  `progressLedger.test.ts` and `backup.test.ts` passed (34 tests total);
+  TypeScript, lint, Expo Doctor (21/21), and Android/iOS exports exited 0.
+  Full coverage exited 1: 77/79 suites pass and 9 tests fail in
+  `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx`, matching the
+  pre-existing failures recorded before this task. The final backup imports
+  successfully. Temporary tests were removed. The earlier first-of-month
+  balancing claim is superseded by the corrected month-end check; evidence is
+  in the 2026-11-01 ledger entries.
 - The prior full coverage run had unrelated TransactionsScreen and
   RouteRenderSmoke failures; see the ledger.
 - Schema version: v13 (`src/domain/schemas.ts`).
