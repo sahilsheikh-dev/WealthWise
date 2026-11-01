@@ -1,9 +1,16 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
+- **Spreadsheet backup scope:** the current schema has no faithful representation
+  for the supplied historical income/expense, emergency-fund passbook and
+  repayment tracker detail, or source comments. These records were not
+  converted into transactions where that would misclassify mixed flows or imply
+  realized activity. The local backup is a supported snapshot, not a complete
+  workbook migration. Do not retain the user's financial values in repository
+  memory.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is

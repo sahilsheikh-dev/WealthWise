@@ -1,22 +1,24 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: Phase 25 part E (P25-E), Node engine and test stability.
-- Current task state: Complete. All six final gates passed on Node 26.13.0;
-  Expo Doctor reports 21/21 checks passed. Node 24.22.2 still fails 13 suites
-  after a clean Jest cache due to Expo Modules Core `Platform.select`
-  initialization through incomplete React Native test mocks; the version-
-  specific trigger is not established.
+- Current task: one-off, local backup preparation for user-provided financial
+  data.
+- Current task state: A schema-v13 WealthWise backup was generated in the
+  repository root and validated through backup parsing and the app-store import
+  action. It is git-ignored and must remain uncommitted. The file represents
+  supported current holdings, goals, emergency-fund allocation and explicit
+  budget lines; it does not contain the full spreadsheet history.
+- Verification: the focused backup suite passed (25 tests). A full coverage
+  run had 79 suites / 955 tests in the last fully passing run on Node 26.13.0.
+  The current run found failing TransactionsScreen and RouteRenderSmoke tests;
+  those failures repeated in focused runs and are unrelated to the backup data.
 - Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: 79 suites, 955 tests passed on Node 26.13.0 in the P25-E
-  coverage run. TypeScript, lint and Android/iOS exports also passed; exact
-  exit codes and directory coverage are in the P25-E ledger entry.
-- Open release items: latest `npm audit --omit=dev` reports 27 advisories and
-  `npm audit` reports 55; counts and affected packages are recorded in the
-  P25-D ledger entry. Node 26.13.0 is now pinned based on the P25-E test
-  comparison; Node 24's Jest mock/platform initialization issue is documented
-  in the same ledger.
+- Test counts: 79 suites, 955 tests in the last fully passing run; the
+  2026-11-01 run has 9 failures in TransactionsScreen and RouteRenderSmoke.
+- Latest complete project gate results remain in the P25-E ledger entry.
+- Open release items: source-workbook records that do not map faithfully to
+  the current app schema are not imported; see [open-items.md](open-items.md).
 - Next release phase: Phase 24 reminders and notifications (CR-1); later accessibility,
   performance, cleanup and release work remain in their planned phases.
 
