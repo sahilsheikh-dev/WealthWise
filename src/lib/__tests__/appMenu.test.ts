@@ -3,10 +3,10 @@ import { buildAppMenu } from '../appMenu';
 describe('buildAppMenu', () => {
   it('orders ordinary actions and development items without link-missing transactions', () => {
     expect(buildAppMenu({ isDev: false, themeLabel: 'Dark' }).map(({ label }) => label))
-      .toEqual(['Backup and restore', 'Security', 'Profile', 'Theme', 'Erase all data']);
+      .toEqual(['Backup and restore', 'Reminders', 'Security', 'Profile', 'Theme', 'Erase all data']);
     const devItems = buildAppMenu({ isDev: true, themeLabel: 'System' });
     expect(devItems.map(({ label }) => label)).toEqual([
-      'Backup and restore', 'Security', 'Profile', 'Theme',
+      'Backup and restore', 'Reminders', 'Security', 'Profile', 'Theme',
       'Load demo data (4 months)', 'Generate stress-test data', 'Simulate corrupt storage', 'Erase all data',
     ]);
     expect(devItems.some(({ label }) => label === 'Budget')).toBe(false);
