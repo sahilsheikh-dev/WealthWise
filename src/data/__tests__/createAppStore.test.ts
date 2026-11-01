@@ -52,12 +52,16 @@ const makeStore = (storage: StateStorage, overrides: {
   reload?: () => void;
   isDev?: boolean;
   removeLockSettings?: () => Promise<void>;
+  clearUiMeta?: () => Promise<void>;
+  cancelReminders?: () => Promise<void>;
   today?: () => ISODate;
 } = {}) => createAppStore(storage, {
   newId: overrides.newId ?? (() => 'fixed-id'),
   today: overrides.today ?? (() => '2026-10-10'),
   reload: overrides.reload,
   removeLockSettings: overrides.removeLockSettings,
+  clearUiMeta: overrides.clearUiMeta,
+  cancelReminders: overrides.cancelReminders,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
 });
 
@@ -2117,8 +2121,10 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
+  const reminderCalls: string[] = [];
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
+    cancelReminders: async () => { reminderCalls.push('cancel'); },
   });
   await waitForHydration(store);
   store.getState().actions.addTransaction({
@@ -2129,6 +2135,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.meta.v1', '{"lastExportAt":"2026-10-10T00:00:00.000Z"}');
   storage.values.set('wealthwise.app.v1.preimport', '{}');
   await expect(store.getState().actions.eraseAllData()).resolves.toEqual({ ok: true });
+  expect(reminderCalls).toEqual(['cancel']);
   expect(store.getState().data.transactions).toEqual([]);
   expect(storage.values.has('wealthwise.app.v1')).toBe(true);
   expect(JSON.parse(storage.values.get('wealthwise.app.v1')!).state.data.transactions).toEqual([]);

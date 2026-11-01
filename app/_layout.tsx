@@ -18,6 +18,7 @@ import { ActionToastHost } from '../src/components/ActionToastHost';
 import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
+import { NotificationResponseHandler, ReminderRuntime } from '../src/components/ReminderRuntime';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
@@ -39,6 +40,7 @@ function AppContent() {
         <RecoveryScreen reason={recoveryReason ?? 'corrupt'} />
       ) : (
         <>
+          <ReminderRuntime />
           <StorageErrorBanner />
           <LockGate>
             {onboarded ? (
@@ -67,6 +69,8 @@ function AppContent() {
                 <Stack.Screen name="investment-entries" />
                 <Stack.Screen name="liability-payments" />
                 <Stack.Screen name="backup" />
+                <Stack.Screen name="reminders" />
+                <Stack.Screen name="payment-confirm" />
                 <Stack.Screen name="security" />
                 <Stack.Screen name="erase-data" />
                 <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
@@ -75,6 +79,7 @@ function AppContent() {
                 <Stack.Screen name="budget-income-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="ef-bucket-form" options={{ presentation: 'modal' }} />
               </Stack>
+              <NotificationResponseHandler />
               <ActionToastHost />
               </>
             ) : <OnboardingScreen />}

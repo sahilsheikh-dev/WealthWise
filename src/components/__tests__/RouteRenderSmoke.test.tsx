@@ -30,7 +30,9 @@ import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
 import OnboardingScreen from '../../../app/onboarding';
 import PolicyFormScreen from '../../../app/policy-form';
+import PaymentConfirmScreen from '../../../app/payment-confirm';
 import ProfileFormScreen from '../../../app/profile-form';
+import RemindersScreen from '../../../app/reminders';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
@@ -224,10 +226,20 @@ jest.mock('../../data/store', () => {
     useAppStore,
     metaStore: {
       getMeta: async () => ({}),
+      updateMeta: async (patch: object) => patch,
       updateSortSpec: async () => ({}),
     },
   };
 });
+
+jest.mock('../../lib/reminderNotifications', () => ({
+  reminderNotificationAdapter: {
+    getPermissionState: jest.fn(async () => 'granted'),
+    requestPermission: jest.fn(async () => 'granted'),
+    openSettings: jest.fn(async () => undefined),
+    scheduleTest: jest.fn(async () => undefined),
+  },
+}));
 
 jest.mock('../../data/useAppData', () => {
   const mockData = {
@@ -580,6 +592,7 @@ jest.mock('react-native', () => {
   );
   return {
     Alert: { alert: jest.fn() },
+    AppState: { addEventListener: () => ({ remove: jest.fn() }), currentState: 'active' },
     BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
     FlatList,
     Keyboard: {
@@ -711,6 +724,8 @@ function openDropdown(
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
+    ['Reminders', React.createElement(RemindersScreen)],
+    ['Payment confirmation', React.createElement(PaymentConfirmScreen)],
     ['Home', React.createElement(HomeScreen)],
     ['Budget', React.createElement(BudgetScreen)],
     ['Budget section form', React.createElement(BudgetSectionFormScreen)],

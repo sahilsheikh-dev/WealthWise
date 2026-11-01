@@ -15,6 +15,7 @@ export function buildAppMenu({
 }): AppMenuItem[] {
   const items: AppMenuItem[] = [
     { label: 'Backup and restore', icon: 'download' },
+    { label: 'Reminders', icon: 'calendar' },
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },
     { label: 'Theme', description: `Current theme: ${themeLabel}`, icon: 'sliders' },
