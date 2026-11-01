@@ -136,7 +136,8 @@ describe('buildInstrumentCardModel', () => {
     const lossData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
-        ? { ...holding, invested: 1_000, value: 500, valueAsOf: '2026-10-01' }
+        ? { ...holding, invested: 1_000, value: 500, valueAsOf: '2026-10-01',
+          logs: [{ id: 'loss-deposit', date: '2025-10-01', amount: 1_000, note: '', kind: 'Deposit' }] }
         : holding),
     };
     const loss = buildInstrumentCardModel(

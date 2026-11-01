@@ -119,6 +119,27 @@ The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
 liabilities, investments, insurance, forms, backup and settings live directly
 under `app/`.
 
+### Investment returns and linked amounts
+
+For a dated holding ledger, contributions are the sum of deposit entries and
+withdrawals are the sum of withdrawal entries; zero entries are ignored and
+same-date entries are summed. Absolute gain is
+`current value + withdrawals - contributions`. Absolute return is
+`absolute gain / contributions`; when contributions are zero, the app shows
+"No return yet".
+
+XIRR solves the dated cash-flow equation
+`sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`. Deposits are
+negative cash flows, withdrawals are positive cash flows, and current value is
+positive on the valuation date. XIRR and single-lump CAGR are shown only when
+the first cash flow to valuation span is at least 365 days; under that span,
+the app shows only absolute return.
+
+CAGR is `(current value / contributions)^(365 / span days) - 1`. A goal's saved
+amount is the sum of the full current values of all assets linked to that goal,
+so an asset may be counted in multiple goals. Emergency-fund bucket targets use
+the user-set goal target with the three-month minimum retained only as a floor.
+
 ## Data and privacy
 
 Application data is stored locally on the device; there are no user accounts or

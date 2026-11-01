@@ -19,8 +19,8 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the 2026-11-01
-  P25-B final coverage run; see
+- Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
+  P29-A coverage run; see
   [status.md](status.md) for the run date and exact gate results.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,

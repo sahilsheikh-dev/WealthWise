@@ -345,13 +345,38 @@ describe('portfolio selectors', () => {
     const rows = buildPortfolioRows(data, '2026-01-01');
     expect(rows.map((row) => row.kind)).toEqual(['manual', 'plan']);
     expect(rows[1]!.value).toBe(250);
-    expect(rows[0]!.gainPct).toBe(20);
-    expect(portfolioTotals(rows)).toEqual({ invested: 350, value: 370, gain: 20, gainPct: 20 / 350 * 100 });
+    expect(rows[0]!.gainPct).toBeNull();
+    expect(portfolioTotals(rows)).toEqual({ invested: 350, value: 370, gain: 120, gainPct: 48 });
     expect(portfolioTotals([])).toEqual({ invested: 0, value: 0, gain: 0, gainPct: null });
     const zeroInvested = buildPortfolioRows(baseData({
       holdings: [{ ...manual, invested: 0 }],
     }), '2026-01-01');
     expect(zeroInvested[0]!.gainPct).toBeNull();
+    const withdrawalAfterValue = buildPortfolioRows(baseData({
+      holdings: [{
+        ...manual,
+        value: 120,
+        valueAsOf: '2025-12-01',
+        logs: [{ id: 'withdrawal', date: '2026-02-01', amount: 20, note: '', kind: 'Withdrawal' }],
+      }],
+    }), '2026-01-01');
+    expect(withdrawalAfterValue[0]!.value).toBe(100);
+    const unknownValueDate = holdingValue({
+      ...manual,
+      valueAsOf: undefined,
+      logs: [{ id: 'new-deposit', date: '2026-01-01', amount: 10, note: '', kind: 'Deposit' }],
+    }, '2026-01-01');
+    expect(unknownValueDate).toBe(130);
+    expect(portfolioTotals([{
+      id: 'plain',
+      kind: 'manual',
+      name: 'Plain',
+      type: 'Cash',
+      invested: 100,
+      value: 120,
+      gain: 20,
+      gainPct: 20,
+    }])).toEqual({ invested: 100, value: 120, gain: 20, gainPct: 20 });
   });
 
   it('filters rows by every supported type and recurring schedule', () => {

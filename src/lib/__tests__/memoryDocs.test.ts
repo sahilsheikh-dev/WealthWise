@@ -50,7 +50,7 @@ describe('shared AI memory documents', () => {
       expect(count).not.toBeNull();
     }
     expect(testCounts[0]?.[0]).toBe(testCounts[1]?.[0]);
-    expect(testCounts[0]?.[1]).toBe('80');
-    expect(testCounts[0]?.[2]).toBe('984');
+    expect(testCounts[0]?.[1]).toBe('84');
+    expect(testCounts[0]?.[2]).toBe('1013');
   });
 });

@@ -79,6 +79,35 @@ describe('investment return reproduction and spec', () => {
     expect(summary.annualizedLabel).toBeNull();
   });
 
+  it('covers invalid annualization and no-sign-change branches', () => {
+    expect(calculateXirr([{ date: '2024-01-01', amount: -100 }])).toBeNull();
+    expect(calculateXirr([
+      { date: '2024-01-01', amount: -100 },
+      { date: '2024-01-01', amount: 100 },
+    ])).toBeNull();
+    expect(calculateXirr([
+      { date: '2024-01-01', amount: 100 },
+      { date: '2025-01-01', amount: 100 },
+    ])).toBeNull();
+    expect(calculateCagr(0, 100, 365)).toBeNull();
+    expect(calculateCagr(100, -1, 365)).toBeNull();
+    expect(calculateCagr(100, 100, 0)).toBeNull();
+  });
+
+  it('labels long-span lump sums CAGR and multi-entry ledgers XIRR', () => {
+    const lump = investmentReturnSummary([
+      entry('lump', '2020-01-01', 1000),
+    ], 1100, '2021-01-01');
+    expect(lump.annualizedLabel).toBe('CAGR');
+    expect(lump.cagr).toBeCloseTo(0.09971358593414137, 9);
+    const multiple = investmentReturnSummary([
+      entry('first', '2020-01-01', 1000),
+      entry('second', '2020-07-01', 500),
+    ], 1600, '2021-01-01');
+    expect(multiple.annualizedLabel).toBe('XIRR');
+    expect(multiple.xirr).toBeCloseTo(0.08026584374015275, 8);
+  });
+
   it('matches an independent plain implementation over 2000 seeded entry sequences (seed 290329)', () => {
     let seed = 290329;
     const random = (): number => {
