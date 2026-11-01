@@ -2222,8 +2222,8 @@ describe('route render smoke audit', () => {
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
       expect(negativeRenderer.root.findAllByProps({ testID: 'pending-items-section' })).toHaveLength(0);
-      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
-        .toHaveLength(0);
+      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000').length)
+        .toBeGreaterThan(0);
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);
