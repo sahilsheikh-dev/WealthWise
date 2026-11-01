@@ -35,6 +35,8 @@ no cloud or network requests at runtime.
   health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
+- Local payment reminders with privacy-aware notification text and an
+  in-app paid/not-paid confirmation route.
 - Optional device-authenticated app lock and locally stored theme preferences.
 
 ## Screenshots
@@ -139,8 +141,12 @@ platform settings.
 
 ## Limitations and disclaimer
 
-- Reminders and notifications are not implemented; they are planned for the
-  next release phase.
+- Local reminders cover up to 60 nearest dated dues and refresh when the app
+  opens, returns to the foreground, or relevant data/settings change. A long
+  gap without opening the app may leave the reminder window empty. Notification
+  delivery is local only; no push tokens, network service, or exact alarms are
+  used. Android and iOS local notifications may require a development or
+  production build for native validation.
 - The owner reports that the app works on a physical device. Device model and
   operating system were not recorded; this is owner verification, not
   automated device evidence.

@@ -152,7 +152,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
 | P23-D | — | Done | CR-91 Home Insurance Card tests now assert the user-owned Home order: after Upcoming and due when present and before Goal Progress, with Insurance content excluded from Goals. | 2026-10-26 |
-| P24-A | P15-K | In progress | DEC-P24A research complete; implementing local-only reminders and notification confirmation. No push or schema change. | 2026-11-01 |
+| P24-A | P15-K | Done | DEC-P24A; CR-1 local reminders, lock-gated confirmation, privacy controls and 60-item scheduler complete. Research commit `372476c`; implementation commit `f5a1a38`; all six gates pass. No push or schema change. | 2026-11-01 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
 | P25-B | P15-L | Done | DEC-P25B; encrypted backup implementation, tests, documentation and all six ordered gates complete. No schema or native build change. | 2026-11-01 |
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
@@ -1698,6 +1698,31 @@ source/test hit and its disposition is listed here:
   exact-alarm permission, which the spec excludes. Schedule local date triggers
   without requesting exact alarms; document and physically verify delivery
   behavior.
+
+#### P24-A implementation and verification close-out (2026-11-01)
+
+- **Verdict:** complete. Added the pure reminder planner, serialized scheduler,
+  Expo notification adapter, UI-only metadata settings, Reminders screen,
+  lock-gated notification response routing and payment-confirmation route.
+  No persisted app schema or migration changed; `app/(tabs)/index.tsx` and
+  Budget cash-flow labels were not edited.
+- Research commit: `372476c6c6185e926de57ead1d52bb0bdc57974a` (verified
+  `commit` object). Implementation commit: `f5a1a38` (verify the full hash with
+  `git cat-file -t f5a1a38`).
+- Dependency: `expo-notifications@57.0.24` (`~57.0.24`), approximately 3.4 MB
+  unpacked, with no lifecycle install scripts. Audit delta: zero.
+- Coverage gate: 83 suites / 1006 tests pass; total line coverage 98.46%,
+  branch 94.98%, function 99.35%, statement 97.84%. Pure reminder planner
+  coverage: 100% line, 94.11% branch in the focused run.
+- Replaced assertions: none. The demo-data reminder assertion was moved out of
+  a nested test body after implementation; it asserts today, tomorrow and
+  later demo dues and was not weakened.
+- Gate exit codes: coverage tests 0; TypeScript 0; Expo lint 0 after removing
+  an unused planner value and a synchronous effect state initialization;
+  Expo Doctor 0 with 21/21 checks; Android export 0; iOS export 0.
+- Physical-device checks not verified: notification delivery/timing, granted/
+  denied/blocked permission flows, reboot restoration, lock-screen text,
+  cold-start and locked notification taps, and layouts at font scales 1.3/2.0.
 
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and

@@ -37,23 +37,23 @@ describe('four-month demo data', () => {
       theme: 'system',
       onboarded: true,
     });
+  });
 
-    it('includes planner dues for today, tomorrow, and later', () => {
-      const reminders = planReminders(data, {
-        enabled: true,
-        localTime: '09:00',
-        dayBefore: true,
-        sameDay: true,
-        showAmounts: false,
-        hidePreviews: false,
-      }, new Date(2026, 9, 16, 8), 60);
-      const dueDates = new Set(reminders.map((reminder) => reminder.target.dueDate));
-      expect([...dueDates]).toEqual(expect.arrayContaining([
-        '2026-10-16',
-        '2026-10-17',
-        '2026-10-23',
-      ]));
-    });
+  it('includes planner dues for today, tomorrow, and later', () => {
+    const reminders = planReminders(data, {
+      enabled: true,
+      localTime: '09:00',
+      dayBefore: true,
+      sameDay: true,
+      showAmounts: false,
+      hidePreviews: false,
+    }, new Date(2026, 9, 16, 8), 60);
+    const dueDates = new Set(reminders.map((reminder) => reminder.target.dueDate));
+    expect([...dueDates]).toEqual(expect.arrayContaining([
+      '2026-10-16',
+      '2026-10-17',
+      '2026-10-23',
+    ]));
   });
 
   it('uses the three requested emergency-fund default allocations', () => {
