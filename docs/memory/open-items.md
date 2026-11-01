@@ -19,8 +19,15 @@
   checksum and imports, but it does not contain the separate transaction
   deletion/addition described for current app data. Historical custom budget
   snapshots were added through October 2026 using the transactions in this
-  backup; those snapshots do not resolve the missing app transaction edit.
-  Export a fresh backup from the app if that edit should be included.
+  backup, including distinct planned/actual historical income rows for
+  non-earned inflows; those snapshots do not resolve the missing app
+  transaction edit. Export a fresh backup from the app if that edit should be
+  included.
+- **Full coverage gate:** the 2026-11-01 run exits 1 with 9 failed tests in
+  `TransactionsScreen.test.tsx` (available-balance theme/action expectations)
+  and `RouteRenderSmoke.test.tsx` (large-amount accessibility expectation).
+  Focused historical Budget tests pass; these failures remain unresolved and
+  are outside the Budget assertions for CR-95.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is

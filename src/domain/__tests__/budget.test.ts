@@ -917,6 +917,39 @@ describe('budget plans and monthly views', () => {
     expect(unplanned.income.extra).toBe(0);
   });
 
+  it('shows planned and actual amounts for every non-earned income category', () => {
+    const snapshot = monthBudgetFromLines('2026-03', [], {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_200 }],
+    });
+    snapshot.otherIncomes = [
+      { id: 'loan', name: 'Loan proceeds', category: 'Loan proceeds', amount: 300 },
+      { id: 'borrowed', name: 'Borrowed', category: 'Borrowed', amount: 100 },
+      { id: 'withdrawal', name: 'Withdrawal', category: 'Withdrawal', amount: 50 },
+      { id: 'custom-inflow', name: 'Refund', category: 'Refund', amount: 25 },
+    ];
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      monthBudgets: [snapshot],
+      transactions: [
+        { id: 'salary-transaction', type: 'income' as const, amount: 1_200, category: 'Salary', note: '', date: '2026-03-01' },
+        { id: 'loan-transaction', type: 'income' as const, amount: 300, category: 'Loan proceeds', note: '', date: '2026-03-02' },
+        { id: 'borrowed-transaction', type: 'income' as const, amount: 100, category: 'Borrowed', note: '', date: '2026-03-03' },
+        { id: 'withdrawal-transaction', type: 'income' as const, amount: 50, category: 'Withdrawal', note: '', date: '2026-03-04' },
+        { id: 'refund-transaction', type: 'income' as const, amount: 25, category: 'Refund', note: '', date: '2026-03-05' },
+      ],
+    };
+
+    const overview = budgetOverview(data, '2026-03', '2026-03-15');
+    const income = overview.sections.find((section) => section.id === 'income');
+    expect(overview.stacked.income).toEqual({ planned: 1_675, actual: 1_675 });
+    expect(income?.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'Loan proceeds', planned: 300, actual: 300, editable: false }),
+      expect.objectContaining({ title: 'Borrowed', planned: 100, actual: 100, editable: false }),
+      expect.objectContaining({ title: 'Withdrawal', planned: 50, actual: 50, editable: false }),
+      expect.objectContaining({ title: 'Refund', planned: 25, actual: 25, editable: false }),
+    ]));
+  });
+
   it('reconciles every transaction in 500 seeded budget-month cases (seed 19052026)', () => {
     const seed = 19_052_026;
     console.info(`budget reconciliation property seed: ${seed}`);
