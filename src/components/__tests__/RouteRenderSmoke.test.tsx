@@ -3287,11 +3287,12 @@ describe('route render smoke audit', () => {
     const previous = { monthBudgets: data.monthBudgets, transactions: data.transactions };
     const month = monthKey(todayISO());
     data.transactions = [
-      { id: 'salary', type: 'income', amount: 500, category: 'Salary', note: '', date: todayISO() },
+      { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: todayISO() },
+      { id: 'borrowed', type: 'income', amount: 100, category: 'Borrowed', note: '', date: todayISO() },
       { id: 'food', type: 'expense', amount: 50, category: 'Food', note: '', date: todayISO() },
       { id: 'transport', type: 'expense', amount: 25, category: 'Transport', note: '', date: todayISO() },
     ];
-    data.monthBudgets = [monthBudgetFromLines(month, [
+    const snapshot = monthBudgetFromLines(month, [
       { category: 'Food', planned: 200 },
       {
         category: 'Quarterly maintenance',
@@ -3308,7 +3309,9 @@ describe('route render smoke audit', () => {
       { category: 'Transport', planned: 100 },
     ], {
       incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
-    })];
+    });
+    snapshot.otherIncomes = [{ id: 'borrowed', name: 'Borrowed', category: 'Borrowed', amount: 100 }];
+    data.monthBudgets = [snapshot];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     routeParams.mockReturnValue({ month });
     try {
@@ -3340,6 +3343,7 @@ describe('route render smoke audit', () => {
       expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Survival (Needs)');
       expect(renderer.root.findByProps({ testID: 'budget-row-line:' + month + ':Food' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'budget-row-other-income:borrowed' })).toBeDefined();
       const foodRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Food` });
       expect(foodRow.findByProps({ accessibilityLabel: 'Edit Food' })).toBeDefined();
       expect(foodRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
@@ -3415,7 +3419,7 @@ describe('route render smoke audit', () => {
       expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
         .toBe(overviewAccessibility);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
-        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([500, 1_000]);
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([1_100, 1_100]);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
         .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
       const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;

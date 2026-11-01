@@ -2,22 +2,23 @@
 
 # Status
 
-- Current task: create flexible historical budget snapshots from transaction
-  logs through October 2026.
+- Current task: complete historical Budget income and reconcile planned and
+  actual amounts to all transaction categories through October 2026.
 - Current task state: the local schema-v13 backup contains 52 custom,
-  month-specific budgets from July 2022 through October 2026. Category-level
-  planned expenses and investments match transaction actuals. The transaction
-  records, legacy budget and null repeating plan were preserved; no future
-  recurring budget was added.
-- Verification: focused 52-month budget matching and schema-v13 import passed;
-  the backup checksum is valid. The local backup remains ignored and was not
-  committed. Prior Transactions balance fix and its full gate results remain
-  recorded in the 2026-11-01 ledger entries.
-- The prior full coverage run had unrelated TransactionsScreen and
-  RouteRenderSmoke failures; see the ledger.
+  month-specific budgets from July 2022 through October 2026. Earned and
+  non-earned income rows are represented separately; planned and actual
+  income, expenses and investments match by month/category. All 716
+  transactions and their explicit source links were preserved.
+- Verification: focused budget/schema/backup and Budget route tests passed;
+  TypeScript, Expo lint, Expo Doctor (21/21), and Android/iOS exports pass.
+  The local backup checksum and schema-v13 import are valid. Full coverage
+  exits 1: 77 suites passed, 2 failed; 949 tests passed, 9 failed (958 total).
+  Failures are Transactions available-balance theme/action expectations and a
+  RouteRenderSmoke large-amount accessibility expectation; no historical
+  Budget assertions failed. See the CR-95 ledger entry.
 - Schema version: v13 (`src/domain/schemas.ts`).
-- Test counts: 79 suites, 955 tests in the last fully passing run; the
-  2026-11-01 run has 9 failures in TransactionsScreen and RouteRenderSmoke.
+- Test counts: latest full coverage run has 79 suites and 958 tests; the last
+  fully passing run had 79 suites and 955 tests.
 - Latest complete project gate results remain in the P25-E ledger entry.
 - Open release items: source-workbook records that do not map faithfully to
   the current app schema are not imported; see [open-items.md](open-items.md).

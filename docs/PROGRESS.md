@@ -160,6 +160,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
 | CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
 | CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
+| CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -2586,6 +2587,7 @@ evidence present in exports/checkpoints.
 | CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
 | CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
 | CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
+| CR-95 | Budget income | — | — | 2026-11-01 | Include all logged income types in historical budgets, keep non-earned inflows categorized as income, match planned and actual totals, and retain transaction links. | Done; the month-budget schema and Budget overview display separate non-earned income rows. All 52 monthly income, expense and investment totals match actuals; the schema-v13 backup importer accepts the updated file. | `a507254` implementation/docs commit; backup data stays local and is not committed. | Owner clarified that loans, borrowed funds and withdrawals must remain income; do not reclassify them as Unexpected Extras. Expense/investment categories in the backup all map to existing budget categories, so no Unexpected fallback was needed. Transaction matching remains month/category-based; explicit asset/liability/policy source links are preserved. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2688,6 +2690,7 @@ evidence present in exports/checkpoints.
 | CR-92 | Reconcile the local backup against monthly income, expenses, loan and emergency-fund tracker data; remove duplicate points; add month-end deficit/surplus adjustments. | Done | Temporary focused reconciliation test passed; all 52 monthly cash-flow totals, duplicate signatures, adjustment dates, checksum and `parseBackup` import were verified. The private backup remains a local deliverable and is not committed. |
 | CR-93 | Show Transactions Available/Closing balance amounts for positive, zero and negative values; validate current backup notes and reported transaction changes. | Done | The amount now renders regardless of brought-forward balance. Zero and negative UI tests pass. The edited local backup checksum was recalculated and `parseBackup` passed. The backup snapshot does not contain the separate transaction deletion/addition reported for app data. |
 | CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
+| CR-95 | Include all income types in each historical budget, classify them from transaction logs, route unknown spending categories to Unexpected Extras, keep planned and actual equal, and link transaction logs. | Done | Added backward-compatible optional `otherIncomes` month-snapshot data and rendered separate non-earned rows without changing earned-income planning. The 52-month local backup now contains all income categories, matches planned/actual income and expense/investment category totals, retains all 716 transactions and their 119 explicit source links, and passes `parseBackup`. No unsupported expense/investment category was present. |
 
 ## 8. Known issues and risks
 
@@ -5079,3 +5082,48 @@ immutable facts and store month-specific editable budget snapshots whose
 planned categories match those facts. Keep planned income limited to the
 app's earned-income model and do not invent non-earned-income classifications.
 The user backup remains local ignored data and is intentionally not committed.
+
+### 2026-11-01 complete historical Budget income reconciliation (CR-95)
+
+The owner clarified that loans, borrowed funds, withdrawals and other
+non-earned inflows must remain income, not be reclassified as Unexpected
+Extras, and selected category-total transaction matching rather than
+per-transaction budget rows. Added optional `otherIncomes` to month snapshots
+and both app/import schemas. Budget overview renders these as distinct
+read-only income rows matched by month and transaction category; earned-income
+planning and future projections remain unchanged. Unknown income categories
+also remain income and are reconciled as non-earned rows. All existing
+expense/investment categories in the backup map to supported budget
+categories; none needed Unexpected Extras fallback.
+
+Updated the local backup with non-earned income rows across the 52 historical
+months. Actual transactions, transaction categories, notes, holdings, linked
+entries and existing explicit transaction source links were preserved. All
+month/category planned and actual income, expense and investment totals
+reconcile; the current transaction array contains 716 records and 119 explicit
+source-linked records.
+
+| Verification | Result | Exit |
+|---|---|---:|
+| Focused historical backup test | 1 suite / 1 test passed; all 52 months reconciled, backup imports, and transactions remain unchanged. Temporary test removed. | 0 |
+| Focused budget/schema/backup and ledger tests | 4 suites / 130 tests passed. | 0 |
+| Focused Budget route smoke cases | Responsive income-row cases pass at font scales 1, 1.3 and 2. | 0 |
+| `progressLedger.test.ts` | 1 suite / 9 tests passed after CR-94 documentation update. | 0 |
+| `npm test -- --coverage` | 77 suites passed and 2 failed; 949 tests passed and 9 failed (958 total). Failures are in Transactions available-balance theme/action expectations and one RouteRenderSmoke large-amount accessibility expectation; no historical Budget assertions failed. | 1 |
+| `npx tsc --noEmit` | TypeScript passes. | 0 |
+| `npx expo lint` | Lint passes. | 0 |
+| `npx expo-doctor` | 21/21 checks passed; no issues detected. | 0 |
+| `npx expo export --platform android` | Android export completed successfully. | 0 |
+| `npx expo export --platform ios` | iOS export completed successfully. | 0 |
+| Backup checksum | Canonical SHA-256 valid; schema-v13 importer accepted updated backup. | 0 |
+
+**Decision — DEC-BUDGET-HISTORICAL-INCOME:** keep non-earned inflows distinct
+from earned income, but include them as planned/actual income rows in historical
+month snapshots. Preserve existing future earned-income projections and the
+original transaction/source-link records.
+
+**Superseded detail from CR-94:** its first decision said non-earned inflows
+would remain outside planned income rows. CR-95 replaces that display rule for
+historical snapshots by adding separate non-earned rows so historical planned
+and actual totals reconcile; earned-income calculations and future projections
+remain unchanged.
