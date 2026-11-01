@@ -2,20 +2,17 @@
 
 # Status
 
-- Current task: fix and validate Transactions available/closing-balance
-  visibility, and validate the user's note-edited local backup.
-- Current task state: the selected-month balance amount now appears for zero
-  and negative balances even when the brought-forward balance is zero. The
-  local backup checksum was recalculated after note edits and the file passed
-  importer validation. The backup does not contain the separately described
-  app transaction deletion/addition.
-- Verification: focused zero/negative balance tests and backup import passed.
-  TypeScript, lint, Expo Doctor (21/21), and Android/iOS exports passed. Full
-  coverage exited 1: 77/79 suites pass and 9 tests fail in the existing
-  `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` cases. The
-  overspend warning compares only the selected month's flows and rounds paise
-  to whole rupees; the balance includes the carried-forward amount. Details
-  and exact gate results are recorded in the 2026-11-01 ledger entries.
+- Current task: create flexible historical budget snapshots from transaction
+  logs through October 2026.
+- Current task state: the local schema-v13 backup contains 52 custom,
+  month-specific budgets from July 2022 through October 2026. Category-level
+  planned expenses and investments match transaction actuals. The transaction
+  records, legacy budget and null repeating plan were preserved; no future
+  recurring budget was added.
+- Verification: focused 52-month budget matching and schema-v13 import passed;
+  the backup checksum is valid. The local backup remains ignored and was not
+  committed. Prior Transactions balance fix and its full gate results remain
+  recorded in the 2026-11-01 ledger entries.
 - The prior full coverage run had unrelated TransactionsScreen and
   RouteRenderSmoke failures; see the ledger.
 - Schema version: v13 (`src/domain/schemas.ts`).
