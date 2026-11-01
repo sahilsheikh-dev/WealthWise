@@ -51,6 +51,9 @@
 
 ## Physical-device verification
 
+- P25-B is not implemented yet. After implementation, verify key-derivation
+  time on a real phone, the share sheet, file picker and large-font layouts.
+  The current 247.4 ms KDF benchmark is from the development machine only.
 - Owner-verified: the owner reports that everything works in a physical-device
   test. Device model and operating system were not recorded. This is owner
   report, not automated test evidence or an independently observed device run.

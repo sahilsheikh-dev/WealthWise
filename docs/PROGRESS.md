@@ -154,7 +154,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-D | — | Done | CR-91 Home Insurance Card tests now assert the user-owned Home order: after Upcoming and due when present and before Goal Progress, with Insurance content excluded from Goals. | 2026-10-26 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
-| P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
+| P25-B | P15-L | In progress | DEC-P25B and a no-native-change pure-JavaScript crypto path are selected; implementation and verification are pending. | 2026-11-01 |
 | P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
 | P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
 | P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
@@ -2207,6 +2207,68 @@ source/test hit and its disposition is listed here:
   validation. The separate transaction deletion/addition described in the
   current app was not present in this backup snapshot and was not invented.
 
+### DEC-P25B (2026-11-01)
+
+- Implement the frozen P25-B encrypted-backup envelope without changing the
+  app schema or adding a native module. Keep the existing checksummed backup
+  JSON, `parseBackup`, v1–v13 migration chain, import staging, Undo and
+  `lastExportAt` behavior unchanged.
+- Use `@noble/ciphers@2.4.0` AES-256-GCM and `@noble/hashes@2.4.0`
+  asynchronous scrypt in the pure domain module. They are zero-runtime-
+  dependency MIT packages intended for portable JavaScript. Noble's README
+  recommends scrypt over its Argon2 implementation and explicitly says
+  Argon2 is unaudited and slower in JavaScript; therefore Argon2id is not
+  selected for this audited-library requirement. Expo SDK 57's existing
+  `expo-crypto@57.0.4` supplies random salt and nonce bytes at the app
+  boundary. Existing `expo-file-system@57.0.7` remains the file I/O layer.
+  No Expo package or native build change is needed.
+- Default scrypt parameters: `N=65536, r=8, p=1, dkLen=32`, with 16-byte salt
+  and 12-byte GCM nonce. Imports will accept only documented bounded values,
+  with `N` between `2^15` and `2^16`, `r=8`, and `p=1`. The selected setting
+  used about 64 MiB and took 247.4 ms on this Node 26.13.0 development
+  machine. Noble reports mobile scrypt may be 1–4× slower; this desktop
+  benchmark is not a substitute for the owner's real-device measurement.
+- Expo SDK 57 references consulted: [expo-crypto](https://docs.expo.dev/versions/v57.0.0/sdk/crypto/)
+  (`getRandomBytesAsync`) and
+  [expo-file-system](https://docs.expo.dev/versions/v57.0.0/sdk/filesystem/)
+  (in-memory file APIs and cache file handling). Noble implementation
+  references: [@noble/hashes 2.4.0](https://github.com/paulmillr/noble-hashes/tree/2.4.0)
+  and [@noble/ciphers 2.4.0](https://github.com/paulmillr/noble-ciphers/tree/2.4.0).
+- Package research: `@noble/ciphers@2.4.0` is approximately 138 KiB
+  compressed / 548,134 bytes unpacked; `@noble/hashes@2.4.0` is approximately
+  164 KiB compressed / 691,646 bytes unpacked. Neither declares runtime
+  dependencies or `preinstall`, `install` or `postinstall` scripts. Their
+  other package scripts are development/test/build tasks, and no install
+  scripts will be approved. The current npm audit baseline is 55 advisories
+  (6 high, 44 moderate, 5 low); exact audit delta is pending the later,
+  exact-version install and will be recorded before close-out.
+- Preserve the specified envelope header as GCM additional authenticated
+  data. Export plaintext remains in memory and must never be written to a
+  temporary file. The passphrase is transient only. Plain backups remain
+  importable, while encrypted exports use a distinct filename.
+- **Spec conflict — truncated data error:** the requested typed-error list
+  contains no truncation-specific error, and GCM cannot distinguish a wrong
+  passphrase from authenticated ciphertext tampering or truncation. Follow
+  the closest specified behavior: malformed/structurally incomplete envelope
+  is `InvalidEnvelope`; a structurally valid envelope with failed GCM
+  authentication is `WrongPassphraseOrTampered`, whose message states that
+  GCM cannot distinguish the causes. All other listed format/version/KDF
+  failures remain distinct.
+- Current-flow inventory: `app/backup.tsx` creates plain JSON in memory,
+  writes it to a temporary cache file for sharing, deletes that file, and
+  updates `lastExportAt` after successful sharing. Import copies the picked
+  file to cache, reads and deletes the copy, then calls `parseBackup`.
+  `src/domain/backup.ts` verifies the JSON checksum before validating and
+  migrating supported schemas v1–v13. The store stages the prior data for
+  Undo before replacement; `lastExportAt` is persisted metadata. No
+  passphrase currently exists in app or persisted state. Integration must
+  ensure the only export temporary file contains ciphertext.
+- The progress-ledger test's `P25-B` status expectation changed from
+  `Planned` to `In progress` because this task has begun; it continues to
+  enforce the task's actual state rather than relaxing a product assertion.
+- This is a research/decision record only; implementation, dependency
+  installation, tests, audit delta and gates remain pending.
+
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -2377,8 +2439,9 @@ blockers/license/shared AI memory, P25-D release sync, P25-E Node engine and
 test stability, and P25-F green test baseline are complete. P25-E changed
 only Node metadata and the existing schedule timing test; P25-F changes tests
 and documentation only, with no app, schema or dependency changes.
-v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L] remain
-planned. P25-D records the owner's report that the EAS build, screenshots and
+v0.1.0 is a GitHub pre-release. P25-B encrypted backups [P15-L] has a frozen
+research decision in DEC-P25B; implementation and all verification remain
+pending. P25-D records the owner's report that the EAS build, screenshots and
 physical-device test are complete; device/OS details were not recorded. Phase
 24 reminders and notifications are planned for the next release.
 
@@ -2582,7 +2645,7 @@ evidence present in exports/checkpoints.
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
-| P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
+| P25-B | Phase 25 | P15-L | 2 | 2026-11-01 | Encrypted backups. | In progress; preflight and DEC-P25B research complete; implementation and verification pending. | Research/decision commit; hash to be recorded in close-out. | Current backup remains unencrypted until implementation; no schema or native build change is planned. | current request |
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
 | P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
