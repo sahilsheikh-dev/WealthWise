@@ -14,9 +14,10 @@
   TypeScript, lint with zero warnings, Expo Doctor 21/21, and Android/iOS
   exports all pass. Coverage uses a fresh `coverage-final.json`; no thresholds
   or exclusions changed.
-- P29-F4 remains In progress because holding deletion removes linked Budget
-  references without Undo. The task prohibited source behavior changes, so the
-  gap is documented for a separately authorized fix. No Home source was edited.
+- Owner decision DEC-P29E-HOLDING-DELETE withdraws the never-existing Undo
+  expectation after holding deletion. The accepted behavior is clearing every
+  Budget link in the same write; P29-B through P29-F4 are closed. No Home
+  source was edited.
 
 ### Investments and goals
 
