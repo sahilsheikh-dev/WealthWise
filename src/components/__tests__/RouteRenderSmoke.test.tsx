@@ -1714,6 +1714,17 @@ describe('route render smoke audit', () => {
       const paidButton = policyCard.findAllByType('button')
         .find((button) => button.props.accessibilityLabel === 'Paid');
       if (!paidButton) throw new Error('Active policy has no Paid action.');
+      screenActions.clearDue.mockClear();
+      await act(async () => {
+        paidButton.props.onPress();
+        await Promise.resolve();
+      });
+      const declinedPolicyDialog = insuranceRoot.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        declinedPolicyDialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(screenActions.clearDue).not.toHaveBeenCalled();
       screenActions.clearDue.mockReturnValueOnce('paid-policy-entry');
       await act(async () => {
         paidButton.props.onPress();

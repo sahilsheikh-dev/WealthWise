@@ -7,6 +7,7 @@ import type { PendingItem } from '../../domain/pending';
 const mockRouterPush = jest.fn();
 const mockConfirmAsync = jest.fn();
 const mockSetActionToast = jest.fn();
+let mockAutoPayDialog = true;
 const mockStoreState = {
   lastError: null as string | null,
   data: {
@@ -121,7 +122,7 @@ jest.mock('../PaidAmountDialog', () => {
       onNotPaid: () => void;
     }) => {
       ReactModule.useEffect(() => {
-        if (!visible) return;
+        if (!visible || !mockAutoPayDialog) return;
         // Exercise the shared paid-dialog callback while keeping this suite focused on action writes.
         onPaid(dueAmount);
       }, [visible, dueAmount, onPaid]);
@@ -173,6 +174,7 @@ beforeEach(() => {
   mockRouterPush.mockClear();
   mockConfirmAsync.mockReset();
   mockSetActionToast.mockReset();
+  mockAutoPayDialog = true;
   mockStoreState.lastError = null;
   mockStoreState.data.transactions = [];
   mockStoreState.data.budgetPlan = null;
@@ -330,6 +332,26 @@ describe('later due and planned item actions', () => {
     const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
     toast.onAction();
     expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
+  });
+
+  it('leaves a compact Budget row unchanged when Not paid is selected', () => {
+    mockAutoPayDialog = false;
+    const planned = item({ kind: 'budget', category: 'Food', type: 'expense' });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      act(() => {
+        renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" compact />);
+      });
+      if (!renderer) throw new Error('Compact Budget actions did not render.');
+      act(() => renderer?.root.findByProps({ children: 'Marked as paid' }).props.onPress());
+      act(() => renderer?.root.findByProps({ children: 'Not paid' }).props.onPress());
+      expect(mockActions.addTransaction).not.toHaveBeenCalled();
+      expect(mockActions.addInvestmentEntry).not.toHaveBeenCalled();
+      expect(mockSetActionToast).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer?.unmount());
+      mockAutoPayDialog = true;
+    }
   });
 
   it('clears a linked manual investment budget item with one holding entry and exact Undo', () => {
