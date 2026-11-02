@@ -8,6 +8,7 @@ import { AppHeader } from '../../src/components/AppHeader';
 import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
+import { PaidAmountDialog } from '../../src/components/PaidAmountDialog';
 import {
   AppText,
   Button,
@@ -35,7 +36,6 @@ import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
-import { PaidAmountDialog } from '../../src/components/PaidAmountDialog';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -165,6 +165,8 @@ export default function HomeScreen() {
             tone="err"
             onPress={() => router.push('/liabilities')}
           />
+        </StatPillRow>
+        <StatPillRow>
           <StatPill
             label="Emergency fund"
             value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
