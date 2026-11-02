@@ -50,6 +50,16 @@ export function createSafeStorage(
             'data' in envelope.state
           ) {
             premigration = { raw, version: envelope.version };
+            const rawData: unknown = envelope.state.data;
+            const rawRecord = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
+              ? rawData as Record<string, unknown>
+              : null;
+            if (rawRecord && resolveEfAllocation({
+              efAllocation: rawRecord.efAllocation,
+              efCustomBuckets: Array.isArray(rawRecord.efCustomBuckets) ? rawRecord.efCustomBuckets : [],
+            }).repaired) {
+              prerepairRaw = raw;
+            }
           } else if (typeof envelope.state !== 'object' || envelope.state === null || !('data' in envelope.state)) {
             reason = 'invalid-schema';
           } else {

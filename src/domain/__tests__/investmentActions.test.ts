@@ -173,4 +173,42 @@ describe('investment ledger actions and valuation', () => {
     };
     expect(holdingValue(undatedSnapshot.holdings[0]!, '2026-10-10')).toBe(6_500);
   });
+
+  it('clears holding links in plan and snapshot budget items without changing the asset links elsewhere', () => {
+    const manual = addHolding(empty(), {
+      name: 'Cash reserve', type: 'Cash', invested: 0, value: 30_000, valueAsOf: '2026-10-10',
+    }, () => 'manual');
+    const data: AppData = {
+      ...manual,
+      budgetPlan: {
+        ...manual.budgetPlan,
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'linked-plan', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10', source: 'custom', linkedIncluded: false, incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        items: [{
+          id: 'linked-snapshot', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      }],
+    };
+    const kept = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'keep' });
+    expect(kept.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.transactions.every((transaction) => transaction.source === undefined)).toBe(true);
+
+    const deleted = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'delete' });
+    expect(deleted.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(deleted.transactions).toEqual([]);
+  });
 });
