@@ -228,6 +228,24 @@ describe('pending item projection', () => {
     ]);
   });
 
+  it('projects custom-goal policy dues under the generic insurance category', () => {
+    const data = base();
+    const customGoal = {
+      id: 'custom-cover',
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'none' as const },
+    };
+    const rows = pendingItems({
+      ...data,
+      coverGoals: [...data.coverGoals, customGoal],
+      policies: [policy({ coverGoalId: customGoal.id })],
+    }, '2026-02', '2026-02-15').filter((item) => item.source.kind === 'policy');
+    expect(rows).toEqual([
+      expect.objectContaining({ category: 'Insurance premium' }),
+    ]);
+  });
+
   it('projects remaining budget lines once and suppresses commitments and represented investment dues', () => {
     const data: AppData = {
       ...base(),

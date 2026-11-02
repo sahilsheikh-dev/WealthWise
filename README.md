@@ -31,8 +31,8 @@ no cloud or network requests at runtime.
   schedules, due tracking and cash-flow views.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
-- Insurance policies, policy-payment tracking and cover targets for term life,
-  health, motor, home and other cover.
+- Insurance policies, policy-payment tracking and editable cover goals for
+  term life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
 - Local payment reminders with privacy-aware notification text and an
@@ -125,9 +125,9 @@ XIRR for multiple entries and CAGR for one lump sum. Annualised XIRR or CAGR is
 shown only when the first cash-flow date to valuation-date span is at least
 365 days; shorter spans show only absolute return and its label.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 14 is
+Zustand persists app data through AsyncStorage. Persisted schema version 15 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 13. Backup import verifies the file integrity and validates
+versions 1 through 14. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -154,6 +154,22 @@ CAGR is `(current value / contributions)^(365 / span days) - 1`. A goal's saved
 amount is the sum of the full current values of all assets linked to that goal,
 so an asset may be counted in multiple goals. Emergency-fund bucket targets use
 the user-set goal target with the three-month minimum retained only as a floor.
+
+### Insurance cover goals
+
+Cover goals are a user-managed list of up to 20 goals. Names are unique without
+case sensitivity; each policy kind can be assigned to at most one goal, and a
+goal may cover a custom policy kind or no kind. Targets can use the existing
+income-multiple, fixed-amount, active-only or no-target modes. Active
+non-savings policies count toward an explicit goal assignment first, then fall
+back to the goal matching their policy kind. Savings policies are excluded
+from goal totals. Policies that do not count toward a goal remain visible under
+"Not in any cover goal"; Home's total cover, yearly premium and next renewal
+continue to use the existing policy summary. Custom-goal premiums use the
+generic Insurance premium category for future dues, planned rows and newly
+recorded payments. Typed premium categories remain derived from policy kind.
+Existing transactions keep their recorded category. The Budget Insurance
+system section and its categories are unchanged.
 
 ## Data and privacy
 

@@ -24,7 +24,12 @@ import {
   updatePolicy,
   type PolicyPatch,
 } from '../domain/policyActions';
-import { setCoverGoalTarget as setCoverGoalTargetData } from '../domain/coverGoals';
+import {
+  addCoverGoal as addCoverGoalData,
+  deleteCoverGoal as deleteCoverGoalData,
+  updateCoverGoal as updateCoverGoalData,
+  type CoverGoalInput,
+} from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -94,7 +99,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -145,7 +150,9 @@ export type AppActions = {
   addPolicy: (input: AddPolicyInput) => void;
   setPolicyStatus: (id: string, status: PolicyStatus) => void;
   deletePolicy: (id: string) => void;
-  setCoverGoalTarget: (input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number }) => void;
+  addCoverGoal: (input: CoverGoalInput) => void;
+  updateCoverGoal: (id: string, patch: CoverGoalInput) => void;
+  deleteCoverGoal: (id: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -443,12 +450,34 @@ export function createAppStore(
             });
           }
         },
-        setCoverGoalTarget(input) {
+        addCoverGoal(input) {
           const previous = get().data;
-          applyDataAction((data) => setCoverGoalTargetData(data, input));
+          applyDataAction((data) => addCoverGoalData(data, { ...input, id: deps.newId() }));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Cover goal added.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        updateCoverGoal(id, patch) {
+          const previous = get().data;
+          applyDataAction((data) => updateCoverGoalData(data, { ...patch, id }));
           if (get().lastError === null && get().data !== previous) {
             useUIStore.getState().setActionToast({
               message: 'Cover goal updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        deleteCoverGoal(id) {
+          const previous = get().data;
+          applyDataAction((data) => deleteCoverGoalData(data, id));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Cover goal deleted.',
               actionLabel: 'Undo',
               onAction: () => set({ data: previous, lastError: null }),
             });
@@ -703,6 +732,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v12`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v13`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v14`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

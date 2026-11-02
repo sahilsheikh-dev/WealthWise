@@ -951,6 +951,30 @@ describe('budget plans and monthly views', () => {
     expect(() => linkedRecurringForMonth(data, '2026-13', '2026-03-31')).toThrow(RangeError);
   });
 
+  it('uses the generic category for scheduled premiums under no-kind cover goals', () => {
+    const empty = emptyAppData('2026-03-01');
+    const customGoal = {
+      id: 'custom-cover',
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'none' as const },
+    };
+    const data = {
+      ...empty,
+      coverGoals: [...empty.coverGoals, customGoal],
+      policies: [{ ...policy, coverGoalId: customGoal.id }],
+    };
+    expect(monthlyCommitments(data, '2026-03').find((item) => item.kind === 'policy')?.category)
+      .toBe('Insurance premium');
+    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')
+      .find((item) => item.kind === 'policy')?.category).toBe('Insurance premium');
+    expect(linkedRecurringForMonth({
+      ...data,
+      policies: [{ ...policy, coverGoalId: undefined }],
+    }, '2026-03', '2026-03-31').find((item) => item.kind === 'policy')?.category)
+      .toBe('Health premium');
+  });
+
   it('matches calendar months, including leap February and demo schedule rows', () => {
     const monthEndPlan: PlanHolding = {
       ...plan,

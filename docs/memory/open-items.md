@@ -7,12 +7,11 @@
 - **P29-F2 headroom targets withdrawn:** the 92% `src/domain/budget.ts` and 88%
   `src/data/createAppStore.ts` targets were advisory and are no longer requirements.
   Configured per-file thresholds are authoritative and green.
-- **P29-F4 acceptance blocker:** deleting a Budget-linked investment holding
-  unlinks the Budget references in one persisted write, but neither the
-  investment form nor store action exposes Undo to restore those links. P29-F4
-  forbids application source behavior changes, so no change was made. P29-E and
-  the dependent P29-B–P29-F4 closure statuses remain In progress until an
-  authorized task adds and tests one-write deletion Undo.
+- **DEC-P29E-HOLDING-DELETE (owner decision, 2026-11-02):** the requirement for
+  Undo after deleting a linked holding is withdrawn. Deletion has never offered
+  Undo, and adding it is out of scope. The retained requirement is that all
+  Budget item links to the deleted holding are cleared in the same persisted
+  write; the acceptance test passes. P29-B through P29-G are Done.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -62,13 +61,19 @@
 - **P29-B through P29-E:** verify the Today control and filter retention,
   centered Dropdown, paid/scope dialogs at each entry point, font scales 1.3
   and 2.0, keyboard-safe dialogs, start-month/holding-link routes, and actual
-  Home Insurance placement on iOS and Android. The holding-delete Undo
-  behavior is also unverified on device and remains unimplemented.
+  Home Insurance placement on iOS and Android. Holding-delete Undo is not a
+  requirement under DEC-P29E-HOLDING-DELETE.
 
 - **P29-A:** verify investment XIRR/CAGR labels, absolute-only short spans,
   linked full-value saved totals, shared-goal notes and Emergency Fund bucket
   targets on iOS and Android devices. Automated Jest and exports do not prove
   native rendering.
+
+- **P29-G:** verify editable cover-goal forms, delete confirmation and Undo,
+  policy assignment dropdowns, unassigned policies, custom-goal premium
+  categories, and font scales 1.3 and 2.0 on iOS and Android. The Home total
+  cover source was not changed; automated route tests and Expo exports do not
+  verify native presentation.
 
 - **P24-A:** verify local-notification delivery and timing, permission and
   blocked-settings flows, reboot restoration behavior, lock-screen text,
@@ -92,6 +97,11 @@
   instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but
   retain their built-in title and metadata; fixed titles are read-only.
+- **Assumed for P29-G:** policies assigned to a no-kind custom cover goal use
+  the generic Insurance premium category for future rows/payments; typed
+  premium categories remain derived from policy kind. The Budget Insurance
+  system section and its categories remain fixed and out of scope; making them
+  editable needs a separate scope decision.
 - The P20-V form omits the Percent option for non-monthly schedules because the
   frozen SegmentedControl has no disabled option API; validation rejects
   non-monthly percent items as well.

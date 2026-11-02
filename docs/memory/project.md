@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-02 | Updates: owner and AI agents -->
 
 # Project
 
@@ -10,7 +10,7 @@ runtime synchronization.
   AsyncStorage, Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v14 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v15 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Backup encryption protects exported files only; app data on device remains
   unencrypted and a lost backup passphrase cannot be recovered.
 - Tabs: Home, Transactions, Goals and Budget.
@@ -19,8 +19,8 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
-  P29-A coverage run; see
+- Test counts: 84 suites, 1054 tests in the current P29-G test inventory; the
+  final verified run is recorded in
   [status.md](status.md) for the run date and exact gate results.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,

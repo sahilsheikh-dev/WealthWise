@@ -1,9 +1,25 @@
 import { emptyAppData } from '../actions';
 import { budgetCategoryChoiceSections } from '../budgetCategories';
-import { INSURANCE_BUDGET_CATEGORIES } from '../policyCategories';
+import {
+  GENERIC_INSURANCE_CATEGORY,
+  INSURANCE_BUDGET_CATEGORIES,
+  policyPremiumCategoryFor,
+} from '../policyCategories';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 describe('budget-aware transaction categories', () => {
+  it('uses the generic category for policies assigned to a no-kind cover goal', () => {
+    const goals = [
+      { id: 'health', name: 'Health', kind: 'health' as const, target: { mode: 'none' as const } },
+      { id: 'custom', name: 'Custom', kind: null, target: { mode: 'none' as const } },
+    ];
+    expect(policyPremiumCategoryFor({ kind: 'health', coverGoalId: 'custom' }, goals))
+      .toBe(GENERIC_INSURANCE_CATEGORY);
+    expect(policyPremiumCategoryFor({ kind: 'health', coverGoalId: 'health' }, goals))
+      .toBe('Health premium');
+    expect(policyPremiumCategoryFor({ kind: 'health' }, goals)).toBe('Health premium');
+  });
+
   it('groups the titles-only insurance transaction categories in the Insurance section', () => {
     const sections = budgetCategoryChoiceSections(
       emptyAppData('2026-03-01'),

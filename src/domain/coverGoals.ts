@@ -1,3 +1,4 @@
+import { NotFoundError } from './actions';
 import { normalizeMoney } from './cashFlow';
 import { policySchedule } from './policySchedule';
 import { policySummary } from './policySummary';
@@ -6,25 +7,61 @@ import {
   COVER_POLICY_TYPES,
   type AppData,
   type CoverGoal,
-  type CoverGoalTargetMode,
+  type CoverGoalTarget,
   type CoverPolicyType,
   type ISODate,
   type Policy,
   type Transaction,
 } from './types';
 
+const COVER_GOAL_NAMES: Record<CoverPolicyType, string> = {
+  'term-life': 'Term life',
+  health: 'Health',
+  motor: 'Motor',
+  home: 'Home',
+  other: 'Other',
+};
+
+export type CoverGoalInput = Omit<CoverGoal, 'id'>;
+
 export function defaultCoverGoals(): CoverGoal[] {
-  return COVER_POLICY_TYPES.map((type) => {
-    if (type === 'term-life') return { type, targetMode: 'income-multiple', targetValue: 10 };
-    if (type === 'health') return { type, targetMode: 'amount' };
-    return { type, targetMode: 'active-only' };
-  });
+  return COVER_POLICY_TYPES.map((kind) => ({
+    id: `cover-${kind}`,
+    name: COVER_GOAL_NAMES[kind],
+    kind,
+    target: kind === 'term-life'
+      ? { mode: 'income-multiple', value: 10 }
+      : kind === 'health'
+        ? { mode: 'none' }
+        : { mode: 'active-only' },
+  }));
 }
 
-export class CoverGoalNotFoundError extends Error {
-  constructor(readonly type: CoverPolicyType) {
-    super(`Cover goal for "${type}" was not found.`);
-    this.name = 'CoverGoalNotFoundError';
+export class DuplicateCoverGoalNameError extends Error {
+  constructor(readonly nameValue: string) {
+    super(`A cover goal named "${nameValue}" already exists.`);
+    this.name = 'DuplicateCoverGoalNameError';
+  }
+}
+
+export class DuplicateCoverGoalKindError extends Error {
+  constructor(readonly kind: CoverPolicyType) {
+    super(`A cover goal already counts policies of type "${kind}".`);
+    this.name = 'DuplicateCoverGoalKindError';
+  }
+}
+
+export class CoverGoalLimitError extends Error {
+  constructor() {
+    super('You can have at most 20 cover goals.');
+    this.name = 'CoverGoalLimitError';
+  }
+}
+
+export class DuplicateCoverGoalIdError extends Error {
+  constructor(readonly id: string) {
+    super(`A cover goal with id "${id}" already exists.`);
+    this.name = 'DuplicateCoverGoalIdError';
   }
 }
 
@@ -35,36 +72,86 @@ export class InvalidCoverGoalTargetError extends Error {
   }
 }
 
-export function setCoverGoalTarget(
-  data: AppData,
-  input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number },
-): AppData {
-  if (input.targetMode === 'income-multiple'
-    && (input.targetValue === undefined || !Number.isFinite(input.targetValue)
-      || input.targetValue < 1 || input.targetValue > 50)) {
+function normalizedGoal(input: CoverGoalInput): CoverGoalInput {
+  const name = input.name.trim();
+  if (name.length < 1 || name.length > 40) {
+    throw new InvalidCoverGoalTargetError('Cover goal name must be between 1 and 40 characters.');
+  }
+  validateTarget(input.target);
+  if (input.kind !== null && !COVER_POLICY_TYPES.includes(input.kind)) {
+    throw new InvalidCoverGoalTargetError('Choose a supported policy type or None.');
+  }
+  return { name, kind: input.kind, target: input.target };
+}
+
+function validateTarget(target: CoverGoalTarget): void {
+  if (target.mode === 'income-multiple'
+    && (!Number.isFinite(target.value) || target.value < 1 || target.value > 50)) {
     throw new InvalidCoverGoalTargetError('Income multiple must be between 1 and 50.');
   }
-  if (input.targetMode === 'amount'
-    && input.targetValue !== undefined
-    && (!Number.isFinite(input.targetValue) || input.targetValue < 0)) {
-    throw new InvalidCoverGoalTargetError('Amount target must be zero or greater.');
+  if (target.mode === 'amount'
+    && (!Number.isFinite(target.value) || target.value < 0 || target.value > 100_000_000_000)) {
+    throw new InvalidCoverGoalTargetError('Amount target must be between zero and 100,000,000,000.');
   }
-  if (input.targetMode === 'active-only' && input.targetValue !== undefined) {
-    throw new InvalidCoverGoalTargetError('Active-only cover goals do not have a target value.');
+}
+
+function assertUniqueGoal(data: AppData, goal: CoverGoal, excludeId?: string): void {
+  if (data.coverGoals.some((item) => item.id !== excludeId
+    && item.name.trim().toLowerCase() === goal.name.toLowerCase())) {
+    throw new DuplicateCoverGoalNameError(goal.name);
   }
-  if (!data.coverGoals.some((goal) => goal.type === input.type)) {
-    throw new CoverGoalNotFoundError(input.type);
+  if (goal.kind !== null && data.coverGoals.some((item) =>
+    item.id !== excludeId && item.kind === goal.kind,
+  )) {
+    throw new DuplicateCoverGoalKindError(goal.kind);
+  }
+}
+
+export function addCoverGoal(data: AppData, input: CoverGoal): AppData {
+  if (data.coverGoals.some((goal) => goal.id === input.id)) {
+    throw new DuplicateCoverGoalIdError(input.id);
+  }
+  if (data.coverGoals.length >= 20) throw new CoverGoalLimitError();
+  const goal = { id: input.id, ...normalizedGoal(input) };
+  assertUniqueGoal(data, goal);
+  return { ...data, coverGoals: [...data.coverGoals, goal] };
+}
+
+export function updateCoverGoal(data: AppData, input: CoverGoal): AppData {
+  if (!data.coverGoals.some((goal) => goal.id === input.id)) {
+    throw new NotFoundError('Cover goal', input.id);
+  }
+  const goal = { id: input.id, ...normalizedGoal(input) };
+  assertUniqueGoal(data, goal, input.id);
+  return {
+    ...data,
+    coverGoals: data.coverGoals.map((item) => item.id === goal.id ? goal : item),
+  };
+}
+
+export function deleteCoverGoal(data: AppData, id: string): AppData {
+  if (!data.coverGoals.some((goal) => goal.id === id)) {
+    throw new NotFoundError('Cover goal', id);
   }
   return {
     ...data,
-    coverGoals: data.coverGoals.map((goal) => goal.type === input.type
-      ? {
-        type: input.type,
-        targetMode: input.targetMode,
-        ...(input.targetValue === undefined ? {} : { targetValue: input.targetValue }),
-      }
-      : goal),
+    coverGoals: data.coverGoals.filter((goal) => goal.id !== id),
+    policies: data.policies.map((policy) => {
+      if (policy.coverGoalId !== id) return policy;
+      const { coverGoalId: _coverGoalId, ...unassigned } = policy;
+      return unassigned;
+    }),
   };
+}
+
+export function policiesBecomingUnassigned(data: AppData, id: string): number {
+  const goal = data.coverGoals.find((item) => item.id === id);
+  if (!goal) return 0;
+  return data.policies.filter((policy) =>
+    policy.coverGoalId === id
+      || (isCoverPolicy(policy) && policy.status === 'active' && policy.coverGoalId === undefined
+        && goal.kind !== null && policy.kind === goal.kind),
+  ).length;
 }
 
 const PAYMENTS_PER_YEAR = {
@@ -75,7 +162,9 @@ const PAYMENTS_PER_YEAR = {
 } as const;
 
 export type CoverGoalSummary = {
-  type: CoverPolicyType;
+  id: string;
+  name: string;
+  kind: CoverPolicyType | null;
   target: number | null;
   currentCover: number;
   gap: number | null;
@@ -84,6 +173,17 @@ export type CoverGoalSummary = {
   nextRenewal: { policyId: string; name: string; date: ISODate; amount: number } | null;
   state: 'covered' | 'gap' | 'no-target' | 'missing';
 };
+
+function isCoverPolicy(policy: Policy): boolean {
+  return policy.kind !== 'life-savings' && policy.kind !== 'ulip';
+}
+
+function goalForPolicy(data: AppData, policy: Policy): CoverGoal | undefined {
+  if (policy.coverGoalId !== undefined) {
+    return data.coverGoals.find((goal) => goal.id === policy.coverGoalId);
+  }
+  return data.coverGoals.find((goal) => goal.kind !== null && goal.kind === policy.kind);
+}
 
 function nextRenewalFor(policies: Policy[], today: ISODate): CoverGoalSummary['nextRenewal'] {
   return policies.flatMap((policy) => policySchedule(policy, today).rows
@@ -103,27 +203,29 @@ export function coverGoalSummaries(data: AppData, today: ISODate): CoverGoalSumm
   const yearlyIncomeEstimate = policySummary(data, today).yearlyIncomeEstimate;
   return data.coverGoals.map((goal) => {
     const activePolicies = data.policies.filter((policy) =>
-      policy.kind === goal.type && policy.status === 'active',
+      isCoverPolicy(policy) && policy.status === 'active' && goalForPolicy(data, policy)?.id === goal.id,
     );
     const activePolicyIds = activePolicies.map((policy) => policy.id);
     const currentCover = normalizeMoney(activePolicies.reduce(
       (sum, policy) => sum + (policy.sumAssured ?? 0), 0,
     ));
-    const target = goal.targetMode === 'amount'
-      ? goal.targetValue ?? null
-      : goal.targetMode === 'income-multiple' && yearlyIncomeEstimate !== null
-        ? normalizeMoney(yearlyIncomeEstimate * (goal.targetValue ?? 0))
+    const target = goal.target.mode === 'amount'
+      ? goal.target.value
+      : goal.target.mode === 'income-multiple' && yearlyIncomeEstimate !== null
+        ? normalizeMoney(yearlyIncomeEstimate * goal.target.value)
         : null;
     const gap = target === null ? null : normalizeMoney(Math.max(0, target - currentCover));
     const state = activePolicies.length === 0
       ? 'missing'
-      : goal.targetMode === 'active-only'
+      : goal.target.mode === 'active-only'
         ? 'covered'
         : target === null
           ? 'no-target'
           : currentCover >= target ? 'covered' : 'gap';
     return {
-      type: goal.type,
+      id: goal.id,
+      name: goal.name,
+      kind: goal.kind,
       target,
       currentCover,
       gap,
@@ -135,6 +237,13 @@ export function coverGoalSummaries(data: AppData, today: ISODate): CoverGoalSumm
       state,
     };
   });
+}
+
+export function policiesNotInCoverGoal(data: AppData): Policy[] {
+  return data.policies.filter((policy) =>
+    policy.status === 'active'
+      && (!isCoverPolicy(policy) || goalForPolicy(data, policy) === undefined),
+  );
 }
 
 export function suggestPolicyForTransaction(

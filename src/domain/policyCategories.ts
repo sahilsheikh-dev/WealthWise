@@ -1,6 +1,8 @@
 import {
   COVER_POLICY_TYPES,
   type CoverPolicyType,
+  type CoverGoal,
+  type Policy,
   type PolicyKind,
 } from './types';
 
@@ -26,6 +28,18 @@ export function policyPremiumCategory(kind: PolicyKind): string {
   return type && type !== 'other'
     ? POLICY_COVER_CATEGORIES[type]
     : GENERIC_INSURANCE_CATEGORY;
+}
+
+export function policyPremiumCategoryFor(
+  policy: Pick<Policy, 'kind' | 'coverGoalId'>,
+  coverGoals: readonly CoverGoal[],
+): string {
+  const assignedGoal = policy.coverGoalId === undefined
+    ? undefined
+    : coverGoals.find((goal) => goal.id === policy.coverGoalId);
+  return assignedGoal?.kind === null
+    ? GENERIC_INSURANCE_CATEGORY
+    : policyPremiumCategory(policy.kind);
 }
 
 export function isInsuranceBudgetCategory(category: string): boolean {
