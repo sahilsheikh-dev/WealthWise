@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 88% (77/88)
+Overall progress ██████████ 97% (85/88)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █░░░░░░░░░ 11% (1/9)
+Phase 29         ██████████ 100% (9/9)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -167,14 +167,14 @@ Phase 29         █░░░░░░░░░ 11% (1/9)
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
-| P29-B | — | In progress | Today, goal-year, centered Dropdown and Home-row behavior tests pass; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
-| P29-C | — | In progress | Paid-dialog entry points, actual amounts, Not paid and Undo paths are covered; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
-| P29-D | — | In progress | Scope controls/dialogs, cancellation, Today and start-month rules are covered; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
-| P29-E | — | In progress | Schema-v14 links, duplicate prevention, plan/manual behavior and unlinking are covered; holding deletion has no Undo path, and source behavior changes are out of scope. | 2026-11-02 |
-| P29-F | — | In progress | Fresh coverage and all six gates pass; the required acceptance table is not complete because of the P29-E holding-delete Undo gap. | 2026-11-02 |
-| P29-F2 | — | In progress | The branch-coverage work is complete, but F4's closure rule keeps the part open while any P29-B–E acceptance row is missing. | 2026-11-02 |
-| P29-F3 | — | In progress | Assertion audit, Home layout, acceptance evidence, lint and all six gates are recorded; P29-E still blocks full acceptance closure. | 2026-11-02 |
-| P29-F4 | — | In progress | Fresh six-gate run passes and the test audit is complete; P29-E holding-delete Undo remains missing and source behavior changes are prohibited by this task. | 2026-11-02 |
+| P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
+| P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
+| P29-D | — | Done | Scope controls/dialogs, cancellation, Today and start-month rules pass; all six final gates exit 0. | 2026-11-02 |
+| P29-E | — | Done | Schema-v14 links, duplicate prevention, plan/manual behavior and same-write unlink-on-delete pass; Undo on holding deletion is explicitly out of scope by owner decision DEC-P29E-HOLDING-DELETE. | 2026-11-02 |
+| P29-F | — | Done | Fresh coverage and all six gates pass; acceptance matrix is complete after the owner withdrew the holding-delete Undo requirement. | 2026-11-02 |
+| P29-F2 | — | Done | Branch-coverage closure and all configured thresholds pass; six final gates exit 0. | 2026-11-02 |
+| P29-F3 | — | Done | Assertion audit, Home layout, acceptance evidence, lint and all six gates pass; acceptance matrix is complete. | 2026-11-02 |
+| P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2784,14 +2784,14 @@ evidence present in exports/checkpoints.
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
-| P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | In progress under the F4 closure rule: evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
-| P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | In progress under the F4 closure rule: payment evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
-| P29-D | Phase 29 | — | — | 2026-11-02 | Budget save/delete scope dialogs and start-month firstDueMonth behavior. | In progress under the F4 closure rule: scope/start-month evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `c9238d4`, `d47ff67` | Assumed: past months stay frozen and later start months plan zero before their first month. | current request |
-| P29-E | Phase 29 | — | — | 2026-11-02 | Schema-v14 optional Budget holding links, migration and manual/plan integration. | In progress: linked deletion unlinks plan/snapshot rows in one write, but neither the form nor store offers the required Undo; source behavior changes are outside P29-F4. | `c9238d4` plus prior P29-E implementation commits | Assumed: v14 links are optional and schema 15 remains refused. | current request |
-| P29-F | Phase 29 | — | — | 2026-11-02 | Stabilize interrupted Phase 29 without new features. | In progress under the F4 closure rule: all six gates pass; P29-E's holding-delete Undo acceptance row remains missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: the exact previous Gate 1 failure excerpts are unavailable; isolated repeats and the fresh full run passed. | current request |
-| P29-F2 | Phase 29 stabilization | — | — | 2026-11-02 | Close two coverage branches with behavior tests; no features or threshold changes. | In progress under the F4 closure rule: branch coverage is closed, but the global acceptance table still has the P29-E Undo gap. | `97f2bbc`; final F4 gates | Assumed: the withdrawn 92%/88% targets were informational only. | current request |
-| P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | In progress: assertion audit, tests, lint and six gates pass, but the required P29-E Undo row is missing. | `7225a7e`, `a48f3af` plus F4 verification commits | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
-| P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | In progress: all six gates pass and acceptance evidence is recorded, but holding-delete Undo is unimplemented and explicitly out of scope. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
+| P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
+| P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
+| P29-D | Phase 29 | — | — | 2026-11-02 | Budget save/delete scope dialogs and start-month firstDueMonth behavior. | Done; acceptance tests pass and all six final gates exit 0. | `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: past months stay frozen and later start months plan zero before their first month. | current request |
+| P29-E | Phase 29 | — | — | 2026-11-02 | Schema-v14 optional Budget holding links, migration and manual/plan integration. | Done; linked deletion clears all Budget links in one write. Owner decision DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; no app behavior change was required. | `c9238d4` plus prior P29-E implementation commits; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: v14 links are optional and schema 15 remains refused. | current request |
+| P29-F | Phase 29 | — | — | 2026-11-02 | Stabilize interrupted Phase 29 without new features. | Done; all six gates pass and acceptance evidence is complete after the owner decision. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: the exact previous Gate 1 failure excerpts are unavailable; isolated repeats and the fresh full run passed. | current request |
+| P29-F2 | Phase 29 stabilization | — | — | 2026-11-02 | Close two coverage branches with behavior tests; no features or threshold changes. | Done; configured thresholds and all six final gates pass. | `97f2bbc`; final F4 gates; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: the withdrawn 92%/88% targets were informational only. | current request |
+| P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | Done; acceptance evidence, lint and all six gates pass. | `7225a7e`, `a48f3af` plus F4 verification commits; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
+| P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 
 ## 7. Change-request register
 
@@ -5881,20 +5881,27 @@ No test expects four items in one row, an old lower Insurance heading/card, or t
 | P29-E | Manual holding clear creates deposit entry + invest transaction in one write; exact Undo | `createAppStore.test.ts` — `creates and undoes a linked manual investment deposit in one persisted write each`; `PendingItemActions.test.tsx` — `clears a linked manual investment budget item with one holding entry and exact Undo` | Pass |
 | P29-E | Plan link creates no second due and no double count | `pending.test.ts` — `does not duplicate a linked plan due and counts its linked transaction once` | Pass |
 | P29-E | At most one budget item per holding | `budget.test.ts` — `validates investment holding links and rejects invalid, missing, and duplicate links` | Pass |
-| P29-E | Holding deletion unlinks Budget references; one write | `createAppStore.test.ts` — `unlinks budget items when a holding is deleted in one persisted write` | Pass |
-| P29-E | Holding deletion Undo restores the linked Budget references | No proving test; the current holding form/store action exposes no Undo. P29-F4 forbids source behavior changes, so this remains missing. | **Missing** |
+| P29-E | Holding deletion clears every Budget item link to the holding in the same single write | `createAppStore.test.ts` — `unlinks budget items when a holding is deleted in one persisted write` | Pass |
 | P29-E | v13→v14 migration, raw v13 archive once, erase-all removes archive | `migrate.test.ts` — `migrates v13 to v14 without changing any persisted fields`; `safeStorage.test.ts` — `copies the raw v%s payload exactly once and never overwrites its archive` with `version = 13`; `createAppStore.test.ts` — `erases all supported storage keys and hydrates to empty data` | Pass |
 | P29-E | Refuse schema 15; import backup versions v1–v13; v14 and encrypted v14 round trips | `backup.test.ts` — `round trips custom emergency-fund options and refuses schema version fifteen`; v1 `verifies a v1 data checksum before migration and imports the v7 result`; v2 `verifies v2 data as written before migrating and validates the v7 result`; v3–v6 `verifies the v%s checksum before migrating its data`; v7 `verifies v7 checksums before migrating backups to schema nine`; v8 `verifies v8 checksums as written before migrating income totals`; v9 `verifies a v9 checksum over the original data before migrating its budget lines`; v10 `round trips v10 backups containing user-managed budget items and expense categories`; v11 `verifies v11 backup bytes and imports seeded cover goals`; v12 `verifies v12 backup bytes before adding monthly recurrence defaults`; v13 `imports a v13 backup through the no-op v14 migration`; plain v14 `round-trips typed insurance premium categories through current backups`; encrypted v14 `round-trips an encrypted v14 backup containing a linked investment item` | Pass |
 
-#### DEC-P29F4-STATUS: Part statuses and blocker
+#### DEC-P29E-HOLDING-DELETE: Owner decision and acceptance correction
 
-The only missing acceptance row is holding-delete Undo. `app/investment-form.tsx`
-deletes the holding and navigates back; the store unlinks Budget references in
-the deletion write and offers no Undo record. Adding Undo would be an
-application behavior change, explicitly prohibited by P29-F4, so it is left
-for a separately authorized task. Consequently P29-B, P29-C, P29-D, P29-E,
-P29-F, P29-F2, P29-F3 and P29-F4 all remain **In progress** under the user's
-all-rows-and-six-green-gates closure rule.
+On 2026-11-02, the owner withdrew the P29-E expectation that deleting a linked
+holding provides Undo. Deletion has never offered Undo in this app; adding it
+is out of scope. The retained requirement is that deleting a holding clears
+every Budget item link to it in the same single persisted write, proven by
+`createAppStore.test.ts` — `unlinks budget items when a holding is deleted in
+one persisted write`.
+
+Replaced assertion: old: deleting a holding must offer Undo and restore its
+Budget links / new: deleting a holding clears every Budget link in the same
+single write / reason: owner decision withdraws the never-existing Undo
+behavior as out of scope; preserve and verify the atomic unlink behavior.
+
+With that row withdrawn, the acceptance table has no missing requirements.
+P29-B, P29-C, P29-D, P29-E, P29-F, P29-F2, P29-F3 and P29-F4 are Done: their
+acceptance evidence is present and all six final gates exit 0.
 
 #### Lint, coverage and gates
 

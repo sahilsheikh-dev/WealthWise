@@ -10,6 +10,7 @@ authoritative rationale and history.
 - [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
 - [DEC-P29F3](../PROGRESS.md#dec-p29f3-assertion-and-coverage-correction)
 - [DEC-P29F4](../PROGRESS.md#dec-p29f4-final-stabilization-audit)
+- [DEC-P29E-HOLDING-DELETE](../PROGRESS.md#dec-p29e-holding-delete-owner-decision-and-acceptance-correction)
 - [DEC-P24A](../PROGRESS.md#dec-p24a-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)
