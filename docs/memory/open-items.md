@@ -4,10 +4,9 @@
 
 ## Unresolved
 
-- **P29-F2 branch headroom:** fresh Jest run passes 84 suites and 1024 tests.
-  Headroom is still short: `src/domain/budget.ts` 760/841 branches (90.37%, target
-  92%); `src/data/createAppStore.ts` 86/99 branches (86.87%, target 88%).
-  P29-B through P29-E remain in progress; P29-F2 source behavior is unchanged.
+- **P29-F2 headroom targets withdrawn:** the 92% `src/domain/budget.ts` and 88%
+  `src/data/createAppStore.ts` targets were advisory and are no longer requirements.
+  Configured per-file thresholds are authoritative and green.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are

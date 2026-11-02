@@ -796,9 +796,7 @@ export function createAppStore(
           data = { ...data, efAllocation: allocationResolution.allocation };
         }
         const today = deps.today();
-        const beforeEnsure = data;
         data = ensureCurrentMonthBudget(data, today, deps.newId);
-        const budgetWasEnsured = data !== beforeEnsure;
         let undoImport: { savedAt: ISODate } | null = null;
         try {
           const rawSnapshot = await storage.getItem(PREIMPORT_KEY);
