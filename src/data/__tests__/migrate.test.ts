@@ -11,6 +11,7 @@ import {
   migrateV10ToV11,
   migrateV11ToV12,
   migrateV12ToV13,
+  migrateV13ToV14,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -171,6 +172,18 @@ describe('schema migration', () => {
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
     expect(migratePersisted(persisted, 14)).toBe(persisted);
+  });
+
+  it('migrates v13 to v14 without changing any persisted fields', () => {
+    const data = {
+      ...mockAppData,
+      budgetPlan: mockAppData.budgetPlan && {
+        ...mockAppData.budgetPlan,
+        items: mockAppData.budgetPlan.items.map((item) => ({ ...item })),
+      },
+    };
+    expect(migrateV13ToV14(data)).toEqual(data);
+    expect(migratePersisted({ data }, 13)).toEqual({ data });
   });
 
   it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {

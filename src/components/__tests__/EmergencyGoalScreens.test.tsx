@@ -465,11 +465,14 @@ describe('three-month emergency target screens', () => {
     const netWorthCard = cards.at(0);
     if (!netWorthCard) throw new Error('Home summary card is missing.');
     expect(renderedText(netWorthCard)).toContain('Net Worth');
-    const firstCardLabels = [...new Set(netWorthCard.findAll((node) =>
-      typeof node.props.label === 'string'
-      && ['Assets', 'Liabilities', 'Emergency fund', 'Insurance'].includes(node.props.label))
-      .map((node) => node.props.label))];
-    expect(firstCardLabels).toEqual(['Assets', 'Liabilities', 'Emergency fund', 'Insurance']);
+    const summaryRows = netWorthCard.findAll((node) => String(node.type) === 'pillrow');
+    expect(summaryRows).toHaveLength(2);
+    expect(summaryRows.map((row) =>
+      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
+    )).toEqual([
+      ['Assets', 'Liabilities'],
+      ['Emergency fund', 'Insurance'],
+    ]);
     expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
     expect(insurancePressable.props.accessibilityLabel).toContain('Insurance');
@@ -481,6 +484,9 @@ describe('three-month emergency target screens', () => {
     expect(insurancePressable.props.accessibilityLabel).toBe(
       'Insurance, total cover ₹20,00,000',
     );
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'section' && renderedText(node).toLowerCase().includes('insurance'),
+    )).toHaveLength(0);
 
     const beforeSummary = homeSummary({ ...data, policies: [] }, '2026-10-11');
     const afterSummary = homeSummary(data, '2026-10-11');

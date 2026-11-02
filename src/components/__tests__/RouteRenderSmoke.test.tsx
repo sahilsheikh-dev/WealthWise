@@ -131,7 +131,7 @@ jest.mock('../../lib/authenticate', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), back: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({})),
   usePathname: jest.fn(() => '/'),
   useIsFocused: jest.fn(() => true),
@@ -1152,6 +1152,10 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
         expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
           .toContain(form.title);
+        expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
+          .not.toContain('Apply changes to');
+        expect(renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')
+          .some((node) => node.props.label === 'Apply changes to')).toBe(false);
         if (form.name.startsWith('item')) {
           expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
@@ -1227,6 +1231,13 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      const cancelScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      act(() => cancelScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
+      expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      await act(async () => {
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       await act(async () => {
@@ -2032,6 +2043,108 @@ describe('route render smoke audit', () => {
       act(() => home?.unmount());
       Object.assign(routeData, previousData);
       mockFontScale = 1;
+    }
+  });
+
+  it('opens the paid-amount dialog from the payment-confirm route and Not paid leaves the due unchanged', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      clearDue: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const data = { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] };
+    const due = pendingItems(data, monthKey(today), today)[0];
+    if (!due?.dueDate) throw new Error('Payment-confirm fixture has no dated pending due.');
+    Object.assign(routeData, data);
+    store.data = data;
+    actions.clearDue.mockClear();
+    routeParams.mockReturnValue({ dueItemId: due.id, dueDate: due.dueDate });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(PaymentConfirmScreen));
+      expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain(due.title);
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(dialog.props.title).toBe(due.title);
+      expect(dialog.props.dueAmount).toBe(due.amount);
+      expect(dialog.props.dueDate).toBe(due.dueDate);
+      await act(async () => {
+        dialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(renderer.root.findAllByProps({ testID: 'paid-amount-dialog' })).toHaveLength(0);
+      expect(actions.clearDue).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      actions.clearDue.mockClear();
+    }
+  });
+
+  it('opens the paid-amount dialog from a Transactions due row without clearing on Not paid', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      clearDue: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const previousMonth = useUIStore.getState().txMonth;
+    const today = todayISO();
+    const month = monthKey(today);
+    const data = { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] };
+    const due = pendingItems(data, month, today)[0];
+    if (!due?.dueDate) throw new Error('Transactions fixture has no dated pending due.');
+    Object.assign(routeData, data);
+    store.data = data;
+    useUIStore.getState().setTxMonth(month);
+    routeParams.mockReturnValue({});
+    actions.clearDue.mockClear();
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(TransactionsScreen));
+      const dueRow = renderer.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-'),
+      ).find((node) => node.props.testID === due.id || node.findAllByProps({
+        accessibilityLabel: 'Paid',
+      }).length > 0);
+      if (!dueRow) throw new Error('Transactions pending row did not render.');
+      await act(async () => {
+        dueRow.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(dialog.props.title).toBe(due.title);
+      expect(dialog.props.dueAmount).toBe(due.amount);
+      expect(dialog.props.dueDate).toBe(due.dueDate);
+      await act(async () => {
+        dialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(renderer.root.findAllByProps({ testID: 'paid-amount-dialog' })).toHaveLength(0);
+      expect(actions.clearDue).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      useUIStore.getState().setTxMonth(previousMonth);
+      actions.clearDue.mockClear();
     }
   });
 
@@ -3818,6 +3931,36 @@ describe('route render smoke audit', () => {
     } finally {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('shows Today only off the current Budget month and returns to the current routed month', () => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const router = jest.requireMock('expo-router').router as { replace: jest.Mock };
+    const current = monthKey(todayISO());
+    const past = shiftMonth(current, -1);
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      routeParams.mockReturnValue({ month: current });
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Go to current month' })).toHaveLength(0);
+      act(() => renderer?.unmount());
+
+      routeParams.mockReturnValue({ month: past });
+      router.replace.mockClear();
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      const todayButton = renderer.root.findByProps({ accessibilityLabel: 'Go to current month' });
+      expect(todayButton).toBeDefined();
+      act(() => todayButton.props.onPress());
+      expect(router.replace).toHaveBeenCalledWith({
+        pathname: '/(tabs)/budget',
+        params: { month: current },
+      });
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Go to current month' })).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      routeParams.mockReturnValue({});
+      router.replace.mockClear();
     }
   });
 
