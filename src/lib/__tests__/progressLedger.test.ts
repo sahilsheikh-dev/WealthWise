@@ -319,13 +319,15 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 88% (77/88)');
-    expect(dashboard).toContain('Phase 29         █░░░░░░░░░ 11% (1/9)');
+    expect(dashboard).toContain('Overall progress ██████████ 97% (85/88)');
+    expect(dashboard).toContain('Phase 29         ██████████ 100% (9/9)');
     for (const id of [
       'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4',
     ]) {
-      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| In progress |');
+      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
     }
+    expect(ledger).toContain('DEC-P29E-HOLDING-DELETE');
+    expect(ledger).toContain('clears every Budget item link to the holding in the same single write');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (22/22)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (6/6)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');

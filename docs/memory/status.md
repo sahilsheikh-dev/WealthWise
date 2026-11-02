@@ -8,8 +8,10 @@
   P29-F4 are Done. The owner decision DEC-P29E-HOLDING-DELETE withdraws Undo
   after holding deletion; the retained requirement, clearing every Budget
   holding link in the same write, is proven by the existing store test.
-- Persisted schema version: 14. P29-E is the Budget holding-link migration.
+- Schema version: v14. P29-E is the Budget holding-link migration.
 - Runtime: Node.js 26.13.0.
+- Test counts: 84 suites, 1037 tests. Latest validated run: 84 suites, 1037 tests
+  passed on 2026-11-02.
 - Final Gate 1 run: 84 suites, 1037 tests passed on 2026-11-02.
 - Final six gates all exit 0: Jest coverage, TypeScript, Expo lint, Expo Doctor
   21/21, Android export and iOS export. The exact commands and fresh coverage
