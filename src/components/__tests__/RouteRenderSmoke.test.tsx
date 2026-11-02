@@ -699,6 +699,19 @@ function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
     .join(' ');
 }
 
+function expectNoInlineBudgetScopeControl(renderer: TestRenderer.ReactTestRenderer): void {
+  const isScopeOption = (option: unknown): boolean =>
+    typeof option === 'object'
+    && option !== null
+    && 'label' in option
+    && option.label === 'This month only';
+  const scopeControls = renderer.root.findAll((node) =>
+    String(node.type) === 'segmentedcontrol'
+    && Array.isArray(node.props.options)
+    && node.props.options.some(isScopeOption));
+  expect(scopeControls).toHaveLength(0);
+}
+
 function textContent(value: React.ReactNode): string {
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   if (Array.isArray(value)) return value.map(textContent).join('');
@@ -1220,6 +1233,7 @@ describe('route render smoke audit', () => {
     try {
       routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Budget item frequency' }).props.options)
         .toEqual([
@@ -1273,6 +1287,7 @@ describe('route render smoke audit', () => {
       const firstDueDropdown = renderer.root.findAllByType(Dropdown)
         .find((node) => node.props.label === 'Start month');
       if (!firstDueDropdown) throw new Error('Start month control missing.');
+      expect(firstDueDropdown.props.value).toBe(month);
       expect(firstDueDropdown.props.options).toHaveLength(25);
       expect(firstDueDropdown.props.options[0]).toMatchObject({ value: month });
       const firstDueControl = renderer.root.findAllByProps({
@@ -1285,9 +1300,22 @@ describe('route render smoke audit', () => {
         String(node.type) === 'segmentedcontrol' && node.props.value === 'amount',
       )[0];
       expect(valueTypeControl?.props.options).toEqual([{ label: 'Amount', value: 'amount' }]);
+      const addCallsBeforeConflict = actions.addBudgetItem.mock.calls.length;
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Quarterly pet care');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('700');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item start-month scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledTimes(addCallsBeforeConflict);
+      expect(visibleText(renderer))
+        .toContain('This month only conflicts with a start month later than the viewed month.');
+      await act(async () => {
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       await act(async () => {
@@ -1309,6 +1337,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Delete item' })).toBeDefined();
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet boarding');
@@ -1332,6 +1361,16 @@ describe('route render smoke audit', () => {
       actions.restoreBudgetPlanAndMonth.mockClear();
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      const cancelDeleteScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      act(() => cancelDeleteScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
+      expect(actions.deleteBudgetStructureItem).not.toHaveBeenCalled();
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
         await Promise.resolve();
@@ -1353,6 +1392,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Trips');
         const type = renderer?.root.findAll((node) => String(node.type) === 'segmentedcontrol')
@@ -1372,6 +1412,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, sectionId: 'pets', name: 'Pets', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Animal care');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
@@ -1388,6 +1429,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('1500');
@@ -1409,6 +1451,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Contract income');
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12500');
@@ -1434,6 +1477,7 @@ describe('route render smoke audit', () => {
       actions.restoreBudgetPlanAndMonth.mockClear();
       routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Delete income' }).props.onPress();
         await Promise.resolve();
