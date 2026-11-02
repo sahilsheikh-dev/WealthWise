@@ -186,9 +186,9 @@ describe('three-month emergency target screens', () => {
     if (!home) throw new Error('Home did not render.');
 
     const pills = home.root.findAll((node) =>
-      ['Assets', 'Emergency fund', 'Liabilities'].includes(node.props.label));
+      ['Assets', 'Emergency fund', 'Liabilities', 'Insurance'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])
-      .toEqual(['Assets', 'Liabilities', 'Emergency fund']);
+      .toEqual(['Assets', 'Liabilities', 'Emergency fund', 'Insurance']);
     expect(pills.some((pill) => pill.props.accessibilityLabel === 'Assets, ₹2,00,000')).toBe(true);
     expect(pills.some((pill) =>
       pill.props.accessibilityLabel === 'Emergency fund, ₹2,00,000, 2.6 months of cover')).toBe(true);
@@ -409,7 +409,7 @@ describe('three-month emergency target screens', () => {
     }
   });
 
-  it.each([1.3, 2])('renders the Home Insurance section after upcoming dues and before Goal Progress at font scale %s', async (fontScale) => {
+  it.each([1.3, 2])('renders Assets/Liabilities then Emergency fund/Insurance in Home row 2 at font scale %s', async (fontScale) => {
     const empty = emptyAppData('2026-10-11');
     const policy: Policy = {
       id: 'home-term-life',
@@ -465,6 +465,11 @@ describe('three-month emergency target screens', () => {
     const netWorthCard = cards.at(0);
     if (!netWorthCard) throw new Error('Home summary card is missing.');
     expect(renderedText(netWorthCard)).toContain('Net Worth');
+    const firstCardLabels = [...new Set(netWorthCard.findAll((node) =>
+      typeof node.props.label === 'string'
+      && ['Assets', 'Liabilities', 'Emergency fund', 'Insurance'].includes(node.props.label))
+      .map((node) => node.props.label))];
+    expect(firstCardLabels).toEqual(['Assets', 'Liabilities', 'Emergency fund', 'Insurance']);
     expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
     expect(insurancePressable.props.accessibilityLabel).toContain('Insurance');

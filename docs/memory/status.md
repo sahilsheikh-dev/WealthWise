@@ -36,13 +36,14 @@ The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth for
 step verdicts, coverage, device checks and release records. Simulated UI tests
 do not establish actual iOS or Android behavior.
 
-- **P29-F2 stabilization snapshot (2026-11-02):** Assumed Phase 29 remains in
-  progress until the P29-F2 branch headroom targets and dashboard ledger work are green.
+- **P29-F3 close-out snapshot (2026-11-02):** DEC-P29F3 withdraws the advisory
+  P29-F2 headroom targets; repository correctness is governed by configured
+  per-file thresholds, which are green.
   Fresh full suite: 84 suites, 1024 tests pass. Fresh coverage
   by directory from `coverage-final.json` after deleting coverage first:
   `src/data/` lines 762/832 (91.59%), branches 643/734 (87.60%);
   `src/domain/` lines 3824/3945 (96.93%), branches 3112/3350 (92.90%);
   `src/lib/` 133/133 lines (100%), 126/126 branches (100%). Jest coverage
-  gate exits 0. Requested P29-F2 headroom remains unmet:
-  `src/domain/budget.ts` 760/841 branches (90.37%, target 92%);
-  `src/data/createAppStore.ts` 86/99 branches (86.87%, target 88%).
+  gate exits 0. Informational current totals are
+  `src/domain/budget.ts` 760/841 branches (90.37%);
+  `src/data/createAppStore.ts` 86/99 branches (86.87%).
