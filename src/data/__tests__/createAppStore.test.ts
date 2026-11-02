@@ -1052,7 +1052,7 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
-  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+  it('clears an actual due amount and undoes it with one persisted write per action', async () => {
     const storage = new MemoryStorage();
     const initial = {
       ...emptyAppData('2026-01-01'),
@@ -1081,16 +1081,29 @@ describe('createAppStore persistence', () => {
     const actions = store.getState().actions;
 
     let writesBefore = storage.setItemCalls;
+    const beforeClear = structuredClone(store.getState().data);
     const firstPending = pendingItems(store.getState().data, '2026-08', '2026-10-10')
       .find((item) => item.source.kind === 'plan');
     if (!firstPending || firstPending.source.kind !== 'plan') throw new Error('Expected a plan due.');
     const entryId = actions.clearDue(
       { kind: 'plan', id: 'past-plan' },
       firstPending.source.slotId,
+      75,
     );
     expect(entryId).toBe('due-1');
     expect(storage.setItemCalls - writesBefore).toBe(1);
+    const afterClear = store.getState().data;
+    const updatedHolding = afterClear.holdings.find((holding) => holding.id === 'past-plan');
+    if (!updatedHolding || updatedHolding.kind !== 'plan') throw new Error('Updated plan missing.');
+    expect(updatedHolding.logs[0]?.amount).toBe(75);
+    expect(afterClear.transactions.at(-1)?.amount).toBe(75);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    if (!entryId) throw new Error('Expected the cleared due entry ID.');
+    writesBefore = storage.setItemCalls;
+    actions.undoClearDue({ kind: 'plan', id: 'past-plan' }, entryId);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data).toEqual(beforeClear);
 
     writesBefore = storage.setItemCalls;
     const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
