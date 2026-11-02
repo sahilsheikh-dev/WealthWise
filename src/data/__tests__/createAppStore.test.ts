@@ -2167,6 +2167,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v6', 'original-v6-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v13', 'original-v13-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2196,6 +2197,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v6',
     'wealthwise.app.v1.premigration.v7',
     'wealthwise.app.v1.premigration.v8',
+    'wealthwise.app.v1.premigration.v13',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
