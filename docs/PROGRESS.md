@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (85/88)
+Overall progress ██████████ 97% (86/89)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (9/9)
+Phase 29         ██████████ 100% (10/10)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -175,6 +175,7 @@ Phase 29         ██████████ 100% (9/9)
 | P29-F2 | — | Done | Branch-coverage closure and all configured thresholds pass; six final gates exit 0. | 2026-11-02 |
 | P29-F3 | — | Done | Assertion audit, Home layout, acceptance evidence, lint and all six gates pass; acceptance matrix is complete. | 2026-11-02 |
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
+| P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -383,9 +384,11 @@ Premigration bytes are copied once and removed by erase-all.
 | v11 | Insurance policy model, lifecycle and premium schedules; v10 policy records migrate into the current model. | P23-A / DEC-P23-A |
 | v12 | Typed cover goals and insurance categories with migration and backup compatibility. | P23-B / DEC-P23-COVER |
 | v13 | Recurring Budget item frequencies and first due month, with migration of prior plan/snapshot items. | P20-V / DEC-P20V |
+| v14 | Optional Budget item-to-holding links; deleting a linked holding clears all Budget links in one write. | P29-E / DEC-P29E-HOLDING-DELETE |
+| v15 | Editable cover goals and optional explicit policy-to-goal assignment. | P29-G / DEC-P29G-COVER-MANAGEMENT |
 
-Current schema is `SCHEMA_VERSION = 13` (`src/domain/schemas.ts`); the
-persisted migration chain and backup importer cover v1 through v13.
+Current schema is `SCHEMA_VERSION = 15` (`src/domain/schemas.ts`); the
+persisted migration chain and backup importer cover v1 through v14.
 
 ### Financial and UI rules
 
@@ -2792,6 +2795,7 @@ evidence present in exports/checkpoints.
 | P29-F2 | Phase 29 stabilization | — | — | 2026-11-02 | Close two coverage branches with behavior tests; no features or threshold changes. | Done; configured thresholds and all six final gates pass. | `97f2bbc`; final F4 gates; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: the withdrawn 92%/88% targets were informational only. | current request |
 | P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | Done; acceptance evidence, lint and all six gates pass. | `7225a7e`, `a48f3af` plus F4 verification commits; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
+| P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
 
 ## 7. Change-request register
 
@@ -5953,3 +5957,120 @@ and Expo exports are not physical-device verification. No Home source file was
 edited.
 
 Pure-function source changes in P29-F4: none.
+
+## P29-G closeout - Editable Insurance cover goals (2026-11-02)
+
+**Decision DEC-P29G-COVER-MANAGEMENT:** supersede DEC-P23-COVER's fixed,
+non-deletable five-goal model. Goals are user-managed, may have a null kind,
+and support add, full update and deletion. Deletion clears assigned policy
+references but preserves policies and transaction history.
+
+**Assumed:** policies explicitly assigned to a no-kind custom goal use the
+generic `Insurance premium` category for future scheduled dues, planned rows
+and newly recorded premium payments. Typed premium categories remain derived
+from policy kind. Existing transactions retain their stored category. The
+Budget Insurance system section and categories remain fixed and out of scope;
+making them editable requires a separate scope decision.
+
+`app/(tabs)/index.tsx` was not edited. Home's existing total-cover, yearly
+premium and next-renewal semantics continue to use the unchanged policy
+summary.
+
+### P29-G replaced assertions
+
+| File and test | Old assertion | New assertion | Reason |
+|---|---|---|---|
+| `coverGoals.test.ts` — `preserves cover, premium and renewal summary states using user-managed targets` | Summary lookup used policy `type` and assumed five pinned goal records. | Summary lookup uses stable goal IDs and validates the same target, cover, premium and renewal outcomes. | Goal records are user-managed and can be renamed, retyped or removed. |
+| `coverGoals.test.ts` — `returns no-target for unknown income and excludes inactive cover` | Fixed-type target rows represented missing/inactive goals. | Explicit assignment, kind fallback, inactive/savings exclusion and unmatched policies are asserted with editable goals. | The count rule is based on goal assignment, not a fixed five-row list. |
+| `coverGoals.test.ts` — `validates target updates and rejects absent goals with typed errors` | Target-only updates and fixed goal lookup. | Add/update/delete validate the full record, duplicate name/kind, 20-goal limit and target constraints. | Every field is editable and typed validation remains behavior-tested. |
+| `coverGoals.test.ts` — `reports duplicate and missing cover types through integrity validation` | Integrity depended on exactly one goal per policy type. | Integrity rejects a missing explicit `coverGoalId`; duplicate IDs, names and kinds remain schema/domain errors. | Kinds are optional and user-managed; explicit policy links must resolve. |
+| `schemas.test.ts` — `validates editable cover goal constraints and policy assignments` | Removing a default goal (`goals.slice(1)`) was invalid. | A subset/empty goal list is valid; duplicates, invalid targets, excessive count and missing policy references remain invalid. | Deletion and an empty user-managed list are supported; integrity constraints remain. |
+| `RouteRenderSmoke.test.tsx` — `renders policy and editable cover-goal forms with delete confirmation` | Route inputs and assertions covered a type-selected target-only form, including its type-specific helper and value-field visibility. | The form is ID-based and asserts name/kind/target creation and editing, conditional value fields, delete confirmation, policy assignment choices and action routing. | The form now manages complete CoverGoal records. |
+| `createAppStore.test.ts` — `does not publish Undo or writes for unchanged policies and cover goals` | Called the removed target-only setter and asserted unchanged data. | The no-op test retains policy non-mutation checks; add/update/delete have separate one-write, typed-error and exact-Undo behavior tests. | The target-only setter is superseded by full user-managed CRUD actions. |
+| `createAppStore.test.ts` — `adds a cover goal in one write and Undo restores deep-equal data` | Looked up the created record by fixed `type`. | Looks up the new record by stable `id` and `kind`; one write and exact Undo are still asserted. | The new shape has `kind`, not legacy `type`. |
+| `migrate.test.ts`, `backup.test.ts`, `schemas.test.ts` | Current schema asserted v14 and future schema 15 was refused. | Current schema is v15; v14 migrates, v1-v14 backups import, and v16 is refused. | P29-G adds the requested v14-to-v15 migration without losing prior backup compatibility. |
+| `memoryDocs.test.ts` — `keeps all memory pages indexed, headed and aligned with source schema/test records` | Expected the earlier 1013-test inventory. | Expects schema v15 and the verified 84-suite/1054-test inventory. | The schema and total test inventory changed. |
+| `progressLedger.test.ts` — `tracks completed P20-M through P20-U while preserving P20-L and P21-D` | Expected 88% (77/88), Phase 29 11% (1/9), and P29 parts In progress. | Expects 97% (86/89), Phase 29 100% (10/10), and completed P29 parts. | Dashboard counts reflect the owner closeout decision and completed P29-G. |
+
+### P29-G assertion counts
+
+The audit compares `expect(` occurrences in test files at `f70e968` with the
+current worktree. Modified assertions count once as removed and once as added;
+the net is added minus removed.
+
+| Test file | At `f70e968` | Current | Net |
+|---|---:|---:|---:|
+| `RouteRenderSmoke.test.tsx` | 402 | 432 | +30 |
+| `createAppStore.test.ts` | 398 | 419 | +21 |
+| `migrate.test.ts` | 101 | 104 | +3 |
+| `safeStorage.test.ts` | 28 | 28 | 0 |
+| `actions.test.ts` | 23 | 23 | 0 |
+| `backup.test.ts` | 83 | 85 | +2 |
+| `budget.test.ts` | 314 | 317 | +3 |
+| `budgetCategories.test.ts` | 18 | 21 | +3 |
+| `coverGoals.test.ts` | 16 | 37 | +21 |
+| `dues.test.ts` | 138 | 145 | +7 |
+| `pending.test.ts` | 38 | 39 | +1 |
+| `policySummary.test.ts` | 10 | 12 | +2 |
+| `schemas.test.ts` | 240 | 245 | +5 |
+| `memoryDocs.test.ts` | 11 | 11 | 0 |
+| `progressLedger.test.ts` | 155 | 158 | +3 |
+| `demoData.test.ts` | 90 | 92 | +2 |
+| **Total** | **2065** | **2168** | **+103** |
+
+The diff contains 133 added and 30 removed `expect(` invocations. All removed
+or changed assertions are represented in the replacement table above and are
+accounted for as fixed goal/type/schema expectations, the superseded
+target-only setter, or stale dashboard/test-count expectations.
+
+### P29-G acceptance evidence
+
+| Frozen requirement | Exact proving test(s) | Result |
+|---|---|---|
+| User-managed CoverGoal shape, 1–40-character case-insensitive unique names, one goal per kind, max 20, target modes/ranges, and deletion of the former fixed five | `coverGoals.test.ts` — `creates stable default goals with the existing target behavior`, `adds, edits and removes complete goal records without mutating input`, `returns typed errors for duplicate names, kinds, limit and invalid targets`; `schemas.test.ts` — `validates editable cover goal constraints and policy assignments` | Pass |
+| Optional policy `coverGoalId`; explicit assignment wins, otherwise kind fallback; count at most once; inactive and savings excluded | `coverGoals.test.ts` — `applies explicit assignment before kind fallback and excludes inactive and savings policies`, `rejects missing policy goal references and permits valid assignments` | Pass |
+| Unmatched policies remain listed; Home total-cover semantics unchanged | `coverGoals.test.ts` — `applies explicit assignment before kind fallback and excludes inactive and savings policies`; `policySummary.test.ts` — `keeps total cover unchanged when a policy is assigned to a custom cover goal`; `RouteRenderSmoke.test.tsx` — `shows an actionable empty cover-goal section` | Pass |
+| Pure v14→v15 migration gives stable IDs/names/kinds and preserves targets/other data | `migrate.test.ts` — `migrates v14 cover goals to stable editable records without changing other data` | Pass |
+| Raw v14 archive is exact, written once and removed by erase-all | `createAppStore.test.ts` — `hydrates v14 cover goals, archives exact original bytes once and erases the archive` | Pass |
+| Refuse v16; import backup versions v1–v14; current and encrypted v15 backup round trips | `migrate.test.ts` — `rejects invalid input and unknown or future versions`; `backup.test.ts` — `round trips custom emergency-fund options and refuses schema version sixteen`, `imports a v1 data checksum before migration and imports the v7 result`, `verifies v2 data as written before migrating and validates the v7 result`, `verifies the v%s checksum before migrating its data` (v3–v6), `verifies v7 checksums before migrating backups to schema nine`, `verifies v8 checksums as written before migrating income totals`, `verifies v9 checksum over the original data before migrating its budget lines`, `verifies v10 checksums as written before migrating policy fields`, `verifies v11 backup bytes and imports seeded cover goals`, `verifies v12 backup bytes before adding monthly recurrence defaults`, `imports a v13 backup through the editable cover-goal migration`, `imports a v14 backup through the editable cover-goal migration`, `canonicalizes recursively and creates a pretty-printed backup`, `round-trips an encrypted v15 backup containing a linked investment item` | Pass |
+| Add/update/delete actions are one store write with Undo restoring deep-equal data; delete clears assigned links while preserving policy/transaction data; typed failures | `createAppStore.test.ts` — `adds a cover goal in one write and Undo restores deep-equal data`, `updates all cover-goal fields in one write and Undo restores deep-equal data`, `deletes a cover goal and clears assigned policies in one write with exact Undo`; `coverGoals.test.ts` — `deletes a goal, clears its explicit policy assignments and preserves policies and transactions`, `returns typed errors for duplicate names, kinds, limit and invalid targets` | Pass |
+| Insurance Cover section add/card edit actions, complete goal form, conditional target-mode value fields, delete confirmation naming affected policy count, and Counts toward choices | `RouteRenderSmoke.test.tsx` — `keeps Budget as the other Insurance entry point and removes Insurance from Goals`, `renders policy and editable cover-goal forms with delete confirmation` | Pass |
+| Empty section says “No cover goals yet” and provides Add | `RouteRenderSmoke.test.tsx` — `shows an actionable empty cover-goal section` | Pass |
+| Delete Undo toast; large-font form layouts at 1.3 and 2.0 | `createAppStore.test.ts` — `deletes a cover goal and clears assigned policies in one write with exact Undo`; `RouteRenderSmoke.test.tsx` — `keeps cover-goal forms accessible at font scale %s` (1.3 and 2.0) | Pass |
+| Demo has a custom assigned goal and a default goal with no matching policy | `demoData.test.ts` — `includes the required active and lapsed policy demo records` | Pass |
+| Generic category for no-kind custom goal, typed categories remain kind-derived, historical payments survive deletion | `budgetCategories.test.ts` — `uses the generic category for policies assigned to a no-kind cover goal`; `budget.test.ts` — `uses the generic category for scheduled premiums under no-kind cover goals`; `pending.test.ts` — `projects custom-goal policy dues under the generic insurance category`; `dues.test.ts` — `keeps custom-goal premium history valid and derives typed categories after goal deletion` | Pass |
+| Budget Insurance system section and categories stay unchanged | `budget.test.ts` — `allows only manual Insurance items while keeping the system section protected`, `keeps manual Insurance actuals separate from linked policy rows and budget dues` | Pass |
+
+No P29-G acceptance row is missing. Configured per-file coverage thresholds
+remain authoritative; the task-specific minimums are met: `src/domain/budget.ts`
+branches 762/841 (90.61%) and `src/data/createAppStore.ts` branches 93/107
+(86.92%).
+
+### P29-G coverage and gates
+
+Coverage method: remove `coverage/`, run `npm test -- --coverage`, then use
+Istanbul's `createCoverageMap` over the fresh `coverage/coverage-final.json`.
+Exclude test files; sum each source file's `toSummary().lines` and
+`toSummary().branches` covered and total counters by directory. Exclude
+`src/data/hooks` from the data group. Do not use `coverage-summary.json`.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 3272/3334 (98.14%) | 3161/3403 (92.89%) |
+| `src/data` excluding hooks | 658/696 (94.54%) | 679/774 (87.73%) |
+| `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 — 84 suites, 1054 tests passed |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 — zero warnings |
+| 4 | `npx expo-doctor` | 0 — 21/21 checks |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+**Physical-device checks not verified:** native Insurance screen and form
+rendering, delete confirmation and Undo presentation, policy assignment
+dropdowns, custom-goal premium presentation and font scales 1.3/2.0 remain
+unverified on iOS and Android. TestRenderer and Expo exports are not device
+verification.

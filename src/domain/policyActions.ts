@@ -17,10 +17,24 @@ export class PolicyGoalLinkError extends Error {
   }
 }
 
+export class PolicyCoverGoalNotFoundError extends Error {
+  constructor(readonly coverGoalId: string) {
+    super(`Cover goal with id "${coverGoalId}" was not found.`);
+    this.name = 'PolicyCoverGoalNotFoundError';
+  }
+}
+
+function assertCoverGoalExists(data: AppData, coverGoalId: string | undefined): void {
+  if (coverGoalId !== undefined && !data.coverGoals.some((goal) => goal.id === coverGoalId)) {
+    throw new PolicyCoverGoalNotFoundError(coverGoalId);
+  }
+}
+
 export function addPolicy(data: AppData, input: Policy): AppData {
   if (data.policies.some((policy) => policy.id === input.id)) {
     throw new DuplicatePolicyError(input.id);
   }
+  assertCoverGoalExists(data, input.coverGoalId);
   return { ...data, policies: [...data.policies, { ...input, payments: [...input.payments] }] };
 }
 
@@ -30,6 +44,7 @@ export function updatePolicy(
 ): AppData {
   const current = data.policies.find((policy) => policy.id === input.id);
   if (!current) throw new NotFoundError('Policy', input.id);
+  assertCoverGoalExists(data, input.patch.coverGoalId);
   const updated = { ...current, ...input.patch };
   if (input.patch.kind !== undefined && input.patch.kind !== current.kind
     && input.patch.kind !== 'life-savings' && input.patch.kind !== 'ulip') {

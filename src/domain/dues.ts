@@ -6,7 +6,7 @@ import { addPlan, type AddPlanInput } from './planActions';
 import { amortizedBalanceAfter, loanState } from './liability';
 import { liabilitySchedule, planSchedule, type ScheduleRow } from './schedule';
 import { policySchedule } from './policySchedule';
-import { policyPremiumCategory } from './policyCategories';
+import { policyPremiumCategoryFor } from './policyCategories';
 import type {
   AppData,
   Liability,
@@ -147,7 +147,7 @@ function createPolicyPayment(
     id: newId(),
     type: 'expense',
     amount: payment.amount,
-    category: policyPremiumCategory(policy.kind),
+    category: policyPremiumCategoryFor(policy, data.coverGoals),
     note: payment.note || `${policy.name} premium`,
     date: payment.date,
     source: { kind: 'policy-payment', parentId: policy.id, entryId },

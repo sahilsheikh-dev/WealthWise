@@ -15,6 +15,7 @@ import {
 } from '../dues';
 import { loanState, amortizedBalanceAfter } from '../liability';
 import { validateIntegrity } from '../links';
+import { deleteCoverGoal } from '../coverGoals';
 import { liabilitySchedule, planSchedule, upcomingDue } from '../schedule';
 import { policySchedule } from '../policySchedule';
 import type { OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
@@ -375,6 +376,43 @@ describe('one-tap dues and undo', () => {
       note: '',
       date: '2026-01-01',
     }]);
+  });
+
+  it('keeps custom-goal premium history valid and derives typed categories after goal deletion', () => {
+    const customGoal = {
+      id: 'custom-cover',
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'none' as const },
+    };
+    const original = {
+      ...withPolicy(policy({ coverGoalId: customGoal.id })),
+      coverGoals: [...base().coverGoals, customGoal],
+    };
+    let id = 0;
+    const customPayment = clearDue(original, { kind: 'policy', id: 'policy' }, {
+      date: '2026-02-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(customPayment.data.transactions[0]).toMatchObject({
+      category: 'Insurance premium',
+      source: { kind: 'policy-payment', parentId: 'policy' },
+    });
+    expect(validateIntegrity(customPayment.data)).toEqual([]);
+
+    const afterDelete = deleteCoverGoal(customPayment.data, customGoal.id);
+    expect(afterDelete.policies[0]?.coverGoalId).toBeUndefined();
+    expect(afterDelete.transactions[0]?.category).toBe('Insurance premium');
+    expect(validateIntegrity(afterDelete)).toEqual([]);
+
+    const typedPayment = clearDue(afterDelete, { kind: 'policy', id: 'policy' }, {
+      date: '2026-03-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(typedPayment.data.transactions.find((transaction) =>
+      transaction.source?.kind === 'policy-payment' && transaction.source.entryId === typedPayment.entryId,
+    )?.category).toBe('Health premium');
+    expect(validateIntegrity(typedPayment.data)).toEqual([]);
   });
 
   it('throws NothingToClearError without changing the input reference', () => {

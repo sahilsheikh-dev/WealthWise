@@ -129,6 +129,7 @@ const policySchema = z.strictObject({
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
+  coverGoalId: idSchema.optional(),
   premium: z.number().finite().positive().max(10_000_000),
   frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: dateSchema,
@@ -156,24 +157,33 @@ const policySchema = z.strictObject({
   }
 });
 const coverGoalsSchema = z.array(z.strictObject({
-  type: z.enum(COVER_POLICY_TYPES),
-  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
-  targetValue: z.number().finite().min(0).max(100_000_000_000).optional(),
-}).superRefine((goal, context) => {
-  if (goal.targetMode === 'income-multiple'
-    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
-  }
-  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
-  }
-})).length(COVER_POLICY_TYPES.length).superRefine((goals, context) => {
-  const seen = new Set<string>();
+  id: idSchema,
+  name: z.string().min(1).max(40).refine((value) => value.trim().length > 0),
+  kind: z.enum(COVER_POLICY_TYPES).nullable(),
+  target: z.discriminatedUnion('mode', [
+    z.strictObject({ mode: z.literal('income-multiple'), value: z.number().finite().min(1).max(50) }),
+    z.strictObject({ mode: z.literal('amount'), value: z.number().finite().min(0).max(100_000_000_000) }),
+    z.strictObject({ mode: z.literal('active-only') }),
+    z.strictObject({ mode: z.literal('none') }),
+  ]),
+})).max(20).superRefine((goals, context) => {
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  const kinds = new Set<string>();
   goals.forEach((goal, index) => {
-    if (seen.has(goal.type)) {
-      context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+    const normalizedName = goal.name.trim().toLowerCase();
+    if (ids.has(goal.id)) {
+      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Cover goal IDs must be unique' });
     }
-    seen.add(goal.type);
+    if (names.has(normalizedName)) {
+      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Cover goal names must be unique' });
+    }
+    if (goal.kind !== null && kinds.has(goal.kind)) {
+      context.addIssue({ code: 'custom', path: [index, 'kind'], message: 'Cover goal kinds must be unique' });
+    }
+    ids.add(goal.id);
+    names.add(normalizedName);
+    if (goal.kind !== null) kinds.add(goal.kind);
   });
 });
 const budgetSchema = z.strictObject({

@@ -51,6 +51,26 @@ describe('policySummary', () => {
     });
   });
 
+  it('keeps total cover unchanged when a policy is assigned to a custom cover goal', () => {
+    const data = {
+      ...emptyAppData('2026-01-01'),
+      coverGoals: [{
+        id: 'custom-cover',
+        name: 'Custom cover',
+        kind: null,
+        target: { mode: 'none' as const },
+      }],
+      policies: [policy({ sumAssured: 5_000 })],
+    };
+    const assigned = {
+      ...data,
+      policies: [{ ...data.policies[0]!, coverGoalId: 'custom-cover' }],
+    };
+    expect(policySummary(assigned, '2026-01-01').totalCover)
+      .toBe(policySummary(data, '2026-01-01').totalCover);
+    expect(policySummary(assigned, '2026-01-01').totalCover).toBe(5_000);
+  });
+
   it('uses the last three months of earned income when no effective budget exists', () => {
     const data = {
       ...emptyAppData('2026-01-15'),

@@ -5,14 +5,15 @@ import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-n
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
+import { IconButton } from '../src/components/IconButton';
 import { AppText, Button, Card, Chip, ChipRow, EmptyState, ProgressBar, SearchField, Screen, StatusBadge } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { coverGoalSummaries } from '../src/domain/coverGoals';
+import { coverGoalSummaries, policiesNotInCoverGoal } from '../src/domain/coverGoals';
 import { policySchedule } from '../src/domain/policySchedule';
 import { policySummary } from '../src/domain/policySummary';
-import type { CoverPolicyType, Policy, PolicyKind, PolicyStatus } from '../src/domain/types';
+import type { Policy, PolicyKind, PolicyStatus } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
@@ -20,14 +21,6 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 import { PaidAmountDialog } from '../src/components/PaidAmountDialog';
 
-const coverTypes: readonly CoverPolicyType[] = ['term-life', 'health', 'motor', 'home', 'other'];
-const coverTitles: Record<CoverPolicyType, string> = {
-  'term-life': 'Term life',
-  health: 'Health',
-  motor: 'Motor',
-  home: 'Home',
-  other: 'Other',
-};
 const policyKinds: readonly PolicyKind[] = [
   'term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other',
 ];
@@ -56,6 +49,7 @@ export default function InsuranceScreen() {
   const [policyPayment, setPolicyPayment] = useState<{ policy: Policy; dueAmount: number; dueDate: string } | null>(null);
   const [query, setQuery] = useState('');
   const coverSummaries = coverGoalSummaries(data, today);
+  const unassignedPolicies = policiesNotInCoverGoal(data);
   const policyTotals = policySummary(data, today);
   const normalizedQuery = query.trim().toLowerCase();
   const visiblePolicies = useMemo(() => data.policies.filter((policy) => {
@@ -162,40 +156,53 @@ export default function InsuranceScreen() {
       />
 
       <View testID="insurance-cover-goals">
-        {coverTypes.map((type) => {
-          const summary = coverSummaries.find((item) => item.type === type);
+        <View style={styles.coverSectionHeader}>
+          <AppText weight="semibold" style={typography.name}>Cover goals</AppText>
+          <IconButton
+            icon="plus"
+            label="Add cover goal"
+            disabled={data.coverGoals.length >= 20}
+            onPress={() => router.push('/cover-goal-form')}
+          />
+        </View>
+        {data.coverGoals.length === 0 ? (
+          <Card>
+            <EmptyState title="No cover goals yet" />
+            <Button label="Add cover goal" icon="plus" variant="primary" onPress={() => router.push('/cover-goal-form')} />
+          </Card>
+        ) : data.coverGoals.map((goal) => {
+          const summary = coverSummaries.find((item) => item.id === goal.id);
           if (!summary) return null;
           const activePolicies = data.policies.filter((policy) =>
             summary.activePolicyIds.includes(policy.id),
           );
-          const goal = data.coverGoals.find((item) => item.type === type);
           const percent = summary.target !== null
             ? summary.target > 0
               ? Math.min(100, summary.currentCover / summary.target * 100)
               : 100
-            : goal?.targetMode === 'active-only' && activePolicies.length > 0 ? 100 : 0;
-          const incomeLine = type === 'term-life' && policyTotals.yearlyIncomeEstimate !== null
+            : goal.target.mode === 'active-only' && activePolicies.length > 0 ? 100 : 0;
+          const incomeLine = goal.kind === 'term-life' && policyTotals.yearlyIncomeEstimate !== null
             ? `Cover is ${policyTotals.coverMultiple?.toFixed(1) ?? '0'} times your yearly income of ${formatAmount(policyTotals.yearlyIncomeEstimate, 'exact', 1)}`
             : null;
-          const targetText = goal?.targetMode === 'active-only'
+          const targetText = goal.target.mode === 'active-only'
             ? 'At least one active policy'
             : summary.target !== null
               ? formatAmount(summary.target, 'exact', 1)
-              : goal?.targetMode === 'income-multiple' && goal.targetValue !== undefined
-                ? `${goal.targetValue}x yearly income`
-                : 'Set target';
+              : goal.target.mode === 'income-multiple'
+                ? `${goal.target.value}x yearly income`
+                : goal.target.mode === 'none' ? 'No target' : 'Set target';
           const shortPolicyNames = activePolicies.map((policy) => policy.name.length > 20
             ? `${policy.name.slice(0, 17)}...`
             : policy.name).join(', ');
           return (
-            <Card key={type} style={styles.coverCard}>
+            <Card key={goal.id} style={styles.coverCard}>
               <Pressable
-                testID={`cover-goal-card-${type}`}
+                testID={`cover-goal-card-${goal.id}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${coverTitles[type]} cover goal`}
-                accessibilityHint="Opens cover target settings"
-                onPress={() => router.push({ pathname: '/cover-goal-form', params: { type } })}>
-                <AppText weight="semibold" style={typography.name}>{coverTitles[type]}</AppText>
+                accessibilityLabel={`${goal.name} cover goal`}
+                accessibilityHint="Opens cover goal settings"
+                onPress={() => router.push({ pathname: '/cover-goal-form', params: { id: goal.id } })}>
+                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <DetailRow label="Target" value={targetText} />
                 <DetailRow label="Current cover" value={<AmountText value={summary.currentCover} tier="row" />} />
                 <DetailRow
@@ -220,13 +227,30 @@ export default function InsuranceScreen() {
                     {incomeLine}
                   </AppText>
                 ) : null}
-                <View testID={`cover-goal-progress-${type}`} style={styles.coverProgress}>
+                <View testID={`cover-goal-progress-${goal.id}`} style={styles.coverProgress}>
                   <ProgressBar percent={percent} />
                 </View>
               </Pressable>
             </Card>
           );
         })}
+        {unassignedPolicies.length > 0 ? (
+          <View testID="insurance-unassigned-cover">
+            <Card>
+              <AppText weight="semibold" style={typography.name}>Not in any cover goal</AppText>
+              <DetailRow
+                label="Current cover"
+                value={
+                  <AmountText
+                    value={unassignedPolicies.reduce((sum, policy) => sum + (policy.sumAssured ?? 0), 0)}
+                    tier="row"
+                  />
+                }
+              />
+              <DetailRow label="Policies" value={unassignedPolicies.map((policy) => policy.name).join(', ') || '—'} last />
+            </Card>
+          </View>
+        ) : null}
       </View>
 
       <View testID="insurance-policy-list">
@@ -320,6 +344,7 @@ function DetailRow({ label, value, last = false }: {
 }
 
 const styles = StyleSheet.create({
+  coverSectionHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   filterPanel: { gap: 7, marginBottom: 8 },
   coverCard: { paddingBottom: 13 },
   coverProgress: { marginTop: 12 },

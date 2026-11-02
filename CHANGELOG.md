@@ -18,6 +18,14 @@
   expectation after holding deletion. The accepted behavior is clearing every
   Budget link in the same write; P29-B through P29-F4 are closed. No Home
   source was edited.
+- P29-G adds editable Insurance cover goals and policy assignments, migrates
+  schema v14 to v15, and retains backup imports through v14. Existing policies
+  remain visible even when they do not count toward a cover goal; Home's total
+  cover, yearly premium and next-renewal semantics are unchanged.
+- P29-G validation: 84 suites and 1054 tests pass; TypeScript, lint with zero
+  warnings, Expo Doctor 21/21, and Android/iOS exports pass. Custom-goal future
+  premiums use the generic Insurance category; existing transaction history
+  retains its stored category.
 
 ### Investments and goals
 

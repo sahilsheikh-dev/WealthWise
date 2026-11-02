@@ -147,11 +147,11 @@ jest.mock('../../data/store', () => {
       liabilities: [],
       policies: [],
       coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-        { type: 'health', targetMode: 'amount' },
-        { type: 'motor', targetMode: 'active-only' },
-        { type: 'home', targetMode: 'active-only' },
-        { type: 'other', targetMode: 'active-only' },
+        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
+        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
+        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
       ],
       budgetPlan: null,
       monthBudgets: [],
@@ -184,7 +184,9 @@ jest.mock('../../data/store', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
+      addCoverGoal: jest.fn(),
+      updateCoverGoal: jest.fn(),
+      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -250,11 +252,11 @@ jest.mock('../../data/useAppData', () => {
     liabilities: [],
     policies: [],
     coverGoals: [
-      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-      { type: 'health', targetMode: 'amount' },
-      { type: 'motor', targetMode: 'active-only' },
-      { type: 'home', targetMode: 'active-only' },
-      { type: 'other', targetMode: 'active-only' },
+      { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
+      { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
+      { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+      { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+      { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
     ],
     budgetPlan: null,
     monthBudgets: [],
@@ -289,7 +291,9 @@ jest.mock('../../data/useAppData', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
+      addCoverGoal: jest.fn(),
+      updateCoverGoal: jest.fn(),
+      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -1043,8 +1047,8 @@ describe('route render smoke audit', () => {
         month: todayISO().slice(0, 7), incomeId: budgetIncome.id, scope: 'month',
       }, React.createElement(BudgetIncomeFormScreen)],
       ...demoData.coverGoals.map((goal) => [
-        `Cover target ${goal.type}`,
-        { type: goal.type },
+        `Cover goal ${goal.name}`,
+        { id: goal.id },
         React.createElement(CoverGoalFormScreen),
       ] as [string, Record<string, string>, React.ReactElement]),
       ['Insurance from Goals/Budget/Home', {}, React.createElement(InsuranceScreen)],
@@ -1685,19 +1689,31 @@ describe('route render smoke audit', () => {
         .findAll((node) => typeof node.props.testID === 'string'
           && node.props.testID.startsWith('cover-goal-card-'));
       expect([...new Set(coverCards.map((card) => card.props.testID))]).toEqual([
-        'cover-goal-card-term-life',
-        'cover-goal-card-health',
-        'cover-goal-card-motor',
-        'cover-goal-card-home',
-        'cover-goal-card-other',
+        'cover-goal-card-cover-term-life',
+        'cover-goal-card-cover-health',
+        'cover-goal-card-cover-motor',
+        'cover-goal-card-cover-home',
+        'cover-goal-card-cover-other',
+        'cover-goal-card-demo-cover-goal-family',
       ]);
-      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-term-life' });
+      const addCoverGoalButtons = insuranceRoot.findAllByProps({ accessibilityLabel: 'Add cover goal' });
+      expect(addCoverGoalButtons.length).toBeGreaterThan(0);
+      router.push.mockClear();
+      act(() => addCoverGoalButtons[0]?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
+      router.push.mockClear();
+      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-cover-term-life' });
       const goalPressable = termLifeCard.findAll((node) => String(node.type) === 'pressable')[0];
       const lastGoalChild = goalPressable?.children.at(-1);
       expect(typeof lastGoalChild === 'object' && lastGoalChild !== null && 'props' in lastGoalChild
         ? lastGoalChild.props.testID
-        : undefined).toBe('cover-goal-progress-term-life');
+        : undefined).toBe('cover-goal-progress-cover-term-life');
       expect(insuranceRoot.findByProps({ testID: 'term-life-income-line' })).toBeDefined();
+      act(() => goalPressable?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/cover-goal-form',
+        params: { id: 'cover-term-life' },
+      });
 
       const activePolicy = demoData.policies.find((policy) => policy.status === 'active');
       if (!activePolicy) throw new Error('Demo data has no active policy fixture.');
@@ -1806,11 +1822,14 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('renders policy create/edit fields and every cover-target mode', async () => {
+  it('renders policy and editable cover-goal forms with delete confirmation', async () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
       deletePolicy: jest.Mock;
+      addCoverGoal: jest.Mock;
+      updateCoverGoal: jest.Mock;
+      deleteCoverGoal: jest.Mock;
     };
     const router = jest.requireMock('expo-router').router as { back: jest.Mock };
     const storeState = useAppStore((state) => state);
@@ -1844,6 +1863,11 @@ describe('route render smoke audit', () => {
           .toBeGreaterThan(0);
       }
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' })).toHaveLength(0);
+      const countsToward = renderer.root.findByProps({ accessibilityLabel: 'Counts toward' });
+      expect(countsToward.props.options).toEqual([
+        { value: 'automatic', title: 'Automatic by type' },
+        ...demoData.coverGoals.map((goal) => ({ value: goal.id, title: goal.name })),
+      ]);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Policy start date' }).props.maximumDate)
         .toBe(todayISO());
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy end date' })).toHaveLength(0);
@@ -1871,46 +1895,188 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       renderer = undefined;
 
-      const noIncomeData = {
-        ...demoData,
-        budgetPlan: null,
-        monthBudgets: [],
-        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
-      };
-      Object.assign(routeData, noIncomeData);
-      storeState.data = noIncomeData;
-      for (const [type, expectedMode] of [
-        ['term-life', 'income-multiple'],
-        ['health', 'amount'],
-        ['motor', 'active-only'],
-        ['home', 'active-only'],
-        ['other', 'active-only'],
-      ] as const) {
-        routeParams.mockReturnValue({ type });
-        renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-        const mode = renderer.root.findByType(Dropdown);
-        expect(mode.props.value).toBe(expectedMode);
-        if (type === 'term-life') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'text')
-            .some((node) => node.children.join('').includes(
-              'Add income or a planned budget to calculate the target amount.',
-            ))).toBe(true);
-        }
-        if (expectedMode === 'active-only') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
-        }
-        act(() => mode.props.onChange('amount'));
-        expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(1);
-        act(() => renderer?.unmount());
-        renderer = undefined;
-      }
+      routeParams.mockReturnValue({});
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.maxLength).toBe(40);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
+        .toEqual([{ value: 'none', title: 'None' }]);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' }).props.options)
+        .toEqual(expect.arrayContaining([
+          { value: 'income-multiple', title: 'Income multiple' },
+          { value: 'amount', title: 'Amount' },
+          { value: 'active-only', title: 'Active policy only' },
+          { value: 'none', title: 'No target' },
+        ]));
+      const targetMode = renderer.root.findByProps({ accessibilityLabel: 'Target mode' });
+      expect(targetMode.props.value).toBe('none');
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
+      act(() => targetMode.props.onChange('income-multiple'));
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' }).length).toBeGreaterThan(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('active-only'));
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('amount'));
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield').length)
+        .toBeGreaterThan(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('none'));
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
+          .props.onChangeText('Travel protection');
+      });
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(screenActions.addCoverGoal).toHaveBeenLastCalledWith({
+        name: 'Travel protection',
+        kind: null,
+        target: { mode: 'none' },
+      });
+      expect(router.back).toHaveBeenCalled();
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      const customGoal = demoData.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
+      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
+      const editableData = { ...demoData, coverGoals: [customGoal] };
+      Object.assign(routeData, editableData);
+      storeState.data = editableData;
+      routeParams.mockReturnValue({ id: customGoal.id });
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.value)
+        .toBe('Family protection');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
+        .toEqual(expect.arrayContaining([
+          { value: 'none', title: 'None' },
+          { value: 'term-life', title: 'Term life' },
+          { value: 'health', title: 'Health' },
+          { value: 'motor', title: 'Motor' },
+          { value: 'home', title: 'Home' },
+          { value: 'other', title: 'Other' },
+        ]));
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
+          .props.onChangeText('Renamed protection');
+        renderer?.root.findByProps({ accessibilityLabel: 'Counts policies of type' })
+          .props.onChange('health');
+        renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+          .props.onChange('amount');
+      });
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Target amount' })
+          .props.onChangeText('250000');
+      });
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(screenActions.updateCoverGoal).toHaveBeenLastCalledWith(customGoal.id, {
+        name: 'Renamed protection',
+        kind: 'health',
+        target: { mode: 'amount', value: 250_000 },
+      });
+      expect(router.back).toHaveBeenCalled();
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ id: customGoal.id });
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      mockConfirmAsync.mockClear();
+      screenActions.deleteCoverGoal.mockClear();
+      router.back.mockClear();
+      const deleteGoalButton = renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' });
+      await act(async () => {
+        deleteGoalButton.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Delete Family protection?',
+        message: '1 policy will become unassigned. Policies and transactions will stay.',
+      }));
+      expect(screenActions.deleteCoverGoal).toHaveBeenCalledWith(customGoal.id);
+      expect(router.back).toHaveBeenCalled();
     } finally {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       storeState.data = previousStoreData;
       routeParams.mockReturnValue(previousParams);
       screenActions.deletePolicy.mockClear();
+      screenActions.deleteCoverGoal.mockClear();
       mockConfirmAsync.mockClear();
+    }
+  });
+
+  it('shows an actionable empty cover-goal section', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = (jest.requireMock('expo-router').useLocalSearchParams as jest.Mock)();
+    const router = jest.requireMock('expo-router').router as { push: jest.Mock };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const emptyGoalsData = { ...buildDemoData(todayISO()), coverGoals: [] };
+      Object.assign(routeData, emptyGoalsData);
+      storeState.data = emptyGoalsData;
+      renderer = renderScreen(React.createElement(InsuranceScreen));
+      const coverSection = renderer.root.findByProps({ testID: 'insurance-cover-goals' });
+      expect(coverSection.findByProps({ title: 'No cover goals yet' })).toBeDefined();
+      const unassignedSection = renderer.root.findByProps({ testID: 'insurance-unassigned-cover' });
+      expect(unassignedSection.findAllByType('text')
+        .some((node) => node.children.join('') === 'Not in any cover goal')).toBe(true);
+      const activeCoverTotal = emptyGoalsData.policies
+        .filter((policy) => policy.status === 'active')
+        .reduce((sum, policy) => sum + (policy.sumAssured ?? 0), 0);
+      expect(unassignedSection.findByType(AmountText).props.value).toBe(activeCoverTotal);
+      const listedPolicy = emptyGoalsData.policies[0];
+      if (!listedPolicy) throw new Error('Demo data has no policy to display.');
+      expect(renderer.root.findByProps({ testID: `policy-card-${listedPolicy.id}` })).toBeDefined();
+      const addButtons = coverSection.findAllByProps({ accessibilityLabel: 'Add cover goal' });
+      expect(addButtons.length).toBeGreaterThanOrEqual(2);
+      router.push.mockClear();
+      act(() => addButtons.at(-1)?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      (jest.requireMock('expo-router').useLocalSearchParams as jest.Mock).mockReturnValue(previousParams);
+    }
+  });
+
+  it.each([1.3, 2])('keeps cover-goal forms accessible at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const previousFontScale = mockFontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const data = buildDemoData(todayISO());
+      const customGoal = data.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
+      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
+      Object.assign(routeData, data);
+      storeState.data = data;
+      routeParams.mockReturnValue({ id: customGoal.id });
+      mockFontScale = fontScale;
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 
