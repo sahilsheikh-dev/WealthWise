@@ -171,7 +171,7 @@ Phase 29         ██░░░░░░░░ 17% (1/6)
 | P29-C | — | In progress | Paid amount dialog and due-payment domain behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
 | P29-D | — | In progress | Budget scope and start-month behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
 | P29-E | — | In progress | Schema-v14 budget investment links and migration are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
-| P29-F | — | In progress | Stabilization baseline, stale assertions, mocks, coverage evidence and gates are recorded; branch coverage has not met both configured thresholds. | 2026-11-02 |
+| P29-F | — | In progress | Stabilization baseline, stale assertions, mocks, coverage evidence and gates are recorded; configured thresholds are green but P29-F2 headroom is incomplete. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs

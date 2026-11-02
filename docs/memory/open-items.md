@@ -4,11 +4,10 @@
 
 ## Unresolved
 
-- **P29-F coverage thresholds:** fresh Jest run passes 84 suites and 1022
-  tests, but exits 1 on branch thresholds: `src/domain/budget.ts` 89.77% vs
-  90%, and `src/data/createAppStore.ts` 83.83% vs 85%. These are test-quality
-  coverage gaps, not assertion weakenings. P29-B through P29-E remain
-  in-progress until the configured thresholds are met without exclusions.
+- **P29-F2 branch headroom:** fresh Jest run passes 84 suites and 1024 tests.
+  Headroom is still short: `src/domain/budget.ts` 760/841 branches (90.37%, target
+  92%); `src/data/createAppStore.ts` 86/99 branches (86.87%, target 88%).
+  P29-B through P29-E remain in progress; P29-F2 source behavior is unchanged.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
