@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-02 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -16,13 +16,15 @@ requires atomicity.
 
 ## Schema and archives
 
-Current persisted schema is v14. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v13. `createAppStore.ts` sets the
+Current persisted schema is v15. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v14. The v14-to-v15 migration
+converts the five legacy Insurance cover goals to stable editable records.
+`createAppStore.ts` sets the
 persist version from `SCHEMA_VERSION`.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v12` before the migrated write. With the current
+`${persistName}.premigration.v14` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration

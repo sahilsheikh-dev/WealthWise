@@ -3,27 +3,27 @@
 # Status
 
 - Current task: P29-G editable Insurance cover goals, after Phase 29 stabilization
-  closeout. `app/(tabs)/index.tsx` remains user-owned and must not be edited.
-- Phase 29 status: P29-B, P29-C, P29-D, P29-E, P29-F, P29-F2, P29-F3 and
-  P29-F4 are Done. The owner decision DEC-P29E-HOLDING-DELETE withdraws Undo
+  closeout. P29-G is complete; `app/(tabs)/index.tsx` remains user-owned and was
+  not edited.
+- Phase 29 status: P29-B, P29-C, P29-D, P29-E, P29-F, P29-F2, P29-F3, P29-F4
+  and P29-G are Done. The owner decision DEC-P29E-HOLDING-DELETE withdraws Undo
   after holding deletion; the retained requirement, clearing every Budget
   holding link in the same write, is proven by the existing store test.
-- Schema version: v14. P29-E is the Budget holding-link migration.
+- Schema version: v15. P29-E is the Budget holding-link migration; P29-G
+  migrates v14 cover goals to editable records.
 - Runtime: Node.js 26.13.0.
-- Test counts: 84 suites, 1037 tests. Latest validated run: 84 suites, 1037 tests
-  passed on 2026-11-02.
-- Final Gate 1 run: 84 suites, 1037 tests passed on 2026-11-02.
-- Final six gates all exit 0: Jest coverage, TypeScript, Expo lint, Expo Doctor
-  21/21, Android export and iOS export. The exact commands and fresh coverage
-  are in [PROGRESS.md](../PROGRESS.md). These gates authorize starting P29-G;
-  its final gate results will be recorded at closeout.
+- Test counts: 84 suites, 1054 tests. Latest validated run: 84 suites, 1054 tests
+  passed on 2026-11-02 after the P29-G category behavior tests.
+- Final six gates all exit 0: Jest coverage, TypeScript, Expo lint with zero
+  warnings, Expo Doctor 21/21, Android export and iOS export. The exact
+  commands and fresh coverage are in [PROGRESS.md](../PROGRESS.md).
 - Fresh per-directory coverage from `coverage-final.json` after deleting
-  `coverage/`: `src/data` excluding hooks 638/676 lines (94.38%), 645/734
-  branches (87.87%); `src/domain` 3207/3261 lines (98.34%), 3116/3350
-  branches (93.01%); pure `src/lib` 107/107 lines and 126/126 branches (100%).
-  Informational branch coverage: `src/domain/budget.ts` 762/841 (90.60%);
-  `src/data/createAppStore.ts` 87/99 (87.87%). Configured per-file thresholds
-  are authoritative; P29-F2's advisory headroom targets were withdrawn.
+  `coverage/`: `src/data` excluding hooks 658/696 lines (94.54%), 679/774
+  branches (87.73%); `src/domain` 3272/3334 lines (98.14%), 3161/3403
+  branches (92.89%); pure `src/lib` 107/107 lines and 126/126 branches (100%).
+  P29-G required branch coverage: `src/domain/budget.ts` 762/841 (90.61%);
+  `src/data/createAppStore.ts` 93/107 (86.92%). Configured per-file thresholds
+  remain authoritative; P29-F2's advisory headroom targets were withdrawn.
 - `npx expo lint` exits 0 with zero warnings and no eslint-disable comments
   added.
 - The P29-F4 assertion audit compares 531d659 with its audited worktree:

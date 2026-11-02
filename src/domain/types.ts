@@ -170,6 +170,7 @@ export type Policy = {
   name: string;
   insurer: string;
   kind: PolicyKind;
+  coverGoalId?: string;
   premium: number;
   frequency: PolicyFrequency;
   startDate: ISODate;
@@ -188,12 +189,19 @@ export type Policy = {
 
 export const COVER_POLICY_TYPES = ['term-life', 'health', 'motor', 'home', 'other'] as const;
 export type CoverPolicyType = (typeof COVER_POLICY_TYPES)[number];
-export type CoverGoalTargetMode = 'income-multiple' | 'amount' | 'active-only';
+export type CoverGoalTargetMode = 'income-multiple' | 'amount' | 'active-only' | 'none';
+
+export type CoverGoalTarget =
+  | { mode: 'income-multiple'; value: number }
+  | { mode: 'amount'; value: number }
+  | { mode: 'active-only' }
+  | { mode: 'none' };
 
 export type CoverGoal = {
-  type: CoverPolicyType;
-  targetMode: CoverGoalTargetMode;
-  targetValue?: number;
+  id: string;
+  name: string;
+  kind: CoverPolicyType | null;
+  target: CoverGoalTarget;
 };
 
 export type BudgetLine = {

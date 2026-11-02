@@ -15,7 +15,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -165,6 +165,7 @@ const policySchema = z.object({
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
   kind: policyKindSchema,
+  coverGoalId: idSchema.optional(),
   premium: moneySchema.positive().max(10_000_000),
   frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: isoDateSchema,
@@ -191,27 +192,37 @@ const policySchema = z.object({
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
   }
 });
+const coverGoalTargetSchema = z.discriminatedUnion('mode', [
+  z.strictObject({ mode: z.literal('income-multiple'), value: moneySchema.min(1).max(50) }),
+  z.strictObject({ mode: z.literal('amount'), value: moneySchema.min(0) }),
+  z.strictObject({ mode: z.literal('active-only') }),
+  z.strictObject({ mode: z.literal('none') }),
+]);
 const coverGoalSchema = z.object({
-  type: z.enum(COVER_POLICY_TYPES),
-  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
-  targetValue: moneySchema.min(0).optional(),
-}).superRefine((goal, context) => {
-  if (goal.targetMode === 'income-multiple'
-    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
-  }
-  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
-  }
+  id: idSchema,
+  name: z.string().min(1).max(40).refine((name) => name.trim().length > 0),
+  kind: z.enum(COVER_POLICY_TYPES).nullable(),
+  target: coverGoalTargetSchema,
 });
-const coverGoalsSchema = z.array(coverGoalSchema).length(COVER_POLICY_TYPES.length)
+const coverGoalsSchema = z.array(coverGoalSchema).max(20)
   .superRefine((goals, context) => {
-    const seen = new Set<string>();
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    const kinds = new Set<string>();
     goals.forEach((goal, index) => {
-      if (seen.has(goal.type)) {
-        context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+      const normalizedName = goal.name.trim().toLowerCase();
+      if (ids.has(goal.id)) {
+        context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Cover goal IDs must be unique' });
       }
-      seen.add(goal.type);
+      if (names.has(normalizedName)) {
+        context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Cover goal names must be unique' });
+      }
+      if (goal.kind !== null && kinds.has(goal.kind)) {
+        context.addIssue({ code: 'custom', path: [index, 'kind'], message: 'Cover goal kinds must be unique' });
+      }
+      ids.add(goal.id);
+      names.add(normalizedName);
+      if (goal.kind !== null) kinds.add(goal.kind);
     });
   });
 
@@ -455,6 +466,17 @@ export const appDataSchema = z.object({
   efAllocation: efAllocationSchema,
   efCustomBuckets: efCustomBucketsSchema,
   efBucketLinks: efBucketLinksSchema,
+}).superRefine((data, context) => {
+  const goalIds = new Set(data.coverGoals.map((goal) => goal.id));
+  data.policies.forEach((policy, index) => {
+    if (policy.coverGoalId !== undefined && !goalIds.has(policy.coverGoalId)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['policies', index, 'coverGoalId'],
+        message: 'Policy cover goal does not exist.',
+      });
+    }
+  });
 });
 
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;

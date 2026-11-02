@@ -12,6 +12,7 @@ import {
   migrateV11ToV12,
   migrateV12ToV13,
   migrateV13ToV14,
+  migrateV14ToV15,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -112,7 +113,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 15)).toThrow(
+    expect(() => migratePersisted({}, 16)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -171,7 +172,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 14)).toBe(persisted);
+    expect(migratePersisted(persisted, 15)).toBe(persisted);
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -213,7 +214,7 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 15)).toThrow(
+    expect(() => migratePersisted({}, 16)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -230,9 +231,38 @@ describe('schema migration', () => {
         { type: 'other', targetMode: 'active-only' },
       ],
     });
+
     expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
     const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
     expect(migrated.data.coverGoals).toHaveLength(5);
+  });
+
+  it('migrates v14 cover goals to stable editable records without changing other data', () => {
+    const legacy = {
+      ...mockAppData,
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 12 },
+        { type: 'health', targetMode: 'amount', targetValue: 900_000 },
+        { type: 'motor', targetMode: 'active-only' },
+        { type: 'home', targetMode: 'active-only' },
+        { type: 'other', targetMode: 'active-only' },
+      ],
+    };
+    const expected = {
+      ...legacy,
+      coverGoals: [
+        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 12 } },
+        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'amount', value: 900_000 } },
+        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
+      ],
+    };
+    expect(migrateV14ToV15(legacy)).toEqual(expected);
+    expect(migratePersisted({ data: legacy }, 14)).toEqual({ data: expected });
+    expect(legacy.coverGoals[0]).toEqual({
+      type: 'term-life', targetMode: 'income-multiple', targetValue: 12,
+    });
   });
 
   it('moves legacy manual Insurance items into the current Insurance system section', () => {
