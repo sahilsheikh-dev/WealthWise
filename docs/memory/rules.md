@@ -30,7 +30,7 @@ relying on them after an authorized edit):
 
 | File | Git blob ID | Rule |
 |---|---|---|
-| `app/(tabs)/index.tsx` | `ad573106748251012efd26da75b3014f7834247b` | Owner-authorized edits: first-card Insurance box and due-payment handler only. |
+| `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
 | `app/(tabs)/budget.tsx` | `7beea9dd1ee7a3f46d95b8dbc13009b90b184dec` | Preserve user-authored cash-flow labels and removed controls. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
