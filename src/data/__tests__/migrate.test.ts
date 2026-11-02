@@ -170,7 +170,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 13)).toBe(persisted);
+    expect(migratePersisted(persisted, 14)).toBe(persisted);
   });
 
   it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {

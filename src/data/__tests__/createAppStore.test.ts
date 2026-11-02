@@ -683,7 +683,7 @@ describe('createAppStore persistence', () => {
       linkedIncluded: true,
     }]);
     expect(storage.values.get('wealthwise.app.v1.premigration.v9')).toBe(rawV9);
-    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1')).toHaveLength(2);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1')).toHaveLength(1);
     expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v9')).toHaveLength(1);
 
     storage.setItemCalls = 0;

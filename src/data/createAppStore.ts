@@ -820,7 +820,6 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
-        if (budgetWasEnsured || allocationNeedsRepair) storeApi.setState({ data });
       },
     },
   ));
