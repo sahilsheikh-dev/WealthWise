@@ -5733,12 +5733,12 @@ there are 41 deleted expectation lines and no Dropdown deletions.
 
 ### DEC-P29F4 final stabilization audit
 
-**Task constraint:** no feature or application source behavior changed. The
-only code change in F4 is the progress-ledger test; `app/(tabs)/index.tsx`
-remains untouched. The previous Gate 1 failure's output is not available in
-the current workspace, so exact first-15-line excerpts from that old error and
-its durations cannot be reconstructed. The three reported suites were run
-alone three times each in this task:
+**Task constraint:** no feature or application source behavior changed. F4 code
+changes are tests only (actual-payment Undo and ledger consistency);
+`app/(tabs)/index.tsx` remains untouched. The previous Gate 1 failure's output
+is not available in the current workspace, so its exact first 15 lines and
+durations cannot be reconstructed. The three reported suites were run alone
+three times each in this task:
 
 | Suite | Run 1 | Run 2 | Run 3 | Tests per run |
 |---|---:|---:|---:|---:|
