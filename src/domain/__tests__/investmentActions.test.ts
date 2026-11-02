@@ -182,6 +182,10 @@ describe('investment ledger actions and valuation', () => {
       ...manual,
       budgetPlan: {
         ...manual.budgetPlan,
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
         items: [{
           id: 'linked-plan', sectionId: 'investments', name: 'Emergency cash',
           mode: 'amount', value: 30_000, frequency: 'monthly',
@@ -189,7 +193,9 @@ describe('investment ledger actions and valuation', () => {
         }],
       },
       monthBudgets: [{
-        month: '2026-10', source: 'custom', linkedIncluded: false, incomes: [], items: [{
+        month: '2026-10', source: 'custom', linkedIncluded: false, incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        items: [{
           id: 'linked-snapshot', sectionId: 'investments', name: 'Emergency cash',
           mode: 'amount', value: 30_000, frequency: 'monthly',
           firstDueMonth: '2026-10', holdingId: 'manual',

@@ -291,7 +291,7 @@ describe('budget plans and monthly views', () => {
 
       const data = emptyAppData('2026-03-15');
       data.budgetPlan = {
-        sections: [{ id: 'daily', name: 'Daily', type: 'expense' }],
+        sections: [{ id: 'daily', name: 'Daily', type: 'spend' }],
         incomes: incomes(1_000),
         repeatMonthly: true,
         repeatFrom: '2026-03',
@@ -317,7 +317,7 @@ describe('budget plans and monthly views', () => {
         budgetPlan: {
           sections: [
             { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'expense' },
+            { id: 'expense', name: 'Expenses', type: 'spend' },
           ],
           incomes: [],
           repeatMonthly: true,
@@ -332,7 +332,7 @@ describe('budget plans and monthly views', () => {
           month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
           sections: [
             { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'expense' },
+            { id: 'expense', name: 'Expenses', type: 'spend' },
           ],
           items: [{
             id: 'existing', sectionId: 'invest', name: 'Existing fund',
