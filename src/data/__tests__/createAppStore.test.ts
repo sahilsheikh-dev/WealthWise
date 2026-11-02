@@ -1512,6 +1512,70 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data).toEqual(before);
   });
 
+  it('unlinks budget items when a holding is deleted in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom' as const,
+        linkedIncluded: false,
+        incomes: [],
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        items: [{
+          id: 'cash-snapshot',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.deleteHolding('manual-cash', { linkedTransactions: 'keep' });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.holdings).toEqual([]);
+    expect(store.getState().data.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(store.getState().data.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
   it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
     const storage = new MemoryStorage();
     const v1 = makeV1Fixture();
