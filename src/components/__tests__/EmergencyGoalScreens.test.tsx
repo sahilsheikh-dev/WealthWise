@@ -185,6 +185,16 @@ describe('three-month emergency target screens', () => {
     });
     if (!home) throw new Error('Home did not render.');
 
+    const summaryCard = home.root.findAll((node) => String(node.type) === 'card')
+      .find((card) => renderedText(card).includes('Net Worth'));
+    if (!summaryCard) throw new Error('Home summary card is missing.');
+    expect(summaryCard.findAll((node) => String(node.type) === 'pillrow').map((row) =>
+      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
+    )).toEqual([
+      ['Assets', 'Liabilities'],
+      ['Emergency fund', 'Insurance'],
+    ]);
+
     const pills = home.root.findAll((node) =>
       ['Assets', 'Emergency fund', 'Liabilities', 'Insurance'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])

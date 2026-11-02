@@ -1443,6 +1443,75 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
   });
 
+  it('creates and undoes a linked manual investment deposit in one persisted write each', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `linked-deposit-${++id}`,
+      today: () => '2026-10-12',
+    });
+    await waitForHydration(store);
+    const before = store.getState().data;
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.addInvestmentEntry('manual-cash', {
+      date: '2026-10-12',
+      amount: 125,
+      kind: 'Deposit',
+      note: 'Emergency cash',
+    });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    const holding = store.getState().data.holdings[0];
+    if (holding?.kind !== 'manual') throw new Error('Manual linked holding is missing.');
+    const entry = holding.logs[0];
+    if (!entry) throw new Error('Manual linked deposit was not created.');
+    expect(entry).toMatchObject({ date: '2026-10-12', amount: 125, kind: 'Deposit' });
+    expect(store.getState().data.transactions).toContainEqual(expect.objectContaining({
+      type: 'invest',
+      amount: 125,
+      date: '2026-10-12',
+      source: { kind: 'holding-entry', parentId: 'manual-cash', entryId: entry.id },
+    }));
+
+    const writesBeforeUndo = storage.setItemCalls;
+    store.getState().actions.deleteInvestmentEntry('manual-cash', entry.id);
+    expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
   it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
     const storage = new MemoryStorage();
     const v1 = makeV1Fixture();
