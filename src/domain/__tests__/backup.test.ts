@@ -45,7 +45,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 16 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 17 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -186,7 +186,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('verifies v11 backup bytes and imports seeded cover goals', async () => {
+  it('verifies v11 backup bytes and removes superseded cover goals during migration', async () => {
     const data = makeV11Fixture();
     const envelope = {
       app: 'wealthwise',
@@ -199,13 +199,7 @@ describe('backup validation and serialization', () => {
     const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
     expect(imported).toMatchObject({ ok: true });
     if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
-    expect(imported.data.coverGoals).toEqual([
-      { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
-      { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
-      { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-      { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-      { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-    ]);
+    expect(imported.data).not.toHaveProperty('coverGoals');
     const tampered = { ...envelope, data: { ...data, settings: { ...data.settings, name: 'Tampered' } } };
     await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
@@ -357,7 +351,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(16);
+    expect(SCHEMA_VERSION).toBe(17);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -395,7 +389,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version seventeen', async () => {
+  it('round trips custom emergency-fund options and refuses schema version eighteen', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -419,12 +413,12 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 17;
+    future.schemaVersion = 18;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
 
-  it.each([13, 14])('imports a v%s backup through the editable cover-goal migration', async (schemaVersion) => {
+  it.each([13, 14])('imports a v%s backup and drops its superseded cover goals', async (schemaVersion) => {
     const data = {
       ...mockAppData,
       coverGoals: [
@@ -447,13 +441,7 @@ describe('backup validation and serialization', () => {
     if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
     expect(imported.data.budgetPlan).toEqual(data.budgetPlan);
     expect(imported.data.monthBudgets).toEqual(data.monthBudgets);
-    expect(imported.data.coverGoals).toEqual([
-      { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
-      { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
-      { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-      { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-      { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-    ]);
+    expect(imported.data).not.toHaveProperty('coverGoals');
   });
 
   it('imports a v15 backup and separates its legacy combined holding type', async () => {
@@ -491,7 +479,28 @@ describe('backup validation and serialization', () => {
     });
   });
 
-  it('round-trips an encrypted v16 backup containing a linked investment item', async () => {
+  it('imports a v16 backup while dropping only the retired insurance-goal fields', async () => {
+    const data = {
+      ...mockAppData,
+      coverGoals: [{ id: 'legacy-cover', name: 'Legacy', kind: 'health', target: { mode: 'none' } }],
+      policies: mockAppData.policies.map((policy) => ({ ...policy, coverGoalId: 'legacy-cover' })),
+    };
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 16,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
+      data,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
+    expect(imported.data).toEqual(mockAppData);
+    expect(imported.data).not.toHaveProperty('coverGoals');
+    expect(imported.data.policies.every((policy) => !('coverGoalId' in policy))).toBe(true);
+  });
+
+  it('round-trips an encrypted v17 backup containing a linked investment item', async () => {
     const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
     if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
     const plan = budgetPlanFromLines(
@@ -505,7 +514,7 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 16 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 17 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -642,7 +651,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 17;
+    newer.schemaVersion = 18;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

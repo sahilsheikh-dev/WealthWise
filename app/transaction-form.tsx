@@ -25,7 +25,7 @@ import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
-import { suggestPolicyForTransaction } from '../src/domain/coverGoals';
+import { suggestPolicyForTransaction } from '../src/domain/policySuggestions';
 import { holdingValue } from '../src/domain/portfolio';
 import {
   INVESTMENT_FORM_CATEGORIES,

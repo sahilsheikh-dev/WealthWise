@@ -64,7 +64,6 @@ function AppContent() {
                 <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="cover-goal-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="policy-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entries" />
                 <Stack.Screen name="liability-payments" />
