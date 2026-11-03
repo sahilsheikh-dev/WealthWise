@@ -448,6 +448,53 @@ describe('budget plans and monthly views', () => {
         patch: { holdingId: 'manual' },
       }, 'month', '2026-03-15')).toThrow('The budget item no longer exists');
     });
+
+    it('rejects new and edited Budget links to fixed deposits', () => {
+      const section = { id: 'invest', name: 'Investments', type: 'invest' as const };
+      const item = {
+        id: 'item',
+        sectionId: 'invest',
+        name: 'Fixed deposit',
+        mode: 'amount' as const,
+        value: 100,
+        frequency: 'monthly' as const,
+        firstDueMonth: '2026-03',
+      };
+      const data: AppData = {
+        ...emptyAppData('2026-03-15'),
+        holdings: [{
+          id: 'fd', kind: 'manual', name: 'FD', type: 'Fixed deposit',
+          invested: 100, value: 100, valueAsOf: '2026-03-01', logs: [],
+        }],
+        budgetPlan: {
+          sections: [section],
+          incomes: [],
+          repeatMonthly: true,
+          repeatFrom: '2026-03',
+          items: [],
+        },
+        monthBudgets: [{
+          month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
+          sections: [section], items: [],
+        }],
+      };
+
+      expect(() => addItem(data, '2026-03', { ...item, holdingId: 'fd' }, 'month', '2026-03-15'))
+        .toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
+
+      const withUnlinkedItem: AppData = {
+        ...data,
+        budgetPlan: { ...data.budgetPlan!, items: [item] },
+        monthBudgets: [{
+          ...data.monthBudgets![0]!,
+          items: [item],
+        }],
+      };
+      expect(() => editBudgetStructureItem(withUnlinkedItem, '2026-03', {
+        itemId: 'item',
+        patch: { holdingId: 'fd' },
+      }, 'month', '2026-03-15')).toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
+    });
   });
 
   it('projects cash flow through the 24-month plan horizon without mutating data', () => {
