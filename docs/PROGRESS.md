@@ -6594,7 +6594,21 @@ Assertion replacements:
 | `src/domain/__tests__/instrumentCard.test.ts`, one-time card actions | `['deposit', 'withdraw', 'entries']` | `['withdraw']` | Same capability rule; a separate test proves legacy-entry cards still expose Entries. |
 | `src/domain/__tests__/goalLinks.test.ts`, demo emergency total | `189_000` | `187_000` | Demo recurring contribution moved off the one-time Fixed deposit; the demo now asserts the Fixed deposit is entry-free and RD plan has entries. |
 | `src/domain/__tests__/schemas.test.ts`, persisted schema version | `15` | `16` | P29-I adds the v15-to-v16 migration. |
+| `src/mock/__tests__/demoData.test.ts`, monthly demo investments | Required every investment category in every month | Excludes the one-time FD/RD category from the monthly loop and asserts two RD-plan investment entries | The monthly deposit rule no longer applies to Fixed deposits; the recurring plan remains represented by its recorded installments. |
+| `src/components/__tests__/TransactionForm.test.tsx`, investment category cases | Included a direct deposit case for a Fixed deposit | Removes that impossible case and asserts Fixed deposit is absent from transaction-linked deposit choices | The UI must not offer a one-time holding as a deposit target; RD remains tested end to end. |
+| `src/lib/__tests__/memoryDocs.test.ts`, memory inventory | `84` suites / `1061` tests | `85` suites / `1078` tests | Current test inventory increased with the P29-I test matrix; the assertion remains exact. |
 
 No assertion was deleted without a replacement or reason. Behavior changes,
 focused evidence and these assertion replacements are recorded; P29-I remains
 in progress pending the final gates and coverage audit.
+
+The first fresh full coverage run exited 1: 82 suites passed and 3 failed
+(1075 passed, 3 failed). `demoData.test.ts` still required a recurring
+deposit-category transaction in all four months after that category was moved
+off the Fixed deposit; `TransactionForm.test.tsx` still attempted to submit a
+Fixed-deposit deposit despite the new action guard; `memoryDocs.test.ts` still
+expected schema v15 and the earlier 84/1061 inventory. The first two test
+expectations were corrected to prove the new one-time rule and retained RD
+behavior, while memory documentation and its exact inventory assertion were
+updated to v16 and 85/1078. The three affected suites then passed (41 tests).
+This initial Gate 1 result is retained; the final ordered gates remain pending.
