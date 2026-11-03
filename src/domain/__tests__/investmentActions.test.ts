@@ -1,6 +1,6 @@
 import { emptyAppData } from '../actions';
 import { validateIntegrity } from '../links';
-import { addHolding } from '../holdingActions';
+import { addHolding, updateHolding } from '../holdingActions';
 import {
   addInvestmentEntry,
   deleteHoldingWithTransactions,
@@ -21,6 +21,43 @@ const idSequence = (...ids: string[]) => {
 const empty = (): AppData => emptyAppData('2026-10-10');
 
 describe('investment ledger actions and valuation', () => {
+  it('blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts', () => {
+    const fixed = addHolding(empty(), {
+      name: 'Maturing FD', type: 'Fixed deposit', invested: 500, value: 500, valueAsOf: '2026-10-10',
+    }, () => 'fixed');
+
+    expect(() => addInvestmentEntry(fixed, 'fixed', {
+      date: '2026-10-10', amount: 100, kind: 'Deposit', note: '',
+    }, idSequence('blocked', 'blocked-tx'), '2026-10-10'))
+      .toThrow('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
+
+    const payout = addInvestmentEntry(fixed, 'fixed', {
+      date: '2026-10-10', amount: 500, kind: 'Withdrawal', note: 'Maturity',
+    }, idSequence('payout', 'payout-tx'), '2026-10-10');
+    expect(payout.holdings[0]?.logs[0]).toMatchObject({ kind: 'Withdrawal', amount: 500 });
+    expect(holdingValue(payout.holdings[0]!, '2026-10-10')).toBe(0);
+
+    const legacyWithEntry: AppData = {
+      ...fixed,
+      holdings: fixed.holdings.map((holding) => holding.kind === 'manual'
+        ? { ...holding, logs: [{ id: 'legacy', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }] }
+        : holding),
+    };
+    const updatedLegacy = updateInvestmentEntry(legacyWithEntry, 'fixed', 'legacy', { amount: 60 }, '2026-10-10');
+    expect(updatedLegacy.holdings[0]?.logs[0]).toMatchObject({ id: 'legacy', amount: 60 });
+    expect(deleteInvestmentEntry(updatedLegacy, 'fixed', 'legacy').holdings[0]?.logs).toEqual([]);
+
+    const cash = addHolding(empty(), {
+      name: 'Cash', type: 'Cash', invested: 0, value: 0, valueAsOf: '2026-10-10',
+    }, () => 'cash');
+    const withEntry = addInvestmentEntry(cash, 'cash', {
+      date: '2026-10-10', amount: 100, kind: 'Deposit', note: '',
+    }, idSequence('cash-entry', 'cash-tx'), '2026-10-10');
+    expect(() => updateHolding(withEntry, 'cash', { type: 'Fixed deposit' }))
+      .toThrow('Remove the existing entries before changing this holding to Fixed deposit.');
+    expect(withEntry.holdings[0]?.type).toBe('Cash');
+  });
+
   it('records manual deposits and withdrawals with linked transactions and updates/deletes both sides', () => {
     let data = addHolding(empty(), {
       name: 'Gold', type: 'Gold', invested: 10_000, value: 10_000, valueAsOf: '2026-10-01',

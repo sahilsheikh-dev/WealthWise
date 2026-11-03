@@ -314,6 +314,15 @@ describe('schema migration', () => {
             logs: [{ id: 'legacy-fixed-entry', date: '2026-10-02', amount: 50, note: 'preserve', kind: 'Withdrawal' }],
           },
           {
+            id: 'already-fixed-linked',
+            kind: 'manual',
+            name: 'Fixed deposit with a Budget schedule',
+            type: 'Fixed deposit',
+            invested: 500,
+            value: 550,
+            logs: [],
+          },
+          {
             id: 'already-recurring',
             kind: 'plan',
             name: 'Already recurring',
@@ -322,6 +331,7 @@ describe('schema migration', () => {
             logs: [],
           },
         ],
+        budgetPlan: { items: [{ id: 'budget-item', holdingId: 'already-fixed-linked' }] },
       };
       const originalHoldings = data.holdings;
       const migrated = migrateV15ToV16(data) as typeof data;
@@ -331,10 +341,12 @@ describe('schema migration', () => {
         { id: 'combined-schedule', type: 'Recurring deposit' },
         { id: 'already-fixed-plan', type: 'Recurring deposit' },
         { id: 'already-fixed', type: 'Fixed deposit' },
+        { id: 'already-fixed-linked', type: 'Recurring deposit' },
         { id: 'already-recurring', type: 'Recurring deposit' },
       ]);
       expect(migrated.holdings[1]?.logs).toEqual(data.holdings[1]?.logs);
       expect(migrated.holdings[3]?.logs).toEqual(data.holdings[3]?.logs);
+      expect(migrated.budgetPlan).toEqual(data.budgetPlan);
       expect(migrated).toMatchObject({ transactions: data.transactions, goals: data.goals, efBucketLinks: data.efBucketLinks });
       expect(data.holdings).toBe(originalHoldings);
       expect(migratePersisted({ data }, 15)).toEqual({ data: migrated });

@@ -177,7 +177,7 @@ Phase 29         █████████░ 92% (12/13)
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
-| P29-I | — | In progress | Inventory complete; schema v16 migration for legacy combined FD/RD types, v15 raw archive and backup import behavior pass focused verification. Capability/UI integration and final gates remain. | 2026-11-03 |
+| P29-I | — | In progress | Schema v16 migration and shared holding capabilities implemented; Fixed-deposit entry, schedule and Budget-link controls/guards, legacy entry preservation and large-font route tests pass focused verification. Full gates and closeout remain. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
@@ -6498,9 +6498,9 @@ or replacements of ledger expectations, not weakened assertions.
 
 ## P29-I holding capabilities (2026-11-03)
 
-**Assumed:** P29-I is new Phase 29 work. The current schema is v15 and the
-requested next schema version is v16. This is an inventory-only closeout so
-far; implementation, migration, tests and gates remain in progress.
+**Assumed:** P29-I is new Phase 29 work. The current schema was v15 and the
+requested next schema version is v16. Implementation and focused verification
+are complete; full gates and closeout remain in progress.
 
 ### Step 1 — read-only capability inventory
 
@@ -6562,7 +6562,39 @@ v16 round trip; the existing v1–v14 import tests remain in the chain.
 
 **Assumed:** schema v16 is warranted by the owner-requested schema bump even
 though current types are already separate. The migration also recognizes
-legacy combined strings defensively. Focused migration, archive, safe-storage
-and backup tests passed (4 suites, 146 tests); `npx tsc --noEmit` and
-`npx expo lint` exited 0. No assertions were
-removed or weakened. The current capability/UI behavior remains in progress.
+legacy combined strings defensively. Fixed deposit is the only one-time
+holding type; Cash and Savings account remain eligible for recurring plans.
+
+The exhaustive `holdingCapabilities(type)` map is the shared source for entry,
+recurring-plan, and return availability. It is applied to card actions, manual
+and plan forms, entry screens and entry actions, transaction-linked deposits,
+schedule/due/reminder generation, and Budget link options/actions. New
+Fixed-deposit deposits and entries are rejected while maturity withdrawals
+remain available. Existing entries remain visible/editable/deletable with the
+required helper note; changing a holding with entries to Fixed deposit is
+blocked. Persisted plans and Fixed-deposit Budget links are rejected by schema
+and integrity validation. Migration reclassifies a legacy Fixed-deposit plan
+as Recurring deposit to retain its schedule. The Emergency fund bucket label
+and links remain unchanged.
+
+The existing manual-holding schema/form has no rate or maturity fields.
+**Assumed:** no new rate or maturity model is added; the existing opening
+amount, valuation update, and withdrawal controls are the closest available
+implementation of the frozen form request.
+
+Focused validation: 12 suites, 348 tests passed, including holding capability
+matrix/actions, form and route behavior, and migration. `npx tsc --noEmit`
+exited 0. Final ordered gates and fresh coverage remain pending.
+
+Assertion replacements:
+
+| File and test | Old | New | Reason |
+|---|---|---|---|
+| `src/domain/__tests__/instrumentCard.test.ts`, one-time card actions | `['deposit', 'withdraw', 'entries', 'confirm']` | `['withdraw', 'confirm']` | Fixed deposits cannot accept new deposits or entries. |
+| `src/domain/__tests__/instrumentCard.test.ts`, one-time card actions | `['deposit', 'withdraw', 'entries']` | `['withdraw']` | Same capability rule; a separate test proves legacy-entry cards still expose Entries. |
+| `src/domain/__tests__/goalLinks.test.ts`, demo emergency total | `189_000` | `187_000` | Demo recurring contribution moved off the one-time Fixed deposit; the demo now asserts the Fixed deposit is entry-free and RD plan has entries. |
+| `src/domain/__tests__/schemas.test.ts`, persisted schema version | `15` | `16` | P29-I adds the v15-to-v16 migration. |
+
+No assertion was deleted without a replacement or reason. Behavior changes,
+focused evidence and these assertion replacements are recorded; P29-I remains
+in progress pending the final gates and coverage audit.

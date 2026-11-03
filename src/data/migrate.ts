@@ -741,17 +741,27 @@ export function migrateV14ToV15(persisted: unknown): unknown {
 
 export function migrateV15ToV16(persisted: unknown): unknown {
   if (!isRecord(persisted) || !Array.isArray(persisted.holdings)) return persisted;
+  const budgets = [
+    persisted.budgetPlan,
+    ...(Array.isArray(persisted.monthBudgets) ? persisted.monthBudgets : []),
+  ];
+  const hasBudgetSchedule = (holdingId: unknown) => budgets.some((budget) =>
+    isRecord(budget) &&
+    Array.isArray(budget.items) &&
+    budget.items.some((item) => isRecord(item) && item.holdingId === holdingId),
+  );
   let changed = false;
   const holdings = persisted.holdings.map((holding) => {
     if (!isRecord(holding)) return holding;
     const combinedType = holding.type === 'Fixed deposit / RD' || holding.type === 'FD / RD';
-    const scheduledFixedDeposit = holding.type === 'Fixed deposit' && holding.kind === 'plan';
+    const hasSchedule = holding.kind === 'plan' || hasBudgetSchedule(holding.id);
+    const scheduledFixedDeposit = holding.type === 'Fixed deposit' && hasSchedule;
     if (!combinedType && !scheduledFixedDeposit) return holding;
     const hasEntries = Array.isArray(holding.logs) && holding.logs.length > 0;
     changed = true;
     return {
       ...holding,
-      type: combinedType && !hasEntries && holding.kind !== 'plan'
+      type: combinedType && !hasEntries && !hasSchedule
         ? 'Fixed deposit'
         : 'Recurring deposit',
     };
