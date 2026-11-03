@@ -956,6 +956,28 @@ describe('budget plans and monthly views', () => {
     expect(() => monthlyCommitments(data, '2026-13')).toThrow(RangeError);
   });
 
+  it('shows a policy premium on its selected next due date in the Insurance section', () => {
+    const duePolicy = {
+      ...policy,
+      startDate: '2026-01-01',
+      trackFrom: '2026-03-08',
+      endDate: '2026-04-30',
+      payments: [],
+    };
+    const rows = linkedRecurringForMonth({
+      ...emptyAppData('2026-03-01'),
+      policies: [duePolicy],
+    }, '2026-03', '2026-03-01').filter((row) => row.kind === 'policy');
+    expect(rows).toEqual([
+      expect.objectContaining({
+        category: 'Health premium',
+        dueDate: '2026-03-08',
+        status: 'upcoming',
+        amount: 60,
+      }),
+    ]);
+  });
+
   it('projects paid and unpaid recurring schedule rows by month and category', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
@@ -998,28 +1020,16 @@ describe('budget plans and monthly views', () => {
     expect(() => linkedRecurringForMonth(data, '2026-13', '2026-03-31')).toThrow(RangeError);
   });
 
-  it('uses the generic category for scheduled premiums under no-kind cover goals', () => {
+  it('derives scheduled premium categories from policy kind', () => {
     const empty = emptyAppData('2026-03-01');
-    const customGoal = {
-      id: 'custom-cover',
-      name: 'Custom cover',
-      kind: null,
-      target: { mode: 'none' as const },
-    };
     const data = {
       ...empty,
-      coverGoals: [...empty.coverGoals, customGoal],
-      policies: [{ ...policy, coverGoalId: customGoal.id }],
+      policies: [policy],
     };
     expect(monthlyCommitments(data, '2026-03').find((item) => item.kind === 'policy')?.category)
-      .toBe('Insurance premium');
-    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')
-      .find((item) => item.kind === 'policy')?.category).toBe('Insurance premium');
-    expect(linkedRecurringForMonth({
-      ...data,
-      policies: [{ ...policy, coverGoalId: undefined }],
-    }, '2026-03', '2026-03-31').find((item) => item.kind === 'policy')?.category)
       .toBe('Health premium');
+    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')
+      .find((item) => item.kind === 'policy')?.category).toBe('Health premium');
   });
 
   it('matches calendar months, including leap February and demo schedule rows', () => {

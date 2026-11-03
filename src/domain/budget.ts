@@ -10,7 +10,7 @@ import { formatINR } from '../lib/format';
 import { BUDGET_GROUPS, budgetGroupFor, type BudgetGroup } from './budgetGroups';
 import {
   isInsuranceBudgetCategory,
-  policyPremiumCategoryFor,
+  policyPremiumCategory,
 } from './policyCategories';
 import type { ScheduleRow } from './schedule';
 import type {
@@ -228,7 +228,7 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
         kind: 'policy', id: policy.id, name: policy.name,
-        category: policyPremiumCategoryFor(policy, data.coverGoals),
+        category: policyPremiumCategory(policy.kind),
         dueDate: row.dueDate, plannedAmount: row.amount, status: row.status,
         paidAmount: row.paidAmount ?? 0,
       });
@@ -277,7 +277,7 @@ export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISOD
   }
   for (const policy of data.policies) {
     rows.push(...linkedRowsFor(
-      'policy', policy.id, policy.name, policyPremiumCategoryFor(policy, data.coverGoals), key,
+      'policy', policy.id, policy.name, policyPremiumCategory(policy.kind), key,
       policySchedule(policy, asOf).rows,
     ));
   }
@@ -1721,9 +1721,8 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
         ? 'EMI'
         : isInsuranceBudgetCategory(transaction.category)
           ? transaction.category
-          : policyPremiumCategoryFor(
-            data.policies.find((policy) => policy.id === source.parentId) ?? { kind: 'other' },
-            data.coverGoals,
+          : policyPremiumCategory(
+            data.policies.find((policy) => policy.id === source.parentId)?.kind ?? 'other',
           );
     const title = kind === 'plan'
       ? data.holdings.find((holding) => holding.id === source.parentId)?.name ?? 'Investment'

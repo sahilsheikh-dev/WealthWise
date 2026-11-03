@@ -8,7 +8,6 @@ import HomeScreen from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import { emptyAppData } from '../../domain/actions';
-import { defaultCoverGoals } from '../../domain/coverGoals';
 import { homeSummary } from '../../domain/summary';
 import { THEME_IDS, type AppData, type Policy, type ThemeId } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
@@ -440,7 +439,6 @@ describe('three-month emergency target screens', () => {
     const data: AppData = {
       ...empty,
       policies: [policy],
-      coverGoals: defaultCoverGoals(),
       liabilities: [{
         id: 'upcoming-friend-payment',
         kind: 'one-time',
@@ -530,7 +528,6 @@ describe('three-month emergency target screens', () => {
     mockData.current = {
       ...empty,
       policies: [policy],
-      coverGoals: defaultCoverGoals(),
       budgetPlan: null,
       monthBudgets: [],
       transactions: [],
@@ -582,7 +579,6 @@ describe('three-month emergency target screens', () => {
         sumAssured: 2_000_000,
         payments: [],
       }],
-      coverGoals: defaultCoverGoals(),
     };
     let goals: TestRenderer.ReactTestRenderer | undefined;
     let home: TestRenderer.ReactTestRenderer | undefined;

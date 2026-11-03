@@ -34,13 +34,6 @@ describe('immutable app actions', () => {
       holdings: [],
       liabilities: [],
       policies: [],
-      coverGoals: [
-        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
-        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
-        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-      ],
       budget: null,
       budgetPlan: null,
       monthBudgets: [],

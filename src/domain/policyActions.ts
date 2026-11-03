@@ -1,7 +1,7 @@
 import { NotFoundError } from './actions';
-import type { AppData, Policy, PolicyStatus } from './types';
+import type { AppData, Policy } from './types';
 
-export type PolicyPatch = Partial<Omit<Policy, 'id' | 'payments'>>;
+export type PolicyPatch = Partial<Omit<Policy, 'id' | 'payments' | 'status'>>;
 
 export class DuplicatePolicyError extends Error {
   constructor(id: string) {
@@ -17,24 +17,10 @@ export class PolicyGoalLinkError extends Error {
   }
 }
 
-export class PolicyCoverGoalNotFoundError extends Error {
-  constructor(readonly coverGoalId: string) {
-    super(`Cover goal with id "${coverGoalId}" was not found.`);
-    this.name = 'PolicyCoverGoalNotFoundError';
-  }
-}
-
-function assertCoverGoalExists(data: AppData, coverGoalId: string | undefined): void {
-  if (coverGoalId !== undefined && !data.coverGoals.some((goal) => goal.id === coverGoalId)) {
-    throw new PolicyCoverGoalNotFoundError(coverGoalId);
-  }
-}
-
 export function addPolicy(data: AppData, input: Policy): AppData {
   if (data.policies.some((policy) => policy.id === input.id)) {
     throw new DuplicatePolicyError(input.id);
   }
-  assertCoverGoalExists(data, input.coverGoalId);
   return { ...data, policies: [...data.policies, { ...input, payments: [...input.payments] }] };
 }
 
@@ -44,7 +30,6 @@ export function updatePolicy(
 ): AppData {
   const current = data.policies.find((policy) => policy.id === input.id);
   if (!current) throw new NotFoundError('Policy', input.id);
-  assertCoverGoalExists(data, input.patch.coverGoalId);
   const updated = { ...current, ...input.patch };
   if (input.patch.kind !== undefined && input.patch.kind !== current.kind
     && input.patch.kind !== 'life-savings' && input.patch.kind !== 'ulip') {
@@ -64,21 +49,6 @@ export function updatePolicy(
     ...data,
     transactions,
     policies: data.policies.map((policy) => policy.id === input.id ? updated : policy),
-  };
-}
-
-export function setPolicyStatus(
-  data: AppData,
-  input: { id: string; status: PolicyStatus },
-): AppData {
-  const policy = data.policies.find((item) => item.id === input.id);
-  if (!policy) throw new NotFoundError('Policy', input.id);
-  if (policy.status === input.status) return data;
-  return {
-    ...data,
-    policies: data.policies.map((item) =>
-      item.id === input.id ? { ...item, status: input.status } : item,
-    ),
   };
 }
 

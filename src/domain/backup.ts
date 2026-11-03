@@ -10,7 +10,7 @@ import {
   EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
-import { COVER_POLICY_TYPES, THEME_IDS, type AppData, type ISODate } from './types';
+import { THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -129,9 +129,9 @@ const policySchema = z.strictObject({
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
-  coverGoalId: idSchema.optional(),
   premium: z.number().finite().positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: dateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
   policyNumber: z.string().max(30).optional(),
@@ -155,36 +155,9 @@ const policySchema = z.strictObject({
   if ((policy.currentValue === null) !== (policy.valueAsOf === null)) {
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and date must be set together' });
   }
-});
-const coverGoalsSchema = z.array(z.strictObject({
-  id: idSchema,
-  name: z.string().min(1).max(40).refine((value) => value.trim().length > 0),
-  kind: z.enum(COVER_POLICY_TYPES).nullable(),
-  target: z.discriminatedUnion('mode', [
-    z.strictObject({ mode: z.literal('income-multiple'), value: z.number().finite().min(1).max(50) }),
-    z.strictObject({ mode: z.literal('amount'), value: z.number().finite().min(0).max(100_000_000_000) }),
-    z.strictObject({ mode: z.literal('active-only') }),
-    z.strictObject({ mode: z.literal('none') }),
-  ]),
-})).max(20).superRefine((goals, context) => {
-  const ids = new Set<string>();
-  const names = new Set<string>();
-  const kinds = new Set<string>();
-  goals.forEach((goal, index) => {
-    const normalizedName = goal.name.trim().toLowerCase();
-    if (ids.has(goal.id)) {
-      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Cover goal IDs must be unique' });
-    }
-    if (names.has(normalizedName)) {
-      context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Cover goal names must be unique' });
-    }
-    if (goal.kind !== null && kinds.has(goal.kind)) {
-      context.addIssue({ code: 'custom', path: [index, 'kind'], message: 'Cover goal kinds must be unique' });
-    }
-    ids.add(goal.id);
-    names.add(normalizedName);
-    if (goal.kind !== null) kinds.add(goal.kind);
-  });
+  if (policy.frequency === 'custom' && policy.customIntervalMonths === undefined) {
+    context.addIssue({ code: 'custom', path: ['customIntervalMonths'], message: 'Custom frequency requires an interval in months.' });
+  }
 });
 const budgetSchema = z.strictObject({
   plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
@@ -306,7 +279,6 @@ export const importDataSchema = z.strictObject({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   policies: z.array(policySchema).max(100_000),
-  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),

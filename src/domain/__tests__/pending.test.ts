@@ -1,4 +1,5 @@
 import { emptyAppData } from '../actions';
+import { deletePolicy } from '../policyActions';
 import { availableBalance, monthPositionAt } from '../cashFlow';
 import { budgetMonthView } from '../budget';
 import { pendingActionLabel, pendingItems } from '../pending';
@@ -234,22 +235,47 @@ describe('pending item projection', () => {
     ]);
   });
 
-  it('projects custom-goal policy dues under the generic insurance category', () => {
+  it('creates an upcoming premium due on the selected date in its month', () => {
+    const due = pendingItems({
+      ...base(),
+      policies: [policy({
+        startDate: '2026-01-01',
+        trackFrom: '2026-02-22',
+        endDate: '2026-03-31',
+      })],
+    }, '2026-02', '2026-02-15').filter((item) => item.source.kind === 'policy');
+    expect(due).toEqual([
+      expect.objectContaining({
+        title: 'Health cover',
+        category: 'Health premium',
+        amount: 60,
+        dueDate: '2026-02-22',
+        status: 'upcoming',
+      }),
+    ]);
+  });
+
+  it('projects savings-policy dues under the generic insurance category', () => {
     const data = base();
-    const customGoal = {
-      id: 'custom-cover',
-      name: 'Custom cover',
-      kind: null,
-      target: { mode: 'none' as const },
-    };
     const rows = pendingItems({
       ...data,
-      coverGoals: [...data.coverGoals, customGoal],
-      policies: [policy({ coverGoalId: customGoal.id })],
+      policies: [policy({ kind: 'life-savings' })],
     }, '2026-02', '2026-02-15').filter((item) => item.source.kind === 'policy');
     expect(rows).toEqual([
       expect.objectContaining({ category: 'Insurance premium' }),
     ]);
+  });
+
+  it('removes pending premium dues when a policy is deleted', () => {
+    const data = {
+      ...base(),
+      policies: [policy()],
+    };
+    expect(pendingItems(data, '2026-02', '2026-02-15')
+      .some((item) => item.source.kind === 'policy')).toBe(true);
+    const deleted = deletePolicy(data, { id: 'policy' });
+    expect(pendingItems(deleted, '2026-02', '2026-02-15')
+      .some((item) => item.source.kind === 'policy')).toBe(false);
   });
 
   it('projects remaining budget lines once and suppresses commitments and represented investment dues', () => {

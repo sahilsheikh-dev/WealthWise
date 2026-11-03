@@ -15,7 +15,6 @@ import {
   plannedForMonth,
 } from '../domain/budget';
 import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
-import { defaultCoverGoals } from '../domain/coverGoals';
 import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
@@ -446,7 +445,6 @@ function makePolicies(today: ISODate, firstMonth: string): Policy[] {
     name: 'Home protection',
     insurer: 'Demo General',
     kind: 'home',
-    coverGoalId: 'demo-cover-goal-family',
     premium: 6_000,
     frequency: 'yearly',
     startDate: `${firstMonth}-22`,
@@ -504,19 +502,6 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
-    coverGoals: [
-      ...defaultCoverGoals().map((goal) => goal.kind === 'term-life'
-        ? { ...goal, target: { mode: 'income-multiple' as const, value: 12 } }
-        : goal.kind === 'health'
-          ? { ...goal, target: { mode: 'amount' as const, value: 2_000_000 } }
-          : goal),
-      {
-        id: 'demo-cover-goal-family',
-        name: 'Family protection',
-        kind: null,
-        target: { mode: 'amount', value: 1_500_000 },
-      },
-    ],
     budget: null,
     budgetPlan,
     monthBudgets: [],

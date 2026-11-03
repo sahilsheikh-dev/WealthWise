@@ -1,7 +1,7 @@
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { holdingCapabilities } from './holdingCapabilities';
-import { GENERIC_INSURANCE_CATEGORY, policyPremiumCategory, policyPremiumCategoryFor } from './policyCategories';
-import type { AppData, CoverGoal, HoldingType, InvestmentEntry, Transaction } from './types';
+import { GENERIC_INSURANCE_CATEGORY, policyPremiumCategory } from './policyCategories';
+import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
 
@@ -96,7 +96,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     { name: 'holdings', ids: data.holdings.map(({ id }) => id) },
     { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
     { name: 'policies', ids: data.policies.map(({ id }) => id) },
-    { name: 'coverGoals', ids: data.coverGoals.map(({ id }) => id) },
     { name: 'efCustomBuckets', ids: data.efCustomBuckets.map(({ id }) => id) },
     { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
     { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
@@ -109,40 +108,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       seen.add(id);
     });
   }
-
-  const coverGoalNames = new Set<string>();
-  const coverGoalKinds = new Set<string>();
-  if (data.coverGoals.length > 20) {
-    add('cover-goal-limit', 'There can be at most 20 cover goals.', ['coverGoals']);
-  }
-  data.coverGoals.forEach((goal: CoverGoal, index) => {
-    const normalizedName = goal.name.trim().toLowerCase();
-    if (coverGoalNames.has(normalizedName)) {
-      add('duplicate-cover-goal-name', `Duplicate cover goal name "${goal.name}".`, ['coverGoals', index, 'name']);
-    }
-    coverGoalNames.add(normalizedName);
-    if (goal.kind !== null && coverGoalKinds.has(goal.kind)) {
-      add('duplicate-cover-goal-kind', `Duplicate cover goal kind "${goal.kind}".`, ['coverGoals', index, 'kind']);
-    }
-    if (goal.kind !== null) coverGoalKinds.add(goal.kind);
-    if (goal.name.trim().length === 0 || goal.name.length > 40) {
-      add('invalid-cover-goal-name', 'Cover goal names must contain 1 to 40 characters.', ['coverGoals', index, 'name']);
-    }
-    if ((goal.target.mode === 'income-multiple'
-      && (!Number.isFinite(goal.target.value) || goal.target.value < 1 || goal.target.value > 50))
-      || (goal.target.mode === 'amount'
-        && (!Number.isFinite(goal.target.value) || goal.target.value < 0))) {
-      add('invalid-cover-goal-target', 'Cover goal target is outside its supported range.', ['coverGoals', index, 'target']);
-    }
-  });
-  const coverGoalIds = new Set(data.coverGoals.map((goal) => goal.id));
-  data.policies.forEach((policy, index) => {
-    if (policy.coverGoalId !== undefined && !coverGoalIds.has(policy.coverGoalId)) {
-      add('missing-policy-cover-goal', `Policy "${policy.id}" references a missing cover goal.`, [
-        'policies', index, 'coverGoalId',
-      ]);
-    }
-  });
 
   const linked = new Map<string, Transaction[]>();
   for (const [index, transaction] of data.transactions.entries()) {
@@ -176,7 +141,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       const policy = data.policies.find((item) => item.id === source.parentId);
       entry = policy?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
-      expectedCategory = policy ? policyPremiumCategoryFor(policy, data.coverGoals) : undefined;
+      expectedCategory = policy ? policyPremiumCategory(policy.kind) : undefined;
       historicalPolicyCategory = policy ? policyPremiumCategory(policy.kind) : undefined;
     } else if (source.kind === 'liability-origin') {
       const liability = data.liabilities.find((item) =>

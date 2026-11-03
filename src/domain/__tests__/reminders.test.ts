@@ -130,6 +130,42 @@ describe('reminder planner', () => {
     expect(reminders.some((item) => item.dueItemId.includes('manual'))).toBe(false);
   });
 
+  it('plans a reminder for a premium due the following week', () => {
+    const policy: Policy = {
+      id: 'next-week-policy',
+      name: 'Next week policy',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 50,
+      frequency: 'monthly',
+      startDate: '2026-10-01',
+      status: 'active',
+      premiumYears: 1,
+      trackFrom: '2026-10-23',
+      endDate: '2026-12-31',
+      currentValue: null,
+      valueAsOf: null,
+      payments: [],
+    };
+    const reminders = planReminders({
+      ...emptyAppData('2026-10-16'),
+      policies: [policy],
+    }, preferences, new Date(2026, 9, 16, 8), 60);
+    expect(reminders).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'day-before',
+        dueItemId: 'due:policy:next-week-policy:policy:0',
+        target: expect.objectContaining({ dueDate: '2026-10-23' }),
+      }),
+      expect.objectContaining({
+        kind: 'same-day',
+        dueItemId: 'due:policy:next-week-policy:policy:0',
+        target: expect.objectContaining({ dueDate: '2026-10-23' }),
+      }),
+    ]));
+    expect(reminders).toHaveLength(6);
+  });
+
   it('plans the day before and same-day local times with deterministic targets', () => {
     const data = dataWithLiabilities(oneTimeLiability({ dueDate: '2024-03-01' }));
     const reminders = planReminders(data, preferences, new Date(2024, 1, 28, 8), 60);
