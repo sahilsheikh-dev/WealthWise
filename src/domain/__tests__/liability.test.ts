@@ -131,6 +131,68 @@ describe('liability calculations', () => {
     expect(withPayment.balance).toBeCloseTo(104_997.92, 0);
   });
 
+  it('characterizes the reported personal-loan inputs with an explicitly illustrative principal', () => {
+    const paymentDates = [
+      '2025-09-07', '2025-10-07', '2025-11-07', '2025-12-07',
+      '2026-01-07', '2026-02-07', '2026-03-07', '2026-04-07',
+      '2026-05-07', '2026-06-07', '2026-07-07', '2026-08-07',
+      '2026-09-07', '2026-10-07',
+    ] as const;
+    const balancesAfterEachPayment = [
+      '239157.67', '236399.08', '233703.76', '230877.81',
+      '228112.01', '225310.91', '222195.71', '219319.08',
+      '216315.43', '213363.74', '210286.51', '207257.86',
+      '204190.55', '201000.00',
+    ];
+    const illustrative = {
+      principal: 241_784.24,
+      ratePct: 15.03,
+      startDate: '2025-08-07',
+      payments: paymentDates.map((date, index) => ({
+        id: `owner-fixture-${index + 1}`,
+        date,
+        amount: 5_713,
+        note: '',
+        kind: 'EMI',
+      })),
+      settlement: null,
+    };
+
+    expect(loanState(illustrative, '2025-09-07').interestAccrued).toBeCloseTo(
+      241_784.24 * 0.1503 * 31 / 365,
+      8,
+    );
+    for (const [index, expectedBalance] of balancesAfterEachPayment.entries()) {
+      const asOf = paymentDates[index];
+      if (!asOf) throw new Error(`Missing due date for payment ${index + 1}`);
+      expect(loanState({
+        ...illustrative,
+        payments: illustrative.payments.slice(0, index + 1),
+      }, asOf).balance.toFixed(2)).toBe(expectedBalance);
+    }
+
+    const firstDuePayment = {
+      id: 'on-due-date',
+      date: '2025-09-07',
+      amount: 5_713,
+      note: '',
+      kind: 'EMI' as const,
+    };
+    const latePayment = { ...firstDuePayment, date: '2025-09-14' };
+    const balanceOnFirstDueDate = loanState({
+      ...illustrative,
+      payments: [firstDuePayment],
+    }, '2025-09-07').balance;
+    const lateBalance = loanState({
+      ...illustrative,
+      payments: [latePayment],
+    }, '2025-09-14').balance;
+    expect(lateBalance - balanceOnFirstDueDate).toBeCloseTo(
+      241_784.24 * 0.1503 * 7 / 365,
+      8,
+    );
+  });
+
   it('clamps overpayments, ignores future payments and normalizes ordering', () => {
     const overpaid = loanState(makeLiability({
       ratePct: 0,

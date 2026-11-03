@@ -6280,3 +6280,45 @@ Investment Entries Balance/Deposited/Withdrawn labels, back-dated helper text,
 and large-amount rendering at font scales 1.3 and 2.0 remain unverified on
 physical iOS and Android devices. TestRenderer and Expo exports are not
 physical-device evidence.
+
+## P29-J liability outstanding-balance audit (2026-11-03)
+
+**Assumed:** P29-J is new Phase 29 audit work. Schema remains v15, liability
+behavior is not changed unless the audit proves a plain calculation bug, and
+the user-owned `app/(tabs)/index.tsx` is read-only.
+
+### Step 1 — read-only characterization
+
+The recurring-liability outstanding balance is calculated by `loanState()` in
+`src/domain/liability.ts` (lines 173–210). The path is actual-days/365 simple
+interest, not standard monthly amortization:
+
+1. Start with the principal (or a saved settlement balance and date).
+2. Select recorded payments whose dates are on or before `asOf`, sort by date
+   and stable payment ID, and clamp any pre-start payment date to the loan start.
+3. Before each payment, accrue `balance × annual rate / 100 × elapsed days / 365`.
+   `daysBetween()` in `src/domain/dates.ts` uses UTC calendar-day differences.
+4. Add accrued interest to the balance, then subtract the entire payment and
+   clamp the balance to zero. There is no separate interest-vs-principal split
+   in this state calculation.
+5. After the last payment, accrue the same daily formula through `asOf`.
+
+For the owner's start date 2025-08-07 and first due/payment date 2025-09-07,
+the first period is 31 days. At 15.03%, that period's interest is principal
+× 0.1503 × 31 / 365. A payment recorded after its due date accrues through its
+actual payment date; `loanState()` itself does not consult the schedule due
+date. A missed payment likewise leaves the balance accruing through the
+requested `asOf`. The balance is not rounded after each accrual or payment;
+the calculation retains JavaScript number precision. Rendering goes through
+`AmountText`/`formatAmount`, so displayed precision follows its display tier.
+
+Characterization coverage was added in
+`src/domain/__tests__/liability.test.ts` — `characterizes the reported
+personal-loan inputs with an explicitly illustrative principal`. The fixture
+uses the provided rate, EMI, start date, first due date and 14 assumed
+on-schedule payment dates. Principal is synthetic, calibrated to produce an
+approximately 201,000 app balance after the 14th payment; it is not asserted
+to be the owner's principal. The test verifies the 31-day first-period
+interest, balance after each of 14 payments, and the extra interest from a
+seven-day-late payment. Focused test result: 12 tests passed. No source
+behavior, schema or Home-screen code changed.
