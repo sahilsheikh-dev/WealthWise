@@ -14,7 +14,6 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 
 const budgetSectionFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter a section name.').max(30, 'Keep the name under 30 characters.'),
@@ -74,6 +73,7 @@ export default function BudgetSectionFormScreen() {
   const today = todayISO();
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
+  const [deleteDescription, setDeleteDescription] = useState('');
   const [pendingValues, setPendingValues] = useState<z.output<typeof budgetSectionFormSchema> | null>(null);
 
   if (editing && !section) {
@@ -84,16 +84,11 @@ export default function BudgetSectionFormScreen() {
     );
   }
 
-  const remove = async () => {
+  const remove = () => {
     if (!section) return;
     const count = data.budgetPlan?.items.filter((item) => item.sectionId === section.id).length ?? 0;
-    const confirmed = await confirmAsync({
-      title: 'Delete category?',
-      message: `This category contains ${count} budget item${count === 1 ? '' : 's'}.`,
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
-    if (confirmed) setDeleteScopeDialogOpen(true);
+    setDeleteDescription(`This category contains ${count} budget item${count === 1 ? '' : 's'}.`);
+    setDeleteScopeDialogOpen(true);
   };
 
   const applyDelete = (selectedScope: 'month' | 'following') => {
@@ -143,7 +138,7 @@ export default function BudgetSectionFormScreen() {
       title={section ? 'Rename category' : 'Add category'}
       onClose={() => router.back()}
       isDirty={isDirty}
-      headerAction={section ? { label: 'Delete category', onPress: () => { void remove(); } } : undefined}
+      headerAction={section ? { label: 'Delete category', onPress: remove } : undefined}
       footer={
         <Button
           label="Save"
@@ -187,8 +182,13 @@ export default function BudgetSectionFormScreen() {
         />
       ) : null}
     </FormScreen>
-    <ApplyScopeDialog visible={scopeDialogOpen} onCancel={() => setScopeDialogOpen(false)} onApply={applySave} />
-    <ApplyScopeDialog visible={deleteScopeDialogOpen} title="Apply to" onCancel={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
+    <ApplyScopeDialog visible={scopeDialogOpen} onClose={() => setScopeDialogOpen(false)} onApply={applySave} />
+    <ApplyScopeDialog
+      visible={deleteScopeDialogOpen}
+      description={deleteDescription}
+      onClose={() => setDeleteScopeDialogOpen(false)}
+      onApply={applyDelete}
+    />
     </>
   );
 }

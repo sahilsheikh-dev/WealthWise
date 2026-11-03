@@ -387,8 +387,8 @@ export default function BudgetItemFormScreen() {
         </AppText>
       ) : null}
       </FormScreen>
-      <ApplyScopeDialog visible={scopeDialogOpen} onCancel={() => setScopeDialogOpen(false)} onApply={applySave} />
-      <ApplyScopeDialog visible={deleteScopeDialogOpen} title="Apply to" onCancel={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
+      <ApplyScopeDialog visible={scopeDialogOpen} onClose={() => setScopeDialogOpen(false)} onApply={applySave} />
+      <ApplyScopeDialog visible={deleteScopeDialogOpen} onClose={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
     </>
   );
 }
