@@ -603,16 +603,18 @@ jest.mock('../../components/PaidAmountDialog', () => {
 jest.mock('../../components/ApplyScopeDialog', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    ApplyScopeDialog: ({ visible, onApply, onCancel }: {
+    ApplyScopeDialog: ({ visible, onApply, onClose, description }: {
       visible: boolean;
       onApply: (scope: 'month' | 'following') => void;
-      onCancel: () => void;
+      onClose: () => void;
+      description?: string;
     }) => visible ? ReactModule.createElement('apply-scope-dialog', {
       testID: 'apply-scope-dialog',
     },
+    description ? ReactModule.createElement('text', null, description) : null,
     ReactModule.createElement('button', { onPress: () => onApply('month') }, 'This month only'),
     ReactModule.createElement('button', { onPress: () => onApply('following') }, 'This and following months'),
-    ReactModule.createElement('button', { onPress: onCancel }, 'Cancel')) : null,
+    ReactModule.createElement('button', { accessibilityLabel: 'Close', onPress: onClose }, 'Close')) : null,
   };
 });
 
@@ -1202,6 +1204,7 @@ describe('route render smoke audit', () => {
     const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
       addSection: jest.Mock;
       renameSection: jest.Mock;
+      deleteSection: jest.Mock;
       addBudgetItem: jest.Mock;
       editBudgetStructureItem: jest.Mock;
       deleteBudgetStructureItem: jest.Mock;
@@ -1253,7 +1256,7 @@ describe('route render smoke audit', () => {
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       const cancelScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
-      act(() => cancelScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      act(() => cancelScopeDialog.findByProps({ accessibilityLabel: 'Close' }).props.onPress());
       expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
@@ -1373,7 +1376,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       const cancelDeleteScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
-      act(() => cancelDeleteScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      act(() => cancelDeleteScopeDialog.findByProps({ accessibilityLabel: 'Close' }).props.onPress());
       expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
       expect(actions.deleteBudgetStructureItem).not.toHaveBeenCalled();
       await act(async () => {
@@ -1429,6 +1432,30 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      actions.deleteSection.mockClear();
+      actions.restoreBudgetPlanAndMonth.mockClear();
+      mockConfirmAsync.mockClear();
+      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
+      renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete category' }).props.onPress();
+      });
+      const deleteSectionDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      expect(deleteSectionDialog.findAllByProps({ children: 'This category contains 1 budget item.' }))
+        .toHaveLength(1);
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      await act(async () => {
+        deleteSectionDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.deleteSection).toHaveBeenCalledWith(month, 'pets', 'following', todayISO());
+      const sectionDeleteToast = useUIStore.getState().actionToast;
+      expect(sectionDeleteToast?.actionLabel).toBe('Undo');
+      act(() => sectionDeleteToast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
       act(() => renderer?.unmount());
       renderer = undefined;
 
