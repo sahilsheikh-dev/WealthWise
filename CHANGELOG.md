@@ -47,6 +47,9 @@
 - P29-I validation: 85 suites/1078 tests pass; TypeScript, lint with zero
   warnings, Expo Doctor 21/21, and Android/iOS exports all pass. Manual holding
   forms have no existing rate or maturity fields; no new fields were added.
+- P29-K scope popups apply the selected month scope immediately. Close,
+  backdrop and Android back dismiss without applying; counted category-delete
+  copy remains in the popup and Undo is unchanged. No schema or domain changes.
 
 ### Investments and goals
 
