@@ -122,9 +122,6 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       ? `Value not updated in ${stale.days ?? 0} days`
       : `Updated ${formatDate(holding.valueAsOf)}`;
   const summary = row.returnSummary;
-  const annualized = summary?.annualizedLabel === 'XIRR'
-    ? summary?.xirr
-    : summary?.cagr;
   const returnText = formatReturnText(summary);
   const cashOrBank = isCashOrBankHoldingType(holding.type);
   const entryTotals = investmentEntryTotals(holding.logs);

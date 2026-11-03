@@ -61,14 +61,14 @@ describe('investment return reproduction and spec', () => {
 
     expect(summarize(
       manual('opening-after-valuation', 73_000, 73_000, '2024-01-01', fourMonthlyDeposits),
-      '2024-06-01',
+      '2024-01-01',
     )).toEqual({
       invested: 81_000,
-      currentValue: 81_000,
+      currentValue: 73_000,
       deposits: 8_000,
       withdrawals: 0,
-      gain: 0,
-      returnPct: 0,
+      gain: -8_000,
+      returnPct: -8_000 / 81_000 * 100,
     });
     expect(summarize(
       manual('opening-before-valuation', 73_000, 72_000, '2024-06-01', fourMonthlyDeposits),

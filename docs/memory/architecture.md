@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-02 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -13,6 +13,19 @@ through AsyncStorage. UI-only preferences are in the meta store.
 An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior
 requires atomicity.
+
+## Asset values and returns
+
+Pure portfolio selectors in `src/domain/portfolio.ts` and `src/domain/sip.ts`
+derive Invested from opening capital plus deposits; withdrawals do not reduce
+Invested. A dated valuation includes only later deposits/withdrawals through
+the requested as-of date. With no dated valuation, value starts from opening
+capital and posted ledger activity; rate-based interest is not estimated.
+Values are clamped at zero. `src/domain/investmentReturns.ts` supplies the
+shared gain, absolute-return, XIRR and CAGR calculations. Cash and Bank
+holdings show balance and deposit/withdrawal totals but no holding-level return.
+The asset list, holding cards and portfolio totals use the same domain
+calculations; the investment-entry screen shows values and ledger totals.
 
 ## Schema and archives
 
