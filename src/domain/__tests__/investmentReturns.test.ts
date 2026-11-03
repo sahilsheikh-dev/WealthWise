@@ -13,6 +13,109 @@ function entry(id: string, date: string, amount: number, kind: 'Deposit' | 'With
 }
 
 describe('investment return reproduction and spec', () => {
+  it('reproduces P29-H opening, back-dated, pattern and withdrawal outputs before the fix', () => {
+    const manual = (
+      id: string,
+      invested: number,
+      value: number,
+      valueAsOf: string,
+      logs: InvestmentEntry[],
+      type: ManualHolding['type'] = 'Fixed deposit',
+    ): ManualHolding => ({
+      id,
+      kind: 'manual',
+      name: id,
+      type,
+      invested,
+      value,
+      valueAsOf,
+      logs,
+    });
+    const fourMonthlyDeposits = [
+      entry('month-1', '2024-02-01', 2_000),
+      entry('month-2', '2024-03-01', 2_000),
+      entry('month-3', '2024-04-01', 2_000),
+      entry('month-4', '2024-05-01', 2_000),
+    ];
+    const summarizeOldOutput = (holding: ManualHolding, asOf: string) => {
+      const currentValue = holdingValue(holding, asOf);
+      const invested = holdingInvested(holding);
+      const totalDeposits = holding.logs
+        .filter((item) => item.kind === 'Deposit')
+        .reduce((sum, item) => sum + item.amount, 0);
+      const totalWithdrawals = holding.logs
+        .filter((item) => item.kind === 'Withdrawal')
+        .reduce((sum, item) => sum + item.amount, 0);
+      const returns = absoluteGainAndReturn(holding.logs, currentValue, asOf);
+      return {
+        invested,
+        currentValue,
+        totalDeposits,
+        totalWithdrawals,
+        gain: returns.gain,
+        returnPct: returns.absoluteReturnPct,
+      };
+    };
+
+    expect(summarizeOldOutput(
+      manual('opening-after-valuation', 73_000, 73_000, '2024-01-01', fourMonthlyDeposits),
+      '2024-06-01',
+    )).toEqual({
+      invested: 81_000,
+      currentValue: 81_000,
+      totalDeposits: 8_000,
+      totalWithdrawals: 0,
+      gain: 73_000,
+      returnPct: 912.5,
+    });
+    expect(summarizeOldOutput(
+      manual('opening-before-valuation', 73_000, 72_000, '2024-06-01', fourMonthlyDeposits),
+      '2024-06-01',
+    )).toEqual({
+      invested: 81_000,
+      currentValue: 72_000,
+      totalDeposits: 8_000,
+      totalWithdrawals: 0,
+      gain: 64_000,
+      returnPct: 800,
+    });
+
+    const cashPattern = [
+      entry('pattern-1', '2024-01-01', 1_000),
+      entry('pattern-2', '2024-02-01', 3_000),
+      entry('pattern-3', '2024-03-01', 0),
+      entry('pattern-4', '2024-04-01', 0),
+      entry('pattern-5', '2024-05-01', 5_000),
+    ];
+    expect(summarizeOldOutput(
+      manual('cash-pattern', 0, 5_400, '2024-06-01', cashPattern, 'Cash'),
+      '2024-06-01',
+    )).toEqual({
+      invested: 9_000,
+      currentValue: 5_400,
+      totalDeposits: 9_000,
+      totalWithdrawals: 0,
+      gain: -3_600,
+      returnPct: -40,
+    });
+
+    const depositAndWithdrawal = [
+      entry('later-deposit', '2024-02-01', 2_000),
+      entry('later-withdrawal', '2024-03-01', 300, 'Withdrawal'),
+    ];
+    expect(summarizeOldOutput(
+      manual('deposit-withdrawal', 1_000, 1_000, '2024-01-01', depositAndWithdrawal),
+      '2024-04-01',
+    )).toEqual({
+      invested: 2_700,
+      currentValue: 2_700,
+      totalDeposits: 2_000,
+      totalWithdrawals: 300,
+      gain: 1_000,
+      returnPct: 50,
+    });
+  });
+
   const userPattern = [
     entry('a', '2024-01-01', 1000),
     entry('b', '2024-02-01', 3000),
