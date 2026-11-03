@@ -112,18 +112,33 @@ validate persisted and imported data.
 
 ### Investment return calculations
 
-For every holding return screen, contributions are the sum of dated deposit
-entries and withdrawals are the sum of dated withdrawal entries. Same-day
-entries are summed. Absolute gain is:
+Invested is the opening amount plus all deposit entries. Withdrawals are shown
+separately and do not reduce Invested. Zero entries are ignored; same-day
+entries are summed. Current value uses a recorded valuation when one exists:
+add deposits and subtract withdrawals dated after that valuation, through the
+requested as-of date. Entries dated on or before the valuation are treated as
+already included. Without a recorded valuation, current value is opening plus
+posted deposits minus posted withdrawals through the as-of date. Values never
+fall below zero. The app does not estimate interest; current value changes
+only when entries are recorded or a valuation is entered.
 
-`current value + withdrawals - contributions`
+The absolute gain and return are:
 
-Absolute return is `gain / contributions`, or "No return yet" when contributions
-are zero. XIRR solves dated cash flows with deposits negative, withdrawals
-positive, and current value positive on the valuation date. It is labelled
-XIRR for multiple entries and CAGR for one lump sum. Annualised XIRR or CAGR is
-shown only when the first cash-flow date to valuation-date span is at least
-365 days; shorter spans show only absolute return and its label.
+`gain = current value + withdrawals - Invested`
+
+`absolute return % = gain / Invested × 100`
+
+When Invested is zero, the return is `null` and the card says "No return yet".
+XIRR solves
+`sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`, using deposits
+as negative cash flows, withdrawals as positive cash flows, and current value
+as positive on the valuation date. Multiple entries use the XIRR label; one
+lump sum uses CAGR: `(current value / Invested)^(365 / span days) - 1`.
+Annualised XIRR/CAGR appears only when the first cash flow to valuation date
+span is at least 365 days. Under 365 days the card shows only the labelled
+absolute return. Cash and Bank holdings show Balance, Deposited and Withdrawn,
+never a return percentage, XIRR or CAGR. If entries predate a recorded
+valuation, the card explains that they are assumed included in the valuation.
 
 Zustand persists app data through AsyncStorage. Persisted schema version 15 is
 the current version. The migration chain upgrades supported data from schema
@@ -136,24 +151,11 @@ under `app/`.
 
 ### Investment returns and linked amounts
 
-For a dated holding ledger, contributions are the sum of deposit entries and
-withdrawals are the sum of withdrawal entries; zero entries are ignored and
-same-date entries are summed. Absolute gain is
-`current value + withdrawals - contributions`. Absolute return is
-`absolute gain / contributions`; when contributions are zero, the app shows
-"No return yet".
-
-XIRR solves the dated cash-flow equation
-`sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`. Deposits are
-negative cash flows, withdrawals are positive cash flows, and current value is
-positive on the valuation date. XIRR and single-lump CAGR are shown only when
-the first cash flow to valuation span is at least 365 days; under that span,
-the app shows only absolute return.
-
-CAGR is `(current value / contributions)^(365 / span days) - 1`. A goal's saved
-amount is the sum of the full current values of all assets linked to that goal,
-so an asset may be counted in multiple goals. Emergency-fund bucket targets use
-the user-set goal target with the three-month minimum retained only as a floor.
+A goal's saved amount is the sum of the full current values of all assets linked
+to that goal, so an asset may be counted in multiple goals. Emergency-fund
+bucket targets use the user-set goal target with the three-month minimum
+retained only as a floor; each bucket's available amount is the sum of the full
+values of assets linked to that bucket.
 
 ### Insurance cover goals
 

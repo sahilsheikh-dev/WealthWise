@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (86/89)
+Overall progress ██████████ 97% (87/90)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (10/10)
+Phase 29         ██████████ 100% (11/11)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -176,6 +176,7 @@ Phase 29         ██████████ 100% (10/10)
 | P29-F3 | — | Done | Assertion audit, Home layout, acceptance evidence, lint and all six gates pass; acceptance matrix is complete. | 2026-11-02 |
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
+| P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2796,6 +2797,7 @@ evidence present in exports/checkpoints.
 | P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | Done; acceptance evidence, lint and all six gates pass. | `7225a7e`, `a48f3af` plus F4 verification commits; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 | P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
+| P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
 
 ## 7. Change-request register
 
@@ -5513,34 +5515,51 @@ imports, and refuse schema 15 or newer.
 Assumed: Phase 29 is recorded as implementation work, not owner-confirmed
 physical-device verification.
 
-Replaced assertions:
-- old: Budget forms use a segmented Apply changes scope control / new: Save and
-  delete use `ApplyScopeDialog` with no preselected option; reason: owner
-  frozen P29-D request.
-- old: Dropdown lists use a top-anchored sheet / new: shared Dropdown lists are
-  centered modal cards with 60% max height; reason: owner frozen P29-B request.
-- old: Insurance is a lower Home heading/card / new: Insurance is a first-card
-  total-cover box with `/insurance` or `/policy-form`; reason: owner P29-B item
-  4 authorization.
-- old: goals reject past target years / new: accept integer years 1990–2100;
-  reason: owner frozen P29-B tracking requirement.
+## P29-H asset value and return correction (2026-11-03)
 
-Gate verdicts:
+**Assumed:** P29-H is new Phase 29 work; schema v15 remains unchanged. The
+user-owned `app/(tabs)/index.tsx` is read-only.
 
-| Gate | Exit |
-|---|---:|
-| `npm test -- --coverage` | 1 |
-| `npx tsc --noEmit` | 0 |
-| `npx expo lint` | 0 |
-| `npx expo-doctor` | 0 (21/21) |
-| `npx expo export --platform android` | 0 |
-| `npx expo export --platform ios` | 0 |
+### Step 1 reproduction — before source changes
 
-Coverage method: Jest/Istanbul `percent lines` and `percent branches` reported
-for each directory in one run. `src/data/` 93.62% lines / 86.93% branches,
-`src/domain/` 97.73% lines / 92.02% branches, `src/lib/` and remaining source
-directories are reported by the same Jest/Istanbul method in this run. Coverage
-exit 1 is due to unresolved stale assertions in this implementation snapshot.
+The regression tests in `src/domain/__tests__/investmentReturns.test.ts` pass
+against the pre-change source and lock the current output for four minimal
+fixtures. The old code path is:
+
+- Invested: `holdingInvested()` in `src/domain/portfolio.ts:18-21`; the
+  investment-entry summary renders it in `app/investment-entries.tsx:193-194`.
+- Current value: `holdingValue()` in `src/domain/portfolio.ts:24-32`; the
+  investment-entry summary renders it in `app/investment-entries.tsx:196-197`.
+- Entry totals: the `logs` reductions in `app/investment-entries.tsx:201-207`.
+- Gain and return: `row()` in `src/domain/portfolio.ts:43-70` calls
+  `investmentReturnSummary()` in `src/domain/investmentReturns.ts:108-145`;
+  `absoluteGainAndReturn()` in `src/domain/investmentReturns.ts:5-30` uses
+  only deposit entries for the return denominator and omits the opening
+  amount. `buildInstrumentCardModel()` in `src/domain/instrumentCard.ts:105-144`
+  displays that result for every manual holding, including Cash and Bank.
+
+| Fixture | Invested | Current value | Total deposits | Total withdrawals | Gain | Return shown by old function |
+|---|---:|---:|---:|---:|---:|---:|
+| Opening 73,000; four 2,000 monthly deposits after 2024-01-01 valuation; current as of 2024-01-01 | 81,000 | 81,000 | 8,000 | 0 | 73,000 | +912.5% |
+| Same opening/deposits, entries on or before valuation; stored valuation 72,000 as of 2024-06-01 | 81,000 | 72,000 | 8,000 | 0 | 64,000 | +800.0% |
+| Cash entries 1,000 / 3,000 / 0 / 0 / 5,000; valuation 5,400 after the entries | 9,000 | 5,400 | 9,000 | 0 | -3,600 | -40.0% |
+| Opening 1,000; later deposit 2,000 and withdrawal 300; value 1,000 at 2024-01-01 | 2,700 | 2,700 | 2,000 | 300 | 1,000 | +50.0% |
+
+These are pre-change outputs, not the intended P29-H results. In particular,
+the source did not reproduce an `Invested` output of 73,000 when
+an opening 73,000 and four 2,000 deposits are all represented in that
+holding's `logs`: `holdingInvested()` returned 81,000. The owner
+reported 73,000/72,000/8,000/0; that exact display implies a different stored
+opening or entry representation and cannot be inferred without exact dates
+and data. The old return denominator does ignore the opening: using the
+reported 72,000 valuation and 8,000 in logged deposits gives
+`(72,000 - 8,000) / 8,000 = 800%`.
+
+The pre-change implementation also netted withdrawals out of
+`holdingInvested()`, added `holding.value` to all entries when `valueAsOf` was
+absent, and used rate-based `planValue()` estimates without an actual
+valuation. It had no back-dated-entry helper line. The P29-H implementation
+and final behavior are recorded in the later P29-H closeout section.
 
 ### DEC-29A Step 1 reproduction ledger
 
@@ -6074,3 +6093,190 @@ rendering, delete confirmation and Undo presentation, policy assignment
 dropdowns, custom-goal premium presentation and font scales 1.3/2.0 remain
 unverified on iOS and Android. TestRenderer and Expo exports are not device
 verification.
+
+## P29-H impact analysis (2026-11-03)
+
+**Assumed:** P29-H is new Phase 29 work, schema v15 remains unchanged, and
+`app/(tabs)/index.tsx` is user-owned and read-only.
+
+### DEC-P29H-ASSET-VALUATION
+
+The old manual-value path treated an undated `value` as a current valuation,
+added every ledger entry to it, and calculated returns from logged deposits
+without including the opening amount. The old plan-value path estimated
+interest from `ratePct`. The new calculations use opening plus all deposits
+as Invested; a dated valuation includes only later entries; without a dated
+valuation, current value starts from opening and posted entries, with no
+estimated interest. Withdrawals remain separate from Invested. Cash and Bank
+holdings do not display returns. No schema or Home-screen change is needed.
+
+### Step 3 impact: demo and mock fixture
+
+Values below are the old implementation at commit `2829c31` versus the
+P29-H implementation at `e60c893`, evaluated at `2026-11-03`. Return labels
+reflect the card behavior, not an unlabelled percentage. Cash and Bank return
+percentages are suppressed in the new output.
+
+| Holding | Old Invested | New Invested | Old value | New value | Old return shown | New return shown |
+|---|---:|---:|---:|---:|---|---|
+| Demo — Emergency cash | 25,000 | 25,000 | 25,000 | 25,000 | No return yet | Not shown (Cash/Bank) |
+| Demo — Emergency savings account | 85,000 | 85,000 | 92,000 | 92,000 | No return yet | Not shown (Cash/Bank) |
+| Demo — Emergency fixed deposit | 73,000 | 73,000 | 72,000 | 72,000 | 800.00% absolute | -1.37% absolute |
+| Demo — Index mutual fund | 50,000 | 50,000 | 45,000 | 45,000 | 275.00% absolute | -10.00% absolute |
+| Demo — Broad market ETF | 30,000 | 30,000 | 29,000 | 29,000 | 383.33% absolute | -3.33% absolute |
+| Demo — Gold savings | 21,200 | 21,200 | 21,300 | 21,300 | 565.63% absolute | 0.47% absolute |
+| Demo — Employee provident fund | 184,800 | 184,800 | 206,200 | 206,200 | 4,195.83% absolute | 11.58% absolute |
+| Demo — Monthly recurring deposit | 16,000 | 16,000 | 16,037.80 | 16,000 | 0.24% absolute | 0.00% absolute |
+| Mock — EPFO - PF | 96,985 | 96,985 | 135,385 | 96,985 | No return yet | 0.00% absolute |
+| Mock — HDFC Fixed Deposit | 110,000 | 110,000 | 135,456 | 135,456 | No return yet | 23.14% absolute |
+| Mock — Emergency cash | 19,544 | 19,544 | 19,544 | 19,544 | No return yet | Not shown (Cash/Bank) |
+| Mock — Emergency savings | 135,456 | 135,456 | 135,456 | 135,456 | No return yet | Not shown (Cash/Bank) |
+| Mock — Retirement fund | 113,600 | 113,600 | 119,252.28 | 118,000 | 4.98% absolute | XIRR 2.73% |
+
+The mock EPFO decrease is intentional: it has no valuation date, so the old
+undated `value` of 135,385 is not treated as a recorded valuation; its opening
+amount is 96,985. The recurring-deposit and retirement-plan value reductions
+remove estimated interest; no interest is inferred without a recorded value.
+The corrected return denominator removes the large positive percentages caused
+by using only ledger deposits while omitting opening capital.
+
+| Fixture totals | Old | New | Reason |
+|---|---:|---:|---|
+| Demo assets | 506,537.80 | 506,500.00 | Estimated plan interest removed |
+| Demo net worth | 113,492.58 | 113,454.78 | Demo assets decrease by 37.80 |
+| Mock assets | 545,093.28 | 505,441.00 | Undated EPFO value and plan interest are no longer inferred |
+| Mock net worth | 217,281.97 | 177,629.68 | Mock assets decrease by 39,652.28 |
+| Demo emergency-fund saved / bucket available | 189,000 / 25,000, 92,000, 72,000 | unchanged | All linked bucket holdings have dated values |
+| Mock emergency-fund saved | 290,456 | unchanged | Linked emergency holdings have unchanged values; mock has no bucket links |
+
+Linked goal amounts change only when the linked holding value changes: demo
+Retirement portfolio 16,037.80 to 16,000 and Home deposit 222,237.80 to
+222,200; mock First 5L portfolio 119,252.28 to 118,000. Other listed goals
+remain unchanged. No Emergency Fund goal or bucket available amount changes in
+these fixtures.
+
+### P29-H assertion replacements
+
+| File and test | Old assertion | New assertion | Reason |
+|---|---|---|---|
+| `investmentReturns.test.ts` — `corrects P29-H opening, back-dated, pattern and withdrawal outputs` | No opening amount in contribution totals; the recorded valuation was treated as simply old-value-plus-all-entries. | Invested includes opening and all deposits; valuation includes only later entries; gain/return use opening-inclusive capital. | Frozen P29-H formula and valuation-date rule. |
+| `investmentReturns.test.ts` — `uses the plan start date for opening-flow CAGR and current value only changes by ledger or valuation` | Plan value could include rate-based estimated growth. | Actual value or opening plus posted ledger entries only; opening flow is dated at plan start. | Interest estimation is explicitly out of scope. |
+| `investmentReturns.test.ts` — `returns null absolute return for zero contributions and handles withdrawals` | Return denominator contained deposits only. | Opening is included when present; withdrawals are displayed and added back in gain, never subtracted from Invested. | Frozen P29-H invested, gain and return formulas. |
+| `investmentReturns.test.ts` — `labels long-span lump sums CAGR and multi-entry ledgers XIRR` | Opening cash flow absent or dated at the tracking-start date. | Manual opening uses the injected as-of date; plan opening uses its start date. | P29-H's opening-flow dating rule. |
+| `sip.test.ts` — `clamps behind counts and values plans from actual value or posted entries` | Plan current value could be interest-estimated. | No-valuation plan value is opening plus posted ledger activity only. | No estimated interest; values change only through entries or recorded valuations. |
+| `instrumentCard.test.ts` — `covers untracked plan snapshots and negative manual holdings without an asset total` | Manual cards included a percentage/progress display for Cash/Bank. | Cash/Bank cards show balance and deposit/withdrawal totals without return or progress percentages. | Frozen Cash/Bank presentation rule. |
+| `RouteRenderSmoke.test.tsx` — `renders ledger-based asset totals and Cash/Bank details at font scale %s` | No asset-list/card/portfolio-total test for the new semantics at large fonts. | Asserts totals, back-dated helper text and Cash/Bank return suppression at 1.3 and 2.0; checks investment-entry summary. | Required P29-H responsive surface verification. |
+
+This impact analysis was recorded before the P29-H behavior commit.
+
+### Owner fixture output: old versus new
+
+The old side is the recorded pre-change output; the new side is the frozen
+P29-H calculation. The percentage column is what a user sees: Cash/Bank
+percentages are suppressed even when the underlying absolute return is
+calculable.
+
+| Fixture | Old: Invested / value / deposits / withdrawals / gain / return | New: Invested / value / deposits / withdrawals / gain / return |
+|---|---|---|
+| Opening 73,000; four 2,000 monthly deposits after month-0 as-of date | 81,000 / 81,000 / 8,000 / 0 / 73,000 / +912.50% | 81,000 / 73,000 / 8,000 / 0 / -8,000 / -9.88% absolute |
+| Same entries dated on or before valuation; valuation 72,000 | 81,000 / 72,000 / 8,000 / 0 / 64,000 / +800.00% | 81,000 / 72,000 / 8,000 / 0 / -9,000 / -11.11% absolute |
+| Cash entries 1,000 / 3,000 / 0 / 0 / 5,000; valuation 5,400 | 9,000 / 5,400 / 9,000 / 0 / -3,600 / -40.00% | 9,000 / 5,400 / 9,000 / 0 / -3,600 / not shown (Cash) |
+| Opening 1,000; deposit 2,000; withdrawal 300; value 2,700 | 2,700 / 2,700 / 2,000 / 300 / 1,000 / +50.00% | 3,000 / 2,700 / 2,000 / 300 / 0 / 0.00% absolute |
+
+The owner-reported FD/RD `Invested 73,000 / Current value 72,000 / Total
+deposits 8,000 / Total withdrawals 0` cannot be reproduced from one holding
+whose opening is 73,000 and whose four deposits are represented in its ledger:
+the corrected Invested is 81,000. The owner did not have exact dates or a data
+export available, so the recorded fixture isolates the denominator and
+valuation-date defects without claiming an exact reproduction of that
+different stored representation.
+
+### P29-H acceptance evidence
+
+| Frozen requirement | Exact behavior test |
+|---|---|
+| Invested includes opening plus every deposit; withdrawals remain separate; zero and same-date entries are handled; the four owner fixtures produce the listed outputs. | `src/domain/__tests__/investmentReturns.test.ts` — `corrects P29-H opening, back-dated, pattern and withdrawal outputs`; `keeps opening-only, over-withdrawn and same-date cash flows consistent` |
+| Dated valuations include only entries after the valuation through as-of; no-valuation current value uses opening and posted entries, is clamped at zero, and excludes future entries. | `src/domain/__tests__/investmentReturns.test.ts` — `matches an independent opening, valuation and return oracle over 2000 seeded sequences (seed 291103)`; `src/domain/__tests__/sip.test.ts` — `keeps dated actual snapshots fixed and includes only later logs` |
+| Gain is current value plus withdrawals minus Invested; return is gain / Invested and null at zero. | `src/domain/__tests__/investmentReturns.test.ts` — `corrects P29-H opening, back-dated, pattern and withdrawal outputs`; `returns null absolute return for zero contributions and handles withdrawals` |
+| XIRR/CAGR known vectors, multiple entries, single lump sums, short-span absolute-only output, and no-sign-change/null paths. | `src/domain/__tests__/investmentReturns.test.ts` — `has XIRR, CAGR, same-day, short-span and known-vector behavior`; `labels long-span lump sums CAGR and multi-entry ledgers XIRR`; `covers invalid annualization and no-sign-change branches` |
+| Opening flow dates use plan start date, and no interest is estimated without recorded valuation/ledger activity. | `src/domain/__tests__/investmentReturns.test.ts` — `uses the plan start date for opening-flow CAGR and current value only changes by ledger or valuation`; `src/domain/__tests__/investmentActions.test.ts` — `keeps plan current value to the opening balance and recorded entries`; `src/domain/__tests__/sip.test.ts` — `clamps behind counts and values plans from actual value or posted entries` |
+| Cash/Bank show Balance, Deposited and Withdrawn, never return percentages; back-dated entries show the helper line. | `src/components/__tests__/RouteRenderSmoke.test.tsx` — `renders ledger-based asset totals and Cash/Bank details at font scale %s`; `src/domain/__tests__/instrumentCard.test.ts` — `covers untracked plan snapshots and negative manual holdings without an asset total` |
+| Asset list, holding cards, portfolio totals and investment-entry summary remain correct at 1.3 and 2.0 font scale; the Home source is untouched. | `src/components/__tests__/RouteRenderSmoke.test.tsx` — `renders ledger-based asset totals and Cash/Bank details at font scale %s`; `app/(tabs)/index.tsx` was not changed. |
+| Independent plain return oracle over 2,000 sequences with logged seed. | `src/domain/__tests__/investmentReturns.test.ts` — `matches an independent plain implementation over 2000 seeded entry sequences (seed 290329)` |
+| Independent opening/valuation/current-value oracle over 2,000 sequences with logged seed. | `src/domain/__tests__/investmentReturns.test.ts` — `matches an independent opening, valuation and return oracle over 2000 seeded sequences (seed 291103)` |
+| Demo and mock data impact was measured for holdings, linked goal amounts, net worth and emergency-fund figures. | Recorded above in `Step 3 impact: demo and mock fixture`; values and reasons are preserved in the demo/mock comparison table. |
+| No schema change; persisted schema remains v15. | `src/domain/schemas.ts` remains at `SCHEMA_VERSION = 15`; the P29-H source diff contains no schema, migration or backup changes. |
+
+### P29-H assertion audit
+
+Counts compare `expect(` occurrences at the previous task commit `51c2ff4`
+(P29-G) with the P29-H closeout tree. The `expect(` count uses a literal
+text-match per test file. Raw diff lines contain 63 added and 22 removed
+`expect(` lines; every removed line was replaced by a stronger or corrected
+behavior assertion. Thus there are 41 new assertions, 0 unreplaced removals,
+22 modified assertions, and a net increase of 41.
+
+| Test file | Before | After | Added (not replacement) | Removed (unreplaced) | Modified | Net |
+|---|---:|---:|---:|---:|---:|---:|
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 432 | 447 | 15 | 0 | 2 | +15 |
+| `src/data/__tests__/createAppStore.test.ts` | 419 | 420 | 1 | 0 | 1 | +1 |
+| `src/domain/__tests__/instrumentCard.test.ts` | 25 | 25 | 0 | 0 | 1 | 0 |
+| `src/domain/__tests__/investmentActions.test.ts` | 43 | 43 | 0 | 0 | 4 | 0 |
+| `src/domain/__tests__/investmentReturns.test.ts` | 27 | 52 | 25 | 0 | 0 | +25 |
+| `src/domain/__tests__/selectors.test.ts` | 82 | 82 | 0 | 0 | 4 | 0 |
+| `src/domain/__tests__/sip.test.ts` | 43 | 43 | 0 | 0 | 7 | 0 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 0 | 0 | 1 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 158 | 158 | 0 | 0 | 2 | 0 |
+| **Total** | **1,240** | **1,281** | **41** | **0** | **22** | **+41** |
+
+Every modified assertion, with its test and reason:
+
+| File and test | Old assertion | New assertion | Reason |
+|---|---|---|---|
+| `RouteRenderSmoke.test.tsx` — `announces exact large amounts in screen-level accessibility labels` | Expected old overall gain amount and `Cash, invested …` label. | Asserts zero gain, exact opening-inclusive Invested, Cash label and absence of the old Cash-invested label. | Invested includes the opening amount; Cash no longer shows a return/Invested card line. |
+| `createAppStore.test.ts` — `migrates a v1 database once and preserves the exact pre-migration bytes` | Migrated asset total omitted the legacy manual holding's current value. | Explicitly asserts the legacy manual value and includes it in migrated net worth. | Corrected no-valuation opening/current-value semantics; migration bytes and one-time archive behavior remain asserted. |
+| `instrumentCard.test.ts` — `shows ledger-based plan values and rejects rows without their holding` | Expected `Estimated value`. | Expects `Current value`. | Plans no longer estimate interest. |
+| `investmentActions.test.ts` — `records manual deposits and withdrawals with linked transactions and updates/deletes both sides` | Invested was 13,000 after opening plus entries. | Invested is 15,000; withdrawal does not reduce it. | Frozen opening-inclusive Invested rule. |
+| `investmentActions.test.ts` — `keeps plan current value to the opening balance and recorded entries` | Expected estimated plan value and 1,500 invested. | Expects recorded value 1,500 and Invested 2,000 including opening. | Remove rate-estimated interest; include opening in Invested. |
+| `investmentActions.test.ts` — `includes manual entries only after a value snapshot and preserves no-entry valuation` | Expected 6,500 after a dated valuation. | Expects 5,500. | Only post-valuation entries through as-of affect current value. |
+| `selectors.test.ts` — `builds holding rows and calculates totals` | Expected manual value 120, portfolio totals 350/370/120/48, and unknown-date value 130. | Expects 100, totals 350/350/0/0, and no-valuation value 110. | Snapshot boundary and opening-based current value; correct aggregate totals. |
+| `selectors.test.ts` — `calculates net worth by summing assets and subtracting loan balances` | Counted an undated stored value as a valuation, yielding assets 14,500. | Uses the 12,500 opening/recorded-valuation total. | An undated `value` is not treated as a recorded valuation. |
+| `sip.test.ts` — `clamps behind counts and values plans from actual value or posted entries` | Included estimated interest in two plan values. | Expects opening plus posted ledger amounts only. | Interest is not estimated. |
+| `sip.test.ts` — `counts deposits only for tracked progress and clamps withdrawn balances at zero` | Expected no Invested and estimated value zero. | Includes opening plus all deposits in Invested and asserts the clamped current value is zero. | Withdrawals do not reduce Invested; current value is clamped. |
+| `sip.test.ts` — `keeps dated actual snapshots fixed and includes only later logs` | Expected pre-snapshot logs and rate growth to affect value. | Keeps the snapshot fixed and adds only post-snapshot ledger entries. | Frozen valuation-date rule and no estimated interest. |
+| `memoryDocs.test.ts` — `keeps all memory pages indexed, headed and aligned with source schema/test records` | Expected 1,054 tests. | Expects the verified inventory of 1,060 tests. | Test inventory increased with P29-H behavior coverage. |
+| `progressLedger.test.ts` — `tracks completed P20-M through P20-U while preserving P20-L and P21-D` | Expected 86/89 overall and 10/10 Phase 29. | Expects 87/90 overall and 11/11 Phase 29. | P29-H is recorded Done and included in dashboard counts. |
+
+### P29-H final verification
+
+All six gates were run in order after the implementation and lint cleanup:
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 84 suites, 1,060 tests passed |
+| `npx tsc --noEmit` | 0 | Passed |
+| `npx expo lint` | 0 | Zero warnings |
+| `npx expo-doctor` | 0 | 21/21 checks passed |
+| `npx expo export --platform android` | 0 | Passed |
+| `npx expo export --platform ios` | 0 | Passed |
+
+Coverage was regenerated after deleting `coverage/`, then calculated from
+`coverage/coverage-final.json`. Method: use Istanbul `createCoverageMap`, sum
+each instrumented source file's covered/total line and branch counters by
+`src/` directory, then divide covered by total; tests are not included.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data/` | 658/696 (94.54%) | 679/774 (87.73%) |
+| `src/domain/` | 3,279/3,342 (98.11%) | 3,193/3,436 (92.93%) |
+| `src/lib/` | 107/107 (100%) | 126/126 (100%) |
+
+Informational branch coverage: `src/domain/budget.ts` 762/841 (90.61%);
+`src/data/createAppStore.ts` 93/107 (86.92%). Configured per-file thresholds
+remain authoritative.
+
+**Physical-device checks not verified:** asset list/card/portfolio totals,
+Investment Entries Balance/Deposited/Withdrawn labels, back-dated helper text,
+and large-amount rendering at font scales 1.3 and 2.0 remain unverified on
+physical iOS and Android devices. TestRenderer and Expo exports are not
+physical-device evidence.

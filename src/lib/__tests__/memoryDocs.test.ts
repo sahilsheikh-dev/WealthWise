@@ -48,7 +48,7 @@ describe('shared AI memory documents', () => {
     const currentTests = status.match(/Test counts: (\d+) suites, (\d+) tests/);
     const latestRun = status.match(/Latest validated run: (\d+) suites, (\d+) tests/);
     expect(projectTests?.[1]).toBe('84');
-    expect(projectTests?.[2]).toBe('1054');
+    expect(projectTests?.[2]).toBe('1060');
     expect(currentTests?.[1]).toBe(latestRun?.[1]);
     expect(currentTests?.[2]).toBe(latestRun?.[2]);
   });

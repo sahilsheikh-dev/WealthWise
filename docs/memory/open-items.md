@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-02 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -11,7 +11,7 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-G are Done.
+  write; the acceptance test passes. P29-B through P29-H are Done.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -58,6 +58,10 @@
 
 ## Physical-device verification
 
+- **P29-H:** verify asset list/card/portfolio totals and Investment Entries on
+  iOS and Android, including Cash/Bank labels, the back-dated-entry helper,
+  large amounts, and font scales 1.3 and 2.0. Automated TestRenderer cases and
+  Expo exports are not physical-device evidence.
 - **P29-B through P29-E:** verify the Today control and filter retention,
   centered Dropdown, paid/scope dialogs at each entry point, font scales 1.3
   and 2.0, keyboard-safe dialogs, start-month/holding-link routes, and actual
@@ -93,6 +97,11 @@
 
 ## Documented assumptions and constraints
 
+- **Assumed for P29-H:** if a holding has no valuation date, its stored `value`
+  is not treated as a recorded valuation; current value is based on opening
+  capital and posted entries, with no estimated interest. Manual holdings have
+  no start-date field, so their opening cash flow uses the injected as-of date.
+- P29-H does not change schema v15 or the user-owned Home screen.
 - AI guidance is maintained only in the root `AGENTS.md`; no tool-specific
   instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but
