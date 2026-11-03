@@ -19,7 +19,8 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { holdingInvested, holdingValue } from '../src/domain/portfolio';
+import { holdingInvested, holdingValue, isCashOrBankHoldingType } from '../src/domain/portfolio';
+import { investmentEntryTotals } from '../src/domain/investmentReturns';
 import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -83,6 +84,11 @@ export default function InvestmentEntriesScreen() {
   if (!holding) {
     return <Screen><AppHeader title="Investment entries" showBack fallbackHref="/assets" /><EmptyState title="Holding not found" /></Screen>;
   }
+
+  const cashOrBank = isCashOrBankHoldingType(holding.type);
+  const currentValue = holdingValue(holding, today);
+  const invested = holdingInvested(holding);
+  const entryTotals = investmentEntryTotals(holding.logs);
 
   const routeEntryForm = (row: ListRow) => {
     if ('status' in row) {
@@ -190,22 +196,34 @@ export default function InvestmentEntriesScreen() {
         <>
           <Card>
             <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
-            <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(holdingInvested(holding), 'exact', 1)}`}>
-              Invested <AmountText value={holdingInvested(holding)} tier="row" />
-            </AppText>
-            <AppText style={styles.summaryLine} accessibilityLabel={`Current value ${formatAmount(holdingValue(holding, today), 'exact', 1)}`}>
-              Current value <AmountText value={holdingValue(holding, today)} tier="row" />
-            </AppText>
-            <AppText
-              style={styles.summaryLine}
-              accessibilityLabel={`Total deposits ${formatAmount(holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0), 'exact', 1)}`}>
-              Total deposits <AmountText value={holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
-            </AppText>
-            <AppText
-              style={styles.summaryLine}
-              accessibilityLabel={`Total withdrawals ${formatAmount(holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0), 'exact', 1)}`}>
-              Total withdrawals <AmountText value={holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
-            </AppText>
+            {cashOrBank ? (
+              <>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Balance ${formatAmount(currentValue, 'exact', 1)}`}>
+                  Balance <AmountText value={currentValue} tier="row" />
+                </AppText>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Deposited ${formatAmount(entryTotals.deposits, 'exact', 1)}`}>
+                  Deposited <AmountText value={entryTotals.deposits} tier="row" />
+                </AppText>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Withdrawn ${formatAmount(entryTotals.withdrawals, 'exact', 1)}`}>
+                  Withdrawn <AmountText value={entryTotals.withdrawals} tier="row" />
+                </AppText>
+              </>
+            ) : (
+              <>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(invested, 'exact', 1)}`}>
+                  Invested <AmountText value={invested} tier="row" />
+                </AppText>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Current value ${formatAmount(currentValue, 'exact', 1)}`}>
+                  Current value <AmountText value={currentValue} tier="row" />
+                </AppText>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Total deposits ${formatAmount(entryTotals.deposits, 'exact', 1)}`}>
+                  Total deposits <AmountText value={entryTotals.deposits} tier="row" />
+                </AppText>
+                <AppText style={styles.summaryLine} accessibilityLabel={`Total withdrawals ${formatAmount(entryTotals.withdrawals, 'exact', 1)}`}>
+                  Total withdrawals <AmountText value={entryTotals.withdrawals} tier="row" />
+                </AppText>
+              </>
+            )}
           </Card>
           <ChipRow>
             <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
