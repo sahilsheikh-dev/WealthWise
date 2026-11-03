@@ -19,7 +19,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 84 suites, 1060 tests in the current P29-H test inventory; the
+- Test counts: 84 suites, 1061 tests in the current P29-J test inventory; the
   final verified run is recorded in
   [status.md](status.md) for the run date and exact gate results.
 
