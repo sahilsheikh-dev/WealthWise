@@ -395,7 +395,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version sixteen', async () => {
+  it('round trips custom emergency-fund options and refuses schema version seventeen', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');

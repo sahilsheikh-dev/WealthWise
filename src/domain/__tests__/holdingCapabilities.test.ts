@@ -99,10 +99,31 @@ describe('holding capabilities', () => {
         holdingId: 'fixed',
       }],
     };
+    data.monthBudgets = [{
+      month: '2026-10',
+      source: 'custom',
+      linkedIncluded: true,
+      incomes: [],
+      sections: [{ id: 'invest', name: 'Investments', type: 'invest' }],
+      items: [{
+        id: 'snapshot-item',
+        sectionId: 'invest',
+        name: 'FD snapshot schedule',
+        mode: 'amount',
+        value: 100,
+        frequency: 'monthly',
+        firstDueMonth: '2026-10',
+        holdingId: 'fixed',
+      }],
+    }];
 
     expect(validateIntegrity(data)).toContainEqual(expect.objectContaining({
       code: 'one-time-budget-link',
       path: ['budgetPlan', 'items', 0, 'holdingId'],
+    }));
+    expect(validateIntegrity(data)).toContainEqual(expect.objectContaining({
+      code: 'one-time-budget-link',
+      path: ['monthBudgets', 0, 'items', 0, 'holdingId'],
     }));
   });
 });
