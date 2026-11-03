@@ -2805,7 +2805,74 @@ evidence present in exports/checkpoints.
 | P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
 | P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Done; 85 suites/1078 tests and all six gates exit 0; final capability matrix, assertions, coverage and device limitations are recorded below. | Inventory `eeeec26`; migration `34fa401`; capabilities `ce3bf4e`; regression/docs `13ef972`; persisted-link tests `94c3dfb`; each verified with `git cat-file -t`. | DEC-P29I-CAPABILITIES: Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the manual model has no rate or maturity fields so no new ones were introduced; the emergency-fund `FD / RD` bucket and links remain unchanged. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
-| P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
+| P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
+
+### P29-K final verification
+
+**DEC-P29K-SCOPE-IMMEDIATE:** selecting either scope applies the operation
+immediately and once; Close, backdrop, and Android back dismiss without
+applying. This applies to item, section, and income Save/Delete flows through
+the shared `ApplyScopeDialog`. No schema/domain behavior changed, and
+`app/(tabs)/index.tsx` was not edited.
+
+Acceptance evidence (test titles are the Jest test names):
+
+| Frozen requirement | Exact test evidence |
+|---|---|
+| "This month only" and "This and following months" apply immediately and only once, including a double tap | `src/components/__tests__/ApplyScopeDialog.test.tsx` — `applies This month only immediately and at most once`; `applies This and following months immediately and at most once` |
+| The shared popup is used by item, section and income Save/Delete flows; the selected scope is applied | `src/components/__tests__/RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` |
+| Close, backdrop and Android back close without applying | `src/components/__tests__/ApplyScopeDialog.test.tsx` — `Close closes without applying a change`; `backdrop closes without applying a change`; `Android back closes without applying a change` |
+| No Cancel or Apply choice; accessible 44-by-44 Close; category-delete count remains in popup; Undo remains available | `src/components/__tests__/ApplyScopeDialog.test.tsx` — `shows only the two scope choices and keeps counted delete copy in the dialog body`; `src/components/__tests__/RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` |
+| Options are full-width, stacked/scrollable and not clipped at font scales 1.3 and 2.0 | `src/components/__tests__/ApplyScopeDialog.test.tsx` — `keeps options expandable and the content scrollable at font scale 1.3`; `keeps options expandable and the content scrollable at font scale 2` |
+
+The assertion audit compares `d8af3f5` with the final worktree. Counts are
+literal `expect(` occurrences; Added/Removed are the positive/negative
+count deltas, and Net is HEAD minus baseline.
+
+| Changed test file | At `d8af3f5` | At HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/components/__tests__/ApplyScopeDialog.test.tsx` | 0 | 15 | 15 | 0 | +15 |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 461 | 466 | 5 | 0 | +5 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 0 | 0 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 158 | 159 | 1 | 0 | +1 |
+| **Total** | **630** | **651** | **21** | **0** | **+21** |
+
+No assertion was removed or weakened. The changed expected values are:
+
+| Test | Old | New | Reason |
+|---|---|---|---|
+| `shared AI memory documents` in `src/lib/__tests__/memoryDocs.test.ts` | Project inventory `85` suites / `1078` tests | `86` suites / `1086` tests | P29-K adds one suite and eight tests; repository inventory updated to the measured run. Two `expect(` calls were replaced in place, so the file count stays 11. |
+| `records the unchanged FX/CH IDs, CR-4 through CR-96 and current phase work` in `src/lib/__tests__/progressLedger.test.ts` | Overall `89/92`; Phase 29 `13/13` | Overall `90/93`; Phase 29 `14/14`; CR-96/P29-K required as Done | One new completed Phase 29 task and its change-request record. Existing dashboard expectations were updated in place; one explicit CR-96 status expectation was added. |
+
+Final gates (run in required order; each command exited 0):
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` after deleting `coverage/` | 0 (86 suites, 1086 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0; zero warnings |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Fresh coverage method: aggregate the regenerated `coverage/coverage-final.json`
+by each source file's immediate directory. A line is covered if any Istanbul
+statement starting on that source line executed; branch coverage counts
+executed branch outcomes. This yields:
+
+| Source directory | Line coverage | Branch coverage |
+|---|---:|---:|
+| `src/data` | 676/714 (94.68%) | 713/809 (88.13%) |
+| `src/domain` | 3318/3381 (98.14%) | 3262/3506 (93.04%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Per-file branch coverage: `src/domain/budget.ts` 770/849 (90.69%) against the
+90% threshold; `src/data/createAppStore.ts` 93/107 (86.92%) against the 85%
+threshold. No `eslint-disable` comments were found in the changed
+implementation/test files. Physical-device checks remain unverified: native
+iOS/Android backdrop hit testing, Android system-back behavior, 1.3/2.0 system
+font rendering, and screen-reader announcements; Jest and Expo exports are
+not device evidence.
 
 ## 7. Change-request register
 

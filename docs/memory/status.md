@@ -19,16 +19,23 @@
 - All six P29-K gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
-- Fresh P29-I coverage was generated after deleting `coverage/`, then measured
-  from `coverage-final.json` with `istanbul-lib-coverage`, grouped by each
-  source file's immediate `src/` directory. `src/data`: 676/714 lines
-  (94.67%), 713/809 branches (88.13%); `src/domain`: 3318/3381 lines
-  (98.13%), 3262/3506 branches (93.04%); `src/lib`: 107/107 lines and
-  126/126 branches (100%). Per-file branch coverage: `src/domain/budget.ts`
-  770/849 (90.69%) and `src/data/createAppStore.ts` 93/107 (86.91%);
-  configured thresholds of 90% and 85% are satisfied.
+- Fresh P29-K coverage was generated after deleting `coverage/`, then measured
+  from `coverage-final.json`: files were grouped by immediate source
+  directory; line coverage counts each unique statement-start source line as
+  covered when any statement on it executed, and branch coverage counts
+  executed branch outcomes. `src/data`: 676/714 lines (94.68%), 713/809
+  branches (88.13%); `src/domain`: 3318/3381 lines (98.14%), 3262/3506
+  branches (93.04%); `src/lib`: 107/107 lines and 126/126 branches (100%).
+  Per-file branch coverage: `src/domain/budget.ts` 770/849 (90.69%) and
+  `src/data/createAppStore.ts` 93/107 (86.92%); configured thresholds of 90%
+  and 85% are satisfied.
 - `npx expo lint` exits 0 with zero warnings and no eslint-disable comments
   added.
+- The P29-K assertion audit compares `d8af3f5` with the final worktree:
+  630 to 651 `expect(` occurrences (+21, -0, net +21) across four changed
+  test files. The two updated memory/ledger expectation values are documented
+  as data/count replacements in [PROGRESS.md](../PROGRESS.md); no assertion
+  was weakened.
 - The P29-F4 assertion audit compares 531d659 with its audited worktree:
   2050 to 2184 `expect(` occurrences (+134); 41 removed expectation lines are
   documented replacements, not removed-only assertions.

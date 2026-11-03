@@ -63,10 +63,11 @@
 
 ## Physical-device verification
 
-- **P29-K:** verify immediate Budget scope application, Close/backdrop/Android
-  back dismissal, category-delete count and Undo, including option wrapping at
-  font scales 1.3 and 2.0 on iOS and Android. The Jest layout checks are
-  simulated and do not verify native rendering.
+- **P29-K:** verify immediate-once scope application and native Close,
+  backdrop, and Android-back dismissal, including the 44 pt Close target,
+  category-delete count and Undo, and option wrapping at font scales 1.3 and
+  2.0 on iOS and Android. Jest simulates these interactions and layout; native
+  hit testing, screen-reader announcements and rendering remain unverified.
 - **P29-I:** verify that Fixed deposits expose no new deposit, entry, recurring
   schedule, or Budget-link controls; legacy entries remain viewable/editable/
   deletable; maturity withdrawal works; and recurring deposits remain fully
