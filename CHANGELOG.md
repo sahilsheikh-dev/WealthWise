@@ -32,6 +32,14 @@
   the owner-managed Home screen.
 - P29-H validation: 84 suites/1060 tests pass; TypeScript, lint with zero
   warnings, Expo Doctor 21/21, and Android/iOS exports all pass.
+- P29-J audits recurring-liability balances: the existing model uses actual
+  days/365 and applies payments on their recorded dates. This is report-only;
+  no liability behavior changed because the bank statement, loan principal,
+  tenure and app payment records were not supplied.
+- P29-J validation: 84 suites/1061 tests pass; TypeScript, lint with zero
+  warnings, Expo Doctor 21/21, and Android/iOS exports all pass. A generic
+  14-payment comparison found only sub-EMI convention differences; the owner's
+  actual bank comparison remains open pending the missing records.
 
 ### Investments and goals
 

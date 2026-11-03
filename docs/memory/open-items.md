@@ -4,6 +4,11 @@
 
 ## Unresolved
 
+- **P29-J bank-balance comparison:** no calculation bug was proven. The owner
+  did not provide the bank outstanding/as-of date, principal, contractual
+  tenure, or app payment date/amount records. The actual statement-method
+  comparison and any monthly-amortization change remain pending those inputs
+  and owner approval; current behavior remains actual-days/365.
 - **P29-F2 headroom targets withdrawn:** the 92% `src/domain/budget.ts` and 88%
   `src/data/createAppStore.ts` targets were advisory and are no longer requirements.
   Configured per-file thresholds are authoritative and green.
@@ -11,7 +16,7 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-H are Done.
+  write; the acceptance test passes. P29-B through P29-H and P29-J are Done.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
