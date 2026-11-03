@@ -2,21 +2,21 @@
 
 # Status
 
-- Current task: P29-I holding capabilities is complete. Fixed deposits are
-  one-time holdings; legacy entries are retained, recurring schedules and
-  Budget links are capability-gated, and schema v16 migration/backup
-  compatibility is verified. `app/(tabs)/index.tsx` remains user-owned and
-  was not edited.
-- Phase 29 status: P29-A through P29-J are Done, including P29-F2, P29-F3 and
+- Current task: P29-K scope popup behavior is complete. Selecting either
+  Budget scope applies immediately; Close, backdrop and Android back discard
+  the pending change. Delete-category counts remain in the popup body and
+  Undo is unchanged. `app/(tabs)/index.tsx` remains user-owned and was not
+  edited.
+- Phase 29 status: P29-A through P29-K are Done, including P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
 - Schema version: v16. P29-E added Budget holding links, P29-G migrated v14
   cover goals, and P29-I migrated v15 holdings.
 - Runtime: Node.js 26.13.0.
-- Test counts: 85 suites, 1078 tests.
-  Latest validated run: 85 suites, 1078 tests passed with
+- Test counts: 86 suites, 1086 tests.
+  Latest validated run: 86 suites, 1086 tests passed with
   `npm test -- --coverage` on 2026-11-03.
-- All six P29-I gates exit 0: Jest coverage, TypeScript, Expo lint with zero
+- All six P29-K gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
 - Fresh P29-I coverage was generated after deleting `coverage/`, then measured

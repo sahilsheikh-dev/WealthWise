@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (89/92)
+Overall progress ██████████ 97% (90/93)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (13/13)
+Phase 29         ██████████ 100% (14/14)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -163,6 +163,7 @@ Phase 29         ██████████ 100% (13/13)
 | CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
 | CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
+| CR-96 | — | Done | P29-K: Budget scope choices apply immediately; Close, backdrop and Android back dismiss without applying. | 2026-11-03 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -179,6 +180,7 @@ Phase 29         ██████████ 100% (13/13)
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
 | P29-I | — | Done | Schema v16 migration, shared holding capabilities, Fixed-deposit one-time controls, legacy entry preservation, backup compatibility and acceptance tests pass; 85 suites/1078 tests and all six gates exit 0. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
+| P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2786,6 +2788,7 @@ evidence present in exports/checkpoints.
 | CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
 | CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
 | CR-95 | Budget income | — | — | 2026-11-01 | Include all logged income types in historical budgets, keep non-earned inflows categorized as income, match planned and actual totals, and retain transaction links. | Done; the month-budget schema and Budget overview display separate non-earned income rows. All 52 monthly income, expense and investment totals match actuals; the schema-v13 backup importer accepts the updated file. | `a507254` implementation/docs commit; backup data stays local and is not committed. | Owner clarified that loans, borrowed funds and withdrawals must remain income; do not reclassify them as Unexpected Extras. Expense/investment categories in the backup all map to existing budget categories, so no Unexpected fallback was needed. Transaction matching remains month/category-based; explicit asset/liability/policy source links are preserved. | current request |
+| CR-96 | P29-K Budget scope popup | — | — | 2026-11-03 | Apply Budget month scope immediately when selected; close without applying through Close, backdrop or Android back. | Done; shared dialog, all item/section/income Save/Delete flows, counted category-delete copy and Undo are tested. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | Assumed: no schema or domain change; `app/(tabs)/index.tsx` unchanged. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2802,6 +2805,7 @@ evidence present in exports/checkpoints.
 | P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
 | P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Done; 85 suites/1078 tests and all six gates exit 0; final capability matrix, assertions, coverage and device limitations are recorded below. | Inventory `eeeec26`; migration `34fa401`; capabilities `ce3bf4e`; regression/docs `13ef972`; persisted-link tests `94c3dfb`; each verified with `git cat-file -t`. | DEC-P29I-CAPABILITIES: Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the manual model has no rate or maturity fields so no new ones were introduced; the emergency-fund `FD / RD` bucket and links remain unchanged. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
+| P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
 
 ## 7. Change-request register
 
@@ -2902,6 +2906,7 @@ evidence present in exports/checkpoints.
 | CR-93 | Show Transactions Available/Closing balance amounts for positive, zero and negative values; validate current backup notes and reported transaction changes. | Done | The amount now renders regardless of brought-forward balance. Zero and negative UI tests pass. The edited local backup checksum was recalculated and `parseBackup` passed. The backup snapshot does not contain the separate transaction deletion/addition reported for app data. |
 | CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
 | CR-95 | Include all income types in each historical budget, classify them from transaction logs, route unknown spending categories to Unexpected Extras, keep planned and actual equal, and link transaction logs. | Done | Added backward-compatible optional `otherIncomes` month-snapshot data and rendered separate non-earned rows without changing earned-income planning. The 52-month local backup now contains all income categories, matches planned/actual income and expense/investment category totals, retains all 716 transactions and their 119 explicit source links, and passes `parseBackup`. No unsupported expense/investment category was present. |
+| CR-96 | P29-K: Budget scope selection applies immediately; Close, backdrop and Android back discard the pending operation. | Done | Shared `ApplyScopeDialog` is used by item, section and income Save/Delete flows; section-delete counts remain in the popup and Undo is preserved. No schema/domain change. |
 
 ## 8. Known issues and risks
 
