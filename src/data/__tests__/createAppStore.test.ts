@@ -1721,12 +1721,15 @@ describe('createAppStore persistence', () => {
     const migratedTotals = netWorth(first.getState().data, '2026-09-03');
     const legacyPlan = v1.holdings.find((holding) => holding.kind === 'plan');
     if (!legacyPlan || legacyPlan.kind !== 'plan') throw new Error('Expected v1 plan fixture');
+    const legacyManual = first.getState().data.holdings.find((holding) => holding.id === 'legacy-manual');
+    if (!legacyManual || legacyManual.kind !== 'manual') throw new Error('Expected v1 manual holding');
     const planValueBeforeMigration = holdingValue({
       ...legacyPlan,
       logs: legacyPlan.logs.map((log) => ({ ...log, kind: 'Deposit' as const })),
     }, '2026-09-03');
+    expect(holdingValue(legacyManual, '2026-09-03')).toBe(900);
     expect(migratedTotals.liabilities).toBe(8_000);
-    expect(migratedTotals.assets).toBe(1_500 + planValueBeforeMigration);
+    expect(migratedTotals.assets).toBe(900 + 500 + planValueBeforeMigration);
     expect(migratedTotals.netWorth).toBe(migratedTotals.assets - 8_000);
     const copyWrites = storage.setItemCalls;
     const second = makeStore(storage);
