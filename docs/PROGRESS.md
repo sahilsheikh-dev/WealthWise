@@ -6122,3 +6122,78 @@ rendering, delete confirmation and Undo presentation, policy assignment
 dropdowns, custom-goal premium presentation and font scales 1.3/2.0 remain
 unverified on iOS and Android. TestRenderer and Expo exports are not device
 verification.
+
+## P29-H impact analysis (2026-11-03)
+
+**Assumed:** P29-H is new Phase 29 work, schema v15 remains unchanged, and
+`app/(tabs)/index.tsx` is user-owned and read-only.
+
+### DEC-P29H-ASSET-VALUATION
+
+The old manual-value path treated an undated `value` as a current valuation,
+added every ledger entry to it, and calculated returns from logged deposits
+without including the opening amount. The old plan-value path estimated
+interest from `ratePct`. The new calculations use opening plus all deposits
+as Invested; a dated valuation includes only later entries; without a dated
+valuation, current value starts from opening and posted entries, with no
+estimated interest. Withdrawals remain separate from Invested. Cash and Bank
+holdings do not display returns. No schema or Home-screen change is needed.
+
+### Step 3 impact: demo and mock fixture
+
+Values below are the old implementation at commit `2829c31` versus the
+uncommitted P29-H implementation, evaluated at `2026-11-03`. Return labels
+reflect the card behavior, not an unlabelled percentage. Cash and Bank return
+percentages are suppressed in the new output.
+
+| Holding | Old Invested | New Invested | Old value | New value | Old return shown | New return shown |
+|---|---:|---:|---:|---:|---|---|
+| Demo — Emergency cash | 25,000 | 25,000 | 25,000 | 25,000 | No return yet | Not shown (Cash/Bank) |
+| Demo — Emergency savings account | 85,000 | 85,000 | 92,000 | 92,000 | No return yet | Not shown (Cash/Bank) |
+| Demo — Emergency fixed deposit | 73,000 | 73,000 | 72,000 | 72,000 | 800.00% absolute | -1.37% absolute |
+| Demo — Index mutual fund | 50,000 | 50,000 | 45,000 | 45,000 | 275.00% absolute | -10.00% absolute |
+| Demo — Broad market ETF | 30,000 | 30,000 | 29,000 | 29,000 | 383.33% absolute | -3.33% absolute |
+| Demo — Gold savings | 21,200 | 21,200 | 21,300 | 21,300 | 565.63% absolute | 0.47% absolute |
+| Demo — Employee provident fund | 184,800 | 184,800 | 206,200 | 206,200 | 4,195.83% absolute | 11.58% absolute |
+| Demo — Monthly recurring deposit | 16,000 | 16,000 | 16,037.80 | 16,000 | 0.24% absolute | 0.00% absolute |
+| Mock — EPFO - PF | 96,985 | 96,985 | 135,385 | 96,985 | No return yet | 0.00% absolute |
+| Mock — HDFC Fixed Deposit | 110,000 | 110,000 | 135,456 | 135,456 | No return yet | 23.14% absolute |
+| Mock — Emergency cash | 19,544 | 19,544 | 19,544 | 19,544 | No return yet | Not shown (Cash/Bank) |
+| Mock — Emergency savings | 135,456 | 135,456 | 135,456 | 135,456 | No return yet | Not shown (Cash/Bank) |
+| Mock — Retirement fund | 113,600 | 113,600 | 119,252.28 | 118,000 | 4.98% absolute | XIRR 2.73% |
+
+The mock EPFO decrease is intentional: it has no valuation date, so the old
+undated `value` of 135,385 is not treated as a recorded valuation; its opening
+amount is 96,985. The recurring-deposit and retirement-plan value reductions
+remove estimated interest; no interest is inferred without a recorded value.
+The corrected return denominator removes the large positive percentages caused
+by using only ledger deposits while omitting opening capital.
+
+| Fixture totals | Old | New | Reason |
+|---|---:|---:|---|
+| Demo assets | 506,537.80 | 506,500.00 | Estimated plan interest removed |
+| Demo net worth | 113,492.58 | 113,454.78 | Demo assets decrease by 37.80 |
+| Mock assets | 545,093.28 | 505,441.00 | Undated EPFO value and plan interest are no longer inferred |
+| Mock net worth | 217,281.97 | 177,629.68 | Mock assets decrease by 39,652.28 |
+| Demo emergency-fund saved / bucket available | 189,000 / 25,000, 92,000, 72,000 | unchanged | All linked bucket holdings have dated values |
+| Mock emergency-fund saved | 290,456 | unchanged | Linked emergency holdings have unchanged values; mock has no bucket links |
+
+Linked goal amounts change only when the linked holding value changes: demo
+Retirement portfolio 16,037.80 to 16,000 and Home deposit 222,237.80 to
+222,200; mock First 5L portfolio 119,252.28 to 118,000. Other listed goals
+remain unchanged. No Emergency Fund goal or bucket available amount changes in
+these fixtures.
+
+### P29-H assertion replacements
+
+| File and test | Old assertion | New assertion | Reason |
+|---|---|---|---|
+| `investmentReturns.test.ts` — `corrects P29-H opening, back-dated, pattern and withdrawal outputs` | No opening amount in contribution totals; the recorded valuation was treated as simply old-value-plus-all-entries. | Invested includes opening and all deposits; valuation includes only later entries; gain/return use opening-inclusive capital. | Frozen P29-H formula and valuation-date rule. |
+| `investmentReturns.test.ts` — `uses the plan start date for opening-flow CAGR and current value only changes by ledger or valuation` | Plan value could include rate-based estimated growth. | Actual value or opening plus posted ledger entries only; opening flow is dated at plan start. | Interest estimation is explicitly out of scope. |
+| `investmentReturns.test.ts` — `returns null absolute return for zero contributions and handles withdrawals` | Return denominator contained deposits only. | Opening is included when present; withdrawals are displayed and added back in gain, never subtracted from Invested. | Frozen P29-H invested, gain and return formulas. |
+| `investmentReturns.test.ts` — `labels long-span lump sums CAGR and multi-entry ledgers XIRR` | Opening cash flow absent or dated at the tracking-start date. | Manual opening uses the injected as-of date; plan opening uses its start date. | P29-H's opening-flow dating rule. |
+| `sip.test.ts` — `clamps behind counts and values plans from actual value or posted entries` | Plan current value could be interest-estimated. | No-valuation plan value is opening plus posted ledger activity only. | No estimated interest; values change only through entries or recorded valuations. |
+| `instrumentCard.test.ts` — `covers untracked plan snapshots and negative manual holdings without an asset total` | Manual cards included a percentage/progress display for Cash/Bank. | Cash/Bank cards show balance and deposit/withdrawal totals without return or progress percentages. | Frozen Cash/Bank presentation rule. |
+| `RouteRenderSmoke.test.tsx` — `renders ledger-based asset totals and Cash/Bank details at font scale %s` | No asset-list/card/portfolio-total test for the new semantics at large fonts. | Asserts totals, back-dated helper text and Cash/Bank return suppression at 1.3 and 2.0; checks investment-entry summary. | Required P29-H responsive surface verification. |
+
+This impact analysis was recorded before the P29-H behavior commit.
