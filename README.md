@@ -28,7 +28,8 @@ no cloud or network requests at runtime.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
 - Monthly budgets with spend/invest sections, income entries, recurring item
-  schedules, due tracking and cash-flow views.
+  schedules, due tracking and cash-flow views. Scope choices apply immediately;
+  Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
 - Insurance policies, policy-payment tracking and editable cover goals for

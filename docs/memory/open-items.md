@@ -16,7 +16,7 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-I and P29-J are Done.
+  write; the acceptance test passes. P29-B through P29-K are Done.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -63,6 +63,11 @@
 
 ## Physical-device verification
 
+- **P29-K:** verify immediate-once scope application and native Close,
+  backdrop, and Android-back dismissal, including the 44 pt Close target,
+  category-delete count and Undo, and option wrapping at font scales 1.3 and
+  2.0 on iOS and Android. Jest simulates these interactions and layout; native
+  hit testing, screen-reader announcements and rendering remain unverified.
 - **P29-I:** verify that Fixed deposits expose no new deposit, entry, recurring
   schedule, or Budget-link controls; legacy entries remain viewable/editable/
   deletable; maturity withdrawal works; and recurring deposits remain fully

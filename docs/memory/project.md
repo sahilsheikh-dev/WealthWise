@@ -14,12 +14,14 @@ runtime synchronization.
 - Backup encryption protects exported files only; app data on device remains
   unencrypted and a lost backup passphrase cannot be recovered.
 - Tabs: Home, Transactions, Goals and Budget.
+- Budget scope choices apply on selection; Close, backdrop and Android back
+  dismiss the popup without applying a change.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 85 suites, 1078 tests in the current P29-I test inventory; the
+- Test counts: 86 suites, 1086 tests in the current P29-K test inventory; the
   final verified run is recorded in
   [status.md](status.md) for the run date and exact gate results.
 
