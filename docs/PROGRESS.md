@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (86/89)
+Overall progress █████████░ 96% (86/90)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (10/10)
+Phase 29         █████████░ 91% (10/11)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -176,6 +176,7 @@ Phase 29         ██████████ 100% (10/10)
 | P29-F3 | — | Done | Assertion audit, Home layout, acceptance evidence, lint and all six gates pass; acceptance matrix is complete. | 2026-11-02 |
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
+| P29-H | — | In progress | Asset invested/current-value/return rules; reproductions committed first, implementation and six gates pending. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2796,6 +2797,7 @@ evidence present in exports/checkpoints.
 | P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | Done; acceptance evidence, lint and all six gates pass. | `7225a7e`, `a48f3af` plus F4 verification commits; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 | P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
+| P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | In progress; Step 1 old-output reproduction tests pass. | Pending implementation and verification | Assumed: P29-H is new Phase 29 work, schema remains v15, and the user-owned Home screen is read-only. | current request |
 
 ## 7. Change-request register
 
@@ -5512,6 +5514,52 @@ imports, and refuse schema 15 or newer.
 
 Assumed: Phase 29 is recorded as implementation work, not owner-confirmed
 physical-device verification.
+
+## P29-H asset value and return correction (2026-11-03)
+
+**Assumed:** P29-H is new Phase 29 work; schema v15 remains unchanged. The
+user-owned `app/(tabs)/index.tsx` is read-only.
+
+### Step 1 reproduction — before source changes
+
+The regression tests in `src/domain/__tests__/investmentReturns.test.ts` pass
+against the pre-change source and lock the current output for four minimal
+fixtures. The old code path is:
+
+- Invested: `holdingInvested()` in `src/domain/portfolio.ts:18-21`; the
+  investment-entry summary renders it in `app/investment-entries.tsx:193-194`.
+- Current value: `holdingValue()` in `src/domain/portfolio.ts:24-32`; the
+  investment-entry summary renders it in `app/investment-entries.tsx:196-197`.
+- Entry totals: the `logs` reductions in `app/investment-entries.tsx:201-207`.
+- Gain and return: `row()` in `src/domain/portfolio.ts:43-70` calls
+  `investmentReturnSummary()` in `src/domain/investmentReturns.ts:108-145`;
+  `absoluteGainAndReturn()` in `src/domain/investmentReturns.ts:5-30` uses
+  only deposit entries for the return denominator and omits the opening
+  amount. `buildInstrumentCardModel()` in `src/domain/instrumentCard.ts:105-144`
+  displays that result for every manual holding, including Cash and Bank.
+
+| Fixture | Invested | Current value | Total deposits | Total withdrawals | Gain | Return shown by old function |
+|---|---:|---:|---:|---:|---:|---:|
+| Opening 73,000; four 2,000 monthly deposits after 2024-01-01 valuation; current as of 2024-06-01 | 81,000 | 81,000 | 8,000 | 0 | 73,000 | +912.5% |
+| Same opening/deposits, entries on or before valuation; stored valuation 72,000 as of 2024-06-01 | 81,000 | 72,000 | 8,000 | 0 | 64,000 | +800.0% |
+| Cash entries 1,000 / 3,000 / 0 / 0 / 5,000; valuation 5,400 after the entries | 9,000 | 5,400 | 9,000 | 0 | -3,600 | -40.0% |
+| Opening 1,000; later deposit 2,000 and withdrawal 300; value 1,000 at 2024-01-01 | 2,700 | 2,700 | 2,000 | 300 | 1,000 | +50.0% |
+
+These are current-function outputs, not the intended P29-H results. In
+particular, the source does not reproduce an `Invested` output of 73,000 when
+an opening 73,000 and four 2,000 deposits are all represented in that
+holding's `logs`: `holdingInvested()` currently returns 81,000. The owner
+reported 73,000/72,000/8,000/0; that exact display implies a different stored
+opening or entry representation and cannot be inferred without exact dates
+and data. The old return denominator does ignore the opening: using the
+reported 72,000 valuation and 8,000 in logged deposits gives
+`(72,000 - 8,000) / 8,000 = 800%`.
+
+The pre-change implementation also nets withdrawals out of `holdingInvested()`,
+adds `holding.value` to all entries when `valueAsOf` is absent, and uses the
+rate-based `planValue()` estimate for plans without an actual valuation. These
+are recorded for correction in the next implementation step. There is no
+back-dated-entry helper line on the current holding card.
 
 Replaced assertions:
 - old: Budget forms use a segmented Apply changes scope control / new: Save and
