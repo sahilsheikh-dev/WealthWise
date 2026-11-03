@@ -14,23 +14,29 @@ export type InvestmentReturnSummary = {
   spanDays: number;
 };
 
+export function investmentEntryTotals(entries: readonly InvestmentEntry[]): {
+  deposits: number;
+  withdrawals: number;
+} {
+  let deposits = 0;
+  let withdrawals = 0;
+  for (const entry of entries) {
+    if (entry.amount === 0) continue;
+    if (entry.kind === 'Deposit') deposits += entry.amount;
+    else withdrawals += entry.amount;
+  }
+  return { deposits, withdrawals };
+}
+
 export function absoluteGainAndReturn(
   entries: readonly InvestmentEntry[],
   currentValue: number,
   valuationDate: ISODate,
+  openingAmount = 0,
 ): Pick<InvestmentReturnSummary, 'contributions' | 'withdrawals' | 'gain' | 'absoluteReturnPct'> {
-  const merged = new Map<ISODate, number>();
-  let contributions = 0;
-  let withdrawals = 0;
-  for (const entry of entries) {
-    if (entry.amount === 0) continue;
-    if (entry.kind === 'Deposit') contributions += entry.amount;
-    else withdrawals += entry.amount;
-    const signed = entry.kind === 'Deposit' ? -entry.amount : entry.amount;
-    merged.set(entry.date, (merged.get(entry.date) ?? 0) + signed);
-  }
-  void merged;
+  const { deposits, withdrawals } = investmentEntryTotals(entries);
   void valuationDate;
+  const contributions = openingAmount + deposits;
   const gain = currentValue + withdrawals - contributions;
   return {
     contributions,
@@ -109,28 +115,33 @@ export function investmentReturnSummary(
   entries: readonly InvestmentEntry[],
   currentValue: number,
   valuationDate: ISODate,
+  openingAmount = 0,
+  openingDate = valuationDate,
 ): InvestmentReturnSummary {
-  const absolute = absoluteGainAndReturn(entries, currentValue, valuationDate);
-  const datedFlows = entries
+  const absolute = absoluteGainAndReturn(entries, currentValue, valuationDate, openingAmount);
+  const datedFlows = [
+    ...(openingAmount > 0 ? [{ date: openingDate, amount: -openingAmount }] : []),
+    ...entries
     .filter((entry) => entry.amount !== 0)
     .map((entry) => ({
       date: entry.date,
       amount: entry.kind === 'Deposit' ? -entry.amount : entry.amount,
-    }));
+    })),
+  ];
   datedFlows.push({ date: valuationDate, amount: currentValue });
   const mergedFlows = mergedCashFlows(datedFlows);
   const firstDate = mergedFlows.find((flow) => flow.amount !== 0)?.date ?? valuationDate;
   const spanDays = daysBetween(firstDate, valuationDate);
   const nonZeroEntries = entries.filter((entry) => entry.amount !== 0);
-  const deposits = nonZeroEntries.filter((entry) => entry.kind === 'Deposit');
+  const cashFlowCount = nonZeroEntries.length + (openingAmount > 0 ? 1 : 0);
   let annualizedLabel: 'XIRR' | 'CAGR' | null = null;
   let xirr: number | null = null;
   let cagr: number | null = null;
   if (spanDays >= 365) {
-    if (deposits.length === 1 && nonZeroEntries.length === 1) {
+    if (cashFlowCount === 1) {
       annualizedLabel = 'CAGR';
       cagr = calculateCagr(absolute.contributions, currentValue, spanDays);
-    } else if (nonZeroEntries.length > 1) {
+    } else if (cashFlowCount > 1) {
       annualizedLabel = 'XIRR';
       xirr = calculateXirr(datedFlows);
     }

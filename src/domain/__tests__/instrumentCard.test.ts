@@ -106,14 +106,14 @@ describe('buildInstrumentCardModel', () => {
     expect(completed.nextLine).toBeUndefined();
   });
 
-  it('supports estimated plan values and rejects rows without their holding', () => {
+  it('shows ledger-based plan values and rejects rows without their holding', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
         ? { ...holding, actualValue: null, actualValueDate: null }
         : holding),
     };
-    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Estimated value');
+    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Current value');
     expect(() => buildInstrumentCardModel({
       id: 'missing', kind: 'manual', name: 'Missing', type: 'Other',
       invested: 0, value: 0, gain: 0, gainPct: null,
@@ -136,7 +136,7 @@ describe('buildInstrumentCardModel', () => {
     const lossData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
-        ? { ...holding, invested: 1_000, value: 500, valueAsOf: '2026-10-01',
+        ? { ...holding, type: 'Fixed deposit' as const, invested: 1_000, value: 500, valueAsOf: '2026-10-01',
           logs: [{ id: 'loss-deposit', date: '2025-10-01', amount: 1_000, note: '', kind: 'Deposit' as const }] }
         : holding),
     };

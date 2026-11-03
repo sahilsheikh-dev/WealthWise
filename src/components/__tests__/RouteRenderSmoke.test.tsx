@@ -42,7 +42,7 @@ import { AmountText } from '../AmountText';
 import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
-import { monthKey, shiftMonth } from '../../domain/dates';
+import { addDays, monthKey, shiftMonth } from '../../domain/dates';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
@@ -3014,8 +3014,12 @@ describe('route render smoke audit', () => {
         label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
       )).toBe(true);
       const assetsLabels = labelsFor(React.createElement(AssetsScreen));
-      expect(assetsLabels.some((label) => label.startsWith(`Gain ${exactA}`))).toBe(true);
-      expect(assetsLabels).toContain(`Cash, invested ${exactB}`);
+      expect(assetsLabels.some((label) =>
+        label.startsWith(`Gain ${formatAmount(0, 'exact', 1)}`),
+      )).toBe(true);
+      expect(assetsLabels).toContain(`Invested, ${formatAmount(259_259_256, 'exact', 1)}`);
+      expect(assetsLabels).toContain('Cash');
+      expect(assetsLabels).not.toContain(`Cash, invested ${exactB}`);
       expect(labelsFor(React.createElement(LiabilitiesScreen))).toEqual(expect.arrayContaining([
         exactA,
         `Monthly EMI, ${exactB}`,
@@ -3561,6 +3565,129 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('renders ledger-based asset totals and Cash/Bank details at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const assets: ManualHolding[] = [
+      {
+        id: 'return-fd',
+        kind: 'manual',
+        name: 'Fixed deposit',
+        type: 'Fixed deposit',
+        invested: 1_000,
+        value: 1_100,
+        valueAsOf: today,
+        logs: [{
+          id: 'backdated-deposit',
+          date: addDays(today, -1),
+          amount: 200,
+          note: '',
+          kind: 'Deposit',
+        }],
+      },
+      {
+        id: 'cash-balance',
+        kind: 'manual',
+        name: 'Cash reserve',
+        type: 'Cash',
+        invested: 500,
+        value: 500,
+        valueAsOf: today,
+        logs: [{
+          id: 'cash-deposit',
+          date: today,
+          amount: 100,
+          note: '',
+          kind: 'Deposit',
+        }],
+      },
+      {
+        id: 'bank-balance',
+        kind: 'manual',
+        name: 'Bank reserve',
+        type: 'Savings account',
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: today,
+        logs: [{
+          id: 'bank-withdrawal',
+          date: today,
+          amount: 100,
+          note: '',
+          kind: 'Withdrawal',
+        }],
+      },
+    ];
+    const data: AppData = { ...emptyAppData(today), holdings: assets };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(AssetsScreen));
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Invested, ${formatAmount(2_800, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Gain, ${formatAmount(-100, 'exact', 1)}`,
+      })).toBeDefined();
+
+      const fixedCard = renderer.root.findByProps({ testID: 'asset-card-manual-Fixed deposit' });
+      expect(fixedCard.findAllByType('text')
+        .some((node) => node.children.join('').includes(
+          'Entries dated before the last valuation are assumed included in it.',
+        ))).toBe(true);
+
+      for (const [testID, expectedLabel] of [
+        ['asset-card-manual-Cash reserve', 'Deposited'],
+        ['asset-card-manual-Bank reserve', 'Withdrawn'],
+      ]) {
+        const card = renderer.root.findByProps({ testID });
+        const content = card.findAllByType('text').map((node) => node.children.join('')).join(' ');
+        expect(content).toContain(expectedLabel);
+        expect(content).not.toMatch(/No return yet|absolute|XIRR|CAGR|% of your assets/);
+        expect(content).not.toContain('Invested');
+        expect(content).not.toContain('Gain');
+      }
+
+      const cashCard = renderer.root.findByProps({ testID: 'asset-card-manual-Cash reserve' });
+      expect(cashCard.findByProps({ accessibilityLabel: 'Cash' })).toBeDefined();
+      expect(cashCard.findByProps({
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}. Withdrawn ${formatAmount(0, 'exact', 1)}`,
+      })).toBeDefined();
+
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ id: 'cash-balance' });
+      renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Balance ${formatAmount(500, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Withdrawn ${formatAmount(0, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findAllByProps({
+        accessibilityLabel: `Invested ${formatAmount(600, 'exact', 1)}`,
+      })).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 

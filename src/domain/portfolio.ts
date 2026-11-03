@@ -1,5 +1,5 @@
 import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
-import { investmentReturnSummary, type InvestmentReturnSummary } from './investmentReturns';
+import { investmentEntryTotals, investmentReturnSummary, type InvestmentReturnSummary } from './investmentReturns';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -15,19 +15,23 @@ export type PortfolioRow = {
   returnSummary?: InvestmentReturnSummary;
 };
 
+export function isCashOrBankHoldingType(type: HoldingType): boolean {
+  return type === 'Cash' || type === 'Savings account';
+}
+
 export function holdingInvested(holding: Holding): number {
   if (holding.kind === 'plan') return planInvested(holding);
-  return Math.max(0, holding.invested + holding.logs.reduce((total, entry) =>
-    total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0));
+  return holding.invested + investmentEntryTotals(holding.logs).deposits;
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
   if (holding.kind === 'plan') return planValue(holding, asOf);
-  const valueAsOf = holding.valueAsOf;
-  const entriesAfterValue = holding.logs
-    .filter((entry) => !valueAsOf || entry.date > valueAsOf)
+  const valuationDate = holding.valueAsOf;
+  const baseValue = valuationDate ? holding.value : holding.invested;
+  const applicableEntries = holding.logs
+    .filter((entry) => entry.date <= asOf && (!valuationDate || entry.date > valuationDate))
     .reduce((total, entry) => total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
-  return Math.max(0, holding.value + entriesAfterValue);
+  return Math.max(0, baseValue + applicableEntries);
 }
 
 function row(
@@ -40,24 +44,15 @@ function row(
   asOf: ISODate,
   holding?: Holding,
 ): PortfolioRow {
-  const returnSummary = holding
-    ? investmentReturnSummary(
-      holding.kind === 'manual'
-        ? holding.logs
-        : [
-          {
-            id: `${holding.id}-opening`,
-            date: holding.trackFrom,
-            amount: Math.max(0, holding.opening),
-            note: '',
-            kind: 'Deposit',
-          },
-          ...holding.logs,
-        ],
-      value,
-      asOf,
-    )
-    : investmentReturnSummary([], value, asOf);
+  const openingAmount = holding?.kind === 'manual' ? holding.invested : holding?.opening ?? 0;
+  const openingDate = holding?.kind === 'plan' ? holding.startDate : asOf;
+  const returnSummary = investmentReturnSummary(
+    holding?.logs ?? [],
+    value,
+    asOf,
+    openingAmount,
+    openingDate,
+  );
   return {
     id,
     kind,
@@ -66,7 +61,7 @@ function row(
     invested,
     value,
     gain: returnSummary.gain,
-    gainPct: returnSummary.absoluteReturnPct,
+    gainPct: holding && isCashOrBankHoldingType(type) ? null : returnSummary.absoluteReturnPct,
     returnSummary,
     ...(holding ? { holding } : {}),
   };
