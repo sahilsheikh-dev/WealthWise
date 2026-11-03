@@ -739,6 +739,36 @@ export function migrateV14ToV15(persisted: unknown): unknown {
   return { ...persisted, coverGoals };
 }
 
+export function migrateV15ToV16(persisted: unknown): unknown {
+  if (!isRecord(persisted) || !Array.isArray(persisted.holdings)) return persisted;
+  const budgets = [
+    persisted.budgetPlan,
+    ...(Array.isArray(persisted.monthBudgets) ? persisted.monthBudgets : []),
+  ];
+  const hasBudgetSchedule = (holdingId: unknown) => budgets.some((budget) =>
+    isRecord(budget) &&
+    Array.isArray(budget.items) &&
+    budget.items.some((item) => isRecord(item) && item.holdingId === holdingId),
+  );
+  let changed = false;
+  const holdings = persisted.holdings.map((holding) => {
+    if (!isRecord(holding)) return holding;
+    const combinedType = holding.type === 'Fixed deposit / RD' || holding.type === 'FD / RD';
+    const hasSchedule = holding.kind === 'plan' || hasBudgetSchedule(holding.id);
+    const scheduledFixedDeposit = holding.type === 'Fixed deposit' && hasSchedule;
+    if (!combinedType && !scheduledFixedDeposit) return holding;
+    const hasEntries = Array.isArray(holding.logs) && holding.logs.length > 0;
+    changed = true;
+    return {
+      ...holding,
+      type: combinedType && !hasEntries && !hasSchedule
+        ? 'Fixed deposit'
+        : 'Recurring deposit',
+    };
+  });
+  return changed ? { ...persisted, holdings } : persisted;
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -777,6 +807,7 @@ export function migratePersisted(
     if (fromVersion <= 12) result = migrateV12ToV13(result);
     if (fromVersion <= 13) result = migrateV13ToV14(result);
     if (fromVersion <= 14) result = migrateV14ToV15(result);
+    if (fromVersion <= 15) result = migrateV15ToV16(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

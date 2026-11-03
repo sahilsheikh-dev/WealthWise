@@ -8,6 +8,7 @@ import { monthKey } from './dates';
 import { investCategoryFor } from './links';
 import { isInsuranceBudgetCategory, policyPremiumCategoryFor } from './policyCategories';
 import { policySchedule } from './policySchedule';
+import { holdingCapabilities } from './holdingCapabilities';
 import { liabilitySchedule, planSchedule } from './schedule';
 import type { AppData, ISODate, Transaction } from './types';
 
@@ -66,7 +67,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
   );
 
   for (const holding of data.holdings) {
-    if (holding.kind !== 'plan') continue;
+    if (holding.kind !== 'plan' || !holdingCapabilities(holding.type).recurring) continue;
     const rows = planSchedule(holding, today).rows;
     const firstUnpaid = rows.find((row) => row.status !== 'paid');
     const category = investCategoryFor(holding.type);

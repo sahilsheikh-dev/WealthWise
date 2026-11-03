@@ -13,6 +13,7 @@ import {
   migrateV12ToV13,
   migrateV13ToV14,
   migrateV14ToV15,
+  migrateV15ToV16,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -113,7 +114,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 16)).toThrow(
+    expect(() => migratePersisted({}, 17)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -172,7 +173,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 15)).toBe(persisted);
+    expect(migratePersisted(persisted, 16)).toBe(persisted);
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -214,7 +215,7 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 16)).toThrow(
+    expect(() => migratePersisted({}, 17)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -263,6 +264,101 @@ describe('schema migration', () => {
     expect(legacy.coverGoals[0]).toEqual({
       type: 'term-life', targetMode: 'income-multiple', targetValue: 12,
     });
+  });
+
+  it('splits legacy combined FD/RD holdings by entries and schedule without changing other data', () => {
+      const data = {
+        ...mockAppData,
+        holdings: [
+          {
+            id: 'combined-empty',
+            kind: 'manual',
+            name: 'Unstarted deposit',
+            type: 'FD / RD',
+            invested: 1_000,
+            value: 1_000,
+            logs: [],
+          },
+          {
+            id: 'combined-entry',
+            kind: 'manual',
+            name: 'Deposited monthly',
+            type: 'Fixed deposit / RD',
+            invested: 1_000,
+            value: 1_100,
+            logs: [{ id: 'old-entry', date: '2026-10-01', amount: 100, note: 'kept', kind: 'Deposit' }],
+          },
+          {
+            id: 'combined-schedule',
+            kind: 'plan',
+            name: 'Scheduled deposit',
+            type: 'FD / RD',
+            frequency: 'monthly',
+            logs: [],
+          },
+          {
+            id: 'already-fixed-plan',
+            kind: 'plan',
+            name: 'Scheduled fixed',
+            type: 'Fixed deposit',
+            frequency: 'monthly',
+            logs: [],
+          },
+          {
+            id: 'already-fixed',
+            kind: 'manual',
+            name: 'Already fixed',
+            type: 'Fixed deposit',
+            invested: 500,
+            value: 550,
+            logs: [{ id: 'legacy-fixed-entry', date: '2026-10-02', amount: 50, note: 'preserve', kind: 'Withdrawal' }],
+          },
+          {
+            id: 'already-fixed-linked',
+            kind: 'manual',
+            name: 'Fixed deposit with a Budget schedule',
+            type: 'Fixed deposit',
+            invested: 500,
+            value: 550,
+            logs: [],
+          },
+          {
+            id: 'already-recurring',
+            kind: 'plan',
+            name: 'Already recurring',
+            type: 'Recurring deposit',
+            frequency: 'monthly',
+            logs: [],
+          },
+        ],
+        budgetPlan: { items: [{ id: 'budget-item', holdingId: 'already-fixed-linked' }] },
+      };
+      const originalHoldings = data.holdings;
+      const migrated = migrateV15ToV16(data) as typeof data;
+      expect(migrated.holdings.map(({ id, type }) => ({ id, type }))).toEqual([
+        { id: 'combined-empty', type: 'Fixed deposit' },
+        { id: 'combined-entry', type: 'Recurring deposit' },
+        { id: 'combined-schedule', type: 'Recurring deposit' },
+        { id: 'already-fixed-plan', type: 'Recurring deposit' },
+        { id: 'already-fixed', type: 'Fixed deposit' },
+        { id: 'already-fixed-linked', type: 'Recurring deposit' },
+        { id: 'already-recurring', type: 'Recurring deposit' },
+      ]);
+      expect(migrated.holdings[1]?.logs).toEqual(data.holdings[1]?.logs);
+      expect(migrated.holdings[3]?.logs).toEqual(data.holdings[3]?.logs);
+      expect(migrated.budgetPlan).toEqual(data.budgetPlan);
+      expect(migrated).toMatchObject({ transactions: data.transactions, goals: data.goals, efBucketLinks: data.efBucketLinks });
+      expect(data.holdings).toBe(originalHoldings);
+      expect(migratePersisted({ data }, 15)).toEqual({ data: migrated });
+  });
+
+  it('leaves already-separated v15 holdings and malformed non-data inputs unchanged', () => {
+    const alreadySeparated = {
+      holdings: [{ id: 'fixed', type: 'Fixed deposit' }, { id: 'recurring', type: 'Recurring deposit' }],
+    };
+    expect(migrateV15ToV16(alreadySeparated)).toBe(alreadySeparated);
+    expect(migrateV15ToV16({ holdings: null })).toEqual({ holdings: null });
+    expect(migrateV15ToV16(null)).toBeNull();
   });
 
   it('moves legacy manual Insurance items into the current Insurance system section', () => {
