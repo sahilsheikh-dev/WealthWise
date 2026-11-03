@@ -6316,9 +6316,76 @@ Characterization coverage was added in
 `src/domain/__tests__/liability.test.ts` — `characterizes the reported
 personal-loan inputs with an explicitly illustrative principal`. The fixture
 uses the provided rate, EMI, start date, first due date and 14 assumed
-on-schedule payment dates. Principal is synthetic, calibrated to produce an
-approximately 201,000 app balance after the 14th payment; it is not asserted
-to be the owner's principal. The test verifies the 31-day first-period
-interest, balance after each of 14 payments, and the extra interest from a
-seven-day-late payment. Focused test result: 12 tests passed. No source
-behavior, schema or Home-screen code changed.
+on-schedule payment dates, with a round synthetic principal of 250,000; it is
+not asserted to be the owner's principal. The test verifies the 31-day
+first-period interest, balance after each of 14 payments, and the extra
+interest from a seven-day-late payment. Focused test result: 12 tests passed.
+No source behavior, schema or Home-screen code changed.
+
+Assertion correction before comparison: the first Step 1 fixture used a
+synthetic principal reverse-calibrated to the reported approximate app
+balance, which risked appearing to reproduce missing owner data. It was
+replaced with the round illustrative principal 250,000 and recomputed
+characterization outputs; reason: principal and payment records are explicitly
+blank, so an arbitrary input must be clearly illustrative rather than tuned
+to the observed result.
+
+### Step 2 — numerical comparison
+
+The owner's bank outstanding and its as-of date, principal, tenure, and app
+payment records were blank. The following is therefore a generic example,
+not the owner's account: principal 250,000 (illustrative only), annual rate
+15.03%, EMI 5,713, start 2025-08-07, and 14 assumed full EMI payments on the
+7th of each month from 2025-09-07 through 2026-10-07. Each row is the balance
+immediately after that payment.
+
+| k | Payment date | App actual/365 | Monthly, full month from first period | Monthly after first 31 actual days | Actual/365 daily |
+|---:|---|---:|---:|---:|---:|
+| 1 | 2025-09-07 | 247,478.30 | 247,418.25 | 247,478.30 | 247,478.30 |
+| 2 | 2025-10-07 | 244,822.51 | 244,804.16 | 244,864.97 | 244,822.51 |
+| 3 | 2025-11-07 | 242,234.72 | 242,157.34 | 242,218.90 | 242,234.72 |
+| 4 | 2025-12-07 | 239,514.14 | 239,477.36 | 239,539.69 | 239,514.14 |
+| 5 | 2026-01-07 | 236,858.59 | 236,763.81 | 236,826.93 | 236,858.59 |
+| 6 | 2026-02-07 | 234,169.14 | 234,016.28 | 234,080.18 | 234,169.14 |
+| 7 | 2026-03-07 | 231,156.08 | 231,234.33 | 231,299.04 | 231,156.08 |
+| 8 | 2026-04-07 | 228,393.83 | 228,417.54 | 228,483.06 | 228,393.83 |
+| 9 | 2026-05-07 | 225,502.28 | 225,565.47 | 225,631.81 | 225,502.28 |
+| 10 | 2026-06-07 | 222,667.86 | 222,677.68 | 222,744.85 | 222,667.86 |
+| 11 | 2026-07-07 | 219,705.57 | 219,753.72 | 219,821.73 | 219,705.57 |
+| 12 | 2026-08-07 | 216,797.16 | 216,793.13 | 216,861.99 | 216,797.16 |
+| 13 | 2026-09-07 | 213,851.62 | 213,795.47 | 213,865.19 | 213,851.62 |
+| 14 | 2026-10-07 | 210,780.42 | 210,760.25 | 210,830.85 | 210,780.42 |
+
+The app and actual/365 columns are identical because `loanState()` uses that
+day-count formula. At payment 14, the full-month convention is 20.17 below
+the app result; retaining the first 31-day actual period and using monthly
+steps thereafter is 50.43 above it. The two monthly variants differ by 70.60.
+These convention deltas are far below one EMI (5,713) in this generic
+example. The first 31-day period contributes 60.05 more interest than a
+rate/12 period (365/12 equivalent days) on the same opening principal; later calendar
+months and compounding determine the final net differences.
+
+This comparison does not establish a match to the bank: its balance and
+statement date are absent, and the synthetic principal was not supplied by
+the owner. It also cannot explain the app's approximate 201,000 display using
+the generic 250,000 principal. If the example were instead viewed on
+2026-11-03, 27 days after its 14th payment, the app's actual/365 balance would
+be 213,123.89; that is a different as-of date, not an apples-to-apples
+comparison with the 2026-10-07 row.
+
+Gap decomposition for the owner's account:
+
+| Factor | Evidence / unresolved input |
+|---|---|
+| Day-count basis | App is actual/365. Generic daily-vs-monthly differences above are under one EMI; bank method cannot be identified without a statement. |
+| First-period handling | App accrues 31 actual days from 2025-08-07 to 2025-09-07. Bank's first-period convention is unknown. |
+| Payment timing | App uses recorded dates. The exact app payment dates and bank debit dates are not supplied; late dates accrue through the date paid. |
+| Number recorded | Owner says 14 installments were paid, but the app's recorded dates and amounts are blank; it is unverified that all 14 are in app data. |
+| Rounding | App does not round each period; bank statement rounding is unknown. |
+| Amount/date comparison | Bank outstanding and its as-of date are blank, so the actual gap and whether it exceeds one EMI cannot be calculated. |
+
+Inputs needed to compare the actual account: principal at disbursement,
+contractual tenure in months, bank outstanding and statement date, app's 14
+payment rows (date and amount), and bank debit dates if different. The tenure
+is also needed to verify the scheduled payoff, though principal and payment
+history determine the balance calculation itself.

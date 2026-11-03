@@ -139,13 +139,13 @@ describe('liability calculations', () => {
       '2026-09-07', '2026-10-07',
     ] as const;
     const balancesAfterEachPayment = [
-      '239157.67', '236399.08', '233703.76', '230877.81',
-      '228112.01', '225310.91', '222195.71', '219319.08',
-      '216315.43', '213363.74', '210286.51', '207257.86',
-      '204190.55', '201000.00',
+      '247478.30', '244822.51', '242234.72', '239514.14',
+      '236858.59', '234169.14', '231156.08', '228393.83',
+      '225502.28', '222667.86', '219705.57', '216797.16',
+      '213851.62', '210780.42',
     ];
     const illustrative = {
-      principal: 241_784.24,
+      principal: 250_000,
       ratePct: 15.03,
       startDate: '2025-08-07',
       payments: paymentDates.map((date, index) => ({
@@ -159,7 +159,7 @@ describe('liability calculations', () => {
     };
 
     expect(loanState(illustrative, '2025-09-07').interestAccrued).toBeCloseTo(
-      241_784.24 * 0.1503 * 31 / 365,
+      250_000 * 0.1503 * 31 / 365,
       8,
     );
     for (const [index, expectedBalance] of balancesAfterEachPayment.entries()) {
@@ -188,7 +188,7 @@ describe('liability calculations', () => {
       payments: [latePayment],
     }, '2025-09-14').balance;
     expect(lateBalance - balanceOnFirstDueDate).toBeCloseTo(
-      241_784.24 * 0.1503 * 7 / 365,
+      250_000 * 0.1503 * 7 / 365,
       8,
     );
   });
