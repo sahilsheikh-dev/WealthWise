@@ -2,12 +2,13 @@
 
 # Status
 
-- Current task: P29-K scope popup behavior is complete. Selecting either
-  Budget scope applies immediately; Close, backdrop and Android back discard
-  the pending change. Delete-category counts remain in the popup body and
-  Undo is unchanged. `app/(tabs)/index.tsx` remains user-owned and was not
-  edited.
-- Phase 29 status: P29-A through P29-K are Done, including P29-F2, P29-F3 and
+- Current task: P29-L Insurance inventory is complete and implementation is
+  in progress. Home was inspected read-only: it imports only `policySummary`
+  for its Insurance box and generic pending dues for Upcoming and due; it does
+  not depend on cover goals. `app/(tabs)/index.tsx` remains user-owned and was
+  not edited.
+- Phase 29 status: P29-A through P29-K are Done; P29-L is In progress.
+  Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
 - Schema version: v16. P29-E added Budget holding links, P29-G migrated v14
