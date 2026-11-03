@@ -10,7 +10,7 @@
   P29-F3 and P29-F4. The owner decision DEC-P29E-HOLDING-DELETE withdraws
   Undo after holding deletion; the retained requirement, clearing every
   Budget holding link in the same write, is proven by the existing store test.
-- Schema version: v15. P29-E is the Budget holding-link migration; P29-G
+- Schema version: v16. P29-E is the Budget holding-link migration; P29-G
   migrates v14 cover goals to editable records.
 - Runtime: Node.js 26.13.0.
 - Test counts: 84 suites, 1061 tests.
