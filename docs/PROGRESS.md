@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (87/90)
+Overall progress ██████████ 97% (88/91)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (11/11)
+Phase 29         ██████████ 100% (12/12)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -177,6 +177,7 @@ Phase 29         ██████████ 100% (11/11)
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
+| P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2798,6 +2799,7 @@ evidence present in exports/checkpoints.
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 | P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
+| P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 
 ## 7. Change-request register
 
@@ -6389,3 +6391,105 @@ contractual tenure in months, bank outstanding and statement date, app's 14
 payment rows (date and amount), and bank debit dates if different. The tenure
 is also needed to verify the scheduled payoff, though principal and payment
 history determine the balance calculation itself.
+
+### DEC-P29J-LIABILITY-AUDIT — report and proposal
+
+The supplied evidence does not establish a plain bug: the current path applies
+all recorded payments dated on or before `asOf`, accrues actual/365 interest
+between payment dates, and does not add a second monthly-interest charge.
+There is no actual statement balance/date or app payment ledger to check for
+an omitted payment, a wrong date/day count, or duplicated interest. Therefore
+P29-J is report-only; no liability behavior or schema was changed.
+
+If a bank statement and the corresponding input record confirm standard
+monthly reducing-balance amortization, propose changing the shared recurring
+liability balance model only after owner approval. Do not separately change
+screens: use one approved domain rule and let each current caller continue to
+consume it. The affected surfaces/callers are:
+
+| Surface | Current source path | Effect of an approved method switch |
+|---|---|---|
+| Home net-worth/liability totals | `src/domain/summary.ts` → `netWorth()`; `app/(tabs)/index.tsx` is user-owned and must remain read-only | Liability total and net worth change with the new balance; no Home source edit is expected. |
+| Liabilities list, total outstanding, row summaries and payoff info | `app/liabilities.tsx` → `liabilitySummary()` / `liabilitiesOverview()` | Displayed balances, cleared state, progress and payoff projections may change. |
+| Liability Schedule/Payments detail | `app/liability-payments.tsx`, `src/domain/schedule.ts` | Balance summary and interest/principal/balance-after schedule rows may change. |
+| Add/edit payment form and payment validation | `app/liability-payment-form.tsx`, `src/domain/liabilityActions.ts` | Suggested amount/current balance and overpayment validation may change. |
+| Clear-due suggested balance | `app/clear-dues.tsx` → `amortizedBalanceAfter()` and `src/domain/dues.ts` | Suggested balance and paid-through schedule may change. |
+| Budget/Transactions loan proceeds and repayment caps | `src/domain/cashFlow.ts`, `src/domain/dues.ts` | Existing-loan allocation limits and due clearing amounts may change. |
+
+Existing test evidence that would need review or updated expected values under
+an approved switch:
+
+| Test file | Exact test(s) |
+|---|---|
+| `src/domain/__tests__/liability.test.ts` | `preserves the existing recurring balance and payoff math`; `accrues daily interest and applies payments on their dates`; `characterizes the reported personal-loan inputs with an explicitly illustrative principal`; `summarizes recurring payoff dates and extra-payment savings` |
+| `src/domain/__tests__/selectors.test.ts` | `calculates net worth by summing assets and subtracting loan balances`; `summarizes active loan commitments, payoff date, cleared and never cases` |
+| `src/domain/__tests__/dues.test.ts` | `keeps the pre-refactor plan and recurring-liability outputs across a fixed date grid`; `settles recurring liabilities at an explicit or amortized balance and ignores historical payments after settlement`; `records recurring-liability dues by due date and caps each payment at the remaining balance`; `marks installments through settlement as assumed paid and stops after a zero balance`; `clears recurring liability dues oldest-first and updates its balance and schedule` |
+| `src/domain/__tests__/cashFlow.test.ts` | `records borrowed, new and existing loan proceeds, repayments, withdrawals and own funds`; `does not replace an existing liability origin or exceed its principal`; `rejects surplus allocations without targets or above the outstanding balance` |
+| `src/domain/__tests__/linkedActions.test.ts` | `creates an auto-EMI loan, syncs payments and removes linked transactions` |
+| `src/data/__tests__/createAppStore.test.ts` | `clears recurring liability installments and undoes linked payments in one write each`; `runs the loan payment scenario through store actions and deletes all linked records`; `round-trips linked plans, liability payments, goals and holdings` |
+| `src/domain/__tests__/schedule.test.ts` | `handles cleared and one-time liability schedule statuses` |
+| `src/components/__tests__/EmergencyGoalScreens.test.tsx` | `shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities` |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | `renders every registered screen with the four-month demo data`; `renders each route form with representative create and edit entry params`; `opens linked plan, liability, and policy rows in their edit routes`; add explicit liability balance assertions for list, detail, payment form and clear-due routes if the method changes. |
+
+A future “balance per statement” recalibration should be a distinct,
+explicitly dated statement-balance anchor with an audited forward-calculation
+rule. Do not reuse the existing `settlement` field: it marks a liability
+settled and causes schedule rows through its date to be treated as assumed
+paid. A separate anchor likely needs a schema/backup migration and UI for
+statement date and balance; that work is outside this no-schema-change audit
+and requires approval.
+
+### P29-J acceptance and audit record
+
+| Frozen line | Evidence |
+|---|---|
+| Document the outstanding calculation, day-count basis, first 31-day period, payment application, late-payment accrual and rounding. | `src/domain/__tests__/liability.test.ts` — `characterizes the reported personal-loan inputs with an explicitly illustrative principal`; implementation path documented in Step 1 above. |
+| Compare all 14 installment balances under app, standard monthly (full first month and actual 31-day first period), and actual/365 daily methods. | Generic 250,000 principal comparison table in Step 2 above. Actual owner principal/statement remains unavailable. |
+| Identify which model matches the bank and quantify the account's gap. | Not determinable: owner bank outstanding/as-of date and principal/payment records are blank. No match is claimed. |
+| Propose-only method change and statement recalibration; do not change behavior pending approval. | `DEC-P29J-LIABILITY-AUDIT` proposal above. No production source or schema changes. |
+
+**Assumed:** the synthetic 250,000 principal and scheduled payment dates exist
+only to compare conventions; they do not represent the owner's loan. The
+owner's bank balance, bank method, contractual principal/tenure and app
+payment rows remain unverified. Device checks are not relevant to this
+domain-only audit; no UI behavior changed.
+
+### P29-J final verification
+
+| Gate | Command | Exit code |
+|---|---|---:|
+| 1 | `rm -rf coverage && npm test -- --coverage` | 0 |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` (zero warnings) | 0 |
+| 4 | `npx expo-doctor` (21/21 checks) | 0 |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Coverage was computed from the freshly regenerated `coverage/coverage-final.json`.
+Executable statement locations are grouped by their immediate directory under
+`src/`; a source line is covered when any statement at that line ran. Branch
+coverage sums executed versus total Istanbul branch arms.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 658/696 (94.54%) | 679/774 (87.73%) |
+| `src/domain` | 3279/3342 (98.11%) | 3193/3436 (92.93%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Informational branch coverage: `src/domain/budget.ts` 762/841 (90.61%);
+`src/data/createAppStore.ts` 93/107 (86.92%). Configured repository thresholds
+remain authoritative.
+
+Assertion-count audit against `337fcc5` (the P29-J Step 2 commit):
+
+| Test file | Before | HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 0 | 0 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 158 | 158 | 0 | 0 | 0 |
+| **Total** | **169** | **169** | **0** | **0** | **0** |
+
+No `expect(` assertion was removed. The memory-doc test's expected inventory
+was updated from 1060 to 1061 tests. The progress-ledger test's expected
+overall and Phase 29 counts were updated from 87/90 and 11/11 to 88/91 and
+12/12, and its required P29 ID lists now include P29-J. These are additions
+or replacements of ledger expectations, not weakened assertions.

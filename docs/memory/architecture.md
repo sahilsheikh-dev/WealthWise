@@ -27,6 +27,13 @@ holdings show balance and deposit/withdrawal totals but no holding-level return.
 The asset list, holding cards and portfolio totals use the same domain
 calculations; the investment-entry screen shows values and ledger totals.
 
+Recurring liability balances in `src/domain/liability.ts` accrue actual
+calendar days over 365, applying each recorded payment on its date and
+continuing accrual to the requested as-of date. No per-period monetary
+rounding is performed. This describes the app's current calculation only; a
+lender's statement convention must be confirmed before changing it. The
+P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
+
 ## Schema and archives
 
 Current persisted schema is v15. `src/data/migrate.ts` contains the ordered

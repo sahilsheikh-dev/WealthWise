@@ -140,6 +140,17 @@ absolute return. Cash and Bank holdings show Balance, Deposited and Withdrawn,
 never a return percentage, XIRR or CAGR. If entries predate a recorded
 valuation, the card explains that they are assumed included in the valuation.
 
+### Recurring liability balances
+
+Recurring liability balances currently accrue simple interest by actual
+calendar days over a 365-day year. Interest accrues from the loan start or
+previous payment date through the next recorded payment date, then the
+recorded payment is subtracted; interest continues through the requested
+as-of date after the last payment. A delayed payment therefore accrues through
+its actual recorded date. The calculation does not round between periods.
+This is the app's accounting convention, not a claim about a lender's method;
+compare against a statement using its as-of date and actual payment records.
+
 Zustand persists app data through AsyncStorage. Persisted schema version 15 is
 the current version. The migration chain upgrades supported data from schema
 versions 1 through 14. Backup import verifies the file integrity and validates

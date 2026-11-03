@@ -2,23 +2,27 @@
 
 # Status
 
-- Current task: P29-H asset invested/current-value/return correction. It is
-  complete; `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-A through P29-H are Done, including P29-F2, P29-F3 and
-  P29-F4. The owner decision DEC-P29E-HOLDING-DELETE withdraws Undo after
-  holding deletion; the retained requirement, clearing every Budget holding
-  link in the same write, is proven by the existing store test.
+- Current task: P29-J recurring-liability balance audit. The report and
+  characterization test are complete; no calculation bug was proven, so
+  liability behavior remains unchanged. `app/(tabs)/index.tsx` remains
+  user-owned and was not edited.
+- Phase 29 status: P29-A through P29-H and P29-J are Done, including P29-F2,
+  P29-F3 and P29-F4. The owner decision DEC-P29E-HOLDING-DELETE withdraws
+  Undo after holding deletion; the retained requirement, clearing every
+  Budget holding link in the same write, is proven by the existing store test.
 - Schema version: v15. P29-E is the Budget holding-link migration; P29-G
   migrates v14 cover goals to editable records.
 - Runtime: Node.js 26.13.0.
-- Test counts: 84 suites, 1060 tests.
-  Latest validated run: 84 suites, 1060 tests passed with
+- Test counts: 84 suites, 1061 tests.
+  Latest validated run: 84 suites, 1061 tests passed with
   `npm test -- --coverage` on 2026-11-03.
-- All six P29-H gates exit 0: Jest coverage, TypeScript, Expo lint with zero
+- All six P29-J gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
-- Fresh P29-H coverage was generated after deleting `coverage/`, then measured
-  from `coverage-final.json`: `src/data` 658/696 lines (94.54%), 679/774
+- Fresh P29-J coverage was generated after deleting `coverage/`, then measured
+  from `coverage-final.json` by grouping executable statement lines by their
+  immediate `src/` directory; a line counts covered if any statement on it ran,
+  and branches count each Istanbul branch arm: `src/data` 658/696 lines (94.54%), 679/774
   branches (87.73%); `src/domain` 3279/3342 lines (98.11%), 3193/3436
   branches (92.93%); `src/lib` 107/107 lines and 126/126 branches (100%).
   Informational branch coverage: `src/domain/budget.ts` 762/841 (90.61%) and
@@ -29,6 +33,10 @@
 - The P29-F4 assertion audit compares 531d659 with its audited worktree:
   2050 to 2184 `expect(` occurrences (+134); 41 removed expectation lines are
   documented replacements, not removed-only assertions.
+- The P29-J final assertion audit compares 337fcc5 with HEAD: the two changed
+  test files remain at 169 total `expect(` occurrences (0 added, 0 removed,
+  0 net); the modified expected ledger counts and P29-J coverage are recorded
+  in [PROGRESS.md](../PROGRESS.md).
 - The prior Gate 1 timeout output is unavailable and cannot be quoted. The
   final fresh full run passes; see the ledger for the historical isolated-run
   information and the preliminary TypeScript correction.
