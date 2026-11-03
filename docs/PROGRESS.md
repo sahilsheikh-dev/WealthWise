@@ -177,7 +177,7 @@ Phase 29         █████████░ 92% (12/13)
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
-| P29-I | — | In progress | Inventory complete: FD and RD are already separate; current entry, plan, Budget-link and reminder surfaces offer schedules/entries without capability gating. Implementation and verification remain. | 2026-11-03 |
+| P29-I | — | In progress | Inventory complete; schema v16 migration for legacy combined FD/RD types, v15 raw archive and backup import behavior pass focused verification. Capability/UI integration and final gates remain. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
@@ -6543,3 +6543,26 @@ deposit plan with entry logs. The owner confirmed for the capability decision
 that Fixed deposit is the only one-time holding type; Cash and Savings
 account may also use recurring plans. The later matrix and migration do not
 change the emergency-fund bucket label or links.
+
+### DEC-P29I-CAPABILITIES — schema v16 migration
+
+The persisted schema is bumped from v15 to v16 as requested. `migrateV15ToV16`
+is pure and one-way: legacy combined type strings `FD / RD` and
+`Fixed deposit / RD` become Fixed deposit only when the holding is manual and
+has no entries; an entry-bearing combined holding or a combined scheduled plan
+becomes Recurring deposit. An already separate Fixed deposit plan is
+reclassified as Recurring deposit so its persisted schedule is retained under
+the new capability rule. Existing entries are copied, not deleted. Other
+fields and the Emergency fund `FD / RD` bucket/link data are unchanged.
+
+Safe storage archives raw v15 bytes exactly once at
+`.premigration.v15`; erase-all removes that archive. The migration rejects v17,
+the next unsupported schema. Backup tests cover importing v15 and an encrypted
+v16 round trip; the existing v1–v14 import tests remain in the chain.
+
+**Assumed:** schema v16 is warranted by the owner-requested schema bump even
+though current types are already separate. The migration also recognizes
+legacy combined strings defensively. Focused migration, archive, safe-storage
+and backup tests passed (4 suites, 146 tests); `npx tsc --noEmit` and
+`npx expo lint` exited 0. No assertions were
+removed or weakened. The current capability/UI behavior remains in progress.
