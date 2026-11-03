@@ -26,6 +26,12 @@
   warnings, Expo Doctor 21/21, and Android/iOS exports pass. Custom-goal future
   premiums use the generic Insurance category; existing transaction history
   retains its stored category.
+- P29-H corrects holding Invested, current value and return calculations with
+  opening capital included, dated valuation handling, no estimated interest,
+  and Cash/Bank return suppression. It does not change the persisted schema or
+  the owner-managed Home screen.
+- P29-H validation: 84 suites/1060 tests pass; TypeScript, lint with zero
+  warnings, Expo Doctor 21/21, and Android/iOS exports all pass.
 
 ### Investments and goals
 

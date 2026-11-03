@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-02 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
 
 # Project
 
@@ -19,7 +19,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 84 suites, 1054 tests in the current P29-G test inventory; the
+- Test counts: 84 suites, 1060 tests in the current P29-H test inventory; the
   final verified run is recorded in
   [status.md](status.md) for the run date and exact gate results.
 
