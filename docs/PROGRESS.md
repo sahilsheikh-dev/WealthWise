@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (88/91)
+Overall progress ██████████ 96% (88/92)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (12/12)
+Phase 29         █████████░ 92% (12/13)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -177,6 +177,7 @@ Phase 29         ██████████ 100% (12/12)
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
+| P29-I | — | In progress | Inventory complete: FD and RD are already separate; current entry, plan, Budget-link and reminder surfaces offer schedules/entries without capability gating. Implementation and verification remain. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
@@ -2799,6 +2800,7 @@ evidence present in exports/checkpoints.
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 | P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
+| P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Step 1 inventory committed; FD/RD already separate. Capability/migration implementation and verification are pending. | Inventory Step 1 commit to follow. | DEC-P29I-CAPABILITIES: owner confirmed Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the emergency-fund `FD / RD` bucket and links remain unchanged. | current request |
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 
 ## 7. Change-request register
@@ -6493,3 +6495,51 @@ was updated from 1060 to 1061 tests. The progress-ledger test's expected
 overall and Phase 29 counts were updated from 87/90 and 11/11 to 88/91 and
 12/12, and its required P29 ID lists now include P29-J. These are additions
 or replacements of ledger expectations, not weakened assertions.
+
+## P29-I holding capabilities (2026-11-03)
+
+**Assumed:** P29-I is new Phase 29 work. The current schema is v15 and the
+requested next schema version is v16. This is an inventory-only closeout so
+far; implementation, migration, tests and gates remain in progress.
+
+### Step 1 — read-only capability inventory
+
+`HoldingType` in `src/domain/types.ts` already stores `Fixed deposit` and
+`Recurring deposit` as separate values. No split is needed for current-schema
+records. The emergency-fund bucket label `FD / RD` and its bucket links are
+separate concepts and remain unchanged. The app has no holding type named
+`Bank`; `Savings account` is the current bank-like holding type.
+
+All ten current types are currently selectable in both manual-holding and
+recurring-plan forms. Because no central capability rule exists yet, each
+type currently offers the same surfaces:
+
+| Holding type | Manual form | Recurring-plan form | Entry controls | Monthly deposit / schedule | Budget link |
+|---|---|---|---|---|---|
+| Mutual fund / SIP | Yes | Yes | Yes | Yes | Yes |
+| Stocks / ETF | Yes | Yes | Yes | Yes | Yes |
+| Fixed deposit | Yes | Yes | Yes | Yes | Yes |
+| Recurring deposit | Yes | Yes | Yes | Yes | Yes |
+| EPFO / PF | Yes | Yes | Yes | Yes | Yes |
+| Savings account (Bank-like) | Yes | Yes | Yes | Yes | Yes |
+| Cash | Yes | Yes | Yes | Yes | Yes |
+| Gold | Yes | Yes | Yes | Yes | Yes |
+| Silver | Yes | Yes | Yes | Yes | Yes |
+| Other | Yes | Yes | Yes | Yes | Yes |
+
+Current behavior paths: `app/assets.tsx` routes Deposit, Withdraw, Entries and
+Schedule from cards; `src/domain/instrumentCard.ts` constructs those actions
+for every manual holding or plan. `app/investment-form.tsx` offers all types
+in both form modes. `app/investment-entry-form.tsx` accepts every holding
+without a type guard. `app/investment-entries.tsx` exposes Add investment
+entry and renders plan schedules. `app/budget-item-form.tsx` lists all
+holdings; `src/domain/budget.ts` permits any holding link. A linked plan
+provides its schedule to Budget, while a linked manual holding can have a
+generic editable Budget-item frequency. `src/domain/pending.ts` creates dues
+for every plan and `src/domain/reminders.ts` plans reminders from those dues.
+
+The demo already includes a Fixed deposit with no entry log and a Recurring
+deposit plan with entry logs. The owner confirmed for the capability decision
+that Fixed deposit is the only one-time holding type; Cash and Savings
+account may also use recurring plans. The later matrix and migration do not
+change the emergency-fund bucket label or links.
