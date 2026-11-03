@@ -11,7 +11,6 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   assets: 'stack',
   backup: 'stack',
   'clear-dues': 'form',
-  'cover-goal-form': 'form',
   'ef-allocation-form': 'form',
   'ef-bucket-form': 'form',
   'emergency-fund': 'stack',

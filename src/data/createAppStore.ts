@@ -20,16 +20,9 @@ import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } fr
 import {
   addPolicy as addPolicyData,
   deletePolicy as deletePolicyData,
-  setPolicyStatus as setPolicyStatusData,
   updatePolicy,
   type PolicyPatch,
 } from '../domain/policyActions';
-import {
-  addCoverGoal as addCoverGoalData,
-  deleteCoverGoal as deleteCoverGoalData,
-  updateCoverGoal as updateCoverGoalData,
-  type CoverGoalInput,
-} from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -99,7 +92,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -148,11 +141,7 @@ export type AppActions = {
   addPolicyPayment: (policyId: string, payment: Omit<PolicyPayment, 'id'>) => void;
   updatePolicy: (id: string, patch: PolicyPatch) => void;
   addPolicy: (input: AddPolicyInput) => void;
-  setPolicyStatus: (id: string, status: PolicyStatus) => void;
   deletePolicy: (id: string) => void;
-  addCoverGoal: (input: CoverGoalInput) => void;
-  updateCoverGoal: (id: string, patch: CoverGoalInput) => void;
-  deleteCoverGoal: (id: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -409,17 +398,7 @@ export function createAppStore(
           applyDataAction((data) => addPolicyPaymentData(data, { policyId, payment }, deps.newId).data);
         },
         updatePolicy(id, patch) {
-          const previous = get().data;
           applyDataAction((data) => updatePolicy(data, { id, patch }));
-          const previousPolicy = previous.policies.find((policy) => policy.id === id);
-          if (get().lastError === null && get().data !== previous
-            && previousPolicy && patch.status !== undefined && patch.status !== previousPolicy.status) {
-            useUIStore.getState().setActionToast({
-              message: 'Policy status updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
         },
         addPolicy(input) {
           applyDataAction((data) => addPolicyData(data, {
@@ -428,56 +407,12 @@ export function createAppStore(
             payments: [],
           }));
         },
-        setPolicyStatus(id, status) {
-          const previous = get().data;
-          applyDataAction((data) => setPolicyStatusData(data, { id, status }));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Policy status updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
         deletePolicy(id) {
           const previous = get().data;
           applyDataAction((data) => deletePolicyData(data, { id }));
           if (get().lastError === null && get().data !== previous) {
             useUIStore.getState().setActionToast({
               message: 'Policy deleted.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        addCoverGoal(input) {
-          const previous = get().data;
-          applyDataAction((data) => addCoverGoalData(data, { ...input, id: deps.newId() }));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Cover goal added.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        updateCoverGoal(id, patch) {
-          const previous = get().data;
-          applyDataAction((data) => updateCoverGoalData(data, { ...patch, id }));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Cover goal updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        deleteCoverGoal(id) {
-          const previous = get().data;
-          applyDataAction((data) => deleteCoverGoalData(data, id));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Cover goal deleted.',
               actionLabel: 'Undo',
               onAction: () => set({ data: previous, lastError: null }),
             });
@@ -734,6 +669,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v13`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v14`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v15`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v16`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

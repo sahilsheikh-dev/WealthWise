@@ -769,6 +769,19 @@ export function migrateV15ToV16(persisted: unknown): unknown {
   return changed ? { ...persisted, holdings } : persisted;
 }
 
+export function migrateV16ToV17(persisted: unknown): unknown {
+  if (!isRecord(persisted) || !Array.isArray(persisted.policies)) {
+    throw new PersistedVersionError(16, 'unknown-version');
+  }
+  const policies = persisted.policies.map((policy) => {
+    if (!isRecord(policy)) throw new PersistedVersionError(16, 'unknown-version');
+    const { coverGoalId: _coverGoalId, ...withoutCoverGoal } = policy;
+    return withoutCoverGoal;
+  });
+  const { coverGoals: _coverGoals, ...withoutCoverGoals } = persisted;
+  return { ...withoutCoverGoals, policies };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -808,6 +821,7 @@ export function migratePersisted(
     if (fromVersion <= 13) result = migrateV13ToV14(result);
     if (fromVersion <= 14) result = migrateV14ToV15(result);
     if (fromVersion <= 15) result = migrateV15ToV16(result);
+    if (fromVersion <= 16) result = migrateV16ToV17(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

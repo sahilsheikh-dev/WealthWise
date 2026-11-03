@@ -32,8 +32,8 @@ no cloud or network requests at runtime.
   Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
-- Insurance policies, policy-payment tracking and editable cover goals for
-  term life, health, motor, home and other cover.
+- Simple editable insurance policy tracking with scheduled premium dues for
+  term life, life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
 - Local payment reminders with privacy-aware notification text and an
@@ -152,9 +152,9 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 16 is
+Zustand persists app data through AsyncStorage. Persisted schema version 17 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 15. Backup import verifies the file integrity and validates
+versions 1 through 16. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -179,21 +179,32 @@ flows. Existing entries on a Fixed deposit are preserved and remain available
 for review, editing and deletion; the app blocks changing a holding with
 entries to Fixed deposit.
 
-### Insurance cover goals
+### Insurance tracking
 
-Cover goals are a user-managed list of up to 20 goals. Names are unique without
-case sensitivity; each policy kind can be assigned to at most one goal, and a
-goal may cover a custom policy kind or no kind. Targets can use the existing
-income-multiple, fixed-amount, active-only or no-target modes. Active
-non-savings policies count toward an explicit goal assignment first, then fall
-back to the goal matching their policy kind. Savings policies are excluded
-from goal totals. Policies that do not count toward a goal remain visible under
-"Not in any cover goal"; Home's total cover, yearly premium and next renewal
-continue to use the existing policy summary. Custom-goal premiums use the
-generic Insurance premium category for future dues, planned rows and newly
-recorded payments. Typed premium categories remain derived from policy kind.
-Existing transactions keep their recorded category. The Budget Insurance
-system section and its categories are unchanged.
+Insurance is a simple editable policy list. When there is no saved Term
+insurance or Life insurance policy, the screen shows an unstored placeholder
+with an Add details action; saving creates an ordinary policy. **Assumed:** the
+Life placeholder uses the existing `life-savings` policy type. Other insurance
+types can be added from the plus action. Policy forms capture type, name,
+insurer, optional cover amount, premium, frequency, next due date, and optional
+policy number and note.
+
+The next due date is the first premium due. Later dues follow the selected
+monthly, quarterly, half-yearly, yearly or custom interval (1–120 months),
+with month-end date clamping, until an optional existing end date. Pending
+premiums appear in Transactions, Home, Budget and reminders; paying a due
+records the linked transaction and advances the schedule. Typed premium
+categories remain derived from policy type; savings-policy premiums use the
+generic Insurance category. The Budget Insurance system section and its
+categories remain fixed and unchanged; making them editable is out of scope
+and requires a separate product decision.
+
+The migration to schema v17 removes only retired cover-goal records and policy
+goal assignments. Historical policy fields not shown in the simplified form
+remain in stored data. In particular, savings-policy current values and
+goal-linked assets remain available to their existing investment and goal
+features. Policies with a legacy inactive status remain visible as Ended and
+produce no dues.
 
 ## Data and privacy
 

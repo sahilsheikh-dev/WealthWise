@@ -158,7 +158,7 @@ export type PolicyKind =
   | 'home'
   | 'other';
 
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
+export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'custom';
 export type PolicyStatus = 'active' | 'lapsed' | 'matured' | 'cancelled';
 
 export type PolicyPayment = {
@@ -173,9 +173,9 @@ export type Policy = {
   name: string;
   insurer: string;
   kind: PolicyKind;
-  coverGoalId?: string;
   premium: number;
   frequency: PolicyFrequency;
+  customIntervalMonths?: number;
   startDate: ISODate;
   status: PolicyStatus;
   policyNumber?: string;
@@ -188,23 +188,6 @@ export type Policy = {
   currentValue: number | null;
   valueAsOf: ISODate | null;
   payments: PolicyPayment[];
-};
-
-export const COVER_POLICY_TYPES = ['term-life', 'health', 'motor', 'home', 'other'] as const;
-export type CoverPolicyType = (typeof COVER_POLICY_TYPES)[number];
-export type CoverGoalTargetMode = 'income-multiple' | 'amount' | 'active-only' | 'none';
-
-export type CoverGoalTarget =
-  | { mode: 'income-multiple'; value: number }
-  | { mode: 'amount'; value: number }
-  | { mode: 'active-only' }
-  | { mode: 'none' };
-
-export type CoverGoal = {
-  id: string;
-  name: string;
-  kind: CoverPolicyType | null;
-  target: CoverGoalTarget;
 };
 
 export type BudgetLine = {
@@ -309,7 +292,6 @@ export type AppData = {
   holdings: Holding[];
   liabilities: Liability[];
   policies: Policy[];
-  coverGoals: CoverGoal[];
   budget: Budget | null;
   budgetPlan: BudgetPlan | null;
   monthBudgets?: MonthBudget[];

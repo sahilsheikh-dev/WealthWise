@@ -14,6 +14,7 @@ import {
   migrateV13ToV14,
   migrateV14ToV15,
   migrateV15ToV16,
+  migrateV16ToV17,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -114,7 +115,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 17)).toThrow(
+    expect(() => migratePersisted({}, 18)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -173,7 +174,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 16)).toBe(persisted);
+    expect(migratePersisted(persisted, 17)).toBe(persisted);
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -215,12 +216,12 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 17)).toThrow(
+    expect(() => migratePersisted({}, 18)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
 
-  it('seeds every v12 cover goal while preserving v11 data', () => {
+  it('seeds legacy v12 cover goals before the v17 migration removes them', () => {
     const legacy = makeV11Fixture();
     expect(migrateV11ToV12(legacy)).toEqual({
       ...legacy,
@@ -235,10 +236,10 @@ describe('schema migration', () => {
 
     expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
     const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
-    expect(migrated.data.coverGoals).toHaveLength(5);
+    expect(migrated.data).not.toHaveProperty('coverGoals');
   });
 
-  it('migrates v14 cover goals to stable editable records without changing other data', () => {
+  it('migrates v14 cover-goal bytes through v15, then removes the superseded data in v17', () => {
     const legacy = {
       ...mockAppData,
       coverGoals: [
@@ -260,7 +261,8 @@ describe('schema migration', () => {
       ],
     };
     expect(migrateV14ToV15(legacy)).toEqual(expected);
-    expect(migratePersisted({ data: legacy }, 14)).toEqual({ data: expected });
+    const { coverGoals: _coverGoals, ...currentData } = expected;
+    expect(migratePersisted({ data: legacy }, 14)).toEqual({ data: currentData });
     expect(legacy.coverGoals[0]).toEqual({
       type: 'term-life', targetMode: 'income-multiple', targetValue: 12,
     });
@@ -359,6 +361,24 @@ describe('schema migration', () => {
     expect(migrateV15ToV16(alreadySeparated)).toBe(alreadySeparated);
     expect(migrateV15ToV16({ holdings: null })).toEqual({ holdings: null });
     expect(migrateV15ToV16(null)).toBeNull();
+  });
+
+  it('removes only cover goals and policy assignments when migrating v16 to v17', () => {
+    const data = {
+      ...mockAppData,
+      coverGoals: [{ id: 'legacy-cover', name: 'Legacy', kind: 'health', target: { mode: 'none' } }],
+      policies: mockAppData.policies.map((policy) => ({ ...policy, coverGoalId: 'legacy-cover' })),
+    };
+    const migrated = migrateV16ToV17(data) as Record<string, unknown>;
+    const { coverGoals: _coverGoals, ...withoutGoals } = data;
+    expect(migrated).toEqual({
+      ...withoutGoals,
+      policies: data.policies.map(({ coverGoalId: _coverGoalId, ...policy }) => policy),
+    });
+    expect(migratePersisted({ data }, 16)).toEqual({ data: migrated });
+    expect(() => migratePersisted(data, 18)).toThrow(
+      new PersistedVersionError(18, 'future-version'),
+    );
   });
 
   it('moves legacy manual Insurance items into the current Insurance system section', () => {
