@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (90/93)
+Overall progress ██████████ 96% (90/94)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (14/14)
+Phase 29         █████████░ 93% (14/15)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -164,6 +164,7 @@ Phase 29         ██████████ 100% (14/14)
 | CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
 | CR-96 | — | Done | P29-K: Budget scope choices apply immediately; Close, backdrop and Android back dismiss without applying. | 2026-11-03 |
+| CR-97 | — | In progress | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | 2026-11-03 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -181,6 +182,7 @@ Phase 29         ██████████ 100% (14/14)
 | P29-I | — | Done | Schema v16 migration, shared holding capabilities, Fixed-deposit one-time controls, legacy entry preservation, backup compatibility and acceptance tests pass; 85 suites/1078 tests and all six gates exit 0. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
+| P29-L | — | In progress | Inventory complete; Home remains read-only. Implementation, migration, tests, documentation and final gates pending. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2806,6 +2808,38 @@ evidence present in exports/checkpoints.
 | P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Done; 85 suites/1078 tests and all six gates exit 0; final capability matrix, assertions, coverage and device limitations are recorded below. | Inventory `eeeec26`; migration `34fa401`; capabilities `ce3bf4e`; regression/docs `13ef972`; persisted-link tests `94c3dfb`; each verified with `git cat-file -t`. | DEC-P29I-CAPABILITIES: Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the manual model has no rate or maturity fields so no new ones were introduced; the emergency-fund `FD / RD` bucket and links remain unchanged. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 | P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
+| P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | In progress; inventory/report-only step complete. Home imports only `policySummary`; no Home edit is required. | Inventory commit follows. | DEC-P29L-SIMPLE-INSURANCE records removal of cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
+
+### P29-L STEP 1 — Insurance inventory (report only)
+
+| Surface | Current Insurance dependency |
+|---|---|
+| Insurance list (`app/insurance.tsx`) | Cover-goal cards, target/gap/income-multiple and missing/unassigned states; status/kind filter panel and search; policy cards with status, cover, premium, next due; Paid and Schedule actions. |
+| Policy form and route | `/policy-form` creates/edits policy kind, cover-goal assignment, premium, frequency, start/end dates, policy number, sum assured, nominee, note and status. `/cover-goal-form` creates/edits/deletes target goals. Both are modal stack routes. |
+| Domain selectors and actions | `coverGoals.ts` owns goal targets/counting, missing cover, generic-category selection for no-kind goals, and automatic policy suggestion. `policyActions.ts` adds/updates/deletes policies, changes lifecycle status, validates cover-goal IDs and clears savings-goal links on deletion. |
+| Premium scheduling and payment | `policySchedule.ts` uses `startDate`, `frequency`, `premiumYears`, `trackFrom`, `endDate`, `status` and payment history. `dues.ts` creates linked expense transactions using typed categories except policies assigned to no-kind goals, which use generic `Insurance premium`. |
+| Home (read only) | `app/(tabs)/index.tsx` imports only `policySummary` for the Insurance box and generic `pendingItems` for upcoming/due items. Its current summary requires active policy count, total cover, yearly premium and next renewal. It imports no cover-goal types or UI. No Home change is needed. |
+| Goals | Savings policies (`life-savings`, `ulip`) remain linkable goal assets; `goalLinks.ts` reads `currentValue`. Policy deletion and kind changes currently remove/block some links. The new form must preserve `currentValue`/`valueAsOf`, existing savings links and link integrity. |
+| Budget | `pending.ts`, `schedule.ts` and `budget.ts` project unpaid policy dues into Insurance and linked planned rows; typed premium categories derive from policy kind. Keep the system Insurance section/categories. |
+| Reminders | `reminders.ts` extends the search horizon using policy `startDate`, `premiumYears` and optional `endDate`, then consumes policy dues through `pendingItems`. |
+| Transactions | `policyPayments` are linked expense transactions; the paid-amount flow records them and Undo restores the payment. `transaction-form.tsx` uses automatic policy suggestion for typed premium categories. |
+| Persistence and backups | `AppData`, schema, strict backup import/export, v14→v15 cover-goal migration and v15→v16 holding migration currently include `coverGoals`/`coverGoalId`. Safe storage archives raw prior bytes once, currently through v15; erase-all removes those archives. |
+| Tests and demo | Coverage is spread across cover-goal domain/screen, policy action/summary, pending/dues, Budget categories, migration/backup/schema, route smoke, reminders, goal links, store and demo tests. Demo currently creates five default cover goals and linked policies. |
+
+Retained hidden fields and why: `nominee` and `policyNumber` remain on records
+for data safety; `status` remains to label historical lapsed/matured/cancelled
+policies as Ended and suppress their dues; `premiumYears` remains as the
+existing finite schedule horizon; `trackFrom` becomes the editable next-due
+date anchor used by the new form and payment schedule; `endDate` continues to
+bound schedules; `currentValue`/`valueAsOf` remain necessary for savings-policy
+goal links. Cover-goal targets, `coverGoalId`, the default goal set, lifecycle
+controls, and no-kind-goal generic category override have no remaining user
+purpose and will be removed. Policy history payments and linked transactions
+remain intact.
+
+Assumed: Term insurance is `term-life`; Life insurance is `life-savings`.
+Schema v17 is the next free version after v16. The v16→v17 migration will
+remove `coverGoals` and `coverGoalId` only; no policy/history field is dropped.
 
 ### P29-K final verification
 
@@ -2974,6 +3008,7 @@ not device evidence.
 | CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
 | CR-95 | Include all income types in each historical budget, classify them from transaction logs, route unknown spending categories to Unexpected Extras, keep planned and actual equal, and link transaction logs. | Done | Added backward-compatible optional `otherIncomes` month-snapshot data and rendered separate non-earned rows without changing earned-income planning. The 52-month local backup now contains all income categories, matches planned/actual income and expense/investment category totals, retains all 716 transactions and their 119 explicit source links, and passes `parseBackup`. No unsupported expense/investment category was present. |
 | CR-96 | P29-K: Budget scope selection applies immediately; Close, backdrop and Android back discard the pending operation. | Done | Shared `ApplyScopeDialog` is used by item, section and income Save/Delete flows; section-delete counts remain in the popup and Undo is preserved. No schema/domain change. |
+| CR-97 | P29-L: Replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | In progress | Inventory is recorded in the P29-L section; implementation and all acceptance evidence remain pending. |
 
 ## 8. Known issues and risks
 

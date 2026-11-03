@@ -4,6 +4,11 @@
 
 ## Unresolved
 
+- **P29-L:** the Insurance feature inventory is recorded in
+  [PROGRESS.md](../PROGRESS.md). Remove cover-goal management and policy
+  lifecycle controls while retaining historical policies, savings-policy
+  values/goal links and all premium-dues integrations. Schema v17 migration,
+  simplified forms/list, Undo, backups, demo and final gates remain in progress.
 - **P29-J bank-balance comparison:** no calculation bug was proven. The owner
   did not provide the bank outstanding/as-of date, principal, contractual
   tenure, or app payment date/amount records. The actual statement-method
