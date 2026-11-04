@@ -7,6 +7,12 @@
   payment and transaction together, and schema v17 migrates to v18 without
   changing legacy schedule outputs. P29-M2 supersedes the blocked P29-M.
   Findings and evidence are recorded in [PROGRESS.md](../PROGRESS.md).
+- P29-O Step 1 report-only inventory is committed before source behavior
+  changes. It records the v18 split manual/plan holding model, calculations,
+  plan-slot matching, dependent screens/actions/selectors and test/fixture
+  inventory. Owner-approved unified-ledger behavior and schema-v19
+  implementation remain pending. The stale schema-v17 statement in
+  `AGENTS.md` was corrected to v18.
 - P29-N remains complete. Transactions no longer shows the Review-month link;
   Budget's independent month routing and Home remain unchanged. The one-time
   reminders prompt is mounted inside `LockGate` and stores its handled flag in
@@ -17,7 +23,7 @@
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
 - Phase 29 status: P29-A through P29-L, P29-N and P29-M2 are Done; P29-M is
-  Superseded by P29-M2.
+  Superseded by P29-M2; P29-O inventory is committed, implementation pending.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
