@@ -236,7 +236,7 @@ describe('linked log and payment actions', () => {
     expect(() => updatePlan(data, 'p', { actualValue: 10 })).toThrow('Actual value and snapshot date');
     const withLinkedLog = addInvestmentEntry(data, 'p', { date: '2026-07-01', amount: 20, note: '', kind: 'Deposit' }, idSequence('linked-log', 'linked-log-tx'), '2026-07-01');
     const noteOnly = updateInvestmentEntry(withLinkedLog, 'p', 'linked-log', { note: 'private' }, '2026-07-01');
-    expect(noteOnly.transactions[0]).toMatchObject({ amount: 20, note: 'Monthly SIP installment' });
+    expect(noteOnly.transactions[0]).toMatchObject({ amount: 20, note: 'Monthly SIP deposit' });
     const withTxn = addInvestmentEntry(noteOnly, 'p', { date: '2026-07-02', amount: 30, note: '', kind: 'Deposit' }, idSequence('linked', 'tx'), '2026-07-02');
     const noteUpdate = updateInvestmentEntry(withTxn, 'p', 'linked', { note: 'changed' }, '2026-07-02');
     expect(findLinkedTransaction(noteUpdate, 'holding-entry', 'linked')).toMatchObject({ amount: 30 });

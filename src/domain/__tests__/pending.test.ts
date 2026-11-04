@@ -347,7 +347,7 @@ describe('pending item projection', () => {
         type: 'invest',
         amount: 100,
         category: 'Mutual fund / SIP',
-        note: 'Monthly SIP installment',
+        note: 'Monthly SIP deposit',
         date: '2026-02-01',
         source: { kind: 'holding-entry', parentId: 'plan', entryId: entry.id },
       }],

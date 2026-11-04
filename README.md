@@ -119,33 +119,52 @@ validate persisted and imported data.
 
 ### Investment return calculations
 
-Invested is the opening amount plus all deposit entries. Withdrawals are shown
-separately and do not reduce Invested. Zero entries are ignored; same-day
-entries are summed. Current value uses a recorded valuation when one exists:
-add deposits and subtract withdrawals dated after that valuation, through the
-requested as-of date. Entries dated on or before the valuation are treated as
-already included. Without a recorded valuation, current value is opening plus
-posted deposits minus posted withdrawals through the as-of date. Values never
-fall below zero. The app does not estimate interest; current value changes
-only when entries are recorded or a valuation is entered.
+The holding ledger includes the opening amount and dated deposit and withdrawal
+entries. Zero entries are ignored. Displayed Invested is net of withdrawals and
+floored at zero:
 
-The absolute gain and return are:
+`raw invested = opening amount + deposits - withdrawals`
 
-`gain = current value + withdrawals - Invested`
+`Invested = max(0, raw invested)`
 
-`absolute return % = gain / Invested × 100`
+When raw invested is negative, the holding shows a "Cost recovered" note.
+Entries on the same date remain separate ledger entries; return cash flows for
+that date are combined for calculation. Current value uses a recorded
+valuation when one exists: add deposits and subtract withdrawals dated after
+that valuation, through the requested as-of date. Entries dated on or before
+the valuation are treated as already included. Without a recorded valuation,
+current value is opening plus posted deposits minus posted withdrawals through
+the as-of date. Values never fall below zero. The app does not estimate
+interest; current value changes only when entries are recorded or a valuation
+is entered.
 
-When Invested is zero, the return is `null` and the card says "No return yet".
+Return calculations use gross contributions (opening amount plus deposits),
+not displayed net Invested:
+
+`gain = current value + withdrawals - contributions`
+
+`absolute return % = gain / contributions × 100`
+
+When contributions are zero, the return is `null` and the card says "No return
+yet".
 XIRR solves
 `sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`, using deposits
 as negative cash flows, withdrawals as positive cash flows, and current value
 as positive on the valuation date. Multiple entries use the XIRR label; one
-lump sum uses CAGR: `(current value / Invested)^(365 / span days) - 1`.
+lump sum uses CAGR: `(current value / contributions)^(365 / span days) - 1`.
 Annualised XIRR/CAGR appears only when the first cash flow to valuation date
 span is at least 365 days. Under 365 days the card shows only the labelled
-absolute return. Cash and Bank holdings show Balance, Deposited and Withdrawn,
+absolute return. Cash and Savings accounts show balance and net Invested, but
 never a return percentage, XIRR or CAGR. If entries predate a recorded
 valuation, the card explains that they are assumed included in the valuation.
+
+Every holding uses the same Deposit, Withdraw and Entries actions when its
+capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
+rule. The opening amount is shown as the first, derived "Opening" row in
+Entries and is edited in the holding form. Recurring holdings show their
+frequency, amount and next due date inside the holding's Recurring plan
+section. These presentation and invested-display changes use the existing
+schema version 18.
 
 ### Recurring liability balances
 

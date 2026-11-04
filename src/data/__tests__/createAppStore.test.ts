@@ -2627,7 +2627,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().lastError).toBe('invalid settings patch');
   });
 
-  it('runs the plan installment integration scenario with one write per action and rehydrates links', async () => {
+  it('runs the scheduled-deposit integration scenario with one write per action and rehydrates links', async () => {
     const storage = new MemoryStorage();
     let id = 0;
     const store = makeStore(storage, { newId: () => `id-${++id}` });

@@ -229,7 +229,7 @@ describe('instrument-linked transactions', () => {
     expect(backfilled.transactions.map((item) => item.type)).toEqual(['invest', 'income', 'invest', 'expense']);
     expect(backfilled.transactions[2]).toMatchObject({
       id: 'tx-plan',
-      note: 'Retirement fund installment',
+      note: 'Retirement fund deposit',
     });
     expect(validateIntegrity(backfilled)).toEqual([]);
     expect(findUnlinkedEntries(backfilled)).toEqual([]);

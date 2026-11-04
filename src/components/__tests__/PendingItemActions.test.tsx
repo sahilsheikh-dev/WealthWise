@@ -471,7 +471,7 @@ describe('later due and planned item actions', () => {
     );
   });
 
-  it('asks before clearing later installments, records one through action and provides one undo', async () => {
+  it('asks before clearing later scheduled deposits, records one through action and provides one undo', async () => {
     mockConfirmAsync.mockResolvedValue(true);
     const laterDue = {
       ...item({ kind: 'plan', parentId: 'sip-1', slotId: 'slot-3' }, 'Mutual fund / SIP'),
