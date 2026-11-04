@@ -4,6 +4,14 @@
 
 ## Unresolved
 
+- **P29-O implementation:** report-only inventory is committed first in
+  [PROGRESS.md](../PROGRESS.md). Implement the owner-approved unified
+  deposit/withdrawal/valueUpdate ledger, per-type current valuation methods,
+  optional recurring schedule with slotDate settlement, and pure v18-to-v19
+  migration. Preserve old current value and net worth for mock/demo and every
+  legacy fixture; add the independent 2,000-sequence oracle, compounding
+  vectors, screen/store tests, backup compatibility and physical-device
+  verification below.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its
