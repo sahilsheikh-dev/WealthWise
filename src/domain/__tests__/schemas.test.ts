@@ -31,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version seventeen', () => {
+  it('accepts the typed mock app data and exports schema version eighteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(17);
+    expect(SCHEMA_VERSION).toBe(18);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -61,6 +61,20 @@ describe('appDataSchema', () => {
     expect(imported.data.goals.find((goal) => goal.id === 'legacy-goal')?.links).toEqual([
       { instrumentId: holding.id, share: 100 },
     ]);
+  });
+
+  it('accepts an optional valid policy-payment due date and rejects invalid dates', () => {
+    const policy = mockAppData.policies[0];
+    if (!policy) throw new Error('Expected the policy schema fixture.');
+    const payment = { id: 'premium', date: '2026-11-04', amount: 500, note: '' };
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, payments: [{ ...payment, dueDate: '2026-11-07' }] }],
+    }).success).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      policies: [{ ...policy, payments: [{ ...payment, dueDate: 'not-a-date' }] }],
+    }).success).toBe(false);
   });
 
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {

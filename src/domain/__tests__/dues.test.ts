@@ -254,6 +254,63 @@ describe('pending dues', () => {
       ]);
   });
 
+  it('matches dated payments to only their exact slot regardless of payment timing', () => {
+    const dated = policy({
+      frequency: 'monthly',
+      trackFrom: '2026-11-07',
+      endDate: '2027-01-31',
+      payments: [
+        { id: 'early', date: '2026-11-04', amount: 40, note: '', dueDate: '2026-11-07' },
+        { id: 'late', date: '2026-12-20', amount: 60, note: '', dueDate: '2026-12-07' },
+        { id: 'edited-slot', date: '2026-11-01', amount: 50, note: '', dueDate: '2026-10-07' },
+      ],
+    });
+
+    expect(policySchedule(dated, '2026-11-04').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'early'],
+      ['2026-12-07', 'upcoming', undefined],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+    expect(policySchedule(dated, '2026-12-20').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'early'],
+      ['2026-12-07', 'paid', 'late'],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+  });
+
+  it('does not let duplicate or future-dated explicit payments settle another slot', () => {
+    const dated = policy({
+      frequency: 'monthly',
+      trackFrom: '2026-11-07',
+      endDate: '2027-01-31',
+      payments: [
+        { id: 'later-duplicate', date: '2026-11-05', amount: 50, note: '', dueDate: '2026-11-07' },
+        { id: 'first-duplicate', date: '2026-11-04', amount: 50, note: '', dueDate: '2026-11-07' },
+        { id: 'future-payment', date: '2026-12-01', amount: 50, note: '', dueDate: '2026-12-07' },
+        { id: 'legacy-payment', date: '2026-11-08', amount: 50, note: '' },
+      ],
+    });
+
+    expect(policySchedule(dated, '2026-11-04').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'first-duplicate'],
+      ['2026-12-07', 'upcoming', undefined],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+    expect(policySchedule(dated, '2026-12-01').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'first-duplicate'],
+      ['2026-12-07', 'paid', 'future-payment'],
+      ['2027-01-07', 'paid', 'legacy-payment'],
+    ]);
+  });
+
   it('starts at the selected next due date and advances after the first premium is paid', () => {
     const scheduled = policy({
       frequency: 'monthly',
@@ -562,8 +619,8 @@ describe('bulk due handling', () => {
     const recorded = clearPastDues(data, { kind: 'policy', id: 'policy' }, { mode: 'record' }, {
       asOf: '2026-02-01', newId: (() => { let id = 0; return () => `policy-${++id}`; })(),
     });
-    expect(recorded.data.policies[0]?.payments.map(({ date, amount }) => [date, amount]))
-      .toEqual([['2026-01-01', 50], ['2026-02-01', 50]]);
+    expect(recorded.data.policies[0]?.payments.map(({ date, amount, dueDate }) => [date, amount, dueDate]))
+      .toEqual([['2026-01-01', 50, '2026-01-01'], ['2026-02-01', 50, '2026-02-01']]);
     expect(validateIntegrity(recorded.data)).toEqual([]);
     const settled = clearPastDues(data, { kind: 'policy', id: 'policy' }, { mode: 'settle' }, {
       asOf: '2026-02-01', newId: () => 'unused',
@@ -823,7 +880,9 @@ describe('bulk due handling', () => {
       date: '2026-01-01',
       newId: (() => { let id = 0; return () => `policy-through-${++id}`; })(),
     });
-    expect(result.data.policies[0]?.payments).toHaveLength(1);
+    expect(result.data.policies[0]?.payments).toEqual([
+      expect.objectContaining({ date: '2026-01-01', dueDate: '2026-01-01', amount: 50 }),
+    ]);
     expect(result.data.transactions[0]).toMatchObject({
       type: 'expense',
       amount: 50,

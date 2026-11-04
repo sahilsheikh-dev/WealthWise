@@ -36,18 +36,22 @@ P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
 
 ## Schema and archives
 
-Current persisted schema is v17. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v16. The v14-to-v15 migration
+Current persisted schema is v18. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v17. The v14-to-v15 migration
 converted legacy Insurance goals; the v15-to-v16 migration applies holding
 capabilities and separates legacy FD/RD records without dropping entries or
 schedules. The v16-to-v17 migration removes only retired cover-goal records
-and policy cover-goal assignments.
+and policy cover-goal assignments. The v17-to-v18 migration annotates legacy
+policy payments with the due date already matched by the v17 FIFO schedule,
+preserving unmatched and pre-trackFrom payment history. New payments carry
+their exact settled slot date, and `policySchedule` matches dated entries by
+slot while keeping the legacy FIFO rule for undated entries.
 `createAppStore.ts` sets the
 persist version from `SCHEMA_VERSION`.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v16` before the migrated write. With the current
+`${persistName}.premigration.v17` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration

@@ -5,12 +5,16 @@ import { decryptBackup, encryptBackup } from '../../domain/backupCrypto';
 import { validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
 import { monthPositionAt } from '../../domain/cashFlow';
-import { budgetMonthView, defaultBudgetSections } from '../../domain/budget';
+import { budgetLineActual, budgetMonthView, defaultBudgetSections, linkedRecurringForMonth } from '../../domain/budget';
 import { netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
 import { pendingItems } from '../../domain/pending';
+import { policySchedule } from '../../domain/policySchedule';
+import { policySummary } from '../../domain/policySummary';
+import { planReminders } from '../../domain/reminders';
+import { upcomingDue } from '../../domain/schedule';
 import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
@@ -218,6 +222,56 @@ it('hydrates v16 policies, archives exact bytes once, and erases the v16 archive
   expect(storage.values.has(archiveKey)).toBe(false);
 });
 
+it('migrates v17 policy payments without changing the existing FIFO schedule and archives bytes once', async () => {
+  const storage = new MemoryStorage();
+  const policy = {
+    ...mockAppData.policies[0],
+    frequency: 'monthly' as const,
+    trackFrom: '2026-11-07',
+    endDate: '2026-12-31',
+    payments: [
+      { id: 'before-track', date: '2026-11-06', amount: 500, note: '' },
+      { id: 'first-slot', date: '2026-11-08', amount: 500, note: '' },
+      { id: 'second-slot', date: '2026-12-10', amount: 500, note: '' },
+      { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
+    ],
+  };
+  if (!policy) throw new Error('Expected the policy migration fixture.');
+  const data = { ...mockAppData, policies: [policy] };
+  const originalBytes = JSON.stringify({ state: { data }, version: 17 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { today: () => '2026-12-15', isDev: false });
+  await waitForHydration(first);
+  expect(first.getState().data.policies[0]?.payments).toEqual([
+    { id: 'before-track', date: '2026-11-06', amount: 500, note: '' },
+    { id: 'first-slot', date: '2026-11-08', amount: 500, note: '', dueDate: '2026-11-07' },
+    { id: 'second-slot', date: '2026-12-10', amount: 500, note: '', dueDate: '2026-12-07' },
+    { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
+  ]);
+  expect(policySchedule(data.policies[0]!, '2026-12-15').rows.map((row) =>
+    [row.dueDate, row.status, row.entryId],
+  )).toEqual(policySchedule(first.getState().data.policies[0]!, '2026-12-15').rows.map((row) =>
+    [row.dueDate, row.status, row.entryId],
+  ));
+  const archiveKey = 'wealthwise.app.v1.premigration.v17';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { today: () => '2026-12-15', isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+  storage.values.set('wealthwise.app.v1', originalBytes);
+  storage.values.set(archiveKey, 'preserve-existing-v17-archive');
+  const third = makeStore(storage, { today: () => '2026-12-15', isDev: false });
+  await waitForHydration(third);
+  expect(storage.values.get(archiveKey)).toBe('preserve-existing-v17-archive');
+  expect((await third.getState().actions.eraseAllData()).ok).toBe(true);
+  expect(storage.values.has(archiveKey)).toBe(false);
+});
+
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
@@ -236,6 +290,356 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('records an early premium against its selected due date in one write and undoes both records', async () => {
+    let sequence = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, {
+      newId: () => `early-payment-${++sequence}`,
+      today: () => '2026-11-04',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    store.getState().actions.addPolicy({
+      name: 'Monthly cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-11-07',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies[0];
+    if (!policy) throw new Error('Policy fixture was not created.');
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+
+    const entryId = store.getState().actions.clearDue(
+      { kind: 'policy', id: policy.id },
+      'policy:0',
+      500,
+    );
+
+    expect(storage.setItemCalls - writes).toBe(1);
+    const paidPolicy = store.getState().data.policies.find((item) => item.id === policy.id);
+    expect(paidPolicy?.payments.at(-1)).toMatchObject({
+      id: entryId,
+      date: '2026-11-04',
+      dueDate: '2026-11-07',
+      amount: 500,
+    });
+    expect(policySchedule(paidPolicy ?? policy, '2026-11-04').summary.nextDue?.dueDate).toBe('2026-12-07');
+    expect(store.getState().data.transactions).toEqual([
+      expect.objectContaining({
+        date: '2026-11-04',
+        amount: 500,
+        category: 'Health premium',
+        source: { kind: 'policy-payment', parentId: policy.id, entryId },
+      }),
+    ]);
+
+    const writesBeforeUndo = storage.setItemCalls;
+    store.getState().actions.undoClearDue({ kind: 'policy', id: policy.id }, entryId ?? '');
+    expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
+  it.each([
+    ['monthly', '2026-12-07'],
+    ['quarterly', '2027-02-07'],
+    ['yearly', '2027-11-07'],
+    ['custom', '2027-01-07'],
+  ] as const)('settles the exact %s slot and advances to %s for early, on-time and late payments', async (frequency, nextDueDate) => {
+    for (const [paidDate, amount] of [
+      ['2026-11-04', 300],
+      ['2026-11-07', 500],
+      ['2026-11-10', 700],
+    ] as const) {
+      let sequence = 0;
+      const store = makeStore(new MemoryStorage(), {
+        newId: () => `slot-${++sequence}`,
+        today: () => paidDate,
+        isDev: false,
+      });
+      await waitForHydration(store);
+      store.getState().actions.addPolicy({
+        name: 'Scheduled cover',
+        insurer: 'Insurer',
+        kind: 'health',
+        premium: 500,
+        frequency,
+        ...(frequency === 'custom' ? { customIntervalMonths: 2 } : {}),
+        startDate: '2026-01-01',
+        endDate: '2027-12-31',
+        status: 'active',
+        premiumYears: 5,
+        trackFrom: '2026-11-07',
+        currentValue: null,
+        valueAsOf: null,
+      });
+      const policy = store.getState().data.policies[0];
+      if (!policy) throw new Error('Policy fixture was not created.');
+      const entryId = store.getState().actions.clearDue(
+        { kind: 'policy', id: policy.id },
+        'policy:0',
+        amount,
+      );
+      const updated = store.getState().data.policies[0];
+      expect(updated?.payments.at(-1)).toMatchObject({
+        id: entryId,
+        date: paidDate,
+        dueDate: '2026-11-07',
+        amount,
+      });
+      expect(policySchedule(updated ?? policy, paidDate).summary.nextDue?.dueDate).toBe(nextDueDate);
+      expect(store.getState().data.transactions).toContainEqual(expect.objectContaining({
+        amount,
+        date: paidDate,
+        category: 'Health premium',
+        source: { kind: 'policy-payment', parentId: policy.id, entryId },
+      }));
+    }
+  });
+
+  it('settles consecutive policy slots separately, supports schedule edits and undoes both payments', async () => {
+    let sequence = 0;
+    const store = makeStore(new MemoryStorage(), {
+      newId: () => `consecutive-${++sequence}`,
+      today: () => '2026-11-04',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    store.getState().actions.addPolicy({
+      name: 'Consecutive cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      endDate: '2027-12-31',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-11-07',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies[0];
+    if (!policy) throw new Error('Policy fixture was not created.');
+    const initialData = store.getState().data;
+    const first = store.getState().actions.clearDue({ kind: 'policy', id: policy.id }, 'policy:0', 400);
+    const second = store.getState().actions.clearDue({ kind: 'policy', id: policy.id }, 'policy:1', 600);
+    expect(store.getState().data.policies[0]?.payments.map(({ dueDate, amount }) => [dueDate, amount]))
+      .toEqual([['2026-11-07', 400], ['2026-12-07', 600]]);
+    expect(policySchedule(store.getState().data.policies[0] ?? policy, '2026-11-04')
+      .summary.nextDue?.dueDate).toBe('2027-01-07');
+
+    store.getState().actions.updatePolicy(policy.id, { trackFrom: '2026-12-14' });
+    expect(policySchedule(store.getState().data.policies[0] ?? policy, '2026-11-04')
+      .summary.nextDue?.dueDate).toBe('2026-12-14');
+    store.getState().actions.updatePolicy(policy.id, { trackFrom: '2026-11-07' });
+    store.getState().actions.undoClearDue({ kind: 'policy', id: policy.id }, second ?? '');
+    store.getState().actions.undoClearDue({ kind: 'policy', id: policy.id }, first ?? '');
+    expect(store.getState().data).toEqual(initialData);
+  });
+
+  it('updates Insurance, Transactions, Budget, Home and reminder due selectors together', async () => {
+    const store = makeStore(new MemoryStorage(), {
+      newId: (() => { let sequence = 0; return () => `surface-${++sequence}`; })(),
+      today: () => '2026-11-04',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    store.getState().actions.addPolicy({
+      name: 'Surface cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      endDate: '2027-12-31',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-11-07',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies[0];
+    if (!policy) throw new Error('Policy fixture was not created.');
+    store.getState().actions.clearDue({ kind: 'policy', id: policy.id }, 'policy:0', 450);
+    const data = store.getState().data;
+
+    expect(policySchedule(data.policies[0] ?? policy, '2026-11-04').summary.nextDue?.dueDate)
+      .toBe('2026-12-07');
+    expect(policySummary(data, '2026-11-04').nextRenewal?.date).toBe('2026-12-07');
+    expect(pendingItems(data, '2026-11', '2026-11-04').some((item) =>
+      item.source.kind === 'policy' && item.source.parentId === policy.id,
+    )).toBe(false);
+    expect(pendingItems(data, '2026-12', '2026-11-04')).toContainEqual(expect.objectContaining({
+      dueDate: '2026-12-07',
+      source: expect.objectContaining({ kind: 'policy', parentId: policy.id }),
+    }));
+    expect(data.transactions).toContainEqual(expect.objectContaining({
+      date: '2026-11-04',
+      amount: 450,
+      source: expect.objectContaining({ kind: 'policy-payment', parentId: policy.id }),
+    }));
+    expect(budgetLineActual(data, '2026-11', 'Health premium')).toBe(450);
+    expect(budgetMonthView(data, '2026-11', '2026-11-04').lines).toContainEqual(expect.objectContaining({
+      category: 'Health premium',
+      planned: 500,
+      actual: 450,
+    }));
+    expect(budgetMonthView(data, '2026-12', '2026-11-04').lines).toContainEqual(expect.objectContaining({
+      category: 'Health premium',
+      planned: 500,
+      actual: 0,
+    }));
+    expect(linkedRecurringForMonth(data, '2026-11', '2026-11-04')).toContainEqual(expect.objectContaining({
+      kind: 'policy',
+      dueDate: '2026-11-07',
+      status: 'paid',
+    }));
+    expect(linkedRecurringForMonth(data, '2026-12', '2026-11-04')).toContainEqual(expect.objectContaining({
+      kind: 'policy',
+      dueDate: '2026-12-07',
+      status: 'upcoming',
+    }));
+    expect(upcomingDue(data, '2026-11-04')).toContainEqual(expect.objectContaining({
+      kind: 'policy',
+      parentId: policy.id,
+      row: expect.objectContaining({ dueDate: '2026-12-07', status: 'upcoming' }),
+    }));
+    const reminders = planReminders(data, {
+      enabled: true,
+      dayBefore: true,
+      sameDay: true,
+      localTime: '09:00',
+      showAmounts: false,
+      hidePreviews: false,
+    }, new Date(2026, 11, 6, 8), 20);
+    expect(reminders).toContainEqual(expect.objectContaining({
+      target: { dueItemId: `due:policy:${policy.id}:policy:1`, dueDate: '2026-12-07' },
+      kind: 'day-before',
+      fireAt: '2026-12-06T09:00',
+    }));
+  });
+
+  it('settles a premium dated across the following month boundary', async () => {
+    let sequence = 0;
+    const store = makeStore(new MemoryStorage(), {
+      newId: () => `boundary-${++sequence}`,
+      today: () => '2026-12-01',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    store.getState().actions.addPolicy({
+      name: 'Month boundary cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      endDate: '2027-12-31',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-11-30',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies[0];
+    if (!policy) throw new Error('Policy fixture was not created.');
+    store.getState().actions.clearDue({ kind: 'policy', id: policy.id }, 'policy:0', 500);
+    const updated = store.getState().data.policies[0];
+    expect(updated?.payments.at(-1)).toMatchObject({
+      date: '2026-12-01',
+      dueDate: '2026-11-30',
+    });
+    expect(policySchedule(updated ?? policy, '2026-12-01').summary.nextDue?.dueDate)
+      .toBe('2026-12-30');
+    expect(pendingItems(store.getState().data, '2026-11', '2026-12-01').some((item) =>
+      item.source.kind === 'policy' && item.source.parentId === policy.id,
+    )).toBe(false);
+    expect(pendingItems(store.getState().data, '2026-12', '2026-12-01')).toContainEqual(
+      expect.objectContaining({ dueDate: '2026-12-30' }),
+    );
+  });
+
+  it('settles the due selected by Insurance, Home, Transactions, payment-confirm and reminder entry points', async () => {
+    const entryPoints = ['Insurance', 'Home', 'Transactions', 'payment-confirm', 'reminder'] as const;
+    for (const entryPoint of entryPoints) {
+      let sequence = 0;
+      const storage = new MemoryStorage();
+      const store = makeStore(storage, {
+        newId: () => `${entryPoint}-${++sequence}`,
+        today: () => '2026-11-04',
+        isDev: false,
+      });
+      await waitForHydration(store);
+      store.getState().actions.addPolicy({
+        name: `${entryPoint} cover`,
+        insurer: 'Insurer',
+        kind: 'health',
+        premium: 500,
+        frequency: 'monthly',
+        startDate: '2026-01-01',
+        endDate: '2027-12-31',
+        status: 'active',
+        premiumYears: 5,
+        trackFrom: '2026-11-07',
+        currentValue: null,
+        valueAsOf: null,
+      });
+      const policy = store.getState().data.policies[0];
+      if (!policy) throw new Error('Policy fixture was not created.');
+      const data = store.getState().data;
+      const monthItems = pendingItems(data, '2026-11', '2026-11-04');
+      const policyDue = monthItems.find((item) =>
+        item.source.kind === 'policy' && item.source.parentId === policy.id,
+      );
+      if (!policyDue || policyDue.source.kind !== 'policy') {
+        throw new Error(`${entryPoint} selector did not produce the policy due.`);
+      }
+      const reminder = planReminders(data, {
+        enabled: true,
+        dayBefore: true,
+        sameDay: true,
+        localTime: '09:00',
+        showAmounts: false,
+        hidePreviews: false,
+      }, new Date(2026, 10, 4, 8), 20).find((item) =>
+        item.target.dueItemId === policyDue.id,
+      );
+      let selectedSlotId: string | undefined;
+      if (entryPoint === 'Insurance') {
+        selectedSlotId = policySchedule(policy, '2026-11-04').summary.nextDue?.id;
+      } else if (entryPoint === 'Home') {
+        selectedSlotId = upcomingDue(data, '2026-11-04').find((item) =>
+          item.kind === 'policy' && item.parentId === policy.id,
+        )?.row.id;
+      } else {
+        const selectedDueItemId = entryPoint === 'reminder'
+          ? reminder?.target.dueItemId
+          : policyDue.id;
+        const selectedItem = monthItems.find((item) => item.id === selectedDueItemId);
+        if (selectedItem?.source.kind === 'policy') selectedSlotId = selectedItem.source.slotId;
+      }
+      if (!selectedSlotId) throw new Error(`${entryPoint} selector did not provide a slot identity.`);
+      const writes = storage.setItemCalls;
+      store.getState().actions.clearDue({ kind: 'policy', id: policy.id }, selectedSlotId, 500);
+      expect(storage.setItemCalls - writes).toBe(1);
+      expect(store.getState().data.policies[0]?.payments.at(-1)).toMatchObject({
+        date: '2026-11-04',
+        dueDate: '2026-11-07',
+        amount: 500,
+      });
+      expect(policySchedule(store.getState().data.policies[0] ?? policy, '2026-11-04')
+        .summary.nextDue?.dueDate).toBe('2026-12-07');
+    }
+  });
+
   it('does not publish Undo or writes for unchanged or missing policies', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
@@ -2380,6 +2784,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v14', 'original-v14-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v15', 'original-v15-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v16', 'original-v16-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v17', 'original-v17-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2413,6 +2818,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v14',
     'wealthwise.app.v1.premigration.v15',
     'wealthwise.app.v1.premigration.v16',
+    'wealthwise.app.v1.premigration.v17',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
