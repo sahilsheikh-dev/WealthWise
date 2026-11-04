@@ -9,7 +9,7 @@ import { buildDemoData } from '../../mock/demoData';
 import { ledgerValue } from '../../domain/holdingLedger';
 import { holdingValue } from '../../domain/portfolio';
 import { netWorth } from '../../domain/summary';
-import { appDataSchema } from '../../domain/schemas';
+import { appDataSchema, ledgerAppDataSchema } from '../../domain/schemas';
 import type { AppData, LedgerHolding } from '../../domain/types';
 
 const today = '2026-11-04';
@@ -41,7 +41,10 @@ function expectValuesPreserved(data: AppData) {
 describe('v18 to v19 holding ledger migration', () => {
   it('preserves values and net worth for mock and demo holdings', () => {
     expectValuesPreserved(mockAppData);
-    expectValuesPreserved(buildDemoData(today));
+    const demo = buildDemoData(today);
+    expectValuesPreserved(demo);
+    expect(ledgerAppDataSchema.parse(migrateV18ToV19(demo, migrationOptions())).holdings)
+      .toHaveLength(demo.holdings.length);
   });
 
   it('preserves values across every available older-version fixture', () => {
@@ -57,6 +60,8 @@ describe('v18 to v19 holding ledger migration', () => {
     for (const [version, fixture] of fixtures) {
       const current = appDataSchema.parse(migratePersisted(fixture, version, options));
       expectValuesPreserved(current);
+      expect(ledgerAppDataSchema.parse(migrateV18ToV19(current, options)).holdings)
+        .toHaveLength(current.holdings.length);
     }
   });
 
