@@ -4,9 +4,10 @@
 
 - Current task: P29-O2 is introducing the unified ledger and v19 migration
   through the compatibility adapter. The v18-to-v19 converter and equivalence
-  tests are committed as `0f1cac4`; the source schema remains v18 and store,
-  screen, mock/demo consumer conversion plus persistence/archive integration
-  remain open. P29-O1 is committed and verified.
+  tests are committed as `0f1cac4`; strict v19 ledger validation and its
+  migration fixtures are the next staged change. The active schema remains
+  v18 while store, screen, mock/demo conversion, and persistence/archive
+  integration remain open. P29-O1 is committed and verified.
   P29-O1 used the existing v18 holding model;
   manual and recurring holdings share Deposit, Withdraw and Entries actions,
   with a derived Opening row and an in-holding Recurring plan section.
