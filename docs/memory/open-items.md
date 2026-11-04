@@ -4,6 +4,13 @@
 
 ## Unresolved
 
+- **P29-O2 in progress:** complete the staged v19 unified-holding migration,
+  convert all domain/store/screen/mock consumers, preserve current values and
+  net worth for demo/mock/legacy fixtures, and add migration/archive/backup/
+  encryption/erase-all coverage. Commit `0f1cac4` adds the unconnected pure
+  converter and migration-equivalence tests; the persisted schema is still
+  v18 and the converter is not yet wired into startup. See
+  DEC-P29O2-UNIFIED-LEDGER in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
   cards, Entries, opening amount edits and Recurring plan details at font
   scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring

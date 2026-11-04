@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (96/100)
+Overall progress ██████████ 95% (96/101)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 95% (20/21)
+Phase 29         █████████░ 91% (20/22)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -188,6 +188,7 @@ Phase 29         ██████████ 95% (20/21)
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
 | P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
 | P29-O1 | P29-O | Done | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
+| P29-O2 | — | In progress | Schema v19 unified ledger, migration and valuation fields; staged adapter transition in progress. | 2026-11-04 |
 | P29-Q | — | Done | Owner-approved Expo SQLite native persistence, lazy legacy AsyncStorage migration, seeded stress loader with Undo, measured selector optimizations and five-sample Node benchmarks; no AppData schema change. Device checks remain open. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
@@ -7584,6 +7585,56 @@ Entries, editing the opening amount, and Recurring plan details at font scales
 1.3 and 2.0 on iOS and Android; visual confirmation of the 13,000 Invested /
 seven-row example; Fixed-deposit maturity withdrawal. Jest renderer tests and
 Expo exports do not establish native device layout or interaction.
+
+### DEC-P29O2-UNIFIED-LEDGER — staged v19 persisted holding model (2026-11-04)
+
+**Assumed:** legacy recurring plans retain `trackFrom` and `stepUpPct` inside
+the new recurring section because existing due matching, amount progression,
+Budget links and reminders depend on them, although the new model explicitly
+names only frequency, amount, start and end. The core ledger adapter is being
+introduced alongside v18 types first; the persisted schema remains v18 until
+the migration and consumers are ready. The requested v19 change will include
+the opening ledger, recurring schedule, valuation method, rate, compounding
+and maturity date so P29-O3 does not require another schema bump.
+
+**Assumed:** legacy accrual plans use yearly compounding when their rate is
+transferred. Their value is separately preserved by the migration adjustment;
+the annual rate's interpretation needs an explicit verification against the
+new valuation rules before the migration is finalized.
+
+The shared ledger formula is date-bounded:
+
+`invested = max(0, deposits - withdrawals)`
+
+`value = deposits - withdrawals + valueUpdate deltas`
+
+`gain = value + withdrawals - deposits`
+
+`costRecovered` is true when deposits less withdrawals is negative. New ledger
+entry kinds are lowercase `deposit`, `withdrawal` and `valueUpdate`; the
+opening deposit is the first array entry and must remain editable but
+non-deletable. The old model remains intact while adapters and consumer groups
+are migrated. Migration preserves the v18 current value at the injected test
+date, link records and old FIFO plan-slot matches.
+
+The first adapter-only step adds the unified ledger types, default
+valuation-method mapping and pure date-bounded summary, with focused tests.
+No persisted data is changed in this step.
+
+The migration-preparation step adds a pure v18-to-v19 converter without
+changing the active schema version. Tests cover mock data, demo data, available
+older-version fixtures, old current-value/net-worth equivalence, manual value
+adjustments, and FIFO slot-date mapping. The v1 SIP fixture's September log
+matches the old schedule's August 1 slot; the migration preserves that exact
+old match rather than inferring a slot from the payment date.
+
+Verified migration-preparation commit `0f1cac4` (`git cat-file -t` returned
+`commit`). `npm test -- --runTestsByPath
+src/data/__tests__/migrateV18ToV19.test.ts` exited 0 (4 tests), and
+`npx tsc --noEmit` exited 0 after the commit. This does not complete P29-O2:
+the converter is not wired into `migratePersisted`, the active schema remains
+v18, and store/screen/mock consumers, archive handling, backup compatibility,
+full gates and device validation remain open.
 
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 
