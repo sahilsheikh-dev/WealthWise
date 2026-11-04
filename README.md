@@ -42,6 +42,9 @@ no cloud or network requests at runtime.
   setup after unlock; system permission is requested only after choosing
   Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
+- Developer-only stress fixtures for 50, 100 and 200 years, plus a 200-year
+  daily-SIP tier, loaded through replace-all with Undo for persistence and
+  rendering checks.
 
 ## Screenshots
 
@@ -155,10 +158,21 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 18 is
-the current version. The migration chain upgrades supported data from schema
-versions 1 through 17. Backup import verifies the file integrity and validates
-the imported data, applying supported migrations where required.
+On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
+`SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
+and copied into SQLite on the next write. Web continues to use AsyncStorage.
+UI metadata and preferences remain in AsyncStorage. Persisted AppData schema
+version 18 is current; P29-Q changes only the storage backend, not the schema.
+The migration chain upgrades supported data from schema versions 1 through 17.
+Backup import verifies file integrity and validates imported data, applying
+supported migrations where required.
+
+The development menu's stress loader replaces all AppData with a deterministic
+long-history fixture and uses the existing Undo snapshot. It reports build,
+validation, save/replace and first-render timings. The Node benchmark and
+measured device checks are recorded in [docs/PROGRESS.md](docs/PROGRESS.md).
+The 50-year fixture measures 2.67 MB, above the requested 1.5 MB target.
+Node timings do not substitute for physical-device verification.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
 liabilities, investments, insurance, forms, backup and settings live directly

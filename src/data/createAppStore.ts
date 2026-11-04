@@ -88,9 +88,9 @@ import {
   type DueTarget,
   type PastDuesMode,
 } from '../domain/dues';
-import { SCHEMA_VERSION } from '../domain/schemas';
+import { appDataSchema, SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
-import { createStressTransactions } from '../domain/stressData';
+import { createStressData, type StressYears } from '../domain/stressData';
 import type {
   AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, Settings, Transaction,
 } from '../domain/types';
@@ -197,7 +197,10 @@ export type AppActions = {
 
 export type DevActions = {
   loadDemoData: () => Promise<{ ok: true } | { ok: false; message: string }>;
-  loadStressData: () => void;
+  loadStressData: (
+    years: StressYears,
+    dailySip?: boolean,
+  ) => Promise<{ ok: true; loadMs: number } | { ok: false; message: string }>;
   simulateCorruption: () => Promise<void>;
 };
 
@@ -216,6 +219,7 @@ export type AppStoreState = {
 export type StoreDependencies = {
   newId: () => string;
   today: () => ISODate;
+  now?: () => number;
   reload?: () => void;
   isDev?: boolean;
   removeLockSettings?: () => Promise<void>;
@@ -253,7 +257,17 @@ export function createAppStore(
       onWriteSuccess: useUIStore.getState().setPersistedBytes,
     },
   );
-  const jsonStorage = createJSONStorage(() => safeStorage);
+  let latestPersistWrite: Promise<void> = Promise.resolve();
+  const trackedStorage: StateStorage = {
+    getItem: (name) => safeStorage.getItem(name),
+    setItem(name, value) {
+      const write = Promise.resolve(safeStorage.setItem(name, value)).then(() => undefined);
+      latestPersistWrite = write;
+      return write;
+    },
+    removeItem: (name) => safeStorage.removeItem(name),
+  };
+  const jsonStorage = createJSONStorage(() => trackedStorage);
 
   const store = create<AppStoreState>()(persist(
     (set, get) => {
@@ -276,6 +290,26 @@ export function createAppStore(
         } catch (error) {
           setError(error);
         }
+      };
+      const replaceDataWithUndo = async (importedData: AppData) => {
+        if (get().status !== 'ready') {
+          return { ok: false as const, message: 'Data can only be replaced after the app has loaded.' };
+        }
+        const today = deps.today();
+        try {
+          await storage.setItem(PREIMPORT_KEY, JSON.stringify({ savedAt: today, data: get().data }));
+        } catch {
+          return { ok: false as const, message: 'Your current data could not be saved for undo. Nothing was replaced.' };
+        }
+        const expenseBaseline = monthlyBaseline(importedData.transactions, 'expense', today);
+        const data = importedData.goals.some((goal) => goal.auto === 'ef')
+          ? importedData
+          : {
+            ...importedData,
+            goals: ensureEfGoal(importedData.goals, { expenseBaseline, asOf: today }),
+          };
+        set({ data, undoImport: { savedAt: today }, lastError: null });
+        return { ok: true as const };
       };
       const actions: AppActions = {
         addTransaction(input) {
@@ -607,21 +641,7 @@ export function createAppStore(
           if (!validated.ok) {
             return { ok: false, message: 'This data cannot be imported safely.' };
           }
-          const today = deps.today();
-          try {
-            await storage.setItem(PREIMPORT_KEY, JSON.stringify({ savedAt: today, data: get().data }));
-          } catch {
-            return { ok: false, message: 'Your current data could not be saved for undo. Nothing was replaced.' };
-          }
-          const expenseBaseline = monthlyBaseline(validated.data.transactions, 'expense', today);
-          const data = validated.data.goals.some((goal) => goal.auto === 'ef')
-            ? validated.data
-            : {
-              ...validated.data,
-              goals: ensureEfGoal(validated.data.goals, { expenseBaseline, asOf: today }),
-            };
-          set({ data, undoImport: { savedAt: today }, lastError: null });
-          return { ok: true };
+          return replaceDataWithUndo(validated.data);
         },
         async undoImport() {
           let raw: string | null;
@@ -706,9 +726,38 @@ export function createAppStore(
             loadDemoData() {
               return actions.replaceAllData(buildDemoData(deps.today()));
             },
-            loadStressData() {
-              const transactions = createStressTransactions(deps.today(), deps.newId);
-              set({ data: { ...get().data, transactions } });
+            async loadStressData(years, dailySip = false) {
+              const startedAt = deps.now?.() ?? Date.now();
+              const data = createStressData({
+                today: deps.today(),
+                years,
+                seed: 0x29_51_0,
+                newId: deps.newId,
+                dailySip,
+              });
+              const validated = appDataSchema.safeParse(data);
+              if (!validated.success) {
+                const issue = validated.error.issues[0];
+                return {
+                  ok: false,
+                  message: issue ? `Stress fixture validation failed at ${issue.path.join('.')}: ${issue.message}` : 'Stress fixture validation failed.',
+                };
+              }
+              const integrityIssues = validateIntegrity(validated.data);
+              if (integrityIssues.length > 0) {
+                const issue = integrityIssues[0];
+                return {
+                  ok: false,
+                  message: issue
+                    ? `Stress fixture integrity failed at ${issue.path.join('.')}: ${issue.message}`
+                    : 'Stress fixture integrity failed.',
+                };
+              }
+              const result = await replaceDataWithUndo(validated.data);
+              if (!result.ok) return result;
+              const persistWrite = latestPersistWrite;
+              await persistWrite;
+              return { ok: true, loadMs: (deps.now?.() ?? Date.now()) - startedAt };
             },
             async simulateCorruption() {
               await storage.setItem('wealthwise.app.v1', '{not json');
