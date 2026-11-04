@@ -63,6 +63,10 @@
   existing defaults; dismissing it is stored in UI metadata, cleared by
   erase-all, and never invokes the system permission prompt unless the user
   chooses Turn on reminders.
+- P29-M2 replaces the blocked P29-M: policy payments store the exact due date
+  settled, and all premium-due surfaces share the same schedule derivation.
+  Schema v18 migrates v17 FIFO matches without changing existing schedule
+  output; payment and linked transaction remain one-write and one-Undo actions.
 
 ### Investments and goals
 

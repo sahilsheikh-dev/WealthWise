@@ -15,6 +15,7 @@ import {
   migrateV14ToV15,
   migrateV15ToV16,
   migrateV16ToV17,
+  migrateV17ToV18,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -115,7 +116,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 18)).toThrow(
+    expect(() => migratePersisted({}, 19)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -174,7 +175,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 17)).toBe(persisted);
+    expect(migratePersisted(persisted, 18)).toBe(persisted);
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -186,7 +187,7 @@ describe('schema migration', () => {
       },
     };
     expect(migrateV13ToV14(data)).toEqual(data);
-    expect(migratePersisted({ data }, 13)).toEqual({ data });
+    expect(migratePersisted({ data }, 13, { today: '2026-11-04', newId: () => 'unused' })).toEqual({ data });
   });
 
   it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {
@@ -213,10 +214,10 @@ describe('schema migration', () => {
       budgetPlan: { items: 'malformed', retained: true },
       monthBudgets: [{ items: [null] }],
     });
-    expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
+    expect(migratePersisted({ data: legacy }, 12, { today: '2026-11-04', newId: () => 'unused' })).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 18)).toThrow(
+    expect(() => migratePersisted({}, 19)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -235,7 +236,10 @@ describe('schema migration', () => {
     });
 
     expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
-    const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
+    const migrated = migratePersisted({ data: legacy }, 11, {
+      today: '2026-11-04',
+      newId: () => 'unused',
+    }) as { data: Record<string, unknown> };
     expect(migrated.data).not.toHaveProperty('coverGoals');
   });
 
@@ -262,7 +266,10 @@ describe('schema migration', () => {
     };
     expect(migrateV14ToV15(legacy)).toEqual(expected);
     const { coverGoals: _coverGoals, ...currentData } = expected;
-    expect(migratePersisted({ data: legacy }, 14)).toEqual({ data: currentData });
+    expect(migratePersisted({ data: legacy }, 14, {
+      today: '2026-11-04',
+      newId: () => 'unused',
+    })).toEqual({ data: currentData });
     expect(legacy.coverGoals[0]).toEqual({
       type: 'term-life', targetMode: 'income-multiple', targetValue: 12,
     });
@@ -351,7 +358,10 @@ describe('schema migration', () => {
       expect(migrated.budgetPlan).toEqual(data.budgetPlan);
       expect(migrated).toMatchObject({ transactions: data.transactions, goals: data.goals, efBucketLinks: data.efBucketLinks });
       expect(data.holdings).toBe(originalHoldings);
-      expect(migratePersisted({ data }, 15)).toEqual({ data: migrated });
+      expect(migratePersisted({ data }, 15, {
+        today: '2026-11-04',
+        newId: () => 'unused',
+      })).toEqual({ data: migrated });
   });
 
   it('leaves already-separated v15 holdings and malformed non-data inputs unchanged', () => {
@@ -375,10 +385,41 @@ describe('schema migration', () => {
       ...withoutGoals,
       policies: data.policies.map(({ coverGoalId: _coverGoalId, ...policy }) => policy),
     });
-    expect(migratePersisted({ data }, 16)).toEqual({ data: migrated });
-    expect(() => migratePersisted(data, 18)).toThrow(
-      new PersistedVersionError(18, 'future-version'),
+    expect(migratePersisted({ data }, 16, { today: '2026-11-04', newId: () => 'unused' }))
+      .toEqual({ data: migrated });
+    expect(() => migratePersisted(data, 19)).toThrow(
+      new PersistedVersionError(19, 'future-version'),
     );
+  });
+
+  it('adds dueDate only to payments matched by the v17 FIFO schedule', () => {
+    const policy = {
+      ...mockAppData.policies[0],
+      frequency: 'monthly' as const,
+      trackFrom: '2026-11-07',
+      endDate: '2026-12-31',
+      payments: [
+        { id: 'before-tracking', date: '2026-11-06', amount: 500, note: '' },
+        { id: 'first-slot', date: '2026-11-08', amount: 500, note: '' },
+        { id: 'second-slot', date: '2026-12-10', amount: 500, note: '' },
+        { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
+      ],
+    };
+    if (!policy) throw new Error('Expected the policy migration fixture.');
+    const legacy = { ...mockAppData, policies: [policy] };
+    const migrated = migrateV17ToV18(legacy, { today: '2026-12-15' }) as typeof legacy;
+    expect(migrated.policies[0]?.payments).toEqual([
+      { id: 'before-tracking', date: '2026-11-06', amount: 500, note: '' },
+      { id: 'first-slot', date: '2026-11-08', amount: 500, note: '', dueDate: '2026-11-07' },
+      { id: 'second-slot', date: '2026-12-10', amount: 500, note: '', dueDate: '2026-12-07' },
+      { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
+    ]);
+    expect(migratePersisted({ data: legacy }, 17, {
+      today: '2026-12-15',
+      newId: () => 'unused',
+    })).toEqual({ data: migrated });
+    expect(() => migrateV17ToV18({ policies: [null] }, { today: '2026-12-15' }))
+      .toThrow(new PersistedVersionError(17, 'unknown-version'));
   });
 
   it('moves legacy manual Insurance items into the current Insurance system section', () => {
