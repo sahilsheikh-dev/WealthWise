@@ -2,7 +2,10 @@
 
 # Status
 
-- Current task: P29-O1 is implemented on the existing v18 holding model;
+- Current task: P29-O2 is introducing the unified ledger and v19 migration
+  through the compatibility adapter; source schema remains v18 while staged
+  consumer conversion proceeds. P29-O1 is committed and verified.
+  P29-O1 used the existing v18 holding model;
   manual and recurring holdings share Deposit, Withdraw and Entries actions,
   with a derived Opening row and an in-holding Recurring plan section.
   Displayed Invested is net of withdrawals and floored at zero; fixed-deposit
@@ -39,7 +42,7 @@
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
-- Schema version: v18. P29-L removes the retired coverGoals and policy
+- Schema version: v18 pending P29-O2's v19 migration. P29-L removes the retired coverGoals and policy
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
