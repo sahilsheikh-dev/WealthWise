@@ -112,13 +112,6 @@ export function availableBalance(
   };
 }
 
-export function reviewableMonths(data: AppData, today: ISODate): MonthPosition[] {
-  const currentMonth = monthKey(today);
-  return monthPositions(data.transactions)
-    .filter((position) => position.month < currentMonth && Math.abs(position.closing) >= 1)
-    .sort((a, b) => b.month.localeCompare(a.month));
-}
-
 export class AllocationMismatchError extends Error {
   constructor(message = 'Allocations must be positive and no greater than the available amount.') {
     super(message);

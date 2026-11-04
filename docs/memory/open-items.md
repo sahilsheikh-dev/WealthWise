@@ -30,7 +30,7 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-L are Done; P29-M is
+  write; the acceptance test passes. P29-B through P29-L and P29-N are Done; P29-M is
   blocked by its no-schema-change constraint.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
@@ -78,6 +78,13 @@
 
 ## Physical-device verification
 
+- **P29-N:** verify the first-launch prompt after unlock, Not now/Close/
+  backdrop/Android-back persistence, granted/denied/blocked permission flows,
+  Reminders menu reachability and 1.3/2.0 font-scale layout on iOS and Android.
+  Also verify Transactions has no Review-month affordance while its month
+  navigation and Budget's routed month/editor flows still work. Automated
+  TestRenderer and Expo exports do not verify native dialogs, layout or
+  notification permission behavior.
 - **P29-K:** verify immediate-once scope application and native Close,
   backdrop, and Android-back dismissal, including the 44 pt Close target,
   category-delete count and Undo, and option wrapping at font scales 1.3 and

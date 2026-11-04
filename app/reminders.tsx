@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
@@ -15,6 +16,7 @@ import { planReminders } from '../src/domain/reminders';
 import { formatDate } from '../src/lib/format';
 import { reminderNotificationAdapter } from '../src/lib/reminderNotifications';
 import type { ReminderPermissionState } from '../src/lib/reminderPermissions';
+import { enableReminderPreferences } from '../src/lib/reminderPreferences';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -41,13 +43,20 @@ function errorText(error: unknown): string {
 }
 
 export default function RemindersScreen() {
+  const params = useLocalSearchParams<{ setup?: string }>();
   const { colors } = useTheme();
   const { settings: securitySettings } = useSecuritySettings();
   const data = useAppStore((state) => state.data);
   const [preferences, setPreferences] = useState<PersistedReminderPreferences | null>(null);
   const [permission, setPermission] = useState<ReminderPermissionState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(() =>
+    params.setup === 'denied'
+      ? 'Notification permission was not granted. Reminders remain off.'
+      : params.setup === 'blocked'
+        ? 'Allow notifications in system settings to turn reminders on.'
+        : null,
+  );
   const [now, setNow] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
@@ -97,21 +106,22 @@ export default function RemindersScreen() {
     setBusy(true);
     setMessage(null);
     try {
-      const current = await reminderNotificationAdapter.getPermissionState();
-      const next = current === 'granted'
-        ? current
-        : current === 'blocked'
-          ? current
-          : await reminderNotificationAdapter.requestPermission();
-      setPermission(next);
-      if (next !== 'granted') {
-        setMessage(next === 'blocked'
+      const result = await enableReminderPreferences(preferences, {
+        getPermissionState: reminderNotificationAdapter.getPermissionState,
+        requestPermission: reminderNotificationAdapter.requestPermission,
+        save: async (next) => {
+          const meta = await metaStore.updateMeta({ reminders: next });
+          return meta.reminders ?? DEFAULT_REMINDER_PREFERENCES;
+        },
+      });
+      setPermission(result.permission);
+      if (result.permission !== 'granted') {
+        setMessage(result.permission === 'blocked'
           ? 'Allow notifications in system settings to turn reminders on.'
           : 'Notification permission was not granted. Reminders remain off.');
         return;
       }
-      const meta = await metaStore.updateMeta({ reminders: { ...preferences, enabled: true } });
-      setPreferences(meta.reminders ?? DEFAULT_REMINDER_PREFERENCES);
+      setPreferences(result.preferences);
     } catch (error) {
       setMessage(errorText(error));
     } finally {
