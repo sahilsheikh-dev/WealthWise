@@ -236,6 +236,7 @@ export function clearDue(
     date: options.date,
     amount: actualAmount,
     note: '',
+    dueDate: row.dueDate,
   }, options.newId);
 }
 
@@ -336,6 +337,7 @@ function recordPastDues(
       date: row.dueDate,
       amount: row.amount,
       note: '',
+      dueDate: row.dueDate,
     }, newId).data;
   }
   return result;

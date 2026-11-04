@@ -4,16 +4,6 @@
 
 ## Unresolved
 
-- **P29-M blocked (2026-11-04):** the store writes an early insurance premium
-  payment and its linked transaction once, but `policySchedule` filters out
-  payments dated before `trackFrom`, so every due selector keeps the slot
-  pending. The current PolicyPayment and transaction-source shapes do not
-  persist slot identity. Removing the date filter would incorrectly apply
-  pre-existing v16 payments to future slots; a reliable fix needs a persisted
-  slot marker and schema migration. P29-M forbids schema changes, so no fix
-  was made. Owner authorization for a schema version bump and a migration
-  rule for legacy payments is required before resuming; see
-  [PROGRESS.md](../PROGRESS.md).
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its
@@ -30,8 +20,8 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-L and P29-N are Done; P29-M is
-  blocked by its no-schema-change constraint.
+  write; the acceptance test passes. P29-B through P29-L, P29-N and P29-M2
+  are Done; P29-M is superseded by P29-M2.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -116,12 +106,14 @@
   large-font layout at scales 1.3 and 2.0 on iOS and Android. Home's
   `policySummary` source and screen remain unchanged. Jest and Expo exports
   simulate or build the app; they do not verify native presentation.
-- **P29-M:** the reported early-payment defect remains unresolved. Native
-  checks for one-write clearing, next-due movement, reminder advancement,
-  Undo and all frequency/entry-point combinations are not complete because
-  correct persisted slot identity requires a schema change prohibited by the
-  task. The owner's reported device behavior is recorded as report, not a
-  reproduced physical-device run.
+- **P29-M2:** verify early/on-time/late payment from the Insurance card, Home,
+  Transactions, `/payment-confirm` and reminder action on iOS and Android;
+  confirm the settled slot disappears everywhere, next dues appear in
+  Insurance/Transactions/Budget/Home/reminders, and Undo restores all state.
+  Also verify month-boundary timing, custom frequency, edited schedules,
+  notification action behavior and font scaling. Jest validates the real
+  store and selectors; it does not prove native notifications, dialogs or
+  physical-device interaction.
 
 - **P24-A:** verify local-notification delivery and timing, permission and
   blocked-settings flows, reboot restoration behavior, lock-screen text,
@@ -145,8 +137,8 @@
   is not treated as a recorded valuation; current value is based on opening
   capital and posted entries, with no estimated interest. Manual holdings have
   no start-date field, so their opening cash flow uses the injected as-of date.
-- P29-H did not change schema v15; P29-I advanced it to v16 and P29-L to v17.
-  Home remained unmodified throughout these steps.
+- P29-H did not change schema v15; P29-I advanced it to v16, P29-L to v17 and
+  P29-M2 to v18. Home remained unmodified throughout these steps.
 - **Assumed for P29-I:** the current manual holding model and form do not
   contain rate or maturity fields. No new fields were introduced; Fixed
   deposits use their opening amount, recorded valuation and withdrawal for
@@ -168,6 +160,11 @@
   `nominee` and `premiumYears` remain intact for data compatibility although
   the simplified tracker no longer edits them or uses `premiumYears` to
   schedule dues.
+- **Assumed for P29-M2:** “no Paid button” means the settled slot is no longer
+  actionable; the Insurance card's existing generic Paid action remains
+  available for the next unpaid slot so early payment through that entry point
+  remains possible. Hiding that action conflicts with the required early
+  Insurance-card payment flow.
 - The P20-V form omits the Percent option for non-monthly schedules because the
   frozen SegmentedControl has no disabled option API; validation rejects
   non-monthly percent items as well.
