@@ -17,6 +17,7 @@ authoritative rationale and history.
 - [DEC-P29L-SIMPLE-INSURANCE](../PROGRESS.md#dec-p29l-simple-insurance)
 - [DEC-P29M2-POLICY-DUE-IDENTITY](../PROGRESS.md#dec-p29m2-policy-due-identity)
 - [DEC-P29O-LEDGER-INVENTORY](../PROGRESS.md#dec-p29o-ledger-inventory--step-1-report-only-inventory)
+- [DEC-P29Q-STORAGE-STOP](../PROGRESS.md#dec-p29q-storage-stop--measured-persistence-limit-and-proposal-2026-11-04)
 - [DEC-P29N-REMINDERS-PROMPT](../PROGRESS.md#dec-p29n-reminders-prompt)
 - [DEC-P24A](../PROGRESS.md#dec-p24a-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)

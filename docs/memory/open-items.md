@@ -4,6 +4,14 @@
 
 ## Unresolved
 
+- **P29-Q persistence approval:** the measured normal 200-year stress state
+  (10,184,994 bytes) exceeds the installed Android AsyncStorage SQLite
+  database cap (6 MiB); even 50 years exceeds the requested 1.5 MB target.
+  Performance measurements beyond serialized size and the dev-menu loader are
+  stopped. Owner must choose a persistence direction before work continues:
+  SQLite (recommended for indexed/selective queries), year-partitioned files
+  (with atomicity/recovery design), or another approved option. The detailed
+  measurements and tradeoffs are recorded in [PROGRESS.md](../PROGRESS.md).
 - **P29-O implementation:** report-only inventory is committed first in
   [PROGRESS.md](../PROGRESS.md). Implement the owner-approved unified
   deposit/withdrawal/valueUpdate ledger, per-type current valuation methods,
@@ -76,6 +84,10 @@
 
 ## Physical-device verification
 
+- **P29-Q:** storage fit and safe full-data replace/Undo remain unverified on
+  iOS and Android. The dev-menu loader was not implemented, so on-device
+  hydrate/render timing is also unverified. Implementation is blocked pending
+  the owner storage decision documented in [PROGRESS.md](../PROGRESS.md).
 - **P29-N:** verify the first-launch prompt after unlock, Not now/Close/
   backdrop/Android-back persistence, granted/denied/blocked permission flows,
   Reminders menu reachability and 1.3/2.0 font-scale layout on iOS and Android.

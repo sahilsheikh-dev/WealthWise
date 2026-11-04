@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (94/98)
+Overall progress █████████░ 95% (94/99)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 95% (18/19)
+Phase 29         █████████░ 90% (18/20)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -187,6 +187,7 @@ Phase 29         █████████░ 95% (18/19)
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
 | P29-O | — | Inventory committed; implementation pending | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; owner approved schema v19 and the unified asset ledger/valuation design. | 2026-11-04 |
+| P29-Q | — | Stopped pending storage approval | Deterministic stress tiers and five-sample size characterization were added. The normal 200-year state exceeds the installed Android persistence cap; further benchmarks and the dev-menu loader are paused pending owner approval of a storage direction. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2817,6 +2818,7 @@ evidence present in exports/checkpoints.
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
 | P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
+| P29-Q | Phase 29 | — | — | 2026-11-04 | Measure persistence and performance for seeded 50-, 100- and 200-year app datasets, then add a dev-menu loader if storage permits. | Stress generator and deterministic size characterization were added. The normal 200-year persisted state is 10,184,994 bytes versus Android AsyncStorage's 6 MiB default SQLite database cap; per the stop rule, no further benchmarks, optimization or loader were attempted. Owner storage approval is required. | Five-sample serialized-size measurements and installed-package inspection; focused and full verification evidence recorded below. | DEC-P29Q-STORAGE-STOP. Assumed: each tier spans exactly `years × 12` calendar months including the injected current month; 25 transactions and 12 monthly holding entries per month; five identical deterministic samples measure the Zustand persisted envelope, not the database's other keys/overhead. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7395,3 +7397,123 @@ Schema v19 is authorized. The six required gates, P29-A return rules, current
 `holdingCapabilities` matrix, transaction links, Budget/goal/EF links and
 offline-only pricing remain constraints. No source behavior or existing
 assertion has been changed in this report-only step.
+
+### DEC-P29Q-STORAGE-STOP — measured persistence limit and proposal (2026-11-04)
+
+**Decision:** stop P29-Q after measuring serialized sizes. The normal
+200-year dataset is 10,184,994 bytes, exceeding the installed Android
+AsyncStorage database cap of 6 MiB (6,291,456 bytes) by 3,893,538 bytes. The
+explicit P29-Q stop condition is met. Do not continue performance timing,
+optimize the dataset or add the dev-menu loader until the owner approves a
+storage direction.
+
+**Installed backend evidence:** `@react-native-async-storage/async-storage`
+2.2.0 is installed. Its Android `android/config.gradle` sets
+`AsyncStorage_db_size_in_MB` to 6 by default, and
+`ReactDatabaseSupplier.java` applies this as the SQLite database maximum.
+No project override was found. This is a whole-database limit, not a per-key
+limit, so other keys and database overhead consume some of the same capacity.
+On iOS, values over 1 KiB are stored in separate files; the package's 2 MiB
+`NSCache.totalCostLimit` is an in-memory cache setting, not a persistent
+storage cap. No fixed iOS persistent per-value limit was found in the
+installed package source.
+
+The deterministic seeded fixtures span exactly `years × 12` calendar months,
+including the injected current month. Each month generates 25 transactions,
+monthly entries for 12 holdings, one budget snapshot, and six liabilities
+(three settled and three active/renewed). Three policies, two seeded goals and
+the default emergency-fund goal are included. The 200-year heavy tier adds a
+daily SIP. The five serialized-size
+samples use the persisted Zustand envelope
+`JSON.stringify({ state: { data }, version: SCHEMA_VERSION })`; each sample is
+the same deterministic payload. Sizes below use decimal MB (1 MB =
+1,000,000 bytes), while the backend limit is binary MiB.
+
+| Tier | Median serialized bytes (5 samples) | Decimal MB | Transactions | Holding entries | Month snapshots | Backup validation |
+|---|---:|---:|---:|---:|---:|---|
+| 50y | 2,604,654 | 2.60 | 15,000 | 7,200 | 600 | Rejected: earliest transaction date is outside the import date range |
+| 100y | 5,130,944 | 5.13 | 30,000 | 14,400 | 1,200 | Rejected: earliest transaction date is outside the import date range |
+| 200y | 10,184,994 | 10.18 | 60,000 | 28,800 | 2,400 | Rejected: earliest transaction date is outside the import date range |
+| 200y + daily SIP | 16,895,576 | 16.90 | 60,000 | 101,850 | 2,400 | Rejected: earliest transaction date is outside the import date range |
+
+The 50-year size misses the requested 1.5 MB budget by 1,104,654 bytes.
+Import validation separately has a 1990 lower date bound; the 100-year state
+also exceeds 5,000,000 bytes while the import validator has a 5,000,000-
+character guard; because every fixture is already rejected at
+`transactions.0.date`, we did not isolate the character-limit result. The
+200-year tiers also exceed the validator's 1,200 month-snapshot limit, and
+the daily-SIP tier's 201-year tenure exceeds its 100-year plan limit.
+`appDataSchema` accepts each generated fixture, but `validateImportData`
+rejects the old first transaction date (`transactions.0.date`). These
+validator limits were inspected, not changed.
+
+No backup export/import, encryption, validation/migration timing, hydration,
+store-write, selector timing or heap medians were collected: size measurement
+triggered the required stop before those operations. No 3-second/300-ms
+performance conclusion is claimed.
+
+**Storage proposal for owner approval:**
+
+1. **expo-sqlite (recommended):** normalized/partitionable records, indexed
+   month/date/parent lookups and selective reads suit 60,000+ transactions and
+   long holding histories. Requires a migration plan from the current
+   AsyncStorage blob and transactional replace/Undo semantics.
+2. **Year-partitioned files via Expo FileSystem:** avoids the AsyncStorage
+   database cap and allows year-at-a-time reads, but requires a manifest,
+   atomic replacement/recovery, backup encryption and schema migration design.
+3. **Multiple AsyncStorage keys:** not sufficient alone because the Android
+   6 MiB cap applies to the whole database. Raising that cap also needs owner
+   approval and device validation; it does not solve the observed 10.18 MB
+   200-year payload.
+
+No persistence choice is assumed. The loader, performance runs, and any
+optimization remain blocked pending the owner's selection. **Assumed:** P29-Q
+is new Phase 29 work; benchmark samples measure the JSON state envelope and
+exclude native SQLite overhead and unrelated stored keys.
+
+#### P29-Q verification
+
+Acceptance evidence is in `src/domain/__tests__/stressData.test.ts`:
+
+| Requirement | Exact test |
+|---|---|
+| Deterministic 50-, 100- and 200-year data ending on injected today; 25 monthly transactions; 12 holdings with monthly entries; six liabilities; policies, goals, monthly budgets; schema acceptance | `generates a deterministic %i-year AppData fixture ending today` (each `STRESS_YEARS` case) |
+| Daily SIP is restricted to the 200-year tier and injected seed must be a safe integer | `requires an explicitly seeded 200-year tier for daily SIP data` |
+| Five-sample serialized-size medians and import validation outcome for all tiers | `measures serialized bytes and records backup validation for each stress tier` |
+| Existing transaction stress fixture remains deterministic and includes 20,000 rows | `covers a year of daily entries, demo data, and 20,000 stress transactions`; `generates deterministic valid transaction types and injected identifiers` |
+
+Before the final ordered run, Gate 1 exited 1 twice because
+`memoryDocs.test.ts` could not parse the updated test-count record when it was
+slash-separated and then when the line wrapped. A later Gate 1 attempt exited
+1 because the new fixture assertion initially expected two total goals rather
+than the default emergency-fund goal plus two stress goals; this was corrected
+without weakening coverage. An intervening Gate 2 attempt exited 2 because
+the test accessed recurring-only fields without narrowing the liability
+union; a discriminant type guard fixed it. The final ordered gate results are:
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 (89 suites, 1125 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+The measured 50-year payload exceeds its 1.5 MB target. Hydration, backup
+export/import timing, encryption, validation/migration timing, store-write
+timing, selector timing, heap use and the 3-second/300-ms performance budgets
+were not measured because the 200-year size triggered the explicit storage
+stop. The dev-menu loader was not implemented. Physical-device checks remain
+unverified: storage fit and safe replace/Undo on iOS/Android, and loader
+hydrate/render timing (there is no loader yet).
+
+Assertion replacements and rationale:
+
+| Test | Old | New | Reason |
+|---|---|---|---|
+| `shared AI memory documents` in `src/lib/__tests__/memoryDocs.test.ts` | Project inventory `86` suites / `1086` tests; no matching latest-run count | `89` suites / `1125` tests, matching both project inventory and latest run | P29-M2 had already raised the actual count to 89/1120; P29-Q adds five tests. The older expected inventory was stale. |
+| `records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work` in `src/lib/__tests__/progressLedger.test.ts` | Overall `94/98`; Phase 29 `18/19` | Overall `94/99`; Phase 29 `18/20`; P29-Q explicitly expected as stopped pending approval | Adds one open Phase 29 ledger part without counting it as complete. |
+
+No assertion was removed or weakened. The current directory and schema state
+was verified at v18; P29-Q makes no AppData schema change.
