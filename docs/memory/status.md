@@ -2,10 +2,16 @@
 
 # Status
 
-- Current task: P29-M2 is complete. Policy payments store the exact due date
-  settled; all due surfaces derive from `policySchedule`, Undo restores the
-  payment and transaction together, and schema v17 migrates to v18 without
-  changing legacy schedule outputs. P29-M2 supersedes the blocked P29-M.
+- Current task: P29-Q storage calibration is stopped pending the owner's
+  persistence decision. The Android AsyncStorage database limit is 6 MiB;
+  the measured normal 200-year state is 10,184,994 bytes, exceeding that limit.
+  The generator and characterization tests are in place, and the storage
+  proposal is recorded in [PROGRESS.md](../PROGRESS.md). No performance
+  benchmarks or dev-menu loader were attempted after the stop condition.
+- P29-M2 is complete. Policy payments store the exact due date settled; all
+  due surfaces derive from `policySchedule`, Undo restores the payment and
+  transaction together, and schema v17 migrates to v18 without changing
+  legacy schedule outputs. P29-M2 supersedes the blocked P29-M.
   Findings and evidence are recorded in [PROGRESS.md](../PROGRESS.md).
 - P29-O Step 1 report-only inventory is committed before source behavior
   changes. It records the v18 split manual/plan holding model, calculations,
@@ -23,7 +29,8 @@
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
 - Phase 29 status: P29-A through P29-L, P29-N and P29-M2 are Done; P29-M is
-  Superseded by P29-M2; P29-O inventory is committed, implementation pending.
+  Superseded by P29-M2; P29-O inventory is committed, implementation pending;
+  P29-Q is paused for owner storage approval.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
@@ -31,9 +38,14 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: the final P29-M2 full coverage run passes 89 suites / 1120
-  tests. P29-N's 1104-test run and P29-M's blocked reproduction remain
-  historical records in [PROGRESS.md](../PROGRESS.md).
+- Test counts: 89 suites, 1125 tests. P29-M2's 1120-test run, P29-N's
+  1104-test run and P29-M's blocked reproduction remain historical records in
+  [PROGRESS.md](../PROGRESS.md).
+- Latest validated run: 89 suites, 1125 tests.
+- P29-Q final gates all exit 0 in the required order. Gate 1's first two
+  attempts exited 1 because the updated test-count line did not match the
+  memory test's format; the corrected full run passes. Full results and the
+  storage stop are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).

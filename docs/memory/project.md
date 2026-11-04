@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Project
 
@@ -23,7 +23,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 89 suites, 1120 tests in the latest verified P29-M2 coverage
+- Test counts: 89 suites, 1125 tests in the latest verified P29-Q coverage
   run. See [status.md](status.md) and the [progress
   ledger](../PROGRESS.md) for exact gate results and coverage.
 

@@ -6,6 +6,11 @@
 
 ### Phase 29
 
+- P29-Q adds deterministic 50-, 100- and 200-year stress datasets and a
+  200-year daily-SIP variant. Measurement found the normal 200-year persisted
+  state exceeds Android AsyncStorage's configured database cap; further
+  benchmarking and the dev-menu loader are paused pending an owner storage
+  decision. See the P29-Q ledger entry for measured sizes and options.
 - Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
   for 1990–2100, the Home Insurance box and actual due-payment amounts.
 - Added Budget start-month handling, schema-v14 holding links, plan/manual
