@@ -66,7 +66,7 @@ const goalSchema = z.object({
   })).default([]),
 });
 
-const manualHoldingSchema = z.object({
+export const manualHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('manual'),
   name: z.string(),
@@ -77,7 +77,7 @@ const manualHoldingSchema = z.object({
   logs: z.array(investmentEntrySchema),
 });
 
-const planHoldingSchema = z.object({
+export const planHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('plan'),
   name: z.string(),

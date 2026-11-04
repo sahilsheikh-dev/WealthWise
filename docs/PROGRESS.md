@@ -7597,11 +7597,16 @@ the migration and consumers are ready. The requested v19 change will include
 the opening ledger, recurring schedule, valuation method, rate, compounding
 and maturity date so P29-O3 does not require another schema bump.
 
+**Assumed:** legacy accrual plans use yearly compounding when their rate is
+transferred. Their value is separately preserved by the migration adjustment;
+the annual rate's interpretation needs an explicit verification against the
+new valuation rules before the migration is finalized.
+
 The shared ledger formula is date-bounded:
 
 `invested = max(0, deposits - withdrawals)`
 
-`value = max(0, deposits - withdrawals + valueUpdate deltas)`
+`value = deposits - withdrawals + valueUpdate deltas`
 
 `gain = value + withdrawals - deposits`
 
@@ -7615,6 +7620,13 @@ date, link records and old FIFO plan-slot matches.
 The first adapter-only step adds the unified ledger types, default
 valuation-method mapping and pure date-bounded summary, with focused tests.
 No persisted data is changed in this step.
+
+The migration-preparation step adds a pure v18-to-v19 converter without
+changing the active schema version. Tests cover mock data, demo data, available
+older-version fixtures, old current-value/net-worth equivalence, manual value
+adjustments, and FIFO slot-date mapping. The v1 SIP fixture's September log
+matches the old schedule's August 1 slot; the migration preserves that exact
+old match rather than inferring a slot from the payment date.
 
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 

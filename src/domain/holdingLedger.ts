@@ -2,6 +2,7 @@ import type {
   HoldingLedgerEntry,
   LedgerHolding,
   ISODate,
+  InvestmentEntry,
   ValuationMethod,
   HoldingType,
 } from './types';
@@ -49,6 +50,20 @@ export function defaultValuationMethod(type: HoldingType): ValuationMethod {
   }
 }
 
+export function legacyEntryToLedgerEntry(
+  entry: InvestmentEntry,
+  slotDate?: ISODate,
+): HoldingLedgerEntry {
+  return {
+    id: entry.id,
+    date: entry.date,
+    kind: entry.kind === 'Deposit' ? 'deposit' : 'withdrawal',
+    amount: entry.amount,
+    note: entry.note,
+    ...(slotDate === undefined ? {} : { slotDate }),
+  };
+}
+
 export function ledgerSummary(holding: LedgerHolding, asOf: ISODate): LedgerSummary {
   const entries = holding.entries.filter((entry) => entry.date <= asOf);
   const deposits = entries
@@ -61,7 +76,7 @@ export function ledgerSummary(holding: LedgerHolding, asOf: ISODate): LedgerSumm
     .filter((entry) => entry.kind === 'valueUpdate')
     .reduce((sum, entry) => sum + entry.amount, 0);
   const rawInvested = deposits - withdrawals;
-  const value = Math.max(0, rawInvested + adjustments);
+  const value = rawInvested + adjustments;
   return {
     deposits,
     withdrawals,
