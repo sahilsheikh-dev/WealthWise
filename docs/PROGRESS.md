@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (91/94)
+Overall progress ██████████ 96% (91/95)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (15/15)
+Phase 29         █████████░ 94% (15/16)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -183,6 +183,7 @@ Phase 29         ██████████ 100% (15/15)
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
 | P29-L | — | Done | Simple editable Insurance tracker, Term/Life placeholders, custom premium schedules, v16-to-v17 migration, backup compatibility and Home unchanged; tests and six gates pass. | 2026-11-03 |
+| P29-M | — | Blocked | Store-level reproduction confirms early premium payments are persisted but remain unmatched to the due slot. Correct slot association is ambiguous for v16 payment history without a persisted slot identifier; implementing it requires a schema change, explicitly out of scope. See the P29-M findings below. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2809,6 +2810,7 @@ evidence present in exports/checkpoints.
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 | P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
 | P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | Done; inventory, implementation, migration, tests, documentation and all six gates are complete. Home imports only `policySummary`; no Home edit was required. | Inventory `8255857`; implementation and closeout commit hashes verified with `git cat-file -t` and reported with the task. | DEC-P29L-SIMPLE-INSURANCE removes cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
+| P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Blocked after reproducing the early-payment defect at the real store. The payment and linked transaction persist in one write, but the schedule still reports the original slot as unpaid. A correct fix requires persisted slot identity so early payments can be distinguished from legacy payments preceding `trackFrom`; this changes schema and is forbidden by this task. No behavior changes made. | Temporary store-level reproduction run: `npx jest src/data/__tests__/createAppStore.test.ts --runInBand -t "reproduces an early premium payment"`; write-count, PolicyPayment and linked-transaction assertions passed before the selector assertion failed. Temporary test was removed; repository tests are not left failing. | Assumed: P29-M is the next Phase 29 task. Schema v17 and the no-schema-change constraint remain in force; implementation stops pending explicit schema authorization. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -6975,3 +6977,71 @@ scales 1.3 and 2.0, native navigation/back behavior, reminder delivery, and
 premium-due interactions on iOS and Android. UI tests are simulated and Expo
 exports are not physical-device verification. No source change was made to
 `app/(tabs)/index.tsx` or `app/(tabs)/budget.tsx`.
+
+### P29-M — Insurance premium payment slot identity (blocked; no schema change)
+
+**Reproduction result, before any behavior change.** A real
+`createAppStore` was hydrated with an active monthly Health policy whose
+`trackFrom` and next slot were 2026-11-07. With the injected store date
+2026-11-04, `actions.clearDue({ kind: 'policy', id }, 'policy:0', 900)` made
+exactly one persisted write. It appended a PolicyPayment dated 2026-11-04 and a
+linked expense transaction for 900 in `Health premium`, with source
+`{ kind: 'policy-payment', parentId, entryId }`. Yet `policySchedule` still
+returned 2026-11-07 as its next unpaid due; the expected next slot was
+2026-12-07. The focused temporary store test failed at that exact selector
+assertion after its write/payment/transaction assertions passed. The test was
+removed after reproduction because this task's schema prohibition prevents a
+safe implementation; no regression test that blesses stale behavior remains.
+
+**Root cause.** In [policySchedule.ts](../src/domain/policySchedule.ts),
+payments are accepted only when `payment.date >= policy.trackFrom`. P29-L sets
+`trackFrom` to the user-selected next due date. Therefore an early payment
+dated before that due date is removed before FIFO matching, even though
+`clearDue` correctly accepts slot `policy:0`. `clearDue` in
+[dues.ts](../src/domain/dues.ts) records the payment and linked transaction
+but does not persist the `rowId` it was asked to clear. The PolicyPayment
+schema/type has only `id`, `date`, `amount`, and `note`; the linked transaction
+source has only `parentId` and `entryId`, not a due slot identity. The UI
+routes do not independently lose the store update.
+
+**Entry-point trace.** All routes call the same store wrapper, which invokes
+the pure `clearDue` action through `applyDataAction`; each successful single
+payment action causes one Zustand set/persisted write.
+
+| Entry point | Store call / identity passed | Recorded state | Stale derivation |
+|---|---|---|---|
+| Insurance card | `app/insurance.tsx` finds the first non-paid row in `policySchedule` and calls `clearDue` with its row id. | `Policy.payments` and linked transaction are appended in one write. | Insurance card recomputes `policySchedule`; the date filter excludes the early payment, so the same due date remains and the Paid action is still enabled. |
+| Home Upcoming and due | `app/(tabs)/index.tsx` gets `source.slotId` from `pendingItems`; actionable rows use `clearDue`, while a non-actionable overdue row may use `clearDuesThrough`. | Same payment/transaction update; a batch clear is one store action/write. | `pendingItems` is derived from `policySchedule`, so the slot remains in Home and later reminder planning. |
+| Transactions due row | `PendingItemActions` receives the policy `slotId` from `pendingItems` and calls `clearDue` (or `clearDuesThrough` for a non-actionable overdue item). | Same one-write payment and linked transaction. | The pending selector still returns the slot; the paid transaction can appear in the month list but is not linked to a cleared schedule slot. |
+| `/payment-confirm` | Resolves `dueItemId` against `pendingItems`, then uses `PendingItemActions` and the same store action. | Same one-write payment and linked transaction. | The route can continue resolving the same due because it remains pending. |
+| Reminder action | Reminder previews are generated by `planReminders` over `pendingItems`; the notification target opens `/payment-confirm`, which follows the path above. | Same one-write payment and linked transaction. | The stale selector schedules the original due again. |
+
+Budget actuals change because the transaction is present and linked to
+PolicyPayment; the linked planned row and every pending view still use
+`policySchedule`, so they keep the old slot. Existing Undo removes the linked
+payment and transaction in one store operation; it restores the prior state
+but cannot resolve the missing slot association.
+
+**Why the task stops here.** Removing the lower date bound would make the
+reproduction pass, but it would also count pre-existing v16 payments that
+precede `trackFrom` against future slots. The persisted v16/v17 data cannot
+distinguish (a) an old premium payment before the configured next due from
+(b) a new early payment for that due: both have the same four PolicyPayment
+fields and the same `trackFrom`. The due `rowId` is currently transient and is
+not written. Matching by dates, array order, or amount cannot prove which slot
+was settled for old data, consecutive early payments, or edited tracking
+dates. Persisting a slot identifier (or equivalent unambiguous marker) in the
+payment and validating/backing it up requires a schema update and migration.
+That is explicitly prohibited by P29-M, so no implementation or broad route /
+frequency matrix was attempted after the store-level proof.
+
+No behavior assertions were replaced or weakened. The required next step is
+owner authorization for a schema version bump and a migration policy for
+legacy payments whose slot cannot be reconstructed. Until then, current
+behavior remains unchanged. P29-M's full frequency/entry-point/Undo matrix
+and six gates are not run because implementation is blocked by that constraint.
+
+Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
+`100% (15/15)`; new `96% (91/95)` and `94% (15/16)`; reason: P29-M is now
+recorded as a blocked task, adding one item to the denominator without
+increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
