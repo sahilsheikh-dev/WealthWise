@@ -7628,6 +7628,14 @@ adjustments, and FIFO slot-date mapping. The v1 SIP fixture's September log
 matches the old schedule's August 1 slot; the migration preserves that exact
 old match rather than inferring a slot from the payment date.
 
+Verified migration-preparation commit `0f1cac4` (`git cat-file -t` returned
+`commit`). `npm test -- --runTestsByPath
+src/data/__tests__/migrateV18ToV19.test.ts` exited 0 (4 tests), and
+`npx tsc --noEmit` exited 0 after the commit. This does not complete P29-O2:
+the converter is not wired into `migratePersisted`, the active schema remains
+v18, and store/screen/mock consumers, archive handling, backup compatibility,
+full gates and device validation remain open.
+
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 
 **Historical stop point:** stop P29-Q after measuring serialized sizes. The normal
