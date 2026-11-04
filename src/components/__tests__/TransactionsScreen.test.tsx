@@ -5,7 +5,7 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { monthSummary } from '../../domain/transactions';
 import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
 import { shiftMonth } from '../../domain/dates';
-import { formatINR, formatMonth } from '../../lib/format';
+import { formatINR } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
@@ -325,7 +325,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('keeps the Review action and routes its selected month to Budget', () => {
+  it('keeps the balance card without the removed month review action', () => {
     const previousTransactions = mockData.transactions;
     const previousTxMonth = mockTxMonth;
     const month = shiftMonth(todayISO().slice(0, 7), -1);
@@ -378,17 +378,13 @@ describe('Transactions available-balance card', () => {
         String(node.type) === 'view' && node.props.testID === 'available-balance-divider',
       )).toHaveLength(1);
 
-      const reviewLabel = `Review ${formatMonth(month)}`;
-      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
-      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
-      const reviewButton = currentRenderer.root.findAll((node) => String(node.type) === 'pressable')
-        .find((node) => node.findAllByType('text').some((text) =>
-          text.children.join(' ').replace(/\s+/g, ' ').trim() === reviewLabel,
-        ));
-      if (!reviewButton) throw new Error('Review action was not rendered.');
-      act(() => reviewButton.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month } });
-      expect(cashCard.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
+      expect(currentRenderer.root.findAll((node) =>
+        node.findAllByType('text').some((text) => text.children.join(' ').includes('Review ')),
+      )).toHaveLength(0);
+      expect(router.push).not.toHaveBeenCalledWith(expect.objectContaining({
+        pathname: '/(tabs)/budget',
+        params: expect.objectContaining({ month }),
+      }));
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
         .not.toContain('NaN');
     } finally {

@@ -57,6 +57,12 @@
   dropping only cover goals and policy cover-goal assignments while preserving
   older backup imports, hidden legacy policy fields and savings-policy goal
   links. Home remains unchanged.
+- P29-N removes Transactions' Review-month section while retaining its normal
+  month navigation and Budget's independent month routing. A one-time,
+  unlock-gated Payment reminders prompt can enable local reminders using the
+  existing defaults; dismissing it is stored in UI metadata, cleared by
+  erase-all, and never invokes the system permission prompt unless the user
+  chooses Turn on reminders.
 
 ### Investments and goals
 

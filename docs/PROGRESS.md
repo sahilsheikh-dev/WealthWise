@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (91/95)
+Overall progress ██████████ 96% (92/96)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 94% (15/16)
+Phase 29         █████████░ 94% (16/17)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -184,6 +184,7 @@ Phase 29         █████████░ 94% (15/16)
 | P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
 | P29-L | — | Done | Simple editable Insurance tracker, Term/Life placeholders, custom premium schedules, v16-to-v17 migration, backup compatibility and Home unchanged; tests and six gates pass. | 2026-11-03 |
 | P29-M | — | Blocked | Store-level reproduction confirms early premium payments are persisted but remain unmatched to the due slot. Correct slot association is ambiguous for v16 payment history without a persisted slot identifier; implementing it requires a schema change, explicitly out of scope. See the P29-M findings below. | 2026-11-04 |
+| P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2811,6 +2812,7 @@ evidence present in exports/checkpoints.
 | P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
 | P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | Done; inventory, implementation, migration, tests, documentation and all six gates are complete. Home imports only `policySummary`; no Home edit was required. | Inventory `8255857`; implementation and closeout commit hashes verified with `git cat-file -t` and reported with the task. | DEC-P29L-SIMPLE-INSURANCE removes cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
 | P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Blocked after reproducing the early-payment defect at the real store. The payment and linked transaction persist in one write, but the schedule still reports the original slot as unpaid. A correct fix requires persisted slot identity so early payments can be distinguished from legacy payments preceding `trackFrom`; this changes schema and is forbidden by this task. No behavior changes made. | Temporary store-level reproduction run: `npx jest src/data/__tests__/createAppStore.test.ts --runInBand -t "reproduces an early premium payment"`; write-count, PolicyPayment and linked-transaction assertions passed before the selector assertion failed. Temporary test was removed; repository tests are not left failing. | Assumed: P29-M is the next Phase 29 task. Schema v17 and the no-schema-change constraint remain in force; implementation stops pending explicit schema authorization. | current request |
+| P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7045,3 +7047,112 @@ Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
 `100% (15/15)`; new `96% (91/95)` and `94% (15/16)`; reason: P29-M is now
 recorded as a blocked task, adding one item to the denominator without
 increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
+
+### DEC-P29N — Reminders prompt (2026-11-04)
+
+- **Assumed:** P29-N is new Phase 29 work. Schema remains v17; no AppData
+  migration is needed. The existing `wealthwise.meta.v1` store owns the
+  one-time `remindersPromptHandled` flag, and erase-all clears it through
+  `metaStore.clearMeta`.
+- The prompt is mounted in the root layout inside `LockGate`, so it cannot
+  render while the lock screen is active. It is eligible only on the Home
+  route, after a 400 ms settling delay; `/payment-confirm` and other routes
+  cannot show it. The system notification permission is requested only after
+  the explicit Turn on reminders action.
+- Turn on uses the same `enableReminderPreferences` implementation as the
+  Reminders screen, with defaults day-before/on-due-date enabled, local time
+  09:00 and amounts hidden. Granted permission enables defaults and routes to
+  Reminders. Denied/blocked results route there with the existing actionable
+  message. Permission and storage failures are reported through an alert.
+- Dismissal by Not now, Close, backdrop or Android back is persisted before
+  display, so it remains handled after restart. If permission is already
+  granted and reminders are enabled, no prompt is displayed. The prompt uses
+  a centered scrollable dialog with a 44 by 44 pt Close action.
+- The Transactions Review-month section/link, its UI strings and
+  `reviewableMonths` were removed. Budget still consumes `month` for its own
+  month state and editor routes; Home continues to use `month` with
+  `apply=1`. `monthPositions`, `monthPositionAt`, `shortfallForMonth` and
+  `surplusForMonth` remain in use for cash-flow, budget and allocation
+  calculations; they are not Review-only helpers.
+- Replaced assertions/decisions:
+  - Old Transactions assertion: `keeps the Review action and routes its selected month to Budget`, including a visible `Review {Mon YYYY}` label and route call. New: `keeps the balance card without the removed month review action`, asserts the Review label and Review-only route are absent, while retaining the balance-card assertions. Reason: the feature is removed; independent month navigation remains.
+  - Old route-smoke assertion: Review link is visible. New: no Review label is rendered. Reason: same UI removal.
+  - Old `reviewableMonths` domain assertions: prior-month results and empty results. New: the helper and its now-orphaned tests are deleted. Reason: no production caller remains after removing the link.
+  - Old P24-A product decision, “no prompt until reminders are switched on.” New: show the one-time in-app prompt after unlock; the operating-system permission prompt still appears only after Turn on reminders. Reason: explicit P29-N supersession without changing permission timing.
+- P27-A follow-up: `monthPositions` remains used by cash-flow summaries and shortfall/surplus derivation; `monthPositionAt` remains used by Budget snapshots and store/pending tests; `shortfallForMonth` remains used by allocation and demo-data calculations; `surplusForMonth` remains used by surplus-allocation validation. `reviewableMonths` has no remaining caller and is deleted.
+- Acceptance tests:
+  - `Transactions available-balance card › keeps the balance card without the removed month review action`
+  - `route render smoke audit › filters due payments and always shows only the user-kept balance elements` asserts that no Review label is rendered.
+  - `cash flow positions › keeps empty month cash-flow helpers at zero after removing the review list` preserves the non-Review empty-month behavior.
+  - `FirstLaunchReminderPrompt › shows once and persists Not now across a remount`
+  - `FirstLaunchReminderPrompt › Close dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › backdrop dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › Android back dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for granted permission`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for denied permission`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for blocked permission`
+  - `FirstLaunchReminderPrompt › skips the prompt when reminders are already enabled and permission is granted`
+  - `FirstLaunchReminderPrompt › does not show over payment confirmation or another route`
+  - `FirstLaunchReminderPrompt › keeps content scrollable and buttons full width at font scale 1.3` and the same test at scale 2.
+  - `LockGate › does not mount its children until the lock is passed`
+  - `route render smoke audit › shows the existing denied permission fix message after prompt setup` and `route render smoke audit › shows the existing blocked permission fix message after prompt setup`.
+  - `backup metadata storage › stores reminder preferences in UI metadata and publishes updates and erase` covers clearing the handled flag with metadata; `createAppStore persistence › erases all supported storage keys and hydrates to empty data` verifies erase-all removes `wealthwise.meta.v1`.
+  - `enableReminderPreferences › uses the granted permission and saves enabled preferences`; `does not save when permission is denied`; `does not save when permission is blocked`; `requests permission after a denied status and saves only when granted`.
+- No assertion was weakened. Assertion count changes and exact gate exit codes
+  are recorded in the P29-N close-out below after final validation.
+
+#### P29-N final verification (2026-11-04)
+
+The six required gates ran in order after deleting the previous
+`coverage/coverage-final.json`; all completed with exit code 0.
+
+| Gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 89 suites / 1104 tests passed; overall lines 97.79%, branches 92.38% | 0 |
+| `npx tsc --noEmit` | TypeScript check passed | 0 |
+| `npx expo lint` | Lint passed with no warnings | 0 |
+| `npx expo-doctor` | 21/21 checks passed | 0 |
+| `npx expo export --platform android` | Android export passed | 0 |
+| `npx expo export --platform ios` | iOS export passed | 0 |
+
+Fresh coverage was read from the regenerated `coverage/coverage-final.json`
+with `istanbul-lib-coverage` `createCoverageMap`; test files were not included
+in the `src/` groups, and files were grouped by immediate `src/` directory.
+Line coverage counts executable lines; branch coverage counts branch arms.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 660/699 (94.42%) | 700/795 (88.05%) |
+| `src/domain` | 3182/3232 (98.45%) | 3130/3361 (93.13%) |
+| `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Per-file branch coverage remains above configured thresholds: `src/domain/budget.ts`
+770/849 (90.69%; threshold 90%) and `src/data/createAppStore.ts` 73/84
+(86.90%; threshold 85%).
+
+Assertion-count audit compares previous commit `194ecb14260f22f3671da070b3d807ab07655ec7`
+with the P29-N final commit. Counts use occurrences of `expect(`; added/removed
+count changed expectation lines, while net is the current minus prior count.
+
+| Test file | Previous | HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `FirstLaunchReminderPrompt.test.tsx` | 0 | 22 | 22 | 0 | +22 |
+| `LockGate.test.tsx` | 0 | 3 | 3 | 0 | +3 |
+| `RouteRenderSmoke.test.tsx` | 439 | 440 | 2 | 1 | +1 |
+| `TransactionsScreen.test.tsx` | 84 | 82 | 2 | 4 | -2 |
+| `createAppStore.test.ts` | 407 | 407 | 0 | 0 | 0 |
+| `metaStore.test.ts` | 20 | 20 | 0 | 0 | 0 |
+| `cashFlow.test.ts` | 75 | 73 | 0 | 2 | -2 |
+| `progressLedger.test.ts` | 161 | 161 | 2 | 2 | 0 |
+| `reminderPreferences.test.ts` | 0 | 9 | 9 | 0 | +9 |
+
+Removed expectation lines are the prior positive assertions for the now-deleted
+Review link/route and `reviewableMonths` results, plus the old progress
+dashboard counts. Their replacements assert the Review label and Review-only
+route are absent, retain the unrelated balance/cash-flow checks, and assert the
+new progress counts/status. No behavior assertion was weakened.
+
+Physical-device checks remain unverified: native dialog/backdrop and Android
+back behavior; permission grant/denial/blocking; erase-all followed by a fresh
+first-launch presentation; and font scales 1.3 and 2.0. See
+`docs/memory/open-items.md`.

@@ -2,7 +2,12 @@
 
 # Status
 
-- Current task: P29-M is blocked before implementation. Store-level
+- Current task: P29-N is complete. Transactions no longer shows
+  the Review-month link; Budget's independent month routing and Home remain
+  unchanged. The one-time reminders prompt is mounted inside `LockGate` and
+  stores its handled flag in the existing metadata store, not AppData.
+  Findings and the P24-A supersession are recorded in [PROGRESS.md](../PROGRESS.md).
+- P29-M remains blocked before implementation. Store-level
   reproduction on 2026-11-04 confirms an early premium payment and linked
   transaction are saved in one write, but the same due slot remains pending.
   Correct slot matching requires persisted payment-to-slot identity; adding it
@@ -12,19 +17,28 @@
   inspected read-only: it imports `policySummary` for its Insurance box and
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-A through P29-L are Done; P29-M is Blocked.
+- Phase 29 status: P29-A through P29-L and P29-N are Done; P29-M is Blocked.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
 - Schema version: v17. P29-L removes the retired coverGoals and policy
   coverGoalId data; migrations/backups through v16 remain supported.
 - Runtime: Node.js 26.13.0.
-- Test counts: the last recorded full P29-L run was 86 suites, 1086 tests.
-  P29-M did not run the full suite because the task is blocked before behavior
-  changes; its temporary reproduction test was removed.
+- Test counts: P29-N full coverage run passes 89 suites / 1104 tests. P29-M did
+  not run the full suite because the task is blocked before behavior changes;
+  its temporary reproduction test was removed.
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
+- All six P29-N gates exit 0 in the required order. Fresh P29-N coverage was
+  generated after deleting `coverage/coverage-final.json` and measured from
+  the regenerated file with `istanbul-lib-coverage`, grouping source by
+  immediate `src/` directory: `src/data` 660/699 lines (94.42%) and 700/795
+  branches (88.05%); `src/domain` 3182/3232 lines (98.45%) and 3130/3361
+  branches (93.13%); `src/lib` 107/107 lines and 126/126 branches (100%).
+  Per-file branches: `src/domain/budget.ts` 770/849 (90.69%) and
+  `src/data/createAppStore.ts` 73/84 (86.90%); configured thresholds pass.
+  Full test, assertion-count and gate details are in [PROGRESS.md](../PROGRESS.md).
 - Fresh P29-L coverage was generated after deleting the prior
   `coverage/coverage-final.json`, then measured from the regenerated file with
   `istanbul-lib-coverage`: files were grouped by immediate `src/` directory;
