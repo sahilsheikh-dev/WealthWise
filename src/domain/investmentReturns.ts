@@ -14,6 +14,14 @@ export type InvestmentReturnSummary = {
   spanDays: number;
 };
 
+export type InvestmentLedgerSummary = {
+  contributions: number;
+  withdrawals: number;
+  rawInvested: number;
+  invested: number;
+  costRecovered: boolean;
+};
+
 export function investmentEntryTotals(entries: readonly InvestmentEntry[]): {
   deposits: number;
   withdrawals: number;
@@ -26,6 +34,22 @@ export function investmentEntryTotals(entries: readonly InvestmentEntry[]): {
     else withdrawals += entry.amount;
   }
   return { deposits, withdrawals };
+}
+
+export function investmentLedgerSummary(
+  entries: readonly InvestmentEntry[],
+  openingAmount = 0,
+): InvestmentLedgerSummary {
+  const { deposits, withdrawals } = investmentEntryTotals(entries);
+  const contributions = openingAmount + deposits;
+  const rawInvested = contributions - withdrawals;
+  return {
+    contributions,
+    withdrawals,
+    rawInvested,
+    invested: Math.max(0, rawInvested),
+    costRecovered: rawInvested < 0,
+  };
 }
 
 export function absoluteGainAndReturn(

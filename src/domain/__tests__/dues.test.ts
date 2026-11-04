@@ -367,7 +367,7 @@ describe('one-tap dues and undo', () => {
     expect(data.liabilities[0]).toMatchObject({ kind: 'one-time', dueDate: null, payments: [] });
   });
 
-  it('clears a plan installment with FIFO matching and undo restores the original data', () => {
+  it('clears a plan due with FIFO matching and undo restores the original data', () => {
     const original = withPlan(plan({
       logs: [{ id: 'deposit-existing', date: '2026-01-31', amount: 100, note: '', kind: 'Deposit' }],
     }));
@@ -603,7 +603,7 @@ describe('bulk due handling', () => {
     expect(validateIntegrity(result.data)).toEqual([]);
   });
 
-  it('marks installments through settlement as assumed paid and stops after a zero balance', () => {
+  it('marks recurring liability dues through settlement and stops after a zero balance', () => {
     const value = liability({
       settlement: { asOf: '2026-03-01', balance: 0 },
       tenureMonths: 3,
@@ -709,7 +709,7 @@ describe('bulk due handling', () => {
     expect(data.holdings[0]?.trackFrom).toBe('2026-04-01');
   });
 
-  it('adds liability and policy history atomically with past installments', () => {
+  it('adds liability and policy history atomically with past payments', () => {
     const liabilityResult = addLiabilityWithHistory(base(), {
       kind: 'recurring',
       name: 'Old liability',
@@ -758,7 +758,7 @@ describe('bulk due handling', () => {
     expect(undoClearDuesThrough(result.data, { kind: 'plan', id: 'plan' }, result.entryIds)).toEqual(original);
   });
 
-  it('clears three earlier and selected future installments oldest-first, dated today', () => {
+  it('clears earlier and selected future dues oldest-first, dated today', () => {
     const original = withPlan(plan({ tenureYears: 1 }));
     expect(duesThroughPreview(original, { kind: 'plan', id: 'plan' }, '2026-03-01', '2026-01-01'))
       .toEqual({ count: 3, amount: 300 });
@@ -836,7 +836,7 @@ describe('bulk due handling', () => {
     });
     const original = withLiability(longLiability);
     const lastDate = liabilitySchedule(longLiability, '2026-01-01').rows.at(-1)?.dueDate;
-    if (!lastDate) throw new Error('Expected 401 scheduled installments.');
+    if (!lastDate) throw new Error('Expected 401 scheduled due slots.');
     const newId = jest.fn(() => 'unused');
     expect(() => clearDuesThrough(original, { kind: 'liability', id: 'liability' }, lastDate, {
       date: '2026-01-01',

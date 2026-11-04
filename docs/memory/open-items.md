@@ -4,14 +4,15 @@
 
 ## Unresolved
 
-- **P29-O implementation:** report-only inventory is committed first in
-  [PROGRESS.md](../PROGRESS.md). Implement the owner-approved unified
-  deposit/withdrawal/valueUpdate ledger, per-type current valuation methods,
-  optional recurring schedule with slotDate settlement, and pure v18-to-v19
-  migration. Preserve old current value and net worth for mock/demo and every
-  legacy fixture; add the independent 2,000-sequence oracle, compounding
-  vectors, screen/store tests, backup compatibility and physical-device
-  verification below.
+- **P29-O1 physical-device checks:** verify manual and recurring holding
+  cards, Entries, opening amount edits and Recurring plan details at font
+  scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
+  10,000 + five 1,000 deposits - 2,000 withdrawal case shows Invested 13,000
+  and seven rows. Fixed-deposit maturity withdrawal remains unchanged. Jest
+  and Expo exports do not prove native layout or interaction.
+  Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
+  Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
+  counts are recorded in [PROGRESS.md](../PROGRESS.md).
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its

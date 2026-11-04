@@ -319,8 +319,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress ██████████ 96% (95/99)');
-    expect(dashboard).toContain('Phase 29         ██████████ 95% (19/20)');
+    expect(dashboard).toContain('Overall progress ██████████ 96% (96/100)');
+    expect(dashboard).toContain('Phase 29         ██████████ 95% (20/21)');
     for (const id of [
       'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q',
     ]) {
