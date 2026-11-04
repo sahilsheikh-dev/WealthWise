@@ -1,22 +1,27 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: P29-L Insurance implementation and migration are complete.
-  Home was inspected read-only: it imports only `policySummary`
-  for its Insurance box and generic pending dues for Upcoming and due; it does
-  not depend on cover goals. `app/(tabs)/index.tsx` remains user-owned and was
-  not edited.
-- Phase 29 status: P29-A through P29-L are Done.
+- Current task: P29-M is blocked before implementation. Store-level
+  reproduction on 2026-11-04 confirms an early premium payment and linked
+  transaction are saved in one write, but the same due slot remains pending.
+  Correct slot matching requires persisted payment-to-slot identity; adding it
+  requires a schema change, prohibited by this task. No behavior changes were
+  made. Findings are in [PROGRESS.md](../PROGRESS.md).
+- P29-L Insurance implementation and migration remain complete. Home was
+  inspected read-only: it imports `policySummary` for its Insurance box and
+  generic pending dues for Upcoming and due; it does not depend on cover goals.
+  `app/(tabs)/index.tsx` remains user-owned and was not edited.
+- Phase 29 status: P29-A through P29-L are Done; P29-M is Blocked.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
 - Schema version: v17. P29-L removes the retired coverGoals and policy
   coverGoalId data; migrations/backups through v16 remain supported.
 - Runtime: Node.js 26.13.0.
-- Test counts: 86 suites, 1086 tests.
-  Latest validated run: 86 suites, 1086 tests passed with
-  `npm test -- --coverage` on 2026-11-03.
+- Test counts: the last recorded full P29-L run was 86 suites, 1086 tests.
+  P29-M did not run the full suite because the task is blocked before behavior
+  changes; its temporary reproduction test was removed.
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
@@ -48,6 +53,11 @@
   task changes: 2513 to 2430 `expect(` occurrences (18 added, 101 removed,
   net -83) across the changed test files. All removed/replaced assertions and
   reasons are listed in [PROGRESS.md](../PROGRESS.md).
+- The P29-M store-level reproduction recorded one persisted write and correct
+  PolicyPayment/linked-transaction data before failing its expected next-slot
+  assertion (`2026-12-07` expected, `2026-11-07` received). The temporary test
+  was removed; repository tests are not left failing. No P29-M behavior tests
+  or six gates were run after the schema blocker was established.
 - The prior Gate 1 timeout output is unavailable and cannot be quoted. The
   final fresh full run passes; see the ledger for the historical isolated-run
   information and the preliminary TypeScript correction.

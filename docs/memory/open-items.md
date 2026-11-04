@@ -1,12 +1,22 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
+- **P29-M blocked (2026-11-04):** the store writes an early insurance premium
+  payment and its linked transaction once, but `policySchedule` filters out
+  payments dated before `trackFrom`, so every due selector keeps the slot
+  pending. The current PolicyPayment and transaction-source shapes do not
+  persist slot identity. Removing the date filter would incorrectly apply
+  pre-existing v16 payments to future slots; a reliable fix needs a persisted
+  slot marker and schema migration. P29-M forbids schema changes, so no fix
+  was made. Owner authorization for a schema version bump and a migration
+  rule for legacy payments is required before resuming; see
+  [PROGRESS.md](../PROGRESS.md).
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
-  former P29-G cover-goal feature is removed; Home remains unchanged. Only the
+  former P29-G cover-goal feature is removed; Home remains unchanged. Its
   physical-device checks below remain unverified.
 - **P29-J bank-balance comparison:** no calculation bug was proven. The owner
   did not provide the bank outstanding/as-of date, principal, contractual
@@ -20,7 +30,8 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-L are Done.
+  write; the acceptance test passes. P29-B through P29-L are Done; P29-M is
+  blocked by its no-schema-change constraint.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -98,6 +109,12 @@
   large-font layout at scales 1.3 and 2.0 on iOS and Android. Home's
   `policySummary` source and screen remain unchanged. Jest and Expo exports
   simulate or build the app; they do not verify native presentation.
+- **P29-M:** the reported early-payment defect remains unresolved. Native
+  checks for one-write clearing, next-due movement, reminder advancement,
+  Undo and all frequency/entry-point combinations are not complete because
+  correct persisted slot identity requires a schema change prohibited by the
+  task. The owner's reported device behavior is recorded as report, not a
+  reproduced physical-device run.
 
 - **P24-A:** verify local-notification delivery and timing, permission and
   blocked-settings flows, reboot restoration behavior, lock-screen text,
