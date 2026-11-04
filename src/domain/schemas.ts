@@ -13,6 +13,7 @@ import {
   THEME_IDS,
   type AppData,
   type ISODate,
+  type LedgerAppData,
   type Transaction,
 } from './types';
 
@@ -107,6 +108,54 @@ export const planHoldingSchema = z.object({
       path: ['actualValueDate'],
       message: 'Actual value and snapshot date must both be set or both be null',
     });
+  }
+});
+
+const ledgerEntrySchema = z.strictObject({
+  id: idSchema,
+  date: isoDateSchema,
+  kind: z.enum(['deposit', 'withdrawal', 'valueUpdate']),
+  amount: moneySchema,
+  note: z.string(),
+  slotDate: isoDateSchema.optional(),
+  price: moneySchema.positive().optional(),
+  units: moneySchema.positive().optional(),
+  transactionId: idSchema.optional(),
+});
+const recurringPlanSchema = z.strictObject({
+  frequency: frequencySchema,
+  amount: moneySchema.min(0),
+  start: isoDateSchema,
+  end: isoDateSchema.optional(),
+  trackFrom: isoDateSchema.optional(),
+  stepUpPct: moneySchema.min(0).max(100).optional(),
+}).superRefine((plan, context) => {
+  if (plan.end !== undefined && plan.end < plan.start) {
+    context.addIssue({ code: 'custom', path: ['end'], message: 'Recurring plan end cannot precede its start.' });
+  }
+  if (plan.trackFrom !== undefined && plan.trackFrom < plan.start) {
+    context.addIssue({ code: 'custom', path: ['trackFrom'], message: 'Tracking cannot start before the recurring plan.' });
+  }
+});
+export const ledgerHoldingSchema = z.strictObject({
+  id: idSchema,
+  name: z.string(),
+  type: holdingTypeSchema,
+  entries: z.array(ledgerEntrySchema).max(100_000).min(1),
+  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']),
+  rate: moneySchema.min(0).max(100).optional(),
+  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
+  maturityDate: isoDateSchema.optional(),
+  recurring: recurringPlanSchema.optional(),
+}).superRefine((holding, context) => {
+  if (holding.entries[0]?.kind !== 'deposit') {
+    context.addIssue({ code: 'custom', path: ['entries', 0, 'kind'], message: 'The first ledger entry must be the opening deposit.' });
+  }
+  if (holding.valuationMethod === 'accrual' && (holding.rate === undefined || holding.compounding === undefined)) {
+    context.addIssue({ code: 'custom', path: ['rate'], message: 'Accrual valuation requires a rate and compounding method.' });
+  }
+  if (holding.recurring !== undefined && !holdingCapabilities(holding.type).recurring) {
+    context.addIssue({ code: 'custom', path: ['recurring'], message: `${holding.type} does not support a recurring plan.` });
   }
 });
 
@@ -435,7 +484,12 @@ export const appDataSchema = z.object({
   efBucketLinks: efBucketLinksSchema,
 });
 
+export const ledgerAppDataSchema = appDataSchema.extend({
+  holdings: z.array(ledgerHoldingSchema),
+});
+
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;
+export type LedgerAppDataSchemaOutput = z.infer<typeof ledgerAppDataSchema>;
 type Assert<T extends true> = T;
 type SchemaMatchesAppData = AppDataSchemaOutput extends AppData
   ? AppData extends AppDataSchemaOutput
@@ -443,6 +497,13 @@ type SchemaMatchesAppData = AppDataSchemaOutput extends AppData
     : false
   : false;
 export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
+type SchemaMatchesLedgerAppData =
+  LedgerAppDataSchemaOutput extends LedgerAppData
+    ? LedgerAppData extends LedgerAppDataSchemaOutput
+      ? true
+      : false
+    : false;
+export type LedgerAppDataSchemaMatchesLedgerAppData = Assert<SchemaMatchesLedgerAppData>;
 
 export const TRANSACTION_CATEGORIES = {
   expense: [

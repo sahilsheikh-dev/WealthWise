@@ -855,6 +855,9 @@ function legacyHoldingToV19(
       type: holding.type,
       entries,
       valuationMethod: defaultValuationMethod(holding.type),
+      ...(defaultValuationMethod(holding.type) === 'accrual'
+        ? { rate: 0, compounding: 'yearly' as const }
+        : {}),
     };
   }
   const planResult = planHoldingSchema.safeParse(value);

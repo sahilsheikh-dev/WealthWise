@@ -7602,6 +7602,11 @@ transferred. Their value is separately preserved by the migration adjustment;
 the annual rate's interpretation needs an explicit verification against the
 new valuation rules before the migration is finalized.
 
+**Assumed:** legacy manual Fixed deposit, Recurring deposit and EPFO/PF
+holdings have no persisted accrual rate. Migration initializes those records
+at 0% with yearly compounding, preserving the old current value without
+inventing an interest rate; the owner can enter the actual rate after upgrade.
+
 The shared ledger formula is date-bounded:
 
 `invested = max(0, deposits - withdrawals)`
@@ -7635,6 +7640,13 @@ src/data/__tests__/migrateV18ToV19.test.ts` exited 0 (4 tests), and
 the converter is not wired into `migratePersisted`, the active schema remains
 v18, and store/screen/mock consumers, archive handling, backup compatibility,
 full gates and device validation remain open.
+
+The v19 validation-schema preparation adds a strict ledger-only holding
+schema and an alternate AppData schema for validating converted data while
+the current v18 runtime remains unchanged. It validates that the opening entry
+is first, accrual fields are complete, recurring plans are capability-allowed,
+and optional transaction links/prices/units use the expected types. Focused
+migration tests validate both demo and available legacy fixture outputs.
 
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 

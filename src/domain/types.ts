@@ -80,6 +80,7 @@ export type HoldingLedgerEntry = {
   slotDate?: ISODate;
   price?: number;
   units?: number;
+  transactionId?: string;
 };
 
 export type RecurringPlan = {
@@ -351,3 +352,5 @@ export type AppData = {
   efCustomBuckets: EfCustomBucket[];
   efBucketLinks: Record<string, string[]>;
 };
+
+export type LedgerAppData = Omit<AppData, 'holdings'> & { holdings: LedgerHolding[] };
