@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (95/99)
+Overall progress ██████████ 96% (96/100)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 95% (19/20)
+Phase 29         ██████████ 95% (20/21)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -186,7 +186,8 @@ Phase 29         ██████████ 95% (19/20)
 | P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
-| P29-O | — | Inventory committed; implementation pending | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; owner approved schema v19 and the unified asset ledger/valuation design. | 2026-11-04 |
+| P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
+| P29-O1 | P29-O | Done | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
 | P29-Q | — | Done | Owner-approved Expo SQLite native persistence, lazy legacy AsyncStorage migration, seeded stress loader with Undo, measured selector optimizations and five-sample Node benchmarks; no AppData schema change. Device checks remain open. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
@@ -7348,9 +7349,9 @@ insurance payments.
 
 | Surface | Current route/files | Current behavior/dependency |
 |---|---|---|
-| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual actions Deposit/Withdraw/Entries/Edit/Confirm; plan actions Log installment/Withdraw/Schedule. Cards display invested/value/gain/return and, for plans, projection, logged count, schedule and due status. |
+| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual and plan cards share Deposit/Withdraw/Entries/Edit actions, subject to Fixed-deposit restrictions. Cards display net Invested/value/gain/return and, for plans, projection, logged count, next due and due status. |
 | Holding form | `/investment-form` (`app/investment-form.tsx`) | Segments into recurring PlanEditor and one-time ManualEditor. Plan stores schedule/rate/step-up/opening/optional actual value; manual stores invested/value/valueAsOf. Type controls use `holdingCapabilities`. |
-| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | Plan-capable holdings can switch between Schedule and Entries. Entry totals include Invested, Current value, Total deposits, and Withdrawn; plan Schedule uses `planSchedule`. |
+| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | P29-O1 uses one Entries list for both holding kinds, with a derived Opening row first, an in-holding Recurring plan section and a shared financial summary. Recurring due rows continue to use `planSchedule`; Fixed deposits retain maturity withdrawal access. |
 | Entry form | `/investment-entry-form` (`app/investment-entry-form.tsx`) | Adds/edits/deletes Deposit or Withdrawal; a selected due row supplies date/amount, but not a persisted slot date. Linked transaction is edited/deleted with its entry. |
 | Due/payment routes | `/clear-dues`, `/payment-confirm`, `app/(tabs)/transactions.tsx`, Home (user-owned read-only), `app/reminders.tsx` | Plan rows flow through `planSchedule` to pending dues, pending items, reminder planning and payment actions. Clearing uses plan slot ID but currently creates an entry without due-slot identity. Home and Transactions consume shared due selectors. |
 | Transaction entry/form | `app/transaction-form.tsx`, `src/domain/links.ts` | Investment transactions can be linked to an instrument/holding; linked transactions navigate to `/investment-entries`. Entry transaction source fields link each transaction to the owning holding entry. |
@@ -7397,6 +7398,192 @@ Schema v19 is authorized. The six required gates, P29-A return rules, current
 `holdingCapabilities` matrix, transaction links, Budget/goal/EF links and
 offline-only pricing remain constraints. No source behavior or existing
 assertion has been changed in this report-only step.
+
+### DEC-P29O1-CURRENT-MODEL — unify holding actions without schema change (2026-11-04)
+
+**Assumed:** P29-O1 is a new Phase 29 follow-up on the schema-v18 ledger, and
+the owner's no-schema-change instruction supersedes P29-O's earlier v19
+migration proposal for this step. Do not redesign valuations or returns:
+preserve P29-H current-value and return behavior and existing FIFO plan-slot
+matching. Fixed-deposit capability restrictions remain in force.
+
+All holdings use the same Deposit, Withdraw and Entries presentation where
+allowed by `holdingCapabilities`. A plan's Deposit continues to use the
+existing entry action and FIFO schedule matching. Entries shows the derived
+opening amount as its first "Opening" row, editable through the holding form;
+the recurring schedule is a section in that screen with frequency, amount,
+next due date and an edit action. Fixed deposits still expose only the
+maturity-withdrawal action and do not gain additional deposits.
+
+Displayed Invested is computed by the shared ledger helper:
+
+`raw invested = opening + deposits - withdrawals`
+
+`Invested = max(0, raw invested)`
+
+When raw invested is negative, show "Cost recovered". Current value and P29-H
+return math continue to use the existing value selector and gross contribution
+cash flows. Goal-linked invested metadata intentionally remains gross
+contributions so Goals, Emergency Fund, Budget links, pending dues, reminders
+and net worth retain their previous values. No persisted field or schema
+version changes.
+
+**Replaced assertions (old / new / reason):**
+
+- `holdingInvested` ignored withdrawals: the 1,000 opening + 2,000 deposit -
+  300 withdrawal fixture expected 3,000; it now expects 2,700, matching the
+  owner's net Invested definition. Gain/return remain 0 because P29-H uses
+  gross contributions in its denominator.
+- An over-withdrawn 1,000 opening + 50 deposit - 200 withdrawal fixture
+  expected Invested 1,050; it now expects 850. The added profit-recovery case
+  separately proves a negative raw invested value displays as 0 with a
+  4,000 gain and "Cost recovered".
+- Manual Cash cards previously exposed separate deposited/withdrawn totals;
+  they now show net Invested only, because the owner removed those totals.
+- Plan cards previously offered a separate Schedule action; the exact shared
+  actions are now Deposit, Withdraw and Entries. The recurring plan remains
+  visible as an editable section inside Entries.
+- Fixed-deposit entries remain visible but have no Deposit action; their
+  dedicated maturity-withdrawal action remains unchanged.
+- The holding-entry list now has one derived Opening row followed by the
+  existing editable/deletable entries. The opening amount is not persisted as
+  a new entry and does not change schema.
+
+**Demo/mock before-and-after selector evidence:** the old gross invested value
+for goal-link metadata equals the new `holdingContributions` value for every
+holding in both fixtures. Current value, goal saved values, Emergency Fund
+available bucket amounts, pending dues, reminder plans, Budget-linked rows and
+net worth are preserved. The linked Budget item used in this comparison is a
+test-only recurring-plan link; no fixture or persisted data is changed.
+
+| Output | Mock before | Mock after | Demo before | Demo after |
+|---|---:|---:|---:|---:|
+| Budget linked rows / planned amount | 1 / 21,200 | 1 / 21,200 | 1 / 2,000 | 1 / 2,000 |
+| Pending dues / amount | 2 / 30,101.32 | 2 / 30,101.32 | 34 / 38,900 | 34 / 38,900 |
+| Reminder plan count | 910 | 910 | 897 | 897 |
+| Goal saved total | 490,956 | 490,956 | 479,200 | 479,200 |
+| Emergency Fund bucket available total | 0 | 0 | 187,000 | 187,000 |
+| Net worth (assets / liabilities / net) | 505,441 / 327,903.94 / 177,537.06 | 505,441 / 327,903.94 / 177,537.06 | 504,500 / 389,107.93 / 115,392.07 | 504,500 / 389,107.93 / 115,392.07 |
+
+Acceptance tests include `uses the same seven-row net-invested ledger for
+manual and plan holdings`, `floors invested at zero after a profit withdrawal
+while preserving the gain`, `preserves linked outputs and legacy linked-
+invested values for mock and demo data`, `keeps manual and recurring holdings
+on the same card, entries and form flow at font scale %s`, and `uses
+scheduled-deposit wording in the recurring holding due cleanup`. The fixture
+tests run at simulated font scales 1.3 and 2.0; physical device checks remain
+unverified.
+
+**Additional assertion replacements (old / new / reason):**
+
+- The Cash card's combined `Deposited 100.00. Withdrawn 0.00` accessibility
+  label and the separate Deposited/Withdrawn labels, alongside an assertion
+  that Invested was absent, are replaced by the shared `Invested 600.00`
+  accessibility label. The old gross-flow labels are removed; the new value
+  is opening 500 + deposits 100 - withdrawals 0.
+- The manual ledger's `holdingInvested` expectation changes from 15,000 to
+  13,000 for the five-deposit, 2,000-withdrawal example. The plan expectation
+  separately changes from 2,000 to 1,500 and from 225 to zero where
+  withdrawals exceed contributions, following the net-invested rule.
+- `Entries (1)` on the Fixed-deposit action becomes `Entries`; the common
+  action label no longer includes a log count.
+- A prior assertion excluding "Invested" on cash/bank cards is replaced by
+  assertions that the removed Deposited and Withdrawn totals are absent. The
+  card now shows net Invested.
+- Plan action assertions replace the old `Schedule` action with `Entries`;
+  the recurring plan remains in its editable section inside the Entries
+  screen, and Fixed-deposit deposit restrictions remain tested.
+- SIP helper copy, tracking labels and recurring transaction notes replace
+  installment terminology with scheduled-deposit wording. The generated plan
+  transaction stays linked; the wording now matches the unified Deposit
+  action.
+- The legacy orphan note `Old installment` becomes `Orphan deposit`; only
+  note copy changes, while orphan category behavior remains unchanged.
+- The schema-validation assertion's old "logged installment" error text
+  becomes "logged deposit", matching the renamed action without changing
+  validation behavior.
+- The progress-ledger test's dashboard counts change from 95/99 overall and
+  19/20 in Phase 29 to 96/100 and 20/21, reflecting the new closed P29-O1
+  part. `memoryDocs.test.ts` changes its expected latest test count from 1134
+  to 1140 to match the final run. Neither count update weakens a behavioral
+  assertion.
+
+#### P29-O1 acceptance tests
+
+| Frozen requirement | Exact test name |
+|---|---|
+| Manual and recurring holdings have Deposit, Withdraw and Entries at font scales 1.3 and 2.0; plan schedule stays in Entries and opening is the first derived row | `keeps manual and recurring holdings on the same card, entries and form flow at font scale %s` |
+| Seven displayed rows and Invested 13,000 for manual and plan ledgers | `uses the same seven-row net-invested ledger for manual and plan holdings` |
+| Net Invested floors at zero after a profit withdrawal; Cost recovered and gain remain correct | `floors invested at zero after a profit withdrawal while preserving the gain` |
+| Plan Deposit/store action and linked transaction behavior | `runs the scheduled-deposit integration scenario with one write per action and rehydrates links`; `clears multiple plan dues and fully undoes them with one persisted write per action` |
+| Fixed-deposit deposit/maturity restrictions remain | `blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts`; `keeps legacy fixed-deposit entries visible without offering new deposits` |
+| Current value and P29-H return outputs remain intact | `corrects P29-H opening, back-dated, pattern and withdrawal outputs`; `has XIRR, CAGR, same-day, short-span and known-vector behavior` |
+| Budget, pending dues, reminders, goals, EF availability, and net worth remain identical in mock and demo data | `preserves linked outputs and legacy linked-invested values for mock and demo data` |
+| Cash and Savings show Invested without return labels or separate totals | `renders ledger-based asset totals and Cash/Bank details at font scale %s` |
+| Obsolete holding wording removed from rendered UI and holding-specific test copy | `explains the first scheduled deposit and deposit tracking dates`; `uses scheduled-deposit wording in the recurring holding due cleanup`. The holding UI/test search found no `Log installment`, `Total deposits` or `Total withdrawals`; liability terminology and legacy domain API names are not holding UI copy. |
+
+#### P29-O1 final ordered verification
+
+The gates were run sequentially after the final source and test updates; each
+process returned exit code 0.
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 (90 suites, 1140 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Coverage was collected after deleting and regenerating
+`coverage/coverage-final.json`. Using `istanbul-lib-coverage`, each
+instrumented source file's Istanbul summary was aggregated by its immediate
+`src/` directory; line totals are executable line counters and branch totals
+are branch-arm counters.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 702/745 (94.23%) | 735/838 (87.71%) |
+| `src/domain` | 3315/3365 (98.51%) | 3205/3437 (93.25%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Per-file branch coverage: `src/domain/budget.ts` is 788/867 (90.89%),
+above its 90% threshold; `src/data/createAppStore.ts` is 86/101 (85.15%),
+above its 85% threshold.
+
+Per-file `expect(` occurrence audit compares the previous commit (HEAD before
+P29-O1) with the final committed task contents. Added/removed counts are
+literal `expect(` lines in zero-context Git diff hunks, and net is added minus
+removed; unchanged rows are included for every modified test file.
+
+| Test file | Previous commit | Task HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/components/__tests__/IconButton.test.tsx` | 9 | 9 | 0 | 0 | 0 |
+| `src/components/__tests__/PendingItemActions.test.tsx` | 43 | 43 | 0 | 0 | 0 |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 440 | 457 | 22 | 5 | +17 |
+| `src/data/__tests__/createAppStore.test.ts` | 463 | 463 | 0 | 0 | 0 |
+| `src/domain/__tests__/dues.test.ts` | 149 | 149 | 0 | 0 | 0 |
+| `src/domain/__tests__/instrumentCard.test.ts` | 27 | 27 | 3 | 3 | 0 |
+| `src/domain/__tests__/instruments.test.ts` | 53 | 53 | 0 | 0 | 0 |
+| `src/domain/__tests__/investmentActions.test.ts` | 50 | 50 | 3 | 3 | 0 |
+| `src/domain/__tests__/investmentReturns.test.ts` | 52 | 62 | 11 | 1 | +10 |
+| `src/domain/__tests__/linkedActions.test.ts` | 93 | 93 | 1 | 1 | 0 |
+| `src/domain/__tests__/pending.test.ts` | 43 | 43 | 0 | 0 | 0 |
+| `src/domain/__tests__/phase5.test.ts` | 40 | 40 | 1 | 1 | 0 |
+| `src/domain/__tests__/schemas.test.ts` | 237 | 237 | 1 | 1 | 0 |
+| `src/domain/__tests__/selectors.test.ts` | 82 | 86 | 4 | 0 | +4 |
+| `src/domain/__tests__/sip.test.ts` | 43 | 43 | 1 | 1 | 0 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 1 | 1 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 162 | 162 | 2 | 2 | 0 |
+| `src/mock/__tests__/demoData.test.ts` | 92 | 92 | 0 | 0 | 0 |
+| **Total** | **2089** | **2120** | **50** | **19** | **+31** |
+
+P29-O1 physical-device checks not verified: manual and recurring cards,
+Entries, editing the opening amount, and Recurring plan details at font scales
+1.3 and 2.0 on iOS and Android; visual confirmation of the 13,000 Invested /
+seven-row example; Fixed-deposit maturity withdrawal. Jest renderer tests and
+Expo exports do not establish native device layout or interaction.
 
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 

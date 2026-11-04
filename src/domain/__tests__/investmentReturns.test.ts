@@ -3,6 +3,7 @@ import {
   calculateCagr,
   calculateXirr,
   investmentEntryTotals,
+  investmentLedgerSummary,
   investmentReturnSummary,
 } from '../investmentReturns';
 import { buildInstrumentCardModel } from '../instrumentCard';
@@ -110,10 +111,8 @@ describe('investment return reproduction and spec', () => {
     expect(cashCard.subtitle).toEqual([{ text: 'Cash' }]);
     expect(cashCard.progressPct).toBeUndefined();
     expect(cashCard.description).toEqual([
-      { text: 'Deposited ' },
+      { text: 'Invested ' },
       { amount: 9_000 },
-      { text: '. Withdrawn ' },
-      { amount: 0 },
     ]);
     expect(JSON.stringify(cashCard)).not.toContain('40.0%');
 
@@ -125,7 +124,7 @@ describe('investment return reproduction and spec', () => {
       manual('deposit-withdrawal', 1_000, 1_000, '2024-01-01', depositAndWithdrawal),
       '2024-04-01',
     )).toEqual({
-      invested: 3_000,
+      invested: 2_700,
       currentValue: 2_700,
       deposits: 2_000,
       withdrawals: 300,
@@ -178,13 +177,14 @@ describe('investment return reproduction and spec', () => {
       const withdrawals = logs
         .filter((item) => item.kind === 'Withdrawal')
         .reduce((sum, item) => sum + item.amount, 0);
-      const invested = opening + deposits;
+      const contributions = opening + deposits;
+      const invested = Math.max(0, contributions - withdrawals);
       const baseline = valuationDate ? valuation : opening;
       const currentValue = Math.max(0, baseline + logs
         .filter((item) => item.date <= asOf && (!valuationDate || item.date > valuationDate))
         .reduce((sum, item) => sum + (item.kind === 'Deposit' ? item.amount : -item.amount), 0));
-      const gain = currentValue + withdrawals - invested;
-      const returnPct = invested === 0 ? null : gain / invested * 100;
+      const gain = currentValue + withdrawals - contributions;
+      const returnPct = contributions === 0 ? null : gain / contributions * 100;
       const actualValue = holdingValue(holding, asOf);
       const actualInvested = holdingInvested(holding);
       const summary = investmentReturnSummary(logs, actualValue, asOf, opening, asOf);
@@ -195,6 +195,13 @@ describe('investment return reproduction and spec', () => {
   });
 
   it('keeps opening-only, over-withdrawn and same-date cash flows consistent', () => {
+    expect(investmentLedgerSummary([])).toEqual({
+      contributions: 0,
+      withdrawals: 0,
+      rawInvested: 0,
+      invested: 0,
+      costRecovered: false,
+    });
     const openingOnly: ManualHolding = {
       id: 'opening-only',
       kind: 'manual',
@@ -216,7 +223,7 @@ describe('investment return reproduction and spec', () => {
         entry('withdrawal', '2024-01-03', 200, 'Withdrawal'),
       ],
     };
-    expect(holdingInvested(overWithdrawn)).toBe(1_050);
+    expect(holdingInvested(overWithdrawn)).toBe(850);
     expect(holdingValue(overWithdrawn, '2024-01-04')).toBe(850);
     expect(investmentReturnSummary(overWithdrawn.logs, 850, '2024-01-04', 1_000, '2024-01-01'))
       .toMatchObject({ withdrawals: 200, gain: 0, absoluteReturnPct: 0 });
@@ -296,6 +303,73 @@ describe('investment return reproduction and spec', () => {
     const current = { ...manual, value: 81000, invested: 9000, logs: [] };
     expect((current.value - holdingInvested(current)) / holdingInvested(current) * 100).toBe(800);
     expect(absoluteGainAndReturn(userPattern, current.value, '2024-06-01').absoluteReturnPct).toBe(800);
+  });
+
+  it('floors invested at zero after a profit withdrawal while preserving the gain', () => {
+    const holding: ManualHolding = {
+      ...manual,
+      id: 'profit-withdrawal',
+      name: 'Profit withdrawal',
+      invested: 1_000,
+      value: 0,
+      valueAsOf: undefined,
+      logs: [entry('large-withdrawal', '2024-02-01', 5_000, 'Withdrawal')],
+    };
+    const row = buildPortfolioRows({ ...mockAppData, holdings: [holding] }, '2024-02-01')[0];
+    if (!row) throw new Error('Profit withdrawal fixture is missing.');
+    expect(row.invested).toBe(0);
+    expect(row.costRecovered).toBe(true);
+    expect(row.gain).toBe(4_000);
+    expect(buildInstrumentCardModel(row, { asOf: '2024-02-01', totalAssets: 0 }).helperLine)
+      .toContain('Cost recovered');
+
+    const recurringTemplate = mockAppData.holdings.find((item): item is PlanHolding => item.kind === 'plan');
+    if (!recurringTemplate) throw new Error('Recurring plan fixture is missing.');
+    const plan = {
+      ...recurringTemplate,
+      opening: 1_000,
+      actualValue: null,
+      actualValueDate: null,
+      logs: holding.logs,
+    };
+    const planRow = buildPortfolioRows({ ...mockAppData, holdings: [plan] }, '2024-02-01')[0];
+    if (!planRow) throw new Error('Plan profit withdrawal fixture is missing.');
+    expect(planRow.invested).toBe(0);
+    expect(planRow.costRecovered).toBe(true);
+    expect(buildInstrumentCardModel(planRow, { asOf: '2024-02-01', totalAssets: 0 }).helperLine)
+      .toContain('Cost recovered');
+  });
+
+  it('uses the same seven-row net-invested ledger for manual and plan holdings', () => {
+    const logs = [
+      entry('deposit-1', '2024-01-02', 1_000),
+      entry('deposit-2', '2024-02-02', 1_000),
+      entry('deposit-3', '2024-03-02', 1_000),
+      entry('deposit-4', '2024-04-02', 1_000),
+      entry('deposit-5', '2024-05-02', 1_000),
+      entry('withdrawal', '2024-06-02', 2_000, 'Withdrawal'),
+    ];
+    const manualLedger: ManualHolding = {
+      ...manual,
+      id: 'manual-seven-rows',
+      invested: 10_000,
+      logs,
+    };
+    const recurringTemplate = mockAppData.holdings.find((holding): holding is PlanHolding =>
+      holding.kind === 'plan',
+    );
+    if (!recurringTemplate) throw new Error('Recurring plan fixture is missing.');
+    const planLedger: PlanHolding = {
+      ...recurringTemplate,
+      id: 'plan-seven-rows',
+      opening: 10_000,
+      logs,
+    };
+
+    for (const holding of [manualLedger, planLedger]) {
+      expect(holding.logs.length + 1).toBe(7);
+      expect(holdingInvested(holding)).toBe(13_000);
+    }
   });
 
   it('returns null absolute return for zero contributions and handles withdrawals', () => {

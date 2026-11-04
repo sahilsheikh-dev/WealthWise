@@ -320,7 +320,7 @@ export function createMissingTransactions(data: AppData, newId: () => string): A
         category: withdrawal ? 'Withdrawal' : investCategoryFor(holding.type),
         note: withdrawal
           ? `${item.holdingName} withdrawal`
-          : item.holdingKind === 'plan' ? `${item.holdingName} installment` : `${item.holdingName} deposit`,
+          : `${item.holdingName} deposit`,
         date: item.entry.date,
         source: { kind: 'holding-entry', parentId: item.holdingId, entryId: item.entry.id },
       };

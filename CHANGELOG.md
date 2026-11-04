@@ -79,6 +79,16 @@
   calculation and schedule behavior, and connected UI/domain/test surfaces.
   The report-only inventory is committed before the approved schema-v19
   unified-ledger implementation.
+- P29-O1 supersedes the P29-O schema-v19 design for this step: on the existing
+  v18 model, manual and recurring holdings now share Deposit, Withdraw and
+  Entries actions, with a derived Opening row and an in-holding Recurring plan
+  section. Displayed Invested is deposits less withdrawals, floored at zero;
+  return and current-value calculations, fixed-deposit restrictions, and
+  linked Budget, pending, reminder, goal, EF and net-worth outputs are
+  preserved. No schema change.
+- P29-O1 validation passes: 90 suites/1140 tests and all six ordered TypeScript,
+  lint, Expo Doctor, Android export and iOS export gates. Device checks remain
+  open.
 
 ### Investments and goals
 

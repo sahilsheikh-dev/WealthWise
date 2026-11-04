@@ -19,12 +19,16 @@ runtime synchronization.
 - Tabs: Home, Transactions, Goals and Budget.
 - Budget scope choices apply on selection; Close, backdrop and Android back
   dismiss the popup without applying a change.
+- Manual and recurring holdings share Deposit, Withdraw and Entries actions
+  where capabilities allow. Opening amounts are derived as the first Entries
+  row, recurring plans are shown inside Entries, and Invested is net of
+  withdrawals without a schema change.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 90 suites, 1134 tests in the latest verified P29-Q coverage
+- Test counts: 90 suites, 1140 tests in the latest verified P29-O1 coverage
   run. See [status.md](status.md) and the [progress
   ledger](../PROGRESS.md) for exact gate results and coverage.
 

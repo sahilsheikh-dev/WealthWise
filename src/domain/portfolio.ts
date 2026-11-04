@@ -1,5 +1,10 @@
-import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
-import { investmentEntryTotals, investmentReturnSummary, type InvestmentReturnSummary } from './investmentReturns';
+import { PERIODS_PER_YEAR, planValue } from './sip';
+import {
+  investmentLedgerSummary,
+  investmentReturnSummary,
+  type InvestmentLedgerSummary,
+  type InvestmentReturnSummary,
+} from './investmentReturns';
 import { holdingCapabilities } from './holdingCapabilities';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
@@ -11,6 +16,7 @@ export type PortfolioRow = {
   invested: number;
   value: number;
   gain: number;
+  costRecovered: boolean;
   gainPct: number | null;
   holding?: Holding;
   returnSummary?: InvestmentReturnSummary;
@@ -21,8 +27,16 @@ export function isCashOrBankHoldingType(type: HoldingType): boolean {
 }
 
 export function holdingInvested(holding: Holding): number {
-  if (holding.kind === 'plan') return planInvested(holding);
-  return holding.invested + investmentEntryTotals(holding.logs).deposits;
+  return holdingLedgerSummary(holding).invested;
+}
+
+export function holdingLedgerSummary(holding: Holding): InvestmentLedgerSummary {
+  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
+  return investmentLedgerSummary(holding.logs, openingAmount);
+}
+
+export function holdingContributions(holding: Holding): number {
+  return holdingLedgerSummary(holding).contributions;
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
@@ -35,6 +49,33 @@ export function holdingValue(holding: Holding, asOf: ISODate): number {
   return Math.max(0, baseValue + applicableEntries);
 }
 
+export function holdingFinancialSummary(holding: Holding, asOf: ISODate): {
+  ledger: InvestmentLedgerSummary;
+  invested: number;
+  value: number;
+  gain: number;
+  returnSummary: InvestmentReturnSummary;
+} {
+  const ledger = holdingLedgerSummary(holding);
+  const value = holdingValue(holding, asOf);
+  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
+  const openingDate = holding.kind === 'plan' ? holding.startDate : asOf;
+  const returnSummary = investmentReturnSummary(
+    holding.logs,
+    value,
+    asOf,
+    openingAmount,
+    openingDate,
+  );
+  return {
+    ledger,
+    invested: ledger.invested,
+    value,
+    gain: returnSummary.gain,
+    returnSummary,
+  };
+}
+
 function row(
   id: string,
   kind: PortfolioRow['kind'],
@@ -42,18 +83,9 @@ function row(
   type: PortfolioRow['type'],
   invested: number,
   value: number,
-  asOf: ISODate,
   holding?: Holding,
+  financial?: ReturnType<typeof holdingFinancialSummary>,
 ): PortfolioRow {
-  const openingAmount = holding?.kind === 'manual' ? holding.invested : holding?.opening ?? 0;
-  const openingDate = holding?.kind === 'plan' ? holding.startDate : asOf;
-  const returnSummary = investmentReturnSummary(
-    holding?.logs ?? [],
-    value,
-    asOf,
-    openingAmount,
-    openingDate,
-  );
   return {
     id,
     kind,
@@ -61,27 +93,28 @@ function row(
     type,
     invested,
     value,
-    gain: returnSummary.gain,
-    gainPct: holding && isCashOrBankHoldingType(type) ? null : returnSummary.absoluteReturnPct,
-    returnSummary,
+    gain: financial?.gain ?? 0,
+    costRecovered: financial?.ledger.costRecovered ?? false,
+    gainPct: holding && isCashOrBankHoldingType(type) ? null : financial?.returnSummary.absoluteReturnPct ?? null,
+    returnSummary: financial?.returnSummary,
     ...(holding ? { holding } : {}),
   };
 }
 
 export function buildPortfolioRows(data: AppData, asOf: ISODate): PortfolioRow[] {
-  const holdings = data.holdings.map((holding) =>
-    row(
+  return data.holdings.map((holding) => {
+    const financial = holdingFinancialSummary(holding, asOf);
+    return row(
       holding.id,
       holding.kind,
       holding.name,
       holding.type,
-      holdingInvested(holding),
-      holdingValue(holding, asOf),
-      asOf,
+      financial.invested,
+      financial.value,
       holding,
-    ),
-  );
-  return holdings;
+      financial,
+    );
+  });
 }
 
 export function filterRows(
