@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-n
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
+import { PaidAmountDialog } from '../src/components/PaidAmountDialog';
 import { AppText, Button, Card, Screen, StatusBadge } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
@@ -16,7 +17,6 @@ import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
-import { PaidAmountDialog } from '../src/components/PaidAmountDialog';
 
 const kindTitles: Record<PolicyKind, string> = {
   'term-life': 'Term life',
@@ -206,8 +206,6 @@ const styles = StyleSheet.create({
   policyHeading: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   policyTitle: { flex: 1, minWidth: 0 },
   policyActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: 8,
