@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Project
 
@@ -7,7 +7,8 @@ runtime data is stored locally; the repository describes no cloud account or
 runtime synchronization.
 
 - Stack: Expo SDK 57, React Native 0.86.3, TypeScript, Expo Router, Zustand,
-  AsyncStorage, Zod, React Hook Form and Jest.
+  Expo SQLite (native AppData), AsyncStorage (web, metadata and legacy native
+  migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
 - Schema version: v18 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
@@ -23,7 +24,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 89 suites, 1120 tests in the latest verified P29-M2 coverage
+- Test counts: 90 suites, 1134 tests in the latest verified P29-Q coverage
   run. See [status.md](status.md) and the [progress
   ledger](../PROGRESS.md) for exact gate results and coverage.
 

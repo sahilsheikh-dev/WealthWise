@@ -8,6 +8,7 @@ import { todayISO } from '../lib/clock';
 import { LOCK_SETTINGS_KEY } from '../lib/securitySettings';
 import { createAppStore } from './createAppStore';
 import { createMetaStore } from './metaStore';
+import { stateStorage } from './stateStorage';
 import { reminderScheduler } from '../lib/reminderRuntime';
 
 const asyncStorage: StateStorage = {
@@ -18,7 +19,7 @@ const asyncStorage: StateStorage = {
 
 export const metaStore = createMetaStore(asyncStorage);
 
-export const useAppStore = createAppStore(asyncStorage, {
+export const useAppStore = createAppStore(stateStorage, {
   newId: () => Crypto.randomUUID(),
   today: todayISO,
   reload: () => DevSettings.reload(),

@@ -76,6 +76,15 @@
 
 ## Physical-device verification
 
+- **P29-Q:** verify migration from existing AsyncStorage to SQLite, a full
+  200-year and daily-SIP fixture load, Undo, cold hydration, write latency,
+  selector responsiveness and available device storage on iOS and Android.
+  The SQLite adapter and loader are implemented; Node SQLite-memory timings
+  are not native bridge, disk, device-memory or physical-render measurements.
+  The 50-year serialized AppData value remains above the 1.5 MB target. The
+  installed SQLite adapter has no app-level per-value guard, but physical
+  device capacity remains unverified.
+  Details and import limits are in [PROGRESS.md](../PROGRESS.md).
 - **P29-N:** verify the first-launch prompt after unlock, Not now/Close/
   backdrop/Android-back persistence, granted/denied/blocked permission flows,
   Reminders menu reachability and 1.3/2.0 font-scale layout on iOS and Android.
@@ -151,6 +160,10 @@
   contain rate or maturity fields. No new fields were introduced; Fixed
   deposits use their opening amount, recorded valuation and withdrawal for
   maturity payout.
+- **Assumed for P29-Q:** Expo SQLite's installed `SQLiteStorage` key-value
+  adapter accepts each measured state value because it contains no
+  app-level per-value cap; native SQLite/device storage limits and capacity
+  remain subject to device verification.
 - AI guidance is maintained only in the root `AGENTS.md`; no tool-specific
   instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but
