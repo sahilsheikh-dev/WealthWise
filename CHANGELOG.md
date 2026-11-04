@@ -67,6 +67,10 @@
   settled, and all premium-due surfaces share the same schedule derivation.
   Schema v18 migrates v17 FIFO matches without changing existing schedule
   output; payment and linked transaction remain one-write and one-Undo actions.
+- P29-O Step 1 inventories the current split manual/plan holding models,
+  calculation and schedule behavior, and connected UI/domain/test surfaces.
+  The report-only inventory is committed before the approved schema-v19
+  unified-ledger implementation.
 
 ### Investments and goals
 

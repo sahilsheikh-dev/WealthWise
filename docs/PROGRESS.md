@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (94/97)
+Overall progress ██████████ 96% (94/98)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (18/18)
+Phase 29         █████████░ 95% (18/19)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -186,6 +186,7 @@ Phase 29         ██████████ 100% (18/18)
 | P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
+| P29-O | — | Inventory committed; implementation pending | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; owner approved schema v19 and the unified asset ledger/valuation design. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2815,6 +2816,7 @@ evidence present in exports/checkpoints.
 | P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Superseded by P29-M2 after the owner authorized schema v18 and froze the dueDate migration rule. The original store reproduction and blocker remain recorded below. | Initial reproduction from P29-M; supersession and implementation evidence recorded in P29-M2. | Assumed: P29-M's no-schema-change constraint was superseded only by the explicit P29-M2 authorization. | current request |
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
+| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7274,3 +7276,122 @@ Physical-device checks remain unverified: native notification/reminder actions
 and dialogs across all five entry points, early/on-time/late payment behavior,
 Undo interaction, schedule edits, month-boundary timing, and font-scale/native
 presentation on iOS and Android. See `docs/memory/open-items.md`.
+
+### DEC-P29O-LEDGER-INVENTORY — Step 1 report-only inventory (2026-11-04)
+
+This inventory was committed before any P29-O source or behavior changes.
+Preflight was clean at `682e0b36a92cfc6a8e68235d2ea0ef57e9bb2a7c` on Node
+26.13.0. The installed app schema is v18 (`SCHEMA_VERSION` in
+`src/domain/schemas.ts`); the root `AGENTS.md` incorrectly said v17, corrected
+in the inventory commit. The owner has authorized the next schema version,
+v19. No holding model, runtime behavior, Home or Budget screen changed in
+Step 1.
+
+#### Existing model and calculations
+
+The persisted `Holding` union in `src/domain/types.ts` has two different shapes:
+
+| Kind | Stored shape | Current entry/schedule semantics |
+|---|---|---|
+| `manual` | `invested`, `value`, optional `valueAsOf`, `logs[]` | Opening capital and current valuation are separate scalar fields; entries are Deposit/Withdrawal. Fixed deposit cannot accept new deposits or recurring schedules, but can receive a maturity Withdrawal. |
+| `plan` | `frequency`, `amount`, `ratePct`, `stepUpPct`, `tenureYears`, `startDate`, `trackFrom`, `opening`, nullable `actualValue`/`actualValueDate`, `logs[]` | Opening capital and recurring-plan configuration are separate from logs; schedule and value snapshot are independent fields. `holdingCapabilities(type).recurring` gates plan creation. |
+
+`InvestmentEntry` currently stores `id`, `date`, `amount`, `note`, `kind`
+(`Deposit`/`Withdrawal`) and optional `snapshotAdjustment`. It has no slot date,
+price, units, value-update kind, opening-entry identity or direct transaction
+ID. Transactions instead point back through
+`source: { kind: 'holding-entry', parentId, entryId }`.
+Budget links are separate `BudgetItem.holdingId` values.
+
+Current formula locations:
+
+- `src/domain/portfolio.ts`: manual invested = opening `invested` + log
+  deposits; plan invested delegates to `planInvested` = `opening` + log
+  deposits. Withdrawals do not reduce either invested number today.
+- `src/domain/portfolio.ts` and `src/domain/sip.ts`: manual value uses the
+  stored `value` when `valueAsOf` exists, otherwise the `invested` opening;
+  it adds/subtracts dated logs after that snapshot through `asOf`, and floors
+  at zero. Plan value uses `actualValue` (or `opening`) and dated logs after
+  its snapshot through `asOf`, also floored at zero. No rate-based interest
+  is currently estimated in either selector.
+- `src/domain/investmentReturns.ts`: returns use opening amount plus all
+  deposits as contributions; withdrawals are counted in gain but not deducted
+  from contributions. The shared P29-A helper computes gain, absolute return,
+  XIRR/CAGR and annualization span. `src/domain/portfolio.ts` suppresses
+  return percentages for Cash and Savings account by capabilities.
+- `src/domain/summary.ts`: net-worth assets sum `holdingValue`; liabilities
+  are subtracted afterward. `src/domain/goalLinks.ts` uses
+  `holdingValue`/`holdingInvested` for holdings linked to goals; Emergency
+  Fund is the auto-goal and uses the same full linked values.
+- `src/domain/budget.ts` uses `planSchedule` for linked recurring rows,
+  commitments and category actual/planned derivation. `holdingId` links at
+  most one Budget item to a recurring-capable holding. EF bucket available
+  amounts are derived from linked holdings by `holdingValue` in
+  `app/emergency-fund.tsx`; the allocation editor also shows `holdingValue`.
+
+#### Schedule matching today
+
+`src/domain/schedule.ts` generates plan slots with IDs `plan:<index>` from
+`startDate`/frequency/tenure and begins at the first scheduled index on or
+after `trackFrom`. It filters logs to Deposits dated on/after `trackFrom` and
+on/before `asOf`, sorts them by date then ID through `matchEntriesFIFO`, and
+assigns them in order to schedule slots. A deposit has no stored slot identity:
+an early deposit consumes the oldest slot, even if it was intended for a
+later one; withdrawals are not schedule payments. `planNextRows` similarly
+counts tracked deposits to find the next unpaid slot. The existing policy
+schedule is separate and its P29-M2 `dueDate` slot identity applies only to
+insurance payments.
+
+#### UI, routes, actions and selectors
+
+| Surface | Current route/files | Current behavior/dependency |
+|---|---|---|
+| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual actions Deposit/Withdraw/Entries/Edit/Confirm; plan actions Log installment/Withdraw/Schedule. Cards display invested/value/gain/return and, for plans, projection, logged count, schedule and due status. |
+| Holding form | `/investment-form` (`app/investment-form.tsx`) | Segments into recurring PlanEditor and one-time ManualEditor. Plan stores schedule/rate/step-up/opening/optional actual value; manual stores invested/value/valueAsOf. Type controls use `holdingCapabilities`. |
+| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | Plan-capable holdings can switch between Schedule and Entries. Entry totals include Invested, Current value, Total deposits, and Withdrawn; plan Schedule uses `planSchedule`. |
+| Entry form | `/investment-entry-form` (`app/investment-entry-form.tsx`) | Adds/edits/deletes Deposit or Withdrawal; a selected due row supplies date/amount, but not a persisted slot date. Linked transaction is edited/deleted with its entry. |
+| Due/payment routes | `/clear-dues`, `/payment-confirm`, `app/(tabs)/transactions.tsx`, Home (user-owned read-only), `app/reminders.tsx` | Plan rows flow through `planSchedule` to pending dues, pending items, reminder planning and payment actions. Clearing uses plan slot ID but currently creates an entry without due-slot identity. Home and Transactions consume shared due selectors. |
+| Transaction entry/form | `app/transaction-form.tsx`, `src/domain/links.ts` | Investment transactions can be linked to an instrument/holding; linked transactions navigate to `/investment-entries`. Entry transaction source fields link each transaction to the owning holding entry. |
+| Budget linked plan | `app/budget-item-form.tsx`, `app/(tabs)/budget.tsx`, `src/domain/budget.ts` | One Budget item may link to a recurring-capable holding; its amount, due month/day and recurring actual/planned rows derive from the plan schedule. Deleting a holding clears those links. |
+| Goals | `app/(tabs)/goals.tsx`, `/goal-form` (`app/goal-form.tsx`), `src/domain/goalLinks.ts`, `src/domain/goals.ts` | Linkable holdings use the same value/invested selectors. Full current asset value is counted for every linked goal; shared-goal note derives from link count. Plan projection separately reads plan rate, frequency and tenure. |
+| Emergency Fund | `/emergency-fund`, `/ef-allocation-form` | EF goal saved amount and each bucket's available amount use linked holding values. Bucket links are persisted separately in `efBucketLinks`; link integrity is checked with goal links. |
+| Net worth/Home | `src/domain/summary.ts`; `app/(tabs)/index.tsx` (read-only) | `netWorth` and Home summary delegate asset totals to `holdingValue`; Home Upcoming uses shared pending due selectors. Home source remains user-owned. |
+| Persistence/migration/backup | `src/data/createAppStore.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts` | Store actions wrap domain actions; schema v18 validates the two holding variants and their entries. Existing migration chain is v1-v18 and backup import migrates older versions. Safe storage archives raw bytes under `.premigration.v<N>` and erase-all removes version archives. |
+
+Store/domain action inventory: `addHolding`, `updateHolding`,
+`confirmHoldingValue`, `deleteHolding` in `src/domain/holdingActions.ts`;
+`addPlan`, `updatePlan`, `deletePlan` in `src/domain/planActions.ts`;
+`addInvestmentEntry`, `updateInvestmentEntry`, `deleteInvestmentEntry`,
+`deleteHoldingWithTransactions` and transaction synchronization in
+`src/domain/investmentActions.ts`; and `clearDue`/clear-through/past-due
+operations in `src/domain/dues.ts`. `src/data/createAppStore.ts` exposes the
+corresponding UI actions and applies them through the app store.
+
+#### Current test and fixture surfaces
+
+The holding/ledger dependency tests are in
+`src/domain/__tests__/{investmentActions,investmentReturns,sip,schedule,dues,pending,budget,goalLinks,holdingCapabilities,instrumentCard,instruments,selectors,efAllocation,efAllocationCustom,reminders,schemas,backup}.test.ts`,
+`src/data/__tests__/{createAppStore,migrate,phase5Store,migrateV4}.test.ts`,
+`src/components/__tests__/{InstrumentCard,EmergencyGoalScreens,RouteRenderSmoke,TransactionForm}.test.tsx`,
+and `src/mock/__tests__/{data,demoData}.test.ts`. The old model and calculations
+are exercised across individual domain contracts, store persistence/Undo,
+screen summaries, backups/migrations, link integrity and demo data.
+
+Fixtures exist in `src/mock/data.ts` (three manual and one plan holding, with
+dated plan logs and an actual-value snapshot), `src/mock/demoData.ts` (generated
+manual and plan holdings, linked Budget/goal/EF examples), and legacy
+`src/data/testFixtures/v1.ts`, `v9.ts`, `v10.ts`, `v11.ts`, and `v12.ts`.
+Migration and backup tests also contain inline schema-v13-v17 fixtures. These
+are the required equivalence set for old-versus-new values/net worth before
+the migration is accepted.
+
+#### Decisions for following implementation step
+
+The owner-approved unified model is recorded for implementation under
+P29-O: one entry ledger for every holding, opening Deposit entry, valueUpdate
+delta entries, optional recurring schedule, slotDate-based due settlement,
+per-type valuation methods, and rate-compound estimates with confirmation.
+Schema v19 is authorized. The six required gates, P29-A return rules, current
+`holdingCapabilities` matrix, transaction links, Budget/goal/EF links and
+offline-only pricing remain constraints. No source behavior or existing
+assertion has been changed in this report-only step.
