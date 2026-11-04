@@ -969,6 +969,28 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it.each([
+    ['denied', 'Notification permission was not granted. Reminders remain off.'],
+    ['blocked', 'Allow notifications in system settings to turn reminders on.'],
+  ])('shows the existing %s permission fix message after prompt setup', async (setup, message) => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    routeParams.mockReturnValue({ setup });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<RemindersScreen />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      if (!renderer) throw new Error('Reminders renderer was not created.');
+      expect(renderer.root.findAllByType('text')
+        .some((node) => node.children.join('') === message)).toBe(true);
+    } finally {
+      act(() => renderer?.unmount());
+      routeParams.mockReturnValue({});
+    }
+  });
+
   it('renders each route form with representative create and edit entry params', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const storeState = useAppStore((state) => state);
@@ -2713,8 +2735,9 @@ describe('route render smoke audit', () => {
         expect.objectContaining({ borderBottomWidth: 1 }),
       ]));
 
-      expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
-        .toBeGreaterThan(0);
+      expect(renderer.root.findAll((node) =>
+        node.findAllByType('text').some((text) => text.children.join(' ').startsWith('Review ')),
+      )).toHaveLength(0);
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
       expect(renderer.root.findAll((node) =>

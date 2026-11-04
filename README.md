@@ -24,7 +24,8 @@ no cloud or network requests at runtime.
 - Home overview of net worth, account balances, emergency-fund progress,
   Insurance cover and scheduled dues.
 - Income, expense and investment transactions, with linked holding and policy
-  entries where supported.
+  entries where supported. Transactions keeps month selection and cash-flow
+  balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
 - Monthly budgets with spend/invest sections, income entries, recurring item
@@ -37,7 +38,9 @@ no cloud or network requests at runtime.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
 - Local payment reminders with privacy-aware notification text and an
-  in-app paid/not-paid confirmation route.
+  in-app paid/not-paid confirmation route. A one-time in-app prompt offers
+  setup after unlock; system permission is requested only after choosing
+  Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
 
 ## Screenshots
