@@ -8480,3 +8480,36 @@ confirmation flows, same-write Undo, schedule/pending/Budget/reminder removal,
 Closed filtering, read-only closed-loan payment/schedule rows, note-only
 editing/deletion and font scales 1.3 and 2.0.
 Native SQLite v19-to-v20 archive/restart behavior also remains unverified.
+
+### P29-X STEP 1 — recurring investment stop inventory (2026-11-05)
+
+#### DEC-P29X-PLAN-STOP-INVENTORY
+
+Report-only inventory; no recurring-plan product data or behavior changed.
+`PlanHolding` currently owns `startDate`, `trackFrom`, `tenureYears`, `frequency`,
+`amount`, `stepUpPct`, `logs`, opening/current value and valuation metadata. It
+has no stop date. The next persisted schema version is therefore v21, and the
+planned additive field is `PlanHolding.stopDate?: ISODate`.
+
+| Area | Existing implementation | P29-X implication |
+|---|---|---|
+| Plan schedule | `src/domain/schedule.ts` `planSchedule()` generates calendar slots with `scheduledDate()` and `totalPeriods()` from SIP frequency, tenure and start date; `firstPlanIndex()` clips to `trackFrom`; slots are matched FIFO against `Deposit` entries dated at or before `asOf`. Entries dated after the valuation date retain existing behavior. | The stop must cut slots after `stopDate`, but preserve every slot on or before it, including unpaid overdue/ongoing rows. It must be applied centrally in `planRows()` and `planNextRows()` so all consumers stay identical. Resume removes the field and restores the next due after today, without changing entries/value. |
+| Tenure | `src/domain/sip.ts` `totalPeriods()` calculates frequency × tenure years. `projection()` also loops the full tenure without a stop cutoff. `planProgressPct()` uses that original tenure contribution total. | Stop does not rewrite tenure, opening, entries or valuation fields; it only cuts displayed/derived future schedule occurrences. Separate goal projection use will be reviewed so stopped plans do not silently continue deposits after the cutoff. |
+| Pending dues and Home | `src/domain/pending.ts` calls `planSchedule(plan, today)` and emits unpaid rows for `Transactions` and the shared pending/Home surface. | A schedule cutoff based on `stopDate` automatically removes post-stop rows because pending derives them from the shared schedule. No separate Home edit is required and the user-owned Home file remains unchanged. |
+| Budget linked rows | `src/domain/budget.ts` calls the same `planSchedule()` for `linkedRecurringForMonth()` and applies matching schedule rows to planned linked investment amounts. | Shared schedule cutoff removes post-stop planned rows; paid/posted due behavior remains unchanged. Budget cache keys include plan identity and date but the schedule itself reads the plan field, so stopping/resuming invalidates values through existing data updates. |
+| Reminders | `src/domain/reminders.ts` gets active schedule rows through `createPendingItemsReader()` and its search horizon currently extends plans to `startDate + tenureYears × 12` regardless of schedule contents. `pending.ts` remains the actual reminder row source. | Post-stop rows disappear through pending data; reminder horizon may still search a historical stopped plan, but no reminder item is emitted unless pending emits one. |
+| Goal saved value and EF | `src/domain/goals.ts`/`goalLinks.ts` link by instrument ID; plan saved contributions use current plan/holding value and `planValue()` rather than mutating entry history. EF uses linked holding values through the shared asset link calculation. | Stop/resume must not create entries, adjust opening, value snapshots or linked transaction records; goal and EF current amounts therefore remain unchanged. Future plan goal simulation currently treats plans as active through tenure and must use the stop date as an injected schedule cutoff rather than treating the stopped plan as continuously contributing. |
+| Card/screen/actions | `app/assets.tsx` derives each plan card status/progress from `planSchedule()` and card model `src/domain/instrumentCard.ts` marks completed plans. `app/investment-entries.tsx` owns the in-holding `Recurring plan` section, Deposit/Withdraw/Entries actions, next-due text, clear-dues and Edit actions. | P29-X adds Stop/Resume controls to this existing section and card text. Deposit remains available because stop is schedule state, not an entry deletion or valuation change. Fixed-deposit capability already yields no plan schedule and stays outside the recurring action scope. |
+| Store actions | `src/domain/planActions.ts` edits/deletes plans through `updatePlan()` and `deletePlan()`; there is no stop/resume action. Entry actions in `src/domain/investmentActions.ts` update logs and linked transactions in the same store write and Undo history. | Stop/resume should be pure domain plan mutations or a shared holding action that patches only `stopDate`, performed by one Zustand store set; Undo restores the prior plan object. No entries/value/transactions are changed. |
+| Transaction matching | `planSchedule()` matches deposits FIFO within scheduled slots and does not distinguish logs by `slotDate` for plan holdings. `installment` and entry actions use the existing due matching for logging. | A stop only cuts the schedule; past unpaid dues stay actionable and remain matchable after stop. The existing FIFO rule determines which deposits settle which unpaid slot. |
+
+Assumed: `stopDate` is the inclusive last scheduled date/range boundary; due
+rows whose `dueDate <= stopDate` remain, and rows after the date are removed.
+`last paid entry` means the latest date of a matching paid `Deposit` entry, not
+the latest raw entry date; the stop form validates stop date against that value,
+and against today's date. Assumed: an optional stop confirmation note is
+non-persisted UI copy because schema change is limited to one additive optional
+`stopDate` field. Assumed: resume restores the original tenure schedule after
+removing `stopDate`, with unpaid overdue dues before today remaining and future
+rows starting at the next due on or after tomorrow, not recreating/resorting
+entries.
