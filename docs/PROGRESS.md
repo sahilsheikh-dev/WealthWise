@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 95% (96/101)
+Overall progress ██████████ 95% (97/102)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 91% (20/22)
+Phase 29         █████████░ 91% (21/23)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -190,6 +190,7 @@ Phase 29         █████████░ 91% (20/22)
 | P29-O1 | P29-O | Done | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
 | P29-O2 | — | In progress | Schema v19 unified ledger, migration and valuation fields; staged adapter transition in progress. | 2026-11-04 |
 | P29-Q | — | Done | Owner-approved Expo SQLite native persistence, lazy legacy AsyncStorage migration, seeded stress loader with Undo, measured selector optimizations and five-sample Node benchmarks; no AppData schema change. Device checks remain open. | 2026-11-04 |
+| P29-R | — | Done | The local schema-v13 backup passed through the real v13-to-v18 backup import pipeline; anonymized pre/post comparisons found no differences in holding, goal, net-worth, liability, pending-due or reminder outputs. The backup remains outside the repository. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2821,6 +2822,8 @@ evidence present in exports/checkpoints.
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
 | P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
 | P29-Q | Phase 29 | — | — | 2026-11-04 | Measure persistence and performance for seeded 50-, 100- and 200-year app datasets; load them from the dev menu with Undo and report build/save/render timing. | Done after the owner approved Expo SQLite. Native AppData now uses Expo SQLite's key-value adapter with lazy legacy AsyncStorage migration; the stress loader uses replace/Undo. Normal 200-year hydration and single-write targets pass in Node; the measured 50-year size still exceeds 1.5 MB. No AppData schema change. | Installed AsyncStorage and Expo SQLite package inspection; five-sample benchmark tables, focused behavior tests and six final gates recorded below. Native-device checks remain unverified. | DEC-P29Q-STORAGE-STOP (historical stop point), DEC-P29Q-SQLITE-APPROVAL. Assumed: each tier spans `years × 12` calendar months including injected today; 25 transactions and 12 monthly holding entries per month; five samples use the same seeded payload. Assumed: `SQLiteStorage` has no app-level per-value cap based on the installed source; actual native SQLite/device capacity needs device validation. | current request |
+
+| P29-R | Phase 29 | — | — | 2026-11-05 | Dry-run every supported migration on the owner's local backup using the production import pipeline; compare all requested summaries without copying the backup into the repository or printing personal text. | Done; schema v13 migrated to v18 and the anonymized comparison found no differences in holding invested/current values, net worth/assets, Emergency fund, all goal saved amounts, liabilities, counts, pending dues or reminder preview. `scripts/dryRunMigration.ts` is committed; the backup was not copied or modified. | TypeScript, lint, Expo Doctor, Android export and iOS export exit 0. Full Jest tests pass, but coverage exits 1 because the unchanged `src/domain/schemas.ts` branch coverage is 89.41% against its 90% configured threshold. | DEC-P29R-BACKUP-DRY-RUN. Assumed: reminder preview uses enabled/day-before/same-day, 09:00, amounts hidden, because reminder preferences are not included in backups. Before-state comparison validates source AppData without migration; after-state uses `parseBackup` and its complete migration/validation pipeline. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7769,6 +7772,35 @@ Assertion replacements and rationale:
 
 No assertion was removed or weakened. The current directory and schema state
 was verified at v18; P29-Q makes no AppData schema change.
+
+### DEC-P29R-BACKUP-DRY-RUN — privacy-safe comparison through schema v18 (2026-11-05)
+
+**Decision:** the requested backup comparison runs through `parseBackup`, so
+checksum validation, the ordered migration chain and final import validation
+are the same as production. The source schema-v13 AppData is separately
+validated for its pre-migration baseline; the comparison includes holdings,
+net worth/assets, Emergency fund, every goal's saved amount, liabilities,
+record counts, pending dues and planned reminders. Output uses numbered
+holdings/goals and omits names, notes, descriptions, IDs and other personal
+text. The backup is read directly from its external path and is not copied into
+the repository.
+
+The real local schema-v13 backup migrated successfully to v18. No differences
+were found in any measured selector output. The final run was as of
+2026-11-05. Reminder preferences are metadata
+and are absent from backup files. **Assumed:** the reminder-plan comparison
+uses enabled reminders, both day-before and same-day, 09:00 local time, and
+hidden amounts; it is a reproducible preview, not a claim about the owner's
+configured preferences. #### P29-R ordered gates
+
+| Gate | Command | Exit code | Result |
+|---|---|---:|---|
+| 1 | `npm test -- --coverage` | 1 | 92 suites and 1148 tests passed; Jest exits 1 because unchanged `src/domain/schemas.ts` branch coverage is 89.41%, below its configured 90% threshold. No assertion was weakened. |
+| 2 | `npx tsc --noEmit` | 0 | Pass |
+| 3 | `npx expo lint` | 0 | Pass |
+| 4 | `npx expo-doctor` | 0 | 21/21 checks pass |
+| 5 | `npx expo export --platform android` | 0 | Pass |
+| 6 | `npx expo export --platform ios` | 0 | Pass |
 
 ### DEC-P29Q-SQLITE-APPROVAL — approved storage and benchmark follow-through (2026-11-04)
 

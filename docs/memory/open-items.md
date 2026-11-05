@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -82,6 +82,20 @@
 - The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
   and screenshots complete. The slug was confirmed by the owner and was not
   changed.
+
+## Recent completed validation
+
+- **P29-R:** the external schema-v13 backup migrated through the production
+  import path to v18 with no differences in the requested before/after
+  summaries. The script prints only numbered holdings/goals, types, and
+  calculated values; the backup and personal text remain outside Git. Reminder
+  preferences are not in the backup, so the recorded preview uses enabled
+  day-before and same-day reminders at 09:00 with amounts hidden. Details are
+  in [PROGRESS.md](../PROGRESS.md). All six ordered gates were run: TypeScript,
+  lint, Doctor and both platform exports pass; 92 suites/1148 tests pass, but
+  coverage exits 1 because the unchanged `src/domain/schemas.ts` branch
+  coverage is 89.41%, below its configured 90% threshold. No assertion was
+  weakened.
 
 ## Physical-device verification
 
