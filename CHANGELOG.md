@@ -6,6 +6,12 @@
 
 ### Phase 29
 
+- Holding and liability details now use owner-preserved compact layouts. The
+  investment Summary card combines recurring-plan and financial details into
+  two columns where appropriate, while liability cards expose Pay EMI, Close
+  loan early and conditional Entries buttons in one row. Liability entries
+  retain a columned asset-style Summary and remove the old Schedule/Payments
+  tabs and sort/filter controls.
 - The owner-edited holding details layout keeps Recurring plan details and
   financial Summary values in one card, with Stop/Resume in the holding action
   row. Removed unwanted screen controls and data remain removed; route smoke

@@ -2,7 +2,8 @@
 
 # Status
 
-- Current task: P29-Y Gate 1 repair complete; P29-X stop/resume implementation
+- Current task: owner holding and liability layout refinements complete.
+  P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
   The recurring plan details and financial Summary now share one card on the
   investment entries screen; Stop/Resume is in the holding action row above the

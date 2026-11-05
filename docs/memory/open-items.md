@@ -4,6 +4,11 @@
 
 ## Unresolved
 
+- **Holding and liability layout physical-device check (2026-11-05):** verify
+  the two-column investment Summary, same-row liability actions, conditional
+  Entries button and liability Summary/details layout at font scales 1.3 and
+  2.0 on iOS and Android. Automated route, ownership and focused font-scale
+  tests pass, and all six gates exit 0.
 - **Holding layout validation (2026-11-05):** the owner-edited holding screen
   passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
   are green: 92 suites passed, with 1191 tests passed and 1 skipped.
