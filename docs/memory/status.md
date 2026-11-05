@@ -4,6 +4,9 @@
 
 - Current task: P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
+  The recurring plan details and financial Summary now share one card on the
+  investment entries screen; Stop/Resume is the footer action, with Entries and
+  Edit recurring plan controls retained.
   Schema v21 stores one optional `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,

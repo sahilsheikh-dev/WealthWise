@@ -4,6 +4,9 @@
 
 ## Unresolved
 
+- **Merged holding summary card physical-device check:** verify the Recurring
+  plan and Summary information remain readable in one card and Stop/Resume stays
+  at the bottom at font scales 1.3 and 2.0 on iOS and Android.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
   passed tests with `1` skipped. The project inventory, status memory and
