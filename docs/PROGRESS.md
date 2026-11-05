@@ -8513,3 +8513,44 @@ non-persisted UI copy because schema change is limited to one additive optional
 removing `stopDate`, with unpaid overdue dues before today remaining and future
 rows starting at the next due on or after tomorrow, not recreating/resorting
 entries.
+
+## P29-X implementation record
+
+| Item | Status | Evidence |
+|---|---|---|
+| P29-X Step 1 | Done | Report-only inventory committed first as `a4a47e63515c90a61903322ae73fe55fa40bf4b8`; schedule, dues, Budget, reminders, goals, card and store paths were inventoried before product edits. |
+| P29-X schema | Done | Schema v21 adds optional `PlanHolding.stopDate`; migration from v20 is identity-preserving and the existing premigration archive supports `.premigration.v20`. |
+| P29-X stop/resume behavior | Done | Pure `stopPlan()` and `resumePlan()` mutations plus one-write store Undo actions. `planSchedule()` and `planNextRows()` apply the inclusive cutoff; goal projections stop future contributions. |
+| P29-X UI | Done | Recurring-plan section has Stop recurring / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
+| P29-X verification | Done | Focused schedule/store tests passed; all six ordered gates passed before implementation commit. |
+
+P29-X final verification:
+
+| Gate | Exit code | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 92 suites passed; 1191 tests passed, 1 skipped. |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed with zero warnings. |
+| `npx expo-doctor` | 0 | 21/21 checks passed. |
+| `npx expo export --platform android` | 0 | Passed. |
+| `npx expo export --platform ios` | 0 | Passed. |
+
+Fresh coverage method: regenerated `coverage/coverage-final.json` during the
+final Gate 1 and summed istanbul `lines`/`branches` coverage by immediate
+`src/<directory>` group. No comparison to historical reports was made:
+`src/data` 728/772 lines (94.30%), 748/851 branches (87.90%);
+`src/domain` 3533/3592 lines (98.36%), 3467/3733 branches (92.87%);
+`src/lib` 107/107 lines (100.00%), 126/126 branches (100.00%).
+
+DEC-P29X-PLAN-STOP-CUTOFF: the optional `stopDate` is an inclusive date
+boundary. Rows with due dates on or before it remain, including past unpaid
+rows; later rows are removed from schedule-derived surfaces. `resumePlan`
+removes the field without changing entries, value, returns, transactions or
+links. Assumed: the owner may stop only on or after the latest deposit entry
+date and no later than today; resume restores future schedule rows from the
+original tenure without rewriting historical entries.
+
+Old assertion / replaced assertion / reason: plan schedules always span the
+full remaining tenure / stopped plans span only dues on or before `stopDate`
+/ `stopDate` must suppress all future schedule occurrences without changing
+stored entries or valuation.

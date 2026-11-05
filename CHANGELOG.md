@@ -6,6 +6,12 @@
 
 ### Phase 29
 
+- P29-X adds recurring-plan stop and resume controls. An inclusive optional
+  stop date removes only schedule slots after the cutoff from Transactions,
+  Home pending dues, Budget planned rows and reminders; past unpaid dues remain
+  actionable. One write and Undo preserve entries, value, returns and links.
+  Schema v21 adds the optional stop-date field with an identity-preserving
+  migration and v20 raw-byte archive support.
 - P29-U adds optional holding valuation methods on schema v19: configured
   accrual estimates, manually entered unit prices, confirmed values and a
   default-off monthly update reminder. Unconfigured holdings retain legacy

@@ -83,6 +83,7 @@ const planHoldingSchema = z.strictObject({
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
   tenureYears: z.number().int().min(1).max(100), startDate: dateSchema, trackFrom: dateSchema,
   opening: money, actualValue: money.nullable(), actualValueDate: dateSchema.nullable(),
+  stopDate: dateSchema.optional(),
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const liabilityCommon = {
