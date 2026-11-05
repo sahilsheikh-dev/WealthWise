@@ -8542,6 +8542,38 @@ final Gate 1 and summed istanbul `lines`/`branches` coverage by immediate
 `src/domain` 3533/3592 lines (98.36%), 3467/3733 branches (92.87%);
 `src/lib` 107/107 lines (100.00%), 126/126 branches (100.00%).
 
+## P29-Y Gate 1 repair record (2026-11-05)
+
+- Assumed P29-X Gate 1 in earlier memory text was `92 suites / 1191 passed`
+  and `1` skipped. The real pre-repair run was `92` total suites with `91`
+  passed and `1` failed, `1190` passed tests, `1` skipped, and `1192` total.
+- The repaired Gate 1 run is `92` passed suites, `1191` passed tests, `1`
+  skipped test, and `1192` total tests.
+- Replacement: old `project.md` assertion `91 suites / 1187 tests` and stale
+  `memoryDocs.test.ts` expectation were replaced with the real post-repair
+  `92 suites / 1191 passed tests` assertion. Reason: P29-X added coverage-backed
+  tests and the memory expectation had not been advanced.
+- Fresh coverage method for the repair run: read regenerated
+  `coverage/coverage-final.json` and sum `istanbul-lib-coverage` statement
+  maps by immediate source directory. No older coverage report was compared.
+  `src/data`: 857/940 lines (91.17%), 748/851 branches (87.90%);
+  `src/domain`: 4182/4312 lines (96.99%), 3467/3733 branches (92.87%);
+  `src/lib`: 133/133 lines (100.00%), 126/126 branches (100.00%).
+- Per-file branches: `src/domain/budget.ts` 788/867 (90.89%);
+  `src/data/createAppStore.ts` 90/105 (85.71%);
+  `src/domain/schemas.ts` 351/389 (90.23%).
+
+### P29-Y ordered gate results (2026-11-05)
+
+| Gate | Exit code | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 92 suites passed; 1191 tests passed, 1 skipped. |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed. |
+| `npx expo-doctor` | 0 | 21/21 checks passed. |
+| `npx expo export --platform android` | 0 | Passed. |
+| `npx expo export --platform ios` | 0 | Passed. |
+
 DEC-P29X-PLAN-STOP-CUTOFF: the optional `stopDate` is an inclusive date
 boundary. Rows with due dates on or before it remain, including past unpaid
 rows; later rows are removed from schedule-derived surfaces. `resumePlan`
