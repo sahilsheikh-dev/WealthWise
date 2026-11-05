@@ -129,6 +129,7 @@ export type PlanHolding = {
   opening: number;
   actualValue: number | null;
   actualValueDate: ISODate | null;
+  stopDate?: ISODate;
   logs: InvestmentEntry[];
 } & HoldingValuation;
 

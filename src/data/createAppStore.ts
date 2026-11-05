@@ -5,7 +5,7 @@ import {
   addTransaction, completeOnboarding, deleteTransaction, emptyAppData, updateSettings, updateTransaction,
 } from '../domain/actions';
 import {
-  addPlan, deletePlan, updatePlan,
+  addPlan, deletePlan, updatePlan, stopPlan, resumePlan,
   type AddPlanInput, type PlanPatch,
 } from '../domain/planActions';
 import {
@@ -130,6 +130,8 @@ export type AppActions = {
   createMissingTransactions: () => void;
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
+  stopPlan: (id: string, stopDate: ISODate) => void;
+  resumePlan: (id: string) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
@@ -381,6 +383,12 @@ export function createAppStore(
         },
         updatePlan(id, patch) {
           applyDataAction((data) => updatePlan(data, id, patch));
+        },
+        stopPlan(id, stopDate) {
+          applyDataActionWithUndo((data) => stopPlan(data, id, stopDate, deps.today()), 'Recurring plan stopped.');
+        },
+        resumePlan(id) {
+          applyDataActionWithUndo((data) => resumePlan(data, id), 'Recurring plan resumed.');
         },
         deletePlan(id, options) {
           applyDataAction((data) => deletePlan(data, id, options));
@@ -748,6 +756,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v17`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v19`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v20`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

@@ -11,7 +11,7 @@ runtime synchronization.
   migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v20 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v21 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains
@@ -29,6 +29,9 @@ runtime synchronization.
 - P29-W adds an optional closure record for recurring liabilities; closures
   retain their dated linked payment, suppress later shared dues and support
   note-only edits after closure.
+- P29-X adds an optional recurring-plan stop date; schedule slots after the
+  inclusive cutoff are removed from shared projections while entries, value,
+  returns, goal links and Emergency Fund links remain unchanged.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.

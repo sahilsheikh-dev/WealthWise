@@ -4,6 +4,13 @@
 
 ## Unresolved
 
+- **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
+  stop-date filtering, stopped card text, past unpaid dues, Deposit
+  availability and one-write Undo at font scales 1.3 and 2.0 on iOS and Android.
+  Confirm the v20-to-v21 archive and restart behavior on native SQLite.
+- **P29-X assumption:** `stopDate` is the last inclusive scheduled date. Resume
+  removes the field; it restores schedule rows without rewriting entries or
+  linked transactions.
 - **P29-W physical-device checks:** verify closure-date selection and
   outstanding recalculation, overpayment/shortfall confirmations, one-write
   Undo, future-due removal, Closed filtering, read-only payment/schedule rows,

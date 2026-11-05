@@ -16,7 +16,24 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 21;
+
+export function makeStopRecurringFormSchema(
+  today: ISODate,
+  logs: { date: ISODate; kind: 'Deposit' | 'Withdrawal' }[],
+) {
+  const lastPaidDate = logs
+    .filter((entry) => entry.kind === 'Deposit')
+    .map((entry) => entry.date)
+    .sort()
+    .at(-1);
+  return z.object({
+    stopDate: z.string()
+      .refine((value) => isValidISO(value) && value >= '1900-01-01', 'Enter a valid stop date')
+      .refine((value) => value <= today, 'Stop date cannot be in the future')
+      .refine((value) => !lastPaidDate || value >= lastPaidDate, 'Stop date cannot be before the last paid entry'),
+  });
+}
 
 const isoDateSchema = z.string().refine(
   (value) => isValidISO(value) && value >= '1900-01-01',
@@ -113,6 +130,7 @@ export const planHoldingSchema = z.object({
   opening: moneySchema,
   actualValue: moneySchema.nullable(),
   actualValueDate: isoDateSchema.nullable(),
+  stopDate: isoDateSchema.optional(),
   logs: z.array(investmentEntrySchema),
 }).superRefine((holding, context) => {
   if (!holdingCapabilities(holding.type).recurring) {

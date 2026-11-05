@@ -18,6 +18,7 @@ import {
   migrateV17ToV18,
   migrateV18ToV19,
   migrateV19ToV20,
+  migrateV20ToV21,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -118,7 +119,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 21)).toThrow(
+    expect(() => migratePersisted({}, 22)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -177,14 +178,14 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 20)).toBe(persisted);
+    expect(migratePersisted(persisted, 21)).toBe(persisted);
   });
 
   it('migrates v18 to v19 without changing any persisted holding values', () => {
     const data = mockAppData;
     expect(migrateV18ToV19(data)).toBe(data);
     expect(migratePersisted({ data }, 18)).toEqual({ data });
-    expect(() => migratePersisted({}, 21)).toThrow(
+    expect(() => migratePersisted({}, 22)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -193,6 +194,12 @@ describe('schema migration', () => {
     const data = mockAppData;
     expect(migrateV19ToV20(data)).toBe(data);
     expect(migratePersisted({ data }, 19)).toEqual({ data });
+  });
+
+  it('migrates v20 to v21 without changing recurring-plan or holding values', () => {
+    const data = mockAppData;
+    expect(migrateV20ToV21(data)).toBe(data);
+    expect(migratePersisted({ data }, 20)).toEqual({ data });
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -234,7 +241,7 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12, { today: '2026-11-04', newId: () => 'unused' })).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 21)).toThrow(
+    expect(() => migratePersisted({}, 22)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -404,8 +411,8 @@ describe('schema migration', () => {
     });
     expect(migratePersisted({ data }, 16, { today: '2026-11-04', newId: () => 'unused' }))
       .toEqual({ data: migrated });
-    expect(() => migratePersisted(data, 21)).toThrow(
-      new PersistedVersionError(21, 'future-version'),
+    expect(() => migratePersisted(data, 22)).toThrow(
+      new PersistedVersionError(22, 'future-version'),
     );
   });
 

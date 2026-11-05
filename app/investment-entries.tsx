@@ -174,10 +174,33 @@ export default function InvestmentEntriesScreen() {
             {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} · <AmountText value={holding.amount} tier="row" /> · Next due{' '}
             {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
           </AppText>
+          {holding.stopDate ? (
+            <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
+          ) : null}
           <Button
             label="Edit recurring plan"
             icon="edit-2"
             onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
+          />
+          <Button
+            label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
+            icon={holding.stopDate ? 'play' : 'pause'}
+            onPress={() => {
+              if (holding.stopDate) {
+                void choiceAsync({
+                  title: 'Resume recurring?',
+                  message: 'This restores the plan schedule from the next due after today.',
+                  choices: [
+                    { id: 'cancel', label: 'Cancel' },
+                    { id: 'resume', label: 'Resume', destructive: false },
+                  ],
+                }).then((choice) => {
+                  if (choice === 'resume') actions.resumePlan(holding.id);
+                });
+              } else {
+                router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holding.id)}` as Href);
+              }
+            }}
           />
         </Card>
       ) : null}
