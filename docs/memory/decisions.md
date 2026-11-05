@@ -19,6 +19,7 @@ authoritative rationale and history.
 - [DEC-P29O-LEDGER-INVENTORY](../PROGRESS.md#dec-p29o-ledger-inventory--step-1-report-only-inventory)
 - [DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE](../PROGRESS.md#dec-p29s-cancel-ledger-only-storage-redesign-2026-11-05)
 - [DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT](../PROGRESS.md#dec-p29t-historical-entry-snapshot--p29-t-decision-2026-11-05)
+- [DEC-P29U-LEGACY-VALUATION-COMPAT](../PROGRESS.md#dec-p29u-legacy-valuation-compat-2026-11-05)
 - [DEC-P29Q-STORAGE-STOP](../PROGRESS.md#dec-p29q-storage-stop--measured-persistence-limit-and-proposal-2026-11-04)
 - [DEC-P29Q-SQLITE-APPROVAL](../PROGRESS.md#dec-p29q-sqlite-approval--approved-storage-and-benchmark-follow-through-2026-11-04)
 - [DEC-P29N-REMINDERS-PROMPT](../PROGRESS.md#dec-p29n-reminders-prompt)

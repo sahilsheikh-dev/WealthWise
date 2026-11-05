@@ -1920,6 +1920,53 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
   });
 
+  it('updates configured value and price snapshots in one persisted store action', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `valuation-${++id}`,
+      today: () => '2025-04-01',
+    });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addHolding({
+      name: 'Priced gold',
+      type: 'Gold',
+      invested: 0,
+      value: 0,
+      valuationMethod: 'unitsPrice',
+      latestPrice: 50,
+      priceAsOf: '2025-01-01',
+    });
+    const holding = store.getState().data.holdings.at(-1);
+    if (!holding) throw new Error('Configured holding was not created.');
+    const performOnce = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+    };
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2025-01-01',
+      amount: 5_000,
+      kind: 'Deposit',
+      note: '',
+      price: 50,
+    }));
+    expect(store.getState().data.holdings.find((item) => item.id === holding.id)?.logs[0]?.price).toBe(50);
+    performOnce(() => actions.updateHoldingPrice(holding.id, 53.2, '2025-04-01'));
+    expect(holdingValue(store.getState().data.holdings.find((item) => item.id === holding.id)!, '2025-04-01'))
+      .toBe(5_320);
+    performOnce(() => actions.updateHoldingValue(holding.id, 5_400, '2025-04-01', 'manual'));
+    const updated = store.getState().data.holdings.find((item) => item.id === holding.id);
+    if (updated?.kind !== 'manual') throw new Error('Updated holding is missing.');
+    expect(updated).toMatchObject({
+      value: 5_400,
+      valueAsOf: '2025-04-01',
+      valuationMethod: 'manual',
+    });
+  });
+
   it('creates and undoes a linked manual investment deposit in one persisted write each', async () => {
     const storage = new MemoryStorage();
     const initial = {
@@ -2853,6 +2900,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v15', 'original-v15-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v16', 'original-v16-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v17', 'original-v17-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v18', 'original-v18-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2887,6 +2935,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v15',
     'wealthwise.app.v1.premigration.v16',
     'wealthwise.app.v1.premigration.v17',
+    'wealthwise.app.v1.premigration.v18',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

@@ -32,7 +32,15 @@ import {
   type ShortfallAllocation,
   type SurplusAllocation,
 } from '../domain/cashFlow';
-import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
+import {
+  addHolding,
+  confirmHoldingValue,
+  deleteHolding,
+  updateHolding,
+  updateHoldingPrice,
+  updateHoldingValue,
+  type HoldingPatch,
+} from '../domain/holdingActions';
 import {
   addInstrumentTransaction,
   createMissingTransactions,
@@ -181,6 +189,8 @@ export type AppActions = {
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
+  updateHoldingValue: (id: string, value: number, date: ISODate, method?: Holding['valuationMethod']) => void;
+  updateHoldingPrice: (id: string, price: number, date: ISODate) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
@@ -606,6 +616,12 @@ export function createAppStore(
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
         },
+        updateHoldingValue(id, value, date, method) {
+          applyDataAction((data) => updateHoldingValue(data, id, value, date, method));
+        },
+        updateHoldingPrice(id, price, date) {
+          applyDataAction((data) => updateHoldingPrice(data, id, price, date));
+        },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
         },
@@ -720,6 +736,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v15`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v16`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v17`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

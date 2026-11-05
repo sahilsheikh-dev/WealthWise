@@ -19,6 +19,8 @@ import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
+import { valueStaleness } from '../src/domain/holdingActions';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { planSchedule } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -64,6 +66,15 @@ export default function InvestmentEntriesScreen() {
 
   const financial = holdingFinancialSummary(holding, today);
   const cashOrBank = isCashOrBankHoldingType(holding.type);
+  const method = holding.valuationMethod ?? suggestedValuationMethod(
+    holding.type,
+    holding.logs.some((entry) => entry.price !== undefined),
+    holding.ratePct,
+  );
+  const valuationDate = method === 'unitsPrice'
+    ? holding.priceAsOf
+    : holding.kind === 'plan' ? holding.actualValueDate : holding.valueAsOf;
+  const staleness = valueStaleness(valuationDate ?? undefined, today);
   const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
   const listRows: ListRow[] = [
     { rowKind: 'opening', id: `opening-${holding.id}`, amount: openingAmount },
@@ -147,6 +158,12 @@ export default function InvestmentEntriesScreen() {
           onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
         />
         <Button label="Entries" icon="list" style={styles.action} disabled />
+        <Button
+          label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
+          icon="edit-2"
+          style={styles.action}
+          onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
+        />
       </View>
       {holding.kind === 'plan' && capabilities?.recurring ? (
         <Card>
@@ -172,8 +189,15 @@ export default function InvestmentEntriesScreen() {
         <AppText
           style={styles.summaryLine}
           accessibilityLabel={`${cashOrBank ? 'Balance' : 'Current value'} ${formatAmount(financial.value, 'exact', 1)}`}>
-          {cashOrBank ? 'Balance' : 'Current value'} <AmountText value={financial.value} tier="row" />
+          {holding.valuationMethod === 'accrual' ? 'Estimated value' : cashOrBank ? 'Balance' : 'Current value'}{' '}
+          <AmountText value={financial.value} tier="row" />
         </AppText>
+        <AppText style={styles.summaryLine}>
+          {valuationDate ? `Updated ${staleness.days ?? 0} days ago` : 'Value date unknown'}
+        </AppText>
+        {(holding.valuationMethod === 'manual' || holding.valuationMethod === 'unitsPrice') && staleness.stale
+          ? <AppText style={styles.summaryLine}>Value is over 90 days old</AppText>
+          : null}
         {holdingCapabilities(holding.type).returns ? (
           <AppText style={styles.summaryLine} accessibilityLabel={`Gain ${formatAmount(financial.gain, 'exact', 1)}`}>
             {financial.gain >= 0 ? 'Gain ' : 'Loss '}
@@ -228,6 +252,7 @@ export default function InvestmentEntriesScreen() {
             >
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
+              {item.price !== undefined ? <AppText style={[typography.meta, { color: colors.text3 }]}>Price per unit {formatAmount(item.price, 'exact', 1)}</AppText> : null}
               <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
             </SharedListRow>
           );

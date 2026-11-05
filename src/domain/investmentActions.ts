@@ -5,8 +5,8 @@ import { holdingValue } from './portfolio';
 import { formatINR } from '../lib/format';
 import type { AppData, Holding, InvestmentEntry, ISODate, Transaction } from './types';
 
-export type InvestmentEntryInput = Pick<InvestmentEntry, 'date' | 'amount' | 'kind' | 'note'>;
-export type InvestmentEntryPatch = Partial<Pick<InvestmentEntry, 'date' | 'amount' | 'note'>>;
+export type InvestmentEntryInput = Pick<InvestmentEntry, 'date' | 'amount' | 'kind' | 'note'> & Pick<InvestmentEntry, 'price'>;
+export type InvestmentEntryPatch = Partial<Pick<InvestmentEntry, 'date' | 'amount' | 'note' | 'price'>>;
 
 export function snapshotAdjustmentForEntry(
   holding: Holding,

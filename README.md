@@ -135,8 +135,8 @@ that valuation, through the requested as-of date. Entries dated on or before
 the valuation are treated as already included. Without a recorded valuation,
 current value is opening plus posted deposits minus posted withdrawals through
 the as-of date. Values never fall below zero. The app does not estimate
-interest; current value changes only when entries are recorded or a valuation
-is entered.
+interest for unconfigured holdings; configured accrual holdings use their
+saved rate, compounding convention and date-based valuation described below.
 
 Return calculations use gross contributions (opening amount plus deposits),
 not displayed net Invested:
@@ -170,12 +170,12 @@ capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
 rule. The opening amount is shown as the first, derived "Opening" row in
 Entries and is edited in the holding form. Recurring holdings show their
 frequency, amount and next due date inside the holding's Recurring plan
-section. These presentation and invested-display changes use the existing
-schema version 18.
+section. These presentation and invested-display changes were delivered on
+schema v18; P29-U later adds optional valuation metadata in schema v19.
 
-The owner cancelled the separate P29-O2 ledger-only storage redesign. The
-v19 converter, validation schema and prototype ledger are not used by the
-application; persisted holdings remain on schema v18. P29-O1's unified
+The owner cancelled the separate P29-O2 ledger-only storage redesign. P29-U
+uses schema v19 only for additive, optional valuation metadata; it does not
+reintroduce the cancelled ledger converter or prototype. P29-O1's unified
 Deposit, Withdraw and Entries presentation remains the supported behavior.
 
 ### Recurring liability balances
@@ -193,8 +193,9 @@ On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
 `SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
 and copied into SQLite on the next write. Web continues to use AsyncStorage.
 UI metadata and preferences remain in AsyncStorage. Persisted AppData schema
-version 18 is current; P29-Q changes only the storage backend, not the schema.
-The migration chain upgrades supported data from schema versions 1 through 17.
+version 19 is current; P29-Q changes only the storage backend. P29-U adds
+optional holding valuation fields without restructuring existing holding data.
+The migration chain upgrades supported data from schema versions 1 through 18.
 Backup import verifies file integrity and validates imported data, applying
 supported migrations where required.
 
@@ -216,6 +217,36 @@ to that goal, so an asset may be counted in multiple goals. Emergency-fund
 bucket targets use the user-set goal target with the three-month minimum
 retained only as a floor; each bucket's available amount is the sum of the full
 values of assets linked to that bucket.
+
+### Holding valuation methods
+
+Existing holdings keep their legacy current-value calculation until a method
+is explicitly saved or a value/price is confirmed. The type-based suggestion
+is not activated automatically: this preserves existing balances, net worth,
+goal amounts and Emergency Fund figures during the additive v18-to-v19
+migration. Suggestions are balance for Cash, balance plus interest entries
+for Savings accounts, accrual for Fixed/Recurring deposits and EPFO/PF when a
+rate is present, units x price for priced Stocks/ETF, Mutual fund/SIP, Gold
+and Silver entries, and manual otherwise.
+
+Accrual compounds each deposit from its date, uses actual elapsed days divided
+by 365, stops at maturity, and restarts from the last confirmed value. For
+quarterly compounding the factor is `(1 + r / 4)^(4t)`, where `r` is the annual
+rate as a decimal and `t` is actual days / 365. Estimated values are labelled
+"estimated". A manual opening amount has no start date in the current model;
+without a dated value snapshot it is treated as current rather than assigning
+an invented accrual period. Units are `entry amount / entry price`; withdrawals reduce units
+at their entry price, and current value is total units times the latest
+hand-entered price. No market data is fetched. The existing opening amount has
+no historical unit-price field, so it is valued at the latest price until the
+owner records priced entries.
+
+Manual and units-price cards show the age of the last value/price and flag
+updates older than 90 days. The optional monthly "Update values" reminder is
+off by default. Cash and Savings accounts continue to suppress holding return
+percentages. Rate is already required by the existing recurring-plan model;
+P29-U preserves that requirement while keeping valuation fields optional for
+manual holdings.
 
 ### Holding entry capabilities
 

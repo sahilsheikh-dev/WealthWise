@@ -27,6 +27,7 @@ const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
   snapshotAdjustment: money.optional(),
+  price: positiveMoney.optional(),
 });
 const liabilityPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
@@ -61,13 +62,23 @@ const holdingType = z.enum([
   'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit',
   'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
 ]);
+const valuationFields = {
+  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
+  ratePct: z.number().finite().min(0).max(100).optional(),
+  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
+  maturityDate: dateSchema.optional(),
+  latestPrice: positiveMoney.optional(),
+  priceAsOf: dateSchema.optional(),
+};
 const manualHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('manual'), name, type: holdingType,
   invested: money, value: money, valueAsOf: dateSchema.optional(),
+  ...valuationFields,
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const planHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('plan'), name, type: holdingType,
+  ...valuationFields,
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
   tenureYears: z.number().int().min(1).max(100), startDate: dateSchema, trackFrom: dateSchema,

@@ -16,6 +16,7 @@ import {
   migrateV15ToV16,
   migrateV16ToV17,
   migrateV17ToV18,
+  migrateV18ToV19,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -116,7 +117,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 19)).toThrow(
+    expect(() => migratePersisted({}, 20)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -175,7 +176,16 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 18)).toBe(persisted);
+    expect(migratePersisted(persisted, 19)).toBe(persisted);
+  });
+
+  it('migrates v18 to v19 without changing any persisted holding values', () => {
+    const data = mockAppData;
+    expect(migrateV18ToV19(data)).toBe(data);
+    expect(migratePersisted({ data }, 18)).toEqual({ data });
+    expect(() => migratePersisted({}, 20)).toThrow(
+      expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
+    );
   });
 
   it('migrates v13 to v14 without changing any persisted fields', () => {
@@ -217,7 +227,7 @@ describe('schema migration', () => {
     expect(migratePersisted({ data: legacy }, 12, { today: '2026-11-04', newId: () => 'unused' })).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 19)).toThrow(
+    expect(() => migratePersisted({}, 20)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
@@ -387,8 +397,8 @@ describe('schema migration', () => {
     });
     expect(migratePersisted({ data }, 16, { today: '2026-11-04', newId: () => 'unused' }))
       .toEqual({ data: migrated });
-    expect(() => migratePersisted(data, 19)).toThrow(
-      new PersistedVersionError(19, 'future-version'),
+    expect(() => migratePersisted(data, 20)).toThrow(
+      new PersistedVersionError(20, 'future-version'),
     );
   });
 

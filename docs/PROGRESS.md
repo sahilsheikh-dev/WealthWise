@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (100/104)
+Overall progress ██████████ 96% (101/105)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 96% (24/25)
+Phase 29         ██████████ 96% (25/26)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -193,6 +193,7 @@ Phase 29         ██████████ 96% (24/25)
 | P29-R | — | Done | The local schema-v13 backup passed through the real v13-to-v18 backup import pipeline; anonymized pre/post comparisons found no differences in holding, goal, net-worth, liability, pending-due or reminder outputs. The backup remains outside the repository. | 2026-11-05 |
 | P29-S | — | Done | Removed the uncalled v18-to-v19 converter, unused v19 validation/types and test-only ledger prototype; preserved P29-O1, schema v18 and migration compatibility. Six ordered gates pass with coverage thresholds met. | 2026-11-05 |
 | P29-T | — | Done | Backdated/on-snapshot deposits and withdrawals now adjust manual and plan stored values within the same write; linked transaction Undo and downstream selectors are covered at store level. No schema change. | 2026-11-05 |
+| P29-U | — | Done | Additive schema-v19 valuation methods, value/price confirmation, shared configured values and default-off monthly update reminders. Unconfigured holdings preserve legacy amounts; focused tests and all six ordered gates pass. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2829,6 +2830,7 @@ evidence present in exports/checkpoints.
 | P29-R | Phase 29 | — | — | 2026-11-05 | Dry-run every supported migration on the owner's local backup using the production import pipeline; compare all requested summaries without copying the backup into the repository or printing personal text. | Done; schema v13 migrated to v18 and the anonymized comparison found no differences in holding invested/current values, net worth/assets, Emergency fund, all goal saved amounts, liabilities, counts, pending dues or reminder preview. `scripts/dryRunMigration.ts` is committed; the backup was not copied or modified. | TypeScript, lint, Expo Doctor, Android export and iOS export exit 0. Full Jest tests pass, but coverage exits 1 because the unchanged `src/domain/schemas.ts` branch coverage is 89.41% against its 90% configured threshold. | DEC-P29R-BACKUP-DRY-RUN. Assumed: reminder preview uses enabled/day-before/same-day, 09:00, amounts hidden, because reminder preferences are not included in backups. Before-state comparison validates source AppData without migration; after-state uses `parseBackup` and its complete migration/validation pipeline. | current request |
 | P29-S | Phase 29 | — | — | 2026-11-05 | Restore Gate 1's coverage threshold and remove uncalled P29-O2 schema-v19 ledger code; no behavior/schema change. | Done; production caller audit found no runtime consumers for the converter, v19 schema/type additions or prototype ledger. Removed the dead code and its tests; P29-O1 remains unchanged. All six ordered gates exit 0. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE supersedes DEC-P29O2-UNIFIED-LEDGER. Deleted test assertions covered canceled prototype behavior, not current app behavior; current holding, migration and progress-ledger tests remain. | current request |
 | P29-T | Phase 29 | — | 16d1c9bc | 2026-11-05 | Make deposits/withdrawals dated on or before a manual or plan valuation adjust the stored value in the same store write; preserve linked-transaction Undo and schema v18. | Done; real-store tests cover manual/plan snapshots, before/on/after dates, edits, deletes, withdrawals, linked transaction paths, Undo and downstream selectors. Final six-gate results are recorded below. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT. Assumed: Budget links refer to transaction actuals/planned flows, because Budget has no current-holding-value selector; no Budget redesign. Native-device checks remain open. | current request |
+| P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -8124,3 +8126,120 @@ hydration, one-write latency, selector responsiveness, first-render timing and
 actual device storage. Node in-memory SQLite tests/benchmarks and Expo exports
 do not verify native bridge/disk behavior, physical capacity, device memory or
 rendering.
+
+### P29-U — valuation methods on the existing holding model (2026-11-05)
+
+**Assumed:** P29-U is new Phase 29 work. P29-O2's ledger-only schema-v19
+redesign remains cancelled; this step uses v19 only for additive, optional
+valuation metadata. No holding structure was replaced.
+
+Schema v18 migrates to v19 through a pure input-preserving migration.
+`valuationMethod`, `ratePct` on manual holdings, `compounding`, `maturityDate`,
+`latestPrice`, `priceAsOf` and entry `price` are optional. `ratePct` already
+exists as a required field on recurring plans for their projection, so that
+existing schema/type requirement is retained rather than weakened. Manual
+holdings may omit it unless accrual is selected. Raw v18 bytes are archived
+once as `.premigration.v18`; future v20 data is refused; older plain/encrypted
+backups remain supported; erase-all removes migration archives.
+
+#### DEC-P29U-LEGACY-VALUATION-COMPAT — owner compatibility decision
+
+The type-derived method is only a suggestion until explicitly saved or a
+value/price is confirmed. This is necessary because recurring plans already
+carry `ratePct`, and applying an inferred accrual method without user action
+would change legacy values during migration. The shared `holdingValue`
+selector routes explicitly configured accrual and units-price holdings through
+`src/domain/valuation.ts`; all unconfigured holdings keep the v18 calculation.
+
+Accrual compounds dated deposits independently using actual days / 365,
+quarterly factor `(1 + r / 4)^(4t)`, optional maturity cap and the last
+confirmed snapshot as the new base. Entries with price derive units as
+`amount / price`; latest manually entered price values total units and
+withdrawals use their entry price. Manual/units-price cards show update age
+and become stale after 90 days. The monthly update-values reminder is opt-in
+and stored in the existing metadata store, not AppData.
+
+**Assumed:** a manual opening amount has no date in the current schema. If
+there is no dated snapshot, it is treated as current and not assigned an
+invented accrual span. The current model also has no opening-unit price; an
+opening amount is valued at the latest price until the owner records priced
+entries. No live prices are fetched. Plan `ratePct` supplies its accrual rate.
+
+#### Before/after compatibility evidence
+
+The prior v18 manual formula was reimplemented in the test and compared with
+the unchanged `planValue` path and the new shared selector for every holding
+after the corresponding legacy fixture had been migrated. It also compared
+asset totals, net worth, each linked goal amount and each Emergency Fund
+bucket's available value. All persisted fixture holdings lacked an explicitly
+configured valuation method.
+
+| Source fixture | Holdings | Assets before / after | Net worth before / after | Goal saved before / after | EF bucket available before / after |
+|---|---:|---:|---:|---:|---:|
+| mock | 5 | 505,441 / 505,441 | 177,444.43 / 177,444.43 | 490,956 / 490,956 | 0 / 0 |
+| demo | 8 | 524,000 / 524,000 | 134,829.36 / 134,829.36 | 487,300 / 487,300 | 187,000 / 187,000 |
+| v1 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v2 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v3 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v4 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v5 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v6 | 3 | 1,500 / 1,500 | -6,500 / -6,500 | 500 / 500 | 0 / 0 |
+| v9 | 5 | 505,441 / 505,441 | 177,444.43 / 177,444.43 | 490,956 / 490,956 | 0 / 0 |
+| v10 | 5 | 505,441 / 505,441 | 177,444.43 / 177,444.43 | 490,956 / 490,956 | 0 / 0 |
+| v11 | 5 | 505,441 / 505,441 | 177,444.43 / 177,444.43 | 490,956 / 490,956 | 0 / 0 |
+| v12 | 5 | 505,441 / 505,441 | 177,444.43 / 177,444.43 | 490,956 / 490,956 | 0 / 0 |
+
+The repository contains no separate v7, v8, or v13-v18 fixture modules;
+existing migration/backup tests cover those versions, and the encrypted v18
+import passes through v18-to-v19. Current v19 backups round-trip and schema
+v20 is rejected.
+
+#### Assertion replacements
+
+| Old assertion / behavior | New assertion / behavior | Reason |
+|---|---|---|
+| No interest estimation; values change only through entries or a manually entered valuation. | Unconfigured holdings retain that exact behavior; accrual estimates run only after the method is configured or a value is confirmed. | Make the requested valuation options opt-in and preserve every legacy amount on migration. |
+| There was no valuation-method setting or monthly value-update reminder. | Type-based defaults are suggestions; the optional monthly reminder defaults off. | Avoid activating a new calculation or notification without user action. |
+| Schema v18 was current after P29-S. | Schema v19 adds optional valuation metadata and preserves the cancelled O2 ledger-only design boundary. | P29-U explicitly authorizes this additive schema bump; no storage redesign is revived. |
+| A recurring plan's `ratePct` remains an existing required projection input. | It also supplies accrual rate; it remains required on plan holdings, while manual rate is optional. | Making the existing field optional would weaken the v18 model assertion; this is the closest compatible implementation. |
+
+No assertion was weakened. Final validation used Node.js 26.13.0:
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Gate 1 reports 91 suites and 1,170 tests passing. During repair, Gate 1 first
+exited 1 on branch coverage and passed after adding tests for valuation,
+holding-action and valuation-form branches; an initial Gate 3 run exited 1
+for an unescaped JSX apostrophe and duplicate imports, both corrected before
+its final exit 0. A later full Gate 1 attempt caught the memory-doc test's
+stale exact-count assertion after the test baseline was updated; that expected
+count was advanced to 91/1170 without weakening the assertion. One intervening
+parallel run also timed out in the encrypted-backup test; its focused run and
+the final full run passed at the existing timeout.
+
+Coverage was computed only from the final regenerated
+`coverage/coverage-final.json`: `istanbul-lib-coverage` `createCoverageMap`,
+grouping files by immediate `src/` directory and summing each file's Istanbul
+summary covered/total line and branch counts. No historical report is used
+for comparison.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 720/762 (94.49%) | 742/845 (87.81%) |
+| `src/domain` | 3,415/3,468 (98.47%) | 3,341/3,584 (93.22%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+#### Device checks not verified
+
+Verify accrual and units-price forms, the update-value/price route, staleness
+indicators and optional reminder scheduling on iOS and Android at font scales
+1.3 and 2.0. Confirm native rendering, persistence across restart, local
+notification delivery and price/value entry interactions. Automated layout
+tests are simulated and Expo exports do not establish device behavior.

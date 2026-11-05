@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -32,12 +32,15 @@ Pure portfolio selectors in `src/domain/portfolio.ts` and `src/domain/sip.ts`
 derive Invested from opening capital plus deposits; withdrawals do not reduce
 Invested. A dated valuation includes only later deposits/withdrawals through
 the requested as-of date. With no dated valuation, value starts from opening
-capital and posted ledger activity; rate-based interest is not estimated.
-Values are clamped at zero. `src/domain/investmentReturns.ts` supplies the
-shared gain, absolute-return, XIRR and CAGR calculations. Cash and Bank
-holdings show balance and deposit/withdrawal totals but no holding-level return.
-The asset list, holding cards and portfolio totals use the same domain
-calculations; the investment-entry screen shows values and ledger totals.
+capital and posted ledger activity. Unconfigured holdings retain that legacy
+calculation; `src/domain/valuation.ts` supplies the shared configured accrual
+and units-price methods, with date inputs supplied by callers. Quarterly
+compounding is `(1 + r/4)^(4t)`, where `t` is actual days / 365. Values are
+clamped at zero. `src/domain/investmentReturns.ts` supplies shared gain,
+absolute-return, XIRR and CAGR calculations. Cash and Savings holdings suppress
+holding-level return percentages. The asset list, cards, portfolio totals,
+goals, Emergency Fund and net worth route holding values through the same
+selector.
 
 Recurring liability balances in `src/domain/liability.ts` accrue actual
 calendar days over 365, applying each recorded payment on its date and
@@ -48,8 +51,8 @@ P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
 
 ## Schema and archives
 
-Current persisted schema is v18. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v17. The v14-to-v15 migration
+Current persisted schema is v19. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v18. The v14-to-v15 migration
 converted legacy Insurance goals; the v15-to-v16 migration applies holding
 capabilities and separates legacy FD/RD records without dropping entries or
 schedules. The v16-to-v17 migration removes only retired cover-goal records
@@ -58,12 +61,14 @@ policy payments with the due date already matched by the v17 FIFO schedule,
 preserving unmatched and pre-trackFrom payment history. New payments carry
 their exact settled slot date, and `policySchedule` matches dated entries by
 slot while keeping the legacy FIFO rule for undated entries.
-`createAppStore.ts` sets the
-persist version from `SCHEMA_VERSION`.
+`createAppStore.ts` sets the persist version from `SCHEMA_VERSION`. The
+v18-to-v19 migration is additive and preserves its input; inferred valuation
+methods are suggestions until a method is explicitly configured or a
+value/price is confirmed.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v17` before the migrated write. With the current
+`${persistName}.premigration.v18` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration
