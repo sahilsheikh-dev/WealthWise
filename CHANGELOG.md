@@ -93,6 +93,10 @@
   uncalled v18-to-v19 converter, unused ledger schemas/types and prototype
   module/tests are removed. P29-O1's v18 Deposit, Withdraw and Entries
   behavior remains; no runtime behavior or schema version changes.
+- P29-T adjusts a holding's stored valuation when deposits or withdrawals
+  dated on or before that valuation are added, edited or deleted. The entry,
+  linked transaction and manual/plan snapshot update together and Undo restores
+  them atomically; schema v18 and post-valuation behavior are unchanged.
 
 ### Investments and goals
 

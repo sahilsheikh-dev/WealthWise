@@ -19,6 +19,14 @@
   Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
   Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
   counts are recorded in [PROGRESS.md](../PROGRESS.md).
+- **P29-T physical-device checks:** verify that adding, editing and deleting
+  dated deposits and withdrawals on or before a valuation updates manual and
+  plan values once, in the same write; verify Undo restores the entry and
+  linked transaction. Confirm goal, Emergency Fund, net-worth and Budget-linked
+  flows at font scales 1.3 and 2.0 on iOS and Android. Jest and Expo exports
+  do not verify native persistence, rendering or interaction. Budget's current
+  linked-actual selector is transaction-based, not a current-holding-value
+  display; that display was not redesigned.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its

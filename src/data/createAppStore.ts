@@ -291,6 +291,17 @@ export function createAppStore(
           setError(error);
         }
       };
+      const applyDataActionWithUndo = (action: (data: AppData) => AppData, message: string) => {
+        const previous = get().data;
+        applyDataAction(action);
+        if (get().lastError === null && get().data !== previous) {
+          useUIStore.getState().setActionToast({
+            message,
+            actionLabel: 'Undo',
+            onAction: () => set({ data: previous, lastError: null }),
+          });
+        }
+      };
       const replaceDataWithUndo = async (importedData: AppData) => {
         if (get().status !== 'ready') {
           return { ok: false as const, message: 'Data can only be replaced after the app has loaded.' };
@@ -322,19 +333,28 @@ export function createAppStore(
           applyDataAction((data) => deleteTransaction(data, id));
         },
         addInstrumentTransaction(input) {
-          applyDataAction((data) => addInstrumentTransaction(data, input, deps.newId, deps.today()));
+          applyDataActionWithUndo(
+            (data) => addInstrumentTransaction(data, input, deps.newId, deps.today()),
+            'Investment transaction added.',
+          );
         },
         updateLinkedTransaction(id, patch) {
-          applyDataAction((data) => updateLinkedTransaction(data, id, patch, {
+          applyDataActionWithUndo((data) => updateLinkedTransaction(data, id, patch, {
             newId: deps.newId,
             today: deps.today(),
-          }));
+          }), 'Investment transaction updated.');
         },
         deleteLinkedTransaction(id) {
-          applyDataAction((data) => deleteLinkedTransaction(data, id));
+          applyDataActionWithUndo(
+            (data) => deleteLinkedTransaction(data, id),
+            'Investment transaction deleted.',
+          );
         },
         linkExistingTransaction(transactionId, instrumentId, note) {
-          applyDataAction((data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note));
+          applyDataActionWithUndo(
+            (data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note),
+            'Investment transaction linked.',
+          );
         },
         createMissingTransactions() {
           applyDataAction((data) => createMissingTransactions(data, deps.newId));
@@ -355,13 +375,22 @@ export function createAppStore(
           applyDataAction((data) => deletePlan(data, id, options));
         },
         addInvestmentEntry(holdingId, input) {
-          applyDataAction((data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()));
+          applyDataActionWithUndo(
+            (data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()),
+            'Investment entry added.',
+          );
         },
         updateInvestmentEntry(holdingId, entryId, patch) {
-          applyDataAction((data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()));
+          applyDataActionWithUndo(
+            (data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()),
+            'Investment entry updated.',
+          );
         },
         deleteInvestmentEntry(holdingId, entryId) {
-          applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
+          applyDataActionWithUndo(
+            (data) => deleteInvestmentEntry(data, holdingId, entryId),
+            'Investment entry deleted.',
+          );
         },
         clearDue(target, rowId, actualAmount) {
           let entryId: string | undefined;
