@@ -15,6 +15,7 @@ import {
   makeOnboardingFormSchema,
   makeProfileFormSchema,
   makePlanFormSchema,
+  makeStopRecurringFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
   makeBudgetItemEditSchema,
@@ -35,7 +36,7 @@ const validInput = {
 describe('appDataSchema', () => {
   it('accepts the typed mock app data and exports schema version twenty', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(20);
+    expect(SCHEMA_VERSION).toBe(21);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -266,6 +267,18 @@ describe('appDataSchema', () => {
       expect(schema.safeParse({ name: 'Asha', monthlySalary: '1000000001' }).error?.issues[0]?.message)
         .toBe('Monthly income must be 1,000,000,000 or less');
       expect(schema.safeParse({ name: 'Asha', monthlySalary: 'not money' }).success).toBe(false);
+    });
+  });
+
+  describe('P29-X stop recurring form validation', () => {
+    const schema = makeStopRecurringFormSchema('2026-05-31', [
+      { date: '2026-05-01', kind: 'Deposit' },
+    ]);
+
+    it('accepts the last paid date and rejects earlier or future dates', () => {
+      expect(schema.safeParse({ stopDate: '2026-05-01' }).success).toBe(true);
+      expect(schema.safeParse({ stopDate: '2026-04-30' }).success).toBe(false);
+      expect(schema.safeParse({ stopDate: '2026-06-01' }).success).toBe(false);
     });
   });
 

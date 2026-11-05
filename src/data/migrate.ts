@@ -821,6 +821,10 @@ export function migrateV19ToV20(persisted: unknown): unknown {
   return persisted;
 }
 
+export function migrateV20ToV21(persisted: unknown): unknown {
+  return persisted;
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -867,6 +871,7 @@ export function migratePersisted(
     }
     if (fromVersion <= 18) result = migrateV18ToV19(result);
     if (fromVersion <= 19) result = migrateV19ToV20(result);
+    if (fromVersion <= 20) result = migrateV20ToV21(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

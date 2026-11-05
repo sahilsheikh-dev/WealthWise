@@ -46,7 +46,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 20 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 21 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -396,7 +396,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(20);
+    expect(SCHEMA_VERSION).toBe(21);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -458,7 +458,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 21;
+    future.schemaVersion = 22;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -623,7 +623,7 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 20 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 21 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -821,7 +821,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 21;
+    newer.schemaVersion = 22;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

@@ -2,7 +2,12 @@
 
 # Status
 
-- Current task: P29-W implements early foreclosure for recurring liabilities.
+- Current task: P29-X adds stop/resume controls for recurring plans.
+  Schema v21 stores one optional `stopDate`; plan schedules, pending items,
+  Budget linked rows, reminders and goal projections share the inclusive cutoff.
+  Stop/resume is one store write with Undo and does not change entries, value,
+  returns or links.
+  P29-W implements early foreclosure for recurring liabilities.
   The report-only inventory was committed first. Schema v20 adds optional
   closure metadata; close, payment, optional charge and zero-balance settlement
   are one domain action/store write with one-step Undo. Closed loans are
@@ -52,7 +57,7 @@
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
-- Schema version: v20. The P29-O2 ledger-only v19 storage redesign was
+- Schema version: v21. The P29-O2 ledger-only v19 storage redesign was
   cancelled; P29-U uses v19 for additive optional valuation metadata.
   P29-W adds optional recurring-liability closure metadata in v20.
   P29-L removes the retired coverGoals and policy
@@ -64,7 +69,7 @@
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1187 tests (P29-W); all six final
+- Latest validated run: 92 suites, 1191 tests passed, 1 skipped (P29-X); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).

@@ -28,6 +28,9 @@ no cloud or network requests at runtime.
   balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
+  Recurring plans can be stopped at an inclusive date or resumed without
+  changing entries, current value, returns, goal links or Emergency Fund
+  links.
 - Monthly budgets with spend/invest sections, income entries, recurring item
   schedules, due tracking and cash-flow views. Scope choices apply immediately;
   Close, backdrop and Android back dismiss without changing the budget.
