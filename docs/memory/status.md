@@ -2,7 +2,7 @@
 
 # Status
 
-- Current task: owner holding and liability layout refinements complete.
+- Current task: owner recurring-stop, foreclosure, and Home-only menu refinements complete.
   P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
   The recurring plan details and financial Summary now share one card on the
@@ -73,16 +73,16 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 92 suites, 1191 tests (1191 passed; one opt-in stress benchmark
+- Test counts: 92 suites, 1193 tests (1192 passed; one opt-in stress benchmark
   skipped); all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 92 suites, 1191 tests passed, 1 skipped (P29-Y); all six final
+- Latest validated run: 92 suites, 1193 tests (1192 passed, 1 skipped); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 92 suites, 1191 tests passed, 1 skipped with coverage thresholds
+- Latest full Jest run: 92 suites, 1192 passed, 1 skipped, 1193 total; coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

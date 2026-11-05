@@ -22,11 +22,12 @@ export function InstrumentCard({
   goalCount?: number;
 }) {
   const { colors } = useTheme();
-  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'list' | 'check-circle' | 'refresh-cw'> = {
+  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'list' | 'check-circle' | 'refresh-cw' | 'pause' | 'play'> = {
     deposit: 'plus',
     withdraw: 'arrow-down-left',
     entries: 'list',
     update: 'refresh-cw',
+    stop: 'pause',
   };
   return (
     <Pressable
@@ -103,7 +104,7 @@ export function InstrumentCard({
               }}
               disabled={action.disabled}
               accessibilityHint={action.accessibilityHint}
-              icon={actionIcons[action.id]}
+              icon={action.id === 'stop' && action.label === 'Resume recurring' ? 'play' : actionIcons[action.id]}
               variant={action.id === 'deposit' ? 'primary' : 'soft'}
               style={styles.action}
             />

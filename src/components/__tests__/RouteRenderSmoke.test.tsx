@@ -2641,7 +2641,7 @@ describe('route render smoke audit', () => {
       )).toEqual(['view']);
       expect(recurringActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
       expect(recurringActionContainer.findAllByProps({ label: 'Pay EMI' })).toHaveLength(1);
-      expect(recurringActionContainer.findAllByProps({ label: 'Close loan early' })).toHaveLength(1);
+      expect(recurringActionContainer.findAllByProps({ label: 'Foreclosure' })).toHaveLength(1);
       const dueActions = recurringContent.findByType(DueActions);
       expect(dueActions.props.stopParentPress).toBe(true);
       const clearDue = recurringCard.findByProps({ accessibilityLabel: 'Clear due' });
