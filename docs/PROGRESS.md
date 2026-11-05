@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (102/106)
+Overall progress ██████████ 95% (102/107)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 96% (26/27)
+Phase 29         █████████░ 93% (26/28)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -195,6 +195,7 @@ Phase 29         ██████████ 96% (26/27)
 | P29-T | — | Done | Backdated/on-snapshot deposits and withdrawals now adjust manual and plan stored values within the same write; linked transaction Undo and downstream selectors are covered at store level. No schema change. | 2026-11-05 |
 | P29-U | — | Done | Additive schema-v19 valuation methods, value/price confirmation, shared configured values and default-off monthly update reminders. Unconfigured holdings preserve legacy amounts; focused tests and all six ordered gates pass. | 2026-11-05 |
 | P29-V | — | Done | SQLite migration verifies read-back bytes before removing legacy data and retains legacy fallback on SQLite failures. Date validation accepts records from 1900; stress tiers are 50/100/126 years plus dense 200-year record counts within the window. Backup export refuses data that would not round-trip or exceeds the 5,000,000-character import limit. Six ordered gates pass. | 2026-11-05 |
+| P29-W | — | Inventory committed; implementation pending | Foreclosure inventory is committed before behavior changes; existing settlement, due, Budget, reminder, Home, net-worth and loan-proceeds paths are documented below. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2833,6 +2834,7 @@ evidence present in exports/checkpoints.
 | P29-T | Phase 29 | — | 16d1c9bc | 2026-11-05 | Make deposits/withdrawals dated on or before a manual or plan valuation adjust the stored value in the same store write; preserve linked-transaction Undo and schema v18. | Done; real-store tests cover manual/plan snapshots, before/on/after dates, edits, deletes, withdrawals, linked transaction paths, Undo and downstream selectors. Final six-gate results are recorded below. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT. Assumed: Budget links refer to transaction actuals/planned flows, because Budget has no current-holding-value selector; no Budget redesign. Native-device checks remain open. | current request |
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
+| P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure state and every connected due, payment, budget, reminder, Home, net-worth and loan-proceeds path before implementation. | Step 1 report-only inventory committed first; foreclosure implementation remains pending. | Inventory commit to be recorded after commit verification; implementation commit follows separately. | DEC-P29W-FORECLOSURE-INVENTORY. Assumed: existing `settlement` is a dated balance anchor, not an explicit closed-state marker; its zero balance can also arise from settling historical dues. No source behavior or schema changed in Step 1. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -8378,3 +8380,38 @@ encrypted 50-year backup export/import; (5) clear export refusal for larger
 tiers before any temporary file is created. Simulator/layout tests, Node
 measurements and Expo exports do not verify native SQLite, device capacity,
 memory, rendering or file-sharing behavior.
+
+### P29-W STEP 1 — foreclosure inventory (report only; 2026-11-05)
+
+#### DEC-P29W-FORECLOSURE-INVENTORY
+
+No product behavior or persisted data was changed for this inventory. The
+current code paths and their implications for early recurring-loan closure
+are:
+
+| Area | Existing implementation | Closure implication |
+|---|---|---|
+| Liability model | `src/domain/types.ts`: recurring and one-time liabilities share `principal`, `ratePct`, `startDate` and payment rows. Recurring liabilities also have tenure, EMI and nullable `settlement`; one-time liabilities have an optional due date. `src/domain/schemas.ts` validates settlement as `{ asOf, balance }`, with a nonnegative balance and an `asOf` no earlier than `startDate`. | Only recurring liabilities are in the requested action scope. |
+| Settlement | `src/domain/liability.ts` `loanState()` uses settlement as an accounting anchor: before `asOf` it returns the saved balance; on/after it starts from that balance and applies later payments. `src/domain/dues.ts` `clearPastDues(..., mode: 'settle')` writes this anchor using an entered or calculated remaining balance. | Settlement can anchor a zero balance and stop subsequent schedule rows, but it does not identify *why* the balance is zero. It is not a dedicated closed flag/date/note; historical setup can also create a zero anchor. This is insufficient by itself to distinguish an explicitly foreclosed loan in a Closed filter. |
+| Schedule rows | `src/domain/schedule.ts` generates recurring due dates monthly from `startDate` and creates EMI rows. Recorded EMI payments are matched FIFO to schedule slots; prepayments affect `loanState()` but do not match an EMI slot. A settlement marks due slots on/before its date as assumed paid, and a zero balance stops later rows. Schedule projections use a monthly-rate calculation while the shared outstanding calculation accrues actual/365 between dated payments. | Using a zero settlement at the closure date is compatible with stopping future schedule rows; the closure payment must remain a dated payment/expense and the explicit closed state must remain distinguishable from generic settlement anchors. |
+| Payments and EMI dues | `src/domain/liabilityActions.ts` adds each payment and a linked expense transaction (`source.kind: 'liability-payment'`) together; edits/deletes update/remove the matching transaction. Recurring payment kinds include EMI and Prepayment. `src/domain/dues.ts` clears the first actionable schedule row and records its payment/transaction. `src/data/createAppStore.ts` exposes these operations through the persisted store. | The foreclosure payment and any excess charge need one pure domain operation/store update so a single Undo restores the complete closure. |
+| Transactions and Home pending dues | `src/domain/pending.ts` derives unpaid liability rows from `liabilitySchedule()`. Transactions renders those pending rows; `app/(tabs)/index.tsx` (user-owned) derives Home's Upcoming and due list through the same pending selector. | Removing future schedule rows in the shared schedule projection removes them from both surfaces; Home source should not need editing. |
+| Budget linked rows and actuals | `src/domain/budget.ts` derives planned and linked recurring liability rows from `liabilitySchedule()` (category `EMI`). Actual payments are expense transactions linked by liability/payment IDs and feed Budget actuals. | Future planned dues can disappear through the shared schedule; the dated closure expense must still appear as actual spending. |
+| Reminders | `src/domain/reminders.ts` builds reminders from `createPendingItemsReader()` and extends its search horizon through recurring liability tenure. | Reminder dues are derived, not stored; removing future dues from the shared schedule prevents their reminders. |
+| Home and net worth | `src/domain/summary.ts` `netWorth()` sums each `liabilitySummary(...).balance`; `homeSummary()` uses it for Home totals. `app/(tabs)/index.tsx` displays the result and links to Liabilities. | A zero balance drops the closed loan from liabilities and increases net worth by the previously outstanding amount. The Home route remains user-owned and read-only. |
+| Loan proceeds | `src/domain/cashFlow.ts` `recordMoneyMovement()` and `fundShortfall()` can create a liability and a linked income transaction (`source.kind: 'liability-origin'`) or record proceeds against an existing liability. | Loan origin/proceeds remain historical; foreclosure adds expense records and does not remove or rewrite the proceeds transaction. |
+| Existing settled/closed UI state | There is no persisted `closed` state. `liabilitySummary()` derives `cleared` when balance is below 1. The Liabilities list shows all records and filters only All / Recurring / One-time; naturally cleared records remain in those lists with “Cleared” text. Schedule detail also shows “Cleared”. There is no Closed filter or early-close action today. | Explicit foreclosure needs a durable discriminator for the Closed filter and its closure date/note; generic `cleared` remains a calculated balance state. |
+
+**Inventory conclusion:** the existing `settlement` field can represent the
+zero balance and date needed by the loan calculation and schedule cutoff, but
+cannot by itself record explicit closure identity or the closure note because
+it is already used as a general historical balance anchor. Step 2 may require
+one additive optional closure field set and the next schema version; no bump
+or source change is made in this report-only commit. Older backup, encryption,
+raw-byte archive and erase-all compatibility will be addressed if that field
+is introduced.
+
+| Step | Status | Evidence |
+|---|---|---|
+| P29-W Step 1 — report-only inventory | Done; committed before implementation | Current types/schema, loan calculator, schedule, payment actions, store actions, pending selector, Budget, reminders, Home, summary and loan-proceeds paths listed above. |
+| P29-W Step 2 — foreclosure behavior | Pending | No implementation or behavior tests are included in this inventory commit. |
