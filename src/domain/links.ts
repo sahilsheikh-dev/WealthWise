@@ -41,6 +41,13 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
       ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } }
       : null;
   }
+  if (source.kind === 'liability-closure-charge') {
+    const liability = data.liabilities.find((entry) =>
+      entry.id === source.parentId
+      && entry.kind === 'recurring'
+      && entry.closure?.chargeTransactionId === source.entryId);
+    return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
+  }
   if (source.kind === 'policy-payment') {
     const policy = data.policies.find((entry) => entry.id === source.parentId);
     return policy?.payments.some((entry) => entry.id === source.entryId)
@@ -137,6 +144,14 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       const liability = data.liabilities.find((item) => item.id === source.parentId);
       entry = liability?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
+    } else if (source.kind === 'liability-closure-charge') {
+      const liability = data.liabilities.find((item) => item.id === source.parentId);
+      const closure = liability?.kind === 'recurring' ? liability.closure : undefined;
+      entry = closure?.chargeTransactionId === source.entryId
+        ? { amount: transaction.amount, date: closure.date }
+        : undefined;
+      expectedType = 'expense';
+      expectedCategory = 'Other';
     } else if (source.kind === 'policy-payment') {
       const policy = data.policies.find((item) => item.id === source.parentId);
       entry = policy?.payments.find((item) => item.id === source.entryId);

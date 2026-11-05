@@ -13,8 +13,8 @@ import {
   type InvestmentEntryInput, type InvestmentEntryPatch,
 } from '../domain/investmentActions';
 import {
-  addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
-  type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
+  addLiability, addLiabilityPayment, closeRecurringLiability, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
+  type AddLiabilityInput, type CloseLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import {
@@ -151,6 +151,7 @@ export type AppActions = {
   addPolicy: (input: AddPolicyInput) => void;
   deletePolicy: (id: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
+  closeLiabilityEarly: (id: string, input: CloseLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
   addLiabilityPayment: (liabilityId: string, input: Pick<LiabilityPayment, 'date' | 'amount' | 'kind' | 'note'>) => void;
@@ -494,6 +495,15 @@ export function createAppStore(
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
         },
+        closeLiabilityEarly(id, input) {
+          applyDataActionWithUndo(
+            (data) => closeRecurringLiability(data, id, input, {
+              today: deps.today(),
+              newId: deps.newId,
+            }),
+            'Loan closed early.',
+          );
+        },
         updateLiability(id, patch) {
           applyDataAction((data) => updateLiability(data, id, patch));
         },
@@ -737,6 +747,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v16`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v17`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v19`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

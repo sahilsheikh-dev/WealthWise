@@ -24,7 +24,7 @@ import {
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { liabilitySummary, payoffDate } from '../src/domain/liability';
+import { isLiabilityClosed, liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
@@ -36,7 +36,7 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const EXTRA_ERROR = 'Enter a whole number between 0 and 10,00,000';
-const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time'] as const;
+const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time', 'Closed'] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -49,7 +49,8 @@ export default function LiabilitiesScreen() {
   const [query, setQuery] = useState('');
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
-  const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
+  const hasRecurring = data.liabilities.some((liability) =>
+    liability.kind === 'recurring' && !isLiabilityClosed(liability));
   const isValidExtra = /^\d+$/.test(extraText) && Number.isSafeInteger(Number(extraText))
     && Number(extraText) >= 0 && Number(extraText) <= 1_000_000;
   const extra = isValidExtra ? Number(extraText) : 0;
@@ -74,8 +75,11 @@ export default function LiabilitiesScreen() {
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleLiabilities = sortedLiabilities.filter((liability) =>
-    (kindFilter === 'All'
-      || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'))
+    (kindFilter === 'Closed'
+      ? liability.kind === 'recurring' && isLiabilityClosed(liability)
+      : kindFilter === 'All'
+        || (!isLiabilityClosed(liability)
+          && (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time')))
     && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
   );
 
@@ -197,9 +201,11 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
     <Pressable
       testID={`liability-card-${liability.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${liability.name}`}
-      accessibilityHint="Opens this liability for editing"
-      onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      accessibilityLabel={`${isLiabilityClosed(liability) ? 'View' : 'Edit'} ${liability.name}`}
+      accessibilityHint={isLiabilityClosed(liability) ? 'Opens this closed liability' : 'Opens this liability for editing'}
+      onPress={() => router.push(isLiabilityClosed(liability)
+        ? { pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }
+        : { pathname: '/liability-form', params: { id: liability.id } })}
       style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View testID={`liability-card-content-${liability.id}`}>
       <CardHeaderRow
@@ -233,8 +239,10 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         }`}
         style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Paid <AmountText value={summary.paidTotal} tier="row" />. Interest accrued <AmountText value={summary.interestAccrued} tier="row" />.
-        {'\n'}{summary.cleared
-          ? 'Cleared'
+        {'\n'}{isLiabilityClosed(liability)
+          ? `Closed ${formatDate(liability.closure?.date ?? asOf)}`
+          : summary.cleared
+            ? 'Cleared'
           : summary.monthsLeft === null
             ? 'EMI is too low to clear this liability'
             : `${summary.monthsLeft} months left · Payoff ${formatMonth(payoffDate(summary.monthsLeft, asOf).slice(0, 7))}.`}
@@ -253,7 +261,7 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       ) : null}
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       <View testID={`liability-card-actions-${liability.id}`}>
-      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
+      {!isLiabilityClosed(liability) && schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
         <DueActions
           target={{ kind: 'liability', id: liability.id }}
           pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
@@ -262,11 +270,21 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         />
       ) : null}
       <ActionRow actions={[
-        ...(!summary.cleared ? [{
+        ...(!summary.cleared && !isLiabilityClosed(liability) ? [{
           label: 'Pay EMI',
           variant: 'primary' as const,
           icon: 'credit-card' as const,
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }),
+        }] : []),
+        ...(!summary.cleared && !isLiabilityClosed(liability) ? [{
+          label: 'Close loan early',
+          icon: 'check-circle' as const,
+          onPress: () => router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } }),
+        }] : []),
+        ...(isLiabilityClosed(liability) ? [{
+          label: 'Edit closure note',
+          icon: 'edit-2' as const,
+          onPress: () => router.push({ pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }),
         }] : []),
         { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
       ]} stopParentPress />

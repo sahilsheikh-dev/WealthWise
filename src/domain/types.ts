@@ -24,6 +24,7 @@ export type Transaction = {
   source?:
     | { kind: 'holding-entry'; parentId: string; entryId: string }
     | { kind: 'liability-payment'; parentId: string; entryId: string }
+    | { kind: 'liability-closure-charge'; parentId: string; entryId: string }
     | { kind: 'policy-payment'; parentId: string; entryId: string }
     | { kind: 'liability-origin'; parentId: string; entryId: string };
 };
@@ -148,11 +149,19 @@ export type LiabilitySettlement = {
   balance: number;
 };
 
+export type LiabilityClosure = {
+  date: ISODate;
+  paymentId: string;
+  note?: string;
+  chargeTransactionId?: string;
+};
+
 export type RecurringLiability = LiabilityBase & {
   kind: 'recurring';
   tenureMonths: number;
   emi: number;
   settlement: LiabilitySettlement | null;
+  closure?: LiabilityClosure;
 };
 
 export type OneTimeLiability = LiabilityBase & {

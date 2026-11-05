@@ -45,7 +45,7 @@ const transactionSchema = z.strictObject({
   note,
   date: dateSchema,
   source: z.strictObject({
-    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'liability-closure-charge', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -91,13 +91,24 @@ const liabilityCommon = {
   principal: money, ratePct: z.number().min(0).max(100), startDate: dateSchema,
   payments: z.array(liabilityPaymentSchema).max(100_000),
 };
+const liabilityClosureSchema = z.strictObject({
+  date: dateSchema,
+  paymentId: idSchema,
+  note: z.string().max(200).optional(),
+  chargeTransactionId: idSchema.optional(),
+});
 const recurringLiabilitySchema = z.strictObject({
   ...liabilityCommon, kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200), emi: positiveMoney,
   settlement: z.strictObject({ asOf: dateSchema, balance: money.min(0) }).nullable(),
+  closure: liabilityClosureSchema.optional(),
 }).superRefine((liability, context) => {
   if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
+  }
+  if (liability.closure
+    && (liability.settlement?.asOf !== liability.closure.date || liability.settlement.balance !== 0)) {
+    context.addIssue({ code: 'custom', path: ['closure'], message: 'Closed liabilities require a zero settlement on the closure date' });
   }
 });
 const oneTimeLiabilitySchema = z.strictObject({
