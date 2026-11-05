@@ -143,10 +143,11 @@ jest.mock('../../data/store', () => {
     data: {
       settings: { name: 'Demo', theme: 'system', monthlySalary: 40000, onboarded: true },
       transactions: [],
-      goals: [],
+      goals: [{ id: 'mock-emergency-fund', name: 'Emergency fund', target: 0, saved: 0, year: 2026, auto: 'ef', links: [] }],
       holdings: [],
       liabilities: [],
       policies: [],
+      budget: null,
       budgetPlan: null,
       monthBudgets: [],
       efAllocation: null,

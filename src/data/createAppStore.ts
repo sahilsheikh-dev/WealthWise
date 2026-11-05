@@ -209,7 +209,7 @@ export type DevActions = {
   loadDemoData: () => Promise<{ ok: true } | { ok: false; message: string }>;
   loadStressData: (
     years: StressYears,
-    dailySip?: boolean,
+    dense?: boolean,
   ) => Promise<{ ok: true; loadMs: number } | { ok: false; message: string }>;
   simulateCorruption: () => Promise<void>;
 };
@@ -772,14 +772,14 @@ export function createAppStore(
             loadDemoData() {
               return actions.replaceAllData(buildDemoData(deps.today()));
             },
-            async loadStressData(years, dailySip = false) {
+            async loadStressData(years, dense = false) {
               const startedAt = deps.now?.() ?? Date.now();
               const data = createStressData({
                 today: deps.today(),
                 years,
                 seed: 0x29_51_0,
                 newId: deps.newId,
-                dailySip,
+                dense,
               });
               const validated = appDataSchema.safeParse(data);
               if (!validated.success) {

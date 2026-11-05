@@ -2,11 +2,13 @@
 
 # Status
 
-- Current task: P29-U adds configured valuation methods on the existing
-  manual/plan holding model. Optional metadata migrates v18 to v19 without
-  changing unconfigured values; configured accrual and units-price values
-  flow through the shared holding selector. P29-T's atomic dated-entry
-  adjustments and P29-S cleanup remain in
+- Current task: P29-V verifies AsyncStorage-to-SQLite migration bytes before
+  removing legacy data and retains legacy fallback after SQLite failures.
+  Historical transaction/entry/goal dates are supported from 1900; stress
+  data uses 50/100/126-year tiers plus a dense 200-year-record-count tier.
+  Backup export round-trips unchanged or refuses before a file is created.
+  P29-U's optional valuation metadata remains on schema v19; P29-T's atomic
+  dated-entry adjustments remain in
   [PROGRESS.md](../PROGRESS.md). P29-R's separate
   schema-v13 backup dry-run remains complete.
   P29-O1 used the existing v18 holding model;
@@ -41,7 +43,8 @@
   inspected read-only: it imports `policySummary` for its Insurance box and
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T and P29-U are Done. P29-M is
+- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U
+  and P29-V are Done. P29-M is
   Superseded by P29-M2; P29-O inventory is committed and P29-O1 remains Done
   on schema v18. P29-S makes no behavior or schema change.
   Includes P29-F2, P29-F3 and
@@ -53,13 +56,15 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 91 suites, 1170 tests. P29-M2's 1120-test run, P29-N's
+- Test counts: 91 suites, 1178 tests (one opt-in stress benchmark skipped in
+  the routine gate; its five-sample run is recorded in
+  [PROGRESS.md](../PROGRESS.md)). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1170 tests (P29-U); all six final gates
+- Latest validated run: 91 suites, 1178 tests (P29-V); all six final gates
   exit 0. Fresh directory coverage is recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 91 suites, 1170 tests passed with coverage thresholds
+- Latest full Jest run: 91 suites, 1178 tests passed with coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

@@ -18,6 +18,13 @@
   and first-render timing. Long-history benchmarks, selector optimizations,
   the 50-year fixture's 1.5 MB target miss, import limits and unverified
   device checks are recorded in the P29-Q ledger.
+- P29-V verifies the SQLite migration read-back byte-for-byte before removing
+  legacy data, falls back to legacy storage on SQLite failures, accepts
+  historical dates from 1900, and changes stress fixtures to 50/100/126-year
+  windows plus a dense 200-year-record-count tier. Backup export now refuses
+  non-round-trippable or over-limit data before the UI writes a file; the
+  50-year fixture round-trips plain and encrypted, while larger fixtures are
+  refused at the documented 5,000,000-character plain-backup limit.
 - Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
   for 1990–2100, the Home Insurance box and actual due-payment amounts.
 - Added Budget start-month handling, schema-v14 holding links, plan/manual
