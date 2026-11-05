@@ -8605,3 +8605,53 @@ Old assertion / replaced assertion / reason: plan schedules always span the
 full remaining tenure / stopped plans span only dues on or before `stopDate`
 / `stopDate` must suppress all future schedule occurrences without changing
 stored entries or valuation.
+
+#### P29 layout refinement — owner-edited holding and liability screens (2026-11-05)
+
+DEC-P29LAYOUT-ASSET-LIABILITY: the holding Summary card is a single card that
+contains recurring-plan details and financial values. The Summary uses
+single-column rows for Monthly amount, Next due and Value date, and two-column
+detail cells for Invested, Current value/balance, date and Gain. `Stop
+recurring` / `Resume recurring` remains in the holding action row/footer area.
+The owner's removed holding Entries and Edit recurring-plan controls are not
+restored.
+
+Liability cards expose `Pay EMI`, `Close loan early`, and a conditional
+`Entries` button in one no-wrap action row. Liability detail pages are
+entries-only: Schedule and Payments tabs, payment sorting/filter controls and
+the old ActionRow layout are removed; `Summary` shows Outstanding, Paid,
+Interest accrued and Next due in columned detail rows, with `Pay EMI` and
+`Close loan early` actions in the same page structure as assets.
+
+Assumed: these changes are presentation-only; no schema, migration, domain
+value, goal, Emergency Fund, net-worth, Budget-link or liability-payment
+behavior changes. Replaced assertions are old/new/reason entries in the
+layout and ownership tests:
+
+- Old: one-time and recurring liability cards require `ActionRow`; new: card
+  actions are direct row `Button` components; reason: owner requested the three
+  liability controls in a consistent single row.
+- Old: closed liability actions require an `ActionRow` and its
+  `Edit closure note` action contract; new: a direct closure-note `Button`
+  action in the card's action container; reason: the owner removed the old
+  liability action structure.
+- Old: liability payments expose a SortChip and Schedule/Payments tabs; new:
+  the liability page is entries-only and has no sort/filter control; reason:
+  payment entries now follow the asset entries presentation.
+- Old: holding `Summary` uses fixed-font separate recurring and financial
+  sections; new: existing typography styles and two-column detail cells in one
+  Summary card; reason: owner-directed visual correction at large font scales.
+
+Gate table:
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 92 suites passed; 1191 passed, 1 skipped, 1192 total |
+| `npx tsc --noEmit` | 0 | Passed |
+| `npx expo lint` | 0 | Passed |
+| `npx expo-doctor` | 0 | 21/21 checks passed |
+| `npx expo export --platform android` | 0 | Android bundle exported |
+| `npx expo export --platform ios` | 0 | iOS bundle exported |
+
+Unverified: physical-device rendering and interaction at font scales 1.3 and
+2.0 on iOS and Android. Protected Home and Budget blobs remain unchanged.
