@@ -22,7 +22,7 @@ describe('SQLite state storage migration', () => {
   it('prefers the SQLite value and falls back to legacy AsyncStorage', async () => {
     const sqlite = new MemoryStorage();
     const legacy = new MemoryStorage();
-    const storage = createMigratingSQLiteStateStorage(sqlite, legacy);
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
     legacy.values.set('wealthwise.app.v1', 'legacy');
     sqlite.values.set('wealthwise.app.v1', 'sqlite');
 
@@ -35,7 +35,7 @@ describe('SQLite state storage migration', () => {
   it('preserves the old value in SQLite before replacing it and removes the legacy copy', async () => {
     const sqlite = new MemoryStorage();
     const legacy = new MemoryStorage();
-    const storage = createMigratingSQLiteStateStorage(sqlite, legacy);
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
     legacy.values.set('wealthwise.app.v1', 'old');
 
     await storage.setItem('wealthwise.app.v1', 'new');
@@ -44,39 +44,83 @@ describe('SQLite state storage migration', () => {
     expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
   });
 
-  it('keeps an existing SQLite value when replacing a stale legacy copy', async () => {
+  it('keeps and uses a mismatched legacy copy instead of discarding it', async () => {
     const sqlite = new MemoryStorage();
     const legacy = new MemoryStorage();
-    const storage = createMigratingSQLiteStateStorage(sqlite, legacy);
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
     sqlite.values.set('wealthwise.app.v1', 'current');
     legacy.values.set('wealthwise.app.v1', 'stale');
 
     await storage.setItem('wealthwise.app.v1', 'next');
 
-    expect(sqlite.values.get('wealthwise.app.v1')).toBe('next');
-    expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
+    expect(sqlite.values.get('wealthwise.app.v1')).toBe('current');
+    expect(legacy.values.get('wealthwise.app.v1')).toBe('next');
+    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('next');
   });
 
-  it('retains the previous data if the new SQLite write fails after legacy migration', async () => {
+  it('falls back to legacy without losing the current value when an SQLite write fails', async () => {
     class FailingSQLiteStorage extends MemoryStorage {
-      writes = 0;
-
       override async setItem(name: string, value: string): Promise<void> {
-        this.writes += 1;
-        if (this.writes === 2) throw new Error('disk full');
-        await super.setItem(name, value);
+        throw new Error('disk full');
       }
     }
 
     const sqlite = new FailingSQLiteStorage();
     const legacy = new MemoryStorage();
-    const storage = createMigratingSQLiteStateStorage(sqlite, legacy);
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
     legacy.values.set('wealthwise.app.v1', 'old');
 
-    await expect(storage.setItem('wealthwise.app.v1', 'new')).rejects.toThrow('disk full');
+    await storage.setItem('wealthwise.app.v1', 'new');
 
-    expect(sqlite.values.get('wealthwise.app.v1')).toBe('old');
-    expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
+    expect(sqlite.values.has('wealthwise.app.v1')).toBe(false);
+    expect(legacy.values.get('wealthwise.app.v1')).toBe('new');
+    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('new');
+  });
+
+  it('uses the legacy value after an SQLite open/read failure', async () => {
+    class OpenFailingSQLiteStorage extends MemoryStorage {
+      override async getItem(): Promise<string | null> {
+        throw new Error('database could not open');
+      }
+
+      override async setItem(): Promise<void> {
+        throw new Error('SQLite must stay disabled');
+      }
+    }
+
+    const sqlite = new OpenFailingSQLiteStorage();
+    const legacy = new MemoryStorage();
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    legacy.values.set('wealthwise.app.v1', 'legacy bytes');
+
+    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('legacy bytes');
+    await storage.setItem('wealthwise.app.v1', 'latest bytes');
+
+    expect(legacy.values.get('wealthwise.app.v1')).toBe('latest bytes');
+    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('latest bytes');
+  });
+
+  it('keeps the legacy copy and falls back when SQLite read-back fails', async () => {
+    class ReadBackFailingSQLiteStorage extends MemoryStorage {
+      reads = 0;
+
+      override async getItem(name: string): Promise<string | null> {
+        this.reads += 1;
+        if (this.reads === 2) throw new Error('read-back failed');
+        return super.getItem(name);
+      }
+    }
+
+    const sqlite = new ReadBackFailingSQLiteStorage();
+    const legacy = new MemoryStorage();
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    legacy.values.set('wealthwise.app.v1', 'legacy bytes');
+
+    await storage.setItem('wealthwise.app.v1', 'latest bytes');
+
+    expect(sqlite.values.get('wealthwise.app.v1')).toBe('legacy bytes');
+    expect(legacy.values.get('wealthwise.app.v1')).toBe('latest bytes');
+    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('latest bytes');
   });
 
   it('removes keys from both backends', async () => {
@@ -90,5 +134,25 @@ describe('SQLite state storage migration', () => {
 
     expect(sqlite.values.has('archive')).toBe(false);
     expect(legacy.values.has('archive')).toBe(false);
+  });
+
+  it('surfaces an SQLite removal failure after removing the legacy copy', async () => {
+    class RemoveFailingSQLiteStorage extends MemoryStorage {
+      override async removeItem(): Promise<void> {
+        throw new Error('SQLite remove failed');
+      }
+    }
+
+    const sqlite = new RemoveFailingSQLiteStorage();
+    const legacy = new MemoryStorage();
+    const storage = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    sqlite.values.set('wealthwise.app.v1', 'SQLite bytes');
+    legacy.values.set('wealthwise.app.v1', 'legacy bytes');
+
+    await expect(storage.removeItem('wealthwise.app.v1')).rejects.toThrow(
+      'SQLite could not remove the persisted value; the legacy copy was removed.',
+    );
+    expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
+    expect(sqlite.values.get('wealthwise.app.v1')).toBe('SQLite bytes');
   });
 });

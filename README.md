@@ -42,9 +42,10 @@ no cloud or network requests at runtime.
   setup after unlock; system permission is requested only after choosing
   Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
-- Developer-only stress fixtures for 50, 100 and 200 years, plus a 200-year
-  daily-SIP tier, loaded through replace-all with Undo for persistence and
-  rendering checks.
+- Developer-only stress fixtures for 50, 100 and 126 years, plus a dense
+  200-year record-count and daily-SIP tier compressed into the supported
+  126-year date window. They load through replace-all with Undo for persistence
+  and rendering checks.
 
 ## Screenshots
 
@@ -132,7 +133,8 @@ Entries on the same date remain separate ledger entries; return cash flows for
 that date are combined for calculation. Current value uses a recorded
 valuation when one exists: add deposits and subtract withdrawals dated after
 that valuation, through the requested as-of date. Entries dated on or before
-the valuation are treated as already included. Without a recorded valuation,
+the valuation are reflected in the stored value in the same write as the
+entry change, and are not added a second time. Without a recorded valuation,
 current value is opening plus posted deposits minus posted withdrawals through
 the as-of date. Values never fall below zero. The app does not estimate
 interest for unconfigured holdings; configured accrual holdings use their
@@ -155,15 +157,9 @@ lump sum uses CAGR: `(current value / contributions)^(365 / span days) - 1`.
 Annualised XIRR/CAGR appears only when the first cash flow to valuation date
 span is at least 365 days. Under 365 days the card shows only the labelled
 absolute return. Cash and Savings accounts show balance and net Invested, but
-never a return percentage, XIRR or CAGR. If entries predate a recorded
-valuation, the card explains that they are assumed included in the valuation.
-When a deposit or withdrawal is added, edited, or deleted with a date on or
-before the valuation date, the holding's stored value is adjusted by the
-corresponding signed amount in the same store write. These entries are therefore
-already included in the snapshot and are not added a second time; entries
-after the valuation date continue to change the value through the normal
-as-of calculation. Undo restores the entry, linked transaction and snapshot
-together.
+never a return percentage, XIRR or CAGR. Entries after the valuation date
+continue to change the value through the normal as-of calculation. Undo
+restores the entry, linked transaction and snapshot together.
 
 Every holding uses the same Deposit, Withdraw and Entries actions when its
 capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
@@ -191,13 +187,17 @@ compare against a statement using its as-of date and actual payment records.
 
 On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
 `SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
-and copied into SQLite on the next write. Web continues to use AsyncStorage.
-UI metadata and preferences remain in AsyncStorage. Persisted AppData schema
+and copied into SQLite on the next write. The copied bytes are read back and
+compared before the legacy copy is removed; SQLite failures and mismatches keep
+the legacy backend active. Web continues to use AsyncStorage. UI metadata and
+preferences remain in AsyncStorage. Persisted AppData schema
 version 19 is current; P29-Q changes only the storage backend. P29-U adds
 optional holding valuation fields without restructuring existing holding data.
 The migration chain upgrades supported data from schema versions 1 through 18.
-Backup import verifies file integrity and validates imported data, applying
-supported migrations where required.
+Backup import accepts dates from 1900 through 2100, verifies file integrity
+and validates imported data, applying supported migrations where required.
+Backup export refuses data that would change on import and refuses plain files
+over the 5,000,000-character import limit before creating a temporary file.
 
 The development menu's stress loader replaces all AppData with a deterministic
 long-history fixture and uses the existing Undo snapshot. It reports build,

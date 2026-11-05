@@ -18,7 +18,10 @@ import {
 
 export const SCHEMA_VERSION = 19;
 
-const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
+const isoDateSchema = z.string().refine(
+  (value) => isValidISO(value) && value >= '1900-01-01',
+  'Enter a valid date',
+);
 const idSchema = z.string().min(1);
 const moneySchema = z.number().finite().min(-100_000_000_000).max(100_000_000_000);
 const frequencySchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
@@ -67,7 +70,7 @@ const goalSchema = z.object({
   name: z.string(),
   target: moneySchema,
   saved: moneySchema,
-  year: z.number().int().finite().min(1990).max(2100),
+  year: z.number().int().finite().min(1900).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.object({
     instrumentId: idSchema,
@@ -887,7 +890,7 @@ export function makeGoalFormSchema(
   today: ISODate,
   ctx: { otherNames: string[]; locked: boolean; existingYear?: number; minTarget?: number },
 ) {
-  const yearMessage = 'Enter a year between 1990 and 2100';
+  const yearMessage = 'Enter a year between 1900 and 2100';
   return z.object({
     name: z.string().transform((name) => name.trim())
       .refine((name) => ctx.locked || (name.length >= 1 && name.length <= 40), 'Enter a name up to 40 characters')
@@ -900,7 +903,7 @@ export function makeGoalFormSchema(
       instrumentId: idSchema,
     })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
-        .transform(Number).refine((value) => value >= 1990 && value <= 2100, yearMessage),
+        .transform(Number).refine((value) => value >= 1900 && value <= 2100, yearMessage),
   }).superRefine((value, context) => {
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
