@@ -89,6 +89,14 @@
 - P29-O1 validation passes: 90 suites/1140 tests and all six ordered TypeScript,
   lint, Expo Doctor, Android export and iOS export gates. Device checks remain
   open.
+- P29-S cancels the ledger-only P29-O2 schema-v19 storage redesign. The
+  uncalled v18-to-v19 converter, unused ledger schemas/types and prototype
+  module/tests are removed. P29-O1's v18 Deposit, Withdraw and Entries
+  behavior remains; no runtime behavior or schema version changes.
+- P29-T adjusts a holding's stored valuation when deposits or withdrawals
+  dated on or before that valuation are added, edited or deleted. The entry,
+  linked transaction and manual/plan snapshot update together and Undo restores
+  them atomically; schema v18 and post-valuation behavior are unchanged.
 
 ### Investments and goals
 
