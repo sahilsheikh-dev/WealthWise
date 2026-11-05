@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 95% (102/107)
+Overall progress ██████████ 96% (103/107)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 93% (26/28)
+Phase 29 ██████████ 96% (27/28)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -195,7 +195,7 @@ Phase 29         █████████░ 93% (26/28)
 | P29-T | — | Done | Backdated/on-snapshot deposits and withdrawals now adjust manual and plan stored values within the same write; linked transaction Undo and downstream selectors are covered at store level. No schema change. | 2026-11-05 |
 | P29-U | — | Done | Additive schema-v19 valuation methods, value/price confirmation, shared configured values and default-off monthly update reminders. Unconfigured holdings preserve legacy amounts; focused tests and all six ordered gates pass. | 2026-11-05 |
 | P29-V | — | Done | SQLite migration verifies read-back bytes before removing legacy data and retains legacy fallback on SQLite failures. Date validation accepts records from 1900; stress tiers are 50/100/126 years plus dense 200-year record counts within the window. Backup export refuses data that would not round-trip or exceeds the 5,000,000-character import limit. Six ordered gates pass. | 2026-11-05 |
-| P29-W | — | Inventory committed; implementation pending | Foreclosure inventory is committed before behavior changes; existing settlement, due, Budget, reminder, Home, net-worth and loan-proceeds paths are documented below. | 2026-11-05 |
+| P29-W | — | Done | Report-only inventory committed first; recurring-liability foreclosure now records an optional closure state, linked payment and separate excess charge, suppresses later dues, supports note-only edits and one-step Undo. Schema v20 is additive; native-device checks remain open. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2834,7 +2834,7 @@ evidence present in exports/checkpoints.
 | P29-T | Phase 29 | — | 16d1c9bc | 2026-11-05 | Make deposits/withdrawals dated on or before a manual or plan valuation adjust the stored value in the same store write; preserve linked-transaction Undo and schema v18. | Done; real-store tests cover manual/plan snapshots, before/on/after dates, edits, deletes, withdrawals, linked transaction paths, Undo and downstream selectors. Final six-gate results are recorded below. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT. Assumed: Budget links refer to transaction actuals/planned flows, because Budget has no current-holding-value selector; no Budget redesign. Native-device checks remain open. | current request |
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
-| P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure state and every connected due, payment, budget, reminder, Home, net-worth and loan-proceeds path before implementation. | Step 1 report-only inventory committed first; foreclosure implementation remains pending. | Inventory commit to be recorded after commit verification; implementation commit follows separately. | DEC-P29W-FORECLOSURE-INVENTORY. Assumed: existing `settlement` is a dated balance anchor, not an explicit closed-state marker; its zero balance can also arise from settling historical dues. No source behavior or schema changed in Step 1. | current request |
+| P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure and implement the owner's frozen foreclosure behavior across due, payment, Budget, reminder, Home and net-worth surfaces. | Step 1 report-only inventory committed first (`bf2610cb5add9a8857b07f3cad50415c0e624cbf`). Step 2 adds an optional closure record in schema v20, a one-write close action with Undo, linked payment and separate excess charge, Closed filter, and note-only closed-loan editing. | Focused store, backup/migration and route tests pass; final six ordered gate results and implementation commit object are recorded below. | DEC-P29W-FORECLOSURE-INVENTORY; DEC-P29W-FORECLOSURE-RECORD. Assumed: P29-W is new Phase 29 work. Existing `settlement` is a dated balance anchor, not an explicit closed-state marker; the optional closure record is required to distinguish foreclosure from ordinary settlement. No Home source edit. Replaced assertions are listed below. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -8414,4 +8414,69 @@ is introduced.
 | Step | Status | Evidence |
 |---|---|---|
 | P29-W Step 1 — report-only inventory | Done; committed before implementation | Current types/schema, loan calculator, schedule, payment actions, store actions, pending selector, Budget, reminders, Home, summary and loan-proceeds paths listed above. |
-| P29-W Step 2 — foreclosure behavior | Pending | No implementation or behavior tests are included in this inventory commit. |
+| P29-W Step 2 — foreclosure behavior | Done; implementation committed separately after all six gates | Schema v20 optional closure record; pure action and one-write store Undo; closed filter and note-only editor; future schedule, pending, Budget and reminder rows stop at the closure date. |
+
+### DEC-P29W-FORECLOSURE-RECORD
+
+The existing `settlement` field remains an accounting anchor that may be used
+for historical balance corrections; it does not identify a foreclosure.
+Schema v20 therefore adds an optional recurring-liability closure record with
+date, linked payment ID, optional note and optional excess-charge transaction
+ID. The close action stores a zero settlement on the same date, allowing the
+existing shared loan and schedule calculations to stop future dues without
+changing unrelated loan arithmetic.
+
+The closure date is constrained to today or earlier and to the first payment
+date or later. The confirmation shows outstanding, amount paid and difference.
+Payment is capped at outstanding; any excess is a separate "Loan closure
+charges" expense that does not reduce balance. A short payment requires a
+second explicit confirmation and the difference is written off. The payment,
+charge, closure metadata and zero settlement are created by one pure action
+and one store write; one Undo restores AppData and linked transactions.
+Closed loans are isolated by the Closed filter; only the closure note can be
+edited, and deletion uses the existing confirmed linked-record choice.
+
+| Fixture | Before closure | After closure |
+|---|---|---|
+| Store test: 100,000 principal, 0% rate, 10,000 EMI, one 10,000 payment, close on the next due date | Outstanding on 2026-03-10 is 90,000; later schedule rows are generated. | Outstanding is 0; a linked 90,000 closing expense and separate 250 closure-charge expense are recorded; no later schedule, pending, Budget or reminder dues remain. |
+| Store test: 50,000 principal, 0% rate, no payments; amount paid 49,900 | Outstanding on 2026-03-10 is 50,000; no closure is recorded without the second confirmation. | After explicit write-off confirmation, outstanding is 0; payment is 49,900 and the 100 remainder is written off without an excess-charge transaction. |
+
+#### Replaced assertions
+
+| Old assertion / behavior | New assertion / behavior | Reason |
+|---|---|---|
+| A zero `settlement.balance` alone identifies a closed loan. | Only an optional closure record identifies a foreclosed recurring liability; generic settlement remains an accounting anchor. | Historical settlement may be used without foreclosure and must not appear in Closed. |
+| Recurring due rows continue to be derived from the scheduled term unless ordinary balance logic clears them. | A confirmed foreclosure stores a zero settlement on its closure date; every later due disappears from shared surfaces while earlier payments remain. | Explicit early closure must stop future obligations consistently. |
+| Recurring liabilities have no early-close action or write-off confirmation. | Close date and amount are confirmed; an underpayment requires explicit write-off confirmation and overpayment is separated as a charge. | Preserve the lender's reported settlement amount without silently changing the shared balance calculation. |
+
+No existing assertion was weakened. Home source remains untouched.
+
+#### Verification
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Gate 1 reports 91 suites, 1,187 passed tests and one skipped opt-in stress
+benchmark. Coverage was measured from the freshly generated
+`coverage/coverage-final.json` with `istanbul-lib-coverage`, summing per-file
+summaries by immediate `src/` directory:
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 725/767 (94.52%) | 745/848 (87.85%) |
+| `src/domain` | 3,507/3,566 (98.35%) | 3,449/3,711 (92.94%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+#### Device checks not verified
+
+Physical iOS and Android validation remains open for closure-date selection,
+confirmation flows, same-write Undo, schedule/pending/Budget/reminder removal,
+Closed filtering, read-only closed-loan payment/schedule rows, note-only
+editing/deletion and font scales 1.3 and 2.0.
+Native SQLite v19-to-v20 archive/restart behavior also remains unverified.

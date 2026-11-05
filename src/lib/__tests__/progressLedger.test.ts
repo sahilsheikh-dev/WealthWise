@@ -320,8 +320,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress ██████████ 95% (102/107)');
-    expect(dashboard).toContain('Phase 29         █████████░ 93% (26/28)');
+    expect(dashboard).toContain('Overall progress ██████████ 96% (103/107)');
+    expect(dashboard).toContain('Phase 29 ██████████ 96% (27/28)');
     for (const id of [
       'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V',
     ]) {
@@ -335,7 +335,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-T |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-V |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |'))).toContain('| Inventory committed; implementation pending |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-P29E-HOLDING-DELETE');
     expect(ledger).toContain('DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT');
     expect(ledger).toContain('DEC-P29U-LEGACY-VALUATION-COMPAT');
@@ -343,6 +343,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('DEC-P29V-DATE-STRESS-BOUNDS');
     expect(ledger).toContain('DEC-P29V-BACKUP-ROUNDTRIP');
     expect(ledger).toContain('DEC-P29W-FORECLOSURE-INVENTORY');
+    expect(ledger).toContain('DEC-P29W-FORECLOSURE-RECORD');
     expect(ledger).toContain('clears every Budget item link to the holding in the same single write');
     expect(ledger).toContain('DEC-P29G-COVER-MANAGEMENT');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (22/22)');

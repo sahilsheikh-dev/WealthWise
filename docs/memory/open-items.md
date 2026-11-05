@@ -4,6 +4,14 @@
 
 ## Unresolved
 
+- **P29-W physical-device checks:** verify closure-date selection and
+  outstanding recalculation, overpayment/shortfall confirmations, one-write
+  Undo, future-due removal, Closed filtering, read-only payment/schedule rows,
+  note-only editing/deletion and font scales 1.3 and 2.0 on iOS and Android.
+  Also verify the v19-to-v20 archive and restart behavior on native SQLite.
+  Jest and Expo exports do not verify native interaction, persistence or
+  layout.
+
 - **P29-V physical-device checks:** confirm AsyncStorage migration compares
   exact bytes before removal, failure fallback survives restart, and all four
   stress tiers load/Undo on iOS and Android. Time native SQLite capacity,
@@ -15,8 +23,9 @@
 - **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
-  removed. The persisted schema remains v18; P29-O1's unified holding actions
-  remain supported. Historical preparation commits are retained; see
+  removed. The cancelled storage design does not affect the current schema
+  v20; P29-O1's unified holding actions remain supported. Historical
+  preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
   cards, Entries, opening amount edits and Recurring plan details at font

@@ -37,7 +37,7 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 
 ## Schema and verification
 
-Current persisted schema version: **19**. Preserve migration and backup-import
+Current persisted schema version: **20**. Preserve migration and backup-import
 compatibility.
 
 Run the gates in this order, recording each exit code:

@@ -18,7 +18,7 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { liabilitySummary } from '../src/domain/liability';
+import { isLiabilityClosed, liabilitySummary } from '../src/domain/liability';
 import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -73,6 +73,7 @@ export default function LiabilityPaymentsScreen() {
   }
 
   const openPayment = (row: ListRow) => {
+    if (isLiabilityClosed(liability)) return;
     if ('status' in row) {
       if (row.status === 'paid' && row.entryId) {
         router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, paymentId: row.entryId } });
@@ -100,13 +101,13 @@ export default function LiabilityPaymentsScreen() {
         title={`${liability.name} ${tab === 'Schedule' ? 'schedule' : 'payments'}`}
         showBack
         fallbackHref="/liabilities"
-        rightActions={[{
+        rightActions={isLiabilityClosed(liability) ? [] : [{
           icon: 'plus',
           label: 'Add liability payment',
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }]}
         menu={[
-          ...(liability.kind === 'recurring' && schedule.summary.overdue + schedule.summary.ongoing > 0
+          ...(liability.kind === 'recurring' && !isLiabilityClosed(liability) && schedule.summary.overdue + schedule.summary.ongoing > 0
             ? [{
               label: 'Clear past dues',
               icon: 'check-circle' as const,
@@ -118,7 +119,9 @@ export default function LiabilityPaymentsScreen() {
           {
             label: 'Edit',
             icon: 'edit-2',
-            onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }),
+            onPress: () => router.push(isLiabilityClosed(liability)
+              ? { pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }
+              : { pathname: '/liability-form', params: { id: liability.id } }),
           },
           {
             label: 'Delete',
@@ -126,7 +129,10 @@ export default function LiabilityPaymentsScreen() {
             destructive: true,
             onPress: () => {
               const linkedCount = data.transactions.filter((transaction) =>
-                transaction.source?.kind === 'liability-payment' && transaction.source.parentId === liability.id,
+                (transaction.source?.kind === 'liability-payment'
+                  || transaction.source?.kind === 'liability-closure-charge'
+                  || transaction.source?.kind === 'liability-origin')
+                && transaction.source.parentId === liability.id,
               ).length;
               void choiceAsync({
                 title: 'Delete liability?',
@@ -215,12 +221,8 @@ export default function LiabilityPaymentsScreen() {
         renderItem={({ item }) => {
           if ('status' in item) {
             const estimated = liability.kind === 'recurring' && item.status !== 'paid';
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
-                onPress={() => openPayment(item)}
-                style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            const content = (
+              <>
                 <View style={styles.rowTop}>
                   <View style={styles.rowTitle}>
                     <AppText weight="semibold">
@@ -249,8 +251,30 @@ export default function LiabilityPaymentsScreen() {
                     </AppText>
                   </View>
                 ) : null}
+              </>
+            );
+            const style = [styles.row, { backgroundColor: colors.surface, borderColor: colors.border }];
+            return isLiabilityClosed(liability) ? (
+              <View style={style}>{content}</View>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
+                onPress={() => openPayment(item)}
+                style={style}>
+                {content}
               </Pressable>
             );
+          }
+          const content = (
+            <>
+              <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
+              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+            </>
+          );
+          if (isLiabilityClosed(liability)) {
+            return <View style={[styles.row, { borderColor: colors.border }]}>{content}</View>;
           }
           return (
             <SharedListRow
@@ -259,11 +283,7 @@ export default function LiabilityPaymentsScreen() {
               onEdit={() => openPayment(item)}
               editLabel="Edit liability payment"
               accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatAmount(item.amount, 'exact', 1)}`}
-            >
-              <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
-              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
-            </SharedListRow>
+            >{content}</SharedListRow>
           );
         }}
       />

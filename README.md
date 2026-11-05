@@ -185,15 +185,28 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
+Recurring liabilities can be closed early from their detail card. The closure
+date must be between the first payment date and today. The shared `loanState`
+calculation supplies the outstanding amount; the amount paid can be adjusted.
+The confirmation shows outstanding, amount paid and the difference. A payment
+up to the outstanding is recorded as one linked expense. Any excess is a
+separate "Loan closure charges" expense; a short payment requires a second
+confirmation before the remainder is written off. Closure, payment, charge
+and zero-balance settlement are one persisted action and one Undo. The shared
+schedule/pending derivation suppresses dues after closure for Transactions,
+Home, Budget and reminders. Closed loans have their own filter; only the
+closure note remains editable, and deletion is confirmed.
+
 On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
 `SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
 and copied into SQLite on the next write. The copied bytes are read back and
 compared before the legacy copy is removed; SQLite failures and mismatches keep
 the legacy backend active. Web continues to use AsyncStorage. UI metadata and
 preferences remain in AsyncStorage. Persisted AppData schema
-version 19 is current; P29-Q changes only the storage backend. P29-U adds
-optional holding valuation fields without restructuring existing holding data.
-The migration chain upgrades supported data from schema versions 1 through 18.
+version 20 is current; P29-Q changes only the storage backend. P29-U adds
+optional holding valuation fields without restructuring existing holding data,
+and P29-W adds an optional recurring-liability closure record. The migration
+chain upgrades supported data from schema versions 1 through 19.
 Backup import accepts dates from 1900 through 2100, verifies file integrity
 and validates imported data, applying supported migrations where required.
 Backup export refuses data that would change on import and refuses plain files

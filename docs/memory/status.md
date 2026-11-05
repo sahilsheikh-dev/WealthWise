@@ -2,12 +2,14 @@
 
 # Status
 
-- Current task: P29-V verifies AsyncStorage-to-SQLite migration bytes before
-  removing legacy data and retains legacy fallback after SQLite failures.
-  Historical transaction/entry/goal dates are supported from 1900; stress
-  data uses 50/100/126-year tiers plus a dense 200-year-record-count tier.
-  Backup export round-trips unchanged or refuses before a file is created.
-  P29-U's optional valuation metadata remains on schema v19; P29-T's atomic
+- Current task: P29-W implements early foreclosure for recurring liabilities.
+  The report-only inventory was committed first. Schema v20 adds optional
+  closure metadata; close, payment, optional charge and zero-balance settlement
+  are one domain action/store write with one-step Undo. Closed loans are
+  filterable, future dues disappear from shared projections, and only the
+  closure note remains editable.
+  P29-U's optional valuation metadata remains on schema v19; P29-W adds
+  optional foreclosure metadata in schema v20. P29-T's atomic
   dated-entry adjustments remain in
   [PROGRESS.md](../PROGRESS.md). P29-R's separate
   schema-v13 backup dry-run remains complete.
@@ -43,28 +45,30 @@
   inspected read-only: it imports `policySummary` for its Insurance box and
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U
-  and P29-V are Done. P29-M is
+- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U,
+  P29-V and P29-W are Done. P29-M is
   Superseded by P29-M2; P29-O inventory is committed and P29-O1 remains Done
   on schema v18. P29-S makes no behavior or schema change.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
-- Schema version: v19. The P29-O2 ledger-only v19 storage redesign was
+- Schema version: v20. The P29-O2 ledger-only v19 storage redesign was
   cancelled; P29-U uses v19 for additive optional valuation metadata.
+  P29-W adds optional recurring-liability closure metadata in v20.
   P29-L removes the retired coverGoals and policy
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 91 suites, 1178 tests (one opt-in stress benchmark skipped in
-  the routine gate; its five-sample run is recorded in
-  [PROGRESS.md](../PROGRESS.md)). P29-M2's 1120-test run, P29-N's
+- Test counts: 91 suites, 1187 tests (1187 passed; one opt-in stress benchmark
+  skipped); all six ordered gate results are recorded in
+  [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1178 tests (P29-V); all six final gates
-  exit 0. Fresh directory coverage is recorded in [PROGRESS.md](../PROGRESS.md).
+- Latest validated run: 91 suites, 1187 tests (P29-W); all six final
+  gates exit 0. Fresh directory
+  coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 91 suites, 1178 tests passed with coverage thresholds
+- Latest full Jest run: 91 suites, 1187 tests passed with coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
