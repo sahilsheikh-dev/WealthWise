@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (103/107)
+Overall progress ██████████ 96% (106/110)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29 ██████████ 96% (27/28)
+Phase 29 ██████████ 97% (30/31)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -196,6 +196,9 @@ Phase 29 ██████████ 96% (27/28)
 | P29-U | — | Done | Additive schema-v19 valuation methods, value/price confirmation, shared configured values and default-off monthly update reminders. Unconfigured holdings preserve legacy amounts; focused tests and all six ordered gates pass. | 2026-11-05 |
 | P29-V | — | Done | SQLite migration verifies read-back bytes before removing legacy data and retains legacy fallback on SQLite failures. Date validation accepts records from 1900; stress tiers are 50/100/126 years plus dense 200-year record counts within the window. Backup export refuses data that would not round-trip or exceeds the 5,000,000-character import limit. Six ordered gates pass. | 2026-11-05 |
 | P29-W | — | Done | Report-only inventory committed first; recurring-liability foreclosure now records an optional closure state, linked payment and separate excess charge, suppresses later dues, supports note-only edits and one-step Undo. Schema v20 is additive; native-device checks remain open. | 2026-11-05 |
+| P29-X | — | Done | Recurring investment stop/resume implementation preserves entries, valuation, returns and links, suppresses schedule rows after the inclusive stop date and restores future dues on resume. Schema v21 is additive with identity-preserving migration and archive support through `.premigration.v20`. Focused and full gates pass. | 2026-11-05 |
+| P29-Y | — | Done | Repaired the red Gate 1 memory expectations and matched the real suite/test counts without weakening assertions; all six ordered gates pass. The source-of-truth run evidence is recorded in the latest verification section. | 2026-11-05 |
+| P29-Z | — | Done | Documentation and ledger consistency restored from source: Foreclosure label, Home-only AppHeader menu, schema v21 migration chain, archive range through `.premigration.v20`, real Gate 1 counts and owner holding/liability UI history. No behavior, schema or UI source change. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2835,6 +2838,9 @@ evidence present in exports/checkpoints.
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
 | P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure and implement the owner's frozen foreclosure behavior across due, payment, Budget, reminder, Home and net-worth surfaces. | Step 1 report-only inventory committed first (`bf2610cb5add9a8857b07f3cad50415c0e624cbf`). Step 2 adds an optional closure record in schema v20, a one-write close action with Undo, linked payment and separate excess charge, Closed filter, and note-only closed-loan editing. | Focused store, backup/migration and route tests pass; final six ordered gate results and implementation commit object are recorded below. | DEC-P29W-FORECLOSURE-INVENTORY; DEC-P29W-FORECLOSURE-RECORD. Assumed: P29-W is new Phase 29 work. Existing `settlement` is a dated balance anchor, not an explicit closed-state marker; the optional closure record is required to distinguish foreclosure from ordinary settlement. No Home source edit. Replaced assertions are listed below. | current request |
+| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume recurring restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
+| P29-Y | Phase 29 | — | 16d1c9bc | 2026-11-05 | Repair stale Gate 1 memory assertions and verify the real counts. | Memory and progress expectations were reconciled to real Jest output without weakening assertions; ordered gates pass. | Commit `7ffa09ad75b2ad42883c1d573ba8133d15cf1304`; real suite/test evidence is preserved in this ledger. | Replaced assertions: stale suite/test counts and latest-run text / real source-derived counts / owner asked Gate 1 repaired. | current request |
+| P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -6397,6 +6403,34 @@ All six gates were run in order after the implementation and lint cleanup:
 | `npx expo export --platform android` | 0 | Passed |
 | `npx expo export --platform ios` | 0 | Passed |
 
+### P29-Z documentation consistency (2026-11-05)
+
+- Source facts: schema v21; migration chain v1 through v20; safe-storage
+  archives `.premigration.v1` through `.premigration.v20`; liability closure
+  labels are `Foreclosure`; AppHeader default menu is limited to `/`, `(tabs)`
+  and `(tabs)/index`.
+- Replaced assertions: old / schema documented as v20 / new / schema v21 /
+  source `SCHEMA_VERSION` is 21.
+- Replaced assertions: old / README migration chain ended at v19 and safe
+  storage archives ended at v19 / new / migration chain ends at v20 and archive
+  support ends at `.premigration.v20` / source migration and erase-all code
+  include v21 and v20 archives.
+- Replaced assertions: old / `Close loan early` appears as current liability
+  copy in documentation / new / `Foreclosure` / source card, entries and form
+  use `Foreclosure`.
+- Replaced assertions: old / status claims a red Gate 1 with 13 failing suites /
+  new / status is tied to the real 92-suite run with 1192 passed, 1 skipped /
+  owner asked false historical gate claims removed.
+- Replaced assertions: old / phase dashboard omitted P29-X, P29-Y and owner
+  UI/menu/Foreclosure work / new / P29-X, P29-Y and P29-Z are Done rows /
+  progress counts derive 106/110 overall and 30/31 Phase 29.
+- Gate 1 real final count: 92 suites passed; 1192 passed, 1 skipped, 1193 total.
+- Coverage method: one regenerated `coverage/coverage-final.json`, sum
+  Istanbul statement and branch counters by immediate `src/<directory>`.
+  `src/data`: 857/940 statements (91.17%), 748/851 branches (87.90%);
+  `src/domain`: 4182/4312 statements (96.99%), 3471/3737 branches (92.88%);
+  `src/lib`: 133/133 statements (100.00%), 126/126 branches (100.00%).
+
 Coverage was regenerated after deleting `coverage/`, then calculated from
 `coverage/coverage-final.json`. Method: use Istanbul `createCoverageMap`, sum
 each instrumented source file's covered/total line and branch counters by
@@ -8616,12 +8650,12 @@ recurring` / `Resume recurring` remains in the holding action row/footer area.
 The owner's removed holding Entries and Edit recurring-plan controls are not
 restored.
 
-Liability cards expose `Pay EMI`, `Close loan early`, and a conditional
+Liability cards expose `Pay EMI`, `Foreclosure`, and a conditional
 `Entries` button in one no-wrap action row. Liability detail pages are
 entries-only: Schedule and Payments tabs, payment sorting/filter controls and
 the old ActionRow layout are removed; `Summary` shows Outstanding, Paid,
 Interest accrued and Next due in columned detail rows, with `Pay EMI` and
-`Close loan early` actions in the same page structure as assets.
+`Foreclosure` actions in the same page structure as assets.
 
 Assumed: these changes are presentation-only; no schema, migration, domain
 value, goal, Emergency Fund, net-worth, Budget-link or liability-payment

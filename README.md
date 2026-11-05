@@ -36,7 +36,7 @@ no cloud or network requests at runtime.
   The global three-dot options menu appears only on the Home/Index screen;
   assets, liabilities, reminders, backup, security, profile and theme screens
   keep screen-specific actions instead of showing duplicate global options.
-  Liability cards keep Pay EMI, Close loan early and conditional Entries
+  Liability cards keep Pay EMI, Foreclosure and conditional Entries
   actions in one row; liability detail pages use an entries-only asset-style
   layout with a columned Summary card.
   Recurring plans can be stopped at an inclusive date or resumed without
@@ -217,10 +217,10 @@ and copied into SQLite on the next write. The copied bytes are read back and
 compared before the legacy copy is removed; SQLite failures and mismatches keep
 the legacy backend active. Web continues to use AsyncStorage. UI metadata and
 preferences remain in AsyncStorage. Persisted AppData schema
-version 20 is current; P29-Q changes only the storage backend. P29-U adds
+version 21 is current; P29-Q changes only the storage backend. P29-U adds
 optional holding valuation fields without restructuring existing holding data,
 and P29-W adds an optional recurring-liability closure record. The migration
-chain upgrades supported data from schema versions 1 through 19.
+chain upgrades supported data from schema versions 1 through 20.
 Backup import accepts dates from 1900 through 2100, verifies file integrity
 and validates imported data, applying supported migrations where required.
 Backup export refuses data that would change on import and refuses plain files
