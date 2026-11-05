@@ -13,9 +13,9 @@
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,
   returns or links.
-  Verification before commit: focused route smoke passed 150 tests and TypeScript
-  passed; the latest six-gate run had Gate 1 exit 1 with 13 Jest suites failing
-  at Expo setup, while Gates 2-6 exited 0.
+  Verification: the real `npm test -- --coverage` run passed 92 suites with
+  1192 passed tests, 1 skipped and 1193 total. The six-gate sequence is
+  recorded in [PROGRESS.md](../PROGRESS.md).
   P29-W implements early foreclosure for recurring liabilities.
   The report-only inventory was committed first. Schema v20 adds optional
   closure metadata; close, payment, optional charge and zero-balance settlement
@@ -69,6 +69,8 @@
 - Schema version: v21. The P29-O2 ledger-only v19 storage redesign was
   cancelled; P29-U uses v19 for additive optional valuation metadata.
   P29-W adds optional recurring-liability closure metadata in v20.
+  P29-X adds optional recurring-stop metadata; P29-Z is documentation/ledger
+  consistency and adds no behavior, schema, or UI source change.
   P29-L removes the retired coverGoals and policy
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.

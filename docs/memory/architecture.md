@@ -73,7 +73,7 @@ projection paths treat it as an inclusive cutoff.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v19` before the migrated write. With the current
+`${persistName}.premigration.v20` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration
