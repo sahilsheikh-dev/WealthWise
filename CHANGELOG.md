@@ -89,6 +89,10 @@
 - P29-O1 validation passes: 90 suites/1140 tests and all six ordered TypeScript,
   lint, Expo Doctor, Android export and iOS export gates. Device checks remain
   open.
+- P29-S cancels the ledger-only P29-O2 schema-v19 storage redesign. The
+  uncalled v18-to-v19 converter, unused ledger schemas/types and prototype
+  module/tests are removed. P29-O1's v18 Deposit, Withdraw and Entries
+  behavior remains; no runtime behavior or schema version changes.
 
 ### Investments and goals
 

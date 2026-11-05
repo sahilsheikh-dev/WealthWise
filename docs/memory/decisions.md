@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
 
 # Decisions
 
@@ -17,6 +17,7 @@ authoritative rationale and history.
 - [DEC-P29L-SIMPLE-INSURANCE](../PROGRESS.md#dec-p29l-simple-insurance)
 - [DEC-P29M2-POLICY-DUE-IDENTITY](../PROGRESS.md#dec-p29m2-policy-due-identity)
 - [DEC-P29O-LEDGER-INVENTORY](../PROGRESS.md#dec-p29o-ledger-inventory--step-1-report-only-inventory)
+- [DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE](../PROGRESS.md#dec-p29s-cancel-ledger-only-storage-redesign-2026-11-05)
 - [DEC-P29Q-STORAGE-STOP](../PROGRESS.md#dec-p29q-storage-stop--measured-persistence-limit-and-proposal-2026-11-04)
 - [DEC-P29Q-SQLITE-APPROVAL](../PROGRESS.md#dec-p29q-sqlite-approval--approved-storage-and-benchmark-follow-through-2026-11-04)
 - [DEC-P29N-REMINDERS-PROMPT](../PROGRESS.md#dec-p29n-reminders-prompt)

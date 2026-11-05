@@ -45,12 +45,12 @@ user claims that cannot be proven are called out as such.
 
 Progress bars use the percentage rounded to the nearest whole number and a
 10-character bar with `round(10 × closed / total)` filled blocks. A part is
-closed when its status starts with `Done` or starts with `Superseded`; both
-statuses count in the numerator and denominator. Phases 1–14 count as one part
+closed when its status starts with `Done`, `Superseded`, or `Cancelled`; closed
+parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 95% (97/102)
+Overall progress ██████████ 96% (99/103)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 91% (21/23)
+Phase 29         ██████████ 96% (23/24)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -188,9 +188,10 @@ Phase 29         █████████░ 91% (21/23)
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
 | P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
 | P29-O1 | P29-O | Done | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
-| P29-O2 | — | In progress | Schema v19 unified ledger, migration and valuation fields; staged adapter transition in progress. | 2026-11-04 |
+| P29-O2 | — | Cancelled by owner | The ledger-only schema-v19 storage redesign was cancelled; its converter, validation additions and uncalled prototype are removed. P29-O1's unified actions remain on schema v18. | 2026-11-05 |
 | P29-Q | — | Done | Owner-approved Expo SQLite native persistence, lazy legacy AsyncStorage migration, seeded stress loader with Undo, measured selector optimizations and five-sample Node benchmarks; no AppData schema change. Device checks remain open. | 2026-11-04 |
 | P29-R | — | Done | The local schema-v13 backup passed through the real v13-to-v18 backup import pipeline; anonymized pre/post comparisons found no differences in holding, goal, net-worth, liability, pending-due or reminder outputs. The backup remains outside the repository. | 2026-11-05 |
+| P29-S | — | Done | Removed the uncalled v18-to-v19 converter, unused v19 validation/types and test-only ledger prototype; preserved P29-O1, schema v18 and migration compatibility. Six ordered gates pass with coverage thresholds met. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2821,9 +2822,11 @@ evidence present in exports/checkpoints.
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
 | P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
+| P29-O2 | Phase 29 | — | — | 2026-11-04 | Begin a schema-v19 ledger-only storage redesign with a converter, strict ledger validation and staged runtime adoption. | Cancelled by the owner in P29-S: the separate storage redesign is not wanted; P29-O1 remains the accepted v18 implementation. Prototype migration/schema/types and their tests were removed. | Historical preparation commits remain intact; removal and six-gate evidence recorded in P29-S. | Supersedes DEC-P29O2-UNIFIED-LEDGER. The cancellation is not a schema migration; schema remains v18. | current request |
 | P29-Q | Phase 29 | — | — | 2026-11-04 | Measure persistence and performance for seeded 50-, 100- and 200-year app datasets; load them from the dev menu with Undo and report build/save/render timing. | Done after the owner approved Expo SQLite. Native AppData now uses Expo SQLite's key-value adapter with lazy legacy AsyncStorage migration; the stress loader uses replace/Undo. Normal 200-year hydration and single-write targets pass in Node; the measured 50-year size still exceeds 1.5 MB. No AppData schema change. | Installed AsyncStorage and Expo SQLite package inspection; five-sample benchmark tables, focused behavior tests and six final gates recorded below. Native-device checks remain unverified. | DEC-P29Q-STORAGE-STOP (historical stop point), DEC-P29Q-SQLITE-APPROVAL. Assumed: each tier spans `years × 12` calendar months including injected today; 25 transactions and 12 monthly holding entries per month; five samples use the same seeded payload. Assumed: `SQLiteStorage` has no app-level per-value cap based on the installed source; actual native SQLite/device capacity needs device validation. | current request |
 
 | P29-R | Phase 29 | — | — | 2026-11-05 | Dry-run every supported migration on the owner's local backup using the production import pipeline; compare all requested summaries without copying the backup into the repository or printing personal text. | Done; schema v13 migrated to v18 and the anonymized comparison found no differences in holding invested/current values, net worth/assets, Emergency fund, all goal saved amounts, liabilities, counts, pending dues or reminder preview. `scripts/dryRunMigration.ts` is committed; the backup was not copied or modified. | TypeScript, lint, Expo Doctor, Android export and iOS export exit 0. Full Jest tests pass, but coverage exits 1 because the unchanged `src/domain/schemas.ts` branch coverage is 89.41% against its 90% configured threshold. | DEC-P29R-BACKUP-DRY-RUN. Assumed: reminder preview uses enabled/day-before/same-day, 09:00, amounts hidden, because reminder preferences are not included in backups. Before-state comparison validates source AppData without migration; after-state uses `parseBackup` and its complete migration/validation pipeline. | current request |
+| P29-S | Phase 29 | — | — | 2026-11-05 | Restore Gate 1's coverage threshold and remove uncalled P29-O2 schema-v19 ledger code; no behavior/schema change. | Done; production caller audit found no runtime consumers for the converter, v19 schema/type additions or prototype ledger. Removed the dead code and its tests; P29-O1 remains unchanged. All six ordered gates exit 0. | Commit verified with `git cat-file -t`; exact gate results below. | DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE supersedes DEC-P29O2-UNIFIED-LEDGER. Deleted test assertions covered canceled prototype behavior, not current app behavior; current holding, migration and progress-ledger tests remain. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7651,6 +7654,47 @@ is first, accrual fields are complete, recurring plans are capability-allowed,
 and optional transaction links/prices/units use the expected types. Focused
 migration tests validate both demo and available legacy fixture outputs.
 
+### DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE — cancelled redesign (2026-11-05)
+
+**Owner decision:** cancel the ledger-only P29-O2 STORAGE redesign. P29-O1
+already provides the unified Deposit, Withdraw and Entries user experience on
+the current v18 holding model. No schema change, runtime behavior change, or
+data migration is authorized or needed.
+
+**Production-caller audit:**
+
+| Surface | Production callers before removal | Finding |
+|---|---|---|
+| `migrateV18ToV19` converter and its helper | Only the converter definition in `src/data/migrate.ts` used `legacyHoldingToV19`; `migratePersisted` did not call it and ends its supported chain at v17→v18. | Dead migration path; removed. |
+| v19 schemas (`ledgerHoldingSchema`, `ledgerAppDataSchema`) | Only the definitions/exports in `src/domain/schemas.ts`; the actual `appDataSchema` still validates the v18 manual/plan union and is the production import/persistence schema. | Test-only alternate schema; removed. |
+| `src/domain/holdingLedger.ts` | Only imported by the unused v18→v19 converter. | No application caller; module removed. |
+| New ledger types and constants | Only referenced by the converter, alternate schema/type assertion, and tests. | No production consumer; declarations removed from `src/domain/types.ts`. |
+| P29-O1 portfolio summary | `src/domain/portfolio.ts` uses a different `holdingLedgerSummary` built on the existing `Holding` type and `investmentReturns`; active list/card/portfolio behavior depends on it. | Preserved unchanged. This similarly named function is not part of the removed prototype. |
+
+Removed prototype-only tests:
+
+| Old test assertions | Replacement / reason |
+|---|---|
+| `migrateV18ToV19.test.ts`: v19 ledger value/net-worth equivalence for mock/demo and older fixtures; ledger schema shape; FIFO slotDate; opening and migrated valueUpdate assertions (7 `expect` calls across 4 tests). | Removed with the cancelled converter and v19 schema. Existing v1→v18 and v17→v18 migration/import tests remain and validate the supported schema path; P29-O1 store/domain/UI tests continue to cover the shipped v18 holding behavior. |
+| `holdingLedger.test.ts`: default v19 valuation mapping, ledger arithmetic, recovered-cost and empty-ledger expectations (4 `expect` calls across 3 tests). | Removed with the uncalled prototype module and types; these formulas were not runtime behavior. Existing P29-O1 `investmentReturns`/portfolio assertions remain. |
+
+No assertion about shipped behavior was weakened. The removed assertions
+specified the cancelled storage model; the replacement is retaining the
+existing v18 migration and P29-O1 behavior tests. Preparation commits
+`316f76e`, `53c5dae`, `0f1cac4` and `13138b0` remain in history; this cleanup
+is a new commit and does not rewrite them.
+
+#### P29-S ordered gates
+
+| Gate | Command | Exit code | Result |
+|---|---|---:|---|
+| 1 | `npm test -- --coverage` | 0 | 90 suites / 1140 tests pass. Coverage: `src/data` 94.22% lines / 87.70% branches; `src/domain` 98.51% / 93.24%; `src/lib` 100% / 100%. `src/domain/schemas.ts` branches recover to 90.29%, above the configured 90% threshold. |
+| 2 | `npx tsc --noEmit` | 0 | Pass |
+| 3 | `npx expo lint` | 0 | Pass |
+| 4 | `npx expo-doctor` | 0 | 21/21 checks pass |
+| 5 | `npx expo export --platform android` | 0 | Pass |
+| 6 | `npx expo export --platform ios` | 0 | Pass |
+
 ### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
 
 **Historical stop point:** stop P29-Q after measuring serialized sizes. The normal
@@ -7791,7 +7835,9 @@ were found in any measured selector output. The final run was as of
 and are absent from backup files. **Assumed:** the reminder-plan comparison
 uses enabled reminders, both day-before and same-day, 09:00 local time, and
 hidden amounts; it is a reproducible preview, not a claim about the owner's
-configured preferences. #### P29-R ordered gates
+configured preferences.
+
+#### P29-R ordered gates
 
 | Gate | Command | Exit code | Result |
 |---|---|---:|---|

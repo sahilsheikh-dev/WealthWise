@@ -166,6 +166,11 @@ frequency, amount and next due date inside the holding's Recurring plan
 section. These presentation and invested-display changes use the existing
 schema version 18.
 
+The owner cancelled the separate P29-O2 ledger-only storage redesign. The
+v19 converter, validation schema and prototype ledger are not used by the
+application; persisted holdings remain on schema v18. P29-O1's unified
+Deposit, Withdraw and Entries presentation remains the supported behavior.
+
 ### Recurring liability balances
 
 Recurring liability balances currently accrue simple interest by actual
