@@ -6,7 +6,8 @@
   remains the latest product change.
   The recurring plan details and financial Summary now share one card on the
   investment entries screen; Stop/Resume is in the holding action row above the
-  card, with Entries and Edit recurring plan controls retained.
+  card. The owner's current edit has no Entries or Edit recurring plan control
+  on the holding screen; removed screen data is not to be restored.
   Schema v21 stores one optional `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,

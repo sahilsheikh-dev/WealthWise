@@ -8581,16 +8581,17 @@ The owner requested a layout-only consolidation on
 
 - Old: Recurring plan and Summary rendered as separate cards.
 - New: Recurring plan details and Summary values render in one `Summary` card;
-  Stop/Resume appears in the holding action row above the card; Entries and
-  Edit recurring plan controls remain available.
+  Stop/Resume appears in the holding action row above the card. The owner then
+  removed the Entries and Edit recurring plan controls from the holding screen,
+  and those removed controls remain removed.
 - Reason: owner-directed frozen layout correction; no financial or persistence
   behavior changed.
-- Validation before the gate run: TypeScript passed; the focused
-  `RouteRenderSmoke.test.tsx` suite passed 150 tests. Gate 1 later exited 1:
-  13 suites failed during `expo-modules-core` Jest setup with
-  `Cannot read properties of undefined (reading 'select')`; Gate 2 exited 0,
-  Gate 3 exited 0, Gate 4 exited 0, Gate 5 exited 0 and Gate 6 exited 0.
-  No commit was created while Gate 1 was red.
+- Replaced assertions: the holding screen previously retained an Entries action
+  and an Edit recurring plan control / the owner-edited screen has neither /
+  preserve owner removal without restoring unwanted data.
+- Validation: the focused `RouteRenderSmoke.test.tsx` suite passed 150 tests at
+  font scales 1.3 and 2.0; TypeScript and all subsequent gates passed. The full
+  Gate 1 run passed 92 suites with 1191 tests passed and 1 skipped.
 
 DEC-P29X-PLAN-STOP-CUTOFF: the optional `stopDate` is an inclusive date
 boundary. Rows with due dates on or before it remain, including past unpaid

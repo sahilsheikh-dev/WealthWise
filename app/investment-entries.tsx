@@ -295,7 +295,6 @@ const styles = StyleSheet.create({
   summaryLine: { marginTop: 7, fontSize: 12 },
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
-  editPlanAction: { marginTop: 10, alignSelf: 'flex-start' },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
 });

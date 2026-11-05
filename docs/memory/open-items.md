@@ -4,9 +4,9 @@
 
 ## Unresolved
 
-- **Gate 1 red (2026-11-05):** 13 Jest suites fail during Expo module setup with
-  `Cannot read properties of undefined (reading 'select')`; no commit should be
-  created until Gate 1 exits 0. Gates 2-6 passed in the latest run.
+- **Holding layout validation (2026-11-05):** the owner-edited holding screen
+  passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
+  are green: 92 suites passed, with 1191 tests passed and 1 skipped.
 - **Merged holding summary card physical-device check:** verify the Recurring
   plan and Summary information remain readable in one card and Stop/Resume stays
   in the action row at font scales 1.3 and 2.0 on iOS and Android.
