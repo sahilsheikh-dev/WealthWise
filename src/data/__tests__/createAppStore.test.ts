@@ -2,11 +2,12 @@ import type { StateStorage } from 'zustand/middleware';
 
 import { canonicalJson, createBackup, parseBackup } from '../../domain/backup';
 import { decryptBackup, encryptBackup } from '../../domain/backupCrypto';
-import { validateIntegrity } from '../../domain/links';
+import { describeSource, validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
+import { deleteLiability as deleteLiabilityData } from '../../domain/liabilityActions';
 import { monthPositionAt } from '../../domain/cashFlow';
 import { budgetLineActual, budgetMonthView, defaultBudgetSections, linkedRecurringForMonth } from '../../domain/budget';
-import { netWorth } from '../../domain/summary';
+import { liabilitiesOverview, netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
@@ -14,7 +15,7 @@ import { pendingItems } from '../../domain/pending';
 import { policySchedule } from '../../domain/policySchedule';
 import { policySummary } from '../../domain/policySummary';
 import { planReminders } from '../../domain/reminders';
-import { upcomingDue } from '../../domain/schedule';
+import { liabilitySchedule, upcomingDue } from '../../domain/schedule';
 import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
@@ -2882,6 +2883,226 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions).toEqual([]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
+
+  it('closes a recurring liability with one write and one Undo, removing all later dues', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `foreclosure-${++id}` });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Foreclosure loan',
+      principal: 100_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 10_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Foreclosure loan was not created.');
+    actions.addLiabilityPayment(loanId, {
+      date: '2026-02-10',
+      amount: 10_000,
+      kind: 'EMI',
+      note: '',
+    });
+    const before = store.getState().data;
+    const loan = before.liabilities.find((entry) => entry.id === loanId);
+    if (!loan || loan.kind !== 'recurring') throw new Error('Expected a recurring liability.');
+    const outstanding = loanState(loan, '2026-03-10').balance;
+    const writes = storage.setItemCalls;
+
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding + 250,
+      note: 'Closed at lender',
+      writeOffConfirmed: false,
+    });
+
+    expect(store.getState().lastError).toBeNull();
+    expect(storage.setItemCalls - writes).toBe(1);
+    const closedData = store.getState().data;
+    const closed = closedData.liabilities.find((entry) => entry.id === loanId);
+    if (!closed || closed.kind !== 'recurring' || !closed.closure) {
+      throw new Error('Foreclosure did not set the closed state.');
+    }
+    expect(closed.closure).toMatchObject({ date: '2026-03-10', note: 'Closed at lender' });
+    expect(closed.settlement).toEqual({ asOf: '2026-03-10', balance: 0 });
+    expect(closed.payments).toHaveLength(2);
+    expect(closed.payments.at(-1)).toMatchObject({ amount: outstanding, kind: 'Prepayment' });
+    expect(closedData.transactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'expense',
+        amount: outstanding,
+        date: '2026-03-10',
+        source: { kind: 'liability-payment', parentId: loanId, entryId: closed.closure.paymentId },
+      }),
+      expect.objectContaining({
+        type: 'expense',
+        amount: 250,
+        date: '2026-03-10',
+        category: 'Other',
+        note: 'Loan closure charges',
+        source: { kind: 'liability-closure-charge', parentId: loanId, entryId: closed.closure.chargeTransactionId },
+      }),
+    ]));
+    const charge = closedData.transactions.find((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge');
+    if (!charge?.source) throw new Error('Expected the closure charge source.');
+    expect(describeSource(closedData, charge.source)).toEqual({
+      label: 'Foreclosure loan',
+      route: '/liability-payments',
+      params: { id: loanId },
+    });
+    expect(describeSource(closedData, {
+      kind: 'liability-closure-charge',
+      parentId: loanId,
+      entryId: 'missing-charge',
+    })).toBeNull();
+    expect(validateIntegrity({
+      ...closedData,
+      transactions: closedData.transactions.map((transaction) =>
+        transaction.id === charge.id ? { ...transaction, category: 'Food' } : transaction),
+    }).some((issue) => issue.code === 'linked-drift')).toBe(true);
+    const deletedKeepingTransactions = deleteLiabilityData(closedData, loanId, { linkedTransactions: 'keep' });
+    expect(deletedKeepingTransactions.liabilities.some((entry) => entry.id === loanId)).toBe(false);
+    expect(deletedKeepingTransactions.transactions
+      .filter((transaction) => transaction.source?.parentId === loanId)).toHaveLength(0);
+    const deletedEverything = deleteLiabilityData(closedData, loanId, { linkedTransactions: 'delete' });
+    expect(deletedEverything.transactions.some((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge')).toBe(false);
+    expect(liabilitySchedule(closed, '2026-10-10').rows.every((row) => row.dueDate <= '2026-03-10')).toBe(true);
+    expect(netWorth(closedData, '2026-10-10').liabilities).toBe(0);
+    expect(liabilitiesOverview(closedData, '2026-10-10', 0).totalOutstanding).toBe(0);
+    expect(pendingItems(closedData, '2026-10', '2026-10-10')
+      .some((item) => item.source.kind === 'liability' && item.source.parentId === loanId)).toBe(false);
+    expect(linkedRecurringForMonth(closedData, '2026-04', '2026-10-10')
+      .some((row) => row.kind === 'liability' && row.parentId === loanId)).toBe(false);
+    expect(planReminders(closedData, {
+      enabled: true,
+      localTime: '09:00',
+      dayBefore: true,
+      sameDay: true,
+      showAmounts: true,
+      hidePreviews: false,
+    }, new Date('2026-04-01T00:00:00'), 100)
+      .some((reminder) => reminder.dueItemId.startsWith(`due:liability:${loanId}:`))).toBe(false);
+    expect(validateIntegrity(closedData)).toEqual([]);
+    expect(useUIStore.getState().actionToast?.message).toBe('Loan closed early.');
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Foreclosure Undo was not set.');
+    undo();
+    expect(store.getState().data).toEqual(before);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('requires explicit write-off confirmation for an underpaid closure', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `writeoff-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Write-off loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 10,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Write-off loan was not created.');
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+    const outstanding = loanState(before.liabilities[0]!, '2026-03-10').balance;
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding - 100,
+      note: '',
+      writeOffConfirmed: false,
+    });
+    expect(store.getState().lastError).toContain('Confirm that the lender closed the loan for less');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding - 100,
+      note: '',
+      writeOffConfirmed: true,
+    });
+    expect(store.getState().lastError).toBeNull();
+    expect(storage.setItemCalls - writes).toBe(1);
+    const closed = store.getState().data.liabilities[0];
+    if (!closed || closed.kind !== 'recurring') throw new Error('Expected a closed recurring liability.');
+    expect(closed.closure).toMatchObject({
+      date: '2026-03-10',
+      note: 'Lender closed the loan for less',
+    });
+    expect(closed.payments.at(-1)?.amount).toBe(outstanding - 100);
+    expect(store.getState().data.transactions.some((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge')).toBe(false);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    const closedLiability = store.getState().data.liabilities[0];
+    if (!closedLiability || closedLiability.kind !== 'recurring') throw new Error('Expected the closed loan.');
+    const closedPayment = closedLiability.payments.at(-1);
+    if (!closedPayment) throw new Error('Expected the closing payment.');
+    actions.addLiabilityPayment(loanId, {
+      date: '2026-03-10', amount: 1, kind: 'Prepayment', note: '',
+    });
+    expect(store.getState().lastError).toContain('cannot be added to a closed liability');
+    actions.updateLiabilityPayment(loanId, closedPayment.id, { amount: closedPayment.amount + 1 });
+    expect(store.getState().lastError).toContain('cannot be edited on a closed liability');
+    actions.deleteLiabilityPayment(loanId, closedPayment.id);
+    expect(store.getState().lastError).toContain('cannot be deleted from a closed liability');
+    actions.updateLiability(loanId, { closureNote: 'Updated closure note' });
+    expect(store.getState().data.liabilities[0]).toMatchObject({
+      closure: { note: 'Updated closure note' },
+    });
+    const closedData = store.getState().data;
+    actions.updateLiability(loanId, { name: 'Must not change' });
+    expect(store.getState().lastError).toContain('Only the closure note can be edited');
+    expect(store.getState().data).toEqual(closedData);
+  });
+
+  it('rejects closure dates before the first payment and in the future without writing', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `datecheck${++id}`, today: () => '2026-03-01' });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Date check loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 10,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Date check loan was not created.');
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+    const input = { amountPaid: 50_000, note: '', writeOffConfirmed: false };
+    actions.closeLiabilityEarly(loanId, { ...input, date: '2026-02-09' });
+    expect(store.getState().lastError).toContain('before the first payment');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+
+    actions.closeLiabilityEarly(loanId, { ...input, date: '2026-03-02' });
+    expect(store.getState().lastError).toContain('cannot be in the future');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+  });
 });
 
 it('erases all supported storage keys and hydrates to empty data', async () => {
@@ -2901,6 +3122,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v16', 'original-v16-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v17', 'original-v17-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v18', 'original-v18-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v19', 'original-v19-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2936,6 +3158,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v16',
     'wealthwise.app.v1.premigration.v17',
     'wealthwise.app.v1.premigration.v18',
+    'wealthwise.app.v1.premigration.v19',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

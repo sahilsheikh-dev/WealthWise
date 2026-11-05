@@ -11,7 +11,7 @@ runtime synchronization.
   migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v19 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v20 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains
@@ -26,14 +26,17 @@ runtime synchronization.
 - P29-U adds optional valuation settings and a default-off monthly update
   reminder. Unconfigured holdings preserve legacy values; configured values
   share the portfolio selector.
+- P29-W adds an optional closure record for recurring liabilities; closures
+  retain their dated linked payment, suppress later shared dues and support
+  note-only edits after closure.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 91 suites, 1178 tests in the latest verified P29-V coverage
-  run. See [status.md](status.md) and the [progress
-  ledger](../PROGRESS.md) for exact gate results and coverage.
+- Test counts: 91 suites, 1187 tests (1187 passed; one opt-in stress benchmark
+  skipped) in the latest P29-W run. See [status.md](status.md) and the
+  [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.

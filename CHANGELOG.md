@@ -25,6 +25,11 @@
   non-round-trippable or over-limit data before the UI writes a file; the
   50-year fixture round-trips plain and encrypted, while larger fixtures are
   refused at the documented 5,000,000-character plain-backup limit.
+- P29-W adds early closure for recurring liabilities using additive schema v20
+  closure metadata. Closure creates a linked dated expense, separates any
+  excess into closure charges, requires confirmation before writing off a
+  shortfall, removes later dues from shared surfaces, and supports one-step
+  Undo. Closed loans are filterable; only the closure note can be edited.
 - Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
   for 1990–2100, the Home Insurance box and actual due-payment amounts.
 - Added Budget start-month handling, schema-v14 holding links, plan/manual

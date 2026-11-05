@@ -14,6 +14,7 @@ import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixtu
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
 import { addInvestmentEntry } from '../investmentActions';
+import { addLiability, closeRecurringLiability } from '../liabilityActions';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { makeV9Fixture } from '../../data/testFixtures/v9';
 import { makeV10Fixture } from '../../data/testFixtures/v10';
@@ -45,7 +46,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 19 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 20 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -395,7 +396,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(19);
+    expect(SCHEMA_VERSION).toBe(20);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -457,7 +458,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 20;
+    future.schemaVersion = 21;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -576,7 +577,7 @@ describe('backup validation and serialization', () => {
     ]);
   });
 
-  it('round-trips an encrypted v19 backup with a settled policy slot and linked investment item', async () => {
+  it('round-trips an encrypted v20 backup with a settled policy slot and linked investment item', async () => {
     const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
     if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
     const plan = budgetPlanFromLines(
@@ -585,9 +586,31 @@ describe('backup validation and serialization', () => {
     );
     const item = plan.items[0];
     if (!item) throw new Error('Expected an investment item in the linked backup.');
+    const loanData = addLiability(mockAppData, {
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Encrypted closure loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    }, () => 'encrypted-closure-loan');
+    const closedData = closeRecurringLiability(loanData, 'encrypted-closure-loan', {
+      date: '2026-10-10',
+      amountPaid: 50_000,
+      note: 'Encrypted backup closure',
+      writeOffConfirmed: false,
+    }, {
+      today: '2026-10-13',
+      newId: (() => {
+        let next = 0;
+        return () => `closure-record-${++next}`;
+      })(),
+    });
     const data = {
-      ...mockAppData,
-      policies: mockAppData.policies.map((policy) => ({
+      ...closedData,
+      policies: closedData.policies.map((policy) => ({
         ...policy,
         payments: [{
           id: 'settled-premium',
@@ -600,7 +623,7 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 19 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 20 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -617,6 +640,40 @@ describe('backup validation and serialization', () => {
     expect(imported.data.policies[0]?.payments).toEqual([
       expect.objectContaining({ id: 'settled-premium', dueDate: '2026-11-07' }),
     ]);
+    expect(imported.data.liabilities.find((liability) => liability.id === 'encrypted-closure-loan'))
+      .toMatchObject({
+        closure: { date: '2026-10-10', note: 'Encrypted backup closure' },
+        settlement: { asOf: '2026-10-10', balance: 0 },
+      });
+  });
+
+  it('rejects imported closure metadata without a matching zero settlement', () => {
+    const loanData = addLiability(mockAppData, {
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Invalid closure loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    }, () => 'invalid-closure-loan');
+    const closedData = closeRecurringLiability(loanData, 'invalid-closure-loan', {
+      date: '2026-10-10',
+      amountPaid: 50_000,
+      writeOffConfirmed: false,
+    }, { today: '2026-10-13', newId: (() => {
+      let next = 0;
+      return () => `invalid-closure-record-${++next}`;
+    })() });
+    const imported = validateImportData({
+      ...closedData,
+      liabilities: closedData.liabilities.map((liability) =>
+        liability.id === 'invalid-closure-loan' && liability.kind === 'recurring'
+          ? { ...liability, settlement: { asOf: '2026-10-10', balance: 1 } }
+          : liability),
+    });
+    expect(imported).toMatchObject({ ok: false, reason: 'invalid-data' });
   });
 
   it('imports an encrypted legacy v18 backup without changing its holdings', async () => {
@@ -764,7 +821,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 20;
+    newer.schemaVersion = 21;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

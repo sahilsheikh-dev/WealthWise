@@ -1,4 +1,5 @@
 import { mockAppData } from '../../mock/data';
+import { addMonths } from '../dates';
 import { validateImportData } from '../backup';
 import { BUDGET_GROUPS } from '../budget';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -32,9 +33,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version nineteen', () => {
+  it('accepts the typed mock app data and exports schema version twenty', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(19);
+    expect(SCHEMA_VERSION).toBe(20);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -414,6 +415,67 @@ describe('appDataSchema', () => {
       'Home premium',
     ]));
     expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
+  });
+
+  it('validates closure dates, zero settlement anchors and the referenced closing payment', () => {
+    const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
+    if (!recurring || recurring.kind !== 'recurring') throw new Error('Expected a recurring liability.');
+    const startDate = '2026-01-10';
+    const firstPaymentDate = addMonths(startDate, 1);
+    const closureDate = addMonths(startDate, 2);
+    const closingPayment = {
+      id: 'schema-closure-payment',
+      date: closureDate,
+      amount: 1,
+      note: '',
+      kind: 'Prepayment' as const,
+    };
+    const closed = {
+      ...recurring,
+      startDate,
+      payments: [closingPayment],
+      settlement: { asOf: closureDate, balance: 0 },
+      closure: {
+        date: closureDate,
+        paymentId: closingPayment.id,
+      },
+    };
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [closed],
+    }).success).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...closed,
+        closure: { ...closed.closure, date: firstPaymentDate },
+        settlement: { asOf: firstPaymentDate, balance: 0 },
+        payments: [{ ...closingPayment, date: firstPaymentDate }],
+      }],
+    }).success).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...closed,
+        closure: { ...closed.closure, date: startDate },
+        settlement: { asOf: startDate, balance: 0 },
+        payments: [{ ...closingPayment, date: startDate }],
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...closed,
+        settlement: { asOf: closureDate, balance: 1 },
+      }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      liabilities: [{
+        ...closed,
+        closure: { ...closed.closure, paymentId: 'missing-payment' },
+      }],
+    }).success).toBe(false);
   });
 
   it('validates optional metadata and every signed-money / identifier rule', () => {

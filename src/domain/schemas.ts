@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { formatINR } from '../lib/format';
-import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
+import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
@@ -16,7 +16,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
 
 const isoDateSchema = z.string().refine(
   (value) => isValidISO(value) && value >= '1900-01-01',
@@ -59,7 +59,7 @@ const transactionSchema = z.object({
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
-    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'liability-closure-charge', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -147,15 +147,34 @@ const liabilitySettlementSchema = z.object({
   asOf: isoDateSchema,
   balance: moneySchema.min(0),
 });
+const liabilityClosureSchema = z.object({
+  date: isoDateSchema,
+  paymentId: idSchema,
+  note: z.string().max(200).optional(),
+  chargeTransactionId: idSchema.optional(),
+});
 const recurringLiabilitySchema = z.object({
   ...liabilityBaseSchema,
   kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200),
   emi: moneySchema.positive(),
   settlement: liabilitySettlementSchema.nullable(),
+  closure: liabilityClosureSchema.optional(),
 }).superRefine((liability, context) => {
   if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
+  }
+  if (liability.closure) {
+    if (liability.closure.date < addMonths(liability.startDate, 1)) {
+      context.addIssue({ code: 'custom', path: ['closure', 'date'], message: 'Closure cannot predate the first payment' });
+    }
+    if (liability.settlement?.asOf !== liability.closure.date || liability.settlement.balance !== 0) {
+      context.addIssue({ code: 'custom', path: ['closure'], message: 'Closed liabilities require a zero settlement on the closure date' });
+    }
+    const payment = liability.payments.find((entry) => entry.id === liability.closure?.paymentId);
+    if (!payment || payment.kind !== 'Prepayment' || payment.date !== liability.closure.date) {
+      context.addIssue({ code: 'custom', path: ['closure', 'paymentId'], message: 'Closure must reference its dated prepayment' });
+    }
   }
   if (liability.payments.some((payment) => payment.kind === 'Payment')) {
     context.addIssue({ code: 'custom', path: ['payments'], message: 'Recurring liabilities use EMI or prepayment entries' });
@@ -971,6 +990,22 @@ export function makeLiabilityPaymentFormSchema(
   });
 }
 
+export function makeLiabilityClosureFormSchema(today: ISODate, firstPaymentDate: ISODate) {
+  return z.object({
+    date: dateInputSchema()
+      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
+      .refine((date) => !isValidISO(date) || date >= firstPaymentDate, 'Date cannot be before the first payment'),
+    amountPaid: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000_000 }),
+    note: z.string().trim().max(200, 'Keep the note under 200 characters'),
+  });
+}
+
+export function makeLiabilityClosureNoteSchema() {
+  return z.object({
+    note: z.string().trim().max(200, 'Keep the note under 200 characters'),
+  });
+}
+
 export type PlanFormInput = z.input<ReturnType<typeof makePlanFormSchema>>;
 export type PlanFormOutput = z.output<ReturnType<typeof makePlanFormSchema>>;
 export type InvestmentEntryFormInput = z.input<ReturnType<typeof makeInvestmentEntryFormSchema>>;
@@ -979,6 +1014,10 @@ export type LiabilityFormInput = z.input<ReturnType<typeof makeLiabilityFormSche
 export type LiabilityFormOutput = z.output<ReturnType<typeof makeLiabilityFormSchema>>;
 export type LiabilityPaymentFormInput = z.input<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
 export type LiabilityPaymentFormOutput = z.output<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
+export type LiabilityClosureFormInput = z.input<ReturnType<typeof makeLiabilityClosureFormSchema>>;
+export type LiabilityClosureFormOutput = z.output<ReturnType<typeof makeLiabilityClosureFormSchema>>;
+export type LiabilityClosureNoteFormInput = z.input<ReturnType<typeof makeLiabilityClosureNoteSchema>>;
+export type LiabilityClosureNoteFormOutput = z.output<ReturnType<typeof makeLiabilityClosureNoteSchema>>;
 export type GoalFormInput = z.input<ReturnType<typeof makeGoalFormSchema>>;
 export type GoalFormOutput = z.output<ReturnType<typeof makeGoalFormSchema>>;
 export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>;

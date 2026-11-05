@@ -25,6 +25,8 @@ import InvestmentEntriesScreen from '../../../app/investment-entries';
 import InvestmentFormScreen from '../../../app/investment-form';
 import LiabilitiesScreen from '../../../app/liabilities';
 import LiabilityFormScreen from '../../../app/liability-form';
+import LiabilityClosureFormScreen from '../../../app/liability-closure-form';
+import LiabilityClosureNoteFormScreen from '../../../app/liability-closure-note-form';
 import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
@@ -71,6 +73,11 @@ const mockConfirmAsync = jest.fn(async (_options: {
   confirmLabel: string;
   cancelLabel?: string;
 }) => true);
+const mockChoiceAsync = jest.fn(async (_options: {
+  title: string;
+  message: string;
+  choices: { id: string; label: string; destructive?: boolean }[];
+}) => null);
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -551,7 +558,7 @@ jest.mock('../../components/form/FormErrorBanner', () => {
 });
 
 jest.mock('../../lib/confirm', () => ({
-  choiceAsync: async () => null,
+  choiceAsync: (options: Parameters<typeof mockChoiceAsync>[0]) => mockChoiceAsync(options),
   confirmAsync: (...args: Parameters<typeof mockConfirmAsync>) => mockConfirmAsync(...args),
 }));
 jest.mock('../../components/PaidAmountDialog', () => {
@@ -1027,6 +1034,8 @@ describe('route render smoke audit', () => {
       ['Investment plan edit', { id: plan.id }, React.createElement(InvestmentFormScreen)],
       ['Liability create from Home/list', {}, React.createElement(LiabilityFormScreen)],
       ['Liability edit', { id: liability.id }, React.createElement(LiabilityFormScreen)],
+      ['Liability closure', { liabilityId: liability.id }, React.createElement(LiabilityClosureFormScreen)],
+      ['Closed liability note', { liabilityId: liability.id }, React.createElement(LiabilityClosureNoteFormScreen)],
       ['Liability payment add from due/list', {
         liabilityId: liability.id, kind: 'Payment', amount: '1', date: todayISO(),
       }, React.createElement(LiabilityPaymentFormScreen)],
@@ -3339,7 +3348,18 @@ describe('route render smoke audit', () => {
     };
     const data: AppData = {
       ...emptyAppData(todayISO()),
-      liabilities: [recurringA, oneTime, recurringB],
+      liabilities: [
+        recurringA,
+        oneTime,
+        recurringB,
+        {
+          ...recurringA,
+          id: 'filter-liability-closed',
+          name: 'Closed recurring',
+          settlement: { asOf: '2026-02-01', balance: 0 },
+          closure: { date: '2026-02-01', paymentId: 'closed-payment' },
+        },
+      ],
     };
     Object.assign(routeData, data);
     store.data = data;
@@ -3358,6 +3378,17 @@ describe('route render smoke audit', () => {
       if (!recurringChip) throw new Error('Recurring liability filter did not render.');
       act(() => recurringChip.props.onPress());
       expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
+      const closedChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Closed');
+      if (!closedChip) throw new Error('Closed liability filter did not render.');
+      act(() => closedChip.props.onPress());
+      expect(cardIds()).toEqual(['liability-card-filter-liability-closed']);
+      const closedActionRow = renderer.root.findByProps({
+        testID: 'liability-card-actions-filter-liability-closed',
+      }).findAll((node) => String(node.type) === 'actionrow')[0];
+      if (!closedActionRow) throw new Error('Closed liability actions did not render.');
+      expect(closedActionRow.props.actions.map((action: { label: string }) => action.label))
+        .toContain('Edit closure note');
       expect(renderer.root.findAll((node) =>
         typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Sort:'),
@@ -3375,6 +3406,112 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('keeps loan closure and closed-note screens accessible at font scale %s', async (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousRouteData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const previousFontScale = mockFontScale;
+    const recurring: RecurringLiability = {
+      id: 'closure-font-loan',
+      kind: 'recurring',
+      name: 'Closure font loan',
+      type: 'Other',
+      principal: 50_000,
+      ratePct: 0,
+      startDate: '2026-01-10',
+      tenureMonths: 12,
+      emi: 5_000,
+      payments: [],
+      settlement: null,
+    };
+    const closed: RecurringLiability = {
+      ...recurring,
+      payments: [{
+        id: 'closed-font-payment',
+        date: '2026-02-10',
+        amount: 5_000,
+        kind: 'Prepayment',
+        note: 'Closing payment',
+      }],
+      id: 'closed-font-loan',
+      closure: {
+        date: '2026-02-10',
+        paymentId: 'closed-font-payment',
+        note: 'Settled with lender',
+      },
+      settlement: { asOf: '2026-02-10', balance: 0 },
+    };
+    const data: AppData = {
+      ...emptyAppData(todayISO()),
+      liabilities: [recurring, closed],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      routeParams.mockReturnValue({ liabilityId: recurring.id });
+      renderer = renderScreen(React.createElement(LiabilityClosureFormScreen));
+      for (const label of ['Loan closure date', 'Amount paid to lender', 'Loan closure note']) {
+        expect(renderer.root.findByProps({ accessibilityLabel: label })).toBeDefined();
+      }
+      expect(JSON.stringify(renderer.toJSON())).toContain('Outstanding on this date');
+      act(() => renderer?.unmount());
+
+      routeParams.mockReturnValue({ liabilityId: closed.id });
+      renderer = renderScreen(React.createElement(LiabilityClosureNoteFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Closure note' }).props.value).toBe('Settled with lender');
+      mockChoiceAsync.mockClear();
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete loan' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockChoiceAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Delete closed loan?',
+        choices: expect.arrayContaining([
+          expect.objectContaining({ id: 'keep' }),
+          expect.objectContaining({ id: 'delete', destructive: true }),
+        ]),
+      }));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Save note' })).toBeDefined();
+      act(() => renderer?.unmount());
+
+      routeParams.mockReturnValue({ id: closed.id });
+      renderer = renderScreen(React.createElement(LiabilityPaymentsScreen));
+      const closureDate = formatDate('2026-02-10');
+      expect(renderer.root.findAll((node) =>
+        node.props.accessibilityRole === 'button'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith(`${closureDate},`),
+      )).toHaveLength(0);
+      const paymentsScreen = renderer;
+      if (!paymentsScreen) throw new Error('Closed liability payments screen did not render.');
+      const segmented = paymentsScreen.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
+      if (!segmented) throw new Error('Liability payment tabs did not render.');
+      act(() => segmented.props.onChange('Payments'));
+      const flatList = paymentsScreen.root.findAll((node) => String(node.type) === 'flatlist')[0];
+      if (!flatList) throw new Error('Closed liability payment list did not render.');
+      const closingPayment = closed.payments[0];
+      if (!closingPayment) throw new Error('Closed liability payment fixture is missing.');
+      const paymentRow = flatList.props.renderItem({
+        item: closingPayment,
+        index: 0,
+        separators: {},
+      });
+      expect(paymentRow.type).toBe(jest.requireMock('react-native').View);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 

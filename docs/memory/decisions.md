@@ -23,6 +23,7 @@ authoritative rationale and history.
 - [DEC-P29V-SQLITE-VERIFIED-FALLBACK](../PROGRESS.md#dec-p29v-sqlite-verified-fallback)
 - [DEC-P29V-DATE-STRESS-BOUNDS](../PROGRESS.md#dec-p29v-date-stress-bounds)
 - [DEC-P29V-BACKUP-ROUNDTRIP](../PROGRESS.md#dec-p29v-backup-roundtrip)
+- [DEC-P29W-FORECLOSURE-RECORD](../PROGRESS.md#dec-p29w-foreclosure-record)
 - [DEC-P29Q-STORAGE-STOP](../PROGRESS.md#dec-p29q-storage-stop--measured-persistence-limit-and-proposal-2026-11-04)
 - [DEC-P29Q-SQLITE-APPROVAL](../PROGRESS.md#dec-p29q-sqlite-approval--approved-storage-and-benchmark-follow-through-2026-11-04)
 - [DEC-P29N-REMINDERS-PROMPT](../PROGRESS.md#dec-p29n-reminders-prompt)
