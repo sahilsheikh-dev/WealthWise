@@ -17,12 +17,12 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { valueStaleness } from '../src/domain/holdingActions';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
-import { valueStaleness } from '../src/domain/holdingActions';
-import { suggestedValuationMethod } from '../src/domain/valuation';
 import { planSchedule } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
@@ -157,32 +157,9 @@ export default function InvestmentEntriesScreen() {
           disabled={financial.value < 1}
           onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
         />
-        <Button label="Entries" icon="list" style={styles.action} disabled />
-        <Button
-          label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
-          icon="edit-2"
-          style={styles.action}
-          onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
-        />
-      </View>
-      {holding.kind === 'plan' && capabilities?.recurring ? (
-        <Card>
-          <AppText style={[typography.label, { color: colors.text3 }]}>Recurring plan</AppText>
-          <AppText
-            style={styles.summaryLine}
-            accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
-            {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} · <AmountText value={holding.amount} tier="row" /> · Next due{' '}
-            {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
-          </AppText>
-          {holding.stopDate ? (
-            <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
-          ) : null}
+        {holding.kind === 'plan' && capabilities?.recurring ? (
           <Button
-            label="Edit recurring plan"
-            icon="edit-2"
-            onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
-          />
-          <Button
+            style={styles.action}
             label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
             icon={holding.stopDate ? 'play' : 'pause'}
             onPress={() => {
@@ -202,10 +179,29 @@ export default function InvestmentEntriesScreen() {
               }
             }}
           />
-        </Card>
-      ) : null}
+        ) : null}
+        <Button
+          label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
+          icon="edit-2"
+          style={styles.action}
+          onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
+        />
+      </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
+        {holding.kind === 'plan' && capabilities?.recurring ? (
+          <>
+            <AppText
+              style={styles.summaryLine}
+              accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
+              {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} · <AmountText value={holding.amount} tier="row" /> · Next due{' '}
+              {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
+            </AppText>
+            {holding.stopDate ? (
+              <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
+            ) : null}
+          </>
+        ) : null}
         <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(financial.invested, 'exact', 1)}`}>
           Invested <AmountText value={financial.invested} tier="row" />
         </AppText>

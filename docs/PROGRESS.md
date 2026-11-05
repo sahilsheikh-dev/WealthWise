@@ -8574,6 +8574,25 @@ final Gate 1 and summed istanbul `lines`/`branches` coverage by immediate
 | `npx expo export --platform android` | 0 | Passed. |
 | `npx expo export --platform ios` | 0 | Passed. |
 
+### Merged holding Summary card (2026-11-05)
+
+The owner requested a layout-only consolidation on
+`app/investment-entries.tsx`: old assertion / new assertion / reason.
+
+- Old: Recurring plan and Summary rendered as separate cards.
+- New: Recurring plan details and Summary values render in one `Summary` card;
+  Stop/Resume appears in the holding action row above the card. The owner then
+  removed the Entries and Edit recurring plan controls from the holding screen,
+  and those removed controls remain removed.
+- Reason: owner-directed frozen layout correction; no financial or persistence
+  behavior changed.
+- Replaced assertions: the holding screen previously retained an Entries action
+  and an Edit recurring plan control / the owner-edited screen has neither /
+  preserve owner removal without restoring unwanted data.
+- Validation: the focused `RouteRenderSmoke.test.tsx` suite passed 150 tests at
+  font scales 1.3 and 2.0; TypeScript and all subsequent gates passed. The full
+  Gate 1 run passed 92 suites with 1191 tests passed and 1 skipped.
+
 DEC-P29X-PLAN-STOP-CUTOFF: the optional `stopDate` is an inclusive date
 boundary. Rows with due dates on or before it remain, including past unpaid
 rows; later rows are removed from schedule-derived surfaces. `resumePlan`

@@ -28,6 +28,9 @@ no cloud or network requests at runtime.
   balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
+  On the holding details screen, recurring-plan details and financial Summary
+  values are combined in one card; recurring Stop/Resume stays in the holding
+  action row.
   Recurring plans can be stopped at an inclusive date or resumed without
   changing entries, current value, returns, goal links or Emergency Fund
   links.
