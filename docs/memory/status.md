@@ -1,8 +1,12 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: P29-O2 is introducing the unified ledger and v19 migration
+- Current task: P29-R is complete; it independently dry-ran the owner's local
+  schema-v13 backup through the real v13-to-v18 import pipeline and found no
+  differences in the requested before/after selectors. The privacy-safe script
+  and evidence are in [PROGRESS.md](../PROGRESS.md). P29-O2 remains in progress,
+  introducing the unified ledger and v19 migration
   through the compatibility adapter. The v18-to-v19 converter and equivalence
   tests are committed as `0f1cac4`; strict v19 ledger validation and its
   migration fixtures are the next staged change. The active schema remains
