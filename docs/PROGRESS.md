@@ -7784,8 +7784,9 @@ so that was not done.
 | Demo and mock selector outputs after historical demo contributions | `selectors.test.ts` — `preserves linked outputs and legacy linked-invested values for mock and demo data` |
 | Single persisted write and data integrity on store actions | Snapshot and linked-transaction store tests count `storage.setItemCalls` and assert `validateIntegrity` |
 
-All tests use real `createAppStore` actions. Device verification of persistence,
-rendering and font-scale behavior remains open in
+The P29-T mutation tests use real `createAppStore` actions; the mock/demo
+selector regression verifies the derived outputs directly. Device verification
+of persistence, rendering and font-scale behavior remains open in
 [`docs/memory/open-items.md`](docs/memory/open-items.md).
 
 The first full Gate 1 attempt exited 1 because the demo selector test still
