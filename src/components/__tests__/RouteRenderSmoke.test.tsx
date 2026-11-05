@@ -4022,7 +4022,7 @@ describe('route render smoke audit', () => {
         renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
         expect(renderer.root.findAllByProps({ label: 'Deposit' })).toHaveLength(1);
         expect(renderer.root.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
-        expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(1);
+        expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(0);
         const list = renderer.root.find((node) => String(node.type) === 'flatlist');
         expect(list.props.data).toHaveLength(7);
         const openingRow = list.props.data[0];
@@ -4041,7 +4041,7 @@ describe('route render smoke audit', () => {
             typeof node.props.accessibilityLabel === 'string'
             && node.props.accessibilityLabel.startsWith('Recurring plan monthly'),
           )).not.toHaveLength(0);
-          expect(renderer.root.findAllByProps({ label: 'Edit recurring plan' })).toHaveLength(1);
+          expect(renderer.root.findAllByProps({ label: 'Edit recurring plan' })).toHaveLength(0);
         }
         act(() => renderer?.unmount());
         renderer = undefined;

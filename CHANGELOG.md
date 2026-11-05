@@ -6,6 +6,10 @@
 
 ### Phase 29
 
+- The owner-edited holding details layout keeps Recurring plan details and
+  financial Summary values in one card, with Stop/Resume in the holding action
+  row. Removed unwanted screen controls and data remain removed; route smoke
+  tests pass at 1.3 and 2.0 font scales, and all six gates pass.
 - P29-X adds recurring-plan stop and resume controls. An inclusive optional
   stop date removes only schedule slots after the cutoff from Transactions,
   Home pending dues, Budget planned rows and reminders; past unpaid dues remain
