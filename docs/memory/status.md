@@ -5,12 +5,15 @@
 - Current task: P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
   The recurring plan details and financial Summary now share one card on the
-  investment entries screen; Stop/Resume is the footer action, with Entries and
-  Edit recurring plan controls retained.
+  investment entries screen; Stop/Resume is in the holding action row above the
+  card, with Entries and Edit recurring plan controls retained.
   Schema v21 stores one optional `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,
   returns or links.
+  Verification before commit: focused route smoke passed 150 tests and TypeScript
+  passed; the latest six-gate run had Gate 1 exit 1 with 13 Jest suites failing
+  at Expo setup, while Gates 2-6 exited 0.
   P29-W implements early foreclosure for recurring liabilities.
   The report-only inventory was committed first. Schema v20 adds optional
   closure metadata; close, payment, optional charge and zero-balance settlement

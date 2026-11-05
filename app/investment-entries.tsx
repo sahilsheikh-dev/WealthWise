@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
@@ -43,7 +43,6 @@ export default function InvestmentEntriesScreen() {
   const data = useAppData();
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
-  const entriesListRef = useRef<FlatList<ListRow>>(null);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const capabilities = holding ? holdingCapabilities(holding.type) : null;
   const entrySortList = holding?.kind === 'plan' ? 'logs' : 'entries';
@@ -158,24 +157,40 @@ export default function InvestmentEntriesScreen() {
           disabled={financial.value < 1}
           onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
         />
+        {holding.kind === 'plan' && capabilities?.recurring ? (
+          <Button
+            style={styles.action}
+            label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
+            icon={holding.stopDate ? 'play' : 'pause'}
+            onPress={() => {
+              if (holding.stopDate) {
+                void choiceAsync({
+                  title: 'Resume recurring?',
+                  message: 'This restores the plan schedule from the next due after today.',
+                  choices: [
+                    { id: 'cancel', label: 'Cancel' },
+                    { id: 'resume', label: 'Resume', destructive: false },
+                  ],
+                }).then((choice) => {
+                  if (choice === 'resume') actions.resumePlan(holding.id);
+                });
+              } else {
+                router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holding.id)}` as Href);
+              }
+            }}
+          />
+        ) : null}
         <Button
           label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
           icon="edit-2"
           style={styles.action}
           onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
         />
-        <Button
-          label="Entries"
-          icon="list"
-          style={styles.action}
-          onPress={() => entriesListRef.current?.scrollToIndex({ index: 0, animated: true })}
-        />
       </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
         {holding.kind === 'plan' && capabilities?.recurring ? (
           <>
-            <AppText style={[typography.label, { color: colors.text3, marginTop: 10 }]}>Recurring plan</AppText>
             <AppText
               style={styles.summaryLine}
               accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
@@ -185,12 +200,6 @@ export default function InvestmentEntriesScreen() {
             {holding.stopDate ? (
               <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
             ) : null}
-            <Button
-              style={styles.editPlanAction}
-              label="Edit recurring plan"
-              icon="edit-2"
-              onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
-            />
           </>
         ) : null}
         <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(financial.invested, 'exact', 1)}`}>
@@ -218,29 +227,6 @@ export default function InvestmentEntriesScreen() {
         {financial.ledger.costRecovered ? (
           <AppText style={[styles.summaryLine, { color: colors.text3 }]}>Cost recovered</AppText>
         ) : null}
-        {holding.kind === 'plan' && capabilities?.recurring ? (
-          <Button
-            style={styles.planAction}
-            label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
-            icon={holding.stopDate ? 'play' : 'pause'}
-            onPress={() => {
-              if (holding.stopDate) {
-                void choiceAsync({
-                  title: 'Resume recurring?',
-                  message: 'This restores the plan schedule from the next due after today.',
-                  choices: [
-                    { id: 'cancel', label: 'Cancel' },
-                    { id: 'resume', label: 'Resume', destructive: false },
-                  ],
-                }).then((choice) => {
-                  if (choice === 'resume') actions.resumePlan(holding.id);
-                });
-              } else {
-                router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holding.id)}` as Href);
-              }
-            }}
-          />
-        ) : null}
       </Card>
       <ChipRow>
         <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
@@ -251,7 +237,6 @@ export default function InvestmentEntriesScreen() {
   return (
     <Screen scroll={false}>
       <FlatList<ListRow>
-        ref={entriesListRef}
         data={listRows}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
@@ -311,7 +296,6 @@ const styles = StyleSheet.create({
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
   editPlanAction: { marginTop: 10, alignSelf: 'flex-start' },
-  planAction: { marginTop: 12, alignSelf: 'stretch' },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
 });

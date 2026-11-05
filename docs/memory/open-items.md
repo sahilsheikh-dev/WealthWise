@@ -4,9 +4,12 @@
 
 ## Unresolved
 
+- **Gate 1 red (2026-11-05):** 13 Jest suites fail during Expo module setup with
+  `Cannot read properties of undefined (reading 'select')`; no commit should be
+  created until Gate 1 exits 0. Gates 2-6 passed in the latest run.
 - **Merged holding summary card physical-device check:** verify the Recurring
   plan and Summary information remain readable in one card and Stop/Resume stays
-  at the bottom at font scales 1.3 and 2.0 on iOS and Android.
+  in the action row at font scales 1.3 and 2.0 on iOS and Android.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
   passed tests with `1` skipped. The project inventory, status memory and
