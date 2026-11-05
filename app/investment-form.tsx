@@ -37,10 +37,19 @@ import { HOLDING_TYPES, type Frequency, type ManualHolding, type PlanHolding } f
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
+const compoundingOptions = ['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple'] as const;
+const valuationMethodOptions = [
+  { value: 'balance', title: 'Balance' },
+  { value: 'balanceInterest', title: 'Balance plus interest' },
+  { value: 'accrual', title: 'Accrual estimate' },
+  { value: 'manual', title: 'Manual value' },
+  { value: 'unitsPrice', title: 'Units × price' },
+];
 const openingBalanceHint = 'Money you had already put in before you started tracking here. It counts towards your invested amount.';
 const actualValueHint = "Today's value from your statement or investment app. Leave it blank and we will use our estimate.";
 const actualValueDateHint = "The date you checked that value. We fill in today's date when you enter a value.";
@@ -124,7 +133,7 @@ function PlanEditor({
     earliestLogDate: plan?.logs.map((entry) => entry.date).sort()[0] ?? null,
   }), [data.holdings, data.liabilities, plan, today]);
   const submitting = useRef(false);
-  const { control, handleSubmit, getValues, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
+  const { control, handleSubmit, getValues, setValue, formState: { errors, isDirty, isSubmitting, submitCount, dirtyFields } } =
     useForm<PlanFormInput, undefined, PlanFormOutput>({
       resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
       defaultValues: plan ? {
@@ -132,10 +141,13 @@ function PlanEditor({
         ratePct: String(plan.ratePct), stepUpPct: String(plan.stepUpPct), tenureYears: String(plan.tenureYears),
         startDate: plan.startDate, trackFrom: plan.trackFrom, opening: String(plan.opening),
         actualValue: plan.actualValue === null ? '' : String(plan.actualValue), actualValueDate: plan.actualValueDate ?? '',
+        valuationMethod: plan.valuationMethod ?? 'manual',
+        compounding: plan.compounding ?? 'yearly',
+        maturityDate: plan.maturityDate ?? '',
       } : {
         name: nameSeed, type: 'Mutual fund / SIP', frequency: 'monthly', amount: '', ratePct: '',
         stepUpPct: '', tenureYears: '', startDate: today, trackFrom: today, opening: '',
-        actualValue: '', actualValueDate: '',
+        actualValue: '', actualValueDate: '', valuationMethod: 'manual', compounding: 'yearly', maturityDate: '',
       },
     });
   const amount = useWatch({ control, name: 'amount' });
@@ -186,18 +198,23 @@ function PlanEditor({
     submitting.current = true;
     try {
       if (plan) actions.updatePlan(plan.id, values);
-      else if (previewPastDues?.count && pastDepositsMode !== 'show') {
-        const confirmed = pastDepositsMode !== 'record' || await confirmAsync({
-          title: 'Record past deposits?',
-          message: `This will record ${previewPastDues.count} deposits totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
-          confirmLabel: `Record ${previewPastDues.count} deposits`,
-          cancelLabel: 'Cancel',
-        });
-        if (!confirmed) return;
-        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastDepositsMode, true);
-      } else if (previewPastDues?.count) {
-        actions.addPlan({ ...values, trackFrom: startDate });
-      } else actions.addPlan(values);
+      else {
+        const configuredValues = dirtyFields.valuationMethod
+          ? values
+          : { ...values, valuationMethod: suggestedValuationMethod(values.type, false, values.ratePct) };
+        if (previewPastDues?.count && pastDepositsMode !== 'show') {
+          const confirmed = pastDepositsMode !== 'record' || await confirmAsync({
+            title: 'Record past deposits?',
+            message: `This will record ${previewPastDues.count} deposits totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
+            confirmLabel: `Record ${previewPastDues.count} deposits`,
+            cancelLabel: 'Cancel',
+          });
+          if (!confirmed) return;
+          actions.addPlanWithHistory({ ...configuredValues, trackFrom: startDate }, pastDepositsMode, true);
+        } else if (previewPastDues?.count) {
+          actions.addPlan({ ...configuredValues, trackFrom: startDate });
+        } else actions.addPlan(configuredValues);
+      }
       const state = useAppStore.getState();
       if (!state.lastError) {
         if (!plan && fromTransaction) {
@@ -240,6 +257,7 @@ function PlanEditor({
             setValue('actualValueDate', today, { shouldDirty: true });
           }
         }}
+        suggestedMethod={suggestedValuationMethod(planType, false, Number(ratePct))}
         maximumDate={plusDays(today, 366)}
       />
       {!plan && startDate < today ? (
@@ -290,21 +308,35 @@ function ManualEditor({
     otherNames: data.holdings.filter((item) => item.id !== holding?.id).map((item) => item.name),
     entriesExist: Boolean(holding?.logs.length),
   }), [data.holdings, holding?.id, holding?.logs.length]);
-  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
+  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: holding ? {
       name: holding.name, type: holding.type, invested: String(holding.invested), value: String(holding.value),
-    } : { name: nameSeed, type: 'EPFO / PF', invested: '', value: '' },
+      valuationMethod: holding.valuationMethod ?? 'manual',
+      ratePct: holding.ratePct === undefined ? '' : String(holding.ratePct),
+      compounding: holding.compounding ?? 'yearly',
+      maturityDate: holding.maturityDate ?? '',
+    } : {
+      name: nameSeed, type: 'EPFO / PF', invested: '', value: '',
+      valuationMethod: 'manual', ratePct: '', compounding: 'yearly', maturityDate: '',
+    },
   });
   const invested = useWatch({ control, name: 'invested' });
   const value = useWatch({ control, name: 'value' });
   const holdingType = useWatch({ control, name: 'type' });
+  const ratePct = useWatch({ control, name: 'ratePct' });
   const keepsEarlierEntries = Boolean(holding?.logs.length) && !holdingCapabilities(holdingType).entries;
   const numeric = (raw: string) => Number(raw.replaceAll(',', ''));
   const belowCost = Number.isFinite(numeric(invested)) && Number.isFinite(numeric(value)) && numeric(value) < numeric(invested);
   const save = (values: HoldingFormOutput) => {
-    if (holding) actions.updateHolding(holding.id, values);
-    else actions.addHolding(values);
+    const configuredValues = !holding && !dirtyFields.valuationMethod
+      ? {
+        ...values,
+        valuationMethod: suggestedValuationMethod(values.type, false, values.ratePct),
+      }
+      : values;
+    if (holding) actions.updateHolding(holding.id, configuredValues);
+    else actions.addHolding(configuredValues);
     const state = useAppStore.getState();
     if (!state.lastError) {
       if (!holding && fromTransaction) {
@@ -336,7 +368,45 @@ function ManualEditor({
       <FormErrorBanner message={lastError} />
       {modeControl}
       {holding ? <ReadOnlyInvestmentKind label="Investment type" value="One-time (FD, gold, PF...)" /> : null}
-      <ManualFields control={control} errors={errors} onNameChange={onNameChange} />
+      <ManualFields
+        control={control}
+        errors={errors}
+        onNameChange={onNameChange}
+      />
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
+          onChange={field.onChange}
+          error={errors.valuationMethod?.message}
+        />} />
+        <Controller control={control} name="ratePct" render={({ field }) => <PercentField
+          label="Annual rate"
+          accessibilityLabel="Annual accrual rate"
+          value={field.value ?? ''}
+          onChangeText={field.onChange}
+          onBlur={field.onBlur}
+          error={errors.ratePct?.message}
+        />} />
+        <Controller control={control} name="compounding" render={({ field }) => <ChoiceField
+          label="Compounding"
+          choices={compoundingOptions}
+          value={field.value ?? 'yearly'}
+          onChange={field.onChange}
+          error={errors.compounding?.message}
+        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => <TextField
+          label="Maturity date (YYYY-MM-DD)"
+          accessibilityLabel="Maturity date"
+          value={field.value ?? ''}
+          onChangeText={field.onChange}
+          onBlur={field.onBlur}
+          error={errors.maturityDate?.message}
+        />} />
+        <HelperText>Suggested: {suggestedValuationMethod(holdingType, Boolean(holding?.logs.some((entry) => entry.price)), ratePct === '' ? undefined : Number(ratePct))}. Changing the suggestion configures this method.</HelperText>
+      </FormSection>
       {keepsEarlierEntries ? <HelperText>Entries from earlier are kept.</HelperText> : null}
       {holding ? <Button label="Value is still correct today" variant="soft" disabled={holding.valueAsOf === today} onPress={() => actions.confirmHoldingValue(holding.id)} /> : null}
       {belowCost ? <HelperText tone="warning">Value is below what you invested</HelperText> : null}
@@ -355,6 +425,7 @@ function PlanFields({
   maximumDate,
   onNameChange,
   onActualValueEntered,
+  suggestedMethod,
 }: {
   control: Control<PlanFormInput, undefined, PlanFormOutput>;
   errors: FieldErrors<PlanFormInput>;
@@ -362,6 +433,7 @@ function PlanFields({
   maximumDate: string;
   onNameChange: (name: string) => void;
   onActualValueEntered: () => void;
+  suggestedMethod: string;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const { colors } = useTheme();
@@ -449,6 +521,34 @@ function PlanFields({
             </View>
           </View>
         </Modal>
+      </FormSection>
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
+          onChange={field.onChange}
+          error={errors.valuationMethod?.message}
+        />} />
+        <Controller control={control} name="compounding" render={({ field }) => <ChoiceField
+          label="Compounding"
+          choices={compoundingOptions}
+          value={field.value ?? 'yearly'}
+          onChange={field.onChange}
+          error={errors.compounding?.message}
+        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => <TextField
+          label="Maturity date (YYYY-MM-DD)"
+          accessibilityLabel="Maturity date"
+          value={field.value ?? ''}
+          onChangeText={field.onChange}
+          onBlur={field.onBlur}
+          error={errors.maturityDate?.message}
+        />} />
+        <HelperText>
+          Accrual uses this plan&apos;s annual return rate. Suggested: {suggestedMethod}.
+        </HelperText>
       </FormSection>
     </>
   );

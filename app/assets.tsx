@@ -18,7 +18,7 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { useAppActions, useAppData } from '../src/data/useAppData';
+import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
@@ -47,7 +47,6 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 export default function AssetsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
-  const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -191,8 +190,8 @@ export default function AssetsScreen() {
                   router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
                   router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'confirm' && row.kind === 'manual') {
-                  actions.confirmHoldingValue(row.id);
+                } else if (action === 'update') {
+                  router.push(`/holding-valuation-form?id=${encodeURIComponent(holdingId)}` as Href);
                 }
               }}
             />

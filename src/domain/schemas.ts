@@ -16,13 +16,21 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 18;
+export const SCHEMA_VERSION = 19;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
 const moneySchema = z.number().finite().min(-100_000_000_000).max(100_000_000_000);
 const frequencySchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
 const holdingTypeSchema = z.enum(HOLDING_TYPES);
+const valuationFields = {
+  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
+  ratePct: moneySchema.min(0).max(100).optional(),
+  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
+  maturityDate: isoDateSchema.optional(),
+  latestPrice: moneySchema.positive().optional(),
+  priceAsOf: isoDateSchema.optional(),
+};
 const investmentEntrySchema = z.object({
   id: idSchema,
   date: isoDateSchema,
@@ -30,6 +38,7 @@ const investmentEntrySchema = z.object({
   note: z.string(),
   kind: z.enum(['Deposit', 'Withdrawal']),
   snapshotAdjustment: moneySchema.optional(),
+  price: moneySchema.positive().optional(),
 });
 const liabilityPaymentSchema = z.object({
   id: idSchema,
@@ -74,7 +83,15 @@ export const manualHoldingSchema = z.object({
   invested: moneySchema,
   value: moneySchema,
   valueAsOf: isoDateSchema.optional(),
+  ...valuationFields,
   logs: z.array(investmentEntrySchema),
+}).superRefine((holding, context) => {
+  if (holding.valuationMethod === 'accrual' && holding.ratePct === undefined) {
+    context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Accrual valuation requires an annual rate' });
+  }
+  if ((holding.latestPrice === undefined) !== (holding.priceAsOf === undefined)) {
+    context.addIssue({ code: 'custom', path: ['priceAsOf'], message: 'Latest price and price date must both be set or both be absent' });
+  }
 });
 
 export const planHoldingSchema = z.object({
@@ -82,6 +99,7 @@ export const planHoldingSchema = z.object({
   kind: z.literal('plan'),
   name: z.string(),
   type: holdingTypeSchema,
+  ...valuationFields,
   frequency: frequencySchema,
   amount: moneySchema,
   ratePct: moneySchema,
@@ -107,6 +125,9 @@ export const planHoldingSchema = z.object({
       path: ['actualValueDate'],
       message: 'Actual value and snapshot date must both be set or both be null',
     });
+  }
+  if ((holding.latestPrice === undefined) !== (holding.priceAsOf === undefined)) {
+    context.addIssue({ code: 'custom', path: ['priceAsOf'], message: 'Latest price and price date must both be set or both be absent' });
   }
 });
 
@@ -657,6 +678,8 @@ const holdingTypeFormSchema = z.enum([
   'Other',
 ]);
 const frequencyFormSchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
+const valuationMethodFormSchema = z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']);
+const compoundingFormSchema = z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']);
 const optionalRate = (max: number, message: string, emptyZero = false) => {
   const rate = z.string().trim()
     .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), message)
@@ -676,6 +699,9 @@ export function makePlanFormSchema(
     frequency: frequencyFormSchema,
     amount: moneyInputSchema({ minimum: 0.01, maximum: 10_000_000, maximumMessage: 'Amount is too large' }),
     ratePct: optionalRate(30, 'Enter a rate between 0 and 30'),
+    valuationMethod: valuationMethodFormSchema.default('manual'),
+    compounding: compoundingFormSchema.default('yearly'),
+    maturityDate: z.string().trim().default(''),
     stepUpPct: optionalRate(50, 'Enter a step-up between 0 and 50', true),
     tenureYears: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole years from 1 to 50')
       .transform(Number).refine((value) => value >= 1 && value <= 50, 'Enter whole years from 1 to 50'),
@@ -690,6 +716,7 @@ export function makePlanFormSchema(
     opening: value.opening ?? 0,
     actualValue: value.actualValue ?? null,
     actualValueDate: value.actualValueDate || null,
+    maturityDate: value.maturityDate || undefined,
   })).superRefine((value, context) => {
     if (!holdingCapabilities(value.type).recurring) {
       context.addIssue({
@@ -716,6 +743,9 @@ export function makePlanFormSchema(
       } else if (value.actualValueDate < value.startDate) {
         context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Value date is before the plan started' });
       }
+      if (value.maturityDate && (!isValidISO(value.maturityDate) || value.maturityDate < value.startDate)) {
+        context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Enter a maturity date on or after the plan start date' });
+      }
     }
     if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged deposit is dated before this start date' });
@@ -732,6 +762,10 @@ export function makeInvestmentEntryFormSchema(
     date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
       .refine((date) => !isValidISO(date) || ctx.startDate === null || date >= ctx.startDate, 'Date is before the plan started'),
     amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
+    price: z.union([
+      z.literal(''),
+      moneyInputSchema({ minimum: 0.01, maximum: Number.MAX_SAFE_INTEGER }),
+    ]).default('').transform((value) => value === '' ? undefined : value),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
   }).superRefine((value, context) => {
     if (value.kind === 'Withdrawal' && value.amount > ctx.currentValue) {
@@ -741,6 +775,13 @@ export function makeInvestmentEntryFormSchema(
         message: `Exceeds the current value of ${formatINR(ctx.currentValue)}`,
       });
     }
+  });
+}
+
+export function makeHoldingValuationFormSchema(today: ISODate) {
+  return z.object({
+    value: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
   });
 }
 
@@ -864,11 +905,12 @@ export function makeGoalFormSchema(
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
     }
-    if (ctx.locked && (ctx.minTarget ?? 0) > 0 && value.target < (ctx.minTarget ?? 0)) {
+    const minTarget = ctx.minTarget;
+    if (ctx.locked && minTarget !== undefined && minTarget > 0 && value.target < minTarget) {
       context.addIssue({
         code: 'custom',
         path: ['target'],
-        message: `Emergency fund target must be at least 3 months of cover (${formatINR(ctx.minTarget ?? 0)})`,
+        message: `Emergency fund target must be at least 3 months of cover (${formatINR(minTarget)})`,
       });
     }
   });
@@ -881,6 +923,11 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?
     type: holdingTypeFormSchema,
     invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
     value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
+    valuationMethod: valuationMethodFormSchema.default('manual'),
+    ratePct: z.union([z.literal(''), optionalRate(100, 'Enter a rate between 0 and 100')])
+      .default('').transform((value) => value === '' ? undefined : value),
+    compounding: compoundingFormSchema.default('yearly'),
+    maturityDate: z.string().trim().default('').transform((value) => value || undefined),
   }).superRefine((value, context) => {
     if (ctx.entriesExist && !holdingCapabilities(value.type).entries) {
       context.addIssue({
@@ -888,6 +935,12 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?
         path: ['type'],
         message: 'Remove the existing entries before changing this holding to Fixed deposit.',
       });
+    }
+    if (value.maturityDate && !isValidISO(value.maturityDate)) {
+      context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Enter a valid maturity date' });
+    }
+    if (value.valuationMethod === 'accrual' && value.ratePct === undefined) {
+      context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Enter an annual rate for accrual valuation' });
     }
   });
 }
