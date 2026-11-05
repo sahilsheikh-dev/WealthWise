@@ -4,6 +4,10 @@
 
 ## Unresolved
 
+- **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
+  plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
+  passed tests with `1` skipped. The project inventory, status memory and
+  ledger now match the repaired run; all six gates pass.
 - **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
   stop-date filtering, stopped card text, past unpaid dues, Deposit
   availability and one-write Undo at font scales 1.3 and 2.0 on iOS and Android.

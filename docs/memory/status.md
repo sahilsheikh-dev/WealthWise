@@ -2,7 +2,8 @@
 
 # Status
 
-- Current task: P29-X adds stop/resume controls for recurring plans.
+- Current task: P29-Y Gate 1 repair complete; P29-X stop/resume implementation
+  remains the latest product change.
   Schema v21 stores one optional `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,
@@ -64,16 +65,16 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 91 suites, 1187 tests (1187 passed; one opt-in stress benchmark
+- Test counts: 92 suites, 1191 tests (1191 passed; one opt-in stress benchmark
   skipped); all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 92 suites, 1191 tests passed, 1 skipped (P29-X); all six final
+- Latest validated run: 92 suites, 1191 tests passed, 1 skipped (P29-Y); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 91 suites, 1187 tests passed with coverage thresholds
+- Latest full Jest run: 92 suites, 1191 tests passed, 1 skipped with coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
