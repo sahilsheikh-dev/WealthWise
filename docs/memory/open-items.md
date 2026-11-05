@@ -27,6 +27,18 @@
   do not verify native persistence, rendering or interaction. Budget's current
   linked-actual selector is transaction-based, not a current-holding-value
   display; that display was not redesigned.
+- **P29-U physical-device checks:** verify configured accrual and units-price
+  values, manual confirmation, staleness notices, and the optional monthly
+  reminder at font scales 1.3 and 2.0 on iOS and Android. Confirm v18-to-v19
+  migration, a confirmed-value reset, and entry-price/withdrawal interactions
+  on device. Node tests and Expo exports do not prove native layout,
+  persistence or notification scheduling. Automated validation passes:
+  91 suites/1170 tests and all six ordered gates exit 0; directory coverage
+  and the exact calculation method are recorded in [PROGRESS.md](../PROGRESS.md).
+- **P29-U model constraint:** recurring plans already require `ratePct` in
+  the v18 model and use it for the plan projection. That existing required
+  field is preserved; valuation metadata remains optional. Manual holdings
+  may omit `ratePct` unless accrual is explicitly selected.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its

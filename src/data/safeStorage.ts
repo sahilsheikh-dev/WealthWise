@@ -27,7 +27,7 @@ export function createSafeStorage(
     onWriteSuccess?: (bytes: number) => void;
   },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 } | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 } | null = null;
   let prerepairRaw: string | null = null;
   return {
     async getItem(name) {
@@ -44,7 +44,7 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12 || envelope.version === 13 || envelope.version === 14 || envelope.version === 15 || envelope.version === 16 || envelope.version === 17) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12 || envelope.version === 13 || envelope.version === 14 || envelope.version === 15 || envelope.version === 16 || envelope.version === 17 || envelope.version === 18) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state

@@ -6,6 +6,10 @@
 
 ### Phase 29
 
+- P29-U adds optional holding valuation methods on schema v19: configured
+  accrual estimates, manually entered unit prices, confirmed values and a
+  default-off monthly update reminder. Unconfigured holdings retain legacy
+  values; v18 data migrates without changing current values or linked totals.
 - P29-Q adds deterministic 50-, 100- and 200-year stress datasets and a
   200-year daily-SIP variant. After the owner approved Expo SQLite, native
   AppData persistence moved to `SQLiteStorage` with legacy AsyncStorage

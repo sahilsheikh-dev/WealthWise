@@ -18,6 +18,7 @@ import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import HomeScreen from '../../../app/(tabs)';
+import HoldingValuationFormScreen from '../../../app/holding-valuation-form';
 import InsuranceScreen from '../../../app/insurance';
 import InvestmentEntryFormScreen from '../../../app/investment-entry-form';
 import InvestmentEntriesScreen from '../../../app/investment-entries';
@@ -3835,6 +3836,9 @@ describe('route render smoke audit', () => {
         invested: 10_000,
         value: 10_000,
         valueAsOf: today,
+        valuationMethod: 'unitsPrice',
+        latestPrice: 1,
+        priceAsOf: today,
         logs: ledgerEntries,
       },
       {
@@ -3908,11 +3912,25 @@ describe('route render smoke audit', () => {
         routeParams.mockReturnValue(formParams);
         renderer = renderScreen(React.createElement(InvestmentFormScreen));
         expect(renderer.root.findAllByProps({ label: 'Save' })).toHaveLength(1);
+        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Valuation method')).toBe(true);
+        expect(renderer.root.findAllByType(ChoiceField).some((field) => field.props.label === 'Compounding')).toBe(true);
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {
           expect(renderer.root.findAllByType(ChoiceField).some((field) => field.props.label === 'Type')).toBe(true);
         }
+        act(() => renderer?.unmount());
+        renderer = undefined;
+
+        renderer = renderScreen(React.createElement(HoldingValuationFormScreen));
+        const valuationLabel = holding.id === 'scale-manual'
+          ? 'Latest price per unit'
+          : 'Confirmed holding value';
+        const valuationDateLabel = holding.id === 'scale-manual' ? 'Price date' : 'Value date';
+        expect(renderer.root.findAllByProps({
+          accessibilityLabel: valuationLabel,
+        })).toHaveLength(2);
+        expect(renderer.root.findAllByProps({ accessibilityLabel: valuationDateLabel })).toHaveLength(2);
         act(() => renderer?.unmount());
         renderer = undefined;
       }

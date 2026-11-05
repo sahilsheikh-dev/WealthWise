@@ -813,6 +813,10 @@ export function migrateV17ToV18(persisted: unknown, options: Pick<V6ToV7Options,
   return { ...persisted, policies };
 }
 
+export function migrateV18ToV19(persisted: unknown): unknown {
+  return persisted;
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -857,6 +861,7 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(17, 'unknown-version');
       result = migrateV17ToV18(result, options);
     }
+    if (fromVersion <= 18) result = migrateV18ToV19(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {
