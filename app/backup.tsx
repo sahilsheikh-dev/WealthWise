@@ -12,7 +12,7 @@ import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/u
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { createMetaStore, type BackupMeta } from '../src/data/metaStore';
 import { useAppStore } from '../src/data/store';
-import { backupFileName, createBackup, encryptedBackupFileName, parseBackup, type ParseBackupResult } from '../src/domain/backup';
+import { BackupExportError, backupFileName, createBackup, encryptedBackupFileName, parseBackup, type ParseBackupResult } from '../src/domain/backup';
 import {
   DEFAULT_SCRYPT_PARAMS,
   InvalidEnvelope,
@@ -117,7 +117,9 @@ export default function BackupScreen() {
       const nextMeta = await metaStore.updateMeta({ lastExportAt: exportedAt });
       setMeta(nextMeta);
     } catch (error) {
-      setMessage(backupCryptoErrorMessage(error) ?? 'The backup could not be exported. Please try again.');
+      setMessage(error instanceof BackupExportError
+        ? error.message
+        : backupCryptoErrorMessage(error) ?? 'The backup could not be exported. Please try again.');
     } finally {
       try {
         if (file?.exists) file.delete();

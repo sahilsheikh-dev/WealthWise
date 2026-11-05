@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (101/105)
+Overall progress ██████████ 96% (102/106)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 96% (25/26)
+Phase 29         ██████████ 96% (26/27)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -194,6 +194,7 @@ Phase 29         ██████████ 96% (25/26)
 | P29-S | — | Done | Removed the uncalled v18-to-v19 converter, unused v19 validation/types and test-only ledger prototype; preserved P29-O1, schema v18 and migration compatibility. Six ordered gates pass with coverage thresholds met. | 2026-11-05 |
 | P29-T | — | Done | Backdated/on-snapshot deposits and withdrawals now adjust manual and plan stored values within the same write; linked transaction Undo and downstream selectors are covered at store level. No schema change. | 2026-11-05 |
 | P29-U | — | Done | Additive schema-v19 valuation methods, value/price confirmation, shared configured values and default-off monthly update reminders. Unconfigured holdings preserve legacy amounts; focused tests and all six ordered gates pass. | 2026-11-05 |
+| P29-V | — | Done | SQLite migration verifies read-back bytes before removing legacy data and retains legacy fallback on SQLite failures. Date validation accepts records from 1900; stress tiers are 50/100/126 years plus dense 200-year record counts within the window. Backup export refuses data that would not round-trip or exceeds the 5,000,000-character import limit. Six ordered gates pass. | 2026-11-05 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2831,6 +2832,7 @@ evidence present in exports/checkpoints.
 | P29-S | Phase 29 | — | — | 2026-11-05 | Restore Gate 1's coverage threshold and remove uncalled P29-O2 schema-v19 ledger code; no behavior/schema change. | Done; production caller audit found no runtime consumers for the converter, v19 schema/type additions or prototype ledger. Removed the dead code and its tests; P29-O1 remains unchanged. All six ordered gates exit 0. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE supersedes DEC-P29O2-UNIFIED-LEDGER. Deleted test assertions covered canceled prototype behavior, not current app behavior; current holding, migration and progress-ledger tests remain. | current request |
 | P29-T | Phase 29 | — | 16d1c9bc | 2026-11-05 | Make deposits/withdrawals dated on or before a manual or plan valuation adjust the stored value in the same store write; preserve linked-transaction Undo and schema v18. | Done; real-store tests cover manual/plan snapshots, before/on/after dates, edits, deletes, withdrawals, linked transaction paths, Undo and downstream selectors. Final six-gate results are recorded below. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT. Assumed: Budget links refer to transaction actuals/planned flows, because Budget has no current-holding-value selector; no Budget redesign. Native-device checks remain open. | current request |
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
+| P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -8243,3 +8245,136 @@ indicators and optional reminder scheduling on iOS and Android at font scales
 1.3 and 2.0. Confirm native rendering, persistence across restart, local
 notification delivery and price/value entry interactions. Automated layout
 tests are simulated and Expo exports do not establish device behavior.
+
+### P29-V — SQLite safety, supported date window and backup scale (2026-11-05)
+
+**Assumed:** P29-V is new Phase 29 work. Schema remains v19; no data-shape or
+migration-version change was made.
+
+#### DEC-P29V-SQLITE-VERIFIED-FALLBACK
+
+When legacy AppData is copied to SQLite, the adapter reads it back and compares
+the exact string bytes. The legacy key is removed only after the copied bytes
+match and the subsequent SQLite write is read back exactly. A SQLite open/read,
+write, or read-back failure or mismatch switches that storage instance to
+legacy AsyncStorage. If SQLite is unreadable and no legacy copy exists, the
+adapter throws an explicit error instead of presenting an empty value that
+could overwrite inaccessible data. Failure-injection tests cover open, write
+and read-back errors; a mismatch test proves the legacy copy remains active.
+SQLite removal failure is also surfaced explicitly after the legacy key is
+removed, rather than being reported as a successful deletion.
+
+#### DEC-P29V-DATE-STRESS-BOUNDS
+
+Before this change, the backup import `dateSchema` accepted
+`1990-01-01` through `2100-12-31` for transactions, holding entries, liability
+payments, policy dates and other imported dates; imported goal years were
+1990–2100. The domain AppData ISO-date validator checked calendar validity but
+had no lower bound, while its goal year and goal form were 1990–2100.
+**Assumed:** use the requested default 1900 floor for date and goal-year
+validation, retaining the existing 2100 upper bound for backup dates and goal
+years. The domain ISO validator accepts valid dates on/after 1900 without
+introducing a new upper bound. This is validation-only; persisted schema stays
+v19 and older backups still pass through the same migration chain.
+
+The old stress options `[50, 100, 200]` and `200 + daily SIP` were replaced by
+50, 100 and 126-year tiers, plus a dense tier containing the 200-year
+transaction, holding-entry and daily-SIP record counts mapped into the 126-year
+window. Every date is on/after 1900; dense keeps one month budget per supported
+month (1,512 total). Its SIP tenure remains within the existing 100-year plan
+tenure validator; its entry dates and count represent 200 years of records.
+The backup snapshot cap changes from 1,200 to 1,512 to include all months in
+the 126-year tier.
+
+#### DEC-P29V-BACKUP-ROUNDTRIP
+
+Export now validates the current data and refuses it if import would normalize
+or change it. It also refuses a serialized plain backup over the existing
+5,000,000-character import limit. The exception is surfaced in Backup before
+the temporary `File` is created. The 50-year fixture round-trips plain and
+encrypted with data equality; larger fixtures are refused at plain export
+with their exact size and the limit, so no oversized encrypted file is made.
+
+#### Five-sample final-model Node measurements
+
+The deterministic seed and today are held constant. State bytes, validation,
+migration, hydration, one-action persistence, each selector, and backup
+operations are medians of five. Selector order is net worth / month view /
+Budget overview / pending items / reminder planner. Heap is the observed
+`process.memoryUsage().heapUsed` after that tier's measurements, without
+forcing garbage collection. Backup size is UTF-8 bytes for successful exports;
+the refusal reports characters, which are ASCII for these fixtures.
+
+| Tier | State bytes | Transactions | Holding entries | Month budgets | Plain export bytes / result | Plain export / import ms | Encrypted bytes / result | Encrypted export / import ms | Validate / migrate ms | Hydrate / one-write ms | Selectors ms (NW / month / Budget / pending / reminders) | Heap bytes |
+|---|---:|---:|---:|---:|---|---:|---|---:|---:|---:|---|---:|
+| 50y | 2,604,654 | 15,000 | 7,200 | 600 | 4,664,998 / accepted | 749 / 755 | 9,330,279 / accepted | 253 / 1,079 | 262 / 0 | 142 / 3 | 1 / 0 / 44 / 24 / 40 | 189,532,320 |
+| 100y | 5,130,944 | 30,000 | 14,400 | 1,200 | 9,167,088 chars / refused (5,000,000 limit) | refused | refused at plain export | refused | 503 / 0 | 663 / 13 | 1 / 1 / 61 / 25 / 52 | 437,172,192 |
+| 126y | 6,444,985 | 37,800 | 18,144 | 1,512 | 11,508,545 chars / refused (5,000,000 limit) | refused | refused at plain export | refused | 641 / 0 | 351 / 8 | 1 / 1 / 62 / 25 / 56 | 325,695,568 |
+| Dense (200y records + daily SIP) | 16,589,944 | 60,000 | 101,800 | 1,512 | 30,992,829 chars / refused (5,000,000 limit) | refused | refused at plain export | refused | 1,658 / 0 | 883 / 25 | 4 / 1 / 294 / 240 / 309 | 350,297,056 |
+
+The dense tier has 28,800 monthly manual entries and 73,000 daily-SIP entries.
+The measured 50-year serialized AppData is 2.60 MB and still exceeds the
+historical 1.5 MB target; this task changes no storage architecture or
+per-value persistence limit. Hydration and one-write action measurements remain
+under 3 seconds and 300 ms respectively on Node for every tier. These Node
+measurements do not prove physical-device responsiveness.
+
+#### Replaced assertions
+
+| Old assertion / behavior | New assertion / behavior | Reason |
+|---|---|---|
+| Copy legacy bytes to SQLite and remove AsyncStorage without checking the copied value. | Read back and compare exact bytes; remove legacy only after an exact match; use legacy fallback on SQLite failures or mismatches. | Prevent migration and write failures from discarding the only valid copy. |
+| Backup dates and goal years start at 1990. | Valid historical dates and goal years start at 1900; existing upper bounds remain. | Allow supported historical fixtures and records while preserving the upper bound. |
+| Stress tiers are 50, 100 and 200 years, plus a separate 200-year daily SIP. | Stress tiers are 50, 100, 126 years and dense 200-year record counts within the 126-year window. | Keep every generated date inside the supported range and retain the high-volume workload. |
+| Backup export can produce content that the importer rejects for size or normalization. | Export round-trips unchanged or refuses before the UI creates a file, with the 5,000,000-character limit stated. | Keep export/import compatibility and avoid unusable files. |
+| Entry-before-valuation helper says those entries are assumed included in the snapshot. | No such claim; dated entries update the snapshot atomically. | P29-T made the former helper assertion false. |
+
+No assertion was weakened. The source schema remains v19.
+
+#### Verification
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Gate 1 reports 91 suites passed and 1,178 tests passed (one opt-in stress
+benchmark skipped; the same five-sample benchmark was run separately). Fresh
+coverage is grouped by immediate `src/` directory using
+`istanbul-lib-coverage` `createCoverageMap()` and per-file
+`toSummary().toJSON()` counts, summed once per source file from
+`coverage/coverage-final.json`. This is a single method on the final run; no
+older coverage report is used for comparison.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 720/762 (94.49%) | 742/845 (87.81%) |
+| `src/domain` | 3,435/3,489 (98.45%) | 3,354/3,602 (93.11%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+The first Gate 1 attempt exited 1 because the route-smoke backup fixture was
+not valid AppData and the newly required export validation correctly refused
+it. The fixture was corrected to include the automatic Emergency Fund goal
+and nullable Budget field; the final Gate 1 exited 0. A preliminary lint run
+exited 0 with two duplicate-import warnings; imports were consolidated, and
+the final Gate 3 exited 0 without warnings. Only the six final exit codes
+above are used as the release verdict.
+
+The five-sample benchmark is opt-in in the routine Jest run to avoid adding
+the several-minute persistence/crypto diagnostic to every test run. Re-run
+with `WEALTHWISE_STRESS_BENCHMARK=1 npm test -- --runInBand src/domain/__tests__/stressData.test.ts`.
+
+#### Device checks not verified
+
+Verify on physical iOS and Android devices: (1) legacy AsyncStorage migration
+with exact read-back, failure fallback and subsequent restart; (2) load 50y,
+100y, 126y and dense data through the dev menu, then Undo; (3) hydration,
+one-write latency, selectors, memory and first render on device; (4) plain and
+encrypted 50-year backup export/import; (5) clear export refusal for larger
+tiers before any temporary file is created. Simulator/layout tests, Node
+measurements and Expo exports do not verify native SQLite, device capacity,
+memory, rendering or file-sharing behavior.

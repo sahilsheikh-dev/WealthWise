@@ -17,7 +17,7 @@ export const BACKUP_FORMAT_VERSION = 1;
 export const MAX_BACKUP_CHARS = 5_000_000;
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((date) => date >= '1990-01-01' && date <= '2100-12-31');
+  .refine((date) => date >= '1900-01-01' && date <= '2100-12-31');
 const idSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
 const money = z.number().finite().max(100_000_000_000).min(-100_000_000_000);
 const positiveMoney = money.positive();
@@ -51,7 +51,7 @@ const transactionSchema = z.strictObject({
   }).optional(),
 });
 const goalSchema = z.strictObject({
-  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1990).max(2100),
+  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1900).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
@@ -293,7 +293,7 @@ export const importDataSchema = z.strictObject({
   policies: z.array(policySchema).max(100_000),
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
-  monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
+  monthBudgets: z.array(monthBudgetSchema).max(1512).optional(),
   efAllocation: importEfAllocationSchema,
   efCustomBuckets: importEfCustomBucketsSchema,
   efBucketLinks: importEfBucketLinksSchema,
@@ -348,8 +348,18 @@ export async function createBackup(
   data: AppData,
   options: { exportedAt: string; digest: (text: string) => Promise<string> },
 ): Promise<string> {
+  if (!z.string().datetime().safeParse(options.exportedAt).success) {
+    throw new BackupExportError('The export timestamp is invalid; no file was written.');
+  }
+  const validation = validateImportData(data);
+  if (!validation.ok) {
+    throw new BackupExportError(`This data cannot be imported as a backup (${validation.issues[0] ?? validation.reason}); no file was written.`);
+  }
+  if (canonicalJson(validation.data) !== canonicalJson(data)) {
+    throw new BackupExportError('This data would change when imported; export was cancelled before writing a file.');
+  }
   const checksum = await options.digest(canonicalJson(data));
-  return JSON.stringify({
+  const text = JSON.stringify({
     app: BACKUP_APP,
     formatVersion: BACKUP_FORMAT_VERSION,
     schemaVersion: SCHEMA_VERSION,
@@ -357,6 +367,19 @@ export async function createBackup(
     checksum: { algorithm: 'sha256', value: checksum },
     data,
   }, null, 2);
+  if (text.length > MAX_BACKUP_CHARS) {
+    throw new BackupExportError(
+      `This backup is ${text.length.toLocaleString('en-US')} characters; the import limit is ${MAX_BACKUP_CHARS.toLocaleString('en-US')} characters. No file was written.`,
+    );
+  }
+  return text;
+}
+
+export class BackupExportError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BackupExportError';
+  }
 }
 
 function zodIssues(error: z.ZodError): string[] {

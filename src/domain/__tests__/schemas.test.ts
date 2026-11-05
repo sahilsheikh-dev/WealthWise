@@ -64,6 +64,41 @@ describe('appDataSchema', () => {
     ]);
   });
 
+  it('accepts supported historical transaction, entry, and goal dates from 1900', () => {
+    const transaction = mockAppData.transactions[0];
+    const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
+    const goal = mockAppData.goals.find((item) => item.auto !== 'ef');
+    if (!transaction || !holding || holding.kind !== 'manual' || !goal) {
+      throw new Error('Historical date fixture is incomplete.');
+    }
+    const historicalLog = {
+      id: 'historical-date-entry',
+      date: '1900-01-01',
+      amount: 1,
+      note: '',
+      kind: 'Deposit' as const,
+    };
+
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1900-01-01' }],
+      holdings: mockAppData.holdings.map((item) => item.id === holding.id
+        ? { ...holding, logs: [historicalLog] }
+        : item),
+      goals: mockAppData.goals.map((item) => item.id === goal.id ? { ...goal, year: 1900 } : item),
+    }).success).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1899-12-31' }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((item) => item.id === holding.id
+        ? { ...holding, logs: [{ ...historicalLog, date: '1899-12-31' }] }
+        : item),
+    }).success).toBe(false);
+  });
+
   it('accepts additive valuation fields and rejects incomplete accrual or price snapshots', () => {
     const manual = mockAppData.holdings.find((holding) => holding.kind === 'manual');
     if (!manual || manual.kind !== 'manual') throw new Error('Expected a manual holding.');
@@ -714,19 +749,20 @@ describe('makeTransactionFormSchema', () => {
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
+      expect(goalSchema.safeParse({ ...goal, year: '1900' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '1990' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '2100' }).success).toBe(true);
-      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1989' });
+      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1899' });
       expect(beforeMinimumYear.success).toBe(false);
       if (!beforeMinimumYear.success) {
         expect(beforeMinimumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1990 and 2100');
+          .toBe('Enter a year between 1900 and 2100');
       }
       const afterMaximumYear = goalSchema.safeParse({ ...goal, year: '2101' });
       expect(afterMaximumYear.success).toBe(false);
       if (!afterMaximumYear.success) {
         expect(afterMaximumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1990 and 2100');
+          .toBe('Enter a year between 1900 and 2100');
       }
       const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: false, existingYear: 2020,

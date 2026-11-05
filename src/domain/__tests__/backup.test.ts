@@ -56,6 +56,50 @@ describe('backup validation and serialization', () => {
       .toBe('wealthwise-backup-20261010-1005Z-encrypted.json');
   });
 
+  it('accepts historical backup dates from 1900 and rejects dates before that floor', () => {
+    const transaction = mockAppData.transactions[0];
+    if (!transaction) throw new Error('Expected transaction fixture.');
+    expect(validateImportData({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1900-01-01' }],
+    }).ok).toBe(true);
+    expect(validateImportData({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1899-12-31' }],
+    })).toMatchObject({ ok: false, reason: 'invalid-data' });
+  });
+
+  it('refuses exports that import would normalize or that have an invalid timestamp', async () => {
+    const withoutEmergencyGoal = {
+      ...mockAppData,
+      goals: mockAppData.goals.filter((goal) => goal.auto !== 'ef'),
+    };
+    await expect(createBackup(withoutEmergencyGoal, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    })).rejects.toThrow('would change when imported; export was cancelled before writing a file');
+    await expect(createBackup(mockAppData, { exportedAt: 'not-a-date', digest }))
+      .rejects.toThrow('export timestamp is invalid; no file was written');
+  });
+
+  it('refuses an oversized export before a backup string can be returned', async () => {
+    const transaction = mockAppData.transactions[0];
+    if (!transaction) throw new Error('Expected transaction fixture.');
+    const data = {
+      ...mockAppData,
+      transactions: Array.from({ length: 35_000 }, (_, index) => ({
+        ...transaction,
+        id: `large-${index}`,
+        note: 'x'.repeat(150),
+      })),
+    };
+
+    await expect(createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    })).rejects.toThrow('import limit is 5,000,000 characters. No file was written.');
+  });
+
   it('round-trips typed insurance premium categories through current backups', async () => {
     const transaction = {
       id: 'typed-premium',

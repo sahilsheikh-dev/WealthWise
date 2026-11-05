@@ -4,6 +4,14 @@
 
 ## Unresolved
 
+- **P29-V physical-device checks:** confirm AsyncStorage migration compares
+  exact bytes before removal, failure fallback survives restart, and all four
+  stress tiers load/Undo on iOS and Android. Time native SQLite capacity,
+  hydration, actions, selectors, memory and first render. Confirm the 50-year
+  backup exports/imports plain and encrypted, and larger tiers refuse before
+  creating a temporary file. Node measurements and Expo exports do not prove
+  device behavior.
+
 - **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
