@@ -6,6 +6,10 @@
 
 ### Phase 29
 
+- Foreclosure is the consistent liability action label. Every recurring asset
+  card can stop or resume a plan from the same instrument-card action row. The
+  Home-only global options menu now appears only on Index/Home; it is not shown
+  on Assets, Liabilities, backup, reminders, security, profile or theme routes.
 - Holding and liability details now use owner-preserved compact layouts. The
   investment Summary card combines recurring-plan and financial details into
   two columns where appropriate, while liability cards expose Pay EMI, Close

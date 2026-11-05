@@ -31,6 +31,11 @@ no cloud or network requests at runtime.
   On the holding details screen, recurring-plan details and financial Summary
   values are combined in one card; recurring Stop/Resume stays in the holding
   action row.
+  Active recurring asset plans show Stop recurring; stopped plans show Resume
+  recurring. Liability cards and details consistently use Foreclosure.
+  The global three-dot options menu appears only on the Home/Index screen;
+  assets, liabilities, reminders, backup, security, profile and theme screens
+  keep screen-specific actions instead of showing duplicate global options.
   Liability cards keep Pay EMI, Close loan early and conditional Entries
   actions in one row; liability detail pages use an entries-only asset-style
   layout with a columned Summary card.

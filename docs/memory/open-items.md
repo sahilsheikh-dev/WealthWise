@@ -4,6 +4,13 @@
 
 ## Unresolved
 
+- **Home-only global menu physical-device check (2026-11-05):** verify the
+  three-dot options menu remains present on Index/Home and absent on Assets,
+  Liabilities and detail screens, including backup, reminders, security,
+  profile and theme routes, at font scales 1.3 and 2.0.
+- **Recurring asset stop label physical-device check:** verify active recurring
+  cards show Stop recurring and stopped plans show Resume recurring while the
+  action remains within the shared instrument-card row.
 - **Holding and liability layout physical-device check (2026-11-05):** verify
   the two-column investment Summary, same-row liability actions, conditional
   Entries button and liability Summary/details layout at font scales 1.3 and
