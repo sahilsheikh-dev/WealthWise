@@ -13,15 +13,15 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  SearchField,
   Screen,
+  SearchField,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
+import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
   buildPortfolioRows,
   filterRows,
@@ -161,7 +161,7 @@ export default function AssetsScreen() {
             tone={totals.gain >= 0 ? 'ok' : 'err'}
           />
           <StatPill
-            label="Monthly SIP/RD"
+            label="Monthly Invt."
             value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
             accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
             tone="primary"

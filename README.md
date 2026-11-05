@@ -31,6 +31,9 @@ no cloud or network requests at runtime.
   On the holding details screen, recurring-plan details and financial Summary
   values are combined in one card; recurring Stop/Resume stays in the holding
   action row.
+  Liability cards keep Pay EMI, Close loan early and conditional Entries
+  actions in one row; liability detail pages use an entries-only asset-style
+  layout with a columned Summary card.
   Recurring plans can be stopped at an inclusive date or resumed without
   changing entries, current value, returns, goal links or Emergency Fund
   links.
