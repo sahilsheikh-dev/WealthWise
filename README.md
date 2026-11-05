@@ -157,6 +157,13 @@ span is at least 365 days. Under 365 days the card shows only the labelled
 absolute return. Cash and Savings accounts show balance and net Invested, but
 never a return percentage, XIRR or CAGR. If entries predate a recorded
 valuation, the card explains that they are assumed included in the valuation.
+When a deposit or withdrawal is added, edited, or deleted with a date on or
+before the valuation date, the holding's stored value is adjusted by the
+corresponding signed amount in the same store write. These entries are therefore
+already included in the snapshot and are not added a second time; entries
+after the valuation date continue to change the value through the normal
+as-of calculation. Undo restores the entry, linked transaction and snapshot
+together.
 
 Every holding uses the same Deposit, Withdraw and Entries actions when its
 capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
@@ -165,6 +172,11 @@ Entries and is edited in the holding form. Recurring holdings show their
 frequency, amount and next due date inside the holding's Recurring plan
 section. These presentation and invested-display changes use the existing
 schema version 18.
+
+The owner cancelled the separate P29-O2 ledger-only storage redesign. The
+v19 converter, validation schema and prototype ledger are not used by the
+application; persisted holdings remain on schema v18. P29-O1's unified
+Deposit, Withdraw and Entries presentation remains the supported behavior.
 
 ### Recurring liability balances
 
