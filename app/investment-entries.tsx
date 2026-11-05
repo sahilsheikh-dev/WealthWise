@@ -17,12 +17,12 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { valueStaleness } from '../src/domain/holdingActions';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
-import { valueStaleness } from '../src/domain/holdingActions';
-import { suggestedValuationMethod } from '../src/domain/valuation';
 import { planSchedule } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
@@ -157,7 +157,6 @@ export default function InvestmentEntriesScreen() {
           disabled={financial.value < 1}
           onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
         />
-        <Button label="Entries" icon="list" style={styles.action} disabled />
         <Button
           label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
           icon="edit-2"
@@ -178,11 +177,7 @@ export default function InvestmentEntriesScreen() {
             <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
           ) : null}
           <Button
-            label="Edit recurring plan"
-            icon="edit-2"
-            onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
-          />
-          <Button
+            style={{marginVertical: 10}}
             label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
             icon={holding.stopDate ? 'play' : 'pause'}
             onPress={() => {
