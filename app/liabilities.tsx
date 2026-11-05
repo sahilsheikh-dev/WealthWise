@@ -279,7 +279,7 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
                 onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }); }}
               />
               <Button
-                label="Close loan early"
+                label="Foreclosure"
                 icon="check-circle"
                 style={styles.liabilityAction}
                 onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } }); }}

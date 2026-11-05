@@ -8655,3 +8655,35 @@ Gate table:
 
 Unverified: physical-device rendering and interaction at font scales 1.3 and
 2.0 on iOS and Android. Protected Home and Budget blobs remain unchanged.
+
+### Home-only options menu and recurring asset controls (2026-11-05)
+
+- Replaced assertions: old / liability action label “Close loan early” / new /
+  “Foreclosure” / reason: owner renamed the recurring-liability early closure
+  action consistently across card, entries and form surfaces.
+- Replaced assertions: old / only one-time and recurring holding card paths /
+  new / every recurring plan card exposes Stop recurring or Resume recurring /
+  reason: owner requires stop/resume on all recurring asset cards.
+- Replaced assertions: old / global three-dot menu available where no explicit
+  right actions exist / new / menu appears only for Home route variants /
+  reason: owner requires global options only on Index/Home.
+- DEC-P29HOME-MENU: AppHeader treats `/`, `(tabs)` and `(tabs)/index` as
+  Home route variants; explicit supplied `menu` and `showDefaultMenu={false}`
+  behavior remains independent.
+- DEC-P29RECURRING-CARD: instrument-card actions use id `stop` for both stop
+  and resume labels; active plans show Stop recurring, stopped plans show
+  Resume recurring.
+- Validation state before final ordered rerun: focused AppHeader,
+  instrument-card and route smoke tests passed; TypeScript passed; Gate 1 real
+  run passed 92 suites, 1192 passed tests, 1 skipped, 1193 total.
+
+### Final ordered verification (2026-11-05)
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 92 suites passed; 1192 passed, 1 skipped, 1193 total |
+| `npx tsc --noEmit` | 0 | Passed |
+| `npx expo lint` | 0 | Passed with zero warnings |
+| `npx expo-doctor` | 0 | 21/21 checks passed |
+| `npx expo export --platform android` | 0 | Passed |
+| `npx expo export --platform ios` | 0 | Passed |

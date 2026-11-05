@@ -119,7 +119,7 @@ export default function LiabilityPaymentsScreen() {
           />
           {liability.kind === 'recurring' ? (
             <Button
-              label="Close loan early"
+              label="Foreclosure"
               icon="check-circle"
               style={styles.action}
               onPress={() => router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } })}
