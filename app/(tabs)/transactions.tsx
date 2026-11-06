@@ -103,7 +103,10 @@ export default function TransactionsScreen() {
     })),
     [budgetCategories, categoryFilter, creationOrder, data.transactions, filter, month, query],
   );
-  const rows = sorting.sort(filteredRows);
+  const rows = useMemo(
+    () => sorting.sort(filteredRows),
+    [filteredRows, sorting],
+  );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
   const filterActive = filter !== 'all' || categoryFilter !== ''

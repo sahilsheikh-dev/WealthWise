@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
@@ -53,9 +53,13 @@ export default function LiabilitiesScreen() {
   const isValidExtra = /^\d+$/.test(extraText) && Number.isSafeInteger(Number(extraText))
     && Number(extraText) >= 0 && Number(extraText) <= 1_000_000;
   const extra = isValidExtra ? Number(extraText) : 0;
-  const overview = liabilitiesOverview(data, asOf, extra);
-  const liabilityCreationOrder = new Map(data.liabilities.map((liability, index) => [liability.id, index]));
-  const sortedLiabilities = sorting.sort(data.liabilities.map((liability) => {
+  const overview = useMemo(
+    () => liabilitiesOverview(data, asOf, extra),
+    [asOf, data, extra],
+  );
+  const sortedLiabilities = useMemo(() => {
+    const liabilityCreationOrder = new Map(data.liabilities.map((item, index) => [item.id, index]));
+    return sorting.sort(data.liabilities.map((liability) => {
     const summary = liabilitySummary(liability, asOf);
     const schedule = liabilitySchedule(liability, asOf);
     return {
@@ -68,7 +72,8 @@ export default function LiabilitiesScreen() {
       status: summary.cleared ? 'cleared' : schedule.summary.overdue > 0 ? 'overdue' : 'active',
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
-  }));
+    }));
+  }, [asOf, data.liabilities, sorting]);
   const filterActive = kindFilter !== 'All'
     || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
