@@ -284,6 +284,6 @@ export function PendingItemActions({
 
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  compactButton: { minHeight: 36, paddingHorizontal: 10, paddingVertical: 6 },
+  compactButton: { minHeight: 44, paddingHorizontal: 10, paddingVertical: 6 },
   comfortableCompactButton: { minHeight: 44, paddingHorizontal: 12, paddingVertical: 8 },
 });
