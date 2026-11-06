@@ -1467,6 +1467,52 @@ describe('createAppStore persistence', () => {
     expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
   });
 
+  it('P29-AA store reproduction: EF links use existing holdings and plan deletion leaves no dangling bucket link', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: (() => {
+      let sequence = 0;
+      return () => `p29-aa-${++sequence}`;
+    })(), today: () => '2026-11-06' });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+
+    actions.addHolding({ name: 'Manual Cash', type: 'Cash', invested: 1_000, value: 1_000 });
+    actions.addHolding({ name: 'Manual Savings', type: 'Savings account', invested: 2_000, value: 2_000 });
+    actions.addHolding({ name: 'Manual Fixed', type: 'Fixed deposit', invested: 3_000, value: 3_000 });
+    actions.addPlan({
+      name: 'Recurring plan',
+      type: 'Recurring deposit',
+      frequency: 'monthly',
+      amount: 500,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-01-01',
+      trackFrom: '2026-01-01',
+      opening: 500,
+      actualValue: null,
+      actualValueDate: null,
+    });
+
+    const report: string[] = [];
+    for (const holding of store.getState().data.holdings) {
+      actions.setEfBucketLinks('cash', [holding.id]);
+      report.push(`${holding.kind}:${holding.type}:${holding.name}:${store.getState().lastError ?? 'linked'}`);
+      actions.setEfBucketLinks('cash', []);
+    }
+
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan) throw new Error('Expected the recurring plan reproduction holding.');
+    actions.setEfBucketLinks('bank', [plan.id]);
+    expect(store.getState().lastError).toBeNull();
+    actions.deletePlan(plan.id, { linkedTransactions: 'delete' });
+    console.log(`P29-AA reproduction: ${report.join(' | ')}`);
+    console.log(`P29-AA stale plan link: ${store.getState().data.efBucketLinks.bank?.join(',') ?? 'none'}`);
+
+    // Replaced assertion target: dangling plan links must be removed in the same delete write.
+    expect(store.getState().data.efBucketLinks.bank ?? []).toEqual([]);
+  });
+
   it('saves custom buckets, percentages, and investment links in one persisted write', async () => {
     const storage = new MemoryStorage();
     let nextId = 0;
