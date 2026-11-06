@@ -1,0 +1,10 @@
+{
+  "name": "Wealth Wise",
+  "colors": {
+    "background": "#0b1f33",
+    "mark": "#ffffff",
+    "monochrome": "#111827",
+    "splashLight": "#0b1f33",
+    "splashDark": "#ffffff"
+  }
+}
