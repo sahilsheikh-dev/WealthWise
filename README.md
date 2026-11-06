@@ -47,6 +47,9 @@ no cloud or network requests at runtime.
   Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
+- Emergency Fund holdings link by holding ID across manual holdings, recurring
+  plans and migrated Fixed deposits. Deletion and hydration remove dangling
+  links without changing net worth or valid goal/link amounts.
 - Simple editable insurance policy tracking with scheduled premium dues for
   term life, life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
