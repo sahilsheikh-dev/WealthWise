@@ -2,6 +2,16 @@
 
 # Status
 
+- P26-A accessibility/performance audit and fixes are complete. The report
+  was committed first as `cfbe023`; implementation and regressions are in
+  `d4071a5`, `f59b01a`, and `08b3992`. Home and Budget source files remain
+  protected and unedited. The bottom-tab fitting assertions were superseded
+  by wrapping/scaling assertions. Final Gate 1 passed 93 suites with 1199
+  passed tests, 1 skipped and 1200 total; all six gates exit 0. Fresh
+  coverage is `src/data` 749/798 lines (93.86%), 780/896 branches (87.05%);
+  `src/domain` 3549/3609 (98.34%), 3480/3747 (92.87%); `src/lib` 107/107
+  lines and 126/126 branches (100%). Full P26-A evidence is in
+  [PROGRESS.md](../PROGRESS.md).
 - Current task: owner recurring-stop, foreclosure, and Home-only menu refinements complete.
   P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.

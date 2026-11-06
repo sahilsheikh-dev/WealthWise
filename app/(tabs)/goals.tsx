@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
@@ -36,7 +36,7 @@ export default function GoalsScreen() {
   });
   const totals = goalTotals(goals, expenseBaseline, data, asOf);
   const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
-  const sortedGoals = useMemo(() => sorting.sort(goals.map((goal) => {
+  const sortedGoals = sorting.sort(goals.map((goal) => {
     const view = goalView(goal, { expenseBaseline, data, asOf });
     return {
       ...goal,
@@ -45,7 +45,7 @@ export default function GoalsScreen() {
       remaining: Math.max(0, view.target - view.saved),
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
-  })), [asOf, data, expenseBaseline, goals, sorting]);
+  }));
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGoals = normalizedQuery
     ? sortedGoals.filter((goal) =>
