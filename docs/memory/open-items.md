@@ -4,6 +4,11 @@
 
 ## Unresolved
 
+- **P27-A Expo SDK audit owner decision:** current `npm audit` reports 7
+  production vulnerability nodes; npm offers Expo SDK/Router major fixes rather
+  than patch-level SDK-57 fixes. No major upgrade or `audit fix --force` is
+  approved. Native-device bundle, hydration and dependency behavior remain
+  subject to normal physical-device verification.
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on

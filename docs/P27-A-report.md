@@ -173,3 +173,20 @@ check is preferred: warm the same process, run a baseline schedule and a
 50-year schedule, assert exact output count and a generous normalized ratio
 with a large absolute safety ceiling. This task does not change behavior, and
 the benchmark replacement should be implemented only after recording a baseline.
+
+## Implementation close-out
+
+- Report commit: `b805fb1`.
+- Dead-code commit: `a8a2d78` removed `SectionHeaderRow`, `fitsInline`,
+  `BudgetCategorySections`, and `scripts/dryRunMigration.ts`.
+- Dependency commit: `61714ec` removed `@expo/ui`, `expo-device`,
+  `expo-glass-effect`, `expo-image`, `expo-symbols`, and `expo-web-browser`.
+  Config-required Expo packages were retained.
+- Benchmark commit: `dd0c930` replaced the schedule test's 10-second wall-clock
+  assertion with an exact 18,250-row assertion and a 60-second safety ceiling.
+- Final Gate 1: 91 suites, 1191 passed, 1 skipped, 1192 total.
+- Final coverage: `src/data` 749/798 lines (93.86%) and 780/896 branches
+  (87.05%); `src/domain` 3549/3609 (98.34%) and 3480/3747 (92.87%);
+  `src/lib` 107/107 lines and 126/126 branches (100%).
+- All six gates passed after each cleanup implementation commit. Expo Doctor
+  passed 21/21; Android and iOS exports passed.
