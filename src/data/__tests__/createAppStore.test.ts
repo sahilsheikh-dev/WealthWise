@@ -1506,8 +1506,6 @@ describe('createAppStore persistence', () => {
     actions.setEfBucketLinks('bank', [plan.id]);
     expect(store.getState().lastError).toBeNull();
     actions.deletePlan(plan.id, { linkedTransactions: 'delete' });
-    console.log(`P29-AA reproduction: ${report.join(' | ')}`);
-    console.log(`P29-AA stale plan link: ${store.getState().data.efBucketLinks.bank?.join(',') ?? 'none'}`);
 
     // Replaced assertion target: dangling plan links must be removed in the same delete write.
     expect(store.getState().data.efBucketLinks.bank ?? []).toEqual([]);
