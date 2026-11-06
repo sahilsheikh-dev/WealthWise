@@ -802,6 +802,26 @@ describe('route render smoke audit', () => {
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
   ];
 
+  it.each([
+    ['Home', () => React.createElement(HomeScreen)],
+    ['Transactions', () => React.createElement(TransactionsScreen)],
+    ['Goals', () => React.createElement(GoalsScreen)],
+    ['Budget', () => React.createElement(BudgetScreen)],
+  ])('%s renders at 1.3x and 2.0x text scale', async (_name, createScreen) => {
+    for (const fontScale of [1.3, 2]) {
+      mockFontScale = fontScale;
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        renderer = renderScreen(createScreen());
+        await Promise.resolve();
+      });
+      if (!renderer) throw new Error(`${_name} did not render at ${fontScale}x.`);
+      act(() => renderer?.unmount());
+      renderer = undefined;
+    }
+    mockFontScale = 1;
+  });
+
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
