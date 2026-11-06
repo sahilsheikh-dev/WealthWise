@@ -1,9 +1,16 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-06 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
+- **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
+  reproduction and store coverage confirmed valid links for Cash, Savings,
+  Fixed deposits and recurring plans. Plan deletion now clears EF bucket and
+  goal links in the same write; hydration repairs dangling links once and
+  preserves valid links, net worth and goal values. No schema change.
+- **Emergency Fund form font-scale and device check:** verify the resolved
+  link picker and EF allocation form at 1.3x and 2.0x on physical devices.
 - **P29-Z documentation verification:** source wins over docs; schema v21,
   migration/archive range through `.premigration.v20`, Foreclosure labels,
   Home-only menu rule and real Gate 1 counts are recorded. No behavior, schema

@@ -1,4 +1,4 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-06 | Updates: owner and AI agents -->
 
 # Status
 
@@ -14,8 +14,12 @@
   Stop/resume is one store write with Undo and does not change entries, value,
   returns or links.
   Verification: the real `npm test -- --coverage` run passed 92 suites with
-  1192 passed tests, 1 skipped and 1193 total. The six-gate sequence is
+  1194 passed tests, 1 skipped and 1195 total. The six-gate sequence is
   recorded in [PROGRESS.md](../PROGRESS.md).
+  P29-AA repairs Emergency Fund link integrity without schema change. It
+  clears a deleted plan's bucket and EF goal links in the same store write,
+  and repairs valid and dangling linked holdings once during hydration while
+  preserving full-value net-worth and goal behavior.
   P29-W implements early foreclosure for recurring liabilities.
   The report-only inventory was committed first. Schema v20 adds optional
   closure metadata; close, payment, optional charge and zero-balance settlement
@@ -75,16 +79,16 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 92 suites, 1193 tests (1192 passed; one opt-in stress benchmark
+- Test counts: 92 suites, 1195 tests (1194 passed; one opt-in stress benchmark
   skipped); all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 92 suites, 1193 tests (1192 passed, 1 skipped); all six final
+- Latest validated run: 92 suites, 1195 tests (1194 passed, 1 skipped); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 92 suites, 1192 passed, 1 skipped, 1193 total; coverage thresholds
+- Latest full Jest run: 92 suites, 1194 passed, 1 skipped, 1195 total; coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
