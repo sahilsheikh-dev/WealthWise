@@ -2,6 +2,14 @@
 
 # Status
 
+- P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
+  commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
+  `dd0c930` (robust schedule benchmark). Final Gate 1 has 91 suites and 1192
+  tests (1191 passed, 1 skipped). All six gates passed after each cleanup
+  implementation commit. Coverage remains above thresholds:
+  `src/data` 749/798 lines/780/896 branches; `src/domain`
+  3549/3609/3480/3747; `src/lib` 107/107 and 126/126. Protected Home and Budget
+  files remain unchanged. Full inventory: [P27-A-report.md](../P27-A-report.md).
 - P26-A accessibility/performance audit and fixes are complete. The report
   was committed first as `cfbe023`; implementation and regressions are in
   `d4071a5`, `f59b01a`, and `08b3992`. Home and Budget source files remain
