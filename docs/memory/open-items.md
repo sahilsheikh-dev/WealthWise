@@ -4,6 +4,12 @@
 
 ## Unresolved
 
+- **P26-A physical-device checks:** verify touch targets, scalable labels and
+  text at 1.3x/2.0x, focus order, announced form errors, color-only status,
+  screen-reader navigation, cold hydration, first render and action writes on
+  iOS and Android. Jest/TestRenderer and Node benchmarks are not device
+  evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
+  user-owned/report-only surfaces under the P26-A scope.
 - **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
   reproduction and store coverage confirmed valid links for Cash, Savings,
   Fixed deposits and recurring plans. Plan deletion now clears EF bucket and

@@ -2610,7 +2610,43 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 ### Phase 26 — Accessibility, performance and final gates
 
-Planned P26-A [P15-M].
+- **P26-A complete (2026-11-06):** report-only inventory committed first as
+  `cfbe023`; accessibility fixes followed in `d4071a5`, performance fixes in
+  `f59b01a`, and regressions/log cleanup in `08b3992`. The report is at
+  [P26-A-report.md](P26-A-report.md). `app/(tabs)/index.tsx` and
+  `app/(tabs)/budget.tsx` remained unedited with protected hashes unchanged;
+  findings for those user-owned screens are reported read-only.
+- Accessibility fixes raise compact actions and search clear targets to 44px,
+  and replace fitted/single-line bottom-tab labels with scalable wrapping
+  labels. Source scanning excludes the protected Home/Budget routes,
+  `SortChip.tsx`, and test files because those surfaces are externally
+  governed or intentionally frozen. Goals memoization was restored because
+  React Compiler rejected it; transactions sorting/group derivation and
+  liability sorting/overview derivation remain memoized.
+- Gate-repair assertions replace old bottom-tab fitting expectations with
+  wrapping/scaling assertions in `BottomTabBar.test.tsx` and
+  `TabsLayout.test.tsx`; the superseded assertions required
+  `adjustsFontSizeToFit`, `minimumFontScale: 0.75`, and one-line labels.
+  The replacement assertions preserve scalable wrapping and document why the
+  old expectations are invalid. These test replacements do not weaken
+  accessibility behavior.
+- Real Gate 1 rerun: 93 suites passed, 1199 tests passed, 1 skipped, 1200
+  total. Gate 2 TypeScript, Gate 3 Expo lint, Gate 4 Expo Doctor 21/21,
+  Gate 5 Android export, and Gate 6 iOS export all exit 0. Lint was rerun
+  cleanly after removing one exhaustive-deps warning.
+- Fresh coverage from the final Gate 1 run, grouped by immediate `src/`
+  directory: `src/data` 749/798 lines (93.86%) and 780/896 branches (87.05%);
+  `src/domain` 3549/3609 lines (98.34%) and 3480/3747 branches (92.87%);
+  `src/lib` 107/107 lines (100%) and 126/126 branches (100%). The repository
+  coverage thresholds remain unchanged; this directory grouping does not
+  include uninstrumented directories such as `src/components` in the
+  coverage-final map.
+- Five-sample Node/TestRenderer medians in the P26-A report: demo/50-year
+  cold hydration 0 ms/147 ms, demo/50-year Home first render 9 ms/11 ms,
+  demo/50-year Budget first render 3 ms/2 ms, and 50-year action write 3 ms.
+  The 50-year fixture stores 2,604,654 bytes. These are Jest/Node
+  measurements, not physical-device evidence. Native layout, touch and
+  font-scale behavior remain pending physical-device verification.
 
 ### Phase 27 — Cleanup
 
