@@ -160,7 +160,7 @@ export default function InvestmentEntriesScreen() {
         {holding.kind === 'plan' && capabilities?.recurring ? (
           <Button
             style={styles.action}
-            label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
+            label={holding.stopDate ? 'Resume recurring' : 'Stop investment'}
             icon={holding.stopDate ? 'play' : 'pause'}
             onPress={() => {
               if (holding.stopDate) {
