@@ -1,6 +1,10 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- Audited all five remaining `chore: user manual changes (checkpoint)` commits
+  reachable from `origin/main` and identified patch-based subject
+  recommendations. No shared commit history was rewritten or pushed; details
+  are in [PROGRESS.md](../PROGRESS.md).
 - Corrected the messages on the two local v1.0.0 release documentation
   commits; the release-folder follow-up was replayed unchanged in content.
   New commit IDs and verification are recorded in [PROGRESS.md](../PROGRESS.md).
