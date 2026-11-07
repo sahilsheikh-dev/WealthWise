@@ -2,6 +2,9 @@
 
 This file contains the configuration and policies governing WealthWise GitHub Releases.
 
+See [`build-config.md`](./build-config.md) for EAS build profiles, version
+identifiers, store tracks, commands, and pre-/post-build requirements.
+
 ## 1. Application Information
 
 | Property | Value |
@@ -100,16 +103,21 @@ do not retain duplicates at the release root or in `drafts/`.
 
 ## 7. Safety Policies
 
-1. Never overwrite existing release records.
-2. Never delete published releases or tags.
-3. Never force-push.
-4. Never rewrite Git history.
-5. Never publish without approval.
-6. Never expose secrets.
-7. Never modify unrelated application code.
-8. Never automatically commit or push documentation.
-9. Keep unpublished notes in `drafts/` and all published release notes in
-   `published/`; move notes there after publication is verified.
+Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
+[`memory/rules.md`](../memory/rules.md), and
+[`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules). In particular:
+
+- Never checkpoint dirty files with a generic message; inspect and commit only
+  the named dirty files with descriptive Conventional Commit messages.
+- Keep fixes to completed work in their original phase as `<ID>-R<n>`.
+- Never push, amend, or rewrite history without explicit owner approval.
+- Release publication and tag creation require explicit owner approval.
+- Never overwrite or delete published release records or tags.
+- Never expose secrets or commit EAS credentials.
+- Keep drafts in `drafts/`; keep published notes in `published/`.
+
+The worktree and release rules are shared policy, not release-specific
+exceptions.
 
 ## 8. Configuration Maintenance
 

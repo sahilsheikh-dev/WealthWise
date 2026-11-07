@@ -12,8 +12,10 @@ unpublished drafts, and the reusable AI-powered GitHub release workflow.
 | File | Description |
 |---|---|
 | `RELEASE_PROMPT.md` | Master reusable prompt for automated release discovery, analysis, and publication |
+| `TEMPLATE.md` | Reusable skeleton for new release notes |
 | `release-config.md` | Repository configuration and release policies |
 | `release-history.md` | Historical register of published releases |
+| `build-config.md` | EAS profiles, versioning, store tracks and build checklist |
 | `drafts/` | Temporary storage for unpublished release notes |
 | `published/` | Permanent Markdown records for published releases |
 
@@ -29,6 +31,7 @@ The release workflow also uses the following project context:
 - `docs/memory/rules.md`
 - `docs/memory/status.md`
 - `docs/memory/working-style.md`
+- `docs/memory/rules.md`
 - `docs/PROGRESS.md`
 
 ## Release Lifecycle
@@ -45,6 +48,15 @@ Every release follows this lifecycle:
 8. Obtain explicit approval.
 9. Publish the GitHub Release.
 10. Move the published notes into `published/` and update release history.
+
+### Release process summary
+
+The current release is v1.0.0; the previous version is the initial release.
+The GitHub release and tag exist, but no production EAS build has been
+created. Run the pre-build checklist in [`build-config.md`](./build-config.md),
+record each platform build and submission result in
+[`release-history.md`](./release-history.md), and wait for explicit owner
+approval before publishing or tagging.
 
 ## Use the Release Prompt
 
@@ -71,10 +83,13 @@ Publish the GitHub Release and update the permanent release documentation.
 ```text
 releases/
 ├── drafts/
+│   └── .gitkeep
 ├── published/
 │   └── v1.0.0.md
 ├── README.md
 ├── RELEASE_PROMPT.md
+├── TEMPLATE.md
+├── build-config.md
 ├── release-config.md
 └── release-history.md
 ```
@@ -92,6 +107,9 @@ releases/
   do not leave a second copy in `drafts/` or at the `docs/releases/` root.
 - Never overwrite or remove published release records.
 - All release-related documentation must remain inside `docs/releases/`.
+- The shared worktree, phase, history and release-approval rules are in
+  [`AGENTS.md`](../../AGENTS.md), [`memory/rules.md`](../memory/rules.md) and
+  [`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules).
 
 ## Latest Release
 
@@ -101,6 +119,7 @@ Update this section after every successful publication.
 - Previous version: Initial release
 - Release date: 2026-11-07
 - GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
+- Production builds: Not built
 
 ## Maintenance
 

@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -6,34 +6,29 @@
 
 - **Published v1.0.0 tag after main history rewrite:** the tag remains
   unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
-  into the original commit history. It was intentionally not moved; retain it
-  unless the owner explicitly requests a tag change.
-- **P28-B production build and dependency audit:** the v1.0.0 GitHub Release
-  and remote tag were published and verified on 2026-11-07 at
+  into the original commit history. The 2026-11-08 `git ls-remote --tags
+  origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
+  origin/main` exited 1. Do not move or delete the tag; any change requires
+  explicit owner approval.
+- **P28-C v1.0.0 production build:** the GitHub Release and remote tag were
+  published and verified on 2026-11-07 at
   `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
-  `docs/releases/published/`. The EAS production build remains unrun. The
-  accepted audit risk is 7 production advisories: 4 moderate and 3 high, with
-  no Expo SDK 57-compatible patch fix.
+  `docs/releases/published/`. No EAS production build has been created. Before
+  building, rerun the six gates, export and restore a backup, pass
+  physical-device checks on iOS and Android, and confirm owner approval. The
+  dependency audit has 7 production advisories (4 moderate, 3 high); no Expo
+  SDK 57-compatible patch fix is available, and no major upgrade or force fix
+  is approved.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
   months, Received dues, projected cash flow, virtual future months and
   v21-to-v22 native migration/restart. Automated evidence is complete and all
   six gates pass; native device behavior remains unverified.
-- **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
+- **Pre-build synthetic v13 equality:** the synthetic v13 backup with explicit
   net-worth, goal and Emergency Fund equality assertions is not yet present.
-  The P28 report commit records the gap; owner/device validation is still
-  required.
-- **P28-A Expo audit owner decision:** `npm audit --omit=dev` currently reports
-  7 production vulnerability nodes (4 moderate, 3 high). Fixes suggested by
-  npm require Expo/Router major upgrades rather than SDK-57 patch fixes. No
-  major upgrade or force audit fix was approved.
-
-- **P27-A Expo SDK audit owner decision:** current `npm audit` reports 7
-  production vulnerability nodes; npm offers Expo SDK/Router major fixes rather
-  than patch-level SDK-57 fixes. No major upgrade or `audit fix --force` is
-  approved. Native-device bundle, hydration and dependency behavior remain
-  subject to normal physical-device verification.
+  Owner/device validation remains required; the pre-build checklist is in
+  [`build-config.md`](../releases/build-config.md).
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on
@@ -47,10 +42,11 @@
   preserves valid links, net worth and goal values. No schema change.
 - **Emergency Fund form font-scale and device check:** verify the resolved
   link picker and EF allocation form at 1.3x and 2.0x on physical devices.
-- **P29-Z documentation verification:** source wins over docs; schema v21,
-  migration/archive range through `.premigration.v20`, Foreclosure labels,
-  Home-only menu rule and real Gate 1 counts are recorded. No behavior, schema
-  or UI source change is part of P29-Z.
+- **P29-Z documentation verification (historical, superseded 2026-11-08):**
+  source wins over docs; current schema v22 and the migration/archive chain
+  through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
+  Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
+  change.
 - **Home-only global menu physical-device check (2026-11-05):** verify the
   three-dot options menu remains present on Index/Home and absent on Assets,
   Liabilities and detail screens, including backup, reminders, security,

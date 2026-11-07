@@ -108,6 +108,15 @@ npx expo export --platform android
 npx expo export --platform ios
 ```
 
+## Release process
+
+The current version is **v1.0.0**; the previous version is the initial
+release. The GitHub release and tag are published, but the production EAS
+builds are **not built** yet. Follow
+[`docs/releases/build-config.md`](docs/releases/build-config.md) for the
+pre-build gates, backup/device checks, EAS commands and build record. Release
+publication and tagging require explicit owner approval.
+
 `eas.json` defines development, preview and production EAS profiles. There is
 no app-build command in `package.json`.
 
@@ -133,7 +142,8 @@ no app-build command in `package.json`.
 The app uses Expo SDK 57, Expo Router routes in `app/`, and a pure domain layer
 in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
-validate persisted and imported data.
+validate persisted and imported data. The current persisted data schema is
+v22; migration and backup-import compatibility are retained.
 
 ### Investment return calculations
 
