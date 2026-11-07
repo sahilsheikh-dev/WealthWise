@@ -51,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (113/114)
+Overall progress ██████████ 98% (113/115)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (3/3)
+Phase 28         ████████░░ 75% (3/4)
 Phase 29         ██████████ 97% (32/33)
 ```
 
@@ -170,7 +170,9 @@ Phase 29         ██████████ 97% (32/33)
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
 | P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata. Protected routes remain unchanged. | 2026-11-07 |
 | P28-B | — | Done | Aligned first stable release metadata to v1.0.0 and updated release notes/changelog; no source behavior change. | 2026-11-07 |
-| P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. | 2026-11-08 |
+| P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. Revised by P28-C-R1. | 2026-11-08 |
+| P28-C-R1 | — | In progress | Add Download and What's new README sections, correct source/schema/test claims, configure Android APK EAS output, and enforce release asset/link/history checks. | 2026-11-08 |
+| P28-C-R1 | — | In progress | Add pending-safe app download guidance, an Android APK EAS profile, pre-publication asset/README/history checks, and correct README claims from source. The existing lint warning is isolated in its own commit. README changes are drafted; EAS/policy updates and final gates remain. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -2928,7 +2930,8 @@ evidence present in exports/checkpoints.
 | P27-A | Phase 27 | — | — | 2026-11-07 | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Done; cleanup and all six ordered gates pass. | Implementation evidence recorded in this ledger. | SDK-57-compatible dependency audit decisions remain open. | current request |
 | P28-A | Phase 28 | — | — | 2026-11-07 | QA and initial release preparation. | Done; original `0.2.0` preparation is historical; stable release metadata was revised by P28-B. | `fbdcbac`, `41c4617`, `d0ddff8` | The release target and build work are tracked by P28-B/P28-C. | current request |
 | P28-B | Phase 28 | — | — | 2026-11-07 | Align and prepare v1.0.0 release metadata. | Done; app/package versions and release notes are aligned; no source behavior change. | Release metadata evidence recorded in this ledger. | Production build remains unbuilt; see build configuration and open items. | current request |
-| P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only; production EAS build remains unbuilt. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
+| P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only; production EAS build remains unbuilt. Revised by P28-C-R1. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
+| P28-C-R1 | Phase 28 | — | — | 2026-11-08 | Add pending-safe README app downloads and What's new, an Android APK profile, release-asset publication checks, and source-accurate README details. | In progress; README changes are drafted; no build, publication, tag, or protected-route changes. | See P28-C-R1 session/release log below. | Android APK and owner-provided iOS link are not yet available. | current request |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
 | P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
