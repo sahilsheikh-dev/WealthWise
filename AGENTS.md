@@ -5,12 +5,22 @@ This `AGENTS.md` is the repository's single instruction entry point for every
 AI tool. Keep tool-specific instruction files out of the repository; update
 these shared instructions instead.
 
+Reports, audits, checklists, and generated output belong in chat responses or
+under `/tmp`, never in the repository. Documentation changes are limited to
+the shared memory files and `docs/PROGRESS.md`.
+
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
 `engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
 
 ## Project rules
 
+- If files are dirty at the start of a task, list every dirty file and checkpoint
+  exactly those files with `chore: user manual changes (checkpoint)` before any
+  other work. Preserve owner edits; never use checkout, restore, stash, reset,
+  or old-code reapplication to undo them.
+- If an owner edit causes a test failure, update the test to match the source
+  and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and
   verification records with the same task commit.
 - Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
