@@ -1,0 +1,93 @@
+import { useEffect, useState, type PropsWithChildren } from 'react';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useTheme } from '../theme/useTheme';
+
+export function TopAnchoredSheet({
+  visible,
+  onClose,
+  children,
+  sheetTestID,
+  contentStyle,
+  centered = false,
+}: PropsWithChildren<{
+  visible: boolean;
+  onClose: () => void;
+  sheetTestID: string;
+  contentStyle?: StyleProp<ViewStyle>;
+  centered?: boolean;
+}>) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} testID={`${sheetTestID}-modal`}>
+      <View style={styles.overlay}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss sheet"
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+          testID={`${sheetTestID}-backdrop`}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={insets.top}
+          style={[styles.keyboardAvoiding, { paddingTop: insets.top }]}>
+          <View
+            testID={sheetTestID}
+            style={[
+              styles.sheet,
+              centered ? styles.centeredSheet : styles.topSheet,
+              {
+                maxHeight: Math.max(0, height * 0.6 - keyboardHeight),
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+              contentStyle,
+            ]}>
+            {children}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  keyboardAvoiding: { flex: 1, alignItems: 'stretch' },
+  centeredSheet: {
+    alignSelf: 'center',
+    width: '88%',
+    maxWidth: 420,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    paddingVertical: 10,
+    marginVertical: 'auto',
+  },
+  topSheet: {
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+  },
+  sheet: {
+    flexShrink: 1,
+  },
+});
