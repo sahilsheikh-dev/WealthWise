@@ -37,9 +37,11 @@ import {
   MissingPlannedIncomeError,
   monthlyCommitments,
   isItemDueInMonth,
+  isIncomeDueInMonth,
   nextDueMonth,
   outstandingAt,
   plannedForMonth,
+  plannedIncomeOf,
   projectedCashFlow,
   renameSection,
   resolveBudgetPlan,
@@ -95,6 +97,31 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
+  it('applies shared income recurrence rules to due and non-due months', () => {
+    const quarterly = {
+      id: 'quarterly-income',
+      name: 'Quarterly',
+      category: 'Freelance' as const,
+      amount: 3000,
+      frequency: 'quarterly' as const,
+      firstDueMonth: '2026-01',
+    };
+    const yearly = {
+      id: 'yearly-income',
+      name: 'Yearly',
+      category: 'Other' as const,
+      amount: 12000,
+      frequency: 'yearly' as const,
+      firstDueMonth: '2026-04',
+    };
+    expect(isIncomeDueInMonth(quarterly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(quarterly, '2026-03')).toBe(false);
+    expect(isIncomeDueInMonth(yearly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-03')).toBe(false);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-04')).toBe(15000);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-05')).toBe(0);
+  });
   it('covers frozen start-month and repeat guards with real outcomes', () => {
     const recurringWithoutStart: BudgetItem = {
       id: 'quarterly-no-start',
@@ -1814,6 +1841,7 @@ describe('budget plans and monthly views', () => {
         category: 'Freelance',
         amount: 2_500.25,
         day: 17,
+        frequency: 'monthly',
       };
       expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
       if (scope === 'following') {
