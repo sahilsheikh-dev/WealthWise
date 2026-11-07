@@ -1,6 +1,15 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-06 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+
+- P28-A release preparation is complete through the report, metadata update,
+  and release checklist. Report commit `fbdcbac` records source-backed release
+  readiness, permissions, storage, audit and migration evidence. Owner-confirmed
+  release `0.2.0` is aligned in `app.json`, `package.json` and the lockfile
+  root. Metadata commit `41c4617` updates the changelog and README audit/license
+  claims. The single all-platform production build and tag commands remain
+  documented in `docs/RELEASE-CHECKLIST.md` and have not been run. Home and
+  Budget remain protected and unchanged.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and

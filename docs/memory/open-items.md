@@ -4,6 +4,15 @@
 
 ## Unresolved
 
+- **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
+  net-worth, goal and Emergency Fund equality assertions is not yet present.
+  The P28 report commit records the gap; owner/device validation is still
+  required.
+- **P28-A Expo audit owner decision:** `npm audit --omit=dev` currently reports
+  7 production vulnerability nodes (4 moderate, 3 high). Fixes suggested by
+  npm require Expo/Router major upgrades rather than SDK-57 patch fixes. No
+  major upgrade or force audit fix was approved.
+
 - **P27-A Expo SDK audit owner decision:** current `npm audit` reports 7
   production vulnerability nodes; npm offers Expo SDK/Router major fixes rather
   than patch-level SDK-57 fixes. No major upgrade or `audit fix --force` is
