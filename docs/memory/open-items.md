@@ -4,11 +4,15 @@
 
 ## Unresolved
 
-- **Release record verification:** release docs under `docs/releases/` still
-  contain `UPDATE_ME` repository identity and unverified v1.0.0 publication
-  fields. Verify the actual GitHub Release, tag target, publication date and
-  changelog URL before completing the permanent release record. Do not treat
-  the release as published based only on the current draft.
+- **v1.0.0 release approval and publication:** review
+  `docs/releases/drafts/v1.0.0.md`. It targets remote `main` at
+  `d7a06a28612d4797885c2f622d6e8d7836f067d4`; the v0.1.0 GitHub entry is an
+  unpublished draft prerelease and there is no previous published stable
+  release. The owner selected Hold on 2026-11-07: do not tag or publish unless
+  the owner later explicitly approves. After successful publication, verify
+  the release URL/tag/target and complete the permanent record and release
+  history; fill the `UPDATE_ME` repository identity only from verified GitHub
+  data.
 - **P28-B first release:** six gates pass; build and tag commands remain
   unrun pending owner release execution. The current accepted audit risk is
   7 production advisories: 4 moderate and 3 high, with no Expo SDK

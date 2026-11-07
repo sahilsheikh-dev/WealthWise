@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- A v1.0.0 first-stable release candidate is drafted at
+  `docs/releases/drafts/v1.0.0.md` for review only. Target is remote `main`
+  commit `d7a06a28612d4797885c2f622d6e8d7836f067d4`; GitHub has no published
+  stable release (the v0.1.0 entry is an unpublished draft prerelease).
+  The owner chose Hold on 2026-11-07. Do not publish or create a tag unless
+  the owner later gives explicit approval.
 - Release-management documentation is present under `docs/releases/`:
   reusable workflow prompt, configuration, release history, drafts folder,
   and v1.0.0 record. The process requires verified changes and explicit

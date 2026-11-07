@@ -75,6 +75,31 @@
   URL, target commit, verified notes and full changelog URL. These must be
   populated only after checking the actual published GitHub Release and tag.
 
+## v1.0.0 first-stable release draft (2026-11-07)
+
+- Generated unpublished notes at
+  [drafts/v1.0.0.md](releases/drafts/v1.0.0.md), using the configured 1.0.0
+  version and the verified source at `origin/main`.
+- GitHub release discovery found only the existing `v0.1.0` draft prerelease;
+  no published stable release or remote version tag exists. Thus v1.0.0 is
+  proposed as the initial stable release, with the initial repository commit
+  `f27258093e14809fe923e480381488ece0d859a9` as the base and `main` at
+  `d7a06a28612d4797885c2f622d6e8d7836f067d4` as the target. The range contains
+  362 commits after the root snapshot. The local branch is ahead of this
+  selected remote target with release-documentation-only commits; they are
+  excluded pending target approval.
+- No merged PRs were returned by the repository query. Representative included
+  implementation commits and notes are in the draft; the complete range is
+  recorded there. No first-time contributors were verifiable from merged PRs.
+- Source/test verification covered Budget income due-month rules and
+  projections, schema v22 migration, backup encryption, local reminders, and
+  the target commit's Resume investment label/test. Six gates passed for this
+  target in the prior P28-B verification; no release command was run here.
+- Breaking changes: none identified for an initial stable release. Migration
+  v21-to-v22 assigns existing Budget incomes monthly automatically.
+- Status: draft prepared and held at the owner's request on 2026-11-07. No
+  tag, release, commit, or push was created by this release-analysis task.
+
 ## Contents
 
 1. [How to use this file](#1-how-to-use-this-file)
