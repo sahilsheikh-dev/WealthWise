@@ -1,0 +1,60 @@
+# WealthWise – Release History
+
+This document maintains the historical register of WealthWise releases.
+
+Only successfully published GitHub Releases should be recorded here.
+
+## 1. Published Releases
+
+| Version | Release Date | Previous Version | Release Type | Status | GitHub Release |
+|---|---|---|---|---|---|
+| v1.0.0 | To be verified | Initial | Initial | Verify | To be verified |
+
+## 2. Release Details
+
+### v1.0.0
+
+- Release notes: [v1.0.0.md](./v1.0.0.md)
+- GitHub Release: To be verified.
+- Tag: To be verified.
+- Target commit: To be verified.
+
+## 3. Draft Releases
+
+Unpublished releases are stored in:
+
+`docs/releases/drafts/`
+
+Drafts must not be included in the published release history.
+
+## 4. Versioning Policy
+
+WealthWise follows Semantic Versioning:
+
+- MAJOR: Breaking or incompatible changes.
+- MINOR: New backward-compatible features.
+- PATCH: Backward-compatible bug fixes and maintenance.
+
+## 5. Historical Record Rules
+
+1. Maintain reverse chronological order.
+2. Record only verified published releases.
+3. Include the actual publication date.
+4. Include the actual previous stable version.
+5. Link the actual GitHub Release.
+6. Link the permanent Markdown release notes.
+7. Never overwrite historical entries.
+8. Never fabricate release information.
+9. Verify release tags against their actual target commits.
+
+## 6. Update Procedure
+
+After every successful GitHub Release:
+
+1. Verify GitHub publication.
+2. Verify the release tag.
+3. Verify the target commit.
+4. Archive the final Markdown.
+5. Add a row to the Published Releases table.
+6. Update the release details.
+7. Verify all links.
