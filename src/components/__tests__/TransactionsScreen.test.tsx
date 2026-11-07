@@ -376,7 +376,7 @@ describe('Transactions available-balance card', () => {
       )).toHaveLength(0);
       expect(cashCard.findAll((node) =>
         String(node.type) === 'view' && node.props.testID === 'available-balance-divider',
-      )).toHaveLength(1);
+      )).toHaveLength(0);
 
       expect(currentRenderer.root.findAll((node) =>
         node.findAllByType('text').some((text) => text.children.join(' ').includes('Review ')),

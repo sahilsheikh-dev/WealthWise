@@ -1,6 +1,21 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- P29-AB is complete. Budget income recurrence supports monthly, quarterly,
+  half-yearly and yearly frequencies, with a required first-due month for
+  non-monthly items. Migration v21-to-v22 defaults existing income monthly
+  and the strict backup schema accepts the additive fields. The owner changes
+  remain preserved: Insurance card and Transactions available-balance have no
+  restored bottom border/divider, and recurring-plan stop action is
+  "Stop investment"; "Resume recurring" remains unchanged and is an open
+  terminology inconsistency.
+  Real Gate 1: 91 suites passed, 1193 tests passed, 1 skipped. Coverage:
+  all files 95.90% statements, 91.89% branches, 97.75% functions, 97.57%
+  lines; `src/data` 90.63/86.95/93.07/93.92; `src/domain`
+  96.96/92.82/98.79/98.31. Gates 2-6 passed: TypeScript, lint (one warning),
+  Expo Doctor 21/21, and Android/iOS exports. Final implementation commits:
+  `df7c109`, `6515c57`, `38a823d`.
 
 - P28-A release preparation is complete through the report, metadata update,
   and release checklist. Report commit `fbdcbac` records source-backed release

@@ -485,7 +485,8 @@ export function buildDemoData(today: ISODate): AppData {
   const budgetPlan: BudgetPlan = {
     incomes: [
       { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
-      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15 },
+      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15, frequency: 'quarterly', firstDueMonth: months[0] },
+      { id: 'demo-income-bonus', name: 'Annual bonus', category: 'Other', amount: 25_000, day: 20, frequency: 'yearly', firstDueMonth: months[0] },
     ],
     sections: [
       ...defaultBudgetSections(),
