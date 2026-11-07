@@ -6,9 +6,10 @@
   and v1.0.0 record. The process requires verified changes and explicit
   publication approval. The release README now gives separate prompts for
   preparing an unpublished draft and publishing only after approval.
-  Repository identity and v1.0.0 publication fields remain placeholders
-  pending verification; see the release-management entry in
-  [PROGRESS.md](../PROGRESS.md).
+  An initial `v1.0.0` draft is prepared from the repository's initial commit
+  through current `main` (`1c1426d`). GitHub currently lists no releases or
+  tags; do not publish until the owner approves and the target and notes are
+  revalidated. See the release-preparation entry in [PROGRESS.md](../PROGRESS.md).
 - P28-B first-release metadata is aligned to version 1.0.0. All six ordered
   gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
   Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
