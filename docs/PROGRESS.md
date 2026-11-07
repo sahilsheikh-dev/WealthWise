@@ -29,10 +29,22 @@
   `eas build --platform all --profile production`
   then
   `git tag -a v1.0.0 -m "WealthWise 1.0.0"`
+- Tag preflight found 17 local tags, no local `v1.0.0`, and no tags returned by
+  `git ls-remote --tags origin`. No tag was created, moved, or deleted.
 - Assertion replacement: old `Phase 29 ██████████ 97% (31/32)`; new
   `Phase 29         ██████████ 97% (31/32)`; reason: preserve the owner's
   dashboard column alignment. The memory test counts now match the latest
   validated 91-suite, 1194-test run rather than the stale 92/1195 record.
+- Six ordered gates: Gate 1 `npm test -- --coverage` exit 0 (91 suites; 1193
+  passed, 1 skipped, 1194 total); Gate 2 `npx tsc --noEmit` exit 0; Gate 3
+  `npx expo lint` exit 0 (one array-style warning); Gate 4 `npx expo-doctor`
+  exit 0 (21/21); Gate 5 Android export exit 0 (5.5 MB bundle); Gate 6 iOS
+  export exit 0 (5.2 MB bundle).
+- Fresh Gate 1 coverage by `src/` directory: `src/data` 758/807 lines
+  (93.93%) and 793/912 branches (86.95%); `src/domain` 3567/3628 lines
+  (98.32%) and 3505/3776 branches (92.82%); `src/lib` 107/107 lines and
+  126/126 branches (100%). Overall coverage: 95.90% statements, 91.89%
+  branches, 97.75% functions and 97.57% lines. Coverage thresholds unchanged.
 
 ## Contents
 
