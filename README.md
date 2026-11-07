@@ -355,10 +355,10 @@ platform settings.
 - The owner reports that the app works on a physical device. Device model and
   operating system were not recorded; this is owner verification, not
   automated device evidence.
-- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
-  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
-  production-dependency-tree and development/build-tool findings; see the
-  progress ledger for package lists.
+- The current `npm audit --omit=dev` run reports 7 production vulnerability
+  nodes (4 moderate and 3 high). Patch-level fixes that remain within Expo SDK
+  57 are not available; the major-upgrade decision is recorded in
+  [docs/P28-A-report.md](docs/P28-A-report.md).
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
@@ -366,8 +366,7 @@ platform settings.
 ## License
 
 This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
-Sheikh. The license holder is based on the locally configured account name and
-should be confirmed by the owner.
+Sheikh.
 
 ## Brand assets
 
