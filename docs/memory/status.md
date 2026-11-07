@@ -1,13 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
-- Current task: P28-C-R1 README download and release-rule revision is complete;
-  no application behavior changed. The Android APK and owner-provided iOS
-  download link are not available yet. The lint warning was fixed in its own
-  commit. All six ordered gates passed; exact counts and exits are in
-  [PROGRESS.md](../PROGRESS.md). The published v1.0.0 tag remains off current
-  `origin/main`; no tag was changed. See
-  [PROGRESS.md](../PROGRESS.md) and [open-items.md](open-items.md).
+- Current task: P28-C-R2 and P28-A-R1 are complete; no application behavior
+  changed. The v1.0.0 APK is uploaded to the GitHub release, with its verified
+  size and SHA-256 recorded in the Builds table. The repository is private, so
+  both unauthenticated public download routes return HTTP 404. The GitHub
+  release-body edit, EAS build metadata and tag decision remain pending owner
+  action; no release body or tag was changed. The Builds row is pending owner
+  data. All six ordered gates passed; exact counts and exits are in
+  [PROGRESS.md](../PROGRESS.md). See [open-items.md](open-items.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -25,13 +26,11 @@
   publication approval. The release README now gives separate prompts for
   preparing an unpublished draft and publishing only after approval.
   See the release publication entry in [PROGRESS.md](../PROGRESS.md).
-- P28-B first-release metadata is aligned to version 1.0.0. All six ordered
-  gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
-  Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
-  array-style warning. The GitHub Release and remote `v1.0.0` tag are
-  published and verified; the EAS production build has not been run. The
-  2026-11-08 ancestry check confirms the tag is no longer on `origin/main`
-  after the history rewrite.
+- P28-B first-release metadata is aligned to version 1.0.0. The v1.0.0 GitHub
+  Release and remote tag are published; the tag remains off current
+  `origin/main`, and its owner decision is pending. The APK asset is uploaded,
+  but public links are inaccessible while the repository is private. EAS build
+  identifiers and the Android `versionCode` remain owner to supply.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
@@ -59,7 +58,9 @@
 - P28-C release organization and build management are complete. The reusable
   release-notes template, EAS profiles/version identifiers, build history,
   release approval rules and draft ignore policy are documented under
-  `docs/releases/`. No build, submission, publication, or tag change was made.
+  `docs/releases/`. P28-C-R2 records the v1.0.0 APK asset and download details;
+  no build, submission, release-body edit, publication, or tag change was made
+  as part of this task.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
@@ -159,12 +160,12 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 91 suites, 1194 tests (1193 passed; one opt-in stress benchmark
-  skipped) in the real 2026-11-08 P28-C-R1 Gate 1 run; all six ordered gate results are recorded in
+- Test counts: 91 suites, 1195 tests (1194 passed; one opt-in stress benchmark
+  skipped) in the real 2026-11-08 P28-C-R2/P28-A-R1 Gate 1 run; all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1194 tests (1193 passed, 1 skipped) on
+- Latest validated run: 91 suites, 1195 tests (1194 passed, 1 skipped) on
   2026-11-08; all six final gates exit 0. Lint had no warnings after the
   isolated shorthand-array fix. Coverage and exact commands are recorded in
   [PROGRESS.md](../PROGRESS.md).
