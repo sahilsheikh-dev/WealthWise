@@ -8,17 +8,19 @@
   unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
   into the original commit history. The 2026-11-08 `git ls-remote --tags
   origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
-  origin/main` exited 1. Do not move or delete the tag; any change requires
-  explicit owner approval.
-- **P28-C v1.0.0 production build:** the GitHub Release and remote tag were
+  origin/main` exited 1. Owner decision is pending; do not move or delete the
+  tag without explicit owner approval.
+- **P28-C v1.0.0 production builds:** the GitHub Release and remote tag were
   published and verified on 2026-11-07 at
   `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
-  `docs/releases/published/`. No EAS production build has been created. Before
-  building, rerun the six gates, export and restore a backup, pass
-  physical-device checks on iOS and Android, and confirm owner approval. The
-  dependency audit has 7 production advisories (4 moderate, 3 high); no Expo
-  SDK 57-compatible patch fix is available, and no major upgrade or force fix
-  is approved.
+  `docs/releases/published/`. Neither the production AAB nor the
+  `android-apk` profile build exists. Before building, rerun the six gates,
+  export and restore a backup, pass physical-device checks on iOS and Android,
+  and confirm owner approval. The dependency audit has 7 production advisories
+  (4 moderate, 3 high); no Expo SDK 57-compatible patch fix is available, and
+  no major upgrade or force fix is approved.
+- **iOS download URL:** the owner will supply a TestFlight or App Store link.
+  Keep the README text as “Not available yet” until then; do not invent a URL.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget

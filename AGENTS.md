@@ -64,6 +64,14 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 - Check the installed Expo major version before using Expo APIs and consult
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
+- After each EAS build and before publishing a GitHub release, attach the
+  Android APK as `WealthWise-android.apk`, verify its download route with
+  `curl -I` (302) and `curl -I -L` (final 200), update the README Download
+  section, and record EAS build ID, Android build number/versionCode and
+  artifact name in `docs/releases/release-history.md`. A release is not
+  complete until README, build history and GitHub assets agree. Follow
+  `docs/releases/build-config.md`; production Android AABs go to Google Play,
+  APKs to GitHub, and iOS builds to TestFlight/App Store.
 
 ## Schema and verification
 

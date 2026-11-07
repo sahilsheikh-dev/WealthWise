@@ -25,9 +25,9 @@ Only successfully published GitHub Releases should be recorded here.
 
 ## 3. Builds
 
-| Version | Platform | Build number | EAS build ID | Profile | Date | Status |
-|---|---|---|---|---|---|---|
-| v1.0.0 | iOS + Android | — | — | production | — | Not built |
+| Version | Platform | Build number / versionCode | EAS build ID | Artifact name | Profile | Date | Status |
+|---|---|---|---|---|---|---|---|
+| v1.0.0 | iOS + Android | — | — | — | production | — | Not built |
 
 ## 4. Draft Releases
 

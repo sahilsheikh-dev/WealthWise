@@ -218,7 +218,7 @@ describe('schema migration', () => {
     const migrated = migrateV21ToV22(data);
     expect(migratePersisted({ data }, 21)).toEqual({ data: migrated });
     const migratedRecord = migrated as Record<string, unknown>;
-    const plan = migratedRecord.budgetPlan as { incomes: Array<Record<string, unknown>> } | null;
+    const plan = migratedRecord.budgetPlan as { incomes: Record<string, unknown>[] } | null;
     expect(plan?.incomes.every((income) => income.frequency === 'monthly' && income.firstDueMonth === undefined)).toBe(true);
   });
 

@@ -46,8 +46,21 @@ Every release follows this lifecycle:
 6. Generate release notes.
 7. Save the unpublished draft.
 8. Obtain explicit approval.
-9. Publish the GitHub Release.
-10. Move the published notes into `published/` and update release history.
+9. Build the production Android AAB for Play and a separate Android APK using
+   the `android-apk` profile for the GitHub release. iOS builds are for
+   TestFlight/App Store only.
+10. Download the APK artifact, rename it exactly `WealthWise-android.apk`,
+    and attach it to the GitHub release draft with `gh release upload`.
+11. Verify the Android asset with `curl -I -L`; confirm and record the 302
+    redirect and final 200 response.
+12. Update the root README Download section with the latest version/date,
+    working Android asset URL, owner-supplied iOS URL, installation notes and
+    unchanged Old versions link.
+13. Record the APK EAS build ID, Android build number/versionCode, profile,
+    date, status and exact artifact name in `release-history.md`.
+14. Confirm README, `release-history.md` and the GitHub release assets agree,
+    then publish the GitHub Release.
+15. Move the published notes into `published/` and update release history.
 
 ### Release process summary
 
@@ -105,6 +118,12 @@ releases/
   `published/`.
 - After publication is verified, move the draft Markdown into `published/`;
   do not leave a second copy in `drafts/` or at the `docs/releases/` root.
+- Before publishing, attach the Android APK as `WealthWise-android.apk`,
+  verify the release download route with `curl -I -L` (302 then 200), update
+  the README Download section, and record its EAS build ID, versionCode and
+  artifact name. The README, release history and GitHub assets must agree.
+- The production Android AAB is for Google Play; `android-apk` is for the
+  GitHub download. iOS builds are distributed through TestFlight/App Store.
 - Never overwrite or remove published release records.
 - All release-related documentation must remain inside `docs/releases/`.
 - The shared worktree, phase, history and release-approval rules are in

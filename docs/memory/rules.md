@@ -49,6 +49,15 @@
 - Demo fixtures use deterministic synthetic data, stable IDs/dates and valid
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
+- After each EAS build and before publishing a GitHub release, attach the
+  Android APK as `WealthWise-android.apk`, verify its download route with
+  `curl -I` (302) and `curl -I -L` (final 200), update the README Download
+  section, and record EAS build ID, Android build number/versionCode and
+  artifact name in `docs/releases/release-history.md`. A release is not
+  complete until README, build history and GitHub assets agree. Production
+  Android AABs go to Google Play, APKs to GitHub, and iOS builds to
+  TestFlight/App Store; signing credentials are EAS-managed. See
+  [`build-config.md`](../releases/build-config.md).
 
 ## Protected file hashes
 
