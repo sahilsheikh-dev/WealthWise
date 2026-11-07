@@ -45,6 +45,29 @@ Every release follows this lifecycle:
 9. Publish the GitHub Release.
 10. Archive release notes and update release history.
 
+## Use the Release Prompt
+
+First, prepare the release:
+
+```
+Read docs/releases/RELEASE_PROMPT.md.
+Discover all changes since the last published
+release. Analyze the codebase and merged PRs.
+Recommend the next version, generate the release
+notes, and save the draft.
+
+Do not publish anything. Wait for approval.
+```
+
+After reviewing the draft:
+
+```
+I approve the proposed release.
+Revalidate the target commit and release notes.
+Publish the GitHub Release and update the
+permanent release documentation.
+```
+
 ## Directory Structure
 
 ```text

@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-06 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -7,8 +7,10 @@
 - **Release record verification:** release docs under `docs/releases/` still
   contain `UPDATE_ME` repository identity and unverified v1.0.0 publication
   fields. Verify the actual GitHub Release, tag target, publication date and
-  changelog URL before completing the permanent release record. Do not treat
-  the release as published based only on the current draft.
+  changelog URL before completing the permanent release record. The README
+  now separates draft preparation from publication and requires approval before
+  publishing. Do not treat the release as published based only on the current
+  draft.
 - **P28-B first release:** six gates pass; build and tag commands remain
   unrun pending owner release execution. The current accepted audit risk is
   7 production advisories: 4 moderate and 3 high, with no Expo SDK
