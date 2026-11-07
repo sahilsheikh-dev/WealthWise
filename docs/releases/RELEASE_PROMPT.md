@@ -456,10 +456,49 @@ After explicit approval:
 4. Recheck the approved target commit.
 5. Confirm the version does not already exist.
 6. Verify the final Markdown draft.
-7. Create the release at the approved target commit.
-8. Publish the approved notes.
-9. Verify successful publication.
-10. Retrieve the actual GitHub Release URL.
+7. Create a GitHub Release draft at the approved target commit.
+8. Complete the post-build artifact, download-link, README and build-history
+   checklist below while the release is still a draft.
+9. Publish the approved notes only after the checklist passes.
+10. Verify successful publication and retrieve the actual GitHub Release URL.
+
+### Required post-build checklist (before publication)
+
+For every build:
+
+1. Download the Android APK from its EAS build, rename it exactly
+   `WealthWise-android.apk`, and attach it to the GitHub Release draft:
+
+   ```bash
+   gh release upload vX.Y.Z /path/to/WealthWise-android.apk
+   ```
+
+2. Verify the direct Android download route. The initial request must redirect
+   (HTTP 302); following it must reach HTTP 200. Record the observed status and
+   `Location` target:
+
+   ```bash
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
+   ```
+
+3. Update the root README `Download` section with the latest app version and
+   release date, the working Android download, the owner-supplied iOS
+   TestFlight/App Store link, and any new installation notes. Keep the Old
+   versions link. If an artifact or owner-provided link is unavailable, state
+   that plainly rather than publishing a dead or invented URL.
+4. Record the EAS build ID, Android build number/`versionCode`, profile,
+   artifact name, build date and status in the `release-history.md` Builds
+   table. Production Android AABs are for Google Play; `android-apk` builds
+   are for GitHub downloads; iOS builds are for TestFlight/App Store only.
+5. Confirm the README, `release-history.md` and GitHub release assets agree.
+   The release is not complete until all three match.
+
+After verification and approval, publish the draft:
+
+```bash
+gh release edit vX.Y.Z --draft=false
+```
 
 Use GitHub CLI.
 
@@ -469,7 +508,8 @@ Example:
 gh release create v1.1.0 \
   --target TARGET_COMMIT \
   --title "WealthWise v1.1.0" \
-  --notes-file docs/releases/drafts/v1.1.0.md
+  --notes-file docs/releases/drafts/v1.1.0.md \
+  --draft
 ```
 
 Use actual values instead of the example.
@@ -554,6 +594,9 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
+- Attached `WealthWise-android.apk` and verified 302-to-200 download route.
+- Updated README Download version/date and owner-supplied iOS link.
+- Matching README, release-history build record, and GitHub release assets.
 
 ---
 
