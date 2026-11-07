@@ -1,6 +1,9 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- P28-B first-release metadata is preparing version 1.0.0. The worktree
+  preflight is clean and protected Home/Budget routes remain unchanged.
+  Release build/tag commands are documented only and have not been run.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
