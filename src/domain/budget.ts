@@ -203,6 +203,23 @@ function monthFromOrdinal(ordinal: number): string {
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
 }
 
+export function isIncomeDueInMonth(
+  item: Pick<BudgetIncomeItem, 'frequency' | 'firstDueMonth'>,
+  month: string,
+): boolean {
+  const monthIndex = monthOrdinal(month);
+  const frequency = item.frequency ?? 'monthly';
+  if (frequency === 'monthly') {
+    return !item.firstDueMonth || monthIndex >= monthOrdinal(item.firstDueMonth);
+  }
+  if (!item.firstDueMonth) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring income.');
+  }
+  const firstDueIndex = monthOrdinal(item.firstDueMonth);
+  const difference = monthIndex - firstDueIndex;
+  return difference >= 0 && difference % frequencyStep(frequency) === 0;
+}
+
 export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
   const monthIndex = monthOrdinal(month);
   const frequency = item.frequency ?? 'monthly';
@@ -355,16 +372,32 @@ export class MissingPlannedIncomeError extends Error {
   }
 }
 
-export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] }): number {
-  return value.incomes.reduce((total, income) => total + income.amount, 0);
+export function plannedIncomeOf(
+  value: { incomes: readonly BudgetIncomeItem[] },
+  month?: string,
+  frozenSnapshot = false,
+): number {
+  return value.incomes.reduce(
+    (total, income) => total + (
+      month === undefined
+        ? income.amount
+        : frozenSnapshot || isIncomeDueInMonth(income, month)
+          ? income.amount
+          : 0
+    ),
+    0,
+  );
 }
 
 export function resolveBudgetPlan(
   plan: Pick<BudgetPlan, 'incomes' | 'sections' | 'items'>,
   month: string,
-  plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
+  plannedIncome: number | null | undefined = undefined,
   frozenSnapshot = false,
 ): BudgetLine[] {
+  const resolvedPlannedIncome = plannedIncome === undefined
+    ? (plan.incomes.length > 0 ? plannedIncomeOf(plan, month, frozenSnapshot) : null)
+    : plannedIncome;
   return plan.items.map((item) => {
     const itemValue = plannedForMonth(
       frozenSnapshot ? { ...item, frequency: 'monthly' } : item,
@@ -383,10 +416,10 @@ export function resolveBudgetPlan(
         ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
       };
     }
-    if (plannedIncome === null) throw new MissingPlannedIncomeError();
+    if (resolvedPlannedIncome === null) throw new MissingPlannedIncomeError();
     return {
       category: line.category,
-      planned: Math.round(line.value * plannedIncome / 100),
+      planned: Math.round(line.value * resolvedPlannedIncome / 100),
       ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
@@ -418,7 +451,7 @@ export function applyBudgetPlanToMonth(
   void options.today;
   const plan = data.budgetPlan;
   if (!plan) return data;
-  const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
+  const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan, month) : null;
   const lines = new Map(resolveBudgetPlan(plan, month, plannedIncome).map((line) => [line.category, line]));
   return replaceMonth(data, {
     month,
@@ -833,12 +866,13 @@ export function addIncomeItem(
     || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
   }
+  const schedule = validateItemFrequency('amount', input.frequency, input.firstDueMonth);
   const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
   if (budget.incomes.some((income) => income.id === input.id)) {
     throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
   }
-  const income = { ...input, name, amount: normalizedAmount };
+  const income = { ...input, ...schedule, name, amount: normalizedAmount };
   if (scope === 'month') {
     return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
   }
@@ -881,6 +915,11 @@ export function editBudgetIncome(
   if (normalizedAmount <= 0) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
   }
+  const schedule = validateItemFrequency(
+    'amount',
+    input.values.frequency ?? 'monthly',
+    input.values.firstDueMonth,
+  );
 
   const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
@@ -888,6 +927,7 @@ export function editBudgetIncome(
   if (!currentIncome) throw new BudgetMutationError('item-not-found', 'The budget income no longer exists.');
   const updatedIncome: BudgetIncomeItem = {
     ...input.values,
+    ...schedule,
     id: input.incomeId,
     name,
     amount: normalizedAmount,
@@ -1435,7 +1475,9 @@ export function budgetMonthView(
     .filter((row) => (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category))
     .reduce((sum, row) => sum + row.amount, 0);
   const actualEarned = position.earnedIncome;
-  const plannedIncome = budget && budget.incomes.length > 0 ? plannedIncomeOf(budget) : null;
+  const plannedIncome = budget && budget.incomes.length > 0
+    ? plannedIncomeOf(budget, key, !virtual)
+    : null;
   return {
     budget, position, plannedIncome,
     actualEarned,
@@ -1478,20 +1520,20 @@ export function projectedCashFlow(
   }
   const prior = projectedCashFlow(data, shiftMonth(month, -1), today, scheduleCache);
   const opening = prior.closing;
-  const { budget } = effectiveMonthBudget(data, month, today);
+  const { budget, virtual } = effectiveMonthBudget(data, month, today);
   if (!budget) return { opening, closing: opening, projected: true };
   const view = budgetMonthView(data, month, today, scheduleCache);
   const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
     + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
   if (monthDistance > 1) {
-    const plannedIncome = plannedIncomeOf(budget);
+    const plannedIncome = plannedIncomeOf(budget, month, !virtual);
     return {
       opening,
       closing: normalizeMoney(opening + plannedIncome - view.plannedSpend - view.plannedSave),
       projected: true,
     };
   }
-  const plannedIncome = plannedIncomeOf(budget);
+  const plannedIncome = plannedIncomeOf(budget, month, !virtual);
   const income = Math.max(0, plannedIncome - view.actualEarned);
   const spend = Math.max(0, view.plannedSpend - view.actualSpend);
   const save = Math.max(0, view.plannedSave - view.actualSave);

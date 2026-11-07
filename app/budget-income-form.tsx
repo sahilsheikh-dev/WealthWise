@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { useState } from 'react';
 
@@ -28,9 +28,14 @@ const budgetIncomeFormSchema = z.object({
   day: z.string(),
   category: z.enum(EARNED_INCOME_CATEGORIES),
   scope: z.enum(['month', 'following']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  firstDueMonth: z.string(),
 }).superRefine((values, context) => {
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
     context.addIssue({ code: 'custom', path: ['day'], message: 'Enter a day from 1 to 31.' });
+  }
+  if (values.frequency !== 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(values.firstDueMonth)) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Enter a first due month as YYYY-MM.' });
   }
 });
 
@@ -48,6 +53,13 @@ const incomeCategoryOptions: readonly DropdownOption[] = EARNED_INCOME_CATEGORIE
   value: category,
   title: category,
 }));
+
+const incomeFrequencyOptions: readonly DropdownOption[] = [
+  { value: 'monthly', title: 'Monthly' },
+  { value: 'quarterly', title: 'Quarterly' },
+  { value: 'half-yearly', title: 'Half-yearly' },
+  { value: 'yearly', title: 'Yearly' },
+];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -93,8 +105,11 @@ export default function BudgetIncomeFormScreen() {
         : firstParam(params.day),
       category: income?.category ?? initialCategory ?? 'Salary',
       scope: requestedScope === 'month' ? 'month' : 'following',
+      frequency: income?.frequency ?? 'monthly',
+      firstDueMonth: income?.firstDueMonth ?? month,
     },
   });
+  const frequency = useWatch({ control, name: 'frequency' });
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<z.output<typeof budgetIncomeFormSchema> | null>(null);
@@ -147,6 +162,8 @@ export default function BudgetIncomeFormScreen() {
       amount: values.amount,
       category: values.category,
       ...(values.day === '' ? {} : { day: Number(values.day) }),
+      frequency: values.frequency,
+      ...(values.frequency === 'monthly' ? {} : { firstDueMonth: values.firstDueMonth }),
     };
     if (income) {
       actions.editBudgetIncome(month, income.id, updatedValues, selectedScope, today);
@@ -238,6 +255,37 @@ export default function BudgetIncomeFormScreen() {
           />
         )}
       />
+      <Controller
+        control={control}
+        name="frequency"
+        render={({ field }) => (
+          <Dropdown
+            label="Frequency"
+            accessibilityLabel="Income frequency"
+            value={field.value}
+            options={incomeFrequencyOptions}
+            onChange={field.onChange}
+            error={errors.frequency?.message}
+          />
+        )}
+      />
+      {frequency !== 'monthly' ? (
+        <Controller
+          control={control}
+          name="firstDueMonth"
+          render={({ field }) => (
+            <TextField
+              label="First due month"
+              accessibilityLabel="Income first due month"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="YYYY-MM"
+              error={errors.firstDueMonth?.message}
+            />
+          )}
+        />
+      ) : null}
       {submitCount > 0 && errorCount > 0 ? (
         <AppText style={[typography.meta, { color: colors.err }]}>
           Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}
