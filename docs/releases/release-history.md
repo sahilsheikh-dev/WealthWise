@@ -19,7 +19,13 @@ Only successfully published GitHub Releases should be recorded here.
 - Tag: `v1.0.0` (verified at `1c1426d03fadccc51278ed9af5426cacd4c9d7af`)
 - Target commit: `1c1426d03fadccc51278ed9af5426cacd4c9d7af`
 
-## 3. Draft Releases
+## 3. Builds
+
+| Version | Platform | Build number | EAS build ID | Profile | Date | Status |
+|---|---|---|---|---|---|---|
+| v1.0.0 | iOS + Android | — | — | production | — | Not built |
+
+## 4. Draft Releases
 
 Unpublished releases are stored in:
 
@@ -27,7 +33,7 @@ Unpublished releases are stored in:
 
 Drafts must not be included in the published release history.
 
-## 4. Versioning Policy
+## 5. Versioning Policy
 
 WealthWise follows Semantic Versioning:
 
@@ -35,7 +41,7 @@ WealthWise follows Semantic Versioning:
 - MINOR: New backward-compatible features.
 - PATCH: Backward-compatible bug fixes and maintenance.
 
-## 5. Historical Record Rules
+## 6. Historical Record Rules
 
 1. Maintain reverse chronological order.
 2. Record only verified published releases.
@@ -49,7 +55,7 @@ WealthWise follows Semantic Versioning:
 10. Keep every published version's Markdown record in `published/`; never
     leave published notes at the `docs/releases/` root or in `drafts/`.
 
-## 6. Update Procedure
+## 7. Update Procedure
 
 After every successful GitHub Release:
 

@@ -108,6 +108,15 @@ npx expo export --platform android
 npx expo export --platform ios
 ```
 
+## Release process
+
+The current version is **v1.0.0**; the previous version is the initial
+release. The GitHub release and tag are published, but the production EAS
+builds are **not built** yet. Follow
+[`docs/releases/build-config.md`](docs/releases/build-config.md) for the
+pre-build gates, backup/device checks, EAS commands and build record. Release
+publication and tagging require explicit owner approval.
+
 `eas.json` defines development, preview and production EAS profiles. There is
 no app-build command in `package.json`.
 

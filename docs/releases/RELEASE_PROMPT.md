@@ -35,9 +35,9 @@ Read the following documentation:
 
 - docs/PROGRESS.md
 - docs/releases/README.md
+- docs/releases/TEMPLATE.md
 - docs/releases/release-config.md
 - docs/releases/release-history.md
-- docs/releases/published/v1.0.0.md
 
 Understand:
 
@@ -357,9 +357,9 @@ Include the New Contributors section only when verified.
 
 ## 10. Generate Release Notes
 
-Use the release format defined in:
+Use the reusable release-notes skeleton defined in:
 
-`docs/releases/published/v1.0.0.md`
+`docs/releases/TEMPLATE.md`
 
 Follow these requirements:
 
