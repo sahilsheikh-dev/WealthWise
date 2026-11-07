@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-07
+
+- WealthWise adds clearer recurring-plan controls, including stop/resume
+  actions, inclusive stop dates and removal of later dues from Transactions,
+  Home, Budget and reminders. Liability Foreclosure is the consistent action
+  label and closed loans use paid, charge and shortfall flows with one-step Undo.
+- Investment and liability details use owner-preserved compact layouts. Assets
+  expose recurring-plan actions and valuation details; liabilities expose EMI,
+  Foreclosure and conditional Entries actions in a consistent row.
+- Optional holding valuation methods, policy-payment due dates, Emergency Fund
+  link repair, accessibility improvements, route font scaling and performance
+  stress/regression coverage are included through Phase 29. The persisted
+  schema is version 21, with backup migrations retained through prior versions.
+
 ### Phase 29
 
 - Foreclosure is the consistent liability action label. Every recurring asset
