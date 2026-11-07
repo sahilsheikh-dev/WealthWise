@@ -17,6 +17,19 @@
   warning; Gate 4 Expo Doctor passed 21/21; Gate 5 Android export passed with
   a 5.5 MB bundle; Gate 6 iOS export passed with a 5.2 MB bundle.
 
+## P28-B first-release 1.0.0 metadata (2026-11-07)
+
+- Owner-edit preflight: the worktree was clean; no owner checkpoint commit was
+  required. Protected Home and Budget routes were not edited.
+- Release metadata is aligned to version `1.0.0` in `app.json`,
+  `package.json` and the `package-lock.json` root. CHANGELOG documents the
+  user-visible result from Phases 24 through 29, including Budget income
+  recurrence and schema v22.
+- Exact release commands, not run:
+  `eas build --platform all --profile production`
+  then
+  `git tag -a v1.0.0 -m "WealthWise 1.0.0"`
+
 ## Contents
 
 1. [How to use this file](#1-how-to-use-this-file)
