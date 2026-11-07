@@ -336,6 +336,11 @@
 
 ## Resolved
 
+- **Historical checkpoint commit message audit (2026-11-07):** reviewed all
+  five matching commits on `origin/main` and recorded proposed descriptive
+  subjects in [PROGRESS.md](../PROGRESS.md). Their remote messages remain
+  unchanged because repository policy prohibits rewriting/pushing shared
+  history.
 - **v1.0.0 release commit messages (2026-11-07):** replaced generic checkpoint
   messages with descriptions of release-draft preparation and publication
   documentation. The changes are local and unpushed; see the verified

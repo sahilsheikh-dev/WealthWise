@@ -2,6 +2,29 @@
 
 # Wealth Wise master progress ledger
 
+## Historical checkpoint commit message audit (2026-11-07)
+
+- Found five commits still titled `chore: user manual changes (checkpoint)`;
+  all are ancestors of `origin/main`. Their patches suggest these more
+  descriptive subjects:
+  - `9b9066bb3c51c33a78e98b2779d664f16f2c2700` — `docs: add release
+    management documentation` (created the release README, prompt,
+    configuration, history, and initial v1.0.0 record).
+  - `b0586fcbdf0787a0acd929f8bb3f2e044d699389` — `docs: align Phase 29
+    progress counter` (aligned the Phase 29 dashboard row).
+  - `ff349515887dae09ac5ebc34776ec2754ed80dbe` — `chore: update Expo SDK 57
+    patch dependencies` (updated Expo SDK patch dependencies and lockfile).
+  - `ecc5c354579bf5812effe5adc3492e61cfd98f4f` — `fix: clarify Budget
+    due-day field labels`.
+  - `75e9097bcf62c09cf22149160318e6392fb1060c` — `fix: simplify Budget
+    management sheet labels` (removed redundant labels and clarified due-day
+    labeling).
+- No remote commit was amended or pushed. The existing shared-history policy
+  prohibits rewriting or pushing commits; the subject changes remain
+  recommendations only. This audit found no matching checkpoint message on
+  the current branch tip because the two recent release commits were already
+  reworded locally in the prior task.
+
 ## Release commit message correction (2026-11-07)
 
 - Reworded local commit `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15` to
