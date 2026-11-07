@@ -54,6 +54,27 @@
 - Focused domain regression and TypeScript verification are recorded in chat.
   No commit was requested or created.
 
+## Release management documentation (2026-11-07)
+
+- Added the release-management documentation set under `docs/releases/`:
+  [README](releases/README.md), reusable
+  [release prompt](releases/RELEASE_PROMPT.md),
+  [release configuration](releases/release-config.md),
+  [release history](releases/release-history.md),
+  [v1.0.0 release record](releases/v1.0.0.md), and the `drafts/` directory.
+- The documentation defines source-verified release discovery, semantic
+  versioning, draft preparation, explicit publication approval, and archival
+  of published release notes and history. It prohibits inventing release
+  details, publishing without approval, and overwriting published records.
+- The user-added files were preserved and checkpointed exactly in
+  `9b9066b` (`chore: user manual changes (checkpoint)`), verified as a commit.
+  No release build or tag was performed by this documentation setup.
+- Release metadata remains unverified: `release-config.md` has `UPDATE_ME`
+  repository identity fields; `release-history.md` marks v1.0.0 as Verify; and
+  `v1.0.0.md` retains placeholders for actual publication date, GitHub Release
+  URL, target commit, verified notes and full changelog URL. These must be
+  populated only after checking the actual published GitHub Release and tag.
+
 ## Contents
 
 1. [How to use this file](#1-how-to-use-this-file)

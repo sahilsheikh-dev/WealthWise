@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- Release-management documentation is present under `docs/releases/`:
+  reusable workflow prompt, configuration, release history, drafts folder,
+  and v1.0.0 record. The process requires verified changes and explicit
+  publication approval. Repository identity and v1.0.0 publication fields
+  remain placeholders pending verification; see the release-management entry
+  in [PROGRESS.md](../PROGRESS.md).
 - P28-B first-release metadata is aligned to version 1.0.0. All six ordered
   gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
   Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
