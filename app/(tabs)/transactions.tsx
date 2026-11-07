@@ -23,8 +23,8 @@ import {
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { availableBalance } from '../../src/domain/cashFlow';
 import { customBudgetCategories } from '../../src/domain/budget';
+import { availableBalance } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
@@ -173,7 +173,6 @@ export default function TransactionsScreen() {
               </View>
             </View>
           </View>
-          <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
           </Card>
         </View>
         {unlinkedCount > 0 ? (
@@ -366,5 +365,4 @@ const styles = StyleSheet.create({
   balanceActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
   balanceChipText: { fontSize: 10 },
-  balanceDivider: { height: StyleSheet.hairlineWidth },
 });
