@@ -4,7 +4,8 @@
 
 This directory contains the official release management documentation for WealthWise.
 
-It maintains release configurations, version history, release notes, unpublished drafts, and the reusable AI-powered GitHub release workflow.
+It maintains release configurations, version history, published release notes,
+unpublished drafts, and the reusable AI-powered GitHub release workflow.
 
 ## Documentation Index
 
@@ -13,8 +14,8 @@ It maintains release configurations, version history, release notes, unpublished
 | `RELEASE_PROMPT.md` | Master reusable prompt for automated release discovery, analysis, and publication |
 | `release-config.md` | Repository configuration and release policies |
 | `release-history.md` | Historical register of published releases |
-| `v1.0.0.md` | Initial release record |
 | `drafts/` | Temporary storage for unpublished release notes |
+| `published/` | Permanent Markdown records for published releases |
 
 ## Project Documentation
 
@@ -43,7 +44,7 @@ Every release follows this lifecycle:
 7. Save the unpublished draft.
 8. Obtain explicit approval.
 9. Publish the GitHub Release.
-10. Archive release notes and update release history.
+10. Move the published notes into `published/` and update release history.
 
 ## Use the Release Prompt
 
@@ -70,11 +71,12 @@ Publish the GitHub Release and update the permanent release documentation.
 ```text
 releases/
 ├── drafts/
+├── published/
+│   └── v1.0.0.md
 ├── README.md
 ├── RELEASE_PROMPT.md
 ├── release-config.md
-├── release-history.md
-└── v1.0.0.md
+└── release-history.md
 ```
 
 ## Important Rules
@@ -84,7 +86,11 @@ releases/
 - Every release must follow Semantic Versioning.
 - Breaking changes must be explicitly documented.
 - Release publication requires approval.
-- Previously published release records must never be overwritten.
+- Draft notes belong in `drafts/`; every published release note belongs in
+  `published/`.
+- After publication is verified, move the draft Markdown into `published/`;
+  do not leave a second copy in `drafts/` or at the `docs/releases/` root.
+- Never overwrite or remove published release records.
 - All release-related documentation must remain inside `docs/releases/`.
 
 ## Latest Release

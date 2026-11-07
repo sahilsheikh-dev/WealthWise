@@ -2,6 +2,17 @@
 
 # Wealth Wise master progress ledger
 
+## Published release notes directory (2026-11-07)
+
+- Created `docs/releases/published/` and moved the already-published
+  `v1.0.0.md` record there.
+- Updated the release prompt, README, configuration, history, and release
+  rules to require all published Markdown records to live in `published/`;
+  drafts move there after publication verification and are removed from
+  `drafts/`.
+- Updated current status/open-items memory links. This documentation-only
+  change does not alter the GitHub Release or its published notes.
+
 ## v1.0.0 GitHub Release published (2026-11-07)
 
 - Published the approved `v1.0.0` GitHub Release at
