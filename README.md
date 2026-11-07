@@ -142,7 +142,8 @@ no app-build command in `package.json`.
 The app uses Expo SDK 57, Expo Router routes in `app/`, and a pure domain layer
 in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
-validate persisted and imported data.
+validate persisted and imported data. The current persisted data schema is
+v22; migration and backup-import compatibility are retained.
 
 ### Investment return calculations
 

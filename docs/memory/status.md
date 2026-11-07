@@ -1,6 +1,13 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
+- Current task: P28-C release organization and build-management documentation
+  is complete; no application behavior changed. Its real Gate 1 run passed 91
+  suites (1193 passed, 1 skipped); all six ordered gates exited 0. Lint has
+  one existing array-style warning. v1.0.0 production EAS builds remain
+  unbuilt. The release tag exists remotely but is not an ancestor of the
+  current `origin/main`; it was not moved. See
+  [PROGRESS.md](../PROGRESS.md) and [open-items.md](open-items.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -22,7 +29,9 @@
   gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
   Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
   array-style warning. The GitHub Release and remote `v1.0.0` tag are
-  published and verified; the EAS production build has not been run.
+  published and verified; the EAS production build has not been run. The
+  2026-11-08 ancestry check confirms the tag is no longer on `origin/main`
+  after the history rewrite.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
@@ -38,14 +47,19 @@
   Expo Doctor 21/21, and Android/iOS exports. Final implementation commits:
   `df7c109`, `6515c57`, `38a823d`.
 
-- P28-A release preparation is complete through the report, metadata update,
+- P28-A initial release preparation is complete through the report, metadata update,
   and release checklist. Report commit `fbdcbac` records source-backed release
-  readiness, permissions, storage, audit and migration evidence. Owner-confirmed
-  release `0.2.0` is aligned in `app.json`, `package.json` and the lockfile
-  root. Metadata commit `41c4617` updates the changelog and README audit/license
-  claims. The single all-platform production build and tag commands remain
-  documented in `docs/RELEASE-CHECKLIST.md` and have not been run. Home and
-  Budget remain protected and unchanged.
+  readiness, permissions, storage, audit and migration evidence. Its initial
+  `0.2.0` metadata was later revised by P28-B to the stable `1.0.0` release.
+  Metadata commit `41c4617` updates the changelog and README audit/license
+  claims. Current EAS build commands and checklist are in
+  [build-config.md](../releases/build-config.md). Home and Budget remain
+  protected and unchanged.
+
+- P28-C release organization and build management are complete. The reusable
+  release-notes template, EAS profiles/version identifiers, build history,
+  release approval rules and draft ignore policy are documented under
+  `docs/releases/`. No build, submission, publication, or tag change was made.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
@@ -54,7 +68,8 @@
   implementation commit. Coverage remains above thresholds:
   `src/data` 749/798 lines/780/896 branches; `src/domain`
   3549/3609/3480/3747; `src/lib` 107/107 and 126/126. Protected Home and Budget
-  files remain unchanged. Full inventory: [P27-A-report.md](../P27-A-report.md).
+  files remain unchanged. The inventory is summarized in [PROGRESS.md](../PROGRESS.md);
+  generated report files are not tracked.
 - P26-A accessibility/performance audit and fixes are complete. The report
   was committed first as `cfbe023`; implementation and regressions are in
   `d4071a5`, `f59b01a`, and `08b3992`. Home and Budget source files remain
@@ -65,14 +80,15 @@
   `src/domain` 3549/3609 (98.34%), 3480/3747 (92.87%); `src/lib` 107/107
   lines and 126/126 branches (100%). Full P26-A evidence is in
   [PROGRESS.md](../PROGRESS.md).
-- Current task: owner recurring-stop, foreclosure, and Home-only menu refinements complete.
+- Historical P29-X/P29-AA context (not the current task): owner recurring-stop,
+  foreclosure, and Home-only menu refinements complete.
   P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
   The recurring plan details and financial Summary now share one card on the
   investment entries screen; Stop/Resume is in the holding action row above the
   card. The owner's current edit has no Entries or Edit recurring plan control
   on the holding screen; removed screen data is not to be restored.
-  Schema v21 stores one optional `stopDate`; plan schedules, pending items,
+  P29-X introduced schema-v21 `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,
   returns or links.
@@ -133,7 +149,8 @@
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
-- Schema version: v21. The P29-O2 ledger-only v19 storage redesign was
+- Historical schema context: P29-X introduced schema v21. The P29-O2
+  ledger-only v19 storage redesign was
   cancelled; P29-U uses v19 for additive optional valuation metadata.
   P29-W adds optional recurring-liability closure metadata in v20.
   P29-X adds optional recurring-stop metadata; P29-Z is documentation/ledger
@@ -143,16 +160,13 @@
   and backups through v17.
 - Runtime: Node.js 26.13.0.
 - Test counts: 91 suites, 1194 tests (1193 passed; one opt-in stress benchmark
-  skipped); all six ordered gate results are recorded in
+  skipped) in the real 2026-11-08 P28-C Gate 1 run; all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1194 tests (1193 passed, 1 skipped); all six final
-  gates exit 0. Fresh directory
-  coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
-  Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 91 suites, 1193 passed, 1 skipped, 1194 total; coverage thresholds
-  met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
+- Latest validated run: 91 suites, 1194 tests (1193 passed, 1 skipped) on
+  2026-11-08; all six final gates exit 0. Fresh coverage and exact commands
+  are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
