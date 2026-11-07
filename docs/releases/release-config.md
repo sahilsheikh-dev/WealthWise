@@ -17,13 +17,13 @@ This file contains the configuration and policies governing WealthWise GitHub Re
 
 | Property | Value |
 |---|---|
-| GitHub Owner | UPDATE_ME |
-| Repository Name | UPDATE_ME |
-| Repository URL | UPDATE_ME |
+| GitHub Owner | sahilsheikh-dev |
+| Repository Name | WealthWise |
+| Repository URL | https://github.com/sahilsheikh-dev/WealthWise |
 | Default Branch | main |
 | Remote Name | origin |
 
-Replace UPDATE_ME using the actual repository remote.
+Repository identity verified from the `origin` remote and GitHub CLI.
 
 Verification commands:
 

@@ -8,16 +8,16 @@ Only successfully published GitHub Releases should be recorded here.
 
 | Version | Release Date | Previous Version | Release Type | Status | GitHub Release |
 |---|---|---|---|---|---|
-| v1.0.0 | To be verified | Initial | Initial | Verify | To be verified |
+| v1.0.0 | 2026-11-07 | Initial | Initial stable release | Published | [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0) |
 
 ## 2. Release Details
 
 ### v1.0.0
 
 - Release notes: [v1.0.0.md](./v1.0.0.md)
-- GitHub Release: To be verified.
-- Tag: To be verified.
-- Target commit: To be verified.
+- GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
+- Tag: `v1.0.0` (verified at `1c1426d03fadccc51278ed9af5426cacd4c9d7af`)
+- Target commit: `1c1426d03fadccc51278ed9af5426cacd4c9d7af`
 
 ## 3. Draft Releases
 

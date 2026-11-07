@@ -4,19 +4,11 @@
 
 ## Unresolved
 
-- **Release record verification:** release docs under `docs/releases/` still
-  contain unverified v1.0.0 publication fields. GitHub currently lists no
-  releases or tags; the initial `v1.0.0` draft is in `docs/releases/drafts/`
-  and awaits explicit approval. An initial unscoped CLI listing showed a
-  `v0.1.0` draft, but subsequent repository-scoped CLI/API checks returned no
-  release or tag. Reconcile this on revalidation; confirm the target commit
-  and notes and verify the actual publication date, tag target and changelog
-  URL before publication. Do not treat the release as published based only on
-  the draft.
-- **P28-B first release:** six gates pass; build and tag commands remain
-  unrun pending owner release execution. The current accepted audit risk is
-  7 production advisories: 4 moderate and 3 high, with no Expo SDK
-  57-compatible patch fix.
+- **P28-B production build and dependency audit:** the v1.0.0 GitHub Release
+  and remote tag were published and verified on 2026-11-07 at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`. The EAS production build remains
+  unrun. The accepted audit risk is 7 production advisories: 4 moderate and 3
+  high, with no Expo SDK 57-compatible patch fix.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
