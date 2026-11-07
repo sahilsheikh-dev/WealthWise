@@ -20,6 +20,10 @@
 - Reports, audits, checklists, and generated output belong in chat replies or
   `/tmp`, never in the repository. Commit documentation only under
   `docs/memory/` and `docs/PROGRESS.md`.
+- Keep release drafts under `docs/releases/drafts/`. After GitHub publication
+  is verified, move each released Markdown file into
+  `docs/releases/published/`; never leave published records at the release
+  root or duplicated in the drafts folder.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.

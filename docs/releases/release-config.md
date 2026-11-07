@@ -74,6 +74,7 @@ Exclude:
 | Platform | GitHub Releases |
 | Publication Tool | GitHub CLI |
 | Draft Directory | docs/releases/drafts/ |
+| Published Notes Directory | docs/releases/published/ |
 | Approval Required | Yes |
 | Automatic Publication | No |
 | Automatic Tagging | Only after approval |
@@ -90,8 +91,12 @@ All release-related documentation must remain inside:
 Naming conventions:
 
 - Draft: `drafts/vX.Y.Z.md`
-- Published release: `vX.Y.Z.md`
+- Published release: `published/vX.Y.Z.md`
 - History: `release-history.md`
+
+Move each draft into `published/` only after verifying successful GitHub
+publication. Keep all published Markdown release records in that directory;
+do not retain duplicates at the release root or in `drafts/`.
 
 ## 7. Safety Policies
 
@@ -103,6 +108,8 @@ Naming conventions:
 6. Never expose secrets.
 7. Never modify unrelated application code.
 8. Never automatically commit or push documentation.
+9. Keep unpublished notes in `drafts/` and all published release notes in
+   `published/`; move notes there after publication is verified.
 
 ## 8. Configuration Maintenance
 

@@ -37,7 +37,7 @@ Read the following documentation:
 - docs/releases/README.md
 - docs/releases/release-config.md
 - docs/releases/release-history.md
-- docs/releases/v1.0.0.md
+- docs/releases/published/v1.0.0.md
 
 Understand:
 
@@ -359,7 +359,7 @@ Include the New Contributors section only when verified.
 
 Use the release format defined in:
 
-`docs/releases/v1.0.0.md`
+`docs/releases/published/v1.0.0.md`
 
 Follow these requirements:
 
@@ -486,9 +486,9 @@ Never claim success unless GitHub confirms publication.
 
 After verifying successful publication:
 
-1. Copy the final release notes to:
+1. Move the final release notes to:
 
-   `docs/releases/vX.Y.Z.md`
+   `docs/releases/published/vX.Y.Z.md`
 
 2. Update:
 
@@ -498,14 +498,16 @@ After verifying successful publication:
 
    `docs/releases/README.md`
 
-4. Remove the corresponding published draft.
+4. Confirm the draft was moved, with no duplicate left in `drafts/` or at the
+   `docs/releases/` root.
 
 5. Verify the release URL, tag, and target commit.
 
 6. Preserve all historical release records.
 
 Never overwrite an existing release record.
-
+Keep all published release Markdown files under `docs/releases/published/`;
+never store a published record at the `docs/releases/` root or in `drafts/`.
 Do not automatically commit or push documentation changes.
 
 ---
@@ -590,7 +592,7 @@ Return:
 
 ## Documentation Updated
 
-- docs/releases/vX.Y.Z.md
+- docs/releases/published/vX.Y.Z.md
 - docs/releases/release-history.md
 - docs/releases/README.md
 
