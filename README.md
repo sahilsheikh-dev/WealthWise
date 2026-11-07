@@ -6,20 +6,6 @@ WealthWise is an offline-first personal finance app built with Expo and React
 Native. It keeps application data on the device using local storage and makes
 no cloud or network requests at runtime.
 
-## Download
-
-- **Latest version:** v1.0.0 (from `app.json`)
-- **Release date:** 2026-11-07
-- **Android APK:** Not available yet (first build pending). When built, the
-  release asset will be
-  `https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk`.
-- **iOS:** Not available yet. An App Store or TestFlight link will be added
-  when supplied by the owner.
-- **Old versions:** [GitHub Releases](https://github.com/sahilsheikh-dev/WealthWise/releases)
-
-To install the APK, allow installs from this source in Android settings when
-prompted. This is a direct APK, not a Google Play Store-signed app.
-
 ## Contents
 
 - [Download](#download)
@@ -34,6 +20,16 @@ prompted. This is a direct APK, not a Google Play Store-signed app.
 - [Limitations and disclaimer](#limitations-and-disclaimer)
 - [License](#license)
 - [Brand assets](#brand-assets)
+
+## Download
+
+Latest version: v1.0.0
+Release date: 2026-11-07
+- [Download the latest Android app (v1.0.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
+- iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
+- [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
+SHA-256 of the v1.0.0 APK: ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3
+To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
 ## Features
 
