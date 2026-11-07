@@ -18,6 +18,10 @@ Only successfully published GitHub Releases should be recorded here.
 - GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
 - Tag: `v1.0.0` (verified at `1c1426d03fadccc51278ed9af5426cacd4c9d7af`)
 - Target commit: `1c1426d03fadccc51278ed9af5426cacd4c9d7af`
+- 2026-11-08 verification: `git ls-remote --tags origin` returned
+  `v1.0.0`; `git merge-base --is-ancestor v1.0.0 origin/main` exited 1.
+  The tag is not an ancestor of the current `origin/main` and was not moved
+  or deleted.
 
 ## 3. Builds
 
