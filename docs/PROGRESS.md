@@ -2,6 +2,21 @@
 
 # Wealth Wise master progress ledger
 
+## P29-AB completion record (2026-11-07)
+
+- Owner checkpoint: initial worktree was clean; no owner-manual checkpoint
+  commit was required. Owner edits remained untouched.
+- Added v22 Budget income recurrence: monthly, quarterly, half-yearly and
+  yearly; non-monthly first-due month; strict backup/import support.
+- Preserved owner UI edits: no Insurance or Transactions Available balance
+  border/divider restoration; recurring action remains "Stop investment".
+  "Resume recurring" remains unchanged as an open terminology inconsistency.
+- Gate 1 passed 91 suites: 1193 tests passed, 1 skipped. All files coverage
+  was 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines.
+  Gate 2 TypeScript passed; Gate 3 lint passed with one existing array-style
+  warning; Gate 4 Expo Doctor passed 21/21; Gate 5 Android export passed with
+  a 5.5 MB bundle; Gate 6 iOS export passed with a 5.2 MB bundle.
+
 ## Contents
 
 1. [How to use this file](#1-how-to-use-this-file)

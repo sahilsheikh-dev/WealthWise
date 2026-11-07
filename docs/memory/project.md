@@ -37,7 +37,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 92 suites, 1195 tests (1194 passed; one opt-in stress benchmark
+- Test counts: 91 suites, 1194 tests (1193 passed; one opt-in stress benchmark
   skipped) in the real P29-AA Gate 1 run. See [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 
