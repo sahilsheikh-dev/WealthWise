@@ -2,6 +2,16 @@
 
 # Wealth Wise master progress ledger
 
+## Release README approval prompts (2026-11-07)
+
+- Added copyable draft-preparation and post-approval publication prompts to
+  `docs/releases/README.md`. The preparation prompt explicitly prohibits
+  publishing and waits for approval; the second prompt revalidates the target
+  commit and release notes before publication and permanent documentation
+  updates.
+- Documentation-only change; no release was prepared or published. No tests
+  were run.
+
 ## P29-AB completion record (2026-11-07)
 
 - Owner checkpoint: initial worktree was clean; no owner-manual checkpoint
