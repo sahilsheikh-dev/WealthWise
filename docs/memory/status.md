@@ -1,6 +1,7 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 
 - P28-A release preparation is complete through the report, metadata update,
   and release checklist. Report commit `fbdcbac` records source-backed release

@@ -11,7 +11,7 @@ runtime synchronization.
   migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v21 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains

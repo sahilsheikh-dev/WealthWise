@@ -1502,7 +1502,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
-        name: 'Consulting', amount: 1500, category: 'Freelance', day: 15,
+        name: 'Consulting', amount: 1500, category: 'Freelance', day: 15, frequency: 'monthly',
       }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1523,7 +1523,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, 'salary-row', {
-        name: 'Contract income', amount: 12500, category: 'Freelance',
+        name: 'Contract income', amount: 12500, category: 'Freelance', frequency: 'monthly',
       }, 'month', todayISO());
       const incomeRenderer = renderer;
       if (!incomeRenderer) throw new Error('Budget income form renderer was not created.');

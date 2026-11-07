@@ -833,7 +833,7 @@ export function migrateV21ToV22(persisted: unknown): unknown {
       ...budget,
       incomes: budget.incomes.map((income) =>
         isRecord(income)
-          ? { ...income, frequency: 'monthly', firstDueMonth: undefined }
+          ? { ...income, frequency: 'monthly' }
           : income,
       ),
     };
