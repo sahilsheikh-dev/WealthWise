@@ -29,6 +29,10 @@
   `eas build --platform all --profile production`
   then
   `git tag -a v1.0.0 -m "WealthWise 1.0.0"`
+- Assertion replacement: old `Phase 29 ██████████ 97% (31/32)`; new
+  `Phase 29         ██████████ 97% (31/32)`; reason: preserve the owner's
+  dashboard column alignment. The memory test counts now match the latest
+  validated 91-suite, 1194-test run rather than the stale 92/1195 record.
 
 ## Contents
 
