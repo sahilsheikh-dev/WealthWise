@@ -1,6 +1,10 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
+- Corrected the messages on the two local v1.0.0 release documentation
+  commits; the release-folder follow-up was replayed unchanged in content.
+  New commit IDs and verification are recorded in [PROGRESS.md](../PROGRESS.md).
+  No history was pushed.
 - Release-management documentation is present under `docs/releases/`:
   reusable workflow prompt, configuration, release history and
   `published/v1.0.0.md` record.

@@ -333,3 +333,10 @@
   require a different platform-specific file destination design.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.
+
+## Resolved
+
+- **v1.0.0 release commit messages (2026-11-07):** replaced generic checkpoint
+  messages with descriptions of release-draft preparation and publication
+  documentation. The changes are local and unpushed; see the verified
+  old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
