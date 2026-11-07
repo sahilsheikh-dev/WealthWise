@@ -4,6 +4,10 @@
 
 ## Unresolved
 
+- **Published v1.0.0 tag after main history rewrite:** the tag remains
+  unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
+  into the original commit history. It was intentionally not moved; retain it
+  unless the owner explicitly requests a tag change.
 - **P28-B production build and dependency audit:** the v1.0.0 GitHub Release
   and remote tag were published and verified on 2026-11-07 at
   `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in

@@ -1,14 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
-- Audited all five remaining `chore: user manual changes (checkpoint)` commits
-  reachable from `origin/main` and identified patch-based subject
-  recommendations. No shared commit history was rewritten or pushed; details
-  are in [PROGRESS.md](../PROGRESS.md).
-- Corrected the messages on the two local v1.0.0 release documentation
-  commits; the release-folder follow-up was replayed unchanged in content.
-  New commit IDs and verification are recorded in [PROGRESS.md](../PROGRESS.md).
-  No history was pushed.
+- Corrected the five historical checkpoint commit subjects and force-pushed
+  the rewritten `main` history to `origin/main` with explicit owner
+  authorization. Replacement commit IDs, unchanged tree verification, and
+  remote tip are recorded in [PROGRESS.md](../PROGRESS.md). The published
+  `v1.0.0` tag remains unchanged at its original history.
+- The two v1.0.0 release-documentation message corrections and their
+  release-folder follow-up are included in the rewritten, pushed `main`
+  history; details are recorded in [PROGRESS.md](../PROGRESS.md).
 - Release-management documentation is present under `docs/releases/`:
   reusable workflow prompt, configuration, release history and
   `published/v1.0.0.md` record.
