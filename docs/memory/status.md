@@ -1,9 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
-- P28-B first-release metadata is preparing version 1.0.0. The worktree
-  preflight is clean and protected Home/Budget routes remain unchanged.
-  Release build/tag commands are documented only and have not been run.
+- P28-B first-release metadata is aligned to version 1.0.0. All six ordered
+  gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
+  Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
+  array-style warning. The release build/tag commands are documented only
+  and have not been run; no v1.0.0 local or remote tag exists.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
@@ -124,16 +126,16 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 92 suites, 1195 tests (1194 passed; one opt-in stress benchmark
+- Test counts: 91 suites, 1194 tests (1193 passed; one opt-in stress benchmark
   skipped); all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 92 suites, 1195 tests (1194 passed, 1 skipped); all six final
+- Latest validated run: 91 suites, 1194 tests (1193 passed, 1 skipped); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 92 suites, 1194 passed, 1 skipped, 1195 total; coverage thresholds
+- Latest full Jest run: 91 suites, 1193 passed, 1 skipped, 1194 total; coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
