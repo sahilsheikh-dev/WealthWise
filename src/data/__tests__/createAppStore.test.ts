@@ -1041,10 +1041,10 @@ describe('createAppStore persistence', () => {
     });
     await waitForHydration(first);
     expect(first.getState().data.budgetPlan?.incomes).toEqual([
-      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1 },
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1, frequency: 'monthly' },
     ]);
     expect(first.getState().data.monthBudgets?.[0]?.incomes).toEqual([
-      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000 },
+      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000, frequency: 'monthly' },
     ]);
     expect(storage.values.get(`${key}.premigration.v8`)).toBe(raw);
     const archiveWrites = storage.calls.filter((call) => call === `set:${key}.premigration.v8`).length;
@@ -1168,7 +1168,7 @@ describe('createAppStore persistence', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
         lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
         repeatMonthly: true,
         repeatFrom: '2026-03',
@@ -1187,7 +1187,7 @@ describe('createAppStore persistence', () => {
     expect(firstStore.getState().data.monthBudgets).toEqual([{
       month: '2026-03',
       source: 'plan',
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
       sections: defaultBudgetSections(),
       items: [{
         id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000, frequency: 'monthly',
