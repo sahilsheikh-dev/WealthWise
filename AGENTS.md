@@ -1,0 +1,93 @@
+> AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
+> finishing, update `status.md` and `open-items.md` there.
+
+This `AGENTS.md` is the repository's single instruction entry point for every
+AI tool. Keep tool-specific instruction files out of the repository; update
+these shared instructions instead.
+
+Reports, audits, checklists, and generated output belong in chat responses or
+under `/tmp`, never in the repository. Routine documentation changes in Git
+are limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
+except that only `.gitkeep` may be committed under
+`docs/releases/drafts/`. Change other documentation only when the owner
+explicitly requests those files.
+
+WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
+(`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
+`engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
+
+## Project rules
+
+- **R1 — Dirty-file preflight:** list every dirty file before other work. If
+  files are dirty, inspect their diff and commit exactly those named files
+  before proceeding, using a Conventional Commit subject derived from the
+  actual changes. If dirty files cover unrelated areas, make one commit per
+  area and name only the files in that area. Never use a generic checkpoint
+  subject. Preserve owner edits; never use checkout, restore, stash, reset, or
+  old-code reapplication to undo them.
+- **R2 — Phase and revision IDs:** align each task with existing work. A fix
+  or change to a completed subtask stays in its original phase and is logged
+  as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
+  `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
+  new areas.
+- **R3 — History and release approval:** never push, amend or rewrite history
+  unless the owner explicitly asks. Release publication and tag creation,
+  movement or deletion require explicit owner approval.
+- **R4 — Documentation scope:** keep routine committed documentation within
+  `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`; do not commit
+  release-draft contents (the `docs/releases/drafts/.gitkeep` exception is
+  allowed). Other documentation files may be changed only when explicitly
+  named in the owner's task. Reports and generated output belong in chat or
+  `/tmp`.
+- If an owner edit causes a test failure, update the test to match the source
+  and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
+- Read `docs/PROGRESS.md` before changing behavior; update its decision and
+  verification records with the same task commit.
+- Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
+  authorization. Preserve the separately hashed files listed in
+  `docs/memory/rules.md`.
+- Keep `src/domain/` pure: no React/Expo imports, clock reads or randomness.
+  Inject dates and identifiers.
+- A multi-entity action must be one pure domain action and one Zustand store
+  `set`, producing one persisted write.
+- Use Expo Router for navigation. Forms use React Hook Form `Controller` and
+  `useWatch`; React Compiler is enabled.
+- Do not use `!` or `as` to silence nullability in `app/` or
+  `src/components/`. Format amounts with `AmountText` or `formatAmount` and an
+  explicit display tier.
+- Keep tabs Home, Transactions, Goals and Budget. Preserve the Budget cash-flow
+  labels, `SortChip.tsx`, `src/lib/sorting.ts`, frozen inputs in
+  `src/components/form/`, and the `formComponentsFrozen` test unless the task
+  explicitly requires a change.
+- Do not weaken assertions. If a design is superseded, document the old
+  assertion, its replacement and the reason in `docs/PROGRESS.md`.
+- Check the installed Expo major version before using Expo APIs and consult
+  matching Expo documentation. Keep native changes in app config/plugins;
+  do not hand-edit generated native files.
+- After each EAS build and before publishing a GitHub release, attach the
+  Android APK as `WealthWise-android.apk`, verify its download route with
+  `curl -I` (302) and `curl -I -L` (final 200), update the README Download
+  section, and record EAS build ID, Android build number/versionCode and
+  artifact name in `docs/releases/release-history.md`. A release is not
+  complete until README, build history and GitHub assets agree. Follow
+  `docs/releases/build-config.md`; production Android AABs go to Google Play,
+  APKs to GitHub, and iOS builds to TestFlight/App Store.
+
+## Schema and verification
+
+Current persisted schema version: **22**. Preserve migration and backup-import
+compatibility.
+
+Run the gates in this order, recording each exit code:
+
+```bash
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
+```
+
+Layout tests are simulated. Record physical-device checks that remain
+unverified in `docs/PROGRESS.md`.
