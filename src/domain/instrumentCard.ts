@@ -127,7 +127,7 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { id: 'entries', label: 'Entries' },
         {
           id: 'stop' as const,
-          label: holding.stopDate ? 'Resume recurring' : 'Stop recurring',
+          label: holding.stopDate ? 'Resume recurring' : 'Stop investment',
           accessibilityHint: holding.stopDate ? 'Resume this recurring plan' : 'Stop future recurring dues',
         },
         { id: 'update', label: method === 'unitsPrice' ? 'Update price' : 'Update value' },
