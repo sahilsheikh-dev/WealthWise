@@ -355,9 +355,11 @@ platform settings.
 - The owner reports that the app works on a physical device. Device model and
   operating system were not recorded; this is owner verification, not
   automated device evidence.
-- The current `npm audit --omit=dev` run reports 7 production vulnerability
-  nodes (4 moderate and 3 high). Patch-level fixes that remain within Expo SDK
-  57 are not available; major Expo/Router upgrades require separate owner approval.
+- The current `npm audit --omit=dev` run reports 7 production advisories:
+  4 moderate and 3 high. These are accepted release risks because patch-level
+  fixes that remain within Expo SDK 57 are not available. Major Expo/Router
+  upgrades or `npm audit fix --force` require separate owner approval and are
+  not included in this release.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
