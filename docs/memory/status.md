@@ -1,9 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
 
 # Status
-- P28-B first-release metadata is preparing version 1.0.0. The worktree
-  preflight is clean and protected Home/Budget routes remain unchanged.
-  Release build/tag commands are documented only and have not been run.
+- P28-B first-release metadata is aligned to version 1.0.0. All six ordered
+  gates pass: 91 suites, 1193 tests passed and 1 skipped; TypeScript, lint,
+  Expo Doctor 21/21 and Android/iOS exports pass. Lint reports one
+  array-style warning. The release build/tag commands are documented only
+  and have not been run; no v1.0.0 local or remote tag exists.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for

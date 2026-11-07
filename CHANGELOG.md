@@ -17,10 +17,12 @@
 - Policy tracking includes editable policies and scheduled premium dues.
   Insurance, Transactions, Home, Budget, goal and Emergency Fund surfaces share
   validated linked records, one-step Undo and local persistence.
+- Users can enable privacy-aware local payment reminders after an in-app prompt.
+  Backups support warned plain export/restore and passphrase-protected
+  encryption, while retaining historical migration compatibility.
 - First-release hardening adds accessibility and font-scale regressions,
-  virtualized stress data, performance budgets, dependency and dead-code
-  cleanup, plain and encrypted backup compatibility, migration safety and
-  local-only storage/privacy safeguards.
+  long-history performance safeguards, migration safety and local-only
+  storage/privacy protections.
 - Security hardening is accepted for this release with the current
   `npm audit --omit=dev` result of 7 production advisories: 4 moderate and 3
   high. Expo SDK 57-compatible patch-level fixes are unavailable; upgrading

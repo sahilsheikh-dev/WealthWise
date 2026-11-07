@@ -4,9 +4,10 @@
 
 ## Unresolved
 
-- **P28-B first release:** build and tag commands are not run until owner
-  release execution. The current accepted audit risk is 7 production
-  advisories: 4 moderate and 3 high, with no Expo SDK 57-compatible patch fix.
+- **P28-B first release:** six gates pass; build and tag commands remain
+  unrun pending owner release execution. The current accepted audit risk is
+  7 production advisories: 4 moderate and 3 high, with no Expo SDK
+  57-compatible patch fix.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
