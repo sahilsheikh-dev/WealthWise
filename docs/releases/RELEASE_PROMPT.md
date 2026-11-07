@@ -457,42 +457,50 @@ After explicit approval:
 5. Confirm the version does not already exist.
 6. Verify the final Markdown draft.
 7. Create a GitHub Release draft at the approved target commit.
-8. Complete the post-build artifact, download-link, README and build-history
-   checklist below while the release is still a draft.
+8. Complete the post-build artifact, Download block, link-verification, README
+   and build-history checklist below while the release is still a draft.
 9. Publish the approved notes only after the checklist passes.
 10. Verify successful publication and retrieve the actual GitHub Release URL.
 
 ### Required post-build checklist (before publication)
 
-For every build:
+For every GitHub release:
 
-1. Download the Android APK from its EAS build, rename it exactly
-   `WealthWise-android.apk`, and attach it to the GitHub Release draft:
+1. Attach the Android APK under the exact filename `WealthWise-android.apk`:
 
    ```bash
    gh release upload vX.Y.Z /path/to/WealthWise-android.apk
    ```
 
-2. Verify the direct Android download route. The initial request must redirect
-   (HTTP 302); following it must reach HTTP 200. Record the observed status and
-   `Location` target:
+2. Add a Download block containing the version, release date, versioned
+   version-specific asset link, verified SHA-256, iOS availability message,
+   and releases-page link to both the published Markdown and GitHub release
+   body. Never use the `latest` route in a published version's block. For an
+   old published record, add only that version's Download block; do not
+   otherwise rewrite the record.
+
+3. Verify both the latest and versioned direct Android links with both
+   `curl -I` and `curl -I -L`; record each observed status and `Location`
+   target. A successful public route should redirect (HTTP 302) and, when
+   followed, reach HTTP 200:
 
    ```bash
    curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
    curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
    ```
 
-3. Update the root README `Download` section with the latest app version and
-   release date, the working Android download, the owner-supplied iOS
-   TestFlight/App Store link, and any new installation notes. Keep the Old
-   versions link. If an artifact or owner-provided link is unavailable, state
-   that plainly rather than publishing a dead or invented URL.
-4. Record the EAS build ID, Android build number/`versionCode`, profile,
-   artifact name, build date and status in the `release-history.md` Builds
-   table. Production Android AABs are for Google Play; `android-apk` builds
-   are for GitHub downloads; iOS builds are for TestFlight/App Store only.
-5. Confirm the README, `release-history.md` and GitHub release assets agree.
-   The release is not complete until all three match.
+4. Update the root README `Download` section with latest version and release
+   date, a version-labelled latest link, verified SHA-256, the iOS
+   availability message and the older-versions link. State unavailable
+   artifacts or owner-provided links plainly; do not publish an invented URL.
+5. Record the EAS build ID, Android `versionCode`, source commit, profile,
+   exact artifact name, build date and status in the `release-history.md`
+   Builds table. Production Android AABs are for Google Play; `android-apk`
+   builds are for GitHub downloads; iOS builds are for TestFlight/App Store.
+6. Confirm the README, published Markdown, `release-history.md` and GitHub
+   release assets agree. The release remains incomplete until all four match.
 
 After verification and approval, publish the draft:
 
@@ -595,8 +603,13 @@ Before considering the release complete, verify:
 - Permanent release record.
 - Updated release history.
 - Attached `WealthWise-android.apk` and verified 302-to-200 download route.
-- Updated README Download version/date and owner-supplied iOS link.
-- Matching README, release-history build record, and GitHub release assets.
+- Versioned Download block with SHA-256 in published Markdown and release body.
+- Both latest and versioned links checked with `curl -I` and `curl -I -L`.
+- README Download version/date, version-labelled latest link, SHA-256, iOS
+  message and older-versions link.
+- EAS build ID, Android `versionCode`, source commit and artifact in Builds.
+- Matching README, published Markdown, release-history build record and GitHub
+  release assets.
 
 ---
 
