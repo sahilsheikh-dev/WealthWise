@@ -8,7 +8,8 @@
 |---|---|---|
 | `development` | Development-client builds for local development and device testing. | `developmentClient: true`; internal distribution. |
 | `preview` | Internal QA builds before store submission. | Internal distribution. |
-| `production` | Store-ready release builds. | Automatic build-number increment enabled. |
+| `production` | Store-ready Android App Bundle (AAB) for Google Play and iOS build for TestFlight/App Store. | Automatic build-number increment enabled. |
+| `android-apk` | Installable APK attached to the GitHub release as a direct Android download. | Extends `production`, sets Android `buildType: apk`; not submitted to a store. |
 
 EAS uses `appVersionSource: remote`. The authoritative app build version is
 maintained by EAS rather than committed to the repository. Production
@@ -22,6 +23,9 @@ auto-increment advances the platform build numbers for subsequent builds.
   its value remotely under the configured remote app-version source.
 - The Android `versionCode` is a monotonically increasing integer build
   identifier, also managed remotely by EAS.
+- `production` and `android-apk` are separate builds. Because each profile
+  uses remote automatic incrementing, the APK's Android `versionCode` will
+  differ from the AAB's `versionCode`.
 - App version identifies the release; build numbers distinguish builds of
   that release. A new build may retain the same app version while receiving
   higher platform build numbers.
@@ -37,8 +41,11 @@ The application identifiers are configured in `app.json`:
 
 ## Credentials and secrets
 
-Signing credentials are managed by EAS. Do not commit credentials, private
-keys, provisioning profiles, tokens, or other secrets to the repository.
+Android and iOS signing credentials are managed by EAS. Do not commit
+credentials, private keys, provisioning profiles, tokens, or other secrets to
+the repository. The Play Store signs/distributes its store build; direct APK
+downloads are not Play Store-signed. iOS builds are distributed only through
+TestFlight or the App Store.
 
 ## Store tracks
 
@@ -55,6 +62,12 @@ Create production builds for both platforms:
 
 ```bash
 eas build --platform all --profile production
+```
+
+Create an Android APK for the GitHub download asset:
+
+```bash
+eas build --platform android --profile android-apk
 ```
 
 Submit builds to the configured stores after review and explicit release
@@ -84,6 +97,8 @@ Before creating a release build:
 5. Confirm EAS signing credentials and store access without copying secrets
    into the repository.
 6. Confirm the owner explicitly approved release publication and tagging.
+7. Build the production Android AAB for Google Play and an `android-apk`
+   artifact for the GitHub release; do not submit the APK to a store.
 
 ## Post-build record
 
@@ -92,3 +107,14 @@ Record each platform build in
 platform build number, EAS build ID, profile, build date and status. Record
 submission track, submission date and store status when submitted. Do not
 infer a successful build or submission from a command being started.
+
+Before publishing a GitHub release, download the `android-apk` EAS artifact,
+rename it exactly `WealthWise-android.apk`, and attach it to the release draft
+with `gh release upload`. Verify the published download route with
+`curl -I -L`; record the expected redirect (302) and final success (200).
+Update the root README Download section with the current version/date, working
+Android asset link, owner-supplied iOS link and any new installation notes.
+Keep the Old versions link. Record the APK EAS build ID, `versionCode` and
+artifact name in the Builds table. Production iOS binaries are for TestFlight
+or the App Store only. A release is complete only after the README,
+`release-history.md` and GitHub release assets agree.
