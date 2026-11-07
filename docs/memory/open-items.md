@@ -4,6 +4,15 @@
 
 ## Unresolved
 
+- **P29-AB income recurrence physical-device check:** verify frequency and
+  first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
+  months, Received dues, projected cash flow, virtual future months and
+  v21-to-v22 native migration/restart. Automated evidence is complete and all
+  six gates pass; native device behavior remains unverified.
+- **P29-AB stop/resume terminology decision:** the owner set the active action
+  to "Stop investment"; the resume action remains "Resume recurring". Source
+  and tests preserve both labels; no wording change is approved.
+
 - **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
   net-worth, goal and Emergency Fund equality assertions is not yet present.
   The P28 report commit records the gap; owner/device validation is still
