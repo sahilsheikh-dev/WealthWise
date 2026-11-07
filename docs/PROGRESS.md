@@ -51,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (114/115)
+Overall progress ██████████ 99% (116/117)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (4/4)
+Phase 28         ██████████ 100% (6/6)
 Phase 29         ██████████ 97% (32/33)
 ```
 
@@ -168,10 +168,12 @@ Phase 29         ██████████ 97% (32/33)
 | CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
 | P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
-| P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata. Protected routes remain unchanged. | 2026-11-07 |
+| P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata; Revised by P28-A-R1 for the v13 backup equality regression. Protected routes remain unchanged. | 2026-11-07 |
+| P28-A-R1 | — | Done | Added a deterministic, checksummed synthetic v13 backup test through `parseBackup`; independently computed net worth, every goal's saved amount and Emergency Fund available amount match after import. No app behavior changed. | 2026-11-08 |
 | P28-B | — | Done | Aligned first stable release metadata to v1.0.0 and updated release notes/changelog; no source behavior change. | 2026-11-07 |
-| P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. Revised by P28-C-R1. | 2026-11-08 |
-| P28-C-R1 | — | Done | Added pending-safe app downloads and What's new, an Android APK profile, post-build asset/link/README/history checklist, and corrected README schema, recurrence, Insurance and test claims. Fixed the existing lint warning in its own commit. All six ordered gates pass; no build, publication, tag or protected-route changes. | 2026-11-08 |
+| P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. Revised by P28-C-R1; Revised by P28-C-R2. | 2026-11-08 |
+| P28-C-R1 | — | Done | Added pending-safe app downloads and What's new, an Android APK profile, post-build asset/link/README/history checklist, and corrected README schema, recurrence, Insurance and test claims. Fixed the existing lint warning in its own commit. Its pending-APK status was updated by P28-C-R2. All six ordered gates passed at that revision; no build, publication, tag or protected-route changes. | 2026-11-08 |
+| P28-C-R2 | — | Done | Published the v1.0.0 APK Download details, tightened release requirements across shared policy files, and recorded the uploaded asset's name, size and digest. `curl -I` and `curl -I -L` returned HTTP 404 for both routes because the GitHub repository is private. No release-body edit, build, tag or push. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -2732,9 +2734,19 @@ version `0.2.0`; `app.json`, `package.json`, package-lock root/package entries,
 CHANGELOG and README were aligned without source behavior or schema changes.
 [`docs/releases/build-config.md`](releases/build-config.md) records the current
 pre-build gates, backup/device checks, build tracking and exact EAS commands.
-No store build or submission was run. The `npm audit --omit=dev` result is 7
-production vulnerability nodes; no major upgrade, force fix or install-script
-approval occurred.
+No store build or submission was run. P28-A-R1 adds a deterministic v13 backup
+import equality test; it changes no application behavior. The `npm audit
+--omit=dev` result is 7 production vulnerability nodes; no major upgrade,
+force fix or install-script approval occurred.
+
+P28-C-R2 records the v1.0.0 APK asset uploaded to the GitHub release:
+`WealthWise-android.apk`, 112,133,413 bytes, SHA-256
+`ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`. The
+latest and versioned public URLs returned HTTP 404 (Content-Length 9) for both
+`curl -I` and `curl -I -L`; `gh repo view` reports the repository is private.
+Build ID, `versionCode`, source commit and profile remain owner to supply.
+The tag decision and release-body edit are pending owner action. No build,
+tag, release edit, or push was performed.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -2927,10 +2939,12 @@ evidence present in exports/checkpoints.
 | CR-96 | P29-K Budget scope popup | — | — | 2026-11-03 | Apply Budget month scope immediately when selected; close without applying through Close, backdrop or Android back. | Done; shared dialog, all item/section/income Save/Delete flows, counted category-delete copy and Undo are tested. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | Assumed: no schema or domain change; `app/(tabs)/index.tsx` unchanged. | current request |
 | P26-A | Phase 26 | P15-M | 2 | 2026-11-06 | Accessibility/performance and final gates. | Done; fixes and all six ordered gates pass; native-device checks remain open. | Report and implementation evidence recorded in this ledger. | Physical font-scale, touch and accessibility checks remain unverified. | current request |
 | P27-A | Phase 27 | — | — | 2026-11-07 | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Done; cleanup and all six ordered gates pass. | Implementation evidence recorded in this ledger. | SDK-57-compatible dependency audit decisions remain open. | current request |
-| P28-A | Phase 28 | — | — | 2026-11-07 | QA and initial release preparation. | Done; original `0.2.0` preparation is historical; stable release metadata was revised by P28-B. | `fbdcbac`, `41c4617`, `d0ddff8` | The release target and build work are tracked by P28-B/P28-C. | current request |
+| P28-A | Phase 28 | — | — | 2026-11-07 | QA and initial release preparation. | Done; original `0.2.0` preparation is historical; stable release metadata was revised by P28-B, and backup equality coverage by P28-A-R1. | `fbdcbac`, `41c4617`, `d0ddff8` | The release target and build work are tracked by P28-B/P28-C. | current request |
+| P28-A-R1 | Phase 28 | — | — | 2026-11-08 | Add a synthetic v13 backup import regression for independently computed net worth, every goal's saved amount, and Emergency Fund available amount. | Done; the focused backup suite passes (37 tests) and all six ordered gates are recorded below. No app behavior changed. | `f8ae2ad` | No prior assertion was replaced or weakened. `progressLedger.test.ts` updates its expected revision marker from P28-C-R1 to P28-C-R2 and adds the P28-A-R1 revision check. | current request |
 | P28-B | Phase 28 | — | — | 2026-11-07 | Align and prepare v1.0.0 release metadata. | Done; app/package versions and release notes are aligned; no source behavior change. | Release metadata evidence recorded in this ledger. | Production build remains unbuilt; see build configuration and open items. | current request |
-| P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only; production EAS build remains unbuilt. Revised by P28-C-R1. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
-| P28-C-R1 | Phase 28 | — | — | 2026-11-08 | Add pending-safe README app downloads and What's new, an Android APK profile, release-asset publication checks, and source-accurate README details. | Done; all six ordered gates pass. No build, publication, tag or protected-route changes. | Step commits `13fce0e`, `19a99c5`, `44545ee`, `95f63a3`; verification is in the session/release log. | Android APK and owner-provided iOS link are not yet available. The v1.0.0 tag remains off current `origin/main`; owner decision pending. | current request |
+| P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only. Revised by P28-C-R1; Revised by P28-C-R2. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
+| P28-C-R1 | Phase 28 | — | — | 2026-11-08 | Add pending-safe README app downloads and What's new, an Android APK profile, release-asset publication checks, and source-accurate README details. | Done; all six ordered gates passed at that revision. No build, publication, tag or protected-route changes. Revised by P28-C-R2. | Step commits `13fce0e`, `19a99c5`, `44545ee`, `95f63a3`; verification is in the session/release log. | Its pending-APK status was later updated; v1.0.0 tag decision remains pending. | current request |
+| P28-C-R2 | Phase 28 | — | — | 2026-11-08 | Publish the v1.0.0 APK Download details and define complete release records and link checks. | Done; README and published note updated; release rules include the versioned block, README fields, both-link checks, and Builds metadata. Asset size/digest are verified. No GitHub release-body edit, build, tag or push. | `144a847`, `1742174`, `181aa44`, `356ec56` | GitHub asset metadata says uploaded, but both unauthenticated routes return HTTP 404 because the repository is private. EAS build ID, `versionCode`, source commit and profile remain owner to supply. | current request |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
 | P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
@@ -3386,9 +3400,13 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 9. **Phase 27 — Cleanup** (Done): dead-code/dependency cleanup, bundle audit,
    README update and robust schedule benchmark.
 10. **Phase 28 — QA and release** (Done for release organization and metadata):
-    P28-A/P28-B/P28-C are complete. The v1.0.0 production EAS build has not
-    been created; see [`docs/releases/build-config.md`](releases/build-config.md)
-    and the release-build record.
+    P28-A/P28-B/P28-C and their recorded revisions are complete. The v1.0.0
+    APK asset is uploaded, but its EAS build ID, Android `versionCode`, source
+    commit and profile remain owner to supply. Public download links return
+    404 while the repository is private; the release-body edit and tag
+    decision remain pending owner action. See
+    [`docs/releases/build-config.md`](releases/build-config.md) and the
+    release-build record.
 11. **Phase 29 — Product delivery** (Done through P29-AB): the dashboard is
     the current source for completed work and open device checks.
 12. **Phase 30 — Release 2 stabilization** (Planned):
@@ -9140,3 +9158,51 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   functions and 97.57% lines. No device build, store submission, release
   publication, tag operation or push occurred. Physical-device checks remain
   unverified.
+
+### P28-C-R2 release downloads and P28-A-R1 v13 backup equality (2026-11-08)
+
+- R1 preflight found a clean worktree. `app.json` and the published v1.0.0
+  release record both identify version 1.0.0 and release date 2026-11-07.
+  `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` were not edited.
+- Step commits: P28-C-R2 README `144a847`, published note `1742174`, release
+  rules `181aa44`, Builds record `356ec56`; P28-A-R1 test `f8ae2ad`.
+- `gh release view v1.0.0` verified the uploaded asset name
+  `WealthWise-android.apk`, size 112,133,413 bytes (about 106.9 MiB), and
+  SHA-256 `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`.
+  `gh repo view` reports the repository is private. Unauthenticated checks
+  returned final HTTP 404 and Content-Length 9 for both latest and versioned
+  links with `curl -I -L`. `curl -I` also returned HTTP 404 for both (latest
+  Content-Length 9; the versioned response omitted that header). The README
+  and published note contain their requested latest/versioned link forms, but
+  the public routes cannot be used while the repository is private.
+- `/tmp/v1.0.0-download-block.md` contains a block identical to the one added
+  to `docs/releases/published/v1.0.0.md`. The GitHub release body was not
+  edited. Build ID, Android `versionCode`, source commit and profile remain
+  Owner to supply; the tag decision and release-body edit remain pending.
+- The new deterministic v13 backup fixture has a valid SHA-256 checksum and
+  is imported through `parseBackup`. Expected net worth, every goal's saved
+  amount and Emergency Fund available amount are independently computed from
+  source fixture values; all imported outputs match. No personal data or app
+  behavior change was introduced. The focused backup suite passed 37 tests.
+- Assertion record: no backup/value assertion was removed or weakened. The
+  ledger test's old revision-marker assertion
+  `Revised by P28-C-R1` is replaced by `Revised by P28-C-R2`, because R2 is
+  the current release-rules revision; a P28-A-R1 revision assertion was
+  added. Derived dashboard counts remain based on ledger rows. The
+  `memoryDocs.test.ts` test remains derived from project/status files. Two
+  intermediate focused ledger runs failed because the text did not satisfy
+  its case-sensitive revision-marker expectation; the wording was corrected,
+  and the final focused ledger/memory run passed 2 suites and 10 tests.
+- Six ordered gates, all exit 0:
+
+  | Command | Exit | Result |
+  |---|---:|---|
+  | `npm test -- --coverage` | 0 | 91 suites; 1,194 passed, 1 skipped, 1,195 total. Coverage: 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines. `src/data`: 90.63/86.95/93.07/93.92; `src/domain`: 96.96/92.82/98.79/98.31; `src/lib`: 100/100/100/100 (statements/branches/functions/lines). |
+  | `npx tsc --noEmit` | 0 | Passed. |
+  | `npx expo lint` | 0 | Passed. |
+  | `npx expo-doctor` | 0 | 21/21 checks passed. |
+  | `npx expo export --platform android` | 0 | Passed. |
+  | `npx expo export --platform ios` | 0 | Passed. |
+
+- No native build, `gh release edit`, tag operation or push occurred.
+  Physical-device checks remain unverified.

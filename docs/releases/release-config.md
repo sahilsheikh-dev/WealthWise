@@ -120,17 +120,21 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
 - Never overwrite or delete published release records or tags.
 - Never expose secrets or commit EAS credentials.
 - Keep drafts in `drafts/`; keep published notes in `published/`.
-- After every build and before GitHub publication:
-  - Download the Android APK, rename it `WealthWise-android.apk`, and attach
-    it to the release draft with `gh release upload`.
-  - Verify the Android download URL with `curl -I` (HTTP 302) and
-    `curl -I -L` (redirect followed by HTTP 200); record the result.
-  - Update the README Download version/date, working Android link,
-    owner-supplied iOS link and new installation notes; retain Old versions.
-  - Record EAS build ID, Android build number/`versionCode`, artifact name,
-    profile, date and status in the release-history Builds table.
-  - Confirm the README, release history and GitHub release assets agree.
-    A release is not complete until they do.
+- For every GitHub release:
+  - Attach the Android APK under the exact name `WealthWise-android.apk`.
+  - Include a Download block with the versioned asset link and SHA-256 in both
+    the published Markdown and GitHub release body.
+  - Update the README Download section with latest version/date, a
+    version-labelled latest link, SHA-256, the iOS availability message and
+    the older-versions link.
+  - Verify both latest and versioned asset links using `curl -I` and
+    `curl -I -L`; record each observed result.
+  - Record EAS build ID, Android `versionCode`, source commit, exact artifact
+    name, profile, date and status in the release-history Builds table.
+  - Confirm the README, published Markdown, release history and GitHub assets
+    agree. The release remains incomplete until they do.
+  - For old published records, add only that version's Download block; do not
+    otherwise rewrite their contents.
 
 The worktree and release rules are shared policy, not release-specific
 exceptions.

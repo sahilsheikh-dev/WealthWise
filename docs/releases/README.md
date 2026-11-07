@@ -49,27 +49,33 @@ Every release follows this lifecycle:
 9. Build the production Android AAB for Play and a separate Android APK using
    the `android-apk` profile for the GitHub release. iOS builds are for
    TestFlight/App Store only.
-10. Download the APK artifact, rename it exactly `WealthWise-android.apk`,
+10. Download the APK artifact, name it exactly `WealthWise-android.apk`,
     and attach it to the GitHub release draft with `gh release upload`.
-11. Verify the Android asset with `curl -I -L`; confirm and record the 302
-    redirect and final 200 response.
-12. Update the root README Download section with the latest version/date,
-    working Android asset URL, owner-supplied iOS URL, installation notes and
-    unchanged Old versions link.
-13. Record the APK EAS build ID, Android build number/versionCode, profile,
-    date, status and exact artifact name in `release-history.md`.
-14. Confirm README, `release-history.md` and the GitHub release assets agree,
-    then publish the GitHub Release.
-15. Move the published notes into `published/` and update release history.
+11. Add a Download block with the versioned asset link and SHA-256 to both the
+    published Markdown and GitHub release body.
+12. Verify both latest and versioned APK links with `curl -I` and
+    `curl -I -L`; record the observed status for each.
+13. Update the root README Download section with latest version/date, a
+    version-labelled latest link, SHA-256, the iOS availability message and
+    the older-versions link.
+14. Record the EAS build ID, Android `versionCode`, source commit, profile,
+    date, status and exact artifact name in the `release-history.md` Builds
+    table.
+15. Confirm README, published Markdown, `release-history.md` and GitHub
+    release assets agree, then publish the GitHub Release. A release remains
+    incomplete until all four agree.
+16. Move the published notes into `published/` and update release history.
 
 ### Release process summary
 
 The current release is v1.0.0; the previous version is the initial release.
-The GitHub release and tag exist, but no production EAS build has been
-created. Run the pre-build checklist in [`build-config.md`](./build-config.md),
+Its APK asset is attached to the GitHub release, but its EAS build metadata
+remains owner to supply. The repository is private, so unauthenticated public
+download URLs currently return HTTP 404. The production AAB and iOS build have
+not been verified. Run the pre-build checklist in [`build-config.md`](./build-config.md),
 record each platform build and submission result in
 [`release-history.md`](./release-history.md), and wait for explicit owner
-approval before publishing or tagging.
+approval before changing visibility, publishing or tagging.
 
 ## Use the Release Prompt
 
@@ -118,10 +124,14 @@ releases/
   `published/`.
 - After publication is verified, move the draft Markdown into `published/`;
   do not leave a second copy in `drafts/` or at the `docs/releases/` root.
-- Before publishing, attach the Android APK as `WealthWise-android.apk`,
-  verify the release download route with `curl -I -L` (302 then 200), update
-  the README Download section, and record its EAS build ID, versionCode and
-  artifact name. The README, release history and GitHub assets must agree.
+- Every release must attach `WealthWise-android.apk`, include a versioned
+  Download block with SHA-256 in its published Markdown and GitHub release
+  body, update the README Download section, verify both latest and versioned
+  links with `curl -I` and `curl -I -L`, and record EAS build ID, Android
+  `versionCode`, source commit and artifact name in the Builds table.
+- A release is incomplete until the README, published Markdown, release
+  history and GitHub assets agree. Old published notes may receive only their
+  own versioned Download block; do not otherwise rewrite them.
 - The production Android AAB is for Google Play; `android-apk` is for the
   GitHub download. iOS builds are distributed through TestFlight/App Store.
 - Never overwrite or remove published release records.

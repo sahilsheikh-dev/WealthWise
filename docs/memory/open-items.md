@@ -10,15 +10,20 @@
   origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
   origin/main` exited 1. Owner decision is pending; do not move or delete the
   tag without explicit owner approval.
-- **P28-C v1.0.0 production builds:** the GitHub Release and remote tag were
-  published and verified on 2026-11-07 at
-  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
-  `docs/releases/published/`. Neither the production AAB nor the
-  `android-apk` profile build exists. Before building, rerun the six gates,
-  export and restore a backup, pass physical-device checks on iOS and Android,
-  and confirm owner approval. The dependency audit has 7 production advisories
-  (4 moderate, 3 high); no Expo SDK 57-compatible patch fix is available, and
-  no major upgrade or force fix is approved.
+- **P28-C v1.0.0 release completion:** the GitHub release contains
+  `WealthWise-android.apk` (112,133,413 bytes; SHA-256
+  `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`).
+  EAS build ID, Android `versionCode`, source commit and profile remain owner
+  to supply. The repository is private, so unauthenticated `curl -I` and
+  `curl -I -L` checks returned HTTP 404 for both latest and versioned links.
+  The owner must decide public access and edit the GitHub release body with
+  the Download block; no release-body edit was made. The `v1.0.0` tag decision
+  remains pending. The production AAB and iOS build are not verified. Before
+  further builds, rerun the six gates, export and restore a backup, pass
+  physical-device checks on iOS and Android, and confirm owner approval. The
+  dependency audit has 7 production advisories (4 moderate, 3 high); no Expo
+  SDK 57-compatible patch fix is available, and no major upgrade or force fix
+  is approved.
 - **iOS download URL:** the owner will supply a TestFlight or App Store link.
   Keep the README text as “Not available yet” until then; do not invent a URL.
 
@@ -27,10 +32,11 @@
   months, Received dues, projected cash flow, virtual future months and
   v21-to-v22 native migration/restart. Automated evidence is complete and all
   six gates pass; native device behavior remains unverified.
-- **Pre-build synthetic v13 equality:** the synthetic v13 backup with explicit
-  net-worth, goal and Emergency Fund equality assertions is not yet present.
-  Owner/device validation remains required; the pre-build checklist is in
-  [`build-config.md`](../releases/build-config.md).
+- **Pre-build synthetic v13 equality:** automated coverage now imports a
+  deterministic, checksummed v13 backup through `parseBackup` and compares
+  source-derived net worth, every goal's saved amount and Emergency Fund
+  available amount. Physical-device backup/restore checks remain part of the
+  pre-build checklist in [`build-config.md`](../releases/build-config.md).
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on

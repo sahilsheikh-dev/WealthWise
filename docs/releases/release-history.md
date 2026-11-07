@@ -25,9 +25,9 @@ Only successfully published GitHub Releases should be recorded here.
 
 ## 3. Builds
 
-| Version | Platform | Build number / versionCode | EAS build ID | Artifact name | Profile | Date | Status |
-|---|---|---|---|---|---|---|---|
-| v1.0.0 | iOS + Android | — | — | — | production | — | Not built |
+| Version | Platform | Build number / versionCode | EAS build ID | Source commit | Artifact name / size | SHA-256 | Download link status | Profile | Date | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v1.0.0 | Android APK | Owner to supply | Owner to supply | Owner to supply | `WealthWise-android.apk` / 112,133,413 bytes (~106.9 MiB) | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` | `curl -I -L`: latest and versioned final HTTP 404, Content-Length 9 bytes; `curl -I`: both HTTP 404 (latest Content-Length 9; versioned header omitted) | Owner to supply | Asset uploaded 2026-11-07 | Uploaded to GitHub; public links unavailable while repository is private |
 
 ## 4. Draft Releases
 
