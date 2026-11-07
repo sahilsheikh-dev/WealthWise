@@ -2,6 +2,25 @@
 
 # Wealth Wise master progress ledger
 
+## Initial v1.0.0 release draft prepared (2026-11-07)
+
+- Preflight worktree was clean. The initial unscoped GitHub CLI listing showed
+  a `v0.1.0` draft; subsequent repository-scoped CLI/API checks returned no
+  releases or tags. Neither result shows a published stable baseline. Reconcile
+  the discrepancy during approval revalidation. The repository initial commit
+  is `f27258093e14809fe923e480381488ece0d859a9`; target branch `main` is at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`.
+- Recommended version is `v1.0.0`, consistent with `app.json`, `package.json`
+  and `CHANGELOG.md`. The initial commit is the history baseline; 365 commits
+  follow it through the target. GitHub CLI returned no merged PRs; GitHub's
+  contributors endpoint verifies `sahilsheikh-dev` and `Copilot`.
+- Saved the unpublished, source-checked release draft at
+  `docs/releases/drafts/v1.0.0.md`. No version files, tags, GitHub releases,
+  permanent release records or application code were changed.
+- No tests or builds were run for this documentation-only draft. Publication
+  awaits explicit approval; revalidate the target commit and release notes
+  before publishing.
+
 ## Release README approval prompts (2026-11-07)
 
 - Added copyable draft-preparation and post-approval publication prompts to
