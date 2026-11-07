@@ -2,6 +2,21 @@
 
 # Wealth Wise master progress ledger
 
+## Release commit message correction (2026-11-07)
+
+- Reworded local commit `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15` to
+  `60a4c8b1d287fbea1cec7f622690aa898b61bda0`
+  (`docs: prepare initial v1.0.0 release draft`), matching its release-draft
+  and status changes.
+- Reworded local commit `8c0857c2c50dfc87cc67808cdc0bf09aa7139739` to
+  `be1e626f8b13e499f94bc86b1a517ed33d0cab14`
+  (`docs: record v1.0.0 release publication`), matching its publication
+  record, history and release-documentation changes.
+- Replayed descendant `8324822981153b602f5168e08b6759537fc0f111` unchanged in
+  content as `a29d861d0d8541c942e06b9ebbdc04f61e7c8c29`; no commits were
+  pushed. Existing Copilot co-author trailers were retained. All replacement
+  commits were verified in Git.
+
 ## Published release notes directory (2026-11-07)
 
 - Created `docs/releases/published/` and moved the already-published
