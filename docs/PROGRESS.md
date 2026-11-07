@@ -10,7 +10,7 @@
   yearly; non-monthly first-due month; strict backup/import support.
 - Preserved owner UI edits: no Insurance or Transactions Available balance
   border/divider restoration; recurring action remains "Stop investment".
-  "Resume recurring" remains unchanged as an open terminology inconsistency.
+  The stopped-plan action is now "Resume investment".
 - Gate 1 passed 91 suites: 1193 tests passed, 1 skipped. All files coverage
   was 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines.
   Gate 2 TypeScript passed; Gate 3 lint passed with one existing array-style
@@ -45,6 +45,14 @@
   (98.32%) and 3505/3776 branches (92.82%); `src/lib` 107/107 lines and
   126/126 branches (100%). Overall coverage: 95.90% statements, 91.89%
   branches, 97.75% functions and 97.57% lines. Coverage thresholds unchanged.
+
+## P28-B Assets resume action label (2026-11-07)
+
+- The Assets and investment-entries action, its confirmation title, icon
+  selection, accessibility hint, domain assertion and current documentation
+  now use "Resume investment" instead of "Resume recurring".
+- Focused domain regression and TypeScript verification are recorded in chat.
+  No commit was requested or created.
 
 ## Contents
 
@@ -2961,7 +2969,7 @@ evidence present in exports/checkpoints.
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
 | P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure and implement the owner's frozen foreclosure behavior across due, payment, Budget, reminder, Home and net-worth surfaces. | Step 1 report-only inventory committed first (`bf2610cb5add9a8857b07f3cad50415c0e624cbf`). Step 2 adds an optional closure record in schema v20, a one-write close action with Undo, linked payment and separate excess charge, Closed filter, and note-only closed-loan editing. | Focused store, backup/migration and route tests pass; final six ordered gate results and implementation commit object are recorded below. | DEC-P29W-FORECLOSURE-INVENTORY; DEC-P29W-FORECLOSURE-RECORD. Assumed: P29-W is new Phase 29 work. Existing `settlement` is a dated balance anchor, not an explicit closed-state marker; the optional closure record is required to distinguish foreclosure from ordinary settlement. No Home source edit. Replaced assertions are listed below. | current request |
-| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume recurring restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
+| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume investment restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
 | P29-Y | Phase 29 | — | 16d1c9bc | 2026-11-05 | Repair stale Gate 1 memory assertions and verify the real counts. | Memory and progress expectations were reconciled to real Jest output without weakening assertions; ordered gates pass. | Commit `7ffa09ad75b2ad42883c1d573ba8133d15cf1304`; real suite/test evidence is preserved in this ledger. | Replaced assertions: stale suite/test counts and latest-run text / real source-derived counts / owner asked Gate 1 repaired. | current request |
 | P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
 
@@ -8682,7 +8690,7 @@ entries.
 | P29-X Step 1 | Done | Report-only inventory committed first as `a4a47e63515c90a61903322ae73fe55fa40bf4b8`; schedule, dues, Budget, reminders, goals, card and store paths were inventoried before product edits. |
 | P29-X schema | Done | Schema v21 adds optional `PlanHolding.stopDate`; migration from v20 is identity-preserving and the existing premigration archive supports `.premigration.v20`. |
 | P29-X stop/resume behavior | Done | Pure `stopPlan()` and `resumePlan()` mutations plus one-write store Undo actions. `planSchedule()` and `planNextRows()` apply the inclusive cutoff; goal projections stop future contributions. |
-| P29-X UI | Done | Recurring-plan section has Stop investment / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
+| P29-X UI | Done | Recurring-plan section has Stop investment / Resume investment controls and card text; stop date uses a validated form and confirmation dialog. |
 | P29-X verification | Done | Focused schedule/store tests passed; all six ordered gates passed before implementation commit. |
 
 P29-X final verification:
@@ -8773,7 +8781,7 @@ DEC-P29LAYOUT-ASSET-LIABILITY: the holding Summary card is a single card that
 contains recurring-plan details and financial values. The Summary uses
 single-column rows for Monthly amount, Next due and Value date, and two-column
 detail cells for Invested, Current value/balance, date and Gain. `Stop
-recurring` / `Resume recurring` remains in the holding action row/footer area.
+investment` / `Resume investment` remains in the holding action row/footer area.
 The owner's removed holding Entries and Edit recurring-plan controls are not
 restored.
 
@@ -8823,7 +8831,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   “Foreclosure” / reason: owner renamed the recurring-liability early closure
   action consistently across card, entries and form surfaces.
 - Replaced assertions: old / only one-time and recurring holding card paths /
-  new / every recurring plan card exposes Stop investment or Resume recurring /
+  new / every recurring plan card exposes Stop investment or Resume investment /
   reason: owner requires stop/resume on all recurring asset cards.
 - Replaced assertions: old / global three-dot menu available where no explicit
   right actions exist / new / menu appears only for Home route variants /
@@ -8833,7 +8841,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   behavior remains independent.
 - DEC-P29RECURRING-CARD: instrument-card actions use id `stop` for both stop
   and resume labels; active plans show Stop investment, stopped plans show
-  Resume recurring.
+  Resume investment.
 - Validation state before final ordered rerun: focused AppHeader,
   instrument-card and route smoke tests passed; TypeScript passed; Gate 1 real
   run passed 92 suites, 1192 passed tests, 1 skipped, 1193 total.

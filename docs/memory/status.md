@@ -12,9 +12,8 @@
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
   and the strict backup schema accepts the additive fields. The owner changes
   remain preserved: Insurance card and Transactions available-balance have no
-  restored bottom border/divider, and recurring-plan stop action is
-  "Stop investment"; "Resume recurring" remains unchanged and is an open
-  terminology inconsistency.
+  restored bottom border/divider. Recurring investment actions are
+  "Stop investment" and "Resume investment".
   Real Gate 1: 91 suites passed, 1193 tests passed, 1 skipped. Coverage:
   all files 95.90% statements, 91.89% branches, 97.75% functions, 97.57%
   lines; `src/data` 90.63/86.95/93.07/93.92; `src/domain`

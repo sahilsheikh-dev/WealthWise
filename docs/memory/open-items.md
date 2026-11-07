@@ -14,10 +14,6 @@
   months, Received dues, projected cash flow, virtual future months and
   v21-to-v22 native migration/restart. Automated evidence is complete and all
   six gates pass; native device behavior remains unverified.
-- **P29-AB stop/resume terminology decision:** the owner set the active action
-  to "Stop investment"; the resume action remains "Resume recurring". Source
-  and tests preserve both labels; no wording change is approved.
-
 - **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
   net-worth, goal and Emergency Fund equality assertions is not yet present.
   The P28 report commit records the gap; owner/device validation is still
@@ -53,9 +49,9 @@
   three-dot options menu remains present on Index/Home and absent on Assets,
   Liabilities and detail screens, including backup, reminders, security,
   profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop label physical-device check:** verify active recurring
-  cards show Stop investment and stopped plans show Resume recurring while the
-  action remains within the shared instrument-card row.
+- **Recurring asset stop/resume label physical-device check:** verify active
+  recurring cards show Stop investment and stopped plans show Resume
+  investment while the action remains within the shared instrument-card row.
 - **Holding and liability layout physical-device check (2026-11-05):** verify
   the two-column investment Summary, same-row liability actions, conditional
   Entries button and liability Summary/details layout at font scales 1.3 and
