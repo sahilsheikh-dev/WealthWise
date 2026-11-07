@@ -2,7 +2,8 @@
 
 # Status
 - Release-management documentation is present under `docs/releases/`:
-  reusable workflow prompt, configuration, release history and v1.0.0 record.
+  reusable workflow prompt, configuration, release history and
+  `published/v1.0.0.md` record.
   The v1.0.0 GitHub Release was published on 2026-11-07 at
   `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; its remote tag and release URL
   are verified. The process requires verified changes and explicit

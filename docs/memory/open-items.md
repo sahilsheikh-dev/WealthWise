@@ -6,9 +6,10 @@
 
 - **P28-B production build and dependency audit:** the v1.0.0 GitHub Release
   and remote tag were published and verified on 2026-11-07 at
-  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`. The EAS production build remains
-  unrun. The accepted audit risk is 7 production advisories: 4 moderate and 3
-  high, with no Expo SDK 57-compatible patch fix.
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
+  `docs/releases/published/`. The EAS production build remains unrun. The
+  accepted audit risk is 7 production advisories: 4 moderate and 3 high, with
+  no Expo SDK 57-compatible patch fix.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
