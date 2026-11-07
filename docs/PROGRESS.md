@@ -8638,7 +8638,7 @@ entries.
 | P29-X Step 1 | Done | Report-only inventory committed first as `a4a47e63515c90a61903322ae73fe55fa40bf4b8`; schedule, dues, Budget, reminders, goals, card and store paths were inventoried before product edits. |
 | P29-X schema | Done | Schema v21 adds optional `PlanHolding.stopDate`; migration from v20 is identity-preserving and the existing premigration archive supports `.premigration.v20`. |
 | P29-X stop/resume behavior | Done | Pure `stopPlan()` and `resumePlan()` mutations plus one-write store Undo actions. `planSchedule()` and `planNextRows()` apply the inclusive cutoff; goal projections stop future contributions. |
-| P29-X UI | Done | Recurring-plan section has Stop recurring / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
+| P29-X UI | Done | Recurring-plan section has Stop investment / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
 | P29-X verification | Done | Focused schedule/store tests passed; all six ordered gates passed before implementation commit. |
 
 P29-X final verification:
@@ -8779,7 +8779,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   “Foreclosure” / reason: owner renamed the recurring-liability early closure
   action consistently across card, entries and form surfaces.
 - Replaced assertions: old / only one-time and recurring holding card paths /
-  new / every recurring plan card exposes Stop recurring or Resume recurring /
+  new / every recurring plan card exposes Stop investment or Resume recurring /
   reason: owner requires stop/resume on all recurring asset cards.
 - Replaced assertions: old / global three-dot menu available where no explicit
   right actions exist / new / menu appears only for Home route variants /
@@ -8788,7 +8788,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   Home route variants; explicit supplied `menu` and `showDefaultMenu={false}`
   behavior remains independent.
 - DEC-P29RECURRING-CARD: instrument-card actions use id `stop` for both stop
-  and resume labels; active plans show Stop recurring, stopped plans show
+  and resume labels; active plans show Stop investment, stopped plans show
   Resume recurring.
 - Validation state before final ordered rerun: focused AppHeader,
   instrument-card and route smoke tests passed; TypeScript passed; Gate 1 real

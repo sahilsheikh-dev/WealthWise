@@ -40,7 +40,7 @@
   Liabilities and detail screens, including backup, reminders, security,
   profile and theme routes, at font scales 1.3 and 2.0.
 - **Recurring asset stop label physical-device check:** verify active recurring
-  cards show Stop recurring and stopped plans show Resume recurring while the
+  cards show Stop investment and stopped plans show Resume recurring while the
   action remains within the shared instrument-card row.
 - **Holding and liability layout physical-device check (2026-11-05):** verify
   the two-column investment Summary, same-row liability actions, conditional

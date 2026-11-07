@@ -136,7 +136,7 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');
     expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'stop', 'update']);
-    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop recurring');
+    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop investment');
 
     const stoppedData = {
       ...mockAppData,
