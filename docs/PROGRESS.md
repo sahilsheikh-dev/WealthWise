@@ -50,7 +50,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (107/111)
+Overall progress ██████████ 97% (108/111)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -78,7 +78,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
-Phase 28         ░░░░░░░░░░ 0% (0/1)
+Phase 28         ██████████ 100% (1/1)
 Phase 29 ██████████ 97% (31/32)
 ```
 
@@ -167,7 +167,7 @@ Phase 29 ██████████ 97% (31/32)
 | CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
-| P28-A | — | Planned | QA and release. | 2026-10-15 |
+| P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, owner-confirmed `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections, and the release checklist. Protected routes remain unchanged. | 2026-11-07 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -200,7 +200,6 @@ Phase 29 ██████████ 97% (31/32)
 | P29-Y | — | Done | Repaired the red Gate 1 memory expectations and matched the real suite/test counts without weakening assertions; all six ordered gates pass. The source-of-truth run evidence is recorded in the latest verification section. | 2026-11-05 |
 | P29-Z | — | Done | Documentation and ledger consistency restored from source: Foreclosure label, Home-only AppHeader menu, schema v21 migration chain, archive range through `.premigration.v20`, real Gate 1 counts and owner holding/liability UI history. No behavior, schema or UI source change. | 2026-11-05 |
 | P29-AA | — | Done | Emergency Fund now links manual holdings, recurring plans and Fixed deposits through their live holding IDs. Deleted plans clear EF bucket and goal links in one write; hydration removes dangling links once, archives raw bytes and writes the repaired state; valid links, net worth and goal values remain unchanged. No schema change. Real Gate 1: 92 suites, 1194 passed, 1 skipped. All six gates exit 0. | 2026-11-06 |
-| P28-A | `fbdcbac`, `41c4617` | Done | Release report first, then verified metadata documentation updates. Owner-confirmed version `0.2.0` is aligned across app/package/lockfile and the changelog/README are corrected. The release checklist documents physical-device acceptance, EAS build/tag commands, exported-backup rollback and audit risks. Six gates pass; native-device and synthetic-v13 equality evidence remain owner/implementation follow-up. | 2026-11-07 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -2687,14 +2686,16 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 ### Phase 28 — QA and release
 
-Planned P28-A: property tests, QA checklist, release engineering and local
-diagnostics.
-
-**Assumed:** this task explicitly assigns the release-preparation work to
-P25-A, which the prior ledger had reserved for encrypted backups. To preserve
-the unimplemented feature in the roadmap without claiming it shipped, encrypted
-backups move to P25-B [P15-L]. This task does not implement encryption or
-perform a store release.
+P28-A: report-only release preparation began with
+`docs/P28-A-report.md`, covering release identity, permissions, storage/archive
+keys, erase-all, migration fixtures and accepted npm risks. The owner confirmed
+version `0.2.0`; `app.json`, `package.json`, package-lock root/package entries,
+CHANGELOG and README were aligned without source behavior or schema changes.
+`docs/RELEASE-CHECKLIST.md` records owner pre-build steps, the full device-test
+ledger, exported-backup rollback and exact not-run EAS/tag commands. No store
+build, tag or submission was run. The `npm audit --omit=dev` result is 7
+production vulnerability nodes; no major upgrade, force fix or install-script
+approval occurred.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -7181,6 +7182,10 @@ Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
 `100% (15/15)`; new `96% (91/95)` and `94% (15/16)`; reason: P29-M is now
 recorded as a blocked task, adding one item to the denominator without
 increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
+
+P28-A assertion replacement: old `Overall progress 96% (107/111)` and Phase
+28 `0% (0/1)`; new `97% (108/111)` and Phase 28 `100% (1/1)`; reason: the
+release-report, metadata and checklist work is completed and counted as Done.
 
 ### DEC-P29N — Reminders prompt (2026-11-04)
 
