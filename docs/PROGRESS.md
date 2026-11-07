@@ -2,6 +2,28 @@
 
 # Wealth Wise master progress ledger
 
+## v1.0.0 GitHub Release published (2026-11-07)
+
+- Published the approved `v1.0.0` GitHub Release at
+  https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0.
+  GitHub reports it is published, not a draft or prerelease, at
+  `2026-11-07T14:12:34Z` (2026-11-07).
+- The `v1.0.0` tag resolves to target commit
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`, matching `origin/main` at
+  publication. The release notes' date placeholder was corrected to
+  `2026-11-07` and the published body reverified.
+- Archived the final notes in `docs/releases/v1.0.0.md`, updated release
+  configuration/history/index and the memory status/open items, and removed
+  the published draft.
+- Pre-publication worktree edits were checkpointed exactly in
+  `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15`
+  (`chore: user manual changes (checkpoint)`). That checkpoint included the
+  deletion of the placeholder `docs/releases/v1.0.0.md`; the permanent record
+  was recreated as requested after publication. The owner's release README
+  line reflow was preserved.
+- No application source or version files were changed. No tests/builds were
+  run. The EAS production build remains unrun.
+
 ## Initial v1.0.0 release draft prepared (2026-11-07)
 
 - Preflight worktree was clean. The initial unscoped GitHub CLI listing showed

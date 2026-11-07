@@ -51,10 +51,8 @@ First, prepare the release:
 
 ```
 Read docs/releases/RELEASE_PROMPT.md.
-Discover all changes since the last published
-release. Analyze the codebase and merged PRs.
-Recommend the next version, generate the release
-notes, and save the draft.
+Discover all changes since the last published release. Analyze the codebase and merged PRs.
+Recommend the next version, generate the release notes, and save the draft.
 
 Do not publish anything. Wait for approval.
 ```
@@ -64,8 +62,7 @@ After reviewing the draft:
 ```
 I approve the proposed release.
 Revalidate the target commit and release notes.
-Publish the GitHub Release and update the
-permanent release documentation.
+Publish the GitHub Release and update the permanent release documentation.
 ```
 
 ## Directory Structure
@@ -94,10 +91,10 @@ releases/
 
 Update this section after every successful publication.
 
-- Current version: To be verified
-- Previous version: To be verified
-- Release date: To be verified
-- GitHub Release: To be verified
+- Current version: v1.0.0
+- Previous version: Initial release
+- Release date: 2026-11-07
+- GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
 
 ## Maintenance
 
