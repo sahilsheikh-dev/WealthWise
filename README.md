@@ -357,8 +357,7 @@ platform settings.
   automated device evidence.
 - The current `npm audit --omit=dev` run reports 7 production vulnerability
   nodes (4 moderate and 3 high). Patch-level fixes that remain within Expo SDK
-  57 are not available; the major-upgrade decision is recorded in
-  [docs/P28-A-report.md](docs/P28-A-report.md).
+  57 are not available; major Expo/Router upgrades require separate owner approval.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.

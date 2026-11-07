@@ -4,6 +4,11 @@
 
 ## Invariants
 
+- At task preflight, list dirty files and checkpoint exactly those named files
+  as `chore: user manual changes (checkpoint)` before other work. Preserve
+  manual edits. Never use checkout, restore, stash, reset, or old-code
+  reapplication to revert them. If source-owner edits break a test, update the
+  test and record old/new/reason in `docs/PROGRESS.md`.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -12,6 +17,9 @@
   one persisted write.
 - Preserve unrequested behavior; remove replaced implementations rather than
   keeping parallel paths. Never weaken tests to get green.
+- Reports, audits, checklists, and generated output belong in chat replies or
+  `/tmp`, never in the repository. Commit documentation only under
+  `docs/memory/` and `docs/PROGRESS.md`.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
