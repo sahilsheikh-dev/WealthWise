@@ -13,7 +13,6 @@ const mockState: { data: AppData; lastError: string | null; writes: number } = {
   writes: 0,
 };
 const mockBack = jest.fn();
-const mockConfirmAsync = jest.fn<Promise<boolean>, [unknown]>();
 const mockSaveEfPlan = jest.fn((plan: {
   customBuckets: AppData['efCustomBuckets'];
   allocation: EfAllocation;
@@ -27,6 +26,9 @@ const mockSaveEfPlan = jest.fn((plan: {
   };
   mockState.writes += 1;
 });
+const mockResetEfAllocation = jest.fn(() => {
+  mockState.data = { ...mockState.data, efAllocation: null };
+});
 
 jest.mock('expo-router', () => ({
   router: { back: (...args: unknown[]) => mockBack(...args) },
@@ -39,10 +41,8 @@ jest.mock('../../data/store', () => {
 jest.mock('../../data/useAppData', () => ({
   useAppActions: () => ({
     saveEfPlan: (...args: Parameters<typeof mockSaveEfPlan>) => mockSaveEfPlan(...args),
+    resetEfAllocation: (...args: Parameters<typeof mockResetEfAllocation>) => mockResetEfAllocation(...args),
   }),
-}));
-jest.mock('../../lib/confirm', () => ({
-  confirmAsync: (...args: [unknown]) => mockConfirmAsync(...args),
 }));
 jest.mock('../../components/AmountText', () => ({
   AmountText: (props: Record<string, unknown>) => {
@@ -50,32 +50,15 @@ jest.mock('../../components/AmountText', () => ({
     return ReactModule.createElement('amount', props);
   },
 }));
-jest.mock('../../components/form/FormErrorBanner', () => {
-  const ReactModule = jest.requireActual('react') as typeof React;
-  return {
-    FormErrorBanner: ({ message }: { message: string }) =>
-      ReactModule.createElement('formerror', { message }),
-  };
-});
+jest.mock('../../components/form/FormErrorBanner', () => ({ FormErrorBanner: () => null }));
 jest.mock('../../components/ScreenErrorBoundary', () => ({ ScreenErrorBoundary: () => null }));
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    FormScreen: ({ children, footer, stickyHeader, headerAction }: React.PropsWithChildren<{
-      footer: React.ReactNode;
-      stickyHeader?: React.ReactNode;
-      headerAction?: { label: string; onPress: () => void; icon?: string; variant?: string };
-    }>) =>
-      ReactModule.createElement('form', { stickyHeader }, stickyHeader,
-        headerAction ? ReactModule.createElement('headeraction', headerAction) : null, children, footer),
+    FormScreen: ({ children, footer }: React.PropsWithChildren<{ footer: React.ReactNode }>) =>
+      ReactModule.createElement('form', null, children, footer),
   };
 });
-jest.mock('../../components/IconButton', () => ({
-  IconButton: (props: Record<string, unknown>) => {
-    const ReactModule = jest.requireActual('react') as typeof React;
-    return ReactModule.createElement('iconbutton', props);
-  },
-}));
 jest.mock('../../components/form/HelperText', () => ({
   HelperText: ({ children }: React.PropsWithChildren) => {
     const ReactModule = jest.requireActual('react') as typeof React;
@@ -120,11 +103,8 @@ jest.mock('react-native', () => {
   const node = (type: string) => ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     ReactModule.createElement(type, props, children);
   return {
-    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Modal: node('modal'),
-    Platform: { OS: 'ios' },
     Pressable: node('pressable'),
-    ScrollView: node('scrollview'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     TextInput: node('textinput'),
     View: node('view'),
@@ -145,21 +125,29 @@ describe('emergency-fund allocation form', () => {
     mockState.lastError = null;
     mockState.writes = 0;
     mockSaveEfPlan.mockClear();
+    mockResetEfAllocation.mockClear();
     mockBack.mockClear();
-    mockConfirmAsync.mockReset();
   });
 
-  it('does not expose an expand-all control or legacy allocation reset actions', () => {
+  it('Use suggested mix keeps the suggested percentages and custom allocation reset behavior', async () => {
     const renderer = renderForm();
-    expect(renderer.root.findAllByProps({ label: 'Show all buckets' })).toHaveLength(0);
-    expect(renderer.root.findAllByProps({ label: 'Reset to suggested allocation' })).toHaveLength(0);
-    for (const file of [
-      require.resolve('../../../app/ef-allocation-form'),
-      require.resolve('../../domain/efAllocationActions'),
-      require.resolve('../../data/createAppStore'),
-    ]) {
-      expect(readFileSync(file, 'utf8')).not.toMatch(/\b(?:use|apply)SuggestedMix\b|\bresetEfAllocation\b/);
-    }
+    expect(renderer.root.findByProps({ label: 'Use suggested mix' })).toBeDefined();
+    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      .toContain('Use suggested mix: saves the suggested percentages as your own, so they stay fixed.');
+    act(() => renderer.root.findByProps({ label: 'Use suggested mix' }).props.onPress());
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({ allocation: SUGGESTED_EF_ALLOCATION }));
+    expect(mockState.writes).toBe(1);
+
+    const resetRenderer = renderForm();
+    expect(resetRenderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      .toContain("Reset to suggested: clears your custom mix and goes back to the app's suggestion.");
+    act(() => resetRenderer.root.findByProps({ label: 'Reset to suggested allocation' }).props.onPress());
+    expect(mockResetEfAllocation).toHaveBeenCalledTimes(1);
+    expect(mockState.data.efAllocation).toBeNull();
   });
 
   it('adds a custom option, shows live totals, links holdings, and saves the complete plan once', async () => {
@@ -171,8 +159,6 @@ describe('emergency-fund allocation form', () => {
       }],
     };
     const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    act(() => renderer.root.findByProps({ label: 'Custom' }).props.onPress());
     const nameField = renderer.root.findByProps({ accessibilityLabel: 'New custom option name' });
     await act(async () => {
       nameField.props.onChangeText('Safe box');
@@ -182,13 +168,13 @@ describe('emergency-fund allocation form', () => {
       renderer.root.findByProps({ label: 'Add custom option' }).props.onPress();
       await Promise.resolve();
     });
-    expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === 'Safe box')).toBe(true);
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Safe box option name' })).toBeDefined();
     const totalText = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-    expect(totalText).toContain('Total: 100.00%');
-    expect(totalText).toContain('Remaining: 0.00%');
+    expect(totalText).toContain('Total: 100.0%');
+    expect(totalText).toContain('Remaining: 0.0%');
 
     await act(async () => {
-      renderer.root.findByProps({ label: 'Link assets: Safe box' }).props.onPress();
+      renderer.root.findByProps({ label: 'Link investments: Safe box' }).props.onPress();
       await Promise.resolve();
     });
     const picker = renderer.root.findByProps({ accessibilityRole: 'checkbox' });
@@ -203,7 +189,7 @@ describe('emergency-fund allocation form', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      renderer.root.findByProps({ label: 'Link assets: Bank account' }).props.onPress();
+      renderer.root.findByProps({ label: 'Link investments: Bank account' }).props.onPress();
       await Promise.resolve();
     });
     const fixedPicker = renderer.root.findByProps({ accessibilityRole: 'checkbox' });
@@ -229,127 +215,18 @@ describe('emergency-fund allocation form', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps a sticky total bar, compact fields, and the header add action', () => {
-    const renderer = renderForm();
-    const form = renderer.root.findByType('form');
-    expect(form.props.stickyHeader).toBeDefined();
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Show all buckets' })).toHaveLength(0);
-    expect(renderer.root.findByProps({ label: 'Add allocation item' }).props).toMatchObject({
-      icon: 'plus',
-      variant: 'default',
-    });
-    const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
-    expect(cashPercent.props.size).toBe('compact');
-  });
-
-  it('shows only the three requested default items when no allocation is saved', () => {
-    mockState.data = { ...mockAppData, efAllocation: null, efCustomBuckets: [], efBucketLinks: {} };
-    const renderer = renderForm();
+  it('keeps action and totals rows responsive to font scaling and provides live, wrapping layout', () => {
     const source = readFileSync(require.resolve('../../../app/ef-allocation-form'), 'utf8');
-    for (const [label, value] of [
-      ['Cash', '10'],
-      ['Bank account', '40'],
-      ['FD / RD', '50'],
-    ]) {
-      expect(renderer.root.findByProps({ accessibilityLabel: `${label} allocation percentage` }).props.value)
-        .toBe(value);
-    }
-    for (const label of ['Mutual funds / Bonds', 'Stock market', 'LIC / Insurance', 'Other']) {
-      expect(renderer.root.findAllByProps({ accessibilityLabel: `${label} allocation percentage` })).toHaveLength(0);
-    }
-    expect(source).not.toMatch(/\b(?:use|apply)SuggestedMix\b/);
+    const totals = source.match(/totals: \{([^}]+)\}/)?.[1] ?? '';
+    const customActions = source.match(/customActions: \{([^}]+)\}/)?.[1] ?? '';
+    expect(totals).toContain('flexWrap: \'wrap\'');
+    expect(totals).toContain('minHeight: 44');
+    expect(customActions).toContain('flexWrap: \'wrap\'');
   });
 
-  it('offers missing predefined items including Mutual funds / Bonds from the header', () => {
-    mockState.data = { ...mockAppData, efAllocation: null, efCustomBuckets: [], efBucketLinks: {} };
-    const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    const choicesModal = renderer.root.findAllByProps({ visible: true })
-      .find((modal) => modal.findAllByProps({ label: 'Stock market' }).length > 0);
-    expect(choicesModal).toBeDefined();
-    const choiceLabels = new Set(choicesModal?.findAll(() => true)
-      .map((node) => node.props.label)
-      .filter((label): label is string => typeof label === 'string'));
-    expect([...choiceLabels]).toEqual(['Mutual funds / Bonds', 'Stock market', 'LIC / Insurance', 'Other', 'Custom', 'Cancel']);
-    expect(renderer.root.findAllByProps({ label: 'Cash' })).toHaveLength(0);
-    expect(renderer.root.findByProps({ label: 'Mutual funds / Bonds' })).toBeDefined();
-    act(() => renderer.root.findByProps({ label: 'Mutual funds / Bonds' }).props.onPress());
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Mutual funds / Bonds allocation percentage' }).props.value)
-      .toBe('0');
+  it('keeps exactly one copy of both existing guidance strings', () => {
+    const source = readFileSync(require.resolve('../../../app/ef-allocation-form'), 'utf8');
+    expect(source.match(/Use suggested mix:/g)).toHaveLength(1);
+    expect(source.match(/Reset to suggested:/g)).toHaveLength(1);
   });
-
-  it('confirms deletion without moving its allocation and keeps a live total', async () => {
-    mockConfirmAsync.mockResolvedValue(true);
-    const renderer = renderForm();
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(mockConfirmAsync).toHaveBeenCalledWith({
-      title: 'Remove allocation item?',
-      message: 'Remove Cash? Its linked assets stay linked to the emergency fund but are no longer grouped.',
-      confirmLabel: 'Remove',
-      destructive: true,
-    });
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Cash allocation percentage' })).toHaveLength(0);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('Remaining: 20.00%');
-  });
-
-  it('rejects saving unless the live allocation total is exactly 100%', async () => {
-    mockConfirmAsync.mockResolvedValue(true);
-    const renderer = renderForm();
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
-      await Promise.resolve();
-    });
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(mockSaveEfPlan).not.toHaveBeenCalled();
-  });
-
-  it('shows the invalid live total and disables Save before submission', async () => {
-    const renderer = renderForm();
-    const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
-    await act(async () => {
-      cashPercent.props.onChangeText('19.99');
-      await Promise.resolve();
-    });
-
-    expect(renderer.root.findByProps({ label: 'Save allocation' }).props.disabled).toBe(true);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('Total: 99.99%');
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(mockSaveEfPlan).not.toHaveBeenCalled();
-    expect(mockState.writes).toBe(0);
-    const errors = renderer.root.findAll((node) =>
-      String(node.type) === 'formerror'
-      && String(node.props.message).includes('Percentages must add up to 100%'));
-    expect(errors.length).toBeGreaterThan(0);
-  });
-
-  it('keeps an item when removal is dismissed', async () => {
-    mockConfirmAsync.mockResolvedValue(false);
-    const renderer = renderForm();
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' })).toBeDefined();
-  });
-
-  it('labels and explains the market-linked toggle', () => {
-    const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    act(() => renderer.root.findByProps({ label: 'Custom' }).props.onPress());
-    const text = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-    expect(renderer.root.findAllByProps({ label: 'Market-linked' }).length).toBeGreaterThan(0);
-    expect(text).toContain('Market-linked: its value goes up and down with the market, for example stocks or equity funds');
-  });
-
 });

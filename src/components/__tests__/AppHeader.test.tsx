@@ -132,7 +132,7 @@ describe('AppHeader', () => {
   });
 
   it('renders only the supplied right-side content for every menu/action combination', () => {
-    const menu = [{ label: 'Only menu', icon: 'edit-2' as const, onPress: jest.fn() }];
+    const menu = [{ label: 'Only menu', icon: 'edit' as const, onPress: jest.fn() }];
     const action = { icon: 'plus' as const, label: 'Add', onPress: jest.fn() };
     const cases = [
       { props: { title: 'Actions', rightActions: [action] }, expected: ['Add'] },
@@ -152,59 +152,47 @@ describe('AppHeader', () => {
     }
   });
 
-  it('keeps three-action header support removed', () => {
-    const actions = ['First', 'Second', 'Third'].map((label) => ({
-      icon: 'plus' as const,
-      label,
-      onPress: jest.fn(),
-    }));
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(<AppHeader title="Actions" rightActions={actions} />);
-    });
-    if (!renderer) throw new Error('Header renderer was not created.');
-    expect([...new Set(renderer.root.findAllByProps({ accessibilityRole: 'button' })
-      .map((button) => button.props.accessibilityLabel))])
-      .toEqual(['First', 'Second']);
-    const title = renderer.root.findAllByType('text').find((node) => node.children.includes('Actions'));
-    expect(title?.props.numberOfLines).toBe(1);
-  });
-
-  it('orders a leading menu before Filter and leaves plus at the far right', () => {
+  it('supports three 44pt actions and truncates a long title before the icons', () => {
+    const actions = [
+      { icon: 'clock' as const, label: 'History', onPress: jest.fn() },
+      { icon: 'check-circle' as const, label: 'Month review, review pending', onPress: jest.fn(), showIndicator: true },
+      { icon: 'layers' as const, label: 'Templates', onPress: jest.fn() },
+    ];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(
-        <AppHeader
-          title="Transactions"
-          menuPlacement="leading"
-          menu={[]}
-          rightActions={[
-            { icon: 'filter', label: 'Filter', onPress: jest.fn(), expanded: false, showIndicator: true },
-            { icon: 'plus', label: 'Add transaction', onPress: jest.fn() },
-          ]}
-        />,
+        <AppHeader title="A very long budget title that should truncate" rightActions={actions} showDefaultMenu={false} />,
       );
     });
-    if (!renderer) throw new Error('Transactions header did not render.');
-    const actions = renderer.root.findAll((node) =>
-      String(node.type) === 'pressable' && node.props.accessibilityRole === 'button',
+    if (!renderer) throw new Error('Budget header did not render.');
+
+    const actionButtons = renderer.root.findAll((node) =>
+      String(node.type) === 'pressable' && actions.some((action) => action.label === node.props.accessibilityLabel),
     );
-    expect(actions.map((action) => action.props.accessibilityLabel))
-      .toEqual(['More options', 'Filter', 'Add transaction']);
-    expect(actions[1]?.props.accessibilityState).toMatchObject({ expanded: false });
+    expect(actionButtons.map((button) => button.props.accessibilityLabel))
+      .toEqual(['History', 'Month review, review pending', 'Templates']);
+    for (const button of actionButtons) {
+      expect(button.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ width: 44, height: 44 }),
+      ]));
+    }
+    expect(renderer.root.findAll((node) => String(node.type) === 'feather').map((icon) => icon.props.name))
+      .toEqual(['clock', 'check-circle', 'layers']);
     expect(renderer.root.findAll((node) =>
       String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
     )).toHaveLength(1);
-  });
-
-  it('keeps the Budget header free of a menu when explicitly disabled', () => {
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(<AppHeader title="Budget" showDefaultMenu={false} />);
-    });
-    if (!renderer) throw new Error('Budget header did not render.');
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
-    expect(renderer.root.findAllByProps({ accessibilityRole: 'menuitem' })).toHaveLength(0);
+    const title = renderer.root.findAllByType('text').find((node) =>
+      node.children.join('') === 'A very long budget title that should truncate',
+    );
+    expect(title?.props.numberOfLines).toBe(1);
+    expect(title?.props.ellipsizeMode).toBe('tail');
+    const titleBlock = renderer.root.findAllByType('view').find((node) =>
+      (Array.isArray(node.props.style) ? node.props.style : [node.props.style]).some((style: unknown) =>
+        typeof style === 'object' && style !== null && 'flex' in style && 'minWidth' in style,
+      ),
+    );
+    expect(titleBlock?.props.style).toEqual(expect.objectContaining({ flex: 1, minWidth: 0 }));
+    expect(360 - 40 - 10 - (3 * 44 + 2 * 8)).toBeGreaterThan(0);
   });
 
   it('preserves two-line title fitting for headers with no more than two actions', () => {

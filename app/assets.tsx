@@ -13,7 +13,6 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  SearchField,
   Screen,
   StatPill,
   StatPillRow,
@@ -31,7 +30,7 @@ import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -58,8 +57,6 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
@@ -83,20 +80,9 @@ export default function AssetsScreen() {
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
   const filteredRows = filterRows(rows, filter);
-  const normalizedQuery = query.trim().toLowerCase();
-  const searchedRows = normalizedQuery
-    ? filteredRows.filter((row) =>
-      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
-    )
-    : filteredRows;
   const visibleRows = filter === 'Recurring'
-    ? sipSorting.sort(searchedRows)
-    : assetSorting.sort(searchedRows);
-  const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
-  const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
-  const filterActive = filter !== 'All'
-    || activeSorting.spec.key !== activeSortDefault.key
-    || activeSorting.spec.dir !== activeSortDefault.dir;
+    ? sipSorting.sort(filteredRows)
+    : assetSorting.sort(filteredRows);
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
@@ -112,37 +98,7 @@ export default function AssetsScreen() {
         title="Assets"
         showBack
         fallbackHref="/(tabs)"
-        rightActions={[
-          {
-            icon: 'filter',
-            label: 'Filter',
-            onPress: () => setFilterPanelOpen((open) => !open),
-            expanded: filterPanelOpen,
-            showIndicator: filterActive,
-          },
-          { icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) },
-        ]}
-      />
-      {filterPanelOpen ? (
-        <View testID="asset-filter-panel">
-          <ChipRow>
-            <SortChip
-              options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-              spec={activeSorting.spec}
-              onChange={activeSorting.setSpec}
-            />
-            {filters.map((item) => (
-              <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
-            ))}
-          </ChipRow>
-        </View>
-      ) : null}
-      <SearchField
-        accessibilityLabel="Search assets"
-        placeholder="Search name or type"
-        value={query}
-        onChangeText={setQuery}
-        onClear={() => setQuery('')}
+        rightActions={[{ icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) }]}
       />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
@@ -173,6 +129,17 @@ export default function AssetsScreen() {
           />
         </StatPillRow>
       </Card>
+
+      <ChipRow>
+        {<SortChip
+          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+        />}
+        {filters.map((item) => (
+          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+        ))}
+      </ChipRow>
 
       <View style={styles.holdingList}>
         {visibleRows.map((row) => {
@@ -205,10 +172,7 @@ export default function AssetsScreen() {
           );
         })}
         {visibleRows.length === 0 ? (
-          <EmptyState
-            title={normalizedQuery ? 'No matches' : data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'}
-            subtitle={normalizedQuery ? undefined : 'Your holdings will appear here.'}
-          />
+          <EmptyState title={data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'} subtitle="Your holdings will appear here." />
         ) : null}
       </View>
       {data.holdings.length === 0 ? (

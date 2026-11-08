@@ -16,39 +16,6 @@ describe('cross-platform confirmation adapters', () => {
     expect(options).toMatchObject({ cancelable: true });
   });
 
-  it('uses the requested Paid and Not paid button labels and treats Not paid as false', async () => {
-    let buttons: Parameters<NativeAlert>[2];
-    const alert: NativeAlert = (...args) => {
-      buttons = args[2];
-    };
-    const { confirmAsync } = createConfirmHelpers(createNativeConfirmAdapter(alert));
-    const result = confirmAsync({
-      title: 'Was this paid?',
-      message: 'SIP, ₹1,000, due 17 Oct 2026',
-      confirmLabel: 'Paid',
-      cancelLabel: 'Not paid',
-    });
-    expect(buttons?.map((button) => button.text)).toEqual(['Not paid', 'Paid']);
-    buttons?.[0]?.onPress?.();
-    await expect(result).resolves.toBe(false);
-  });
-
-  it('treats dismissal of a Paid confirmation as not paid', async () => {
-    let options: Parameters<NativeAlert>[3];
-    const alert: NativeAlert = (...args) => {
-      options = args[3];
-    };
-    const { confirmAsync } = createConfirmHelpers(createNativeConfirmAdapter(alert));
-    const result = confirmAsync({
-      title: 'Was this paid?',
-      message: 'SIP, ₹1,000, due 17 Oct 2026',
-      confirmLabel: 'Paid',
-      cancelLabel: 'Not paid',
-    });
-    options!.onDismiss?.();
-    await expect(result).resolves.toBe(false);
-  });
-
   it('returns null when a native choice alert is dismissed', async () => {
     let options: Parameters<NativeAlert>[3];
     const alert: NativeAlert = (...args) => {

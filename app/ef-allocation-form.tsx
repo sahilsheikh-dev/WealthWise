@@ -2,24 +2,26 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
+import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
+import { HelperText } from '../src/components/form/HelperText';
 import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { IconButton } from '../src/components/IconButton';
-import { FormShell } from '../src/components/FormShell';
 import { AppText, Button, Card } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import {
-  activeEfBucketMetadata,
+  EF_BUCKET_META,
+  EF_BUCKETS,
   efBucketMetadata,
-  resolveEfAllocation,
+  effectiveAllocation,
+  SUGGESTED_EF_ALLOCATION,
   validateAllocation,
   type EfAllocation,
 } from '../src/domain/efAllocation';
@@ -27,7 +29,6 @@ import { holdingValue } from '../src/domain/portfolio';
 import type { EfCustomBucket } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -42,19 +43,9 @@ type AllocationFormValues = {
   newBucketMarketLinked: boolean;
 };
 
-function toFormValues(
-  sourceAllocation: Partial<EfAllocation> | null | undefined,
-  customBuckets: EfCustomBucket[],
-  links: Record<string, string[]>,
-): AllocationFormValues {
-  const allocation = resolveEfAllocation({
-    efAllocation: sourceAllocation,
-    efCustomBuckets: customBuckets,
-  }).allocation;
+function toFormValues(allocation: EfAllocation, customBuckets: EfCustomBucket[], links: Record<string, string[]>): AllocationFormValues {
   const amounts: Record<string, string> = {};
-  for (const bucket of activeEfBucketMetadata(allocation, customBuckets, links)) {
-    amounts[bucket.id] = String(allocation[bucket.id] ?? 0);
-  }
+  for (const bucket of efBucketMetadata(customBuckets)) amounts[bucket.id] = String(allocation[bucket.id] ?? 0);
   return {
     allocation: amounts,
     customBuckets: customBuckets.map((bucket) => ({ ...bucket })),
@@ -78,14 +69,11 @@ export default function EfAllocationFormScreen() {
   const actions = useAppActions();
   const [formError, setFormError] = useState<string | undefined>();
   const [linkingBucketId, setLinkingBucketId] = useState<string | null>(null);
-  const [editingBucketId, setEditingBucketId] = useState<string | null>(null);
-  const [addItemMode, setAddItemMode] = useState<'choices' | 'custom' | null>(null);
-  const [editBucketName, setEditBucketName] = useState('');
-  const [editBucketAccess, setEditBucketAccess] = useState<EfCustomBucket['access']>('instant');
-  const [editBucketMarketLinked, setEditBucketMarketLinked] = useState(false);
+  const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
+  const [deleteMoveTo, setDeleteMoveTo] = useState('bank');
   const { control, handleSubmit, setValue, formState: { isDirty, isSubmitting } } = useForm<AllocationFormValues>({
     defaultValues: toFormValues(
-      data.efAllocation,
+      effectiveAllocation(data.efAllocation, data.efCustomBuckets),
       data.efCustomBuckets,
       data.efBucketLinks,
     ),
@@ -96,27 +84,19 @@ export default function EfAllocationFormScreen() {
   const newBucketName = useWatch({ control, name: 'newBucketName' });
   const newBucketAccess = useWatch({ control, name: 'newBucketAccess' });
   const newBucketMarketLinked = useWatch({ control, name: 'newBucketMarketLinked' });
-  const linkedBucketIds = new Set(
-    Object.entries(links).filter(([, holdingIds]) => holdingIds.length > 0).map(([id]) => id),
-  );
-  const bucketMetadata = efBucketMetadata(customBuckets).filter(({ id }) =>
-    Object.hasOwn(allocationValues, id) || linkedBucketIds.has(id)
-    || customBuckets.some((bucket) => bucket.id === id));
-  const availableFixedBuckets = efBucketMetadata().filter(({ id }) =>
-    !Object.hasOwn(allocationValues, id) && !linkedBucketIds.has(id));
+  const bucketMetadata = efBucketMetadata(customBuckets);
   const numericAllocation: EfAllocation = Object.fromEntries(
     bucketMetadata.map(({ id }) => [id, Number(allocationValues[id] ?? 0)]),
   );
   const allocationCheck = validateAllocation(numericAllocation, true, customBuckets);
   const allocationTotal = typeof allocationCheck === 'object' ? allocationCheck.total : 0;
-  const allocationIsValid = typeof allocationCheck === 'object' && allocationCheck.valid;
-  const allocationError = typeof allocationCheck === 'object' && !allocationCheck.valid
-    ? allocationCheck.issues.join('. ')
-    : undefined;
+  const linkTargetOptions = bucketMetadata
+    .filter(({ id }) => id !== deletingBucketId)
+    .map(({ id, label }) => ({ label, value: id }));
 
   const save = handleSubmit((values) => {
     const nextAllocation: EfAllocation = Object.fromEntries(
-      Object.entries(values.allocation).map(([id, value]) => [id, Number(value)]),
+      efBucketMetadata(values.customBuckets).map(({ id }) => [id, Number(values.allocation[id] ?? 0)]),
     );
     const validation = validateAllocation(nextAllocation, true, values.customBuckets);
     if (typeof validation !== 'object' || !validation.valid) {
@@ -134,19 +114,21 @@ export default function EfAllocationFormScreen() {
 
   const updateAllocation = (id: string, value: string) => {
     setValue('allocation', { ...allocationValues, [id]: value.replace(/[^\d.]/g, '') }, { shouldDirty: true });
-    setFormError(undefined);
   };
 
-  const removeDraftBucket = async (bucketId: string) => {
-    const bucket = bucketMetadata.find(({ id }) => id === bucketId);
-    if (!bucket) throw new Error(`Emergency-fund bucket metadata is missing for ${bucketId}.`);
-    const confirmed = await confirmAsync({
-      title: 'Remove allocation item?',
-      message: `Remove ${bucket.label}? Its linked assets stay linked to the emergency fund but are no longer grouped.`,
-      confirmLabel: 'Remove',
-      destructive: true,
-    });
-    if (!confirmed) return;
+  const removeDraftBucket = (bucketId: string, moveTo?: string) => {
+    const percent = Number(allocationValues[bucketId] ?? 0);
+    if (percent > 0 && !moveTo) {
+      setDeletingBucketId(bucketId);
+      setDeleteMoveTo('bank');
+      return;
+    }
+    if (percent > 0 && moveTo) {
+      setValue('allocation', {
+        ...allocationValues,
+        [moveTo]: String(Number(allocationValues[moveTo] ?? 0) + percent),
+      }, { shouldDirty: true });
+    }
     const nextAllocation = { ...allocationValues };
     delete nextAllocation[bucketId];
     const nextLinks = { ...links };
@@ -154,13 +136,7 @@ export default function EfAllocationFormScreen() {
     setValue('allocation', nextAllocation, { shouldDirty: true });
     setValue('links', nextLinks, { shouldDirty: true });
     setValue('customBuckets', customBuckets.filter(({ id }) => id !== bucketId), { shouldDirty: true });
-    setFormError(undefined);
-  };
-
-  const addFixedBucket = (bucketId: string) => {
-    setValue('allocation', { ...allocationValues, [bucketId]: '0' }, { shouldDirty: true });
-    setAddItemMode(null);
-    setFormError(undefined);
+    setDeletingBucketId(null);
   };
 
   const addCustomBucket = () => {
@@ -184,116 +160,204 @@ export default function EfAllocationFormScreen() {
     setValue('allocation', { ...allocationValues, [id]: '0' }, { shouldDirty: true });
     setValue('newBucketName', '', { shouldDirty: true });
     setFormError(undefined);
-    setAddItemMode(null);
   };
 
   const setLinksForBucket = (bucketId: string, holdingIds: string[]) => {
     setValue('links', { ...links, [bucketId]: holdingIds }, { shouldDirty: true });
   };
 
-  const editBucket = (bucket: EfCustomBucket) => {
-    setEditingBucketId(bucket.id);
-    setEditBucketName(bucket.name);
-    setEditBucketAccess(bucket.access);
-    setEditBucketMarketLinked(bucket.marketLinked);
-  };
-
-  const saveBucketMetadata = () => {
-    const name = editBucketName.trim();
-    if (name.length < 1 || name.length > 24) {
-      setFormError('Custom option names must be 1 to 24 characters.');
-      return;
-    }
-    setValue('customBuckets', customBuckets.map((bucket) => bucket.id === editingBucketId
-      ? { ...bucket, name, access: editBucketAccess, marketLinked: editBucketMarketLinked }
-      : bucket), { shouldDirty: true });
-    setEditingBucketId(null);
-    setFormError(undefined);
-  };
-
   const linkedBucketName = bucketMetadata.find(({ id }) => id === linkingBucketId)?.label;
-  const accessLabel = (access: EfCustomBucket['access']) =>
-    access === 'instant' ? 'Instant access' : access === 'days' ? 'Within days' : 'Slow access';
+  const deleteBucket = customBuckets.find(({ id }) => id === deletingBucketId);
+  const linkMoveChoices = linkTargetOptions.map(({ value }) => value);
+  const deletePercent = deletingBucketId ? Number(allocationValues[deletingBucketId] ?? 0) : 0;
 
   return (
     <>
       <FormScreen
-        title="Edit allocation"
+        title="Emergency fund allocation"
         onClose={() => router.back()}
         isDirty={isDirty}
-        headerAction={{
-          icon: 'plus',
-          label: 'Add allocation item',
-          variant: 'default',
-          onPress: () => setAddItemMode('choices'),
-        }}
-        stickyHeader={(
-          <View style={styles.totals} accessibilityLabel={`Total ${allocationTotal.toFixed(1)} percent. Remaining ${(100 - allocationTotal).toFixed(1)} percent.`}>
-            <AppText style={typography.meta}>Total: {allocationTotal.toFixed(2)}%</AppText>
-            <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(2)}%</AppText>
-          </View>
-        )}
         footer={(
           <View>
-            <Button
-              label="Save allocation"
-              icon="save"
-              variant="primary"
-              disabled={isSubmitting || !allocationIsValid}
-              onPress={save}
-            />
+            <Button label="Save allocation" icon="save" variant="primary" disabled={isSubmitting} onPress={save} />
           </View>
         )}
       >
         <AppText style={[typography.meta, { color: colors.text3 }]}>
-          Set a target mix for your linked emergency assets. The total must be 100%.
+          Assign percentages to each type. The total must be exactly 100%.
         </AppText>
         <FormErrorBanner message={lastError} />
         <Controller
           control={control}
           name="allocation"
-          render={() => (
-            <View style={styles.bucketList}>
-              {bucketMetadata.map((metadata) => {
-              const customBucket = customBuckets.find(({ id }) => id === metadata.id);
-              return (
-                <View key={metadata.id} style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
-                  <View style={styles.bucketLabel}>
-                    <AppText weight="medium">{metadata.label}</AppText>
-                    <AppText style={[styles.accessCaption, { color: colors.text3 }]}>
-                      {accessLabel(metadata.access)} · {metadata.marketLinked ? 'Market-linked' : 'Stable'}
-                    </AppText>
-                  </View>
-                  <View style={styles.percentWrap}>
-                    <PercentField
-                      size="compact"
-                      accessibilityLabel={`${metadata.label} allocation percentage`}
-                      value={allocationValues[metadata.id] ?? '0'}
-                      onChangeText={(value) => updateAllocation(metadata.id, value)}
-                    />
-                  </View>
-                  {customBucket ? (
-                    <IconButton icon="edit-2" label={`Edit ${metadata.label}`} onPress={() => editBucket(customBucket)} />
-                  ) : null}
-                  <IconButton
-                    icon="link-2"
-                    label={`Link assets: ${metadata.label}`}
-                    onPress={() => setLinkingBucketId(metadata.id)}
+          render={({ field }) => (
+            <>              
+              {EF_BUCKETS.map((id) => (
+                <View key={id} style={styles.fixedBucketField}>
+                  <PercentField
+                    label={EF_BUCKET_META[id].label}
+                    accessibilityLabel={`${EF_BUCKET_META[id].label} allocation percentage`}
+                    value={field.value[id] ?? String(SUGGESTED_EF_ALLOCATION[id])}
+                    onChangeText={(value) => updateAllocation(id, value)}
                   />
-                  <IconButton
-                    icon="trash-2"
-                    label={`Remove ${metadata.label}`}
-                    variant="destructive"
-                    onPress={() => { void removeDraftBucket(metadata.id); }}
+                  <Button
+                    label={`Link investments: ${EF_BUCKET_META[id].label}`}
+                    icon="link-2"
+                    onPress={() => setLinkingBucketId(id)}
                   />
                 </View>
-              );
-              })}
-            </View>
+              ))}
+            </>
           )}
         />
 
-        {formError ?? allocationError ? <FormErrorBanner message={formError ?? allocationError ?? ''} /> : null}
+        <Controller
+          control={control}
+          name="customBuckets"
+          render={({ field }) => (
+            <View style={styles.customBucketList}>
+              {field.value.map((bucket) => (
+                <Card key={bucket.id} style={styles.customBucketCard}>
+                  <TextField
+                    label="Custom option name"
+                    accessibilityLabel={`${bucket.name} option name`}
+                    value={bucket.name}
+                    onChangeText={(name) => field.onChange(field.value.map((item) =>
+                      item.id === bucket.id ? { ...item, name } : item,
+                    ))}
+                    maxLength={24}
+                  />
+                  <PercentField
+                    label={`${bucket.name} allocation`}
+                    accessibilityLabel={`${bucket.name} allocation percentage`}
+                    value={allocationValues[bucket.id] ?? '0'}
+                    onChangeText={(value) => updateAllocation(bucket.id, value)}
+                  />
+                  <AppText weight="semibold">How quickly can you access it?</AppText>
+                  <SegmentedControl
+                    value={bucket.access}
+                    options={[
+                      { label: 'Instant', value: 'instant' },
+                      { label: 'Within days', value: 'days' },
+                      { label: 'Slow', value: 'slow' },
+                    ]}
+                    onChange={(access) => field.onChange(field.value.map((item) =>
+                      item.id === bucket.id ? { ...item, access } : item,
+                    ))}
+                  />
+                  <SwitchRow
+                    label="Market-linked"
+                    value={bucket.marketLinked}
+                    onValueChange={(marketLinked) => field.onChange(field.value.map((item) =>
+                      item.id === bucket.id ? { ...item, marketLinked } : item,
+                    ))}
+                  />
+                  <View style={styles.customActions}>
+                    <Button
+                      label={`Link investments: ${bucket.name}`}
+                      icon="link-2"
+                      onPress={() => setLinkingBucketId(bucket.id)}
+                    />
+                    <Button label="Remove option" icon="trash-2" variant="danger-text" onPress={() => removeDraftBucket(bucket.id)} />
+                  </View>
+                  <Controller
+                    control={control}
+                    name="links"
+                    render={({ field: linkField }) => (
+                      <View style={styles.linkedSummary}>
+                        {(linkField.value[bucket.id] ?? []).map((holdingId) => {
+                          const holding = data.holdings.find((item) => item.id === holdingId);
+                          if (!holding) return null;
+                          const value = holdingValue(holding, todayISO());
+                          return (
+                            <View
+                              key={holdingId}
+                              accessible
+                              accessibilityLabel={`${holding.name}: ${formatAmount(value, 'exact', 1)}`}
+                              style={[styles.linkedHoldingChip, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+                              <AppText style={typography.chip}>{holding.name}</AppText>
+                              <AmountText value={value} tier="row" style={typography.chip} />
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  />
+                </Card>
+              ))}
+            </View>
+          )}
+        />
+        <Controller
+          control={control}
+          name="newBucketName"
+          render={({ field }) => (
+            <TextField
+              label="New custom option"
+              accessibilityLabel="New custom option name"
+              value={field.value}
+              onChangeText={field.onChange}
+              maxLength={24}
+              placeholder="For example, valuables"
+            />
+          )}
+        />
+        <AppText weight="semibold">How quickly can you access the new option?</AppText>
+        <Controller
+          control={control}
+          name="newBucketAccess"
+          render={({ field }) => (
+            <SegmentedControl
+              value={field.value}
+              options={[
+                { label: 'Instant', value: 'instant' },
+                { label: 'Within days', value: 'days' },
+                { label: 'Slow', value: 'slow' },
+              ]}
+              onChange={field.onChange}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="newBucketMarketLinked"
+          render={({ field }) => (
+            <SwitchRow label="Market-linked" value={field.value} onValueChange={field.onChange} />
+          )}
+        />
+        <Button
+          label="Add custom option"
+          icon="plus"
+          disabled={customBuckets.length >= 8}
+          onPress={addCustomBucket}
+        />
+
+        <View style={styles.totals} accessibilityLabel={`Total ${allocationTotal.toFixed(1)} percent. Remaining ${(100 - allocationTotal).toFixed(1)} percent.`}>
+          <AppText style={typography.meta}>Total: {allocationTotal.toFixed(1)}%</AppText>
+          <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(1)}%</AppText>
+        </View>
+        {formError ? <FormErrorBanner message={formError} /> : null}
+        <Button
+          label="Use suggested mix"
+          icon="refresh-cw"
+          onPress={() => {
+            const suggested = { ...SUGGESTED_EF_ALLOCATION };
+            for (const bucket of customBuckets) suggested[bucket.id] = 0;
+            setValue('allocation', Object.fromEntries(
+              Object.entries(suggested).map(([id, value]) => [id, String(value)]),
+            ), { shouldDirty: true });
+          }}
+        />
+        <HelperText>Use suggested mix: saves the suggested percentages as your own, so they stay fixed.</HelperText>
+        <Button
+          label="Reset to suggested allocation"
+          icon="rotate-ccw"
+          onPress={() => {
+            actions.resetEfAllocation();
+            if (!useAppStore.getState().lastError) router.back();
+          }}
+        />
+        <HelperText>Reset to suggested: clears your custom mix and goes back to the app&apos;s suggestion.</HelperText>
       </FormScreen>
 
       <Modal
@@ -345,153 +409,31 @@ export default function EfAllocationFormScreen() {
       </Modal>
 
       <Modal
-        visible={editingBucketId !== null}
+        visible={deletingBucketId !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setEditingBucketId(null)}>
+        onRequestClose={() => setDeletingBucketId(null)}>
         <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKeyboard}>
-            <Card style={styles.modalCard}>
-              <FormShell
-                title="Edit custom option"
-                rightActions={[{
-                  icon: 'x',
-                  label: 'Close',
-                  hint: 'Close custom option editor',
-                  onPress: () => setEditingBucketId(null),
-                }]}
-                footer={(
-                  <>
-                    <Button label="Save option" icon="check" variant="primary" onPress={saveBucketMetadata} />
-                    <Button label="Cancel" icon="x" onPress={() => setEditingBucketId(null)} />
-                  </>
-                )}>
-                <TextField
-                  label="Custom option name"
-                  accessibilityLabel="Custom option name"
-                  value={editBucketName}
-                  onChangeText={setEditBucketName}
-                  maxLength={24}
-                />
-                <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
-                <SegmentedControl
-                  value={editBucketAccess}
-                  options={[
-                    { label: 'Instant', value: 'instant' },
-                    { label: 'Within days', value: 'days' },
-                    { label: 'Slow', value: 'slow' },
-                  ]}
-                  onChange={setEditBucketAccess}
-                />
-                <SwitchRow
-                  label="Market-linked"
-                  value={editBucketMarketLinked}
-                  onValueChange={setEditBucketMarketLinked}
-                />
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  Market-linked: its value goes up and down with the market, for example stocks or equity funds
-                </AppText>
-                {formError ? <FormErrorBanner message={formError} /> : null}
-              </FormShell>
-            </Card>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={addItemMode !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAddItemMode(null)}>
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKeyboard}>
-            <Card style={styles.modalCard}>
-              <FormShell
-                title={addItemMode === 'choices' ? 'Add allocation item' : 'Custom allocation item'}
-                rightActions={[{
-                  icon: 'x',
-                  label: 'Close',
-                  hint: 'Close allocation item picker',
-                  onPress: () => setAddItemMode(null),
-                }]}
-                footer={addItemMode === 'custom' ? (
-                  <>
-                    <Button
-                      label="Add custom option"
-                      icon="plus"
-                      disabled={customBuckets.length >= 8}
-                      onPress={addCustomBucket}
-                    />
-                    <Button label="Cancel" icon="x" onPress={() => setAddItemMode(null)} />
-                  </>
-                ) : <Button label="Cancel" icon="x" onPress={() => setAddItemMode(null)} />}>
-                {addItemMode === 'choices' ? (
-                  <>
-                    {availableFixedBuckets.map(({ id, label }) => (
-                      <Button key={id} label={label} onPress={() => addFixedBucket(id)} />
-                    ))}
-                    <Button
-                      label="Custom"
-                      disabled={customBuckets.length >= 8}
-                      onPress={() => setAddItemMode('custom')}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Controller
-                      control={control}
-                      name="newBucketName"
-                      render={({ field }) => (
-                        <TextField
-                          label="New custom option"
-                          accessibilityLabel="New custom option name"
-                          value={field.value}
-                          onChangeText={field.onChange}
-                          maxLength={24}
-                          placeholder="For example, valuables"
-                        />
-                      )}
-                    />
-                    <View style={styles.newBucketMetadata}>
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
-                      <Controller
-                        control={control}
-                        name="newBucketAccess"
-                        render={({ field }) => (
-                          <SegmentedControl
-                            value={field.value}
-                            options={[
-                              { label: 'Instant', value: 'instant' },
-                              { label: 'Within days', value: 'days' },
-                              { label: 'Slow', value: 'slow' },
-                            ]}
-                            onChange={field.onChange}
-                          />
-                        )}
-                      />
-                    </View>
-                    <Controller
-                      control={control}
-                      name="newBucketMarketLinked"
-                      render={({ field }) => (
-                        <>
-                          <SwitchRow label="Market-linked" value={field.value} onValueChange={field.onChange} />
-                          <AppText style={[typography.meta, { color: colors.text3 }]}>
-                            Market-linked: its value goes up and down with the market, for example stocks or equity funds
-                          </AppText>
-                        </>
-                      )}
-                    />
-                    {formError ? <FormErrorBanner message={formError} /> : null}
-                  </>
-                )}
-              </FormShell>
-            </Card>
-          </KeyboardAvoidingView>
+          <Card style={styles.modalCard}>
+            <AppText weight="bold" style={typography.name}>Remove custom option?</AppText>
+            <AppText style={typography.meta}>
+              Move {deletePercent}% from {deleteBucket?.name ?? 'this option'} to another option before removing it.
+            </AppText>
+            <ChoiceField
+              label="Move allocation to"
+              value={deleteMoveTo}
+              choices={linkMoveChoices}
+              choiceLabels={Object.fromEntries(linkTargetOptions.map(({ label, value }) => [value, label]))}
+              onChange={setDeleteMoveTo}
+            />
+            <Button
+              label="Move allocation and remove"
+              icon="trash-2"
+              variant="danger-text"
+              onPress={() => deletingBucketId && removeDraftBucket(deletingBucketId, deleteMoveTo)}
+            />
+            <Button label="Cancel" icon="x" onPress={() => setDeletingBucketId(null)} />
+          </Card>
         </View>
       </Modal>
     </>
@@ -499,16 +441,15 @@ export default function EfAllocationFormScreen() {
 }
 
 const styles = StyleSheet.create({
-  bucketList: { gap: 2 },
-  bucketRow: { minHeight: 62, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
-  bucketLabel: { flex: 1, minWidth: 100, gap: 2 },
-  accessCaption: { fontSize: 10, lineHeight: 13 },
-  percentWrap: { width: 82 },
-  totals: { minHeight: 40, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  newBucketMetadata: { gap: 4 },
+  fixedBucketField: { gap: 6 },
+  customBucketList: { gap: 12 },
+  customBucketCard: { gap: 12 },
+  customActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  linkedSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  linkedHoldingChip: { minHeight: 34, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
+  totals: { minHeight: 44, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.45)' },
   modalCard: { maxHeight: '90%', gap: 12 },
-  modalKeyboard: { width: '100%' },
   holdingPickerList: { maxHeight: 360 },
   holdingPickerRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   holdingPickerText: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 },

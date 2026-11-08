@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useSecuritySettings } from '../src/components/SecurityProvider';
-import { FormScreen } from '../src/components/form/FormScreen';
-import { AppText, Button, Card, SectionTitle } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/ui';
 import { TextField } from '../src/components/form/TextField';
 import { useAppStore } from '../src/data/store';
 import { createAuthenticator } from '../src/lib/authenticate';
@@ -62,18 +62,8 @@ export default function EraseDataScreen() {
   };
 
   return (
-    <FormScreen
-      title="Erase all data"
-      onClose={() => router.back()}
-      isDirty={false}
-      footer={(
-        <Button
-          label="Erase all data"
-          variant="danger-text"
-          disabled={confirmation !== 'ERASE' || busy}
-          onPress={() => void erase()}
-        />
-      )}>
+    <Screen>
+      <AppHeader title="Erase all data" showBack showDefaultMenu={false} />
       <SectionTitle>What will be deleted</SectionTitle>
       <Card>
         <AppText style={[typography.meta, { color: colors.text2, lineHeight: 20 }]}>
@@ -90,9 +80,15 @@ export default function EraseDataScreen() {
           onChangeText={setConfirmation}
           placeholder="ERASE"
         />
+        <Button
+          label="Erase all data"
+          variant="danger-text"
+          disabled={confirmation !== 'ERASE' || busy}
+          onPress={() => void erase()}
+        />
       </Card>
       {message ? <AppText accessibilityRole="alert" style={[typography.meta, styles.message, { color: colors.err }]}>{message}</AppText> : null}
-    </FormScreen>
+    </Screen>
   );
 }
 

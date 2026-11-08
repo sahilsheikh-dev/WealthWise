@@ -27,7 +27,6 @@ import {
 } from '../index';
 import type { AppData, Goal, Holding, HoldingType, ManualHolding, PlanHolding, RecurringLiability, Transaction } from '../types';
 import { goalSavedFor } from '../goalLinks';
-import { defaultCoverGoals } from '../coverGoals';
 
 const tx = (
   id: string,
@@ -46,11 +45,9 @@ const baseData = (changes: Partial<AppData> = {}): AppData => ({
   liabilities: [],
   policies: [],
   budget: null,
-  budgetPlan: null,
   efCustomBuckets: [],
   efBucketLinks: {},
   ...changes,
-  coverGoals: changes.coverGoals ?? defaultCoverGoals(),
 });
 
 describe('income baseline selection', () => {
@@ -260,14 +257,12 @@ describe('transaction selectors', () => {
       tx('festival', 'expense', 1_500, '2026-10-01', 'Festival', 'Festival'),
       tx('donation', 'expense', 500, '2026-10-02', 'Donation', 'Donation'),
       tx('gifts', 'expense', 1_000, '2026-10-03', 'Gifts', 'Gifts'),
-      tx('health-premium', 'expense', 750, '2026-10-03', 'Health premium', 'Health premium'),
       tx('food', 'expense', 250, '2026-10-04', 'Food', 'Food'),
       tx('last-month', 'expense', 5_000, '2026-09-30', 'Festival', 'Festival'),
       tx('income', 'income', 20_000, '2026-10-05', 'Festival', 'Festival'),
     ], '2026-10')).toEqual([
       { category: 'Festival', amount: 1_500 },
       { category: 'Gifts', amount: 1_000 },
-      { category: 'Health premium', amount: 750 },
       { category: 'Donation', amount: 500 },
       { category: 'Food', amount: 250 },
     ]);
@@ -278,7 +273,6 @@ describe('transaction selectors', () => {
       tx('b', 'expense', 3, '2026-10-02', 'Rent'),
       tx('c', 'invest', 4, '2026-10-02', 'Index fund'),
       tx('other-investment', 'invest', 5, '2026-10-03', 'Other', 'Other'),
-      tx('custom-investment', 'invest', 7, '2026-10-03', 'Fund', 'Fund'),
       tx('other-expense', 'expense', 6, '2026-10-03', 'Other', 'Other'),
       tx('a', 'income', 2, '2026-10-01', 'Salary'),
       tx('z', 'expense', 1, '2026-09-30', 'Rent'),
@@ -286,19 +280,12 @@ describe('transaction selectors', () => {
     expect(filterTransactions(txs, { month: '2026-10', type: 'all', query: ' RENT ' }).map((item) => item.id)).toEqual(['b']);
     expect(filterTransactions(txs, { month: '2026-10', type: 'income', query: '' }).map((item) => item.id)).toEqual(['a']);
     expect(filterTransactions(txs, {
-      month: '2026-10',
-      type: 'invest',
-      query: '',
-      category: 'Other investments',
-      customCategories: new Set(['Fund']),
+      month: '2026-10', type: 'invest', query: '', category: 'Other investments',
     }).map((item) => item.id)).toEqual(['other-investment', 'c']);
-    expect(filterTransactions(txs, {
-      month: '2026-10', type: 'invest', query: '', category: 'Fund', customCategories: new Set(['Fund']),
-    }).map((item) => item.id)).toEqual(['custom-investment']);
     const filtered = filterTransactions(txs, { month: '2026-10', type: 'all', query: '' });
-    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'custom-investment', 'c', 'b', 'a']);
+    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'c', 'b', 'a']);
     expect(groupByDate(filtered).map((group) => [group.date, group.items.map((item) => item.id)])).toEqual([
-      ['2026-10-03', ['other-investment', 'other-expense', 'custom-investment']],
+      ['2026-10-03', ['other-investment', 'other-expense']],
       ['2026-10-02', ['c', 'b']],
       ['2026-10-01', ['a']],
     ]);

@@ -1,7 +1,7 @@
 export type AppMenuItem = {
   label: string;
   description?: string;
-  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit-2' | 'calendar' | 'check-circle';
+  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit' | 'calendar';
   destructive?: boolean;
   disabled?: boolean;
 };
@@ -21,7 +21,7 @@ export function buildAppMenu({
   ];
   if (isDev) {
     items.push(
-      { label: 'Load demo data (4 months)', icon: 'database' },
+      { label: 'Load demo data', icon: 'database' },
       { label: 'Generate stress-test data', icon: 'database', destructive: true },
       { label: 'Simulate corrupt storage', icon: 'alert-triangle', destructive: true },
     );

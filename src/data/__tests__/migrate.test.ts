@@ -5,19 +5,9 @@ import {
   migrateV3ToV4,
   migrateV5ToV6,
   migrateV6ToV7,
-  migrateV7ToV8,
-  migrateV8ToV9,
-  migrateV9ToV10,
-  migrateV10ToV11,
-  migrateV11ToV12,
-  migrateV12ToV13,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
-import { makeV9Fixture } from '../testFixtures/v9';
-import { makeV10Fixture } from '../testFixtures/v10';
-import { makeV11Fixture } from '../testFixtures/v11';
-import { makeV12Fixture } from '../testFixtures/v12';
 import { validateImportData } from '../../domain/backup';
 import { netWorth } from '../../domain/summary';
 import { goalSavedFor } from '../../domain/goalLinks';
@@ -111,7 +101,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 14)).toThrow(
+    expect(() => migratePersisted({}, 8)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -169,327 +159,8 @@ describe('schema migration', () => {
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 13)).toBe(persisted);
-  });
-
-  it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {
-    const legacy = makeV12Fixture();
-    const expected = {
-      ...legacy,
-      budgetPlan: legacy.budgetPlan && {
-        ...legacy.budgetPlan,
-        items: legacy.budgetPlan.items.map((item) => ({ ...item, frequency: 'monthly' })),
-      },
-      monthBudgets: legacy.monthBudgets?.map((budget) => ({
-        ...budget,
-        items: budget.items.map((item) => ({ ...item, frequency: 'monthly' })),
-      })),
-    };
-    expect(migrateV12ToV13(legacy)).toEqual(expected);
-    expect(() => migrateV12ToV13(null)).toThrow(PersistedVersionError);
-    expect(migrateV12ToV13({
-      settings: {},
-      budgetPlan: { items: 'malformed', retained: true },
-      monthBudgets: [{ items: [null] }],
-    })).toEqual({
-      settings: {},
-      budgetPlan: { items: 'malformed', retained: true },
-      monthBudgets: [{ items: [null] }],
-    });
-    expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
-      data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
-    });
-    expect(() => migratePersisted({}, 14)).toThrow(
-      expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
-    );
-  });
-
-  it('seeds every v12 cover goal while preserving v11 data', () => {
-    const legacy = makeV11Fixture();
-    expect(migrateV11ToV12(legacy)).toEqual({
-      ...legacy,
-      coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-        { type: 'health', targetMode: 'amount' },
-        { type: 'motor', targetMode: 'active-only' },
-        { type: 'home', targetMode: 'active-only' },
-        { type: 'other', targetMode: 'active-only' },
-      ],
-    });
-    expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
-    const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
-    expect(migrated.data.coverGoals).toHaveLength(5);
-  });
-
-  it('moves legacy manual Insurance items into the current Insurance system section', () => {
-    const legacy = makeV11Fixture();
-    const insuranceItem = {
-      id: 'legacy-insurance',
-      sectionId: 'survival',
-      name: 'Insurance',
-      mode: 'amount',
-      value: 200,
-    };
-    const migrated = migrateV11ToV12({
-      ...legacy,
-      budgetPlan: {
-        sections: [
-          { id: 'survival', name: 'Needs', type: 'spend' },
-          { id: 'insurance', name: 'Legacy section', type: 'invest' },
-        ],
-        items: [insuranceItem],
-      },
-      monthBudgets: [{
-        month: '2026-10',
-        sections: [{ id: 'survival', name: 'Needs', type: 'spend' }],
-        items: [insuranceItem],
-      }],
-    });
-    expect(migrated).toMatchObject({
-      budgetPlan: {
-        sections: [
-          { id: 'survival', name: 'Needs', type: 'spend' },
-          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
-        ],
-        items: [{ ...insuranceItem, sectionId: 'insurance' }],
-      },
-      monthBudgets: [{
-        sections: expect.arrayContaining([
-          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
-        ]),
-        items: [{ ...insuranceItem, sectionId: 'insurance' }],
-      }],
-    });
-
-    const malformedBudget = { sections: [], items: null, preserved: true };
-    expect(migrateV11ToV12({
-      ...legacy,
-      budgetPlan: malformedBudget,
-      monthBudgets: 'not-an-array',
-    })).toMatchObject({
-      budgetPlan: malformedBudget,
-      monthBudgets: 'not-an-array',
-    });
-  });
-
-  it('migrates v10 policy kinds, status, metadata, date fallbacks and legacy frequency', () => {
-    const policy = makeV10Fixture().policies[0];
-    if (!policy) throw new Error('Expected a v10 policy fixture.');
-    const migrated = migrateV10ToV11({
-      policies: [
-        { ...policy, id: 'term', kind: 'term', frequency: 'single', premiumYears: null },
-        { ...policy, id: 'motor', kind: 'vehicle', frequency: 'quarterly' },
-        {
-          ...policy,
-          id: 'payment-start',
-          kind: 'health',
-          startDate: undefined,
-          trackFrom: undefined,
-          frequency: undefined,
-          premiumYears: undefined,
-          payments: [{ id: 'paid', date: '2021-04-06', amount: 2, note: '' }],
-        },
-        {
-          ...policy,
-          id: 'today-start',
-          kind: 'other',
-          startDate: undefined,
-          trackFrom: undefined,
-          frequency: undefined,
-          premiumYears: undefined,
-          payments: [],
-          coverAmount: null,
-          maturityDate: null,
-        },
-      ],
-    }, { today: '2026-10-10' }) as { policies: Record<string, unknown>[] };
-    expect(migrated.policies).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        id: 'term', kind: 'term-life', frequency: 'yearly', premiumYears: 1, status: 'active',
-        sumAssured: policy.coverAmount, endDate: policy.maturityDate,
-      }),
-      expect.objectContaining({ id: 'motor', kind: 'motor', frequency: 'quarterly', status: 'active' }),
-      expect.objectContaining({
-        id: 'payment-start', startDate: '2021-04-06', trackFrom: '2021-04-06',
-        frequency: 'yearly', premiumYears: 1, status: 'active',
-      }),
-      expect.objectContaining({
-        id: 'today-start', startDate: '2026-10-10', trackFrom: '2026-10-10',
-        frequency: 'yearly', premiumYears: 1, status: 'active',
-      }),
-    ]));
-    const migratedTerm = migrated.policies.find((item) => item.id === 'term');
-    expect(migratedTerm).not.toHaveProperty('coverAmount');
-    expect(migratedTerm).not.toHaveProperty('maturityDate');
-    expect(migratedTerm).not.toHaveProperty('policyNumber');
-    expect(migratedTerm).not.toHaveProperty('nominee');
-    expect(migratedTerm).not.toHaveProperty('note');
-  });
-
-  it('rejects malformed v10 policy data', () => {
-    expect(() => migrateV10ToV11(null, { today: '2026-10-10' })).toThrow(PersistedVersionError);
-    expect(() => migrateV10ToV11({ policies: null }, { today: '2026-10-10' })).toThrow(PersistedVersionError);
-    expect(() => migrateV10ToV11({ policies: [null] }, { today: '2026-10-10' })).toThrow(PersistedVersionError);
-    expect(() => migrateV10ToV11({ policies: [{ payments: [null] }] }, { today: '2026-10-10' }))
-      .toThrow(PersistedVersionError);
-  });
-
-  it('migrates v9 plan lines and snapshots into section items with unmapped items in Survival', () => {
-    const legacy = makeV9Fixture({
-      ...mockAppData,
-      budgetPlan: {
-        ...mockAppData.budgetPlan!,
-        items: [
-          { id: 'food-item', sectionId: 'survival', name: 'Food', mode: 'percent', value: 10 },
-          { id: 'custom-item', sectionId: 'survival', name: 'Domestic help', mode: 'amount', value: 1_000 },
-        ],
-      },
-      monthBudgets: [{
-        month: '2026-10',
-        source: 'custom',
-        incomes: [],
-        sections: mockAppData.budgetPlan!.sections,
-        items: [
-          { id: 'snapshot-food', sectionId: 'survival', name: 'Food', mode: 'amount', value: 2_000 },
-          { id: 'snapshot-custom', sectionId: 'survival', name: 'Pet care', mode: 'amount', value: 500 },
-        ],
-      }],
-    });
-    let nextId = 0;
-    const migrated = migrateV9ToV10(legacy, {
-      today: '2026-10-18',
-      newId: () => `new-item-${++nextId}`,
-    }) as AppData;
-    expect(migrated.budgetPlan?.sections.map(({ id }) => id)).toEqual(
-      expect.arrayContaining(['survival', 'savings-investments', 'wants', 'festival-donations-culture', 'unexpected-extras']),
-    );
-    expect(migrated.budgetPlan?.items).toEqual([
-      expect.objectContaining({ id: 'new-item-1', sectionId: 'survival', name: 'Food', mode: 'percent', value: 10 }),
-      expect.objectContaining({ id: 'new-item-2', sectionId: 'survival', name: 'Domestic help', mode: 'amount', value: 1_000 }),
-    ]);
-    expect(migrated.monthBudgets?.[0]?.items).toEqual([
-      expect.objectContaining({ id: 'v10-2026-10-0', sectionId: 'survival', name: 'Food', value: 2_000 }),
-      expect.objectContaining({ id: 'v10-2026-10-1', sectionId: 'survival', name: 'Pet care', value: 500 }),
-    ]);
-    expect(migrated.monthBudgets?.[0]).not.toHaveProperty('lines');
-  });
-
-  it('migrates v7 snapshots and selects the plan by default, usage and recency', () => {
-    const makeLegacy = (defaultId: string | null) => ({
-      ...mockAppData,
-      budgetPlan: undefined,
-      budgetTemplates: [
-        { id: 'first', name: 'First', plannedIncome: 10_000, lines: [
-          { category: 'Food', mode: 'amount', value: 100 },
-          { category: 'EMI', mode: 'amount', value: 500 },
-          { category: 'Insurance', mode: 'amount', value: 200 },
-        ] },
-        { id: 'used', name: 'Used', plannedIncome: 20_000, lines: [
-          { category: 'Bills', mode: 'amount', value: 250, dueDay: 31 },
-        ] },
-        { id: 'latest', name: 'Latest', plannedIncome: 30_000, lines: [
-          { category: 'Food', mode: 'percent', value: 20 },
-        ] },
-      ],
-      defaultBudgetTemplateId: defaultId,
-      monthBudgets: [
-        { month: '2026-01', templateId: 'used', templateName: 'Used', customized: false, plannedIncome: 20_000, linkedIncluded: true, lines: [{ category: 'Bills', planned: 250, dueDay: 31 }] },
-        { month: '2026-02', templateId: 'used', templateName: 'Used', customized: true, plannedIncome: 20_000, linkedIncluded: true, lines: [{ category: 'Bills', planned: 300, dueDay: 31 }] },
-        { month: '2026-02', templateId: 'latest', templateName: 'Latest', customized: false, plannedIncome: 30_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 6_000 }] },
-      ],
-    });
-
-    const selectedDefault = migrateV7ToV8(makeLegacy('first'));
-    expect(selectedDefault).toMatchObject({
-      budgetPlan: {
-        plannedIncome: 10_000,
-        lines: [{ category: 'Food', mode: 'amount', value: 100 }],
-        repeatMonthly: false,
-        repeatFrom: null,
-      },
-      monthBudgets: [
-        { month: '2026-01', source: 'custom', linkedIncluded: false, lines: [{ category: 'Bills', planned: 250, dueDay: 31 }] },
-        { month: '2026-02', source: 'custom', linkedIncluded: false, lines: [{ category: 'Bills', planned: 300, dueDay: 31 }] },
-        { month: '2026-02', source: 'custom', linkedIncluded: false, lines: [{ category: 'Food', planned: 6_000 }] },
-      ],
-    });
-    expect(selectedDefault).not.toHaveProperty('budgetTemplates');
-    expect(selectedDefault).not.toHaveProperty('defaultBudgetTemplateId');
-
-    const used = migrateV7ToV8(makeLegacy(null)) as { budgetPlan: { plannedIncome: number } };
-    expect(used.budgetPlan.plannedIncome).toBe(20_000);
-    const latestTie = migrateV7ToV8({
-      ...makeLegacy(null),
-      monthBudgets: [
-        { month: '2026-01', templateId: 'used', lines: [] },
-        { month: '2026-02', templateId: 'latest', lines: [] },
-      ],
-    }) as { budgetPlan: { plannedIncome: number } };
-    expect(latestTie.budgetPlan.plannedIncome).toBe(30_000);
-    const firstFallback = migrateV7ToV8({ ...makeLegacy(null), monthBudgets: [] }) as {
-      budgetPlan: { plannedIncome: number };
-    };
-    expect(firstFallback.budgetPlan.plannedIncome).toBe(10_000);
-  });
-
-  it('migrates v8 income totals, category defaults, and dayless snapshots', () => {
-    let id = 0;
-    const v8 = {
-      ...mockAppData,
-      settings: { ...mockAppData.settings, monthlySalary: 900 },
-      transactions: [
-        { id: 'salary-1', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-08-01' },
-        { id: 'salary-2', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-09-01' },
-        { id: 'freelance', type: 'income' as const, amount: 100, category: 'Freelance', note: '', date: '2026-10-01' },
-      ],
-      budgetPlan: {
-        plannedIncome: null,
-        lines: [],
-        repeatMonthly: true,
-        repeatFrom: '2026-11',
-      },
-      monthBudgets: [
-        { month: '2026-09', source: 'custom' as const, plannedIncome: 500, lines: [] },
-        { month: '2026-10', source: 'custom' as const, plannedIncome: null, lines: [] },
-      ],
-    };
-    const migrated = migrateV8ToV9(v8, {
-      today: '2026-10-10',
-      newId: () => `migrated-${++id}`,
-    }) as {
-      budgetPlan: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] };
-      monthBudgets: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] }[];
-    };
-    expect(migrated.budgetPlan.incomes).toEqual([
-      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 900, day: 1 },
-    ]);
-    expect(migrated.monthBudgets).toEqual([
-      { month: '2026-09', source: 'custom', lines: [], incomes: [
-        { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 500 },
-      ] },
-      { month: '2026-10', source: 'custom', lines: [], incomes: [] },
-    ]);
-    const zero = migrateV8ToV9({
-      ...v8,
-      budgetPlan: { ...v8.budgetPlan, plannedIncome: 0 },
-      settings: { ...v8.settings, monthlySalary: 0 },
-    }, { today: '2026-10-10', newId: () => 'unused' }) as {
-      budgetPlan: { incomes: unknown[] };
-    };
-    expect(zero.budgetPlan.incomes).toEqual([]);
-  });
-
-  it('rejects malformed v7 budget containers and migrates an empty template list', () => {
-    expect(() => migrateV7ToV8(null)).toThrow(PersistedVersionError);
-    expect(() => migrateV7ToV8({ budgetTemplates: [null] })).toThrow(PersistedVersionError);
-    expect(() => migrateV7ToV8({ monthBudgets: {} })).toThrow(PersistedVersionError);
-    expect(() => migrateV7ToV8({ budgetTemplates: [{ id: 'missing-lines' }] })).toThrow(PersistedVersionError);
-    expect(() => migrateV7ToV8({ budgetTemplates: [{ lines: [] }] })).toThrow(PersistedVersionError);
-    expect(migrateV7ToV8({ budgetTemplates: [], monthBudgets: [] })).toEqual({
-      budgetPlan: null,
-      monthBudgets: [],
-    });
+    const persisted = { data: { version7: true } };
+    expect(migratePersisted(persisted, 7)).toBe(persisted);
   });
 
   it('adds only empty custom emergency-fund fields when migrating v5 to v6', () => {
@@ -606,10 +277,6 @@ describe('schema migration', () => {
   });
 
   it('preserves the mock portfolio net worth and emergency goal progress across the v6 migration', () => {
-    const planLines = mockAppData.budgetPlan?.items.map((item) => ({
-      category: item.name, mode: item.mode, value: item.value,
-      ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
-    })) ?? [];
     const legacy = {
       ...mockAppData,
       transactions: mockAppData.transactions.map((transaction) => transaction.id === 'tx-emergency-fund'
@@ -629,24 +296,18 @@ describe('schema migration', () => {
           { category: 'Emergency fund', planned: 1_000 },
         ],
       },
-      budgetTemplates: [{
-        id: 'migrated-template',
-        name: 'Migrated plan',
-        plannedIncome: mockAppData.budgetPlan?.incomes
-          .reduce((sum, income) => sum + income.amount, 0) ?? null,
+      budgetTemplates: mockAppData.budgetTemplates!.map((template) => ({
+        ...template,
         lines: [
-          ...planLines.filter((line) => line.category !== 'Other investments'),
+          ...template.lines.filter((line) => line.category !== 'Other investments'),
           { category: 'Other investments', mode: 'amount' as const, value: 500 },
           { category: 'Emergency fund', mode: 'amount' as const, value: 1_000 },
         ],
-      }],
-      monthBudgets: mockAppData.monthBudgets!.map(({ items, sections: _sections, ...budget }) => ({
+      })),
+      monthBudgets: mockAppData.monthBudgets!.map((budget) => ({
         ...budget,
         lines: [
-          ...items.filter((item) => item.name !== 'Other investments').map((item) => ({
-            category: item.name, planned: item.value,
-            ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
-          })),
+          ...budget.lines.filter((line) => line.category !== 'Other investments'),
           { category: 'Other investments', planned: 500 },
           { category: 'Emergency fund', planned: 1_000 },
         ],
@@ -655,10 +316,7 @@ describe('schema migration', () => {
     const oldAssets = legacy.holdings.reduce((sum, holding) => sum + holdingValue(holding, '2026-10-10'), 0) + 155_000;
     const oldLiabilities = netWorth(mockAppData, '2026-10-10').liabilities;
     const oldNetWorth = oldAssets - oldLiabilities;
-    const result = migrateV6ToV7(legacy, { today: '2026-10-10', newId: () => 'migrated-mock-fund' }) as AppData & {
-      monthBudgets?: { lines: { category: string; planned: number }[] }[];
-      budgetTemplates?: { lines: { category: string; mode: 'amount' | 'percent'; value: number }[] }[];
-    };
+    const result = migrateV6ToV7(legacy, { today: '2026-10-10', newId: () => 'migrated-mock-fund' }) as AppData;
     const emergency = result.goals.find((goal) => goal.auto === 'ef')!;
     expect(netWorth(result, '2026-10-10').netWorth).toBe(oldNetWorth);
     expect(goalSavedFor(emergency, result, '2026-10-10')).toBe(155_000);
@@ -749,14 +407,11 @@ describe('schema migration', () => {
       const migrated = migrateV6ToV7(legacy, {
         today: '2026-10-10',
         newId: () => `migrated-${sample}`,
-      }) as AppData & {
-        monthBudgets?: { lines: { category: string; planned?: number; mode?: 'amount' | 'percent'; value?: number }[] }[];
-        budgetTemplates?: { lines: { category: string; planned?: number; mode?: 'amount' | 'percent'; value?: number }[] }[];
-      };
+      }) as AppData;
       expect(netWorth(migrated, '2026-10-10').netWorth).toBe(oldNetWorth);
       expect(groupTotals(legacyMonthLines)).toEqual(groupTotals(migrated.monthBudgets![0]!.lines));
       expect(legacyMonthLines.reduce((sum, line) => sum + line.planned, 0))
-        .toBe(migrated.monthBudgets![0]!.lines.reduce((sum, line) => sum + (line.planned ?? 0), 0));
+        .toBe(migrated.monthBudgets![0]!.lines.reduce((sum, line) => sum + line.planned, 0));
       const oldTemplateTotals = groupTotals(templateLines, plannedIncome);
       const newTemplateTotals = groupTotals(migrated.budgetTemplates![0]!.lines, plannedIncome);
       for (const group of BUDGET_GROUPS) {

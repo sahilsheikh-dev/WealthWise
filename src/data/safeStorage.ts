@@ -1,7 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 
 import { appDataSchema, SCHEMA_VERSION } from '../domain/schemas';
-import { resolveEfAllocation } from '../domain/efAllocation';
 import { utf8ByteLength } from '../lib/storageGuard';
 
 export type CorruptionReason = 'invalid-json' | 'invalid-blob' | 'invalid-schema' | 'newer-version';
@@ -27,8 +26,7 @@ export function createSafeStorage(
     onWriteSuccess?: (bytes: number) => void;
   },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 } | null = null;
-  let prerepairRaw: string | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 } | null = null;
   return {
     async getItem(name) {
       const raw = await base.getItem(name);
@@ -44,33 +42,19 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state
           ) {
             premigration = { raw, version: envelope.version };
-          } else if (typeof envelope.state !== 'object' || envelope.state === null || !('data' in envelope.state)) {
+          } else if (
+            typeof envelope.state !== 'object' ||
+            envelope.state === null ||
+            !('data' in envelope.state) ||
+            !appDataSchema.safeParse((envelope.state as { data?: unknown }).data).success
+          ) {
             reason = 'invalid-schema';
-          } else {
-            const rawData: unknown = (envelope.state as { data?: unknown }).data;
-            const allocationlessData = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
-              ? { ...rawData, efAllocation: null }
-              : rawData;
-            const validatedData = appDataSchema.safeParse(allocationlessData);
-            if (!validatedData.success) {
-              reason = 'invalid-schema';
-            } else {
-              const rawAllocation = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
-                ? (rawData as Record<string, unknown>).efAllocation
-                : undefined;
-              if (resolveEfAllocation({
-                efAllocation: rawAllocation,
-                efCustomBuckets: validatedData.data.efCustomBuckets,
-              }).repaired) {
-                prerepairRaw = raw;
-              }
-            }
           }
         }
       } catch {
@@ -103,12 +87,6 @@ export function createSafeStorage(
           const existing = await base.getItem(premigrationKey);
           if (existing === null) await base.setItem(premigrationKey, premigration.raw);
           premigration = null;
-        }
-        if (prerepairRaw !== null) {
-          const prerepairKey = `${name}.prerepair-efallocation`;
-          const existing = await base.getItem(prerepairKey);
-          if (existing === null) await base.setItem(prerepairKey, prerepairRaw);
-          prerepairRaw = null;
         }
         await base.setItem(name, value);
       } catch {

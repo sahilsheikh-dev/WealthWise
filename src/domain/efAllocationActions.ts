@@ -1,10 +1,4 @@
-import {
-  EF_BUCKET_META,
-  EF_BUCKETS,
-  resolveEfAllocation,
-  type EfAllocation,
-  validateAllocation,
-} from './efAllocation';
+import { EF_BUCKET_META, EF_BUCKETS, effectiveAllocation, type EfAllocation, validateAllocation } from './efAllocation';
 import { linkEmergencyGoalAssets } from './goalLinks';
 import type { AppData, EfCustomBucket } from './types';
 
@@ -85,8 +79,11 @@ export function setEfAllocation(data: AppData, allocation: EfAllocation): AppDat
   }
   if (!check) throw new InvalidAllocationError();
 
-  const resolved = resolveEfAllocation({ ...data, efAllocation: allocation });
-  return { ...data, efAllocation: resolved.allocation };
+  return { ...data, efAllocation: effectiveAllocation(allocation, data.efCustomBuckets) };
+}
+
+export function resetEfAllocation(data: AppData): AppData {
+  return { ...data, efAllocation: null };
 }
 
 export function addEfCustomBucket(
@@ -123,6 +120,37 @@ export function setEfCustomBucketAccess(
   );
   validateCustomBuckets(efCustomBuckets);
   return { ...data, efCustomBuckets };
+}
+
+export function deleteEfCustomBucket(
+  data: AppData,
+  bucketId: string,
+  options: { moveTo?: string } = {},
+): AppData {
+  assertCustomBucket(data, bucketId);
+  const amount = data.efAllocation?.[bucketId] ?? 0;
+  if (amount > 0 && !options.moveTo) {
+    throw new InvalidEfCustomBucketError('Move this option’s allocation before deleting it.');
+  }
+  const efAllocation = data.efAllocation ? { ...data.efAllocation } : null;
+  if (efAllocation && options.moveTo) {
+    const moveTarget = options.moveTo;
+    const isKnownTarget = EF_BUCKETS.some((id) => id === moveTarget)
+      || data.efCustomBuckets.some(({ id }) => id === moveTarget && id !== bucketId);
+    if (!isKnownTarget || moveTarget === bucketId) {
+      throw new InvalidEfCustomBucketError('Choose another existing option for the allocation.');
+    }
+    efAllocation[moveTarget] = (efAllocation[moveTarget] ?? 0) + amount;
+  }
+  if (efAllocation) delete efAllocation[bucketId];
+  const efBucketLinks = { ...data.efBucketLinks };
+  delete efBucketLinks[bucketId];
+  return {
+    ...data,
+    efCustomBuckets: data.efCustomBuckets.filter(({ id }) => id !== bucketId),
+    efAllocation,
+    efBucketLinks,
+  };
 }
 
 export function setEfBucketLinks(data: AppData, bucketId: string, holdingIds: string[]): AppData {
@@ -193,7 +221,7 @@ export function saveEfPlan(
   return {
     ...linkedData,
     efCustomBuckets: customBuckets,
-    efAllocation: resolveEfAllocation({ ...linkedData, efCustomBuckets: customBuckets, efAllocation: allocation }).allocation,
+    efAllocation: allocation,
     efBucketLinks: links,
   };
 }
