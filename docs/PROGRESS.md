@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 90% (78/87)
+Overall progress █████████░ 88% (77/88)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ███░░░░░░░ 25% (2/8)
+Phase 29         █░░░░░░░░░ 11% (1/9)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -167,13 +167,14 @@ Phase 29         ███░░░░░░░ 25% (2/8)
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
-| P29-B | — | In progress | Small UI/schema-independent corrections exist in repository and targeted tests pass, but the P29-F stabilization branch gate is not fully green. | 2026-11-02 |
-| P29-C | — | In progress | Paid amount dialog and due-payment domain behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
-| P29-D | — | In progress | Budget scope and start-month behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
-| P29-E | — | In progress | Schema-v14 budget investment links and migration are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
-| P29-F | — | In progress | Stabilization baseline, stale assertions, mocks, coverage evidence and gates are recorded; configured thresholds are green. | 2026-11-02 |
-| P29-F2 | — | Done | Branch coverage gap behavior tests passed; the advisory 92%/88% headroom targets were later withdrawn. | 2026-11-02 |
-| P29-F3 | — | In progress | Final stabilization close-out: assertion audit, Home layout assertions, acceptance evidence, lint cleanup, ledger status and gates. | 2026-11-02 |
+| P29-B | — | In progress | Today, goal-year, centered Dropdown and Home-row behavior tests pass; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
+| P29-C | — | In progress | Paid-dialog entry points, actual amounts, Not paid and Undo paths are covered; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
+| P29-D | — | In progress | Scope controls/dialogs, cancellation, Today and start-month rules are covered; the full P29 acceptance table still has an unresolved P29-E Undo requirement. | 2026-11-02 |
+| P29-E | — | In progress | Schema-v14 links, duplicate prevention, plan/manual behavior and unlinking are covered; holding deletion has no Undo path, and source behavior changes are out of scope. | 2026-11-02 |
+| P29-F | — | In progress | Fresh coverage and all six gates pass; the required acceptance table is not complete because of the P29-E holding-delete Undo gap. | 2026-11-02 |
+| P29-F2 | — | In progress | The branch-coverage work is complete, but F4's closure rule keeps the part open while any P29-B–E acceptance row is missing. | 2026-11-02 |
+| P29-F3 | — | In progress | Assertion audit, Home layout, acceptance evidence, lint and all six gates are recorded; P29-E still blocks full acceptance closure. | 2026-11-02 |
+| P29-F4 | — | In progress | Fresh six-gate run passes and the test audit is complete; P29-E holding-delete Undo remains missing and source behavior changes are prohibited by this task. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2783,13 +2784,14 @@ evidence present in exports/checkpoints.
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
-| P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and owner-authorized Home layout support. | In progress; implementation and targeted tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: owner Home layout remains user-owned after this task. | current request |
-| P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog and actual-payment clearing behavior. | In progress; implementation and due/store tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
-| P29-D | Phase 29 | — | — | 2026-11-02 | Budget save/delete scope dialogs and start month firstDueMonth behavior. | In progress; implementation and route tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: past months stay frozen and later start months plan zero before their first month. | current request |
-| P29-E | Phase 29 | — | — | 2026-11-02 | Schema-v14 optional Budget holding links, migration and manual/plan integration. | In progress; implementation, migration, integrity and route tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: v14 links are optional and schema 15 remains refused. | current request |
-| P29-F | Phase 29 | — | — | 2026-11-02 | Stabilize interrupted Phase 29 without new features. | In progress; baseline suite has real assertion fixes, 1020/1022 tests pass, and gates 2–6 are green, but configured branch thresholds remain red. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: coverage gaps are real mock/test gaps and not source defects. | current request |
-| P29-F2 | Phase 29 stabilization | — | — | 2026-11-02 | Close two coverage branches with behavior tests; no features or threshold changes. | Done; fresh configured Jest coverage passed and only advisory headroom targets were not met. | commit 97f2bbc | Assumed: the withdrawn 92%/88% targets were informational only. | current request |
-| P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | In progress until Gate 1 is rerun green and all six gates exit zero. | pending final verification commit | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
+| P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | In progress under the F4 closure rule: evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
+| P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | In progress under the F4 closure rule: payment evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
+| P29-D | Phase 29 | — | — | 2026-11-02 | Budget save/delete scope dialogs and start-month firstDueMonth behavior. | In progress under the F4 closure rule: scope/start-month evidence is present, but the P29-E holding-delete Undo acceptance row is missing. | `c9238d4`, `d47ff67` | Assumed: past months stay frozen and later start months plan zero before their first month. | current request |
+| P29-E | Phase 29 | — | — | 2026-11-02 | Schema-v14 optional Budget holding links, migration and manual/plan integration. | In progress: linked deletion unlinks plan/snapshot rows in one write, but neither the form nor store offers the required Undo; source behavior changes are outside P29-F4. | `c9238d4` plus prior P29-E implementation commits | Assumed: v14 links are optional and schema 15 remains refused. | current request |
+| P29-F | Phase 29 | — | — | 2026-11-02 | Stabilize interrupted Phase 29 without new features. | In progress under the F4 closure rule: all six gates pass; P29-E's holding-delete Undo acceptance row remains missing. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: the exact previous Gate 1 failure excerpts are unavailable; isolated repeats and the fresh full run passed. | current request |
+| P29-F2 | Phase 29 stabilization | — | — | 2026-11-02 | Close two coverage branches with behavior tests; no features or threshold changes. | In progress under the F4 closure rule: branch coverage is closed, but the global acceptance table still has the P29-E Undo gap. | `97f2bbc`; final F4 gates | Assumed: the withdrawn 92%/88% targets were informational only. | current request |
+| P29-F3 | Phase 29 stabilization | — | — | 2026-11-02 | Close out stabilization documentation, assertions, Home tests, acceptance evidence and lint. | In progress: assertion audit, tests, lint and six gates pass, but the required P29-E Undo row is missing. | `7225a7e`, `a48f3af` plus F4 verification commits | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
+| P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | In progress: all six gates pass and acceptance evidence is recorded, but holding-delete Undo is unimplemented and explicitly out of scope. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 
 ## 7. Change-request register
 
@@ -5717,36 +5719,230 @@ the displayed return is the fixture's gain divided by its contribution sum.
 | P29-E | In progress | v14 migration and links are implemented; branch threshold remains red. |
 | P29-F | In progress | Stabilization is complete in source/test/audit evidence except the two coverage thresholds. |
 
-### DEC-P29F3 final close-out snapshot
+### DEC-P29F3 assertion and coverage correction
 
-DEC-P29F3: withdraw the P29-F2 92% and 88% advisory branch-headroom targets.
-The repository rule is the configured per-file threshold; `budget.ts` and
-`createAppStore.ts` remain above those configured thresholds.
+DEC-P29F3: the P29-F2 92% and 88% branch-headroom targets were advisory and
+are withdrawn. Configured per-file thresholds remain the only repository
+coverage rule. The earlier P29-F3 summary's assertion statement was
+inconsistent: 94 added / 41 removed / +53 described changed lines in its F3
+subset, not expectation-call counts; 2050→2174/+124 described the broader
+base-to-interim-HEAD test set. Its "removed 0 / eight replacements / seven
+Home plus one Dropdown" wording was not a valid complete audit. The final
+base-531d659 test-file audit below reports expectation calls consistently;
+there are 41 deleted expectation lines and no Dropdown deletions.
 
-Assertion audit base `531d659` to current HEAD: 94 added expectation lines, 41
-removed expectation lines, 53 net added. In the Home layout audit, every Home
-test now asserts row 1 = Assets and Liabilities and row 2 = Emergency fund and
-Insurance. No `app/(tabs)/index.tsx` source edit was made.
+### DEC-P29F4 final stabilization audit
 
-Replaced assertions:
-- old: P29-F2 Home layout used an old duplicate/card expectation / new:
-  owner-authorized row structure is asserted without depending on render
-  wrapper duplication; reason: owners changed Home while it remained user-owned.
-- old: two lint variables `expectedMessage` and `budgetWasEnsured` remained unused
-  / new: both are removed without behavior changes; reason: configured lint
-  warnings were fixed directly.
-- old: progress ledger expected `91% (77/85)` / new: dashboard progress is
-  `90% (78/87)` after P29-F2 and P29-F3 rows are counted; reason: the ledger
-  progress assertion must derive from the dashboard total and closed status.
+**Task constraint:** no feature or application source behavior changed. The
+only code change in F4 is the progress-ledger test; `app/(tabs)/index.tsx`
+remains untouched. The previous Gate 1 failure's output is not available in
+the current workspace, so exact first-15-line excerpts from that old error and
+its durations cannot be reconstructed. The three reported suites were run
+alone three times each in this task:
 
-Fresh Gate 1 rerun is required after the ledger-row correction before part
-statuses can be changed to Done.
+| Suite | Run 1 | Run 2 | Run 3 | Tests per run |
+|---|---:|---:|---:|---:|
+| `TransactionForm.test.tsx` | Pass, 1.494 s | Pass, 1.379 s | Pass, 1.324 s | 25 |
+| `RouteRenderSmoke.test.tsx` | Pass, 2.962 s | Pass, 3.057 s | Pass, 3.186 s | 137 |
+| `backupCrypto.test.ts` | Pass, 4.526 s | Pass, 4.595 s | Pass, 4.676 s | 22 |
 
-Pure-function source for stabilization: none. The stabilization task changed no
-new or changed pure domain function source. It replaced stale test assertions,
-completed mocks, fixed data-store/archive behavior, and added coverage edges.
+No root cause for the unavailable historical failure can be established, so
+it is not labeled environmental or attributed to a specific timeout cause.
+The final fresh full run passed 84 suites / 1037 tests in 16.674 s.
 
-Physical-device checks not verified: today/month route interaction, centered
-Dropdown and paid/scope dialog keyboard safe behavior at font scales 1.3 and
-2.0, native file/share behavior, Home owned-card layout, Start month and
-holding-link routes, and device-specific export timing on iOS and Android.
+Preflight: 2026-11-02, Node v26.13.0, base `531d659` verified as a commit,
+and the worktree was clean before F4 edits. The only non-Copilot commit since
+that ledger base is owner commit `95451cf`, which changes only
+`app/(tabs)/index.tsx`; the file was read-only in F4.
+
+The two audited P29-F3 commits contain:
+
+| Commit | Files |
+|---|---|
+| `7225a7e` (`chore: P29-F3 stabilization checkpoint`) | `docs/PROGRESS.md`; `docs/memory/open-items.md`; `docs/memory/status.md`; `src/components/__tests__/EmergencyGoalScreens.test.tsx`; `src/components/__tests__/RouteRenderSmoke.test.tsx`; `src/data/createAppStore.ts`; `src/lib/__tests__/progressLedger.test.ts` |
+| `a48f3af` (`fix: close P29-F3 ledger and lint checks`) | `docs/PROGRESS.md`; `src/lib/__tests__/progressLedger.test.ts` |
+
+Neither commit contains generated or stray coverage, `dist`, `.expo`, log or
+temporary files; there was nothing to untrack. The `dist/` output generated by
+the final Android/iOS exports is not tracked and is cleaned after verification.
+
+#### DEC-P29F4-AUDIT: Assertion integrity
+
+Method: for each test file changed between base commit `531d659` and the final
+worktree, count syntactic `expect(` occurrences in the base and worktree source.
+The base commit resolves to a Git commit object (`git cat-file -t 531d659` =
+`commit`). The line diff has 175 added and 41 removed expectation lines after
+the ledger-test update; the occurrence count changes from 2050 to 2184, a net
+increase of 134. In semantic accounting, the 41 deleted old expressions are
+the documented replacements listed below (0 removed-only assertions, 41
+modified/replaced assertions, 134 new-only assertions); line-based diff
+therefore reports 175 additions and 41 removals; the syntactic occurrence
+delta is +134.
+
+| Test file | `expect(` at 531d659 | `expect(` in worktree | Net |
+|---|---:|---:|---:|
+| `src/components/__tests__/Dropdown.test.tsx` | 16 | 18 | +2 |
+| `src/components/__tests__/EmergencyGoalScreens.test.tsx` | 82 | 79 | -3 |
+| `src/components/__tests__/HomeThemeSmoke.test.tsx` | 20 | 20 | 0 |
+| `src/components/__tests__/PendingItemActions.test.tsx` | 32 | 43 | +11 |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 377 | 402 | +25 |
+| `src/components/__tests__/TransactionsScreen.test.tsx` | 77 | 84 | +7 |
+| `src/data/__tests__/createAppStore.test.ts` | 372 | 398 | +26 |
+| `src/data/__tests__/migrate.test.ts` | 99 | 101 | +2 |
+| `src/data/__tests__/safeStorage.test.ts` | 28 | 28 | 0 |
+| `src/domain/__tests__/backup.test.ts` | 79 | 83 | +4 |
+| `src/domain/__tests__/budget.test.ts` | 278 | 314 | +36 |
+| `src/domain/__tests__/dues.test.ts` | 131 | 138 | +7 |
+| `src/domain/__tests__/investmentActions.test.ts` | 38 | 43 | +5 |
+| `src/domain/__tests__/pending.test.ts` | 34 | 38 | +4 |
+| `src/domain/__tests__/schemas.test.ts` | 234 | 240 | +6 |
+| `src/lib/__tests__/progressLedger.test.ts` | 153 | 155 | +2 |
+| **Total** | **2050** | **2184** | **+134** |
+
+Every deleted expectation expression is accounted for here. "Modified" means
+the old source assertion was replaced by a current-spec assertion, often with
+a different component or action; it is not an assertion removal or weakening.
+Where replacements are broader than one-to-one, the new behavioral test is
+identified in the acceptance table.
+
+| # | File and old test name | Deleted expectation | Ledger entry; replacement / reason |
+|---:|---|---|---|
+| 1 | `EmergencyGoalScreens.test.tsx` — `renders Home, Goals and Emergency fund for malformed persisted allocations` | `insurancePressable.props.accessibilityRole === 'button'` | DEC-P29F4-HOME; the shared Home insurance row now asserts the current label, placement and route instead of the obsolete separate card role. |
+| 2 | same | `insurancePressable.props.accessibilityLabel === 'Open Insurance'` | DEC-P29F4-HOME; use the current Insurance summary accessibility label. |
+| 3 | same | `upcomingIndex >= 0` | DEC-P29F4-HOME; the old lower-section ordering no longer exists. |
+| 4 | same | `insuranceHeadingIndex > upcomingIndex` | DEC-P29F4-HOME; replaced by explicit two-row summary structure. |
+| 5 | same | `insuranceCardIndex > insuranceHeadingIndex` | DEC-P29F4-HOME; the lower Insurance card was removed by the owner layout. |
+| 6 | same | `goalProgressIndex > insuranceCardIndex` | DEC-P29F4-HOME; no lower Insurance card precedes goal content. |
+| 7 | same | unique labels collected from the old Insurance pressable subtree | DEC-P29F4-HOME; old subtree shape is gone; current row/pill structure is asserted directly. |
+| 8 | same | last child has `home-insurance-term-progress` | DEC-P29F4-HOME; obsolete lower-card testID removed; current Insurance box placement is tested. |
+| 9 | same | old subtree contains `home-insurance-term-progress` | DEC-P29F4-HOME; see the current Insurance summary behavior test. |
+| 10 | same | old Insurance card switches to a stacked layout at 1.3/2.0 font scale | DEC-P29F4-HOME; tests now assert row structure at those scales, not the removed card. |
+| 11 | same | old Insurance card text contains `₹20,00,000` | DEC-P29F4-HOME; card content was replaced by the compact Home Insurance summary. |
+| 12 | same | old Insurance card text contains `Yearly premium` | DEC-P29F4-HOME; the old card copy is not part of the owner layout. |
+| 13 | same | old Insurance card text contains `Term cover` | DEC-P29F4-HOME; the old card copy is not part of the owner layout. |
+| 14 | `EmergencyGoalScreens.test.tsx` — `hides the term-life bar without a known target and routes the empty-state Add policy action` | old `home-insurance-term-progress` testID absent | DEC-P29F4-HOME; the Home box no longer renders the old term-life bar. |
+| 15 | same | old `home-insurance-row-next-renewal` testID present | DEC-P29F4-HOME; obsolete row testID removed; Insurance screen still owns detailed renewal content. |
+| 16 | same | old `No policies yet` card title exists | DEC-P29F4-HOME; current compact summary is asserted by its value. |
+| 17 | same | `stopPropagation` called once from the old card action | DEC-P29F4-HOME; the current empty-box action routes directly to policy creation. |
+| 18 | `PendingItemActions.test.tsx` — `uses the Transactions Paid label for a direct oldest-due clear and offers Undo` | direct `clearDue(plan, 'slot-1')` callback assertion | DEC-P29F4-ACCEPTANCE (P29-C); the shared paid dialog now mediates the action; route and store tests assert confirmation, one write and Undo. |
+| 19 | `PendingItemActions.test.tsx` — `uses the compact paid action for later dues and confirms the exact clear-through preview` | old `mockConfirmAsync` clear-through payload assertion | DEC-P29F4-ACCEPTANCE (P29-C); current route tests assert the paid dialog and exact due behavior. |
+| 20 | `PendingItemActions.test.tsx` — `asks before clearing later installments, records one through action and provides one undo` | old `mockConfirmAsync` payload assertion | DEC-P29F4-ACCEPTANCE (P29-C); modal behavior replaced the native confirmation assertion; action/Undo assertions remain. |
+| 21 | `RouteRenderSmoke.test.tsx` — `renders each route form with representative create and edit entry params` | exactly one inline Budget `Dropdown` | DEC-P29F4-ACCEPTANCE (P29-D); inline scope control is intentionally removed; the form test asserts it is absent. |
+| 22 | same | inline `budgetScopeControl(...).props.value` is `month` | DEC-P29F4-ACCEPTANCE (P29-D); scope is selected in the save popup, not the form. |
+| 23 | `RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` | exactly one inline Budget `Dropdown` | DEC-P29F4-ACCEPTANCE (P29-D); replaced by no-inline-control assertion plus popup choices. |
+| 24 | same | first-due Dropdown has 12 options | DEC-P29F4-ACCEPTANCE (P29-D); replaced by viewed-month default and explicit later-start validation. |
+| 25 | same | inline scope value is `month` | DEC-P29F4-ACCEPTANCE (P29-D); scope now comes from the popup. |
+| 26 | same | native `mockConfirmAsync` save payload | DEC-P29F4-ACCEPTANCE (P29-D); current scope dialog tests exercise save, cancel and both scope choices. |
+| 27 | `RouteRenderSmoke.test.tsx` — `keeps Home spending collapsed and asks before changing a due` | native confirmation payload | DEC-P29F4-ACCEPTANCE (P29-C); replaced by shared paid-dialog behavior. |
+| 28 | same | native confirmation called twice | DEC-P29F4-ACCEPTANCE (P29-C); paid-dialog dismissal/Not paid behavior is asserted at the current entry points. |
+| 29 | `RouteRenderSmoke.test.tsx` — `clears a confirmed Home due with Undo and previews earlier dues` | direct one-slot `clearDue` action expectation | DEC-P29F4-ACCEPTANCE (P29-C); replaced by the selected actual-amount/clear-through action and Undo checks. |
+| 30 | same | native clear-through confirmation payload | DEC-P29F4-ACCEPTANCE (P29-C); shared paid dialog now supplies the amount before clearing. |
+| 31 | same | `clearDuesThrough` called with the later plan and current month date | DEC-P29F4-ACCEPTANCE (P29-C); current test asserts the selected due/actual amount flow and resulting Undo. |
+| 32 | `createAppStore.test.ts` — `applies a repeating plan once after hydration and stays idempotent on the next launch` | primary storage write count is exactly 2 | DEC-P29F4-ACCEPTANCE (P29-E); replaced by the one-write expectation, while the separate second-launch assertion still proves idempotence. |
+| 33 | `migrate.test.ts` — `rejects invalid input and unknown or future versions` | schema 14 is rejected | DEC-P29F4-ACCEPTANCE (P29-E); v14 is now current; schema 15 refusal remains covered by backup/import tests. |
+| 34 | `migrate.test.ts` — `passes the current persisted schema through unchanged` | v13 migration returns the original object | DEC-P29F4-ACCEPTANCE (P29-E); current schema v14 has its own identity assertion, while v13 now migrates. |
+| 35 | `migrate.test.ts` — `adds monthly recurrence to v12 plan and snapshot items without changing other fields` | schema 14 is rejected | DEC-P29F4-ACCEPTANCE (P29-E); v14 is accepted and future versions remain rejected. |
+| 36 | `backup.test.ts` — `canonicalizes recursively and creates a pretty-printed backup` | exported backup schema is 13 | DEC-P29F4-ACCEPTANCE (P29-E); backup export/import now uses v14. |
+| 37 | `backup.test.ts` — `round trips v10 backups containing user-managed budget items and expense categories` | `SCHEMA_VERSION` is 13 | DEC-P29F4-ACCEPTANCE (P29-E); the v14 migration chain is the current backup version. |
+| 38 | `schemas.test.ts` — `accepts the typed mock app data and exports schema version thirteen` | schema version is 13 | DEC-P29F4-ACCEPTANCE (P29-E); replaced with schema-v14 integrity and migration assertions. |
+| 39 | `schemas.test.ts` — `validates goal and holding forms` | goal year 2025 is rejected | P29-B; past years are now accepted. |
+| 40 | same | editing year 2019 is rejected | P29-B; the range is 1990–2100 and past years are accepted. |
+| 41 | `progressLedger.test.ts` — `tracks completed P20-M through P20-U while preserving P20-L and P21-D` | dashboard expected `96% (77/80)` | DEC-P29F4-STATUS; dashboard counters now include nine Phase 29 parts and the still-open acceptance gap. |
+
+#### DEC-P29F4-HOME: Home layout tests
+
+The only tests asserting the owner's Home row layout are:
+
+| Test | Exact structure asserted |
+|---|---|
+| `EmergencyGoalScreens.test.tsx` — `shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities` | Row 1 is `Assets`, `Liabilities`; row 2 is `Emergency fund`, `Insurance`; flattened order is asserted. |
+| `EmergencyGoalScreens.test.tsx` — `renders Assets/Liabilities then Emergency fund/Insurance in Home row 2 at font scale %s` (`it.each([1.3, 2])`) | Both rows are asserted at font scales 1.3 and 2.0; the test also asserts there is no separate Insurance content in the lower section. |
+
+No test expects four items in one row, an old lower Insurance heading/card, or the removed lower-card testIDs. The first layout test also checks the row labels and the second checks that the Insurance summary is in row 2 rather than below it. All Home component changes remain unapproved and untouched.
+
+#### DEC-P29F4-ACCEPTANCE: P29-B–P29-E acceptance matrix
+
+| Part | Frozen acceptance line | Evidence (exact test file and test name) | Result |
+|---|---|---|---|
+| P29-B | Today hidden on current month; returns to it and keeps filters | `RouteRenderSmoke.test.tsx` — `shows Today only off the current Budget month and returns to the current routed month`; `RouteRenderSmoke.test.tsx` — `preserves the routed month, hides category management in past months, and keeps Cash flow labels` | Pass |
+| P29-B | Goal year 1990–2100 and past years accepted | `schemas.test.ts` — `validates goal and holding forms` | Pass |
+| P29-B | Dropdown is centered, not top-anchored | `Dropdown.test.tsx` — `opens a centered sheet with grouped titles, checks selection, and closes on selection` | Pass |
+| P29-B | Home row 1 Assets/Liabilities; row 2 Emergency fund/Insurance; no lower Insurance card | `EmergencyGoalScreens.test.tsx` — `shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities`; `EmergencyGoalScreens.test.tsx` — `renders Assets/Liabilities then Emergency fund/Insurance in Home row 2 at font scale %s` | Pass |
+| P29-C | Paid dialog from Home | `RouteRenderSmoke.test.tsx` — `clears a confirmed Home due with Undo and previews earlier dues` | Pass |
+| P29-C | Paid dialog from Transactions; Not paid leaves due unchanged | `RouteRenderSmoke.test.tsx` — `opens the paid-amount dialog from a Transactions due row without clearing on Not paid` | Pass |
+| P29-C | Paid dialog from `/payment-confirm`; Not paid leaves due unchanged | `RouteRenderSmoke.test.tsx` — `opens the paid-amount dialog from the payment-confirm route and Not paid leaves the due unchanged` | Pass |
+| P29-C | Paid dialog from Budget; Not paid leaves Budget unchanged | `PendingItemActions.test.tsx` — `leaves a compact Budget row unchanged when Not paid is selected` | Pass |
+| P29-C | Paid dialog from Insurance; filters/search/header remain | `RouteRenderSmoke.test.tsx` — `keeps Budget as the other Insurance entry point and removes Insurance from Goals` | Pass |
+| P29-C | Default due amount and lower/higher/invalid amounts | `RouteRenderSmoke.test.tsx` — `clears a confirmed Home due with Undo and previews earlier dues`; `dues.test.ts` — `records actual paid amounts for lower, higher, and invalid plan and policy dues` | Pass |
+| P29-C | One persisted write; Undo restores the actual due amount/linked data | `createAppStore.test.ts` — `clears an actual due amount and undoes it with one persisted write per action`; `dues.test.ts` — `clears one due and undoes the linked entry and transaction together`; `PendingItemActions.test.tsx` — `clears a linked manual investment budget item with one holding entry and exact Undo` | Pass |
+| P29-D | Budget forms have no inline scope control | `RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` | Pass |
+| P29-D | Scope popup on save/delete, each choice and cancel | `RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` (popup cancel and each choice are asserted for save/delete) | Pass |
+| P29-D | Start month defaults to viewed month; later start rejects “This month only” | `RouteRenderSmoke.test.tsx` — `saves Budget route forms with scope, Undo, validation and edit-only delete actions` | Pass |
+| P29-E | Manual holding clear creates deposit entry + invest transaction in one write; exact Undo | `createAppStore.test.ts` — `creates and undoes a linked manual investment deposit in one persisted write each`; `PendingItemActions.test.tsx` — `clears a linked manual investment budget item with one holding entry and exact Undo` | Pass |
+| P29-E | Plan link creates no second due and no double count | `pending.test.ts` — `does not duplicate a linked plan due and counts its linked transaction once` | Pass |
+| P29-E | At most one budget item per holding | `budget.test.ts` — `validates investment holding links and rejects invalid, missing, and duplicate links` | Pass |
+| P29-E | Holding deletion unlinks Budget references; one write | `createAppStore.test.ts` — `unlinks budget items when a holding is deleted in one persisted write` | Pass |
+| P29-E | Holding deletion Undo restores the linked Budget references | No proving test; the current holding form/store action exposes no Undo. P29-F4 forbids source behavior changes, so this remains missing. | **Missing** |
+| P29-E | v13→v14 migration, raw v13 archive once, erase-all removes archive | `migrate.test.ts` — `migrates v13 to v14 without changing any persisted fields`; `safeStorage.test.ts` — `copies the raw v%s payload exactly once and never overwrites its archive` with `version = 13`; `createAppStore.test.ts` — `erases all supported storage keys and hydrates to empty data` | Pass |
+| P29-E | Refuse schema 15; import backup versions v1–v13; v14 and encrypted v14 round trips | `backup.test.ts` — `round trips custom emergency-fund options and refuses schema version fifteen`; v1 `verifies a v1 data checksum before migration and imports the v7 result`; v2 `verifies v2 data as written before migrating and validates the v7 result`; v3–v6 `verifies the v%s checksum before migrating its data`; v7 `verifies v7 checksums before migrating backups to schema nine`; v8 `verifies v8 checksums as written before migrating income totals`; v9 `verifies a v9 checksum over the original data before migrating its budget lines`; v10 `round trips v10 backups containing user-managed budget items and expense categories`; v11 `verifies v11 backup bytes and imports seeded cover goals`; v12 `verifies v12 backup bytes before adding monthly recurrence defaults`; v13 `imports a v13 backup through the no-op v14 migration`; plain v14 `round-trips typed insurance premium categories through current backups`; encrypted v14 `round-trips an encrypted v14 backup containing a linked investment item` | Pass |
+
+#### DEC-P29F4-STATUS: Part statuses and blocker
+
+The only missing acceptance row is holding-delete Undo. `app/investment-form.tsx`
+deletes the holding and navigates back; the store unlinks Budget references in
+the deletion write and offers no Undo record. Adding Undo would be an
+application behavior change, explicitly prohibited by P29-F4, so it is left
+for a separately authorized task. Consequently P29-B, P29-C, P29-D, P29-E,
+P29-F, P29-F2, P29-F3 and P29-F4 all remain **In progress** under the user's
+all-rows-and-six-green-gates closure rule.
+
+#### Lint, coverage and gates
+
+The prior-session summary reports two lint warnings but does not preserve their
+diagnostic lines or rule names. The named variables in that summary cannot be
+found in the available Git snapshots, so their exact file/line/rule details
+cannot be independently recovered and are not restated as verified facts.
+Final `npx expo lint` exits 0 with zero warnings; no eslint-disable comment was
+added.
+
+Coverage method: remove `coverage/`, run the configured `npm test -- --coverage`,
+then read the fresh `coverage/coverage-final.json`. For each `src/<directory>`
+sum each file's Istanbul statement and branch maps: covered is the count of
+nonzero counters; total is the number of counters; percentage is covered/total
+× 100. Do not use the generated summary file.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data excluding hooks` | 638/676 (94.38%) | 645/734 (87.87%) |
+| `src/domain` | 3207/3261 (98.34%) | 3116/3350 (93.01%) |
+| `pure src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Informational branch coverage only: `src/domain/budget.ts` is 762/841
+(90.60%); `src/data/createAppStore.ts` is 87/99 (87.87%). The advisory P29-F2
+headroom targets are withdrawn; configured per-file thresholds remain
+authoritative.
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 — 84 suites, 1037 tests passed |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 — zero warnings |
+| 4 | `npx expo-doctor` | 0 — 21/21 checks |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Preliminary Gate 2 before the final ordered rerun exited 2 because the new
+actual-payment Undo test passed `string | undefined` to the Undo action. A
+runtime guard was added; the final six-gate run above was then executed in
+order and all commands exited 0.
+
+#### Device checks not verified
+
+Physical iOS/Android checks remain unverified for the Today control and filter
+retention, centered Dropdown and paid/scope dialog placement/keyboard behavior,
+the paid dialog at each entry point, start-month and holding-link routes, Home
+Insurance placement, and font scales 1.3/2.0. Simulator/TestRenderer assertions
+and Expo exports are not physical-device verification. No Home source file was
+edited.
+
+Pure-function source changes in P29-F4: none.

@@ -1052,7 +1052,7 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
-  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+  it('clears an actual due amount and undoes it with one persisted write per action', async () => {
     const storage = new MemoryStorage();
     const initial = {
       ...emptyAppData('2026-01-01'),
@@ -1081,16 +1081,29 @@ describe('createAppStore persistence', () => {
     const actions = store.getState().actions;
 
     let writesBefore = storage.setItemCalls;
+    const beforeClear = structuredClone(store.getState().data);
     const firstPending = pendingItems(store.getState().data, '2026-08', '2026-10-10')
       .find((item) => item.source.kind === 'plan');
     if (!firstPending || firstPending.source.kind !== 'plan') throw new Error('Expected a plan due.');
     const entryId = actions.clearDue(
       { kind: 'plan', id: 'past-plan' },
       firstPending.source.slotId,
+      75,
     );
     expect(entryId).toBe('due-1');
     expect(storage.setItemCalls - writesBefore).toBe(1);
+    const afterClear = store.getState().data;
+    const updatedHolding = afterClear.holdings.find((holding) => holding.id === 'past-plan');
+    if (!updatedHolding || updatedHolding.kind !== 'plan') throw new Error('Updated plan missing.');
+    expect(updatedHolding.logs[0]?.amount).toBe(75);
+    expect(afterClear.transactions.at(-1)?.amount).toBe(75);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    if (!entryId) throw new Error('Expected the cleared due entry ID.');
+    writesBefore = storage.setItemCalls;
+    actions.undoClearDue({ kind: 'plan', id: 'past-plan' }, entryId);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data).toEqual(beforeClear);
 
     writesBefore = storage.setItemCalls;
     const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
@@ -1441,6 +1454,139 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions.find((tx) => tx.source?.entryId === deposit.id)?.note).toBe('Renamed manual deposit');
     performOnce(() => actions.deleteInvestmentEntry(holding.id, deposit.id));
     expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
+  });
+
+  it('creates and undoes a linked manual investment deposit in one persisted write each', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `linked-deposit-${++id}`,
+      today: () => '2026-10-12',
+    });
+    await waitForHydration(store);
+    const before = store.getState().data;
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.addInvestmentEntry('manual-cash', {
+      date: '2026-10-12',
+      amount: 125,
+      kind: 'Deposit',
+      note: 'Emergency cash',
+    });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    const holding = store.getState().data.holdings[0];
+    if (holding?.kind !== 'manual') throw new Error('Manual linked holding is missing.');
+    const entry = holding.logs[0];
+    if (!entry) throw new Error('Manual linked deposit was not created.');
+    expect(entry).toMatchObject({ date: '2026-10-12', amount: 125, kind: 'Deposit' });
+    expect(store.getState().data.transactions).toContainEqual(expect.objectContaining({
+      type: 'invest',
+      amount: 125,
+      date: '2026-10-12',
+      source: { kind: 'holding-entry', parentId: 'manual-cash', entryId: entry.id },
+    }));
+
+    const writesBeforeUndo = storage.setItemCalls;
+    store.getState().actions.deleteInvestmentEntry('manual-cash', entry.id);
+    expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
+  it('unlinks budget items when a holding is deleted in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom' as const,
+        linkedIncluded: false,
+        incomes: [],
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        items: [{
+          id: 'cash-snapshot',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.deleteHolding('manual-cash', { linkedTransactions: 'keep' });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.holdings).toEqual([]);
+    expect(store.getState().data.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(store.getState().data.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
   it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
@@ -2167,6 +2313,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v6', 'original-v6-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v13', 'original-v13-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2196,6 +2343,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v6',
     'wealthwise.app.v1.premigration.v7',
     'wealthwise.app.v1.premigration.v8',
+    'wealthwise.app.v1.premigration.v13',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

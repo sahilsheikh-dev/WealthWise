@@ -27,9 +27,10 @@ const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
 const mockThemeId: { current: ThemeId } = { current: 'light' };
 let mockFontScale = 1;
 let mockTxMonth = '2026-10';
+const mockSetTxMonth = jest.fn((month: string) => { mockTxMonth = month; });
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({})),
 }));
 jest.mock('../../data/store', () => ({
@@ -41,7 +42,7 @@ jest.mock('../../data/useAppData', () => ({
 }));
 jest.mock('../../data/uiStore', () => ({
   useUIStore: (selector: (state: { txMonth: string; setTxMonth: jest.Mock }) => unknown) =>
-    selector({ txMonth: mockTxMonth, setTxMonth: jest.fn((month: string) => { mockTxMonth = month; }) }),
+    selector({ txMonth: mockTxMonth, setTxMonth: mockSetTxMonth }),
 }));
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => {
@@ -598,6 +599,81 @@ describe('Transactions sorting', () => {
     act(() => categoryChip.props.onPress());
     expect(titles()).toEqual(['Rent', 'Lunch']);
     routeParams.mockReturnValue({});
+  });
+
+  it('returns to the current month without clearing filters, search, or sort', async () => {
+    const previousMonth = mockTxMonth;
+    const currentMonth = todayISO().slice(0, 7);
+    const pastMonth = shiftMonth(currentMonth, -1);
+    const previousTransactions = mockData.transactions;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const router = jest.requireMock('expo-router').router as { setParams: jest.Mock };
+    const previousParams = routeParams();
+    mockTxMonth = currentMonth;
+    routeParams.mockReturnValue({ month: currentMonth });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Go to current month' })).toHaveLength(0);
+      act(() => renderer?.unmount());
+
+      mockTxMonth = pastMonth;
+      mockData.transactions = [
+        { id: 'food-expense', type: 'expense', amount: 50, category: 'Food', note: 'Food lunch', date: `${pastMonth}-10` },
+        { id: 'food-income', type: 'income', amount: 100, category: 'Food', note: 'Food income', date: `${pastMonth}-11` },
+      ];
+      routeParams.mockReturnValue({ month: pastMonth, category: 'Food' });
+      mockSetTxMonth.mockClear();
+      router.setParams.mockClear();
+      await act(async () => {
+        renderer = TestRenderer.create(<TransactionsScreen />);
+        await Promise.resolve();
+      });
+      if (!renderer) throw new Error('Transactions renderer was not created.');
+      const todayButton = renderer.root.findByProps({ accessibilityLabel: 'Go to current month' });
+      openFilterPanel(renderer);
+      const expenseFilter = renderer.root.findAll((node) =>
+        String(node.type) === 'chip' && node.props.label === 'Expense',
+      )[0];
+      if (!expenseFilter) throw new Error('Expense filter was not rendered.');
+      act(() => expenseFilter.props.onPress());
+      const search = renderer.root.findAll((node) => String(node.type) === 'searchfield')[0];
+      if (!search) throw new Error('Search field was not rendered.');
+      act(() => search.props.onChangeText('Food'));
+      const sortChip = renderer.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => typeof node.props.label === 'string' && node.props.label.startsWith('Sort:'));
+      if (!sortChip) throw new Error('Sort chip was not rendered.');
+      act(() => sortChip.props.onPress());
+      const amountOption = renderer.root.findAll((node) => String(node.type) === 'pressable').find((node) =>
+        node.findAll((child) => String(child.type) === 'text')
+          .some((textNode) => textNode.children.join('') === 'Amount'),
+      );
+      if (!amountOption) throw new Error('Amount sort option was not rendered.');
+      act(() => amountOption.props.onPress());
+
+      await act(async () => {
+        todayButton.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockSetTxMonth).toHaveBeenLastCalledWith(currentMonth);
+      expect(router.setParams).toHaveBeenCalledWith({ month: currentMonth });
+      expect(renderer.root.findByProps({ label: 'Category: Food ×' })).toBeDefined();
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'chip' && node.props.label === 'Expense',
+      )[0]?.props.selected).toBe(true);
+      expect(renderer.root.findAll((node) => String(node.type) === 'searchfield')[0]?.props.value).toBe('Food');
+      expect(renderer.root.findAll((node) => String(node.type) === 'chip')
+        .some((node) => typeof node.props.label === 'string' && node.props.label.startsWith('Sort: Amount')))
+        .toBe(true);
+    } finally {
+      act(() => renderer?.unmount());
+      mockData.transactions = previousTransactions;
+      mockTxMonth = previousMonth;
+      routeParams.mockReturnValue(previousParams);
+      mockSetTxMonth.mockClear();
+      router.setParams.mockClear();
+    }
   });
 
   it('changes only the order after the active type filter and search', async () => {
