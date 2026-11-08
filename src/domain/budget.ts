@@ -602,9 +602,7 @@ export type BudgetMutationErrorCode =
   | 'section-limit'
   | 'invalid-item'
   | 'invalid-frequency'
-  | 'percent-only-monthly'
-  | 'invalid-holding-link'
-  | 'holding-link-duplicate';
+  | 'percent-only-monthly';
 
 export class BudgetMutationError extends Error {
   constructor(readonly code: BudgetMutationErrorCode, message: string) {
@@ -1167,21 +1165,10 @@ export function budgetLineActual(
   options: { excludePolicyPayments?: boolean } = {},
 ): number {
   const customCategories = customBudgetCategories(data);
-  const linkedHoldingIds = new Set(
-    [
-      ...(data.budgetPlan?.items ?? []),
-      ...(data.monthBudgets?.filter((snapshot) => snapshot.month === month).flatMap((snapshot) => snapshot.items) ?? []),
-    ]
-      .filter((item) => item.name === category && item.holdingId)
-      .map((item) => item.holdingId),
-  );
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
+    && budgetCategoryForTransaction(row, customCategories) === category
     && (row.type === 'expense' || row.type === 'invest')
-    && (
-      (row.source?.kind === 'holding-entry' && linkedHoldingIds.has(row.source.parentId))
-      || budgetCategoryForTransaction(row, customCategories) === category
-    )
     && !(options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }

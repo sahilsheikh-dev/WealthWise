@@ -19,7 +19,6 @@ import { makeV9Fixture } from '../../data/testFixtures/v9';
 import { makeV10Fixture } from '../../data/testFixtures/v10';
 import { makeV11Fixture } from '../../data/testFixtures/v11';
 import { makeV12Fixture } from '../../data/testFixtures/v12';
-import { decryptBackup, encryptBackup } from '../backupCrypto';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -393,7 +392,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version fifteen', async () => {
+  it('round trips custom emergency-fund options and refuses schema version fourteen', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -417,54 +416,9 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 15;
+    future.schemaVersion = 14;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
-  });
-
-  it('imports a v13 backup through the no-op v14 migration', async () => {
-    const data = mockAppData;
-    const envelope = {
-      app: 'wealthwise',
-      formatVersion: BACKUP_FORMAT_VERSION,
-      schemaVersion: 13,
-      exportedAt: '2026-10-13T10:00:00.000Z',
-      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
-      data,
-    };
-    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
-    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
-    expect(imported.data.budgetPlan).toEqual(data.budgetPlan);
-    expect(imported.data.monthBudgets).toEqual(data.monthBudgets);
-  });
-
-  it('round-trips an encrypted v14 backup containing a linked investment item', async () => {
-    const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
-    if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
-    const plan = budgetPlanFromLines(
-      [{ category: 'Mutual fund / SIP', value: 1_000 }],
-      { incomes: mockAppData.budgetPlan?.incomes ?? [] },
-    );
-    const item = plan.items[0];
-    if (!item) throw new Error('Expected an investment item in the linked backup.');
-    const data = {
-      ...mockAppData,
-      budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
-    };
-    const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 14 });
-    const passphrase = 'a sufficiently long backup passphrase';
-    const encrypted = await encryptBackup(raw, passphrase, {
-      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
-      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
-      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
-    });
-    const decrypted = await decryptBackup(encrypted, passphrase);
-    const imported = await parseBackup(decrypted, { digest });
-    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
-    expect(imported.data.budgetPlan?.items).toEqual([
-      expect.objectContaining({ id: item.id, holdingId: holding.id }),
-    ]);
   });
 
   it('rejects hand-broken custom bucket links and allocation keys as integrity failures', () => {
@@ -589,7 +543,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 15;
+    newer.schemaVersion = 14;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

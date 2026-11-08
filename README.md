@@ -110,22 +110,7 @@ in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
 validate persisted and imported data.
 
-### Investment return calculations
-
-For every holding return screen, contributions are the sum of dated deposit
-entries and withdrawals are the sum of dated withdrawal entries. Same-day
-entries are summed. Absolute gain is:
-
-`current value + withdrawals - contributions`
-
-Absolute return is `gain / contributions`, or "No return yet" when contributions
-are zero. XIRR solves dated cash flows with deposits negative, withdrawals
-positive, and current value positive on the valuation date. It is labelled
-XIRR for multiple entries and CAGR for one lump sum. Annualised XIRR or CAGR is
-shown only when the first cash-flow date to valuation-date span is at least
-365 days; shorter spans show only absolute return and its label.
-
-Zustand persists app data through AsyncStorage. Persisted schema version 14 is
+Zustand persists app data through AsyncStorage. Persisted schema version 13 is
 the current version. The migration chain upgrades supported data from schema
 versions 1 through 13. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.

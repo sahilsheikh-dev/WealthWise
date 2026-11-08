@@ -101,13 +101,9 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
+    StyleSheet: { create: (styles: object) => styles },
     Text: node('text'),
     View: node('view'),
-    TextInput: node('text-input'),
-    ScrollView: node('scroll-view'),
-    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
-    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });

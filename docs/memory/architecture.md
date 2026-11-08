@@ -16,7 +16,7 @@ requires atomicity.
 
 ## Schema and archives
 
-Current persisted schema is v14. `src/data/migrate.ts` contains the ordered
+Current persisted schema is v13. `src/data/migrate.ts` contains the ordered
 upgrade chain from legacy schemas v1 through v13. `createAppStore.ts` sets the
 persist version from `SCHEMA_VERSION`.
 

@@ -4,20 +4,6 @@
 
 ## [Unreleased]
 
-### Phase 29
-
-- Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
-  for 1990–2100, the Home Insurance box and actual due-payment amounts.
-- Added Budget start-month handling, schema-v14 holding links, plan/manual
-  linked asset behavior, demo coverage and holding-link integrity.
-- P29-F4 stabilization tests and ledger audit pass: 84 suites and 1037 tests,
-  TypeScript, lint with zero warnings, Expo Doctor 21/21, and Android/iOS
-  exports all pass. Coverage uses a fresh `coverage-final.json`; no thresholds
-  or exclusions changed.
-- P29-F4 remains In progress because holding deletion removes linked Budget
-  references without Undo. The task prohibited source behavior changes, so the
-  gap is documented for a separately authorized fix. No Home source was edited.
-
 ### Investments and goals
 
 - Added shared pure return calculations for holdings and plans: absolute gain

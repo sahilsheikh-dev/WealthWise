@@ -31,7 +31,7 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version fourteen', () => {
+  it('accepts the typed mock app data and exports schema version thirteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
     expect(SCHEMA_VERSION).toBe(14);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
@@ -688,27 +688,13 @@ describe('makeTransactionFormSchema', () => {
       expect(duplicate.success).toBe(false);
       if (!duplicate.success) expect(duplicate.error.issues.some((issue) => issue.message === 'A goal with this name already exists')).toBe(true);
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
-      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(true);
+      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '1990' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '2100' }).success).toBe(true);
-      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1989' });
-      expect(beforeMinimumYear.success).toBe(false);
-      if (!beforeMinimumYear.success) {
-        expect(beforeMinimumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1990 and 2100');
-      }
-      const afterMaximumYear = goalSchema.safeParse({ ...goal, year: '2101' });
-      expect(afterMaximumYear.success).toBe(false);
-      if (!afterMaximumYear.success) {
-        expect(afterMaximumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1990 and 2100');
-      }
       const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: false, existingYear: 2020,
       });
       expect(editingPastGoalSchema.safeParse({ ...goal, year: '2020' }).success).toBe(true);
-      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(true);
+      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(false);
       const minimumTargetSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: true, minTarget: 60_000,
       });
