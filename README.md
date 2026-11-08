@@ -55,9 +55,9 @@ requests at runtime.
   Encrypted backup export is available with a passphrase.
 
 ## Download
-Latest version: v1.0.0
-Release date: 2026-11-07
-- [Download the latest Android app (v1.0.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
+Latest version: v1.1.0
+Release date: 2026-11-08
+- [Download the latest Android app (v1.1.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
 - iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
@@ -170,7 +170,7 @@ npx expo export --platform ios
 
 ### Release process
 
-The current published version is v1.0.0. Follow
+The current published version is v1.1.0. Follow
 [`docs/releases/build-config.md`](docs/releases/build-config.md) and
 [`docs/releases/RELEASE_PROMPT.md`](docs/releases/RELEASE_PROMPT.md). A release
 updates the README Download and What's new sections and the link to the
