@@ -53,16 +53,18 @@
   [PROGRESS.md](../PROGRESS.md).
 - P28-F-R3-R2 corrected historical downloads: the v1.0.0 asset is now
   `WealthWise-android-v1.0.0.apk` at its version-specific URL, and the GitHub
-  release body matches the canonical checksum-free note. The latest v1.1.0
-  asset and tag remain unchanged. Current and affected versioned links return
-  HTTP 200 with expected sizes; the former generic v1.0.0 URL returns 404.
-  The related repository policy, ledger and regression-test changes are on
-  the task branch; they have not been pushed or merged by PR.
+  release body matches the canonical checksum-free note. The former generic
+  v1.0.0 URL returns 404; the versioned URL returns HTTP 200 with its expected
+  size.
 - P28-F-R3-R3 names the current v1.1.0 APK
   `WealthWise-android-latest-v1.1.0.apk`; its README/note/release-body links
   and release-history entry match. Both latest-route and versioned v1.1.0
   links return HTTP 200 at 112,147,677 bytes; v1.0.0's versioned link returns
-  HTTP 200 at 112,133,413 bytes. The local task branch has not been pushed.
+  HTTP 200 at 112,133,413 bytes. The changes reached `main` and `develop`
+  through PRs #21-#25: task to Phase 28, Phase 28 to develop, develop to
+  `release/v1.1.0`, release to main, then main back to develop. Remote trees
+  for main, develop, release and Phase 28 are identical; the tag was not
+  changed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
@@ -76,8 +78,11 @@
   GitHub PRs. The v1.1.0 tag points to the verified EAS source commit and its
   GitHub release is published. `codex-changes`, `phase/25-release-and-backups`, and
   `task/P28-E-phase-history` remain outside the merged Release 2 chain; the
-  `history/by-phase` branch is a read-only archive. No unrelated branch or
-  tag was changed.
+  `history/by-phase` branch is a read-only archive. `task/P28-E-phase-history`
+  has one unique documentation commit, but its branch comparison with develop
+  spans 35 files, including application code; it was not blindly pushed or
+  merged. The separate `codex-changes` branch was also left untouched. No
+  unrelated branch or tag was changed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> Phase 28 -> develop -> release -> main -> develop.
