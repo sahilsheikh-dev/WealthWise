@@ -405,29 +405,83 @@ export function SearchField({
   );
 }
 
-export function DetailTabBar({ active = 'Home' }: { active?: 'Home' | 'none' }) {
+const bottomTabs = [
+  { key: 'index', label: 'Home', accessibleLabel: 'Home', route: '/(tabs)' as const, icon: 'home' as const },
+  { key: 'transactions', label: 'Txns', accessibleLabel: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const },
+  { key: 'goals', label: 'Goals', accessibleLabel: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const },
+  { key: 'budget', label: 'Budget', accessibleLabel: 'Budget', route: '/(tabs)/budget' as const, icon: 'pie-chart' as const },
+] as const;
+
+export type BottomTabKey = typeof bottomTabs[number]['key'];
+
+export function BottomTabBar({
+  activeTab,
+  onSelect,
+  placement = 'flow',
+}: {
+  activeTab: string | null;
+  onSelect: (tab: BottomTabKey) => void;
+  placement?: 'flow' | 'overlay';
+}) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const tabs = [
-    { label: 'Home', route: '/(tabs)', icon: 'home' as const, active: active === 'Home' },
-    { label: 'Transactions', route: '/(tabs)/transactions' as const, icon: 'repeat' as const, active: false },
-    { label: 'Goals', route: '/(tabs)/goals' as const, icon: 'target' as const, active: false },
-  ] as const;
   return (
-    <View style={[styles.detailTabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
-      {tabs.map((tab) => (
+    <View
+      testID="bottom-tab-bar"
+      style={[
+        styles.bottomTabBar,
+        placement === 'overlay' ? styles.bottomTabBarOverlay : undefined,
+        { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) },
+      ]}>
+      {bottomTabs.map((tab) => {
+        const selected = activeTab === tab.key;
+        const color = selected ? colors.primary : colors.text3;
+        return (
         <Pressable
-          key={tab.label}
-          accessibilityRole="button"
-          accessibilityLabel={tab.label}
-          accessibilityState={{ selected: tab.active }}
-          onPress={() => router.replace(tab.route)}
-          style={styles.detailTab}>
-          <Feather name={tab.icon} size={18} color={tab.active ? colors.primary : colors.text3} />
-          <AppText style={[typography.navLabel, { color: tab.active ? colors.primary : colors.text3 }]}>{tab.label}</AppText>
+          key={tab.key}
+          testID={`bottom-tab-${tab.key}`}
+          accessibilityRole="tab"
+          accessibilityLabel={tab.accessibleLabel}
+          accessibilityState={{ selected }}
+          onPress={() => onSelect(tab.key)}
+          style={styles.bottomTab}>
+          <Feather name={tab.icon} size={18} color={color} />
+          <AppText
+            testID={`bottom-tab-label-${tab.key}`}
+            allowFontScaling
+            numberOfLines={2}
+            style={[typography.navLabel, styles.bottomTabLabel, { color }]}>
+            {tab.label}
+          </AppText>
         </Pressable>
-      ))}
+        );
+      })}
     </View>
+  );
+}
+
+export function DetailTabBar({
+  active = 'Home',
+  placement = 'overlay',
+}: {
+  active?: 'Home' | 'Transactions' | 'Goals' | 'Budget' | 'none';
+  placement?: 'flow' | 'overlay';
+}) {
+  const activeTab = active === 'Home'
+    ? 'index'
+    : active === 'Transactions' ? 'transactions'
+      : active === 'Goals' ? 'goals'
+        : active === 'Budget' ? 'budget' : null;
+  return (
+    <BottomTabBar
+      activeTab={activeTab}
+      placement={placement}
+      onSelect={(tab) => {
+        const destination = bottomTabs.find((item) => item.key === tab);
+        if (!destination) throw new Error(`Unknown bottom tab "${tab}".`);
+        router.replace(destination.route);
+      }}
+    />
   );
 }
 
@@ -463,6 +517,8 @@ const styles = StyleSheet.create({
   actionButton: { flexGrow: 1 },
   searchField: { minHeight: 48, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.button },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 8, fontSize: 12, fontFamily: 'Montserrat_500Medium' },
-  detailTabBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 8, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-around' },
-  detailTab: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  bottomTabBar: { paddingTop: 10, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-around' },
+  bottomTabBarOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  bottomTab: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  bottomTabLabel: { alignSelf: 'stretch', flexShrink: 1, textAlign: 'center', lineHeight: undefined },
 });
