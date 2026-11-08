@@ -9,6 +9,7 @@ import { ChoiceField } from '../src/components/form/ChoiceField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
+import { IconButton } from '../src/components/IconButton';
 import { PercentField } from '../src/components/form/PercentField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
@@ -17,7 +18,6 @@ import { AppText, Button, Card } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import {
-  EF_BUCKET_META,
   EF_BUCKETS,
   efBucketMetadata,
   effectiveAllocation,
@@ -70,6 +70,11 @@ export default function EfAllocationFormScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [linkingBucketId, setLinkingBucketId] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
+  const [editingBucketId, setEditingBucketId] = useState<string | null>(null);
+  const [editBucketName, setEditBucketName] = useState('');
+  const [editBucketAccess, setEditBucketAccess] = useState<EfCustomBucket['access']>('instant');
+  const [editBucketMarketLinked, setEditBucketMarketLinked] = useState(false);
+  const [showAllBuckets, setShowAllBuckets] = useState(false);
   const [deleteMoveTo, setDeleteMoveTo] = useState('bank');
   const { control, handleSubmit, setValue, formState: { isDirty, isSubmitting } } = useForm<AllocationFormValues>({
     defaultValues: toFormValues(
@@ -166,10 +171,34 @@ export default function EfAllocationFormScreen() {
     setValue('links', { ...links, [bucketId]: holdingIds }, { shouldDirty: true });
   };
 
+  const editBucket = (bucket: EfCustomBucket) => {
+    setEditingBucketId(bucket.id);
+    setEditBucketName(bucket.name);
+    setEditBucketAccess(bucket.access);
+    setEditBucketMarketLinked(bucket.marketLinked);
+  };
+
+  const saveBucketMetadata = () => {
+    const name = editBucketName.trim();
+    if (name.length < 1 || name.length > 24) {
+      setFormError('Custom option names must be 1 to 24 characters.');
+      return;
+    }
+    setValue('customBuckets', customBuckets.map((bucket) => bucket.id === editingBucketId
+      ? { ...bucket, name, access: editBucketAccess, marketLinked: editBucketMarketLinked }
+      : bucket), { shouldDirty: true });
+    setEditingBucketId(null);
+    setFormError(undefined);
+  };
+
   const linkedBucketName = bucketMetadata.find(({ id }) => id === linkingBucketId)?.label;
   const deleteBucket = customBuckets.find(({ id }) => id === deletingBucketId);
   const linkMoveChoices = linkTargetOptions.map(({ value }) => value);
   const deletePercent = deletingBucketId ? Number(allocationValues[deletingBucketId] ?? 0) : 0;
+  const visibleFixedBuckets = EF_BUCKETS.filter((id) => showAllBuckets || Number(allocationValues[id] ?? 0) > 0);
+  const hiddenFixedCount = EF_BUCKETS.length - visibleFixedBuckets.length;
+  const accessLabel = (access: EfCustomBucket['access']) =>
+    access === 'instant' ? 'Instant access' : access === 'days' ? 'Within days' : 'Slow access';
 
   return (
     <>
@@ -177,6 +206,12 @@ export default function EfAllocationFormScreen() {
         title="Emergency fund allocation"
         onClose={() => router.back()}
         isDirty={isDirty}
+        stickyHeader={(
+          <View style={styles.totals} accessibilityLabel={`Total ${allocationTotal.toFixed(1)} percent. Remaining ${(100 - allocationTotal).toFixed(1)} percent.`}>
+            <AppText style={typography.meta}>Total: {allocationTotal.toFixed(1)}%</AppText>
+            <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(1)}%</AppText>
+          </View>
+        )}
         footer={(
           <View>
             <Button label="Save allocation" icon="save" variant="primary" disabled={isSubmitting} onPress={save} />
@@ -184,110 +219,78 @@ export default function EfAllocationFormScreen() {
         )}
       >
         <AppText style={[typography.meta, { color: colors.text3 }]}>
-          Assign percentages to each type. The total must be exactly 100%.
+          Set a target mix for your linked emergency assets. The total must be 100%.
         </AppText>
         <FormErrorBanner message={lastError} />
         <Controller
           control={control}
           name="allocation"
-          render={({ field }) => (
-            <>              
-              {EF_BUCKETS.map((id) => (
-                <View key={id} style={styles.fixedBucketField}>
-                  <PercentField
-                    label={EF_BUCKET_META[id].label}
-                    accessibilityLabel={`${EF_BUCKET_META[id].label} allocation percentage`}
-                    value={field.value[id] ?? String(SUGGESTED_EF_ALLOCATION[id])}
-                    onChangeText={(value) => updateAllocation(id, value)}
-                  />
-                  <Button
-                    label={`Link investments: ${EF_BUCKET_META[id].label}`}
-                    icon="link-2"
-                    onPress={() => setLinkingBucketId(id)}
-                  />
-                </View>
-              ))}
-            </>
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="customBuckets"
-          render={({ field }) => (
-            <View style={styles.customBucketList}>
-              {field.value.map((bucket) => (
-                <Card key={bucket.id} style={styles.customBucketCard}>
-                  <TextField
-                    label="Custom option name"
-                    accessibilityLabel={`${bucket.name} option name`}
-                    value={bucket.name}
-                    onChangeText={(name) => field.onChange(field.value.map((item) =>
-                      item.id === bucket.id ? { ...item, name } : item,
-                    ))}
-                    maxLength={24}
-                  />
-                  <PercentField
-                    label={`${bucket.name} allocation`}
-                    accessibilityLabel={`${bucket.name} allocation percentage`}
-                    value={allocationValues[bucket.id] ?? '0'}
-                    onChangeText={(value) => updateAllocation(bucket.id, value)}
-                  />
-                  <AppText weight="semibold">How quickly can you access it?</AppText>
-                  <SegmentedControl
-                    value={bucket.access}
-                    options={[
-                      { label: 'Instant', value: 'instant' },
-                      { label: 'Within days', value: 'days' },
-                      { label: 'Slow', value: 'slow' },
-                    ]}
-                    onChange={(access) => field.onChange(field.value.map((item) =>
-                      item.id === bucket.id ? { ...item, access } : item,
-                    ))}
-                  />
-                  <SwitchRow
-                    label="Market-linked"
-                    value={bucket.marketLinked}
-                    onValueChange={(marketLinked) => field.onChange(field.value.map((item) =>
-                      item.id === bucket.id ? { ...item, marketLinked } : item,
-                    ))}
-                  />
-                  <View style={styles.customActions}>
-                    <Button
-                      label={`Link investments: ${bucket.name}`}
+          render={() => (
+            <View style={styles.bucketList}>
+              {visibleFixedBuckets.map((id) => {
+                const metadata = bucketMetadata.find((bucket) => bucket.id === id);
+                if (!metadata) throw new Error(`Missing emergency-fund bucket metadata for ${id}.`);
+                return (
+                  <View key={id} style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
+                    <View style={styles.bucketLabel}>
+                      <AppText weight="medium">{metadata.label}</AppText>
+                      <AppText style={[styles.accessCaption, { color: colors.text3 }]}>
+                        {accessLabel(metadata.access)} · {metadata.marketLinked ? 'Market-linked' : 'Stable'}
+                      </AppText>
+                    </View>
+                    <View style={styles.percentWrap}>
+                      <PercentField
+                        size="compact"
+                        accessibilityLabel={`${metadata.label} allocation percentage`}
+                        value={allocationValues[id] ?? String(SUGGESTED_EF_ALLOCATION[id])}
+                        onChangeText={(value) => updateAllocation(id, value)}
+                      />
+                    </View>
+                    <IconButton
                       icon="link-2"
-                      onPress={() => setLinkingBucketId(bucket.id)}
+                      label={`Link assets: ${metadata.label}`}
+                      onPress={() => setLinkingBucketId(id)}
                     />
-                    <Button label="Remove option" icon="trash-2" variant="danger-text" onPress={() => removeDraftBucket(bucket.id)} />
                   </View>
-                  <Controller
-                    control={control}
-                    name="links"
-                    render={({ field: linkField }) => (
-                      <View style={styles.linkedSummary}>
-                        {(linkField.value[bucket.id] ?? []).map((holdingId) => {
-                          const holding = data.holdings.find((item) => item.id === holdingId);
-                          if (!holding) return null;
-                          const value = holdingValue(holding, todayISO());
-                          return (
-                            <View
-                              key={holdingId}
-                              accessible
-                              accessibilityLabel={`${holding.name}: ${formatAmount(value, 'exact', 1)}`}
-                              style={[styles.linkedHoldingChip, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-                              <AppText style={typography.chip}>{holding.name}</AppText>
-                              <AmountText value={value} tier="row" style={typography.chip} />
-                            </View>
-                          );
-                        })}
-                      </View>
-                    )}
-                  />
-                </Card>
-              ))}
+                );
+              })}
+              {hiddenFixedCount > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={showAllBuckets ? 'Hide unused buckets' : `Show all buckets, ${hiddenFixedCount} unused`}
+                  accessibilityState={{ expanded: showAllBuckets }}
+                  onPress={() => setShowAllBuckets((visible) => !visible)}
+                  style={styles.showAll}>
+                  <AppText style={{ color: colors.primary }}>{showAllBuckets ? 'Hide unused buckets' : 'Show all buckets'}</AppText>
+                  <Feather name={showAllBuckets ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+                </Pressable>
+              ) : null}
             </View>
           )}
         />
+
+        {customBuckets.map((bucket) => (
+          <View key={bucket.id} style={[styles.bucketRow, { borderBottomColor: colors.border }]}>
+            <View style={styles.bucketLabel}>
+              <AppText weight="medium">{bucket.name}</AppText>
+              <AppText style={[styles.accessCaption, { color: colors.text3 }]}>
+                {accessLabel(bucket.access)} · {bucket.marketLinked ? 'Market-linked' : 'Stable'}
+              </AppText>
+            </View>
+            <View style={styles.percentWrap}>
+              <PercentField
+                size="compact"
+                accessibilityLabel={`${bucket.name} allocation percentage`}
+                value={allocationValues[bucket.id] ?? '0'}
+                onChangeText={(value) => updateAllocation(bucket.id, value)}
+              />
+            </View>
+            <IconButton icon="edit-3" label={`Edit ${bucket.name}`} onPress={() => editBucket(bucket)} />
+            <IconButton icon="link-2" label={`Link assets: ${bucket.name}`} onPress={() => setLinkingBucketId(bucket.id)} />
+            <IconButton icon="trash-2" label={`Remove ${bucket.name}`} onPress={() => removeDraftBucket(bucket.id)} />
+          </View>
+        ))}
+        <AppText weight="semibold">Custom options</AppText>
         <Controller
           control={control}
           name="newBucketName"
@@ -302,22 +305,24 @@ export default function EfAllocationFormScreen() {
             />
           )}
         />
-        <AppText weight="semibold">How quickly can you access the new option?</AppText>
-        <Controller
-          control={control}
-          name="newBucketAccess"
-          render={({ field }) => (
-            <SegmentedControl
-              value={field.value}
-              options={[
-                { label: 'Instant', value: 'instant' },
-                { label: 'Within days', value: 'days' },
-                { label: 'Slow', value: 'slow' },
-              ]}
-              onChange={field.onChange}
-            />
-          )}
-        />
+        <View style={styles.newBucketMetadata}>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
+          <Controller
+            control={control}
+            name="newBucketAccess"
+            render={({ field }) => (
+              <SegmentedControl
+                value={field.value}
+                options={[
+                  { label: 'Instant', value: 'instant' },
+                  { label: 'Within days', value: 'days' },
+                  { label: 'Slow', value: 'slow' },
+                ]}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </View>
         <Controller
           control={control}
           name="newBucketMarketLinked"
@@ -332,10 +337,6 @@ export default function EfAllocationFormScreen() {
           onPress={addCustomBucket}
         />
 
-        <View style={styles.totals} accessibilityLabel={`Total ${allocationTotal.toFixed(1)} percent. Remaining ${(100 - allocationTotal).toFixed(1)} percent.`}>
-          <AppText style={typography.meta}>Total: {allocationTotal.toFixed(1)}%</AppText>
-          <AppText style={typography.meta}>Remaining: {(100 - allocationTotal).toFixed(1)}%</AppText>
-        </View>
         {formError ? <FormErrorBanner message={formError} /> : null}
         <Button
           label="Use suggested mix"
@@ -409,6 +410,43 @@ export default function EfAllocationFormScreen() {
       </Modal>
 
       <Modal
+        visible={editingBucketId !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditingBucketId(null)}>
+        <View style={styles.modalBackdrop}>
+          <Card style={styles.modalCard}>
+            <AppText weight="bold" style={typography.name}>Edit custom option</AppText>
+            <TextField
+              label="Custom option name"
+              accessibilityLabel="Custom option name"
+              value={editBucketName}
+              onChangeText={setEditBucketName}
+              maxLength={24}
+            />
+            <AppText style={[typography.meta, { color: colors.text3 }]}>Access speed</AppText>
+            <SegmentedControl
+              value={editBucketAccess}
+              options={[
+                { label: 'Instant', value: 'instant' },
+                { label: 'Within days', value: 'days' },
+                { label: 'Slow', value: 'slow' },
+              ]}
+              onChange={setEditBucketAccess}
+            />
+            <SwitchRow
+              label="Market-linked"
+              value={editBucketMarketLinked}
+              onValueChange={setEditBucketMarketLinked}
+            />
+            {formError ? <FormErrorBanner message={formError} /> : null}
+            <Button label="Save option" icon="check" variant="primary" onPress={saveBucketMetadata} />
+            <Button label="Cancel" icon="x" onPress={() => setEditingBucketId(null)} />
+          </Card>
+        </View>
+      </Modal>
+
+      <Modal
         visible={deletingBucketId !== null}
         transparent
         animationType="fade"
@@ -441,13 +479,14 @@ export default function EfAllocationFormScreen() {
 }
 
 const styles = StyleSheet.create({
-  fixedBucketField: { gap: 6 },
-  customBucketList: { gap: 12 },
-  customBucketCard: { gap: 12 },
-  customActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  linkedSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  linkedHoldingChip: { minHeight: 34, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
-  totals: { minHeight: 44, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  bucketList: { gap: 2 },
+  bucketRow: { minHeight: 62, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
+  bucketLabel: { flex: 1, minWidth: 100, gap: 2 },
+  accessCaption: { fontSize: 10, lineHeight: 13 },
+  percentWrap: { width: 82 },
+  showAll: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  totals: { minHeight: 40, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  newBucketMetadata: { gap: 4 },
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.45)' },
   modalCard: { maxHeight: '90%', gap: 12 },
   holdingPickerList: { maxHeight: 360 },

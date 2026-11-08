@@ -55,10 +55,16 @@ jest.mock('../../components/ScreenErrorBoundary', () => ({ ScreenErrorBoundary: 
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    FormScreen: ({ children, footer }: React.PropsWithChildren<{ footer: React.ReactNode }>) =>
-      ReactModule.createElement('form', null, children, footer),
+    FormScreen: ({ children, footer, stickyHeader }: React.PropsWithChildren<{ footer: React.ReactNode; stickyHeader?: React.ReactNode }>) =>
+      ReactModule.createElement('form', { stickyHeader }, stickyHeader, children, footer),
   };
 });
+jest.mock('../../components/IconButton', () => ({
+  IconButton: (props: Record<string, unknown>) => {
+    const ReactModule = jest.requireActual('react') as typeof React;
+    return ReactModule.createElement('iconbutton', props);
+  },
+}));
 jest.mock('../../components/form/HelperText', () => ({
   HelperText: ({ children }: React.PropsWithChildren) => {
     const ReactModule = jest.requireActual('react') as typeof React;
@@ -168,13 +174,13 @@ describe('emergency-fund allocation form', () => {
       renderer.root.findByProps({ label: 'Add custom option' }).props.onPress();
       await Promise.resolve();
     });
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Safe box option name' })).toBeDefined();
+    expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === 'Safe box')).toBe(true);
     const totalText = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
     expect(totalText).toContain('Total: 100.0%');
     expect(totalText).toContain('Remaining: 0.0%');
 
     await act(async () => {
-      renderer.root.findByProps({ label: 'Link investments: Safe box' }).props.onPress();
+      renderer.root.findByProps({ label: 'Link assets: Safe box' }).props.onPress();
       await Promise.resolve();
     });
     const picker = renderer.root.findByProps({ accessibilityRole: 'checkbox' });
@@ -189,7 +195,7 @@ describe('emergency-fund allocation form', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      renderer.root.findByProps({ label: 'Link investments: Bank account' }).props.onPress();
+      renderer.root.findByProps({ label: 'Link assets: Bank account' }).props.onPress();
       await Promise.resolve();
     });
     const fixedPicker = renderer.root.findByProps({ accessibilityRole: 'checkbox' });
@@ -215,13 +221,13 @@ describe('emergency-fund allocation form', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps action and totals rows responsive to font scaling and provides live, wrapping layout', () => {
-    const source = readFileSync(require.resolve('../../../app/ef-allocation-form'), 'utf8');
-    const totals = source.match(/totals: \{([^}]+)\}/)?.[1] ?? '';
-    const customActions = source.match(/customActions: \{([^}]+)\}/)?.[1] ?? '';
-    expect(totals).toContain('flexWrap: \'wrap\'');
-    expect(totals).toContain('minHeight: 44');
-    expect(customActions).toContain('flexWrap: \'wrap\'');
+  it('keeps a sticky total bar and compact inline bucket fields with unused buckets expandable', () => {
+    const renderer = renderForm();
+    const form = renderer.root.findByType('form');
+    expect(form.props.stickyHeader).toBeDefined();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Show all buckets, 3 unused' })).toBeDefined();
+    const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
+    expect(cashPercent.props.size).toBe('compact');
   });
 
   it('keeps exactly one copy of both existing guidance strings', () => {

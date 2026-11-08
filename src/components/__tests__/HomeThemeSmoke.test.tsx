@@ -126,7 +126,8 @@ describe('Home screen theme smoke', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    const emergencyFundPill = renderer.root.findByProps({ label: 'Emergency Fund' });
+    const emergencyFundPill = renderer.root.findAllByProps({ label: 'Emergency fund' })[0];
+    if (!emergencyFundPill) throw new Error('Emergency fund pill did not render.');
     act(() => emergencyFundPill.props.onPress());
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/emergency-fund');
@@ -203,7 +204,7 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
-    expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
+    expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(3);
     assertNoVerbText(renderer.root, { screen: 'home' });
     await act(async () => renderer?.unmount());
   });
@@ -217,17 +218,16 @@ describe('Home screen theme smoke', () => {
     if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
     const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
       node.props.accessibilityRole === 'button'
-      && ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'].includes(
+      && ['Add Transaction', 'New Investment', 'New Liability'].includes(
         node.props.accessibilityLabel,
       ),
     );
-    expect(quickActionButtons).toHaveLength(4);
-    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(4);
+    expect(quickActionButtons).toHaveLength(3);
+    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(3);
     expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
       'Add Transaction',
       'New Investment',
       'New Liability',
-      'Log Emergency Fund',
     ]);
     assertNoVerbText(renderer.root, { screen: 'home' });
     act(() => renderer?.unmount());
