@@ -57,10 +57,12 @@
   `docs: draft vX.Y.Z release notes`. After publication is verified, move the
   file into `docs/releases/published/` and commit the move. Never leave a
   published file in drafts or a draft in published.
-- For the current/latest release, attach `WealthWise-android.apk`. When it is
-  superseded, rename the asset to `WealthWise-android-vX.Y.Z.apk` before
-  linking it. Each older release must use its own versioned URL and filename;
-  never use `/latest/` for an older release.
+- Name the current release APK `WealthWise-android-latest-vX.Y.Z.apk` and use
+  that filename on the latest download route. On supersession, remove
+  `latest` from the old asset name, rename it to
+  `WealthWise-android-vX.Y.Z.apk`, and update that release's Download block
+  and history link. Each older release must use its own versioned URL and
+  filename; never use `/latest/` for an older release.
 - Verify each APK digest privately against the artifact before release; never
   include it in human-authored release material. GitHub may expose a
   platform-generated asset digest that cannot be removed by editing the
@@ -80,9 +82,11 @@
 - Demo fixtures use deterministic synthetic data, stable IDs/dates and valid
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
-- For each GitHub release, attach `WealthWise-android.apk` as the current
-  asset. On supersession, rename it `WealthWise-android-vX.Y.Z.apk` and use
-  the matching versioned asset URL in its old note and history entry. Verify
+- For each GitHub release, attach its APK with the version in the filename.
+  Name the current asset `WealthWise-android-latest-vX.Y.Z.apk`; on
+  supersession, remove `latest` and rename it
+  `WealthWise-android-vX.Y.Z.apk`, updating the old note and history URL.
+  Verify
   APK digests privately; never include them in human-authored release
   material. GitHub may expose a platform-generated asset digest that cannot
   be removed by editing the release. Keep the README and latest published

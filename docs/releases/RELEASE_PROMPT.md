@@ -478,11 +478,11 @@ After explicit approval:
 
 For every GitHub release:
 
-1. Attach the current release Android APK under the exact filename
-   `WealthWise-android.apk`:
+1. Attach the current release Android APK under the versioned latest filename
+   `WealthWise-android-latest-vX.Y.Z.apk`:
 
    ```bash
-   gh release upload vX.Y.Z /path/to/WealthWise-android.apk
+   gh release upload vX.Y.Z /path/to/WealthWise-android-latest-vX.Y.Z.apk
    ```
 
 2. Add the version, release date, asset link, iOS availability message and
@@ -492,17 +492,18 @@ For every GitHub release:
    may expose a platform-generated asset digest that cannot be removed by
    editing the release. The latest published block must match the README and
    use the latest route.
-   When a newer version is published, rename the previous release asset to
-   `WealthWise-android-vX.Y.Z.apk` and use the matching versioned asset URL
-   and filename in its Download block. Never use `/latest/` for an older
-   release. When adding a block to an existing published note, add or replace
-   only that block; do not otherwise rewrite the file.
+   When a newer version is published, remove `latest` from the previous
+   release asset name, using `WealthWise-android-vX.Y.Z.apk`, and update the
+   old Download block to its matching versioned asset URL. Never use
+   `/latest/` for an older release. When adding a block to an existing
+   published note, add or replace only that block; do not otherwise rewrite
+   the file.
 
 3. Keep the README Download section and the latest release Download block
    byte-identical. When a newer version is published, rename only the previous
-   release asset and replace only that release's Download block with its
-   version-specific URL and filename; do not change anything else in that old
-   note.
+   release asset by removing `latest` from its filename, then replace only
+   that release's Download block with its version-specific URL and filename;
+   do not change anything else in that old note.
 4. Verify the current latest link and every affected versioned direct Android
    link with `curl -I -L`; record final HTTP status and `Content-Length`. Each
    must return HTTP 200 with the expected artifact size. Verify digests
@@ -510,8 +511,8 @@ For every GitHub release:
    human-authored release material:
 
    ```bash
-   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
-   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk
    curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
    curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
    ```
@@ -640,7 +641,7 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android.apk` to the current release; the `/latest/`
+- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the current release; the `/latest/`
   route and each affected version-specific route return HTTP 200 with the
   expected artifact size. When superseding a release, rename that older asset
   to `WealthWise-android-vX.Y.Z.apk` and update its Download block. Verify the

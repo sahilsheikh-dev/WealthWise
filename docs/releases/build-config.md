@@ -110,11 +110,12 @@ submission track, submission date and store status when submitted. Do not
 infer a successful build or submission from a command being started.
 
 Before publishing a GitHub release, download the `android-apk` EAS artifact,
-rename it exactly `WealthWise-android.apk`, and attach it to the current
-release with `gh release upload`. When a newer version is published, rename
-the previous release asset to `WealthWise-android-vX.Y.Z.apk` and update its
-historical Download link to that exact asset; never use `/latest/` for an old
-version. Verify the latest link and every affected versioned link using
+rename it `WealthWise-android-latest-vX.Y.Z.apk`, and attach it to the current
+release with `gh release upload`. The latest-route URL must use this exact
+filename. When a newer version is published, remove `latest` from the previous
+release asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and update
+its historical Download link to that exact asset; never use `/latest/` for
+an old version. Verify the latest link and every affected versioned link using
 `curl -I -L`; all final responses must be HTTP 200. Record each final status
 and `Content-Length`; require the expected artifact size. Verify APK digests
 privately against the EAS artifact before publication, and never include them

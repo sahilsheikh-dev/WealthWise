@@ -31,10 +31,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 4. Run all six gates in order and complete the physical-device checklist.
    Expo exports are allowed; EAS and Gradle builds are only run when separately
    authorized.
-5. After build approval, attach the current release Android APK as exactly
-   `WealthWise-android.apk`. When publishing a newer version, rename the
-   previous release asset to `WealthWise-android-vX.Y.Z.apk`; its historical
-   link must point to that release and filename, never the latest route.
+5. After build approval, attach the current release Android APK as
+   `WealthWise-android-latest-vX.Y.Z.apk`. The latest-route URL must use this
+   exact filename. When publishing a newer version, remove `latest` from the
+   previous filename and rename that asset to
+   `WealthWise-android-vX.Y.Z.apk`; its historical link must point to that
+   release and filename, never the latest route.
    Production Android AABs are for Google Play; APKs are for GitHub. iOS
    distribution is not currently offered.
 6. Verify the APK digest privately against the artifact before publication.
@@ -61,9 +63,10 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - Preserve published notes. When updating an existing note, change only its
   Download block; older releases use versioned links.
 - The expected download URL is
-  `https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk`
-  for the latest release. When a release is superseded, rename its asset to
-  `WealthWise-android-vX.Y.Z.apk` and use
+  `https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk`
+  for the latest release. Its asset filename includes both `latest` and the
+  version. When superseded, remove `latest` from the old asset filename,
+  rename it to `WealthWise-android-vX.Y.Z.apk`, and use
   `https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk`.
 - A release is incomplete until links, expected artifact size, notes, README,
   release history and GitHub assets agree.

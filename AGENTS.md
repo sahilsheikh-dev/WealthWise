@@ -112,12 +112,13 @@ are not authorized unless explicitly requested.
 - Check the installed Expo major version before using Expo APIs and consult
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
-- For the current/latest GitHub release, attach the Android APK as
-  `WealthWise-android.apk`. When a newer version is published, rename the
-  previous release's asset to `WealthWise-android-vX.Y.Z.apk` before linking
-  it; every non-latest release must link to its own version-specific asset and
-  download with the version in the filename. Never use the `/latest/` route
-  for an older release. Anyone starting or continuing release work
+- For the current/latest GitHub release, attach the APK as
+  `WealthWise-android-latest-vX.Y.Z.apk`; the `/latest/` URL uses this exact
+  filename. When a newer version is published, remove `latest` from the
+  previous asset name and rename it to `WealthWise-android-vX.Y.Z.apk` before
+  linking it. Each non-latest release uses its own version-specific asset.
+  Never use the `/latest/` route for an older release. Anyone starting or
+  continuing release work
   creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
   subject `docs: draft vX.Y.Z release notes`. After publication is verified,
   move it to `docs/releases/published/` and commit the move; never leave a
@@ -127,8 +128,7 @@ are not authorized unless explicitly requested.
   platform-generated asset digest that cannot be removed by editing the
   release.
   The README Download block and latest published release Download block must
-  be identical and use the latest route; older notes link to the matching
-  versioned asset filename under that version's release.
+  be identical.
   Every release updates the README Download and What's new sections and its
   releases-page link. When updating an existing published note, change only
   its Download block. Verify the current latest URL and every affected
