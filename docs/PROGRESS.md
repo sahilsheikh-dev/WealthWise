@@ -9215,3 +9215,9 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   both latest and versioned APK links. The downloaded GitHub APK was
   112,133,413 bytes and its SHA-256 matched the published digest. The scratch
   APK was removed. Results are recorded in `release-history.md`.
+- Step 4: EAS build `7addde9a-34df-4f00-a54a-b695c1578859` is FINISHED,
+  Android profile `preview`, app version 1.0.0, `appBuildVersion` /
+  `versionCode` 1, source commit
+  `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, completed 2026-11-07 14:52 UTC.
+  Its artifact has the same 112,133,413-byte size and SHA-256 as the GitHub
+  APK; all requested build fields are recorded in `release-history.md`.

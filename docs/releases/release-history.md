@@ -27,7 +27,7 @@ Only successfully published GitHub Releases should be recorded here.
 
 | Version | Platform | Build number / versionCode | EAS build ID | Source commit | Artifact name / size | SHA-256 | Download link status | Profile | Date | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| v1.0.0 | Android APK | Owner to supply | Owner to supply | Owner to supply | `WealthWise-android.apk` / 112,133,413 bytes (~106.9 MiB) | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` | `curl -I -L`: latest HTTP 200, Content-Length 112133413; versioned HTTP 200, Content-Length 112133413; downloaded APK SHA-256 matches | Owner to supply | Asset uploaded 2026-11-07 | Asset and both public download routes verified; owner release-body edit and build/tag record remain pending |
+| v1.0.0 | Android APK (app version 1.0.0) | 1 | `7addde9a-34df-4f00-a54a-b695c1578859` | `cac6fedc6242b495558f11cc6d7fe8551fd354ea` | `WealthWise-android.apk` / 112,133,413 bytes (~106.9 MiB) | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` | `curl -I -L`: latest HTTP 200, Content-Length 112133413; versioned HTTP 200, Content-Length 112133413; downloaded APK SHA-256 matches | preview | 2026-11-07 (completed 14:52 UTC) | EAS build finished; its artifact SHA-256 and size match the GitHub APK exactly. Owner release-body edit remains pending |
 
 ## 4. Draft Releases
 

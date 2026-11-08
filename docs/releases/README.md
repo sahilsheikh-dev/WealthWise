@@ -78,10 +78,13 @@ Every release follows this lifecycle:
 
 The current release is v1.0.0; the previous version is the initial release.
 Its APK is attached to the public GitHub release. P28-C-R3 verified HTTP 200
-and `Content-Length: 112133413` for both latest and versioned download links
-and confirmed the APK SHA-256. EAS build metadata, the tag alignment and the
-owner's GitHub release-body edit remain pending. The production AAB has not
-been verified. Record build evidence in
+and `Content-Length: 112133413` for both latest and versioned download links,
+confirmed the APK SHA-256, and matched it to EAS build
+`7addde9a-34df-4f00-a54a-b695c1578859` (profile `preview`, app version
+1.0.0, `versionCode` 1, source commit
+`cac6fedc6242b495558f11cc6d7fe8551fd354ea`). Tag alignment and the owner's
+GitHub release-body edit remain pending. The production AAB has not been
+verified. Record build evidence in
 [`release-history.md`](./release-history.md); see
 [`build-config.md`](./build-config.md).
 
