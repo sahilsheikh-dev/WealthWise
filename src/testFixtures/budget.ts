@@ -7,6 +7,8 @@ type LineInput = {
   value?: number;
   planned?: number;
   dueDay?: number;
+  frequency?: BudgetItem['frequency'];
+  firstDueMonth?: string;
 };
 
 export function budgetItemsFromLines(lines: readonly LineInput[], sections = defaultBudgetSections()): BudgetItem[] {
@@ -18,6 +20,8 @@ export function budgetItemsFromLines(lines: readonly LineInput[], sections = def
     name: line.category,
     mode: line.mode ?? 'amount',
     value: line.value ?? line.planned ?? 0,
+    frequency: line.frequency ?? 'monthly',
+    ...(line.firstDueMonth === undefined ? {} : { firstDueMonth: line.firstDueMonth }),
     ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
   }));
 }

@@ -7,13 +7,14 @@ import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
 import {
   EARNED_INCOME_CATEGORIES,
+  COVER_POLICY_TYPES,
   THEME_IDS,
   type AppData,
   type ISODate,
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 13;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -151,7 +152,7 @@ const oneTimeLiabilitySchema = z.strictObject({
   }
 });
 
-const policyKindSchema = z.enum(['term', 'health', 'life-savings', 'ulip', 'vehicle', 'home', 'other']);
+const policyKindSchema = z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']);
 const policyPaymentSchema = z.object({
   id: idSchema,
   date: isoDateSchema,
@@ -164,21 +165,22 @@ const policySchema = z.object({
   insurer: z.string().max(40),
   kind: policyKindSchema,
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'single']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: isoDateSchema,
-  premiumYears: z.number().int().min(1).max(80).nullable(),
+  status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
+  policyNumber: z.string().max(30).optional(),
+  sumAssured: moneySchema.min(0).max(100_000_000_000).optional(),
+  endDate: isoDateSchema.optional(),
+  nominee: z.string().max(40).optional(),
+  note: z.string().max(120).optional(),
+  premiumYears: z.number().int().min(1).max(80),
   trackFrom: isoDateSchema,
-  coverAmount: moneySchema.positive().max(100_000_000_000).nullable(),
   currentValue: moneySchema.min(0).max(100_000_000_000).nullable(),
   valueAsOf: isoDateSchema.nullable(),
-  maturityDate: isoDateSchema.nullable(),
   payments: z.array(policyPaymentSchema),
 }).superRefine((policy, context) => {
-  if ((policy.frequency === 'single') !== (policy.premiumYears === null)) {
-    context.addIssue({ code: 'custom', path: ['premiumYears'], message: 'Single policies have no premium term; recurring policies require a term' });
-  }
-  if (policy.maturityDate !== null && policy.maturityDate < policy.startDate) {
-    context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Maturity date cannot be before the policy started' });
+  if (policy.endDate !== undefined && policy.endDate <= policy.startDate) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must be after the policy started' });
   }
   const savingsKind = policy.kind === 'life-savings' || policy.kind === 'ulip';
   if (!savingsKind && policy.currentValue !== null) {
@@ -188,11 +190,35 @@ const policySchema = z.object({
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
   }
 });
+const coverGoalSchema = z.object({
+  type: z.enum(COVER_POLICY_TYPES),
+  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
+  targetValue: moneySchema.min(0).optional(),
+}).superRefine((goal, context) => {
+  if (goal.targetMode === 'income-multiple'
+    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
+  }
+  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
+  }
+});
+const coverGoalsSchema = z.array(coverGoalSchema).length(COVER_POLICY_TYPES.length)
+  .superRefine((goals, context) => {
+    const seen = new Set<string>();
+    goals.forEach((goal, index) => {
+      if (seen.has(goal.type)) {
+        context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+      }
+      seen.add(goal.type);
+    });
+  });
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
-  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+  'EMI', 'Insurance', 'Insurance premium', 'Term life premium', 'Health premium',
+  'Motor premium', 'Home premium', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities', 'Recharge',
   'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
@@ -211,6 +237,23 @@ const budgetIncomeSchema = z.object({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
+const budgetItemSchedulingFields = {
+  frequency: budgetItemFrequencySchema,
+  firstDueMonth: budgetFirstDueMonthSchema,
+};
+function validateBudgetItemScheduling(
+  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly'; firstDueMonth?: string },
+  context: z.RefinementCtx,
+): void {
+  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
+  }
+  if (item.mode === 'percent' && (item.frequency ?? 'monthly') !== 'monthly') {
+    context.addIssue({ code: 'custom', path: ['frequency'], message: 'Percent items can only be monthly.' });
+  }
+}
 const budgetSectionSchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(30).refine((name) => name === name.trim()),
@@ -236,10 +279,12 @@ const budgetItemSchema = z.strictObject({
   mode: z.enum(['amount', 'percent']),
   value: moneySchema.min(0).max(1_000_000_000),
   dueDay: budgetDueDaySchema,
+  ...budgetItemSchedulingFields,
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
   }
+  validateBudgetItemScheduling(item, context);
 });
 const budgetPlanSchema = z.object({
   incomes: z.array(budgetIncomeSchema).max(1000),
@@ -263,13 +308,12 @@ const budgetPlanSchema = z.object({
   plan.items.forEach((item, index) => {
     const section = plan.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (itemNames.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (systemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     itemIds.add(item.id);
@@ -309,13 +353,12 @@ const monthBudgetSchema = z.object({
   budget.items.forEach((item, index) => {
     const section = budget.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (ids.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (sectionSystemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     ids.add(item.id);
@@ -396,6 +439,7 @@ export const appDataSchema = z.object({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
+  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
@@ -416,8 +460,9 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
+    'Insurance premium', 'Term life premium', 'Health premium', 'Motor premium', 'Home premium',
     'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
-    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities', 'Recharge',
     'Subscriptions', 'Personal spending', 'Travel',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
@@ -488,6 +533,7 @@ export function makeTransactionFormSchema(
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
+    linkToPolicy: z.boolean().optional(),
   }).superRefine((value, context) => {
     const allowedCategories: readonly string[] = TRANSACTION_CATEGORIES[value.type];
     const customBudgetCategories = value.type === 'income'

@@ -12,6 +12,13 @@ const EMPTY_STATE_CTA_TEXTS = new Set([
   'Add one more of tenure, interest rate or EMI so we can work out the rest',
 ]);
 
+const BUDGET_FORM_TITLES = new Set([
+  'Add item',
+  'Edit item',
+  'Add income',
+  'Edit income',
+]);
+
 function flattenText(node: ReactTestInstance): string {
   return node.children.map((child) =>
     typeof child === 'string' ? child : flattenText(child),
@@ -23,12 +30,11 @@ const HOME_QUICK_ACTIONS = new Set([
   'New Investment',
   'New Liability',
   'Log Emergency Fund',
-  'Add custom option',
 ]);
 
 export function assertNoVerbText(
   tree: ReactTestInstance,
-  options: { screen?: 'home' } = {},
+  options: { screen?: 'home' | 'budget-form' } = {},
 ): void {
   const allowed = new Set<string>([
     ...TEXT_ACTIONS_ALLOWED.filter((text) => !HOME_QUICK_ACTIONS.has(text)),
@@ -36,6 +42,9 @@ export function assertNoVerbText(
   ]);
   if (options.screen === 'home') {
     for (const label of HOME_QUICK_ACTIONS) allowed.add(label);
+  }
+  if (options.screen === 'budget-form') {
+    for (const title of BUDGET_FORM_TITLES) allowed.add(title);
   }
   const textNodes = new Set(tree.findAll((node) => node.type === 'text').map(flattenText));
   const forbidden = [...textNodes].filter((text) => {

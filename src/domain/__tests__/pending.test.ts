@@ -4,7 +4,7 @@ import { pendingActionLabel, pendingItems } from '../pending';
 import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
-import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
+import type { AppData, OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 const base = () => emptyAppData('2026-01-01');
@@ -56,7 +56,56 @@ const oneTime = (changes: Partial<OneTimeLiability> = {}): OneTimeLiability => (
   ...changes,
 });
 
+const policy = (changes: Partial<Policy> = {}): Policy => ({
+  id: 'policy',
+  name: 'Health cover',
+  insurer: 'Insurer',
+  kind: 'health',
+  premium: 60,
+  frequency: 'monthly',
+  startDate: '2026-02-05',
+  status: 'active',
+  premiumYears: 1,
+  trackFrom: '2026-02-05',
+  currentValue: null,
+  valueAsOf: null,
+  payments: [],
+  ...changes,
+});
+
 describe('pending item projection', () => {
+  it('creates recurring budget dues only in due months and clamps the due day', () => {
+    const data = {
+      ...base(),
+      budgetPlan: budgetPlanFromLines([{
+        category: 'Quarterly bill',
+        mode: 'amount',
+        value: 1_200,
+        dueDay: 31,
+        frequency: 'quarterly',
+        firstDueMonth: '2026-04',
+      }], {
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-04',
+      }),
+    };
+
+    expect(pendingItems(data, '2026-04', '2026-03-15')).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        title: 'Quarterly bill',
+        amount: 1_200,
+        dueDate: '2026-04-30',
+        source: { kind: 'budget', category: 'Quarterly bill', type: 'expense' },
+      }),
+    ]));
+    expect(pendingItems(data, '2026-05', '2026-03-15'))
+      .not.toEqual(expect.arrayContaining([expect.objectContaining({ title: 'Quarterly bill' })]));
+    expect(pendingItems(data, '2026-07', '2026-03-15')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'Quarterly bill', dueDate: '2026-07-31' }),
+    ]));
+  });
+
   it('creates clamped income dues, allocates recorded earnings across same-category items, and supports future months', () => {
     const data = {
       ...base(),
@@ -157,6 +206,27 @@ describe('pending item projection', () => {
       .find((item) => item.source.kind === 'plan')).toMatchObject({ actionable: true });
   });
 
+  it('projects active policy dues with their typed insurance category and excludes inactive policies', () => {
+    const data = {
+      ...base(),
+      policies: [
+        policy(),
+        policy({ id: 'lapsed-policy', kind: 'motor', status: 'lapsed' }),
+      ],
+    };
+    const rows = pendingItems(data, '2026-02', '2026-02-15')
+      .filter((item) => item.source.kind === 'policy');
+    expect(rows).toEqual([
+      expect.objectContaining({
+        title: 'Health cover',
+        category: 'Health premium',
+        amount: 60,
+        dueDate: '2026-02-05',
+        source: { kind: 'policy', parentId: 'policy', slotId: 'policy:0' },
+      }),
+    ]);
+  });
+
   it('projects remaining budget lines once and suppresses commitments and represented investment dues', () => {
     const data: AppData = {
       ...base(),
@@ -178,8 +248,31 @@ describe('pending item projection', () => {
     const rows = pendingItems(data, '2026-02', '2026-02-15');
     expect(rows.filter((row) => row.kind === 'budget')).toEqual([
       expect.objectContaining({ title: 'Food', amount: 200, status: 'planned', actionable: true }),
+      expect.objectContaining({ title: 'Insurance', amount: 100, status: 'planned', actionable: true }),
     ]);
     expect(rows.find((row) => row.title === 'Food')).not.toHaveProperty('dueDate');
+  });
+
+  it('does not duplicate an active policy due with a manual budget line in the same typed category', () => {
+    const data: AppData = {
+      ...base(),
+      policies: [policy()],
+      monthBudgets: [monthBudgetFromLines('2026-02', [
+        { category: 'Health premium', planned: 100, dueDay: 20 },
+      ], {
+        incomes: [],
+        linkedIncluded: true,
+      })],
+    };
+    const rows = pendingItems(data, '2026-02', '2026-02-15');
+    expect(rows.filter((row) => row.category === 'Health premium')).toEqual([
+      expect.objectContaining({
+        kind: 'due',
+        title: 'Health cover',
+        amount: 60,
+        source: { kind: 'policy', parentId: 'policy', slotId: 'policy:0' },
+      }),
+    ]);
   });
 
   it('clamps budget due days to the month length, including leap February', () => {

@@ -14,7 +14,11 @@ import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
+import { useUIStore } from '../uiStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
+import { makeV10Fixture } from '../testFixtures/v10';
+import { makeV11Fixture } from '../testFixtures/v11';
+import { makeV12Fixture } from '../testFixtures/v12';
 import { emptyAppData } from '../../domain/actions';
 import type { ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -55,6 +59,31 @@ const makeStore = (storage: StateStorage, overrides: {
   removeLockSettings: overrides.removeLockSettings,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
 });
+
+it('hydrates v12 item recurrence defaults and archives the original bytes once', async () => {
+  const storage = new MemoryStorage();
+  const data = makeV12Fixture();
+  const originalBytes = JSON.stringify({ state: { data }, version: 12 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { today: () => '2026-10-21', isDev: false });
+  await waitForHydration(first);
+  expect(first.getState().data.budgetPlan?.items.every((item) => item.frequency === 'monthly')).toBe(true);
+  expect(first.getState().data.monthBudgets?.every((budget) =>
+    budget.items.every((item) => item.frequency === 'monthly'),
+  )).toBe(true);
+  const archiveKey = 'wealthwise.app.v1.premigration.v12';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { today: () => '2026-10-21', isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+  await second.getState().actions.eraseAllData();
+  expect(storage.values.has(archiveKey)).toBe(false);
+});
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
@@ -73,6 +102,193 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists a cover-goal target change once and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    let writes = storage.setItemCalls;
+
+    store.getState().actions.setCoverGoalTarget({
+      type: 'health',
+      targetMode: 'amount',
+      targetValue: 1_000_000,
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.coverGoals.find((goal) => goal.type === 'health'))
+      .toEqual({ type: 'health', targetMode: 'amount', targetValue: 1_000_000 });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Cover-goal Undo was not set.');
+    writes = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(before);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('persists policy add, status, and delete atomically and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => 'created-policy' });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    let writes = storage.setItemCalls;
+    actions.addPolicy({
+      name: 'Policy',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 100,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-01-01',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const created = store.getState().data.policies.find((policy) => policy.id === 'created-policy');
+    if (!created) throw new Error('Policy was not created.');
+    const initial = store.getState().data;
+
+    writes = storage.setItemCalls;
+    actions.setPolicyStatus(created.id, 'lapsed');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.policies[0]?.status).toBe('lapsed');
+    const statusUndo = useUIStore.getState().actionToast?.onAction;
+    if (!statusUndo) throw new Error('Policy status Undo was not set.');
+    writes = storage.setItemCalls;
+    statusUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(initial);
+
+    useUIStore.getState().setActionToast(null);
+    writes = storage.setItemCalls;
+    actions.updatePolicy(created.id, { status: 'lapsed' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    const updateStatusUndo = useUIStore.getState().actionToast?.onAction;
+    if (!updateStatusUndo) throw new Error('Policy form status change did not expose Undo.');
+    writes = storage.setItemCalls;
+    updateStatusUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(initial);
+
+    useUIStore.getState().setActionToast(null);
+    writes = storage.setItemCalls;
+    actions.updatePolicy(created.id, { status: 'active' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
+    const beforeDelete = store.getState().data;
+    writes = storage.setItemCalls;
+    actions.deletePolicy(created.id);
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.policies).toEqual([]);
+    const deleteUndo = useUIStore.getState().actionToast?.onAction;
+    if (!deleteUndo) throw new Error('Policy deletion Undo was not set.');
+    writes = storage.setItemCalls;
+    deleteUndo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(beforeDelete);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('records a manual policy premium and linked transaction in one persisted write', async () => {
+    let sequence = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `policy-payment-${++sequence}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addPolicy({
+      name: 'Health cover',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 100,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 5,
+      trackFrom: '2026-01-01',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    const policy = store.getState().data.policies.find((item) => item.id === 'policy-payment-1');
+    if (!policy) throw new Error('Policy fixture was not created.');
+    const before = storage.setItemCalls;
+
+    actions.addPolicyPayment(policy.id, {
+      date: '2026-10-10',
+      amount: 125,
+      note: 'Paid at renewal',
+    });
+
+    expect(storage.setItemCalls - before).toBe(1);
+    const entry = store.getState().data.policies.find((item) => item.id === policy.id)?.payments[0];
+    expect(entry).toMatchObject({ id: 'policy-payment-2', date: '2026-10-10', amount: 125 });
+    const transaction = store.getState().data.transactions.find((item) =>
+      item.source?.kind === 'policy-payment' && item.source.entryId === 'policy-payment-2',
+    );
+    expect(transaction).toMatchObject({
+      type: 'expense',
+      amount: 125,
+      category: 'Health premium',
+      note: 'Paid at renewal',
+      source: { kind: 'policy-payment', parentId: policy.id, entryId: 'policy-payment-2' },
+    });
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('hydrates v10 policy data, archives the exact original bytes once, and never recopies them', async () => {
+    const storage = new MemoryStorage();
+    const originalData = makeV10Fixture();
+    const originalBytes = JSON.stringify({ state: { data: originalData }, version: 10 });
+    storage.values.set('wealthwise.app.v1', originalBytes);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.policies[0]).toMatchObject({
+      kind: 'life-savings',
+      status: 'active',
+      sumAssured: 500_000,
+      endDate: '2042-01-15',
+    });
+
+    const archiveKey = 'wealthwise.app.v1.premigration.v10';
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+    expect(archiveWrites).toBe(1);
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has(archiveKey)).toBe(false);
+  });
+
+  it('hydrates v11 data, seeds cover goals, and archives its raw bytes once', async () => {
+    const storage = new MemoryStorage();
+    const originalData = makeV11Fixture();
+    const originalBytes = JSON.stringify({ state: { data: originalData }, version: 11 });
+    storage.values.set('wealthwise.app.v1', originalBytes);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.coverGoals).toHaveLength(5);
+    const archiveKey = 'wealthwise.app.v1.premigration.v11';
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    const writes = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+    expect(writes).toBe(1);
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(writes);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has(archiveKey)).toBe(false);
+  });
+
   it('updates linked policy details with one persisted write', async () => {
     const storage = new MemoryStorage();
     const policy = {
@@ -333,7 +549,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 10 });
+    const raw = JSON.stringify({ state: { data }, version: 13 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -370,7 +586,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 10 });
+    const raw = JSON.stringify({ state: { data }, version: 13 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -457,7 +673,7 @@ describe('createAppStore persistence', () => {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
       sections: defaultBudgetSections(),
       items: [{
-        id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000,
+        id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000, frequency: 'monthly',
       }],
       linkedIncluded: true,
     }]);
@@ -518,11 +734,30 @@ describe('createAppStore persistence', () => {
       beforeIncome.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeIncome);
+    const beforeIncomeEdit = store.getState().data;
+    runOnce(() => actions.editBudgetIncome(month, 'salary', {
+      name: 'Contract work',
+      category: 'Freelance',
+      amount: 1_250,
+      day: 18,
+    }, 'following', today));
+    expect(store.getState().data.budgetPlan?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    expect(store.getState().data.monthBudgets?.[0]?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeIncomeEdit.budgetPlan,
+      month,
+      beforeIncomeEdit.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeIncomeEdit);
     runOnce(() => actions.addBudgetItem(month, {
       sectionId: addedSection.id, name: 'Pet care', mode: 'amount', value: 100,
+      frequency: 'quarterly', firstDueMonth: month,
     }, 'month', today));
     const addedItem = store.getState().data.monthBudgets?.[0]?.items.find((item) => item.name === 'Pet care');
     if (!addedItem) throw new Error('Added budget item missing.');
+    expect(addedItem).toMatchObject({ frequency: 'quarterly', firstDueMonth: month });
     runOnce(() => actions.editBudgetStructureItem(month, addedItem.id, { value: 200 }, 'month', today));
     const beforeDeleteItem = store.getState().data;
     runOnce(() => actions.deleteBudgetStructureItem(month, addedItem.id, 'month', today));
@@ -547,7 +782,14 @@ describe('createAppStore persistence', () => {
       beforeInsuranceDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeInsuranceDelete);
+    const beforeSectionDelete = store.getState().data;
     runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeSectionDelete.budgetPlan,
+      month,
+      beforeSectionDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeSectionDelete);
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {
@@ -876,12 +1118,11 @@ describe('createAppStore persistence', () => {
       premium: 50,
       frequency: 'monthly',
       startDate: '2026-08-10',
+      status: 'active',
       premiumYears: 1,
       trackFrom: '2026-08-10',
-      coverAmount: null,
       currentValue: null,
       valueAsOf: null,
-      maturityDate: null,
     }, 'settle'));
   });
 

@@ -51,6 +51,7 @@ function AppContent() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
                 <Stack.Screen name="liabilities" />
+                <Stack.Screen name="insurance" />
                 <Stack.Screen name="emergency-fund" />
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="link-missing" />
@@ -61,12 +62,18 @@ function AppContent() {
                 <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="cover-goal-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="policy-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entries" />
                 <Stack.Screen name="liability-payments" />
                 <Stack.Screen name="backup" />
                 <Stack.Screen name="security" />
                 <Stack.Screen name="erase-data" />
                 <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-section-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-item-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="budget-income-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="ef-bucket-form" options={{ presentation: 'modal' }} />
               </Stack>
               <ActionToastHost />
               </>

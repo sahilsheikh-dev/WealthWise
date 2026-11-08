@@ -1,8 +1,21 @@
 import { emptyAppData } from '../actions';
 import { budgetCategoryChoiceSections } from '../budgetCategories';
+import { INSURANCE_BUDGET_CATEGORIES } from '../policyCategories';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 describe('budget-aware transaction categories', () => {
+  it('groups the titles-only insurance transaction categories in the Insurance section', () => {
+    const sections = budgetCategoryChoiceSections(
+      emptyAppData('2026-03-01'),
+      '2026-03',
+      '2026-03-15',
+      'expense',
+    );
+    const insurance = sections.find((section) => section.id === 'insurance');
+    expect(insurance?.name).toBe('Insurance');
+    expect(insurance?.categories.map((item) => item.category)).toEqual(INSURANCE_BUDGET_CATEGORIES);
+  });
+
   it('groups categories, orders budgeted items first and calculates actuals by selected month', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
@@ -65,6 +78,31 @@ describe('budget-aware transaction categories', () => {
       planned: 2_000,
       actual: 0,
     });
+  });
+
+  it('uses the recurrence plan for transaction-category planned amounts and offers Recharge under Utilities', () => {
+    const plan = budgetPlanFromLines([
+      {
+        category: 'Quarterly fee',
+        mode: 'amount',
+        value: 900,
+        frequency: 'quarterly',
+        firstDueMonth: '2026-04',
+      },
+    ], {
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-04',
+    });
+    const data = { ...emptyAppData('2026-03-15'), budgetPlan: plan };
+    const dueMonth = budgetCategoryChoiceSections(data, '2026-04', '2026-03-15', 'expense');
+    const offMonth = budgetCategoryChoiceSections(data, '2026-05', '2026-03-15', 'expense');
+    expect(dueMonth.find((section) => section.id === 'survival')?.categories)
+      .toContainEqual(expect.objectContaining({ category: 'Quarterly fee', planned: 900 }));
+    expect(offMonth.find((section) => section.id === 'survival')?.categories)
+      .toContainEqual(expect.objectContaining({ category: 'Quarterly fee', planned: 0 }));
+    expect(dueMonth.find((section) => section.id === 'survival')?.categories)
+      .toContainEqual(expect.objectContaining({ category: 'Recharge' }));
   });
 
   it('follows user section order and treats a zero-value item as budgeted', () => {

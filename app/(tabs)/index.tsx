@@ -23,6 +23,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
+import { coverGoalSummaries } from '../../src/domain/coverGoals';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
@@ -56,6 +57,8 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
+  const coverGaps = coverGoalSummaries(data, today)
+    .filter((goal) => goal.state === 'gap' || goal.state === 'missing');
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
@@ -99,7 +102,7 @@ export default function HomeScreen() {
     });
   };
   const handleDuePress = async (item: PendingItem) => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
     if (!item.dueDate) {
       Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
       return;
@@ -130,8 +133,11 @@ export default function HomeScreen() {
         Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
         return;
       }
+      const sourceKind = target.kind === 'plan'
+        ? 'holding-entry'
+        : target.kind === 'liability' ? 'liability-payment' : 'policy-payment';
       const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
-        transaction.source?.kind === (target.kind === 'plan' ? 'holding-entry' : 'liability-payment')
+        transaction.source?.kind === sourceKind
         && transaction.source.parentId === target.id
         && transaction.source.entryId === entryId,
       ));
@@ -165,7 +171,9 @@ export default function HomeScreen() {
       return;
     }
     const transaction = useAppStore.getState().data.transactions.find((candidate) =>
-      (candidate.source?.kind === 'holding-entry' || candidate.source?.kind === 'liability-payment')
+      (candidate.source?.kind === 'holding-entry'
+        || candidate.source?.kind === 'liability-payment'
+        || candidate.source?.kind === 'policy-payment')
       && candidate.source.parentId === target.id
       && candidate.source.entryId === entryId,
     );
@@ -217,6 +225,23 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
+      {coverGaps.length > 0 ? (
+        <Pressable
+          testID="home-insurance-cover-link"
+          accessibilityRole="button"
+          accessibilityLabel={`Insurance cover, ${coverGaps.length} goals need review`}
+          accessibilityHint="Opens insurance cover goals and policies"
+          onPress={() => router.push('/insurance')}
+          style={[styles.coverLink, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.coverLinkText}>
+            <AppText weight="semibold">Insurance cover</AppText>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>
+              {coverGaps.length} {coverGaps.length === 1 ? 'cover goal' : 'cover goals'} to review
+            </AppText>
+          </View>
+          <AppText style={[typography.meta, { color: colors.primary }]}>View</AppText>
+        </Pressable>
+      ) : null}
 
       <View style={styles.quickActions}>
         {HOME_QUICK_ACTIONS.map((action) => (
@@ -345,7 +370,7 @@ export default function HomeScreen() {
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
                   <Button
-                    label="Paid"
+                    label={'Paid'}
                     accessibilityHint="Confirms whether this scheduled item was paid."
                     style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
@@ -491,4 +516,18 @@ const styles = StyleSheet.create({
   goalAmounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   goalMinimum: { marginTop: 7 },
   emergencyGoalActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  coverLink: {
+    minHeight: 60,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  coverLinkText: { flex: 1, minWidth: 0 },
 });

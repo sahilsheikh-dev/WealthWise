@@ -59,12 +59,6 @@ function validateCustomBuckets(buckets: readonly EfCustomBucket[]): void {
   }
 }
 
-function assertCustomBucket(data: AppData, bucketId: string): EfCustomBucket {
-  const bucket = data.efCustomBuckets.find(({ id }) => id === bucketId);
-  if (!bucket) throw new InvalidEfCustomBucketError('Custom emergency-fund option was not found.');
-  return bucket;
-}
-
 function assertValidLinks(data: AppData, holdingIds: readonly string[]): void {
   if (holdingIds.length > MAX_LINKED_HOLDINGS) {
     throw new InvalidEfCustomBucketError('Link up to 10 investments per option.');
@@ -87,42 +81,6 @@ export function setEfAllocation(data: AppData, allocation: EfAllocation): AppDat
 
   const resolved = resolveEfAllocation({ ...data, efAllocation: allocation });
   return { ...data, efAllocation: resolved.allocation };
-}
-
-export function addEfCustomBucket(
-  data: AppData,
-  input: Omit<EfCustomBucket, 'id'>,
-  newId: () => string,
-): AppData {
-  const bucket = { ...input, name: input.name.trim(), id: newId() };
-  const efCustomBuckets = [...data.efCustomBuckets, bucket];
-  validateCustomBuckets(efCustomBuckets);
-  const efAllocation = data.efAllocation === null || data.efAllocation === undefined
-    ? data.efAllocation
-    : { ...data.efAllocation, [bucket.id]: 0 };
-  return { ...data, efCustomBuckets, efAllocation };
-}
-
-export function renameEfCustomBucket(data: AppData, bucketId: string, name: string): AppData {
-  assertCustomBucket(data, bucketId);
-  const efCustomBuckets = data.efCustomBuckets.map((bucket) =>
-    bucket.id === bucketId ? { ...bucket, name: name.trim() } : bucket,
-  );
-  validateCustomBuckets(efCustomBuckets);
-  return { ...data, efCustomBuckets };
-}
-
-export function setEfCustomBucketAccess(
-  data: AppData,
-  bucketId: string,
-  access: EfCustomBucket['access'],
-): AppData {
-  assertCustomBucket(data, bucketId);
-  const efCustomBuckets = data.efCustomBuckets.map((bucket) =>
-    bucket.id === bucketId ? { ...bucket, access } : bucket,
-  );
-  validateCustomBuckets(efCustomBuckets);
-  return { ...data, efCustomBuckets };
 }
 
 export function setEfBucketLinks(data: AppData, bucketId: string, holdingIds: string[]): AppData {

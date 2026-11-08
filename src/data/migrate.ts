@@ -1,6 +1,7 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
 import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
+import { defaultCoverGoals } from '../domain/coverGoals';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -564,6 +565,130 @@ export function migrateV8ToV9(data: unknown, options: V6ToV7Options): unknown {
   };
 }
 
+export function migrateV10ToV11(data: unknown, options: Pick<V6ToV7Options, 'today'>): unknown {
+  if (!isRecord(data) || !Array.isArray(data.policies)) {
+    throw new PersistedVersionError(10, 'unknown-version');
+  }
+  const policies = data.policies.map((value) => {
+    if (!isRecord(value) || !Array.isArray(value.payments)) {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const payments = value.payments;
+    if (!payments.every(isRecord)) throw new PersistedVersionError(10, 'unknown-version');
+    const paymentDates = payments.flatMap((payment) =>
+      typeof payment.date === 'string' ? [payment.date] : [],
+    ).sort();
+    const startDate = typeof value.startDate === 'string'
+      ? value.startDate
+      : paymentDates[0] ?? options.today;
+    const legacyKind = value.kind;
+    const kind = legacyKind === 'term'
+      ? 'term-life'
+      : legacyKind === 'vehicle'
+        ? 'motor'
+        : legacyKind;
+    if (kind !== 'term-life' && kind !== 'health' && kind !== 'life-savings'
+      && kind !== 'ulip' && kind !== 'motor' && kind !== 'home' && kind !== 'other') {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const frequency = value.frequency === 'single'
+      ? 'yearly'
+      : value.frequency === 'monthly' || value.frequency === 'quarterly'
+        || value.frequency === 'half-yearly' || value.frequency === 'yearly'
+        ? value.frequency
+        : 'yearly';
+    const premiumYears = value.frequency === 'single'
+      ? 1
+      : typeof value.premiumYears === 'number' ? value.premiumYears : 1;
+    const sumAssured = typeof value.coverAmount === 'number' && value.coverAmount >= 0
+      ? value.coverAmount
+      : undefined;
+    const endDate = typeof value.maturityDate === 'string' && value.maturityDate > startDate
+      ? value.maturityDate
+      : undefined;
+    const { coverAmount: _coverAmount, maturityDate: _maturityDate, ...rest } = value;
+    return {
+      ...rest,
+      kind,
+      frequency,
+      startDate,
+      trackFrom: typeof value.trackFrom === 'string' ? value.trackFrom : startDate,
+      premiumYears,
+      status: 'active',
+      ...(sumAssured === undefined ? {} : { sumAssured }),
+      ...(endDate === undefined ? {} : { endDate }),
+    };
+  });
+  return { ...data, policies };
+}
+
+export function migrateV11ToV12(data: unknown): unknown {
+  if (!isRecord(data)) throw new PersistedVersionError(11, 'unknown-version');
+  const moveLegacyInsuranceItems = (budget: unknown): unknown => {
+    if (!isRecord(budget) || !Array.isArray(budget.sections) || !Array.isArray(budget.items)) {
+      return budget;
+    }
+    const needsInsuranceSection = budget.items.some((item) =>
+      isRecord(item) && item.name === 'Insurance' && item.sectionId !== 'insurance',
+    );
+    if (!needsInsuranceSection) return budget;
+    const sections = [...budget.sections];
+    const existingIndex = sections.findIndex((section) =>
+      isRecord(section) && section.id === 'insurance',
+    );
+    if (existingIndex >= 0) {
+      const existing = sections[existingIndex];
+      if (isRecord(existing)) {
+        sections[existingIndex] = { ...existing, id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' };
+      }
+    } else {
+      const insuranceSection = defaultBudgetSections().find((section) => section.system === 'insurance');
+      if (insuranceSection) sections.push(insuranceSection);
+    }
+    return {
+      ...budget,
+      sections,
+      items: budget.items.map((item) =>
+        isRecord(item) && item.name === 'Insurance' ? { ...item, sectionId: 'insurance' } : item,
+      ),
+    };
+  };
+  return {
+    ...data,
+    coverGoals: defaultCoverGoals(),
+    ...(data.budgetPlan === null || data.budgetPlan === undefined
+      ? {}
+      : { budgetPlan: moveLegacyInsuranceItems(data.budgetPlan) }),
+    ...(Array.isArray(data.monthBudgets)
+      ? { monthBudgets: data.monthBudgets.map(moveLegacyInsuranceItems) }
+      : {}),
+  };
+}
+
+export function migrateV12ToV13(data: unknown): unknown {
+  if (!isRecord(data)) throw new PersistedVersionError(12, 'unknown-version');
+  const migrateBudget = (budget: unknown): unknown => {
+    if (!isRecord(budget) || !Array.isArray(budget.items)) return budget;
+    return {
+      ...budget,
+      items: budget.items.map((item) => {
+        if (!isRecord(item)) return item;
+        const { firstDueMonth: _firstDueMonth, ...monthlyItem } = item;
+        return { ...monthlyItem, frequency: 'monthly' };
+      }),
+    };
+  };
+  return {
+    ...data,
+    ...(data.budgetPlan === null || data.budgetPlan === undefined
+      ? {}
+      : { budgetPlan: migrateBudget(data.budgetPlan) }),
+    ...(Array.isArray(data.monthBudgets)
+      ? { monthBudgets: data.monthBudgets.map(migrateBudget) }
+      : {}),
+  };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -594,6 +719,12 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(9, 'unknown-version');
       result = migrateV9ToV10(result, options);
     }
+    if (fromVersion <= 10) {
+      if (!options) throw new PersistedVersionError(10, 'unknown-version');
+      result = migrateV10ToV11(result, options);
+    }
+    if (fromVersion <= 11) result = migrateV11ToV12(result);
+    if (fromVersion <= 12) result = migrateV12ToV13(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

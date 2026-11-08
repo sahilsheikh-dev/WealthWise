@@ -51,12 +51,12 @@ const policy: Policy = {
   premium: 500,
   frequency: 'yearly',
   startDate: '2026-01-01',
+  status: 'active',
   premiumYears: 10,
   trackFrom: '2026-01-01',
-  coverAmount: 20_000,
+  sumAssured: 20_000,
   currentValue: 4_000,
   valueAsOf: '2026-10-01',
-  maturityDate: null,
   payments: [{ id: 'premium', date: '2026-01-01', amount: 500, note: '' }],
 };
 
@@ -73,7 +73,7 @@ describe('goal asset links', () => {
       policies: [
         policy,
         { ...policy, id: 'ulip', kind: 'ulip' as const, currentValue: null, valueAsOf: null },
-        { ...policy, id: 'term', kind: 'term' as const },
+        { ...policy, id: 'term', kind: 'term-life' as const },
       ],
     };
     expect(linkableInstruments(data, '2026-10-12').map(({ id, kind, value, invested }) =>
