@@ -33,36 +33,6 @@ describe('appDataSchema', () => {
     expect(SCHEMA_VERSION).toBe(5);
   });
 
-  it('validates budget templates and stored month snapshots', () => {
-    const budgeted = {
-      ...mockAppData,
-      budgetTemplates: [{
-        id: 'template', name: 'Monthly', plannedIncome: 50_000,
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 20 }],
-      }],
-      defaultBudgetTemplateId: 'template',
-      monthBudgets: [{
-        month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
-        plannedIncome: 50_000, lines: [{ category: 'Food', planned: 10_000 }],
-      }],
-    };
-    expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetTemplates: [{
-        ...budgeted.budgetTemplates[0],
-        lines: [{ category: 'Food', mode: 'percent', value: 101 }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{
-        ...budgeted.monthBudgets[0],
-        lines: [{ category: 'Not a category', planned: 10 }],
-      }],
-    }).success).toBe(false);
-  });
-
   describe('onboarding and profile schemas', () => {
     it('trims names, allows a cleared salary and returns normalized salary values', () => {
       expect(makeOnboardingFormSchema().parse({ name: '  Asha  ', monthlySalary: '50000' }))

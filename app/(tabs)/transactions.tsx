@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -44,24 +44,17 @@ const transactionTone = {
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function TransactionsScreen() {
-  const params = useLocalSearchParams<{ category?: string; month?: string }>();
-  const routeCategory = typeof params.category === 'string' ? params.category : '';
   const { colors } = useTheme();
   const data = useAppData();
   const month = useUIStore((state) => state.txMonth);
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const sorting = useSort('transactions');
   const [filter, setFilter] = useState<Filter>('all');
-  const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
-  const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
   const [movementSheetOpen, setMovementSheetOpen] = useState(false);
   const [dismissedReview, setDismissedReview] = useState<string | null>(null);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
-  useEffect(() => {
-    if (params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)) setTxMonth(params.month);
-  }, [params.month, setTxMonth]);
   const monthPanResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
       !touchingChips && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
@@ -83,11 +76,11 @@ export default function TransactionsScreen() {
     [data.transactions],
   );
   const filteredRows = useMemo(
-    () => filterTransactions(data.transactions, { month, type: filter, query, category: categoryFilter }).map((transaction) => ({
+    () => filterTransactions(data.transactions, { month, type: filter, query }).map((transaction) => ({
       ...transaction,
       sortCreatedIndex: creationOrder.get(transaction.id) ?? 0,
     })),
-    [categoryFilter, creationOrder, data.transactions, filter, month, query],
+    [creationOrder, data.transactions, filter, month, query],
   );
   const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
@@ -222,13 +215,6 @@ export default function TransactionsScreen() {
                 onPress={() => setFilter(item)}
               />
             ))}
-            {categoryFilter ? (
-              <Chip
-                label={`Category: ${categoryFilter} ×`}
-                selected
-                onPress={() => setCategoryOverride('')}
-              />
-            ) : null}
             <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
           </ChipRow>
         </View>

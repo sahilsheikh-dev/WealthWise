@@ -18,9 +18,6 @@ export function emptyAppData(asOf: ISODate): AppData {
     liabilities: [],
     policies: [],
     budget: null,
-    budgetTemplates: [],
-    defaultBudgetTemplateId: null,
-    monthBudgets: [],
     efEntries: [],
     efAllocation: null,
   };

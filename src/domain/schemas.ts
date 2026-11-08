@@ -181,62 +181,9 @@ const policySchema = z.object({
   }
 });
 
-const expenseBudgetCategories = ['Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education', 'EMI', 'Insurance', 'Other'] as const;
-const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
-export const BUDGET_CATEGORIES = [
-  ...expenseBudgetCategories.filter((category) => category !== 'Other'),
-  'Other',
-  ...investmentBudgetCategories,
-] as const;
-const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
-const budgetTemplateLineSchema = z.object({
-  category: z.string().min(1).max(60),
-  mode: z.enum(['amount', 'percent']),
-  value: moneySchema.min(0).max(1_000_000_000),
-}).superRefine((line, context) => {
-  if (line.mode === 'percent' && line.value > 100) {
-    context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
-  }
-});
-const budgetTemplateSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1).max(40),
-  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
-  lines: z.array(budgetTemplateLineSchema).max(1000),
-}).superRefine((template, context) => {
-  const seen = new Set<string>();
-  template.lines.forEach((line, index) => {
-    if (!budgetCategorySet.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
-    if (seen.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
-    }
-    seen.add(line.category);
-  });
-});
-const monthBudgetSchema = z.object({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  templateId: idSchema.nullable(),
-  templateName: z.string().min(1).max(40).nullable(),
-  customized: z.boolean(),
-  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
-  lines: z.array(z.object({
-    category: z.string().min(1).max(60),
-    planned: moneySchema.min(0).max(1_000_000_000),
-  })).max(1000),
-}).superRefine((budget, context) => {
-  const seen = new Set<string>();
-  budget.lines.forEach((line, index) => {
-    if (!budgetCategorySet.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
-    }
-    if (seen.has(line.category)) {
-      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
-    }
-    seen.add(line.category);
-  });
-});
+const expenseBudgetCategories = ['Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education', 'Other'] as const;
+const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'] as const;
+export const BUDGET_CATEGORIES = [...expenseBudgetCategories, ...investmentBudgetCategories] as const;
 const budgetSchema = z.object({
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
   lines: z.array(z.object({
@@ -292,9 +239,6 @@ export const appDataSchema = z.object({
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
   budget: budgetSchema.nullable(),
-  budgetTemplates: z.array(budgetTemplateSchema).optional(),
-  defaultBudgetTemplateId: idSchema.nullable().optional(),
-  monthBudgets: z.array(monthBudgetSchema).optional(),
   efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
 });

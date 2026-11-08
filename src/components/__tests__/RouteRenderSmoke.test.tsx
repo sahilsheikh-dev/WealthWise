@@ -3,11 +3,6 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
-import BudgetScreen from '../../../app/budget';
-import BudgetHistoryScreen from '../../../app/budget-history';
-import BudgetMonthFormScreen from '../../../app/budget-month-form';
-import BudgetTemplateFormScreen from '../../../app/budget-template-form';
-import BudgetTemplatesScreen from '../../../app/budget-templates';
 import ClearDuesScreen from '../../../app/clear-dues';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfEntryFormScreen from '../../../app/ef-entry-form';
@@ -382,11 +377,6 @@ describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
     ['Home', React.createElement(HomeScreen)],
-    ['Budget', React.createElement(BudgetScreen)],
-    ['Budget templates', React.createElement(BudgetTemplatesScreen)],
-    ['Budget template form', React.createElement(BudgetTemplateFormScreen)],
-    ['Budget month form', React.createElement(BudgetMonthFormScreen)],
-    ['Budget history', React.createElement(BudgetHistoryScreen)],
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
     ['Month review empty state', React.createElement(MonthReviewScreen)],
@@ -433,8 +423,6 @@ describe('route render smoke audit', () => {
 
   it.each([
     ['Transactions', () => React.createElement(TransactionsScreen)],
-    ['Budget spending', () => React.createElement(BudgetScreen)],
-    ['Budget history', () => React.createElement(BudgetHistoryScreen)],
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
@@ -446,7 +434,6 @@ describe('route render smoke audit', () => {
     const appData = jest.requireMock('../../data/useAppData').useAppData() as {
       holdings: object[];
       liabilities: object[];
-      monthBudgets?: object[];
     };
     const storeData = useAppStore((state) => state).data;
     const holding: ManualHolding = {
@@ -472,16 +459,10 @@ describe('route render smoke audit', () => {
     };
     appData.holdings = name === 'Investment entries' ? [holding] : [];
     appData.liabilities = name === 'Liability payments' ? [liability] : [];
-    appData.monthBudgets = name === 'Budget spending' ? [{
-      month: todayISO().slice(0, 7), templateId: null, templateName: null, customized: false,
-      plannedIncome: 1000, lines: [{ category: 'Food', planned: 500 }],
-    }] : [];
     storeData.holdings = name === 'Link missing transactions' ? [holding] : [];
     storeData.liabilities = [];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue(name === 'Budget spending'
-      ? { month: todayISO().slice(0, 7) }
-      : name === 'Investment entries'
+    routeParams.mockReturnValue(name === 'Investment entries'
       ? { id: holding.id }
       : name === 'Liability payments'
         ? { id: liability.id }

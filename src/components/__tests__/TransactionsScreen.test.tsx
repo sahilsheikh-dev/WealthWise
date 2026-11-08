@@ -22,10 +22,7 @@ const mockData: { transactions: Transaction[]; [key: string]: unknown } = {
 };
 const mockThemeId: { current: ThemeId } = { current: 'light' };
 
-jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
-  useLocalSearchParams: jest.fn(() => ({})),
-}));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('../../data/store', () => ({
   metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
 }));
@@ -117,27 +114,6 @@ describe('Transactions screen withdrawals-only month', () => {
 });
 
 describe('Transactions sorting', () => {
-  it('applies a routed category filter and can clear it without changing the month', async () => {
-    mockData.transactions = [
-      { id: 'food', type: 'expense', amount: 50, category: 'Food', note: 'Lunch', date: '2026-10-10' },
-      { id: 'rent', type: 'expense', amount: 500, category: 'Living', note: 'Rent', date: '2026-10-10' },
-    ];
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue({ category: 'Food', month: '2026-10' });
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<TransactionsScreen />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Transactions renderer was not created.');
-    const titles = () => renderer?.root.findAll((node) => String(node.type) === 'listitem').map((node) => node.props.title);
-    expect(titles()).toEqual(['Lunch']);
-    const categoryChip = renderer.root.findByProps({ label: 'Category: Food ×' });
-    act(() => categoryChip.props.onPress());
-    expect(titles()).toEqual(['Rent', 'Lunch']);
-    routeParams.mockReturnValue({});
-  });
-
   it('changes only the order after the active type filter and search', async () => {
     mockData.transactions = [
       { id: 'a', type: 'expense', amount: 500, category: 'Food', note: 'Food groceries', date: '2026-10-10' },

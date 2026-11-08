@@ -218,47 +218,11 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       seen.add(line.category);
     }
   }
-  const budgetTemplateIds = new Set((data.budgetTemplates ?? []).map(({ id }) => id));
-  if (data.defaultBudgetTemplateId && !budgetTemplateIds.has(data.defaultBudgetTemplateId)) {
-    add('missing-default-budget-template', 'Default budget template does not exist.', ['defaultBudgetTemplateId']);
-  }
-  for (const [templateIndex, template] of (data.budgetTemplates ?? []).entries()) {
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of template.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
-    }
-  }
-  for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
-    if (budget.templateId !== null && !budgetTemplateIds.has(budget.templateId)) {
-      add('missing-budget-template', 'Month budget template does not exist.', ['monthBudgets', monthIndex, 'templateId']);
-    }
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of budget.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
-    }
-  }
   for (const policy of data.policies) {
     for (const [index, payment] of policy.payments.entries()) {
       const count = linked.get(payment.id)?.length ?? 0;
       if (count > 1) add('duplicate-linked-entry', 'Policy payment has more than one linked transaction.', ['policies', policy.id, 'payments', index]);
     }
-
   }
   return issues;
-}
-
-function allowedBudgetCategory(category: string): boolean {
-  return (BUDGET_CATEGORIES as readonly string[]).includes(category);
 }

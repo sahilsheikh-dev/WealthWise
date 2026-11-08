@@ -68,61 +68,6 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
-  it('stores a budget template and month snapshot with one write per action', async () => {
-    const storage = new MemoryStorage();
-    storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data: emptyAppData('2026-03-01') }, version: 5,
-    }));
-    let nextId = 0;
-    const store = createAppStore(storage, {
-      newId: () => `budget-${++nextId}`,
-      today: () => '2026-10-10',
-      isDev: false,
-    });
-    await waitForHydration(store);
-
-    let writes = storage.setItemCalls;
-    store.getState().actions.createBudgetTemplate({
-      name: 'Monthly', plannedIncome: 20_000,
-      lines: [{ category: 'Food', mode: 'percent', value: 20 }],
-    });
-    expect(storage.setItemCalls - writes).toBe(1);
-    writes = storage.setItemCalls;
-    store.getState().actions.setDefaultBudgetTemplate('budget-1');
-    expect(storage.setItemCalls - writes).toBe(1);
-    writes = storage.setItemCalls;
-    store.getState().actions.applyTemplateToMonth({ month: '2026-03', templateId: 'budget-1' });
-    expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
-    expect(validateIntegrity(store.getState().data)).toEqual([]);
-    writes = storage.setItemCalls;
-    store.getState().actions.createBudgetTemplateAndApply({
-      name: 'Atomic', plannedIncome: 10_000, lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
-    }, '2026-04');
-    expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.monthBudgets).toHaveLength(2);
-    expect(validateIntegrity(store.getState().data)).toEqual([]);
-  });
-
-  it('applies the default template after hydration and persists the current-month snapshot once', async () => {
-    const storage = new MemoryStorage();
-    const data = {
-      ...emptyAppData('2026-03-01'),
-      budgetTemplates: [{
-        id: 'default', name: 'Default', plannedIncome: 20_000,
-        lines: [{ category: 'Food', mode: 'amount' as const, value: 5_000 }],
-      }],
-      defaultBudgetTemplateId: 'default',
-    };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 5 }));
-    const store = createAppStore(storage, {
-      newId: () => 'unused', today: () => '2026-03-15', isDev: false,
-    });
-    await waitForHydration(store);
-    expect(store.getState().data.monthBudgets?.[0]?.month).toBe('2026-03');
-    expect(storage.setItemCalls).toBe(1);
-  });
-
   it('records a shortfall allocation atomically with one persisted write', async () => {
     const storage = new MemoryStorage();
     const initial = {
