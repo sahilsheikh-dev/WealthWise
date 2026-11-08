@@ -136,7 +136,7 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');
     expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'stop', 'update']);
-    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop recurring');
+    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop investment');
 
     const stoppedData = {
       ...mockAppData,
@@ -145,7 +145,7 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const stopped = buildInstrumentCardModel(rowFor(stoppedData, 'holding-sip'), { ...context, asOf: '2026-06-15' });
-    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume recurring');
+    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume investment');
 
     const completedData = {
       ...mockAppData,

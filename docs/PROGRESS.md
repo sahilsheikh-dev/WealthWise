@@ -14,6 +14,7 @@
 8. [Known issues and risks](#8-known-issues-and-risks)
 9. [Upcoming roadmap](#9-upcoming-roadmap)
 10. [Verification matrix](#10-verification-matrix)
+11. [Session and release log](#11-session-and-release-log)
 
 ## 1. How to use this file
 
@@ -24,16 +25,16 @@ texts of P15-FIX-R1 to R4 and earlier archived files are recoverable from git:
 `git show <RECOVERY>:docs/prompts/<file>`. For this ledger, RECOVERY is
 `5aeefb96e70df7c388e5eb39454285204adb5707`, the last commit containing the
 archive; current HEAD already removed the directory. Every future prompt
-starts by reading this file and ends by updating the dashboard, prompt log,
-change-request register, and verification matrix with the prompt ID, purpose,
-and outcome, then committing the updates.
-Use IDs `P<phase>-<part>` for phase prompts, `FX-<id>` for fixes, and `CR-<n>`
-for change requests. Never delete history: supersede an earlier entry with a
-dated note. When the repository and this ledger disagree, Git and current
-source win; correct the ledger and record the conflict. Do not infer
-completion from a prior summary or a prompt: require a repository commit and
-named test evidence. Historical claims without that evidence remain
-user-reported, unverified. Never push.
+starts by reading this file and ends by updating the dashboard, prompt log, change-request register,
+verification matrix and session/release log with the prompt ID, purpose,
+outcome and evidence. Use IDs `P<phase>-<part>` for phase prompts, `<ID>-R<n>`
+for revisions to completed work, `FX-<id>` for fixes, and `CR-<n>` for change
+requests. Never delete history: supersede an earlier entry with a dated note.
+When the repository and this ledger disagree, Git and current source win;
+correct the ledger and record the conflict. Do not infer completion from a
+prior summary or a prompt: require a repository commit and named test
+evidence. Historical claims without that evidence remain user-reported,
+unverified. Never push.
 
 ## 2. Status dashboard
 
@@ -50,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (107/111)
+Overall progress ██████████ 99% (114/115)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -76,10 +77,10 @@ Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
-Phase 26         ░░░░░░░░░░ 0% (0/1)
-Phase 27         ░░░░░░░░░░ 0% (0/1)
-Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29 ██████████ 97% (31/32)
+Phase 26         ██████████ 100% (1/1)
+Phase 27         ██████████ 100% (1/1)
+Phase 28         ██████████ 100% (4/4)
+Phase 29         ██████████ 97% (32/33)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -165,9 +166,12 @@ Phase 29 ██████████ 97% (31/32)
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
 | CR-96 | — | Done | P29-K: Budget scope choices apply immediately; Close, backdrop and Android back dismiss without applying. | 2026-11-03 |
 | CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
-| P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
-| P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
-| P28-A | — | Planned | QA and release. | 2026-10-15 |
+| P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
+| P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
+| P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata. Protected routes remain unchanged. | 2026-11-07 |
+| P28-B | — | Done | Aligned first stable release metadata to v1.0.0 and updated release notes/changelog; no source behavior change. | 2026-11-07 |
+| P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. Revised by P28-C-R1. | 2026-11-08 |
+| P28-C-R1 | — | Done | Added pending-safe app downloads and What's new, an Android APK profile, post-build asset/link/README/history checklist, and corrected README schema, recurrence, Insurance and test claims. Fixed the existing lint warning in its own commit. All six ordered gates pass; no build, publication, tag or protected-route changes. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -200,7 +204,7 @@ Phase 29 ██████████ 97% (31/32)
 | P29-Y | — | Done | Repaired the red Gate 1 memory expectations and matched the real suite/test counts without weakening assertions; all six ordered gates pass. The source-of-truth run evidence is recorded in the latest verification section. | 2026-11-05 |
 | P29-Z | — | Done | Documentation and ledger consistency restored from source: Foreclosure label, Home-only AppHeader menu, schema v21 migration chain, archive range through `.premigration.v20`, real Gate 1 counts and owner holding/liability UI history. No behavior, schema or UI source change. | 2026-11-05 |
 | P29-AA | — | Done | Emergency Fund now links manual holdings, recurring plans and Fixed deposits through their live holding IDs. Deleted plans clear EF bucket and goal links in one write; hydration removes dangling links once, archives raw bytes and writes the repaired state; valid links, net worth and goal values remain unchanged. No schema change. Real Gate 1: 92 suites, 1194 passed, 1 skipped. All six gates exit 0. | 2026-11-06 |
-| P28-A | `fbdcbac`, `41c4617` | Done | Release report first, then verified metadata documentation updates. Owner-confirmed version `0.2.0` is aligned across app/package/lockfile and the changelog/README are corrected. The release checklist documents physical-device acceptance, EAS build/tag commands, exported-backup rollback and audit risks. Six gates pass; native-device and synthetic-v13 equality evidence remain owner/implementation follow-up. | 2026-11-07 |
+| P29-AB | — | Done | Budget income recurrence supports monthly, quarterly, half-yearly and yearly frequencies with strict backup/import support; v22 migration defaults existing income monthly. All six ordered gates pass. | 2026-11-07 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -240,7 +244,7 @@ valid EF saves.
 | CH-2 | Done | `e8b1d26`; Budget owns History and Month review. | 2026-10-14 |
 | CH-3 | Done | `cac7cc0`; link-missing action and conditional count notice route to the existing screen. | 2026-10-14 |
 | CH-4 | Done | `1321e29`; removed Transactions movement sheet/route, preserving liability-origin logic. | 2026-10-14 |
-| CR-1 | Open | Deferred to P24-A; notification design, permission behavior, and tests remain outstanding. | 2026-10-13 |
+| CR-1 | Done; superseded by P24-A (2026-11-08) | Resolved by local reminders, lock-gated confirmation, privacy controls and the 60-item scheduler. Original open-state note is historical and was superseded on 2026-11-08. | 2026-11-08 |
 | CR-2 | Done | Session/checkpoint backfill and prompt archive removal; source limitations remain in Section 8. | 2026-10-14 |
 | CR-3 | Open | Save narrows with validation summaries in `profile-form.tsx` and `transaction-form.tsx`. | 2026-10-14 |
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
@@ -262,6 +266,10 @@ valid EF saves.
 | CR-20 | Done | Emergency fund remains a linked-goal visualization; ledger/category/instrument removed; all required gates pass. | P21-A/B |
 
 ### Resume point
+
+**Superseded (2026-11-08):** this earlier Phase 23 resume point predates
+completion of Phases 24–29 and release 1.0.0. Use the current status dashboard
+and open-items memory for active work.
 
 P19-A/B/C and P20-A/B/C/D passed their required gates and are complete.
 P20-E/F/G/H/I, P21-A/B/C and P22-A are Done. The optional importer has been removed
@@ -361,6 +369,24 @@ default-item, validation and save/rehydration coverage.
 
 ## 3. Standing rules
 
+- **R1 — Dirty-file preflight:** list every dirty file before other work. If
+  files are dirty, inspect their diff and commit exactly those named files
+  before proceeding, using a Conventional Commit subject derived from the
+  actual changes. If dirty files cover unrelated areas, make one commit per
+  area and name only the files in that area. Never use a generic checkpoint
+  subject and never revert owner edits.
+- **R2 — Phase and revision IDs:** align each task with existing work. A fix
+  or change to a completed subtask stays in its original phase and is logged
+  as `<ID>-R<n>`; add `Revised by <ID>-R<n>` to the original row. Create a new
+  phase and subtasks only for genuinely new areas.
+- **R3 — History and release approval:** never push, amend or rewrite history
+  unless the owner explicitly asks. Release publication and tag creation or
+  movement require explicit owner approval.
+- **R4 — Documentation scope:** routine documentation committed to Git is
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
+  excluding contents of `docs/releases/drafts/` other than its `.gitkeep`.
+  Other documentation files may be changed only when explicitly named in the
+  owner's task. Reports and generated output belong in chat or `/tmp`.
 - No cloud or network at runtime. Domain logic is pure: no React/Expo imports,
   clock reads, or randomness; inject dates, identifiers and other varying
   values.
@@ -386,7 +412,8 @@ default-item, validation and save/rehydration coverage.
   `CardHeaderRow` or `ListRow` alone owns the edit pencil. Goal cards open the
   editor on tap and have no pencil. Home quick actions uniquely pair icons and
   text.
-- Commit each part locally, never push, and update this ledger at each part.
+- Commit each part locally without pushing, and update this ledger at each
+  part.
 
 ## 4. Architecture and decisions
 
@@ -421,9 +448,20 @@ Premigration bytes are copied once and removed by erase-all.
 | v13 | Recurring Budget item frequencies and first due month, with migration of prior plan/snapshot items. | P20-V / DEC-P20V |
 | v14 | Optional Budget item-to-holding links; deleting a linked holding clears all Budget links in one write. | P29-E / DEC-P29E-HOLDING-DELETE |
 | v15 | Editable cover goals and optional explicit policy-to-goal assignment. | P29-G / DEC-P29G-COVER-MANAGEMENT |
+| v16 | Distinguishes fixed deposits from recurring deposits while preserving scheduled holdings and entry history. | `migrateV15ToV16` in `src/data/migrate.ts`; P29-I |
+| v17 | Removes retired cover-goal records and policy-to-goal assignments. | `migrateV16ToV17`; P29-L |
+| v18 | Adds the scheduled due date settled by each insurance-policy payment. | `migrateV17ToV18`; P29-M2 |
+| v19 | Adds optional holding valuation methods and valuation metadata. | P29-U; identity-preserving v18-to-v19 migration |
+| v20 | Adds optional recurring-liability closure metadata. | P29-W; identity-preserving v19-to-v20 migration |
+| v21 | Adds optional recurring-investment stop date. | P29-X; identity-preserving v20-to-v21 migration |
+| v22 | Adds Budget income recurrence frequency and first-due month; existing income defaults to monthly. | P29-AB; additive v21-to-v22 migration |
 
-Current schema is `SCHEMA_VERSION = 15` (`src/domain/schemas.ts`); the
-persisted migration chain and backup importer cover v1 through v14.
+Current schema is `SCHEMA_VERSION = 22` (`src/domain/schemas.ts`); the
+persisted migration chain and backup importer cover v1 through v21.
+**Superseded (2026-11-08):** the prior v15 current-schema statement and
+v1-through-v14 migration boundary were accurate only at their earlier
+checkpoint; the table now records the subsequent source-backed v16–v22
+changes.
 
 ### Financial and UI rules
 
@@ -2613,8 +2651,9 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 - **P26-A complete (2026-11-06):** report-only inventory committed first as
   `cfbe023`; accessibility fixes followed in `d4071a5`, performance fixes in
-  `f59b01a`, and regressions/log cleanup in `08b3992`. The report is at
-  [P26-A-report.md](P26-A-report.md). `app/(tabs)/index.tsx` and
+  `f59b01a`, and regressions/log cleanup in `08b3992`. The report-only audit
+  is summarized in this ledger; generated report files are not tracked.
+  `app/(tabs)/index.tsx` and
   `app/(tabs)/budget.tsx` remained unedited with protected hashes unchanged;
   findings for those user-owned screens are reported read-only.
 - Accessibility fixes raise compact actions and search clear targets to 44px,
@@ -2642,7 +2681,7 @@ physical-device test are complete; device/OS details were not recorded. Phase
   coverage thresholds remain unchanged; this directory grouping does not
   include uninstrumented directories such as `src/components` in the
   coverage-final map.
-- Five-sample Node/TestRenderer medians in the P26-A report: demo/50-year
+- Five-sample Node/TestRenderer medians recorded by P26-A: demo/50-year
   cold hydration 0 ms/147 ms, demo/50-year Home first render 9 ms/11 ms,
   demo/50-year Budget first render 3 ms/2 ms, and 50-year action write 3 ms.
   The 50-year fixture stores 2,604,654 bytes. These are Jest/Node
@@ -2653,8 +2692,8 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 - **P27-A complete (2026-11-07):** report committed first as `b805fb1`.
   Dead-code cleanup was committed as `a8a2d78`; dependency cleanup as
-  `61714ec`; and the robust schedule benchmark as `dd0c930`. The canonical
-  inventory is [P27-A-report.md](P27-A-report.md).
+  `61714ec`; and the   robust schedule benchmark as `dd0c930`. The audit inventory is summarized
+  in this ledger; generated report files are not tracked.
 - Knip and ts-prune were run. Knip's high-confidence orphan production paths
   were verified by grep and removed: `SectionHeaderRow`, `fitsInline`,
   `BudgetCategorySections`, and the standalone `scripts/dryRunMigration.ts`.
@@ -2687,14 +2726,15 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 ### Phase 28 — QA and release
 
-Planned P28-A: property tests, QA checklist, release engineering and local
-diagnostics.
-
-**Assumed:** this task explicitly assigns the release-preparation work to
-P25-A, which the prior ledger had reserved for encrypted backups. To preserve
-the unimplemented feature in the roadmap without claiming it shipped, encrypted
-backups move to P25-B [P15-L]. This task does not implement encryption or
-perform a store release.
+P28-A: report-only release preparation covered release identity, permissions, storage/archive
+keys, erase-all, migration fixtures and accepted npm risks. The owner confirmed
+version `0.2.0`; `app.json`, `package.json`, package-lock root/package entries,
+CHANGELOG and README were aligned without source behavior or schema changes.
+[`docs/releases/build-config.md`](releases/build-config.md) records the current
+pre-build gates, backup/device checks, build tracking and exact EAS commands.
+No store build or submission was run. The `npm audit --omit=dev` result is 7
+production vulnerability nodes; no major upgrade, force fix or install-script
+approval occurred.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -2873,7 +2913,7 @@ evidence present in exports/checkpoints.
 | P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. Its four-default fallback is superseded by P21-D/CR-51. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed at delivery: normalize positive known buckets by largest remainder and fall back to P21-C's 10/40/35/15 mix. Preserve P21-C behavior; CR-51 supersedes only the fallback mix. | current request |
 | P21-D | Phase 21 | — | — | 2026-10-18 | Change emergency-fund defaults and repair fallback to Cash 10, Bank account 40, FD / RD 50 (CR-51). | Done; full suite and all six required gates exit 0; schema remains v8. | `cd2c746` | Assumed: only null/default/fallback values change; existing valid stored allocations stay byte-for-byte unchanged. Mutual funds / Bonds remains addable. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
-| P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
+| P24-A | Phase 24 | P15-K | 2 | 2026-11-01 | Reminders and notifications, including CR-1. | Done; local reminders, lock-gated confirmation, privacy controls and scheduler delivered; all six gates pass. | Research `372476c`; implementation `f5a1a38` | Physical notification delivery remains subject to native-device verification. | current request |
 | P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
 | P25-B | Phase 25 | P15-L | 2 | 2026-11-01 | Encrypted backups. | Done; 80 suites / 984 tests pass; all six ordered gates exit 0; `backupCrypto.ts` has 100% line and branch coverage. | Research/decision commit `d5aac3eb9535ac0b7cd3e3a11d37c77a8452d6aa`; implementation commit `c90a8f323e355348b1fd17d7589d8a4cd505f7d4`; final ledger update follows. | Encrypted exports protect exported files only; app data remains unencrypted. Plain export and picked-file cache paths retain the documented temporary-plaintext API conflict. | current request |
 | P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
@@ -2885,9 +2925,12 @@ evidence present in exports/checkpoints.
 | CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
 | CR-95 | Budget income | — | — | 2026-11-01 | Include all logged income types in historical budgets, keep non-earned inflows categorized as income, match planned and actual totals, and retain transaction links. | Done; the month-budget schema and Budget overview display separate non-earned income rows. All 52 monthly income, expense and investment totals match actuals; the schema-v13 backup importer accepts the updated file. | `a507254` implementation/docs commit; backup data stays local and is not committed. | Owner clarified that loans, borrowed funds and withdrawals must remain income; do not reclassify them as Unexpected Extras. Expense/investment categories in the backup all map to existing budget categories, so no Unexpected fallback was needed. Transaction matching remains month/category-based; explicit asset/liability/policy source links are preserved. | current request |
 | CR-96 | P29-K Budget scope popup | — | — | 2026-11-03 | Apply Budget month scope immediately when selected; close without applying through Close, backdrop or Android back. | Done; shared dialog, all item/section/income Save/Delete flows, counted category-delete copy and Undo are tested. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | Assumed: no schema or domain change; `app/(tabs)/index.tsx` unchanged. | current request |
-| P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
-| P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P26-A | Phase 26 | P15-M | 2 | 2026-11-06 | Accessibility/performance and final gates. | Done; fixes and all six ordered gates pass; native-device checks remain open. | Report and implementation evidence recorded in this ledger. | Physical font-scale, touch and accessibility checks remain unverified. | current request |
+| P27-A | Phase 27 | — | — | 2026-11-07 | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Done; cleanup and all six ordered gates pass. | Implementation evidence recorded in this ledger. | SDK-57-compatible dependency audit decisions remain open. | current request |
+| P28-A | Phase 28 | — | — | 2026-11-07 | QA and initial release preparation. | Done; original `0.2.0` preparation is historical; stable release metadata was revised by P28-B. | `fbdcbac`, `41c4617`, `d0ddff8` | The release target and build work are tracked by P28-B/P28-C. | current request |
+| P28-B | Phase 28 | — | — | 2026-11-07 | Align and prepare v1.0.0 release metadata. | Done; app/package versions and release notes are aligned; no source behavior change. | Release metadata evidence recorded in this ledger. | Production build remains unbuilt; see build configuration and open items. | current request |
+| P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only; production EAS build remains unbuilt. Revised by P28-C-R1. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
+| P28-C-R1 | Phase 28 | — | — | 2026-11-08 | Add pending-safe README app downloads and What's new, an Android APK profile, release-asset publication checks, and source-accurate README details. | Done; all six ordered gates pass. No build, publication, tag or protected-route changes. | Step commits `13fce0e`, `19a99c5`, `44545ee`, `95f63a3`; verification is in the session/release log. | Android APK and owner-provided iOS link are not yet available. The v1.0.0 tag remains off current `origin/main`; owner decision pending. | current request |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
 | P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
@@ -2916,9 +2959,11 @@ evidence present in exports/checkpoints.
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
 | P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure and implement the owner's frozen foreclosure behavior across due, payment, Budget, reminder, Home and net-worth surfaces. | Step 1 report-only inventory committed first (`bf2610cb5add9a8857b07f3cad50415c0e624cbf`). Step 2 adds an optional closure record in schema v20, a one-write close action with Undo, linked payment and separate excess charge, Closed filter, and note-only closed-loan editing. | Focused store, backup/migration and route tests pass; final six ordered gate results and implementation commit object are recorded below. | DEC-P29W-FORECLOSURE-INVENTORY; DEC-P29W-FORECLOSURE-RECORD. Assumed: P29-W is new Phase 29 work. Existing `settlement` is a dated balance anchor, not an explicit closed-state marker; the optional closure record is required to distinguish foreclosure from ordinary settlement. No Home source edit. Replaced assertions are listed below. | current request |
-| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume recurring restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
+| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume investment restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
 | P29-Y | Phase 29 | — | 16d1c9bc | 2026-11-05 | Repair stale Gate 1 memory assertions and verify the real counts. | Memory and progress expectations were reconciled to real Jest output without weakening assertions; ordered gates pass. | Commit `7ffa09ad75b2ad42883c1d573ba8133d15cf1304`; real suite/test evidence is preserved in this ledger. | Replaced assertions: stale suite/test counts and latest-run text / real source-derived counts / owner asked Gate 1 repaired. | current request |
 | P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
+| P29-AA | Phase 29 | — | — | 2026-11-06 | Repair Emergency Fund holding links on deletion and hydration. | Done; valid links, net worth and goal values preserved; all six gates passed at completion. | Implementation and gate evidence recorded in this ledger. | Original Gate 1 count is historical, not the current suite count. No schema change. | current request |
+| P29-AB | Phase 29 | — | — | 2026-11-07 | Add Budget income recurrence and strict backup/import support. | Done; v21-to-v22 migration defaults prior incomes monthly; all six gates pass. | Implementation and gate evidence recorded in this ledger. | Physical-device checks remain open. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -3022,7 +3067,7 @@ not device evidence.
 
 | ID | Request | Status | Owner / evidence |
 |---|---|---|---|
-| CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Held for P24-A; notification design, permission behavior, and tests remain outstanding. |
+| CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Done; superseded by P24-A (2026-11-08) | Resolved by local reminders, lock-gated confirmation, privacy controls and the 60-item scheduler. Original open-state note is historical and was superseded on 2026-11-08. |
 | CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
 | CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
@@ -3330,18 +3375,32 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 4. **Phase 22 — Demo data** (Done): P22-A four months of linked demo data
    (CR-12).
 5. **Phase 23 — Insurance** (Done) [P15-F].
-6. **Phase 24 — Reminders and notifications** (In progress), including CR-1
-   [P15-K].
+6. **Phase 24 — Reminders and notifications** (Done), including CR-1
+   [P15-K]. P24-A implemented local reminders and confirmation; CR-1's former
+   Open entry was superseded on 2026-11-08.
 7. **Phase 25 — Release preparation and encrypted backups**: P25-A v0.1.0
    release-preparation documentation (Done); P25-B encrypted backups (Done)
    [P15-L]; P25-C release blockers and shared AI memory (Done).
-8. **Phase 26 — Accessibility, performance and final gates** (Planned)
-   [P15-M].
-9. **Phase 27 — Cleanup** (Planned): dead-code audit (including whether
-   `SectionHeaderRow` and `fitsInline` remain used after the ChipRow redesign),
-   unused dependencies, bundle audit, README, and a more robust schedule
-   benchmark.
-10. **Phase 28 — QA and release** (Planned).
+8. **Phase 26 — Accessibility, performance and final gates** (Done)
+   [P15-M]; physical-device checks remain open.
+9. **Phase 27 — Cleanup** (Done): dead-code/dependency cleanup, bundle audit,
+   README update and robust schedule benchmark.
+10. **Phase 28 — QA and release** (Done for release organization and metadata):
+    P28-A/P28-B/P28-C are complete. The v1.0.0 production EAS build has not
+    been created; see [`docs/releases/build-config.md`](releases/build-config.md)
+    and the release-build record.
+11. **Phase 29 — Product delivery** (Done through P29-AB): the dashboard is
+    the current source for completed work and open device checks.
+12. **Phase 30 — Release 2 stabilization** (Planned):
+    - P30-A — [placeholder]
+    - P30-B — [placeholder]
+    - P30-C — [placeholder]
+
+**Superseded (2026-11-08):** the earlier roadmap ended at Phase 28 and marked
+Phases 24, 26, 27 and 28 as in progress or planned. Those entries have been
+updated above; use the dashboard for the canonical status. Fixes to completed
+work remain in their original phase and use `<ID>-R<n>` (for example,
+`P29-AB-R1`), with the original row noting `Revised by`.
 
 ## 10. Verification matrix
 
@@ -4244,17 +4303,21 @@ was resolved in CR-26. No schema change was made; `SCHEMA_VERSION` remains 7.
 | `npx expo-doctor` | 20/21 checks passed. Expo config validation failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`, which is not the `.icon` directory required by the checker. This pre-existing config was not changed as part of P22-A. | 1 |
 
 | P22-A four-month linked demo | Done | `src/mock/demoData.ts`, development-menu loader, and strict import preservation of `snapshotAdjustment` | `src/mock/__tests__/demoData.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/appMenu.test.ts`; acceptance tests and final required gates pass |
-| P23-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |
+| P23-A insurance [P15-F] | Done | Schema-v11 policy model and migration; policy actions, schedules and due integration | Policy, migration, backup and route tests; final six gates pass |
 | P16-C goal links | Done | `src/domain/goalLinks.ts`, `src/domain/goals.ts`, `app/goal-form.tsx` | `src/domain/__tests__/goalLinks.test.ts`, store and route smoke suites |
 | P17-A cash flow/movements | Done | `src/domain/cashFlow.ts`, `app/month-review.tsx`, `app/money-movement-form.tsx` | `src/domain/__tests__/cashFlow.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
 | P17-B budgets | Done | `src/domain/budget.ts`, `app/budget.tsx`, `app/budget-template-form.tsx`, `app/budget-history.tsx` | `src/domain/__tests__/budget.test.ts`, `src/data/__tests__/createAppStore.test.ts`, route and Transactions screen suites |
 | P17-C sorting | Done | `src/lib/sorting.ts`, `src/data/useSort.ts`, `src/components/SortChip.tsx`, sortable `app/` lists | `src/lib/__tests__/sorting.test.ts`, `src/data/__tests__/metaStore.test.ts`, screen and route smoke suites |
-| P24-A reminders / CR-1 [P15-K] | Planned | No verified planner, prefs, notification adapter or screen | No reminder tests |
+| P24-A reminders / CR-1 [P15-K] | Done | Local reminders, lock-gated confirmation, privacy controls and scheduler | Focused tests and all six ordered gates pass; native delivery remains unverified |
 | P25-A release preparation | Done | `README.md`, `CHANGELOG.md`, `AGENTS.md`, package/app version metadata and this ledger | Release gates recorded in DEC-P25A; store deployment and device QA remain outside this task |
 | P25-B encrypted backup [P15-L] | Done | `src/domain/backupCrypto.ts`, `app/backup.tsx`, and the existing import/migration chain | `src/domain/__tests__/backupCrypto.test.ts`, route smoke and store migration/Undo tests; 80 suites / 984 tests and all six gates pass |
-| P26-A accessibility/performance [P15-M] | Planned | No final audit artifact | No comprehensive device/accessibility suite |
-| P27-A cleanup | Planned | Dead-code/dependency, bundle, README and schedule benchmark audit pending | Cleanup gates pending |
-| P28-A QA and release | Planned | QA and release work not started | Release checklist pending |
+| P26-A accessibility/performance [P15-M] | Done | Accessibility and performance fixes; audit evidence summarized in this ledger | Full coverage and six ordered gates pass; native-device checks remain open |
+| P27-A cleanup | Done | Dead-code/dependency, bundle and schedule benchmark cleanup | Six ordered gates pass; accepted dependency audit risk remains open |
+| P28-A QA and release | Done | Initial release preparation; stable v1.0.0 metadata subsequently handled in P28-B | See dashboard and release history; production EAS build remains unbuilt |
+| P28-B release metadata | Done | v1.0.0 app/package metadata and published notes | See dashboard and release history |
+| P28-C release organization/build management | Done | Reusable notes, EAS build configuration, build history and release rules | See dashboard and build history; production build remains unbuilt |
+| P29-AA Emergency Fund link integrity | Done | Deletion/hydration repair preserving valid links and balances | Six gates passed at completion; original test counts remain historical |
+| P29-AB Budget income recurrence | Done | Monthly, quarterly, half-yearly and yearly income schedules; migration and backup/import | Six gates passed; native-device check remains open |
 
 ### Fix round
 
@@ -5321,7 +5384,7 @@ In P25-D the owner reported that physical-device testing works; device model
 and operating system were not recorded. This is owner-verified, not automated
 evidence. The owner also reports the EAS build and screenshots are complete.
 Full automated test and coverage results are recorded in DEC-P25C; see
-[`docs/memory/open-items.md`](../memory/open-items.md) for outstanding owner
+[`docs/memory/open-items.md`](./memory/open-items.md) for outstanding owner
 decisions and the source of the owner-reported verification.
 
 ### 2026-11-01 backup revalidation
@@ -7182,6 +7245,10 @@ Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
 recorded as a blocked task, adding one item to the denominator without
 increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
 
+P28-A assertion replacement: old `Overall progress 96% (107/111)` and Phase
+28 `0% (0/1)`; new `97% (108/111)` and Phase 28 `100% (1/1)`; reason: the
+release-report, metadata and checklist work is completed and counted as Done.
+
 ### DEC-P29N — Reminders prompt (2026-11-04)
 
 - **Assumed:** P29-N is new Phase 29 work. Schema remains v17; no AppData
@@ -7905,7 +7972,7 @@ so that was not done.
 The P29-T mutation tests use real `createAppStore` actions; the mock/demo
 selector regression verifies the derived outputs directly. Device verification
 of persistence, rendering and font-scale behavior remains open in
-[`docs/memory/open-items.md`](docs/memory/open-items.md).
+[`docs/memory/open-items.md`](./memory/open-items.md).
 
 The first full Gate 1 attempt exited 1 because the demo selector test still
 expected the pre-P29-T values. `buildDemoData` adds dated contributions through
@@ -8633,7 +8700,7 @@ entries.
 | P29-X Step 1 | Done | Report-only inventory committed first as `a4a47e63515c90a61903322ae73fe55fa40bf4b8`; schedule, dues, Budget, reminders, goals, card and store paths were inventoried before product edits. |
 | P29-X schema | Done | Schema v21 adds optional `PlanHolding.stopDate`; migration from v20 is identity-preserving and the existing premigration archive supports `.premigration.v20`. |
 | P29-X stop/resume behavior | Done | Pure `stopPlan()` and `resumePlan()` mutations plus one-write store Undo actions. `planSchedule()` and `planNextRows()` apply the inclusive cutoff; goal projections stop future contributions. |
-| P29-X UI | Done | Recurring-plan section has Stop recurring / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
+| P29-X UI | Done | Recurring-plan section has Stop investment / Resume investment controls and card text; stop date uses a validated form and confirmation dialog. |
 | P29-X verification | Done | Focused schedule/store tests passed; all six ordered gates passed before implementation commit. |
 
 P29-X final verification:
@@ -8724,7 +8791,7 @@ DEC-P29LAYOUT-ASSET-LIABILITY: the holding Summary card is a single card that
 contains recurring-plan details and financial values. The Summary uses
 single-column rows for Monthly amount, Next due and Value date, and two-column
 detail cells for Invested, Current value/balance, date and Gain. `Stop
-recurring` / `Resume recurring` remains in the holding action row/footer area.
+investment` / `Resume investment` remains in the holding action row/footer area.
 The owner's removed holding Entries and Edit recurring-plan controls are not
 restored.
 
@@ -8774,7 +8841,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   “Foreclosure” / reason: owner renamed the recurring-liability early closure
   action consistently across card, entries and form surfaces.
 - Replaced assertions: old / only one-time and recurring holding card paths /
-  new / every recurring plan card exposes Stop recurring or Resume recurring /
+  new / every recurring plan card exposes Stop investment or Resume investment /
   reason: owner requires stop/resume on all recurring asset cards.
 - Replaced assertions: old / global three-dot menu available where no explicit
   right actions exist / new / menu appears only for Home route variants /
@@ -8783,8 +8850,8 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   Home route variants; explicit supplied `menu` and `showDefaultMenu={false}`
   behavior remains independent.
 - DEC-P29RECURRING-CARD: instrument-card actions use id `stop` for both stop
-  and resume labels; active plans show Stop recurring, stopped plans show
-  Resume recurring.
+  and resume labels; active plans show Stop investment, stopped plans show
+  Resume investment.
 - Validation state before final ordered rerun: focused AppHeader,
   instrument-card and route smoke tests passed; TypeScript passed; Gate 1 real
   run passed 92 suites, 1192 passed tests, 1 skipped, 1193 total.
@@ -8799,3 +8866,277 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 | `npx expo-doctor` | 0 | 21/21 checks passed |
 | `npx expo export --platform android` | 0 | Passed |
 | `npx expo export --platform ios` | 0 | Passed |
+
+## 11. Session and release log
+
+### Historical checkpoint commit message correction (2026-11-07)
+
+- With explicit owner authorization, corrected five historical checkpoint
+  subjects on `main` and force-pushed using a lease from
+  `6d50bdb9887ced961433c93daaf3a4c67f341d7c`. Each replacement commit has the
+  same tree as its original:
+  - `9b9066bb3c51c33a78e98b2779d664f16f2c2700` ->
+    `9e8bde709c618fe5359258507e8182a4c873499c` — `docs: add release
+    management documentation`.
+  - `b0586fcbdf0787a0acd929f8bb3f2e044d699389` ->
+    `3ef87b1cb54370addd987ad382f8350a25778858` — `docs: align Phase 29
+    progress counter`.
+  - `ff349515887dae09ac5ebc34776ec2754ed80dbe` ->
+    `f467e58701a91b709009f03eb1b7b47a3f5d1332` — `chore: update Expo SDK 57
+    patch dependencies`.
+  - `ecc5c354579bf5812effe5adc3492e61cfd98f4f` ->
+    `c94aca65b842c3fe2b6590bb3c3e3093e50fdcf3` — `fix: clarify Budget
+    due-day field labels`.
+  - `75e9097bcf62c09cf22149160318e6392fb1060c` ->
+    `46ffe0966dcacd8839244f4a7e9e87ddb2c3cbaa` — `fix: simplify Budget
+    management sheet labels`.
+- Verified the rewritten subjects and unchanged tree IDs, and confirmed
+  `origin/main` now resolves to `91cfde59c4cd4821377399c55fb1ba3052aaf9f2`.
+  The published `v1.0.0` tag was intentionally left unchanged at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; no tests or builds were needed
+  for this message-only history change.
+
+### Release commit message correction (2026-11-07)
+
+- Reworded local commit `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15` to
+  `60a4c8b1d287fbea1cec7f622690aa898b61bda0`
+  (`docs: prepare initial v1.0.0 release draft`), matching its release-draft
+  and status changes.
+- Reworded local commit `8c0857c2c50dfc87cc67808cdc0bf09aa7139739` to
+  `be1e626f8b13e499f94bc86b1a517ed33d0cab14`
+  (`docs: record v1.0.0 release publication`), matching its publication
+  record, history and release-documentation changes.
+- Replayed descendant `8324822981153b602f5168e08b6759537fc0f111` unchanged in
+  content as `a29d861d0d8541c942e06b9ebbdc04f61e7c8c29`; no commits were
+  pushed. Existing Copilot co-author trailers were retained. All replacement
+  commits were verified in Git.
+
+### Published release notes directory (2026-11-07)
+
+- Created `docs/releases/published/` and moved the already-published
+  `v1.0.0.md` record there.
+- Updated the release prompt, README, configuration, history, and release
+  rules to require all published Markdown records to live in `published/`;
+  drafts move there after publication verification and are removed from
+  `drafts/`.
+- Updated current status/open-items memory links. This documentation-only
+  change does not alter the GitHub Release or its published notes.
+
+### v1.0.0 GitHub Release published (2026-11-07)
+
+- Published the approved `v1.0.0` GitHub Release at
+  https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0.
+  GitHub reports it is published, not a draft or prerelease, at
+  `2026-11-07T14:12:34Z` (2026-11-07).
+- The `v1.0.0` tag resolves to target commit
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`, matching `origin/main` at
+  publication. The release notes' date placeholder was corrected to
+  `2026-11-07` and the published body reverified.
+- Archived the final notes in `docs/releases/published/v1.0.0.md`, updated release
+  configuration/history/index and the memory status/open items, and removed
+  the published draft.
+- Pre-publication worktree edits were checkpointed exactly in
+  `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15`
+  (`chore: user manual changes (checkpoint)`). That checkpoint included the
+  deletion of the placeholder `docs/releases/v1.0.0.md`; the permanent record
+  was recreated as requested after publication. The owner's release README
+  line reflow was preserved.
+- No application source or version files were changed. No tests/builds were
+  run. The EAS production build remains unrun.
+
+### Initial v1.0.0 release draft prepared (2026-11-07)
+
+- Preflight worktree was clean. The initial unscoped GitHub CLI listing showed
+  a `v0.1.0` draft; subsequent repository-scoped CLI/API checks returned no
+  releases or tags. Neither result shows a published stable baseline. Reconcile
+  the discrepancy during approval revalidation. The repository initial commit
+  is `f27258093e14809fe923e480381488ece0d859a9`; target branch `main` is at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`.
+- Recommended version is `v1.0.0`, consistent with `app.json`, `package.json`
+  and `CHANGELOG.md`. The initial commit is the history baseline; 365 commits
+  follow it through the target. GitHub CLI returned no merged PRs; GitHub's
+  contributors endpoint verifies `sahilsheikh-dev` and `Copilot`.
+- Saved the unpublished, source-checked release draft at
+  `docs/releases/drafts/v1.0.0.md`. No version files, tags, GitHub releases,
+  permanent release records or application code were changed.
+- No tests or builds were run for this documentation-only draft. Publication
+  awaits explicit approval; revalidate the target commit and release notes
+  before publishing.
+
+### Release README approval prompts (2026-11-07)
+
+- Added copyable draft-preparation and post-approval publication prompts to
+  `docs/releases/README.md`. The preparation prompt explicitly prohibits
+  publishing and waits for approval; the second prompt revalidates the target
+  commit and release notes before publication and permanent documentation
+  updates.
+- Documentation-only change; no release was prepared or published. No tests
+  were run.
+
+### P29-AB completion record (2026-11-07)
+
+- Owner checkpoint: initial worktree was clean; no owner-manual checkpoint
+  commit was required. Owner edits remained untouched.
+- Added v22 Budget income recurrence: monthly, quarterly, half-yearly and
+  yearly; non-monthly first-due month; strict backup/import support.
+- Preserved owner UI edits: no Insurance or Transactions Available balance
+  border/divider restoration; recurring action remains "Stop investment".
+  The stopped-plan action is now "Resume investment".
+- Gate 1 passed 91 suites: 1193 tests passed, 1 skipped. All files coverage
+  was 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines.
+  Gate 2 TypeScript passed; Gate 3 lint passed with one existing array-style
+  warning; Gate 4 Expo Doctor passed 21/21; Gate 5 Android export passed with
+  a 5.5 MB bundle; Gate 6 iOS export passed with a 5.2 MB bundle.
+
+### P28-B first-release 1.0.0 metadata (2026-11-07)
+
+- Owner-edit preflight: the worktree was clean; no owner checkpoint commit was
+  required. Protected Home and Budget routes were not edited.
+- Release metadata is aligned to version `1.0.0` in `app.json`,
+  `package.json` and the `package-lock.json` root. CHANGELOG documents the
+  user-visible result from Phases 24 through 29, including Budget income
+  recurrence and schema v22.
+- Exact release commands, not run:
+  `eas build --platform all --profile production`
+  then
+  `git tag -a v1.0.0 -m "WealthWise 1.0.0"`
+- Tag preflight found 17 local tags, no local `v1.0.0`, and no tags returned by
+  `git ls-remote --tags origin`. No tag was created, moved, or deleted.
+- Assertion replacement: old `Phase 29 ██████████ 97% (31/32)`; new
+  `Phase 29         ██████████ 97% (31/32)`; reason: preserve the owner's
+  dashboard column alignment. The memory test counts now match the latest
+  validated 91-suite, 1194-test run rather than the stale 92/1195 record.
+- Six ordered gates: Gate 1 `npm test -- --coverage` exit 0 (91 suites; 1193
+  passed, 1 skipped, 1194 total); Gate 2 `npx tsc --noEmit` exit 0; Gate 3
+  `npx expo lint` exit 0 (one array-style warning); Gate 4 `npx expo-doctor`
+  exit 0 (21/21); Gate 5 Android export exit 0 (5.5 MB bundle); Gate 6 iOS
+  export exit 0 (5.2 MB bundle).
+- Fresh Gate 1 coverage by `src/` directory: `src/data` 758/807 lines
+  (93.93%) and 793/912 branches (86.95%); `src/domain` 3567/3628 lines
+  (98.32%) and 3505/3776 branches (92.82%); `src/lib` 107/107 lines and
+  126/126 branches (100%). Overall coverage: 95.90% statements, 91.89%
+  branches, 97.75% functions and 97.57% lines. Coverage thresholds unchanged.
+
+### P28-B Assets resume action label (2026-11-07)
+
+- The Assets and investment-entries action, its confirmation title, icon
+  selection, accessibility hint, domain assertion and current documentation
+  now use "Resume investment" instead of "Resume recurring".
+- Focused domain regression and TypeScript verification are recorded in chat.
+  No commit was requested or created.
+
+### Release management documentation (2026-11-07)
+
+- Added the release-management documentation set under `docs/releases/`:
+  [README](releases/README.md), reusable
+  [release prompt](releases/RELEASE_PROMPT.md),
+  [release configuration](releases/release-config.md),
+  [release history](releases/release-history.md),
+  [v1.0.0 release record](releases/published/v1.0.0.md), and the `drafts/`
+  directory.
+- The documentation defines source-verified release discovery, semantic
+  versioning, draft preparation, explicit publication approval, and archival
+  of published release notes and history. It prohibits inventing release
+  details, publishing without approval, and overwriting published records.
+- The user-added files were preserved and checkpointed exactly in
+  `9b9066b` (`chore: user manual changes (checkpoint)`), verified as a commit.
+  No release build or tag was performed by this documentation setup.
+- Release metadata remains unverified: `release-config.md` has `UPDATE_ME`
+  repository identity fields; `release-history.md` marks v1.0.0 as Verify; and
+  `v1.0.0.md` retains placeholders for actual publication date, GitHub Release
+  URL, target commit, verified notes and full changelog URL. These must be
+  populated only after checking the actual published GitHub Release and tag.
+- **Superseded (2026-11-08):** later v1.0.0 publication records verified the
+  release identity, date, tag target, notes and changelog; see
+  `docs/releases/published/v1.0.0.md` and `release-history.md`.
+
+### P28-C release organization and build management (2026-11-08)
+
+- Preflight worktree was clean. Protected-file `git hash-object` results for
+  Home, Budget, `SortChip`, sorting, the frozen manifest and its test match
+  the recorded hashes. Neither protected route was edited.
+- Step 1: `git ls-remote --tags origin` returned `v1.0.0`; the required
+  `git merge-base --is-ancestor v1.0.0 origin/main` check exited 1. The tag
+  was not changed. Its current ancestry status is recorded in
+  `docs/releases/release-history.md` and `docs/memory/open-items.md`.
+- Added the reusable release-notes template and EAS build/configuration guide,
+  updated release prompts/config/index, ignored release drafts except for
+  `.gitkeep`, added build tracking (`v1.0.0` production build: Not built),
+  and summarized the release process in the root README. No build, submission,
+  publication, tag creation or tag movement occurred.
+- Assertion replacements (old → new; reason):
+  - `memoryDocs.test.ts`: hardcoded project test-count assertions (`91`,
+    `1194`) → project counts must equal the counts in `status.md` and its
+    latest validated run; reason: counts are read from the project records,
+    not duplicated as literals, while equality checks remain.
+  - `progressLedger.test.ts`: fixed overall/phase bars and counts, fixed
+    maximum phase 29, and the ten-section expected list → derive bars and
+    counts from dashboard rows and section count/order from numbered headings
+    and the Contents index; reason: retain validations for every displayed
+    count, percentage, bar, row status and indexed heading without freezing
+    future phase or section totals.
+- All progress bars are recomputed from the dashboard rows. The prior
+  Resume point, Schema history, Roadmap and CR-1 open record now carry dated
+  supersession notes; v16-v22 schema entries are based on current migration
+  source. Missing report/checklist paths were removed or redirected to the
+  ledger and release build guide.
+- Gate results, run in the required order:
+
+  | Command | Exit | Result |
+  |---|---:|---|
+  | `npm test -- --coverage` | 0 | 91 suites; 1193 passed, 1 skipped, 1194 total. Coverage: 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines. |
+  | `npx tsc --noEmit` | 0 | Passed. |
+  | `npx expo lint` | 0 | 0 errors; one pre-existing `array-type` warning at `src/data/__tests__/migrate.test.ts:221`. |
+  | `npx expo-doctor` | 0 | 21/21 checks passed. |
+  | `npx expo export --platform android` | 0 | Passed. |
+  | `npx expo export --platform ios` | 0 | Passed. |
+
+- Focused ledger/memory tests: 2 suites, 10 tests passed. All dashboard rows
+  have unique IDs; derived totals are 113/114 overall, 3/3 for Phase 28 and
+  32/33 for Phase 29. Current schema v22 and all six protected blob IDs were
+  verified against source and `git hash-object`. Native physical-device
+  checks remain unverified. Production build and store submission were not
+  performed.
+
+### P28-C-R1 README downloads and release rules (2026-11-08)
+
+- Preflight worktree was clean. Fixed the existing `array-type` lint warning
+  separately: `Array<Record<string, unknown>>` became
+  `Record<string, unknown>[]` in `src/data/__tests__/migrate.test.ts`; no
+  behavior or assertion changed. Isolated commit: `13fce0e`.
+- README now has a Download section before Contents, source-version/release
+  date, the live Old versions link, explicit pending Android/iOS notices and
+  APK installation guidance. No dead Android link or invented iOS URL is
+  shown. What's new summarizes `CHANGELOG.md` v1.0.0.
+- Source audit corrected the schema and migration range to v22 / v1–v22,
+  documented monthly/quarterly/half-yearly/yearly Budget income, current
+  Insurance placeholder behavior, and the real 91-suite/1194-test run.
+  Stop/Resume investment and Foreclosure labels remain aligned with source.
+- Added the `android-apk` profile extending production with APK output, without
+  changing existing profiles. Documented production AAB for Play, GitHub APK,
+  separately auto-incremented `versionCode`, iOS store channels and EAS-managed
+  signing credentials. No build was started.
+- Release instructions require exact APK asset naming/upload, 302-to-200
+  download verification, README and Builds table updates, and consistency
+  across README, release history and GitHub release assets before publication.
+- Assertion record: `progressLedger.test.ts` now expects the P28-C revision ID
+  and derives phase/progress values from ledger rows; its old fixed phase list
+  assertion is replaced with an additional Phase 28 completion check so this
+  revision is tracked without hardcoded counters. `memoryDocs.test.ts` remains
+  file-derived, comparing the recorded counts to status and the latest run.
+- Ordered gates:
+
+  | Command | Exit | Result |
+  |---|---:|---|
+  | `npm test -- --coverage` | 0 | 91 suites; 1193 passed, 1 skipped, 1194 total. |
+  | `npx tsc --noEmit` | 0 | Passed. |
+  | `npx expo lint` | 0 | Passed with 0 errors and 0 warnings. |
+  | `npx expo-doctor` | 0 | 21/21 checks passed. |
+  | `npx expo export --platform android` | 0 | Passed. |
+  | `npx expo export --platform ios` | 0 | Passed. |
+
+- Focused migration, ledger and memory run: 3 suites, 40 tests passed.
+  Coverage in the full run: 95.90% statements, 91.89% branches, 97.75%
+  functions and 97.57% lines. No device build, store submission, release
+  publication, tag operation or push occurred. Physical-device checks remain
+  unverified.
