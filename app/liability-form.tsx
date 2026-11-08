@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Switch, View } from 'react-native';
 
-import { ChoiceField } from '../src/components/form/ChoiceField';
+import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
@@ -245,7 +245,7 @@ export default function LiabilityFormScreen() {
         <TextField label="Name" accessibilityLabel="Liability name" maxLength={40} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.name?.message} />
       )} />
       <Controller control={control} name="type" render={({ field }) => (
-        <ChoiceField label="Type" choices={[...LIABILITY_TYPES]} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+        <Dropdown label="Type" accessibilityLabel="Liability type" options={LIABILITY_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
       )} />
       {!liabilityId ? (
         <Controller control={control} name="received" render={({ field }) => (

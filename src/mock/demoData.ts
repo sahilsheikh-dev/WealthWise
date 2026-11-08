@@ -6,12 +6,18 @@ import {
   recordMoneyMovement,
   shortfallForMonth,
 } from '../domain/cashFlow';
-import { applyBudgetPlanToMonth } from '../domain/budget';
+import {
+  applyBudgetPlanToMonth,
+  defaultBudgetSectionIdFor,
+  defaultBudgetSections,
+  editBudgetItem,
+} from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
-  BudgetPlanLine,
+  BudgetItem,
+  BudgetPlan,
   Goal,
   Holding,
   ISODate,
@@ -39,6 +45,11 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
   Fashion: 800,
   Culture: 400,
   Unexpected: 700,
+  Rent: 15_000,
+  Utilities: 2_500,
+  Subscriptions: 800,
+  'Personal spending': 1_200,
+  Travel: 1_500,
 };
 
 const INVESTMENT_AMOUNTS: Record<string, number> = {
@@ -77,7 +88,7 @@ function generatedIdFactory(): () => string {
   return () => `demo-generated-${String(++index).padStart(5, '0')}`;
 }
 
-function makeBudgetPlanLines(): BudgetPlanLine[] {
+function makeBudgetPlanItems(): BudgetItem[] {
   const percentages: Record<string, number> = {
     Living: 18,
     Food: 8,
@@ -85,7 +96,7 @@ function makeBudgetPlanLines(): BudgetPlanLine[] {
     Shopping: 4,
     Unexpected: 3,
   };
-  return [
+  const builtInItems = [
     ...TRANSACTION_CATEGORIES.expense.filter((category) => category !== 'EMI' && category !== 'Insurance').map((category) => ({
       category,
       mode: percentages[category] === undefined ? 'amount' as const : 'percent' as const,
@@ -99,6 +110,38 @@ function makeBudgetPlanLines(): BudgetPlanLine[] {
       mode: category === 'Mutual fund / SIP' ? 'percent' as const : 'amount' as const,
       value: category === 'Mutual fund / SIP' ? 5 : Math.max(2_000, (INVESTMENT_AMOUNTS[category] ?? 1_000) * 1.5),
     })),
+  ];
+  return [
+    ...builtInItems.map((item, index) => ({
+      id: `demo-budget-item-${index + 1}`,
+      sectionId: defaultBudgetSectionIdFor(item.category),
+      name: item.category,
+      mode: item.mode,
+      value: item.value,
+      ...('dueDay' in item ? { dueDay: item.dueDay } : {}),
+    })),
+    {
+      id: 'demo-budget-item-domestic-help',
+      sectionId: 'survival',
+      name: 'Domestic help',
+      mode: 'amount',
+      value: 2_000,
+    },
+    {
+      id: 'demo-budget-item-manual-insurance',
+      sectionId: 'insurance',
+      name: 'Insurance',
+      mode: 'amount',
+      value: 1_200,
+      dueDay: 20,
+    },
+    {
+      id: 'demo-budget-item-pets',
+      sectionId: 'demo-section-pets',
+      name: 'Pet care',
+      mode: 'amount',
+      value: 3_000,
+    },
   ];
 }
 
@@ -302,9 +345,16 @@ export function buildDemoData(today: ISODate): AppData {
   const liabilities = makeLiabilities(months);
   const goals = makeGoals();
   const policies = makePolicies(today, months[0]!);
-  const budgetPlan = {
-    plannedIncome: 75_000,
-    lines: makeBudgetPlanLines(),
+  const budgetPlan: BudgetPlan = {
+    incomes: [
+      { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
+      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15 },
+    ],
+    sections: [
+      ...defaultBudgetSections(),
+      { id: 'demo-section-pets', name: 'Pets', type: 'spend' },
+    ],
+    items: makeBudgetPlanItems(),
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
   };
@@ -321,8 +371,7 @@ export function buildDemoData(today: ISODate): AppData {
     efAllocation: {
       cash: 10,
       bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
+      'fd-rd': 50,
     },
     efCustomBuckets: [],
     efBucketLinks: {
@@ -384,6 +433,26 @@ export function buildDemoData(today: ISODate): AppData {
         category,
         note: exceptionalRepair > 0 ? 'Major emergency home repair' : `${category} spending`,
         date: monthDate(month, 12, today),
+      });
+    }
+    for (const [category, amount] of [['Domestic help', 1_500], ['Pet care', 2_000]] as const) {
+      data.transactions.push({
+        id: `demo-expense-${month}-${category.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`,
+        type: 'expense',
+        amount,
+        category,
+        note: `${category} spending`,
+        date: monthDate(month, 13, today),
+      });
+    }
+    if (monthIndex === 3) {
+      data.transactions.push({
+        id: `demo-unbudgeted-vet-${month}`,
+        type: 'expense',
+        amount: 650,
+        category: 'Vet visit',
+        note: 'Unbudgeted veterinary visit',
+        date: monthDate(month, 16, today),
       });
     }
   }
@@ -487,11 +556,30 @@ export function buildDemoData(today: ISODate): AppData {
     allocations: [{ kind: 'liability', liabilityId: recurringLiability.id, amount: 5_000 }],
   }, id, today);
 
+  for (const month of months.slice(0, 3)) {
+    data = applyBudgetPlanToMonth(data, month, { newId: id, today });
+  }
   data = applyBudgetPlanToMonth(data, currentMonth, { newId: id, today });
   const currentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
   const linkedCurrentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
-  data.budget = { plannedIncome: linkedCurrentBudget.plannedIncome, lines: linkedCurrentBudget.lines };
+  data.budget = {
+    plannedIncome: linkedCurrentBudget.incomes.reduce((total, income) => total + income.amount, 0),
+    lines: linkedCurrentBudget.items.map((item) => ({ category: item.name, planned: item.value })),
+  };
+  const customMonth = shiftMonth(currentMonth, 2);
+  data = editBudgetItem(data, customMonth, { kind: 'line', category: 'Food' }, {
+    amount: 2_400,
+    dueDay: 17,
+  }, 'month', today);
+  data = editBudgetItem(data, customMonth, {
+    kind: 'income',
+    incomeId: 'demo-income-freelance',
+    category: 'Freelance',
+  }, {
+    amount: 8_000,
+    dueDay: 18,
+  }, 'month', today);
   return data;
 }

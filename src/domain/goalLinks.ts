@@ -9,15 +9,7 @@ export type LinkableInstrument = {
   kind: 'manual' | 'plan' | 'policy';
   value: number;
   invested: number;
-  freeShare: number;
 };
-
-export class AssetOverAllocatedError extends Error {
-  constructor(alreadyAllocated: number, available: number) {
-    super(`This asset is already ${formatShare(alreadyAllocated)}% allocated to other goals; at most ${formatShare(available)}% is left`);
-    this.name = 'AssetOverAllocatedError';
-  }
-}
 
 export class InvalidGoalLinksError extends Error {
   constructor(message: string) {
@@ -57,24 +49,13 @@ function hasLinkableInstrument(data: AppData, instrumentId: string): boolean {
     || data.policies.some((policy) => policy.id === instrumentId && isSavingsPolicy(policy));
 }
 
-function formatShare(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
 export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstrument[] {
-  const allocations = new Map<string, number>();
-  for (const goal of data.goals) {
-    for (const link of goal.links) {
-      allocations.set(link.instrumentId, (allocations.get(link.instrumentId) ?? 0) + link.share);
-    }
-  }
   const holdings = data.holdings.map((holding): LinkableInstrument => ({
     id: holding.id,
     name: holding.name,
     kind: holding.kind,
     value: holdingValue(holding, asOf),
     invested: holdingInvested(holding),
-    freeShare: Math.max(0, 100 - (allocations.get(holding.id) ?? 0)),
   }));
   const policies = data.policies.filter(isSavingsPolicy).map((policy): LinkableInstrument => ({
     id: policy.id,
@@ -82,9 +63,35 @@ export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstr
     kind: 'policy',
     value: policyValue(policy),
     invested: policyInvested(policy),
-    freeShare: Math.max(0, 100 - (allocations.get(policy.id) ?? 0)),
   }));
   return [...holdings, ...policies];
+}
+
+function goalSharePosition(data: AppData, goalId: string, instrumentId: string): { index: number; count: number } {
+  const goalIds = new Set(data.goals
+    .filter((goal) => goal.links.some((link) => link.instrumentId === instrumentId))
+    .map((goal) => goal.id));
+  goalIds.add(goalId);
+  const orderedIds = [...goalIds].sort((left, right) => left.localeCompare(right));
+  const index = orderedIds.indexOf(goalId);
+  return { index, count: orderedIds.length };
+}
+
+function splitPaiseForPosition(value: number, index: number, count: number): number {
+  const paise = Math.max(0, Math.round(value * 100));
+  const base = Math.floor(paise / count);
+  const remainder = paise % count;
+  return (base + (index < remainder ? 1 : 0)) / 100;
+}
+
+export function goalAssetValueFor(
+  goal: Pick<Goal, 'id'>,
+  data: AppData,
+  instrumentId: string,
+  value: number,
+): number {
+  const { index, count } = goalSharePosition(data, goal.id, instrumentId);
+  return splitPaiseForPosition(value, index, count);
 }
 
 export function goalSavedFor(
@@ -94,7 +101,7 @@ export function goalSavedFor(
 ): number {
   if (goal.links.length === 0) return goal.auto === 'ef' ? 0 : goal.saved;
   return goal.links.reduce((total, link) =>
-    total + (linkedValue(data, link.instrumentId, asOf) ?? 0) * link.share / 100, 0);
+    total + goalAssetValueFor(goal, data, link.instrumentId, linkedValue(data, link.instrumentId, asOf) ?? 0), 0);
 }
 
 export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink[]): void {
@@ -102,10 +109,6 @@ export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink
   if (!goal) throw new InvalidGoalLinksError('The selected goal could not be found.');
   const seen = new Set<string>();
   for (const link of links) {
-    if (!Number.isFinite(link.share) || link.share < 0.1 || link.share > 100
-      || Math.round(link.share * 10) !== link.share * 10) {
-      throw new InvalidGoalLinksError('Asset shares must be from 0.1% to 100% in increments of 0.1%.');
-    }
     if (seen.has(link.instrumentId)) {
       throw new InvalidGoalLinksError('A goal cannot link the same asset more than once.');
     }
@@ -113,13 +116,6 @@ export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink
     if (!hasLinkableInstrument(data, link.instrumentId)) {
       throw new InvalidGoalLinksError('Choose an existing holding or savings policy.');
     }
-    const allocatedElsewhere = data.goals
-      .filter((item) => item.id !== goalId)
-      .flatMap((item) => item.links)
-      .filter((item) => item.instrumentId === link.instrumentId)
-      .reduce((total, item) => total + item.share, 0);
-    const total = allocatedElsewhere + link.share;
-    if (total > 100) throw new AssetOverAllocatedError(allocatedElsewhere, 100 - allocatedElsewhere);
   }
 }
 
@@ -137,7 +133,7 @@ export function setGoalLinks(data: AppData, goalId: string, links: GoalLink[]): 
     ...data,
     efBucketLinks,
     goals: data.goals.map((goal) => goal.id === goalId
-      ? { ...goal, links: links.map((link) => ({ ...link })) }
+      ? { ...goal, links: links.map(({ instrumentId }) => ({ instrumentId })) }
       : goal),
   };
 }
@@ -148,14 +144,7 @@ export function linkEmergencyGoalAssets(data: AppData, instrumentIds: readonly s
   const links = [...emergencyGoal.links];
   for (const instrumentId of instrumentIds) {
     if (links.some((link) => link.instrumentId === instrumentId)) continue;
-    const allocatedElsewhere = data.goals
-      .filter((goal) => goal.id !== emergencyGoal.id)
-      .flatMap((goal) => goal.links)
-      .filter((link) => link.instrumentId === instrumentId)
-      .reduce((total, link) => total + link.share, 0);
-    const available = Math.floor(Math.max(0, 100 - allocatedElsewhere) * 10) / 10;
-    if (available < 0.1) throw new AssetOverAllocatedError(allocatedElsewhere, available);
-    links.push({ instrumentId, share: available });
+    links.push({ instrumentId });
   }
   return setGoalLinks(data, emergencyGoal.id, links);
 }
@@ -184,7 +173,7 @@ function monthIndex(date: ISODate): number {
 export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalProjection {
   const current = goalSavedFor(goal, data, asOf);
   const invested = goal.links.reduce((total, link) =>
-    total + (linkedInvested(data, link.instrumentId) ?? 0) * link.share / 100, 0);
+    total + goalAssetValueFor(goal, data, link.instrumentId, linkedInvested(data, link.instrumentId) ?? 0), 0);
   const remaining = Math.max(0, goal.target - current);
   const percent = goal.target <= 0 ? 0 : Math.min(100, Math.max(0, current / goal.target * 100));
   const deadline = `${goal.year}-12-31`;
@@ -195,7 +184,7 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
   const linkedPlans = goal.links.flatMap((link) => {
     const plan = data.holdings.find((holding): holding is PlanHolding =>
       holding.id === link.instrumentId && holding.kind === 'plan');
-    return plan ? [{ plan, share: link.share }] : [];
+    return plan ? [{ plan, position: goalSharePosition(data, goal.id, link.instrumentId) }] : [];
   });
   if (linkedPlans.length === 0) {
     return { current, invested, remaining, percent, projectedDate: null, deadline, deltaMonths: null, status: 'none' };
@@ -203,11 +192,13 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
 
   const fixedValue = goal.links.reduce((total, link) => {
     const planExists = linkedPlans.some(({ plan }) => plan.id === link.instrumentId);
-    return total + (planExists ? 0 : (linkedValue(data, link.instrumentId, asOf) ?? 0) * link.share / 100);
+    return total + (planExists ? 0 : goalAssetValueFor(
+      goal, data, link.instrumentId, linkedValue(data, link.instrumentId, asOf) ?? 0,
+    ));
   }, 0);
-  const states = linkedPlans.map(({ plan, share }) => ({
+  const states = linkedPlans.map(({ plan, position }) => ({
     plan,
-    share,
+    position,
     value: planValue(plan, asOf),
   }));
   const hasContribution = states.some(({ plan }) => plan.amount * PERIODS_PER_YEAR[plan.frequency] > 0);
@@ -215,7 +206,8 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
     return { current, invested, remaining, percent, projectedDate: null, deadline, deltaMonths: null, status: 'none' };
   }
 
-  let simulated = fixedValue + states.reduce((total, state) => total + state.value * state.share / 100, 0);
+  let simulated = fixedValue + states.reduce((total, state) =>
+    total + splitPaiseForPosition(state.value, state.position.index, state.position.count), 0);
   let projectedDate: ISODate | null = null;
   for (let month = 1; month <= 600; month += 1) {
     const simulationDate = monthEndAfter(asOf, month);
@@ -230,7 +222,8 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
         : 0;
       state.value = state.value * (simulationDate >= state.plan.startDate ? 1 + monthlyRate : 1) + monthlyContribution;
     }
-    simulated = fixedValue + states.reduce((total, state) => total + state.value * state.share / 100, 0);
+    simulated = fixedValue + states.reduce((total, state) =>
+      total + splitPaiseForPosition(state.value, state.position.index, state.position.count), 0);
     if (simulated >= goal.target) {
       projectedDate = monthEndAfter(asOf, month);
       break;

@@ -16,11 +16,13 @@ export function PendingItemActions({
   today,
   onClose,
   compact = false,
+  actionLabel,
 }: {
   item: PendingItem;
   today: string;
   onClose?: () => void;
   compact?: boolean;
+  actionLabel?: string;
 }) {
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -67,12 +69,12 @@ export function PendingItemActions({
     if (!item.actionable) return;
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
-    if (item.source.kind === 'budget') {
+    if (item.source.kind === 'budget' || item.source.kind === 'income') {
       actions.addTransaction({
         type: pendingTransactionType(item),
         amount: item.amount,
         category: item.category,
-        note: '',
+        note: item.source.kind === 'income' ? item.title : '',
         date: today,
       });
       const state = useAppStore.getState();
@@ -122,7 +124,9 @@ export function PendingItemActions({
       };
     }
     setActionToast({
-      message: `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
+      message: pendingTransactionType(item) === 'income'
+        ? `Received ${formatAmount(clearedAmount, 'exact', 1)}`
+        : `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
       actionLabel: 'Undo',
       onAction: undo,
     });
@@ -184,8 +188,8 @@ export function PendingItemActions({
     return (
       <View style={styles.actions}>
         <Button
-          label={pendingActionLabel(pendingTransactionType(item))}
-          icon="check"
+          label={actionLabel ?? pendingActionLabel(pendingTransactionType(item))}
+          icon={actionLabel ? undefined : 'check'}
           onPress={() => {
             if (item.actionable) clear();
             else void clearThrough();

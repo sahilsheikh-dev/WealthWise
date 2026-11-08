@@ -27,7 +27,7 @@ class MemoryStorage implements StateStorage {
 
 const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
 
-function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7): unknown {
+function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9): unknown {
   if (version === 1) return makeV1Fixture();
   if (version === 4) return makeV4Fixture();
   if (version === 5) return makeV5Fixture();
@@ -39,6 +39,49 @@ function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7): unknown {
       budgetTemplates: [],
       defaultBudgetTemplateId: null,
       monthBudgets: [],
+    };
+  }
+  if (version === 8) {
+    const budgetPlan = mockAppData.budgetPlan
+      ? {
+        ...mockAppData.budgetPlan,
+        plannedIncome: mockAppData.budgetPlan.incomes.reduce((total, income) => total + income.amount, 0),
+        incomes: undefined,
+      }
+      : null;
+    return {
+      ...mockAppData,
+      budgetPlan,
+      monthBudgets: (mockAppData.monthBudgets ?? []).map((budget) => ({
+        ...budget,
+        plannedIncome: budget.incomes.reduce((total, income) => total + income.amount, 0),
+        incomes: undefined,
+      })),
+    };
+  }
+  if (version === 9) {
+    const { sections: _sections, items, ...plan } = mockAppData.budgetPlan ?? {
+      incomes: [], repeatMonthly: false, repeatFrom: null, sections: [], items: [],
+    };
+    return {
+      ...mockAppData,
+      budgetPlan: {
+        ...plan,
+        lines: items.map((item) => ({
+          category: item.name,
+          mode: item.mode,
+          value: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })),
+      },
+      monthBudgets: (mockAppData.monthBudgets ?? []).map(({ sections: _snapshotSections, items: snapshotItems, ...budget }) => ({
+        ...budget,
+        lines: snapshotItems.map((item) => ({
+          category: item.name,
+          planned: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })),
+      })),
     };
   }
   const v2 = makeV2Fixture();
@@ -65,7 +108,7 @@ describe('createSafeStorage', () => {
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
     ['invalid-schema', blob({ transactions: [] }, 0), 'corrupt'],
-    ['newer-version', blob(mockAppData, 9), 'newer-version'],
+    ['newer-version', blob(mockAppData, 11), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
@@ -146,11 +189,11 @@ describe('createSafeStorage', () => {
     expect(onWriteSuccess).not.toHaveBeenCalled();
   });
 
-  it.each([1, 2, 3, 4, 5, 6, 7] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
     const name = 'wealthwise.app.v1';
     const base = new MemoryStorage();
     const raw = blob(makeLegacyData(version), version);
-    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 8 });
+    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 10 });
     const premigrationKey = `${name}.premigration.v${version}`;
     base.values.set(name, raw);
     const safe = createSafeStorage(

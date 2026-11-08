@@ -11,9 +11,31 @@ import {
   validateAllocation,
   type EfAllocation,
 } from '../efAllocation';
-import { InvalidAllocationError, resetEfAllocation, saveEfPlan, setEfAllocation } from '../efAllocationActions';
+import { InvalidAllocationError, saveEfPlan, setEfAllocation } from '../efAllocationActions';
 
 describe('ef allocation', () => {
+  it('uses the three requested defaults and leaves saved allocations unchanged', () => {
+    expect(DEFAULT_EF_ALLOCATION).toEqual({ cash: 10, bank: 40, 'fd-rd': 50 });
+    expect(resolveEfAllocation({ efAllocation: null })).toEqual({
+      allocation: { cash: 10, bank: 40, 'fd-rd': 50 },
+      repaired: false,
+    });
+    expect(resolveEfAllocation({ efAllocation: {} })).toEqual({
+      allocation: { cash: 10, bank: 40, 'fd-rd': 50 },
+      repaired: true,
+    });
+    const saved: EfAllocation = {
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    };
+    expect(resolveEfAllocation({ efAllocation: saved })).toEqual({
+      allocation: saved,
+      repaired: false,
+    });
+  });
+
   it('suggested allocation totals 100%', () => {
     const total = Object.values(SUGGESTED_EF_ALLOCATION).reduce((sum, value) => sum + value, 0);
     expect(total).toBe(100);
@@ -71,7 +93,7 @@ describe('ef allocation', () => {
     expect(allocationWarnings(null)).toEqual([]);
   });
 
-  it('normalizes partial and invalid allocations and applies set/reset actions', () => {
+  it('normalizes partial and invalid allocations and validates set actions', () => {
     expect(resolveEfAllocation({ efAllocation: null }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
     expect(resolveEfAllocation({ efAllocation: undefined }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
     expect(resolveEfAllocation({ efAllocation: {} }).allocation).toEqual(DEFAULT_EF_ALLOCATION);
@@ -98,7 +120,6 @@ describe('ef allocation', () => {
 
     const updated = setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 });
     expect(updated.efAllocation).toMatchObject({ cash: 20, bank: 30 });
-    expect(resetEfAllocation(updated)).toMatchObject({ efAllocation: null });
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(InvalidAllocationError);
 
     const floatDrift = {
@@ -140,12 +161,11 @@ describe('ef allocation', () => {
     });
   });
 
-  it('uses the four default groups and drops legacy zero groups without linked assets', () => {
+  it('uses only the three requested default groups and drops legacy zero groups without linked assets', () => {
     expect(activeEfBucketMetadata(null).map(({ id }) => id)).toEqual([
       'cash',
       'bank',
       'fd-rd',
-      'mutual-funds-bonds',
     ]);
     expect(activeEfBucketMetadata({
       cash: 10,

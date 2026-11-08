@@ -6,9 +6,12 @@ import {
   migrateV5ToV6,
   migrateV6ToV7,
   migrateV7ToV8,
+  migrateV8ToV9,
+  migrateV9ToV10,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
+import { makeV9Fixture } from '../testFixtures/v9';
 import { validateImportData } from '../../domain/backup';
 import { netWorth } from '../../domain/summary';
 import { goalSavedFor } from '../../domain/goalLinks';
@@ -102,7 +105,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 9)).toThrow(
+    expect(() => migratePersisted({}, 11)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -160,8 +163,48 @@ describe('schema migration', () => {
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version7: true } };
-    expect(migratePersisted(persisted, 8)).toBe(persisted);
+    const persisted = { data: { version10: true } };
+    expect(migratePersisted(persisted, 10)).toBe(persisted);
+  });
+
+  it('migrates v9 plan lines and snapshots into section items with unmapped items in Survival', () => {
+    const legacy = makeV9Fixture({
+      ...mockAppData,
+      budgetPlan: {
+        ...mockAppData.budgetPlan!,
+        items: [
+          { id: 'food-item', sectionId: 'survival', name: 'Food', mode: 'percent', value: 10 },
+          { id: 'custom-item', sectionId: 'survival', name: 'Domestic help', mode: 'amount', value: 1_000 },
+        ],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom',
+        incomes: [],
+        sections: mockAppData.budgetPlan!.sections,
+        items: [
+          { id: 'snapshot-food', sectionId: 'survival', name: 'Food', mode: 'amount', value: 2_000 },
+          { id: 'snapshot-custom', sectionId: 'survival', name: 'Pet care', mode: 'amount', value: 500 },
+        ],
+      }],
+    });
+    let nextId = 0;
+    const migrated = migrateV9ToV10(legacy, {
+      today: '2026-10-18',
+      newId: () => `new-item-${++nextId}`,
+    }) as AppData;
+    expect(migrated.budgetPlan?.sections.map(({ id }) => id)).toEqual(
+      expect.arrayContaining(['survival', 'savings-investments', 'wants', 'festival-donations-culture', 'unexpected-extras']),
+    );
+    expect(migrated.budgetPlan?.items).toEqual([
+      expect.objectContaining({ id: 'new-item-1', sectionId: 'survival', name: 'Food', mode: 'percent', value: 10 }),
+      expect.objectContaining({ id: 'new-item-2', sectionId: 'survival', name: 'Domestic help', mode: 'amount', value: 1_000 }),
+    ]);
+    expect(migrated.monthBudgets?.[0]?.items).toEqual([
+      expect.objectContaining({ id: 'v10-2026-10-0', sectionId: 'survival', name: 'Food', value: 2_000 }),
+      expect.objectContaining({ id: 'v10-2026-10-1', sectionId: 'survival', name: 'Pet care', value: 500 }),
+    ]);
+    expect(migrated.monthBudgets?.[0]).not.toHaveProperty('lines');
   });
 
   it('migrates v7 snapshots and selects the plan by default, usage and recency', () => {
@@ -188,6 +231,7 @@ describe('schema migration', () => {
         { month: '2026-02', templateId: 'latest', templateName: 'Latest', customized: false, plannedIncome: 30_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 6_000 }] },
       ],
     });
+
     const selectedDefault = migrateV7ToV8(makeLegacy('first'));
     expect(selectedDefault).toMatchObject({
       budgetPlan: {
@@ -219,6 +263,53 @@ describe('schema migration', () => {
       budgetPlan: { plannedIncome: number };
     };
     expect(firstFallback.budgetPlan.plannedIncome).toBe(10_000);
+  });
+
+  it('migrates v8 income totals, category defaults, and dayless snapshots', () => {
+    let id = 0;
+    const v8 = {
+      ...mockAppData,
+      settings: { ...mockAppData.settings, monthlySalary: 900 },
+      transactions: [
+        { id: 'salary-1', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-08-01' },
+        { id: 'salary-2', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-09-01' },
+        { id: 'freelance', type: 'income' as const, amount: 100, category: 'Freelance', note: '', date: '2026-10-01' },
+      ],
+      budgetPlan: {
+        plannedIncome: null,
+        lines: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-11',
+      },
+      monthBudgets: [
+        { month: '2026-09', source: 'custom' as const, plannedIncome: 500, lines: [] },
+        { month: '2026-10', source: 'custom' as const, plannedIncome: null, lines: [] },
+      ],
+    };
+    const migrated = migrateV8ToV9(v8, {
+      today: '2026-10-10',
+      newId: () => `migrated-${++id}`,
+    }) as {
+      budgetPlan: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] };
+      monthBudgets: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] }[];
+    };
+    expect(migrated.budgetPlan.incomes).toEqual([
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 900, day: 1 },
+    ]);
+    expect(migrated.monthBudgets).toEqual([
+      { month: '2026-09', source: 'custom', lines: [], incomes: [
+        { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 500 },
+      ] },
+      { month: '2026-10', source: 'custom', lines: [], incomes: [] },
+    ]);
+    const zero = migrateV8ToV9({
+      ...v8,
+      budgetPlan: { ...v8.budgetPlan, plannedIncome: 0 },
+      settings: { ...v8.settings, monthlySalary: 0 },
+    }, { today: '2026-10-10', newId: () => 'unused' }) as {
+      budgetPlan: { incomes: unknown[] };
+    };
+    expect(zero.budgetPlan.incomes).toEqual([]);
   });
 
   it('rejects malformed v7 budget containers and migrates an empty template list', () => {
@@ -347,6 +438,10 @@ describe('schema migration', () => {
   });
 
   it('preserves the mock portfolio net worth and emergency goal progress across the v6 migration', () => {
+    const planLines = mockAppData.budgetPlan?.items.map((item) => ({
+      category: item.name, mode: item.mode, value: item.value,
+      ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+    })) ?? [];
     const legacy = {
       ...mockAppData,
       transactions: mockAppData.transactions.map((transaction) => transaction.id === 'tx-emergency-fund'
@@ -369,17 +464,21 @@ describe('schema migration', () => {
       budgetTemplates: [{
         id: 'migrated-template',
         name: 'Migrated plan',
-        plannedIncome: mockAppData.budgetPlan?.plannedIncome ?? null,
+        plannedIncome: mockAppData.budgetPlan?.incomes
+          .reduce((sum, income) => sum + income.amount, 0) ?? null,
         lines: [
-          ...(mockAppData.budgetPlan?.lines ?? []).filter((line) => line.category !== 'Other investments'),
+          ...planLines.filter((line) => line.category !== 'Other investments'),
           { category: 'Other investments', mode: 'amount' as const, value: 500 },
           { category: 'Emergency fund', mode: 'amount' as const, value: 1_000 },
         ],
       }],
-      monthBudgets: mockAppData.monthBudgets!.map((budget) => ({
+      monthBudgets: mockAppData.monthBudgets!.map(({ items, sections: _sections, ...budget }) => ({
         ...budget,
         lines: [
-          ...budget.lines.filter((line) => line.category !== 'Other investments'),
+          ...items.filter((item) => item.name !== 'Other investments').map((item) => ({
+            category: item.name, planned: item.value,
+            ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+          })),
           { category: 'Other investments', planned: 500 },
           { category: 'Emergency fund', planned: 1_000 },
         ],
@@ -389,6 +488,7 @@ describe('schema migration', () => {
     const oldLiabilities = netWorth(mockAppData, '2026-10-10').liabilities;
     const oldNetWorth = oldAssets - oldLiabilities;
     const result = migrateV6ToV7(legacy, { today: '2026-10-10', newId: () => 'migrated-mock-fund' }) as AppData & {
+      monthBudgets?: { lines: { category: string; planned: number }[] }[];
       budgetTemplates?: { lines: { category: string; mode: 'amount' | 'percent'; value: number }[] }[];
     };
     const emergency = result.goals.find((goal) => goal.auto === 'ef')!;
@@ -482,12 +582,13 @@ describe('schema migration', () => {
         today: '2026-10-10',
         newId: () => `migrated-${sample}`,
       }) as AppData & {
+        monthBudgets?: { lines: { category: string; planned?: number; mode?: 'amount' | 'percent'; value?: number }[] }[];
         budgetTemplates?: { lines: { category: string; planned?: number; mode?: 'amount' | 'percent'; value?: number }[] }[];
       };
       expect(netWorth(migrated, '2026-10-10').netWorth).toBe(oldNetWorth);
       expect(groupTotals(legacyMonthLines)).toEqual(groupTotals(migrated.monthBudgets![0]!.lines));
       expect(legacyMonthLines.reduce((sum, line) => sum + line.planned, 0))
-        .toBe(migrated.monthBudgets![0]!.lines.reduce((sum, line) => sum + line.planned, 0));
+        .toBe(migrated.monthBudgets![0]!.lines.reduce((sum, line) => sum + (line.planned ?? 0), 0));
       const oldTemplateTotals = groupTotals(templateLines, plannedIncome);
       const newTemplateTotals = groupTotals(migrated.budgetTemplates![0]!.lines, plannedIncome);
       for (const group of BUDGET_GROUPS) {

@@ -1,4 +1,13 @@
 export type ISODate = string;
+export const EARNED_INCOME_CATEGORIES = [
+  'Salary',
+  'Freelance',
+  'Rental',
+  'Business',
+  'Interest',
+  'Other',
+] as const;
+export type EarnedIncomeCategory = (typeof EARNED_INCOME_CATEGORIES)[number];
 
 export const THEME_IDS = ['system', 'light', 'dark', 'sky', 'mint', 'blush', 'midnight'] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
@@ -19,7 +28,7 @@ export type Transaction = {
 
 export type GoalLink = {
   instrumentId: string;
-  share: number;
+  share?: number;
 };
 
 export type Goal = {
@@ -176,21 +185,39 @@ export type BudgetLine = {
   dueDay?: number;
 };
 
+export type BudgetIncomeItem = {
+  id: string;
+  name: string;
+  category: EarnedIncomeCategory;
+  amount: number;
+  day?: number;
+};
+
 export type Budget = {
   plannedIncome: number | null;
   lines: BudgetLine[];
 };
 
-export type BudgetPlanLine = {
-  category: string;
+export type BudgetSection = {
+  id: string;
+  name: string;
+  type: 'spend' | 'invest';
+  system?: 'income' | 'debt' | 'insurance';
+};
+
+export type BudgetItem = {
+  id: string;
+  sectionId: string;
+  name: string;
   mode: 'amount' | 'percent';
   value: number;
   dueDay?: number;
 };
 
 export type BudgetPlan = {
-  plannedIncome: number | null;
-  lines: BudgetPlanLine[];
+  incomes: BudgetIncomeItem[];
+  sections: BudgetSection[];
+  items: BudgetItem[];
   repeatMonthly: boolean;
   repeatFrom: string | null;
 };
@@ -198,8 +225,9 @@ export type BudgetPlan = {
 export type MonthBudget = {
   month: string;
   source: 'plan' | 'custom';
-  plannedIncome: number | null;
-  lines: BudgetLine[];
+  incomes: BudgetIncomeItem[];
+  sections: BudgetSection[];
+  items: BudgetItem[];
   linkedIncluded?: boolean;
 };
 

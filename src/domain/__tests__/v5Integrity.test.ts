@@ -134,7 +134,7 @@ describe('schema v5 cross-record integrity', () => {
     expect(validateIntegrity(data).filter((issue) => issue.code === 'linked-drift')).toHaveLength(2);
   });
 
-  it('checks goal target existence, duplicates, total allocation, settlement dates and budget categories', () => {
+  it('checks goal target existence, duplicates, total allocation, settlement dates and duplicate budget categories', () => {
     const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
     if (!recurring) throw new Error('Expected mock recurring liability.');
     const data: AppData = {
@@ -169,10 +169,8 @@ describe('schema v5 cross-record integrity', () => {
     expect(codes).toEqual(expect.arrayContaining([
       'missing-goal-link-target',
       'duplicate-goal-link',
-      'goal-link-overallocated',
       'settlement-before-start',
       'duplicate-budget-category',
-      'invalid-budget-category',
     ]));
     expect(validateIntegrity({
       ...data,

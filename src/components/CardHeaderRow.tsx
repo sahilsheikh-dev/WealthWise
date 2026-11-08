@@ -16,8 +16,8 @@ export function CardHeaderRow({
   subtitle?: ReactNode;
   value?: ReactNode;
   valueCaption?: ReactNode;
-  editLabel: string;
-  onEdit: () => void;
+  editLabel?: string;
+  onEdit?: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -30,7 +30,7 @@ export function CardHeaderRow({
         {value}
         {valueCaption}
       </View>
-      <IconButton icon="edit-2" label={editLabel} onPress={onEdit} />
+      {editLabel && onEdit ? <IconButton icon="edit-2" label={editLabel} onPress={onEdit} /> : null}
     </View>
   );
 }

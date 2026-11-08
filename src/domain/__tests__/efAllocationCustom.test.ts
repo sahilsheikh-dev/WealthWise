@@ -10,7 +10,7 @@ import {
 } from '../efAllocationActions';
 import { emptyAppData } from '../actions';
 import { deleteHolding } from '../holdingActions';
-import { AssetOverAllocatedError, setGoalLinks } from '../goalLinks';
+import { setGoalLinks } from '../goalLinks';
 import { validateIntegrity } from '../links';
 import type { EfAllocation } from '../types';
 
@@ -135,8 +135,8 @@ describe('custom emergency-fund options', () => {
     });
     expect(saved.efBucketLinks).toEqual({});
     expect(saved.goals[0]?.links).toEqual([
-      { instrumentId: 'holding-a', share: 100 },
-      { instrumentId: 'holding-b', share: 100 },
+      { instrumentId: 'holding-a' },
+      { instrumentId: 'holding-b' },
     ]);
     expect(validateIntegrity(saved)).toEqual([]);
   });
@@ -154,7 +154,7 @@ describe('custom emergency-fund options', () => {
     expect(bucketLinked.efBucketLinks)
       .toEqual({ 'custom-safe-box': ['holding-a'] });
     expect(bucketLinked.goals.find((goal) => goal.auto === 'ef')?.links)
-      .toEqual([{ instrumentId: 'holding-a', share: 100 }]);
+      .toEqual([{ instrumentId: 'holding-a' }]);
     expect(validateIntegrity(bucketLinked)).toEqual([]);
     expect(setEfBucketLinks(bucketLinked, 'custom-safe-box', ['holding-a']).efBucketLinks)
       .toEqual({ 'custom-safe-box': ['holding-a'] });
@@ -167,9 +167,11 @@ describe('custom emergency-fund options', () => {
     const fullyAllocated = setGoalLinks({
       ...data,
       goals: [...data.goals, { id: 'other', name: 'Other', target: 100, saved: 0, year: 2028, links: [] }],
-    }, 'other', [{ instrumentId: 'holding-a', share: 100 }]);
-    expect(() => setEfBucketLinks(fullyAllocated, 'custom-safe-box', ['holding-a']))
-      .toThrow(AssetOverAllocatedError);
+    }, 'other', [{ instrumentId: 'holding-a' }]);
+    const shared = setEfBucketLinks(fullyAllocated, 'custom-safe-box', ['holding-a']);
+    expect(shared.goals.flatMap((goal) => goal.links)
+      .filter((link) => link.instrumentId === 'holding-a')).toHaveLength(2);
+    expect(validateIntegrity(shared)).toEqual([]);
     expect(() => setEfBucketLinks(data, 'custom-safe-box', ['missing'])).toThrow('must exist');
     expect(() => setEfBucketLinks(data, 'custom-safe-box', ['holding-a', 'holding-a'])).toThrow('only be linked once');
     expect(() => setEfBucketLinks(data, 'custom-safe-box', Array.from({ length: 11 }, (_, index) => `h-${index}`)))
