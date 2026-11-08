@@ -15,8 +15,10 @@ import { todayISO } from '../../lib/clock';
 import { budgetPlanFromLines } from '../../testFixtures/budget';
 import { createAppStore } from '../../data/createAppStore';
 import { useUIStore } from '../../data/uiStore';
+import { StorageErrorBanner } from '../StorageErrorBanner';
 
 let mockStore: ReturnType<typeof createAppStore> | null = null;
+let mockStorage: MemoryStorage | null = null;
 let mockRouteParams: Record<string, string> = {};
 
 jest.mock('../../data/store', () => {
@@ -118,12 +120,14 @@ jest.mock('react-native', () => {
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
+  failWrites = false;
 
   getItem(name: string): string | null {
     return this.values.get(name) ?? null;
   }
 
   setItem(name: string, value: string): void {
+    if (this.failWrites) throw new Error('disk full');
     this.values.set(name, value);
   }
 
@@ -163,7 +167,7 @@ function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
       const flatten = (value: React.ReactNode): string => {
         if (typeof value === 'string' || typeof value === 'number') return String(value);
         if (Array.isArray(value)) return value.map(flatten).join(' ');
-        if (React.isValidElement(value)) return flatten(value.props.children as React.ReactNode);
+        if (React.isValidElement<{ children?: React.ReactNode }>(value)) return flatten(value.props.children);
         return '';
       };
       return flatten(node.props.children);
@@ -179,7 +183,8 @@ describe('real-store screen refresh', () => {
   beforeEach(async () => {
     sequence = 0;
     mockRouteParams = {};
-    mockStore = createAppStore(new MemoryStorage(), {
+    mockStorage = new MemoryStorage();
+    mockStore = createAppStore(mockStorage, {
       newId: () => `refresh-${++sequence}`,
       today: () => today,
       isDev: false,
@@ -198,6 +203,7 @@ describe('real-store screen refresh', () => {
 
   afterEach(() => {
     mockStore = null;
+    mockStorage = null;
     mockRouteParams = {};
   });
 
@@ -399,6 +405,26 @@ describe('real-store screen refresh', () => {
       });
       expect(renderer.root.findAll((node) =>
         node.props.accessibilityLabel === 'Insurance, total cover ₹50,000',
+      ).length).toBeGreaterThan(0);
+    } finally {
+      act(() => renderer.unmount());
+    }
+  });
+
+  it('shows a user-visible error when a store write cannot be persisted', async () => {
+    const store = mockStore;
+    const storage = mockStorage;
+    if (!store || !storage) throw new Error('Refresh test store is missing.');
+    const renderer = renderScreen(React.createElement(StorageErrorBanner));
+    try {
+      storage.failWrites = true;
+      await act(async () => {
+        store.getState().actions.updateSettings({ name: 'Unsaved change' });
+        await flushPersistence();
+      });
+      expect(visibleText(renderer)).toContain('Your last change could not be saved.');
+      expect(renderer.root.findAll((node) =>
+        node.props.accessibilityRole === 'alert',
       ).length).toBeGreaterThan(0);
     } finally {
       act(() => renderer.unmount());

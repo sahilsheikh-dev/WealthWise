@@ -212,5 +212,7 @@ describe('SQLite state storage migration', () => {
     );
     expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
     expect(sqlite.values.get('wealthwise.app.v1')).toBe('SQLite bytes');
+    const restartedProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await expect(restartedProcess.getItem('wealthwise.app.v1')).resolves.toBeNull();
   });
 });
