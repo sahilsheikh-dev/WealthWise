@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 95% (75/79)
+Overall progress █████████░ 93% (71/76)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -75,7 +75,7 @@ Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
-Phase 25         ██████████ 100% (6/6)
+Phase 25         ███████░░░ 67% (2/3)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
@@ -154,18 +154,11 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P23-D | — | Done | CR-91 Home Insurance Card tests now assert the user-owned Home order: after Upcoming and due when present and before Goal Progress, with Insurance content excluded from Goals. | 2026-10-26 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | — | Done | v0.1.0 documentation and metadata release preparation; source audit and six gates recorded below. | 2026-10-25 |
-| P25-B | P15-L | Done | DEC-P25B; encrypted backup implementation, tests, documentation and all six ordered gates complete. No schema or native build change. | 2026-11-01 |
-| P25-C | — | Done | Expo Doctor 21/21; Node metadata and MIT license; shared AI memory; user-order CR-91 tests; all six final gates pass. Release sync is in P25-D; Node/test stability is in P25-E. | 2026-10-26 |
-| P25-D | — | Done | v0.1.0 GitHub pre-release sync; owner-reported physical-device verification; current npm audit and Node engine report; six gates pass. | 2026-10-31 |
-| P25-E | — | Done | Pin stable Node 26.13.0 after Node 24.22.2 clean-cache Jest failure; full Node 26 suite passes; schedule benchmark retains a ten-second bound. | 2026-10-31 |
-| P25-F | — | Done | Restore green baseline on Node 26.13.0: 79 suites / 958 tests; six ordered gates pass. No features or schema changes. | 2026-11-01 |
-| CR-93 | — | Done | Transactions always displays the selected month's available/closing balance amount, including zero and negative values. | 2026-11-01 |
-| CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
-| CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
+| P25-B | P15-L | Planned | Encrypted backups; current backups remain readable JSON and unencrypted. | 2026-10-25 |
+| P25-C | — | Done | Expo Doctor 21/21; Node 24 LTS and MIT metadata; shared AI memory; user-order CR-91 tests; all six final gates pass. `npm audit` advisories and physical-device/owner checks remain open. | 2026-10-26 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
-| CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
 
@@ -1390,8 +1383,7 @@ persisted migration chain and backup importer cover v1 through v13.
   agree on `@expo/ui` 57.0.26, `expo` 57.0.31, `expo-router` 57.0.29, and
   `expo-sharing` 57.0.24; package, lockfile root and Expo app versions remain
   0.1.0. `npx expo-doctor` passes 21/21.
-  Historical audit on 2026-10-26 exited 1: 8 advisories (0 critical, 5 high,
-  3 moderate); superseded by the P25-D audit below.
+  `npm audit --json` exits 1: 8 advisories (0 critical, 5 high, 3 moderate).
   Reported packages: high — `@expo/cli`, `@expo/code-signing-certificates`,
   `expo`, `node-forge`, `zod`; moderate — `decode-uri-component`, `expo-router`,
   `query-string`. Audit fix suggestions require Expo 54 or Router 58 and a
@@ -1420,10 +1412,10 @@ persisted migration chain and backup importer cover v1 through v13.
   `npm install --package-lock-only --ignore-scripts --offline`; lifecycle
   scripts were explicitly ignored and not approved or run.
   README and AGENTS now state the Node requirement and the README identifies
-  the MIT license. At P25-C, screenshots and EAS build had not been performed
-  by the agent; the owner later reported completing both, recorded in P25-D.
-  Slug, bundle identifier and Android package remain unchanged.
-  **Needs the owner:** confirm the MIT copyright holder; the slug was confirmed.
+  the MIT license. Slug, bundle identifier, Android package and screenshot
+  placeholder remain unchanged; no EAS build was run.
+  **Needs the owner:** confirm the MIT copyright holder. Screenshots and EAS
+  build remain deferred as directed; the slug was confirmed by the owner.
 
   **P25-C STEP 4 — AI memory inventory:** source and hidden-file inventory at
   the repository root found:
@@ -1455,10 +1447,9 @@ persisted migration chain and backup importer cover v1 through v13.
   exit 0; `npx expo lint` exit 0; `npx expo-doctor` exit 0 (21/21); Android
   export exit 0; iOS export exit 0.
   An earlier gate pass exposed the renderer type error documented above; it was
-  fixed before this final all-green sequence. The historical
-  `npm audit --json` result was 8 advisories; current results are recorded in
-  P25-D. No physical-device validation was performed by the agent during
-  P25-C; the owner subsequently reported a successful device test in P25-D.
+  fixed before this final all-green sequence. `npm audit --json` is a separate
+  audit and exits 1 with 8 advisories; see STEP 2. No EAS build or physical
+  device validation was run.
   Final Istanbul directory totals: `src/domain/` 98.26% lines / 92.92%
   branches; `src/data/` excluding hooks 94.23% lines / 87.75% branches; pure
   `src/lib/` 100% lines / 100% branches. All coverage floors are met.
@@ -1473,129 +1464,6 @@ tool-specific instructions. `memoryDocs.test.ts` asserts those pointer files
 remain absent and that `AGENTS.md` identifies itself as the shared entry point.
 `status.md` and `open-items.md` were updated; unresolved owner/device items are
 unchanged.
-
-### P25-D Release sync (2026-10-31)
-
-Documentation-only release sync; no application code, persisted schema or
-dependency manifests changed.
-
-- **Release:** owner reports that v0.1.0 is a GitHub pre-release under tag
-  `v0.1.0`, and that its EAS build and screenshots are complete.
-- **Physical device:** owner reports the app works after a physical-device
-  test. Device model and operating system were not recorded. This is
-  owner-verified, not automated evidence or an independently observed test.
-  Earlier statements in P25-C describe the agent's verification state at that
-  time and are superseded for the current release by this owner report.
-- **Node:** `.nvmrc` remains `24.22.1`; `package.json` still declares
-  `>=24.3.0 <25`. The owner reports `npm install` and all 955 tests completed
-  on Node v26.10.0, with only an `EBADENGINE` warning. No pin or engine-range
-  change was made. Owner choices remain: keep the current Node 24 pin, test
-  again on Node 24, or relax the engine range to `>=24.3.0`.
-- **Audit:** both requested commands exited 1 because advisories remain.
-  `npm audit --omit=dev` reported 27 advisories: 6 high, 20 moderate, 1 low,
-  0 critical. Affected package names in the production dependency graph:
-  `@expo/cli`, `@expo/config`, `@expo/config-plugins`, `@expo/fingerprint`,
-  `@expo/inline-modules`, `@expo/local-build-cache-provider`,
-  `@expo/metro-config`, `@expo/prebuild-config`, `@jest/transform`,
-  `@react-native-community/datetimepicker`, `@react-native/jest-preset`,
-  `@react-native/virtualized-lists`, `babel-jest`, `babel-plugin-istanbul`,
-  `decode-uri-component`, `deepmerge`, `expo`, `expo-router`, `expo-sharing`,
-  `expo-splash-screen`, `glob`, `minimatch`, `node-forge`, `query-string`,
-  `react-native`, `test-exclude`, `zod`.
-  The direct app/runtime packages among those findings are
-  `@react-native-community/datetimepicker`, `expo`, `expo-router`,
-  `expo-sharing`, `expo-splash-screen`, and `react-native`. The same
-  production dependency graph also includes Expo CLI/config/build and
-  transitive tooling packages; their appearance here reflects npm's
-  production-tree reachability, not a claim that each ships in the app binary.
-- `npm audit` reported 55 advisories: 6 high, 44 moderate, 5 low, 0 critical.
-  This includes the 27 production-tree advisories above plus 28 advisories
-  across development-only build/test tooling. The additional package names
-  are `@eslint-community/eslint-utils`, `@eslint/config-array`,
-  `@eslint/eslintrc`, `@jest/core`, `@jest/expect`, `@jest/globals`,
-  `@jest/reporters`, `@typescript-eslint/eslint-plugin`,
-  `@typescript-eslint/parser`, `@typescript-eslint/type-utils`,
-  `@typescript-eslint/typescript-estree`, `@typescript-eslint/utils`,
-  `create-jest`, `eslint`, `eslint-config-expo`, `eslint-plugin-expo`,
-  `eslint-plugin-import`, `eslint-plugin-react`, `jest`, `jest-circus`,
-  `jest-cli`, `jest-config`, `jest-expo`, `jest-resolve-dependencies`,
-  `jest-runner`, `jest-runtime`, `jest-snapshot`, `jest-watch-typeahead`.
-  No audit fix was applied.
-- **Next release:** Phase 24 reminders and notifications remain unimplemented
-  and are planned for the next release. Insurance cover multiples and similar
-  figures remain guidelines, not advice or adequacy judgments.
-
-| Gate | Exit | Result |
-|---|---:|---|
-| `npm test -- --coverage` | 1, then 0 on one required retry | First run: only `builds a fifty-year daily schedule within two seconds` failed at 2,411 ms (threshold 2,000 ms). The same command was rerun once; 79 suites / 955 tests passed. The benchmark was not edited. |
-| `npx tsc --noEmit` | 0 | Passed. |
-| `npx expo lint` | 0 | Passed. |
-| `npx expo-doctor` | 0 | 21/21 checks passed. |
-| `npx expo export --platform android` | 0 | Export passed. |
-| `npx expo export --platform ios` | 0 | Export passed. |
-
-The other five gates exited 0 in the initial sequential run. The one-time test
-retry then passed with 79 suites/955 tests; no code or test was changed in
-response to the wall-clock result.
-
-### P25-E Node engine and test stability (2026-10-31)
-
-**Assumed:** set the project to stable Node `26.13.0`, with
-`engines.node` `>=26.0.0 <27`, because the full test suite passed on Node
-26.13.0 and failed after a clean Jest cache on Node 24.22.2. This records
-observed project test behavior; it does not claim that Expo SDK 57 or React
-Native 0.86 rejects Node 24.
-
-- Current machine default: Node `v26.10.0`; comparison runs used installed
-  stable Node `v26.13.0` and `v24.22.2`.
-- Node `v26.13.0`: `npm test` passed 79 suites / 955 tests. After clearing
-  Jest's cache, the previously failing `AppHeader.test.tsx` passed all 10
-  tests.
-- Node `v24.22.2`: `npx jest --clearCache` exited 0, then `npm test` had 13
-  failing suites, 66 passing suites, and 880 passing tests. Failures report
-  `Cannot read properties of undefined (reading 'select')` from
-  `expo-modules-core/src/Platform.ts`.
-- Installed versions are Expo `57.0.31`, React Native `0.86.3`, and
-  `expo-modules-core` `57.0.24`. React Native 0.86.3 declares Node
-  `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0`; this includes Node 24.
-  Expo SDK 57 release notes identify React Native 0.86, and the versioned SDK
-  57 docs are at https://docs.expo.dev/versions/v57.0.0/. React Native 0.86
-  environment setup says Node 22.11.0 or newer:
-  https://reactnative.dev/docs/0.86/set-up-your-environment.
-- The observed error path is reproducible from repository/package code:
-  Expo Modules Core evaluates `ReactNativePlatform.select` in
-  `src/Platform.ts`; multiple test-local `jest.mock('react-native', ...)`
-  factories omit `Platform`. This explains the thrown access when that path
-  initializes, but the repository evidence does not establish why Node 24
-  activates the path while Node 26 does not. No test mock was changed in this
-  task.
-- `.nvmrc`, `package.json` and the lockfile root engine metadata now agree on
-  `26.13.0` / `>=26.0.0 <27`. No dependency versions or app/schema behavior
-  changed.
-
-Replaced assertions:
-
-| Old assertion | New assertion | Reason |
-|---|---|---|
-| Fifty-year daily schedule had to finish in `< 2_000` ms; test name said “within two seconds.” | Retain exact 18,250-row assertion and require elapsed time `< 10_000` ms; test says “within ten seconds.” | A previous full test run took 2,411 ms on shared execution; the original strict wall-clock ceiling was unstable. The wider bound preserves a finite performance check without changing schedule correctness assertions. |
-| Progress-ledger test expected 72/77 overall and Phase 25 3/4. | It now requires 73/78 overall and Phase 25 4/5, and explicitly checks P25-E is Done in dashboard and prompt log. | P25-D and P25-E are recorded as additional completed Phase 25 items; counts must derive from the current dashboard rather than stale totals. |
-
-Focused validation on Node 26.13.0: `schedule.test.ts` and
-`progressLedger.test.ts`, 2 suites / 19 tests passed.
-
-Final sequential gates, all on Node `v26.13.0`:
-
-| Gate | Exit | Result |
-|---|---:|---|
-| `npm test -- --coverage` | 0 | 79 suites / 955 tests passed. |
-| `npx tsc --noEmit` | 0 | Passed. |
-| `npx expo lint` | 0 | Passed. |
-| `npx expo-doctor` | 0 | 21/21 checks passed. |
-| `npx expo export --platform android` | 0 | Export passed. |
-| `npx expo export --platform ios` | 0 | Export passed. |
-
-Coverage from this run: `src/domain/` 99.04% lines / 95.23% branches;
-`src/data/` excluding hooks 95.34% / 90.91%; pure `src/lib/` 100% / 100%.
 
 #### P23-B legacy Insurance literal audit
 
@@ -2176,117 +2044,6 @@ source/test hit and its disposition is listed here:
 | P18-R5 detail-tab-bar behavior | Superseded by DEC-TABS; tabs appear only on the four main screens, effective P20-C. |
 | P19-B Budget body action row (CR-16) | Superseded by CR-17: History, Month review and Templates are right-side Budget header icons. |
 
-### DEC-BACKUP-RECONCILIATION (2026-11-01)
-
-- Reconcile the supplied monthly income and expense totals, loan subtotals,
-  emergency-fund activity and existing transactions without duplicating
-  source movements.
-- Remove stale cash-flow balancing transactions and represent remaining
-  month-end deficits as linked Bank withdrawals and surpluses as `Other`
-  expenses, dated on each month's final calendar day.
-- Preserve the 18 existing linked ICICI RD deposits and linked HDFC liability
-  payments; account for their loan-tracker rounding differences in comparison
-  checks rather than changing the source-linked records.
-- **Supersedes the earlier claim** that the prior first-of-month balancing
-  entries constituted a complete reconciliation. That pass omitted positive
-  balances as expenses and used the wrong adjustment dates. The replacement
-  verification covers every month from July 2022 through October 2026.
-
-### DEC-TRANSACTIONS-CLOSING-BALANCE (2026-11-01)
-
-- Always render the selected month's balance amount, even when the previous
-  month's closing balance was zero. This applies to positive, zero and
-  negative amounts for both current-month Available balance and past-month
-  Closing balance.
-- The monthly overspend warning compares that month's total expenses and
-  investments with that month's income; the balance card separately includes
-  the carried-forward balance. Currency display rounds paise to whole rupees,
-  so a fractional overspend can appear rounded in the warning.
-- The current local JSON backup's notes were edited without updating its
-  checksum. The checksum was recalculated and the backup passed importer
-  validation. The separate transaction deletion/addition described in the
-  current app was not present in this backup snapshot and was not invented.
-
-### DEC-P25B (2026-11-01)
-
-- Implement the frozen P25-B encrypted-backup envelope without changing the
-  app schema or adding a native module. Keep the existing checksummed backup
-  JSON, `parseBackup`, v1–v13 migration chain, import staging, Undo and
-  `lastExportAt` behavior unchanged.
-- Use `@noble/ciphers@2.4.0` AES-256-GCM and `@noble/hashes@2.4.0`
-  asynchronous scrypt in the pure domain module. They are zero-runtime-
-  dependency MIT packages intended for portable JavaScript. Noble's README
-  recommends scrypt over its Argon2 implementation and explicitly says
-  Argon2 is unaudited and slower in JavaScript; therefore Argon2id is not
-  selected for this audited-library requirement. Expo SDK 57's existing
-  `expo-crypto@57.0.4` supplies random salt and nonce bytes at the app
-  boundary. Existing `expo-file-system@57.0.7` remains the file I/O layer.
-  No Expo package or native build change is needed.
-- Default scrypt parameters: `N=65536, r=8, p=1, dkLen=32`, with 16-byte salt
-  and 12-byte GCM nonce. Imports will accept only documented bounded values,
-  with `N` between `2^15` and `2^16`, `r=8`, and `p=1`. The selected setting
-  used about 64 MiB and took 247.4 ms on this Node 26.13.0 development
-  machine. Noble reports mobile scrypt may be 1–4× slower; this desktop
-  benchmark is not a substitute for the owner's real-device measurement.
-- Expo SDK 57 references consulted: [expo-crypto](https://docs.expo.dev/versions/v57.0.0/sdk/crypto/)
-  (`getRandomBytesAsync`) and
-  [expo-file-system](https://docs.expo.dev/versions/v57.0.0/sdk/filesystem/)
-  (in-memory file APIs and cache file handling). Noble implementation
-  references: [@noble/hashes 2.4.0](https://github.com/paulmillr/noble-hashes/tree/2.4.0)
-  and [@noble/ciphers 2.4.0](https://github.com/paulmillr/noble-ciphers/tree/2.4.0).
-- Package research: `@noble/ciphers@2.4.0` is approximately 138 KiB
-  compressed / 548,134 bytes unpacked; `@noble/hashes@2.4.0` is approximately
-  164 KiB compressed / 691,646 bytes unpacked. Neither declares runtime
-  dependencies or `preinstall`, `install` or `postinstall` scripts. Their
-  other package scripts are development/test/build tasks. They were installed
-  at exact versions with `npm install --save-exact --ignore-scripts`; no
-  install scripts ran or were approved. The full npm audit remains at 55
-  advisories (6 high, 44 moderate, 5 low), so the dependency audit delta is
-  zero.
-- Preserve the specified envelope header as GCM additional authenticated
-  data. Export plaintext remains in memory and must never be written to a
-  temporary file on the encrypted export path. Salt, nonce and ciphertext are
-  lowercase hexadecimal strings in the JSON envelope; this avoids a runtime
-  base64 dependency. The passphrase is transient only. Plain backups remain
-  importable, while encrypted exports use a distinct filename.
-- **Spec conflict — truncated data error:** the requested typed-error list
-  contains no truncation-specific error, and GCM cannot distinguish a wrong
-  passphrase from authenticated ciphertext tampering or truncation. Follow
-  the closest specified behavior: malformed/structurally incomplete envelope
-  is `InvalidEnvelope`; a structurally valid envelope with failed GCM
-  authentication is `WrongPassphraseOrTampered`, whose message states that
-  GCM cannot distinguish the causes. All other listed format/version/KDF
-  failures remain distinct.
-- **Spec conflict — plaintext temporary files:** the frozen spec requires a
-  plain-export opt-out and legacy plain-file import, but also says never to
-  write plaintext backup data to a temporary file. SDK 57's
-  [Sharing API](https://docs.expo.dev/versions/v57.0.0/sdk/sharing/) shares a
-  local file URL; its
-  [DocumentPicker guidance](https://docs.expo.dev/versions/v57.0.0/sdk/document-picker/)
-  says a cache copy is needed to ensure immediate file-system reads. Without
-  adding a platform-specific/native destination picker, the closest behavior
-  is to keep encrypted exports ciphertext-only in cache, retain the requested
-  explicit plain-export opt-out with a clear warning and remove its cache file
-  immediately after sharing, and retain the existing picked-file cache copy
-  then delete it immediately after reading. Decrypted encrypted payloads are
-  never written to disk. The literal no-plaintext-temp rule cannot be
-  satisfied for those two explicit legacy/plain paths with the current
-  cross-platform APIs.
-- Pre-change flow inventory: `app/backup.tsx` creates plain JSON in memory,
-  writes it to a temporary cache file for sharing, deletes that file, and
-  updates `lastExportAt` after successful sharing. Import copies the picked
-  file to cache, reads and deletes the copy, then calls `parseBackup`.
-  `src/domain/backup.ts` verifies the JSON checksum before validating and
-  migrating supported schemas v1–v13. The store stages the prior data for
-  Undo before replacement; `lastExportAt` is persisted metadata. No
-  passphrase currently exists in app or persisted state. Integration must
-  ensure the only export temporary file contains ciphertext.
-- The progress-ledger test's `P25-B` status expectation changed from
-  `Planned` to `In progress` because this task has begun; it continues to
-  enforce the task's actual state rather than relaxing a product assertion.
-- Implementation completes P25-B below; physical-device checks remain
-  unverified.
-
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -2452,15 +2209,10 @@ Planned P24-A, including CR-1 [P15-K].
 
 ### Phase 25 — Release preparation and encrypted backups
 
-P25-A v0.1.0 release-preparation documentation and metadata, P25-B encrypted
-backups [P15-L], P25-C release blockers/license/shared AI memory, P25-D
-release sync, P25-E Node engine and test stability, and P25-F green test
-baseline are complete. P25-E changed only Node metadata and the existing
-schedule timing test; P25-F changes tests and documentation only, with no app,
-schema or dependency changes. v0.1.0 is a GitHub pre-release. P25-D records the
-owner's report that the EAS build, screenshots and
-physical-device test are complete; device/OS details were not recorded. Phase
-24 reminders and notifications are planned for the next release.
+P25-A (v0.1.0 release-preparation documentation and metadata) is complete.
+P25-B encrypted backups [P15-L] remain planned. P25-C release blockers,
+license/Node metadata, and shared AI memory are complete; no feature or schema
+changes were made.
 
 ### Phase 26 — Accessibility, performance and final gates
 
@@ -2662,15 +2414,8 @@ evidence present in exports/checkpoints.
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | — | 2 | 2026-10-25 | v0.1.0 release preparation: audit/update documentation and version metadata. | Done; audit, gates and owner follow-ups recorded in DEC-P25A. | `6165922273156b41bcc131996669784a0041afe1`. | Assumed: encrypted backups move from the previous P25-A label to P25-B and remain unimplemented. | current request |
-| P25-B | Phase 25 | P15-L | 2 | 2026-11-01 | Encrypted backups. | Done; 80 suites / 984 tests pass; all six ordered gates exit 0; `backupCrypto.ts` has 100% line and branch coverage. | Research/decision commit `d5aac3eb9535ac0b7cd3e3a11d37c77a8452d6aa`; implementation and final ledger commits recorded in the P25-B close-out below. | Encrypted exports protect exported files only; app data remains unencrypted. Plain export and picked-file cache paths retain the documented temporary-plaintext API conflict. | current request |
-| P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. Historical audit and device status were subsequently updated by P25-D. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded below. | Assumed: P25-C was the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
-| P25-D | Phase 25 | — | — | 2026-10-31 | Sync the v0.1.0 release state; record owner-reported physical-device verification, Node v26 result and current npm audits. | Done; owner reports the GitHub pre-release, EAS build, screenshots and working device test are complete. Six automated gates pass; current audit and Node choices are recorded below. | `5b29544f1ded8d93a21b5fd824bd6d239f455d94` | Assumed: owner-reported device verification only; device model and OS not recorded. No feature/schema/dependency changes. | current request |
-| P25-E | Phase 25 | — | — | 2026-10-31 | Test supported Node versions, choose a stable project engine pin, and stabilize the long-schedule timing check. | Done; Node 26.13.0 passes all 79 suites/955 tests. After `npx jest --clearCache`, Node 24.22.2 has 13 suite failures in Expo Modules Core initialization; all six final gates and the benchmark update are recorded below. | P25-E documentation/metadata/test close-out commit; hash verified in Git. | Assumed: use stable Node 26.13.0 (`>=26.0.0 <27`) because Node 26 passes and Node 24 fails after clean cache. SDK/RN package engines permit Node 24; suite failures trace to mocks missing `Platform`, so this pin follows observed project test behavior, not an asserted SDK Node-24 incompatibility. | current request |
-| P25-F | Phase 25 | — | — | 2026-11-01 | Restore a green test baseline without features or schema changes. | Done; 79 suites / 958 tests pass on Node 26.13.0. Baseline failures, replacements and final gates are documented in the P25-F verification entry. | `f99445790f44a20e022201452ddd4755ecc9d243` (verified Git commit). | The baseline exposed stale user-owned balance-label expectations, date-bound test fixtures, and an outdated memory test count. Protected source labels were not edited; assertions and exact-amount checks were retained. | current request |
-| CR-92 | Data backup | — | — | 2026-11-01 | Reconcile the restored backup against all supplied income, expense, loan and emergency-fund tracker data; remove duplicate points and date balancing adjustments at month end. | Done; 52 monthly cash-flow totals reconcile, loan subtotals and emergency-fund metadata were checked, 16 linked month-end withdrawals and 3 month-end extra expenses were verified, and the schema-v13 importer accepted the recalculated checksum. | Documentation close-out commit; hash verified in Git. | A focused test initially omitted RD holding logs because their notes begin with tracker metadata, not the recurring-deposit label; the selector was corrected and the passing test includes those linked entries. Failed test runs did not write the backup. | current request |
-| CR-93 | Transactions UI | — | — | 2026-11-01 | Show zero and negative Available/Closing balances; validate the updated local backup and the reported tracker edit. | Done; focused zero/negative balance tests pass. Edited backup checksum was repaired and importer validation passed. Full gates and the difference between monthly overspend and carried-forward balance are documented in the close-out. | Implementation and documentation close-out commit; hash verified in Git. | The tagged backup does not contain the separate deletion/addition described for the current app, so no transaction was inferred or changed. Overspend display rounds paise to whole rupees. | current request |
-| CR-94 | Data backup | — | — | 2026-11-01 | Add flexible historical budgets through October 2026, using each month's transaction log as the source of actual category targets. | Done; 52 custom snapshots cover every month from July 2022 through October 2026. Category-level planned amounts match calculated actuals and the schema-v13 importer accepts the updated backup. | Local backup only; intentionally not committed. | Assumed and owner-selected: historical month snapshots match actuals; do not alter transactions, the legacy budget, or add a repeating future plan. Non-earned inflows remain outside planned earned-income rows. | current request |
-| CR-95 | Budget income | — | — | 2026-11-01 | Include all logged income types in historical budgets, keep non-earned inflows categorized as income, match planned and actual totals, and retain transaction links. | Done; the month-budget schema and Budget overview display separate non-earned income rows. All 52 monthly income, expense and investment totals match actuals; the schema-v13 backup importer accepts the updated file. | `a507254` implementation/docs commit; backup data stays local and is not committed. | Owner clarified that loans, borrowed funds and withdrawals must remain income; do not reclassify them as Unexpected Extras. Expense/investment categories in the backup all map to existing budget categories, so no Unexpected fallback was needed. Transaction matching remains month/category-based; explicit asset/liability/policy source links are preserved. | current request |
+| P25-B | Phase 25 | P15-L | 2 | 2026-10-25 | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | current request |
+| P25-C | Phase 25 | — | — | 2026-10-26 | Resolve release blockers; pin license and Node metadata; add repository-based shared AI memory. | Done; 79 suites/955 tests; all six sequential final gates exit 0; Expo Doctor 21/21. npm audit findings and physical-device/owner checks are explicitly open. | Preflight checkpoint `ff349515887dae09ac5ebc34776ec2754ed80dbe`; Home order `1361f05288c858a00bb2732ca54d50f8e8a49171`; dependency audit `bb5e3976b6a50696cd3943670f4b36d43689a5a2`; license/Node `b9c84914c4d4e7cfbcfd56bfa1923c8715d9cf7f`; memory `66510745b64aa9f702571986c2e647566394ac41`; test-type correction `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`; final ledger/gate close-out is recorded in the P25-C verification section below. | Assumed: P25-C is the next unused Phase 25 ID; keep encrypted backups under P25-B. No feature/schema changes. | current request |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
@@ -2770,10 +2515,6 @@ evidence present in exports/checkpoints.
 | CR-87 | Verify route-form entry points, scoped save/delete Undo, validation, shared-shell layout and protected behavior; close P20-U. | Done | P20-U route smoke, domain/store, route-kind, shared-shell and frozen-component tests pass; final six gates and simulated-device limitations are recorded in the P20-U close-out. |
 | CR-88 | Add Budget item recurrence to schema v13 with v12 migration, backup-chain support, and once-only raw-byte archive. | Done | STEP 1 committed as `6d3feab`; recurrence-aware domain planning, due suppression and focused tests committed as `82793e8`. Full migration/backup coverage passes. |
 | CR-89 | Add recurrence-aware Budget forms, rows, dues, projections, categories, demo data and tests. | Done | Route form, row frequency/next-due copy, category choices, demo and route/domain acceptance tests complete; full suite and all six gates pass. Simulated layout only; native-device checks remain. |
-| CR-92 | Reconcile the local backup against monthly income, expenses, loan and emergency-fund tracker data; remove duplicate points; add month-end deficit/surplus adjustments. | Done | Temporary focused reconciliation test passed; all 52 monthly cash-flow totals, duplicate signatures, adjustment dates, checksum and `parseBackup` import were verified. The private backup remains a local deliverable and is not committed. |
-| CR-93 | Show Transactions Available/Closing balance amounts for positive, zero and negative values; validate current backup notes and reported transaction changes. | Done | The amount now renders regardless of brought-forward balance. Zero and negative UI tests pass. The edited local backup checksum was recalculated and `parseBackup` passed. The backup snapshot does not contain the separate transaction deletion/addition reported for app data. |
-| CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
-| CR-95 | Include all income types in each historical budget, classify them from transaction logs, route unknown spending categories to Unexpected Extras, keep planned and actual equal, and link transaction logs. | Done | Added backward-compatible optional `otherIncomes` month-snapshot data and rendered separate non-earned rows without changing earned-income planning. The 52-month local backup now contains all income categories, matches planned/actual income and expense/investment category totals, retains all 716 transactions and their 119 explicit source links, and passes `parseBackup`. No unsupported expense/investment category was present. |
 
 ## 8. Known issues and risks
 
@@ -2988,7 +2729,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
 7. **Phase 25 — Release preparation and encrypted backups**: P25-A v0.1.0
-   release-preparation documentation (Done); P25-B encrypted backups (In progress)
+   release-preparation documentation (Done); P25-B encrypted backups (Planned)
    [P15-L]; P25-C release blockers and shared AI memory (Done).
 8. **Phase 26 — Accessibility, performance and final gates** (Planned)
    [P15-M].
@@ -3906,7 +3647,7 @@ was resolved in CR-26. No schema change was made; `SCHEMA_VERSION` remains 7.
 | P17-C sorting | Done | `src/lib/sorting.ts`, `src/data/useSort.ts`, `src/components/SortChip.tsx`, sortable `app/` lists | `src/lib/__tests__/sorting.test.ts`, `src/data/__tests__/metaStore.test.ts`, screen and route smoke suites |
 | P24-A reminders / CR-1 [P15-K] | Planned | No verified planner, prefs, notification adapter or screen | No reminder tests |
 | P25-A release preparation | Done | `README.md`, `CHANGELOG.md`, `AGENTS.md`, package/app version metadata and this ledger | Release gates recorded in DEC-P25A; store deployment and device QA remain outside this task |
-| P25-B encrypted backup [P15-L] | Done | `src/domain/backupCrypto.ts`, `app/backup.tsx`, and the existing import/migration chain | `src/domain/__tests__/backupCrypto.test.ts`, route smoke and store migration/Undo tests; 80 suites / 984 tests and all six gates pass |
+| P25-B encrypted backup [P15-L] | Planned | `src/domain/backup.ts` is unencrypted | No encryption tests |
 | P26-A accessibility/performance [P15-M] | Planned | No final audit artifact | No comprehensive device/accessibility suite |
 | P27-A cleanup | Planned | Dead-code/dependency, bundle, README and schedule benchmark audit pending | Cleanup gates pending |
 | P28-A QA and release | Planned | QA and release work not started | Release checklist pending |
@@ -4971,400 +4712,11 @@ are not device runs.
 | STEP 4 — Shared AI memory | Done | `docs/memory/`, `AGENTS.md`; tool-specific pointer files were initially created and removed in the P25-C follow-up | `shared AI memory documents` and `permanent progress ledger`; memory pages/header/index/schema/count checks pass, and the follow-up test requires a single `AGENTS.md` instruction entry point. |
 | STEP 5 — Final gates | Done | Current task source/docs and this ledger | 79 suites / 955 tests; six ordered gates all exit 0; Expo Doctor 21/21. |
 
-P25-C's simulated layout tests did not establish physical-device behavior.
-In P25-D the owner reported that physical-device testing works; device model
-and operating system were not recorded. This is owner-verified, not automated
-evidence. The owner also reports the EAS build and screenshots are complete.
-Full automated test and coverage results are recorded in DEC-P25C; see
+**P25-C acceptance criteria not verified on a real device:** dynamic type and
+clipping at system font scales 1.3/2.0; Insurance-card native touch and
+navigation; keyboard/safe-area behavior; VoiceOver/TalkBack and accessibility
+activation; local storage and backup interactions on physical devices.
+Screenshots and EAS build are explicitly deferred to the owner. Full test and
+coverage results are recorded in DEC-P25C; see
 [`docs/memory/open-items.md`](../memory/open-items.md) for outstanding owner
-decisions and the source of the owner-reported verification.
-
-### 2026-11-01 backup revalidation
-
-The restored local schema-v13 backup was parsed and validated by the app
-importer with a temporary Jest smoke test (1/1 passed); the temporary test was
-removed. Its existing checksum matches its data. The revised envelope shown in
-the owner's message does not match the file currently at the tagged path, so
-no entries were changed or inferred and the existing file was left intact.
-The owner then supplied the complete data, matching `sahil_wealthwise_import.json`
-(31 transactions, 28 goals, 5 holdings and 1 liability). The supplied checksum
-does not match the app's canonical JSON digest. Recomputing it in a temporary
-test exposed three importer constraints: a goal name exceeds the 40-character
-limit, the plan includes an unrecognized derived `invested` field, and a
-non-null actual value has no snapshot date. A diagnostic normalization using a
-shortened goal name, removing the derived field and setting the snapshot date
-to the export date passed importer validation (1/1). The owner approved those
-minimal adjustments. Created `wealthwise-backup-20261101-complete.json` from
-the complete supplied data, recalculated its checksum using the app's canonical
-JSON, and verified the resulting backup imports successfully (1/1 temporary
-smoke test). The temporary test was removed. The original source and earlier
-dated backup remain intact. No commit was created.
-
-### 2026-11-01 monthly income added to backup
-
-Added the owner's July 2022–October 2026 income details to
-`wealthwise-backup-20261101-complete.json` as 115 separate source-level income
-transactions, each dated on the first of its month. Mapped salary to Salary,
-freelancing/agency to Freelance, other income to Other, savings withdrawals to
-Withdrawal, friends/family help to Borrowed, and loan/credit-card proceeds to
-Loan proceeds. Notes preserve the supplied source labels where category names
-are normalized. Monthly totals were used as reconciliation checks, not added
-again as duplicate transactions. A temporary Jest test confirmed that all 52
-component sums equal the supplied totals, then recalculated the canonical
-checksum and verified importer success (1/1); the temporary test was removed.
-The original source and dated prior backup remain unchanged. No commit was
-created.
-
-### 2026-11-01 monthly expenses and loan logs added to backup
-
-Added the owner's July 2022–October 2026 monthly expense components and
-November 2022–October 2026 loan payment breakdowns to
-`wealthwise-backup-20261101-complete.json`. Non-loan expense items are dated
-on each month's first day. Savings and investments are `invest` transactions
-in the unlinked `Other investments` category; other expense labels use the
-nearest supported category and retain the original label in the note. Loan
-components already match each month's Loans subtotal; they are represented
-once, with historical non-HDFC components as EMI transactions and the HDFC
-payments linked to the existing recurring liability. The missing September
-2025 HDFC payment was added on its due date using the existing liability EMI.
-Existing HDFC payments through October 2026 remain unchanged. Future
-installments through the liability term remain scheduled, not marked paid.
-No separate settled liabilities were invented for the old loans, as their
-individual creditors and original principals were not supplied. Income
-transactions from the previous update were not duplicated.
-
-Five expense months had itemized amounts below their stated totals. Per owner
-approval, the differences were added as distinct `Other` expenses on the first
-of each month with notes identifying them as unitemized differences; no
-categories were inferred. A temporary Jest test confirmed the monthly expense
-totals and loan subtotals, updated the checksum, and verified importer success
-(1/1); the temporary test was removed. The full project gates were not rerun
-for this backup-data-only update. No commit was created.
-
-### 2026-11-01 emergency-fund logs and cash-flow reconciliation
-
-Updated `wealthwise-backup-20261101-complete.json` with the supplied emergency-
-fund activity for January 2025 through October 2026. Existing linked ICICI RD
-deposits were reused, and 18 duplicate unlinked investment transactions were
-removed. Other deposits and withdrawals were mapped to linked holding entries
-and transactions; existing savings, investment and withdrawal transactions
-were reused or split where amounts matched. A zero-current-value Bachat Gat
-holding was added and linked to the FD/RD emergency-fund bucket and Emergency
-Fund goal. Existing Cash, Bank and HDFC FD values were preserved with snapshot
-dates at the backup export date.
-
-The supplied net movements reconcile to their itemized entries except for
-unitemized deposit/withdrawal differences, which remain explicitly labeled.
-Monthly tracker net, target and cumulative metadata are retained in notes.
-Per the owner's request, cash-flow deficits were covered with linked Bank
-withdrawals in 16 months; all 52 transaction months now reconcile. Future HDFC
-loan installments remain scheduled rather than marked paid, and existing
-income, sale and loan proceeds were not duplicated.
-
-A temporary updater test reconciled the emergency-fund activity and passed
-(1/1), and a separate temporary final-file test verified canonical checksum,
-schema/import integrity, unique transaction IDs, snapshots, links and monthly
-cash flow (1/1). `npx tsc --noEmit` exited 0. Temporary tests were removed.
-The full project gates were not rerun for this backup-data-only update. No
-commit was created.
-
-### 2026-11-01 Transactions closing balance and local backup validation (CR-93)
-
-The Transactions card hid the balance amount whenever the brought-forward
-balance was zero, even when the selected month had a zero or negative closing
-balance. The amount is now always rendered; negative amounts retain the
-existing danger tone and shortfall label. Added route tests for zero and
-negative balances and updated the route smoke assertion to require a visible
-negative value.
-
-The edited local schema-v13 backup had a stale SHA-256 checksum after note
-changes. Recalculated only the checksum, then verified that the backup imports.
-The tagged backup still contains its month-end balancing record and does not
-include the separate transaction deletion/addition described for current app
-data, so no financial transaction was changed in the file. The monthly
-overspend warning measures the selected month's expenses plus investments
-against that month's income; the balance card also includes carried-forward
-amounts. Existing currency formatting rounds paise to whole rupees, which can
-make the warning display round a fractional difference.
-
-| Verification | Result | Exit |
-|---|---|---:|
-| Zero/negative balance focused tests | `TransactionsScreen.test.tsx` verifies zero and negative balances; the route smoke test verifies the negative amount is present. | 0 |
-| Edited local backup | Recalculated canonical checksum; schema-v13 `parseBackup` accepts the result. | 0 |
-| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 957 tests fail in the pre-existing `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` cases. | 1 |
-| `npx tsc --noEmit` | TypeScript passes. | 0 |
-| `npx expo lint` | Lint passes. | 0 |
-| `npx expo-doctor` | 21/21 checks pass. | 0 |
-| `npx expo export --platform android` | Android bundle export passes. | 0 |
-| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
-
-Temporary backup validation test was removed. The local backup remains ignored
-user data; only its checksum was updated. The pre-existing `backup.ts` change
-was preserved.
-
-### 2026-11-01 complete tracker reconciliation (CR-92)
-
-Re-tallied the local schema-v13 backup against the supplied income, monthly
-expense, loan and emergency-fund trackers. Removed the 16 stale cash-flow
-balancing transactions and their linked holding logs. Added a linked Bank
-withdrawal on the final calendar day for each remaining deficit month, and an
-`Other` expense on the final calendar day for each surplus month. The resulting
-backup contains 716 transactions across all 52 tracker months; each month's
-income equals its recorded outflows. The 48 supplied loan months, emergency-
-fund tracker metadata, unique transaction IDs/signatures, and the 18 existing
-linked RD deposits were checked. Existing HDFC payments and holding snapshots
-were preserved.
-
-**Superseded assertion:** the previous close-out said the 52 transaction
-months reconciled, but its balancing rows were placed on the first of each
-month, and positive balances were not recorded as extra expenses. The new
-assertion requires month-end dates, separate deficit withdrawals and surplus
-expenses, no duplicate points, and zero net cash flow for every supplied
-month. This corrects the earlier claim without changing the source tracker
-amounts.
-
-| Verification | Result | Exit |
-|---|---|---:|
-| `npm test -- --runInBand src/domain/__tests__/reconcileBackupTransactions.test.ts` | 1 suite / 1 test passed; monthly totals, loan totals, emergency-fund logs, duplicate detection, adjustment counts/dates and importer integrity verified. | 0 |
-| Schema-v13 backup | Canonical SHA-256 recalculated; `parseBackup` accepts the final file. | 0 |
-| `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts src/domain/__tests__/backup.test.ts` | 2 suites / 34 tests passed. | 0 |
-| `npm test -- --coverage` | 77 of 79 suites pass; 9 of 955 tests fail in `TransactionsScreen.test.tsx` and `RouteRenderSmoke.test.tsx` (the same baseline failures recorded before this data-only task). | 1 |
-| `npx tsc --noEmit` | TypeScript passes. | 0 |
-| `npx expo lint` | Lint passes. | 0 |
-| `npx expo-doctor` | 21/21 checks pass. | 0 |
-| `npx expo export --platform android` | Android bundle export passes. | 0 |
-| `npx expo export --platform ios` | iOS bundle export passes. | 0 |
-
-The temporary test was removed after verification. The full backup is kept as
-a local user-data deliverable and is not committed to the repository.
-
-### 2026-11-01 historical actual-based budgets (CR-94)
-
-The owner selected monthly custom snapshots that match each completed month's
-transaction actuals. Added 52 snapshots for July 2022 through October 2026.
-Each expense/investment category's planned amount is aligned to the recorded
-transactions, including linked schedule rows, so historical budget views
-reflect what was logged rather than imposing new limits on immutable past
-transactions. Earned-income rows follow the logged earned-income categories;
-borrowed funds, loan proceeds and withdrawals remain non-earned inflows in the
-app's existing model.
-
-Transactions, holdings, linked records, the legacy `budget` object, and the
-null repeating `budgetPlan` were preserved. All snapshots are custom and
-month-specific; no future recurring budget was created.
-
-| Verification | Result | Exit |
-|---|---|---:|
-| Temporary focused budget/import test | 1 suite / 1 test passed; all 52 months have category-level planned/actual agreement, the transaction array is unchanged, and the schema-v13 backup imports. The temporary test was removed. | 0 |
-| Local backup checksum and coverage | Canonical SHA-256 is valid; 52 consecutive month snapshots span July 2022 through October 2026. | 0 |
-| `git diff --check` | Passed. | 0 |
-| Full application gates | Not rerun; this was a local backup data-only update. | — |
-
-**Decision — DEC-BUDGET-HISTORICAL-ACTUALS:** preserve past transactions as
-immutable facts and store month-specific editable budget snapshots whose
-planned categories match those facts. Keep planned income limited to the
-app's earned-income model and do not invent non-earned-income classifications.
-The user backup remains local ignored data and is intentionally not committed.
-
-### 2026-11-01 complete historical Budget income reconciliation (CR-95)
-
-The owner clarified that loans, borrowed funds, withdrawals and other
-non-earned inflows must remain income, not be reclassified as Unexpected
-Extras, and selected category-total transaction matching rather than
-per-transaction budget rows. Added optional `otherIncomes` to month snapshots
-and both app/import schemas. Budget overview renders these as distinct
-read-only income rows matched by month and transaction category; earned-income
-planning and future projections remain unchanged. Unknown income categories
-also remain income and are reconciled as non-earned rows. All existing
-expense/investment categories in the backup map to supported budget
-categories; none needed Unexpected Extras fallback.
-
-Updated the local backup with non-earned income rows across the 52 historical
-months. Actual transactions, transaction categories, notes, holdings, linked
-entries and existing explicit transaction source links were preserved. All
-month/category planned and actual income, expense and investment totals
-reconcile; the current transaction array contains 716 records and 119 explicit
-source-linked records.
-
-| Verification | Result | Exit |
-|---|---|---:|
-| Focused historical backup test | 1 suite / 1 test passed; all 52 months reconciled, backup imports, and transactions remain unchanged. Temporary test removed. | 0 |
-| Focused budget/schema/backup and ledger tests | 4 suites / 130 tests passed. | 0 |
-| Focused Budget route smoke cases | Responsive income-row cases pass at font scales 1, 1.3 and 2. | 0 |
-| `progressLedger.test.ts` | 1 suite / 9 tests passed after CR-94 documentation update. | 0 |
-| `npm test -- --coverage` | 77 suites passed and 2 failed; 949 tests passed and 9 failed (958 total). Failures are in Transactions available-balance theme/action expectations and one RouteRenderSmoke large-amount accessibility expectation; no historical Budget assertions failed. | 1 |
-| `npx tsc --noEmit` | TypeScript passes. | 0 |
-| `npx expo lint` | Lint passes. | 0 |
-| `npx expo-doctor` | 21/21 checks passed; no issues detected. | 0 |
-| `npx expo export --platform android` | Android export completed successfully. | 0 |
-| `npx expo export --platform ios` | iOS export completed successfully. | 0 |
-| Backup checksum | Canonical SHA-256 valid; schema-v13 importer accepted updated backup. | 0 |
-
-**Decision — DEC-BUDGET-HISTORICAL-INCOME:** keep non-earned inflows distinct
-from earned income, but include them as planned/actual income rows in historical
-month snapshots. Preserve existing future earned-income projections and the
-original transaction/source-link records.
-
-**Superseded detail from CR-94:** its first decision said non-earned inflows
-would remain outside planned income rows. CR-95 replaces that display rule for
-historical snapshots by adding separate non-earned rows so historical planned
-and actual totals reconcile; earned-income calculations and future projections
-remain unchanged.
-
-### P25-F green test baseline (2026-11-01)
-
-No features or schema changes. The required baseline run used Node
-`v26.13.0`: 79 suites (76 passed, 3 failed), 948 tests passed and 10 failed
-(958 total), exit 1. The requested nine UI failures and the additional stale
-memory-count failure were:
-
-| File | Test | Expected | Received |
-|---|---|---|---|
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the system theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the light theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the dark theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the sky theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the mint theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the blush theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `renders the withdrawals-only state under the midnight theme` | Text contains `Available balance`. | Rendered text contains `Closing balance ₹5.00 K` (October 2026 is a past month on 2026-11-01). |
-| `src/components/__tests__/TransactionsScreen.test.tsx` | `keeps the Review action and routes its selected month to Budget` | Cash-card labels contain `Available balance`. | Labels are `Closing balance`, `₹830`, and `Review October 2026`. |
-| `src/components/__tests__/RouteRenderSmoke.test.tsx` | `announces exact large amounts in screen-level accessibility labels` | A Budget accessibility label includes `₹1,23,45,678 spent of ₹12,34,56,789` (`true`). | No matching label (`false`); the hard-coded October dates were future-dated relative to the 2026-11-01 current-month cutoff. |
-| `src/lib/__tests__/memoryDocs.test.ts` | `keeps all memory pages indexed, headed and aligned with source schema/test records` | A `Test counts: <suites> suites, <tests> tests` record is present (`not null`). | `null`; the status record used a different format and the remembered 955-test total was stale. |
-
-**Assertion decisions and replacements:**
-
-| Old assertion / fixture | Replacement | Reason |
-|---|---|---|
-| Eight Transactions cases required the October card label `Available balance`. | Keep checking the label, now `Closing balance`; keep the always-visible amount, no-toggle, and Review action/routing assertions. | DEC-USER-CHANGES preserves the user's compact balance card and amount; DEC-TRANSACTIONS-CLOSING-BALANCE distinguishes current-month Available from past-month Closing. The selected October month is past on November 1, so changing app text or removing an assertion would contradict the recorded decisions. |
-| Review test fixed transactions to September/October 2026 and expected Review September. | Derive the selected month as the most recently completed month, use month-relative transaction dates, preserve the ₹830 closing-balance assertion, and route Review to that derived month. | The original test became stale as the calendar advanced; this still tests a past-month amount and selected-month routing. |
-| Large-amount smoke fixture fixed transactions to October 10/11 and required an exact Budget label. | Keep the exact accessibility-label assertion; put the current-month income/expense on `todayISO()` and derive the budget snapshot month from that date. | The actuals selector correctly excludes future dates in the current month. October 10/11 became future-dated when the system date changed to November 1; this was a fixture issue, not a Budget source regression. |
-| Memory test fixed the repository total at 955 tests. | Update the expected total to 958; keep the exact suite count and cross-check of both memory pages. | The checked-in suite now contains 958 tests. The assertion remains exact and requires the project and status records to agree. |
-
-The TransactionsScreen and RouteRenderSmoke focused run passes 155/155 tests;
-the memory and ledger tests pass 10/10.
-
-The first ordered gate run had a shared-runner timeout in
-`TransactionForm.test.tsx`: `saves a new expense transaction` exceeded the
-5-second test timeout, then `saves a new income transaction` observed two Back
-calls instead of one. The isolated file passed 25/25; the exact full coverage
-command then passed all 79 suites / 958 tests in 15.093 seconds. No timeout or
-assertion was changed.
-
-Final ordered gates on Node `v26.13.0`:
-
-| Gate | Exit | Result |
-|---|---:|---|
-| `npm test -- --coverage` | 1, then 0 on retry | First full run had only the two `TransactionForm.test.tsx` timeout/follow-on failures; isolated file passed 25/25. Retry: 79 suites / 958 tests passed. |
-| `npx tsc --noEmit` | 0 | Passed. |
-| `npx expo lint` | 0 | Passed. |
-| `npx expo-doctor` | 0 | 21/21 checks passed; no issues detected. |
-| `npx expo export --platform android` | 0 | Android export completed successfully. |
-| `npx expo export --platform ios` | 0 | iOS export completed successfully. |
-
-Coverage from the passing full run: `src/data/` 94.23% lines / 87.74%
-branches; `src/domain/` 98.26% / 92.88%; pure `src/lib/` 100% / 100%.
-All documented directory floors pass. No physical-device check was performed
-for P25-F; these route/accessibility checks are simulated.
-
-### P25-B encrypted backups close-out (2026-11-01)
-
-**Step verdicts**
-
-| Step | Verdict | Evidence |
-|---|---|---|
-| 0. Preflight | Complete | Read `AGENTS.md` and `docs/memory/`; checked date, `git log -n 12`, status and Node `v26.13.0`. Initial tree was clean. Protected Budget source hash `5f5fd6e34555affd04c441e18f8acf5b43907083` matches the P25-B research commit; the older hash in `docs/memory/rules.md` predates commit `a507254`. No protected source was edited. |
-| 1. Research and decision | Complete | SDK 57 Crypto/FileSystem/Sharing/DocumentPicker documentation and Noble package references recorded in DEC-P25B. Research commit `d5aac3eb9535ac0b7cd3e3a11d37c77a8452d6aa`. |
-| 2. Pure crypto domain | Complete | `src/domain/backupCrypto.ts` implements the versioned envelope, header AAD, NFKC, bounded async scrypt, AES-256-GCM and typed errors; salt/nonce are injected. |
-| 3. Import/export integration | Complete | `app/backup.tsx` keeps decrypted data in memory, uses Expo secure random bytes at the boundary, retains plain import, migration, staging, Undo and `lastExportAt` behavior. |
-| 4. UI | Complete | Encrypted export default, warned plain opt-out, double-entry and show/hide passphrase controls, import retry and visible busy state. Automated font-scale cases run at 1.3 and 2.0. |
-| 5. Tests | Complete | 80 suites / 984 tests pass. Standard scrypt and AES-GCM known-answer vectors, deterministic round-trip, NFKC, errors, mutation/truncation, plain import, v1→v13 migration, Undo, ciphertext-only encrypted export file and no persisted passphrase are covered. |
-| 6. Docs and gates | Complete | README privacy disclosure, Unreleased changelog, memory and this ledger updated. All six final gates pass in order. |
-
-No persisted schema change: current schema remains v13. No native dependency,
-tag or push was created. The passphrase exists only in transient form state;
-the format envelope is a file format, not persisted application data.
-
-No product assertion was weakened or deleted. The progress-ledger test's P25-B
-status expectation changed from `In progress` to `Done` because implementation
-and final gates are now complete. The memory test's exact suite/test counts
-changed from 79/958 to 80/984 to match the verified full run. Both changes
-preserve strict status/count assertions.
-
-**Dependency and KDF report**
-
-| Package | Version | Purpose | Install scripts / runtime dependencies | Approx. size | npm audit delta |
-|---|---:|---|---|---:|---:|
-| `@noble/ciphers` | 2.4.0 | Portable AES-256-GCM | No lifecycle install scripts; zero runtime dependencies | 138 KiB compressed; 548,134 bytes unpacked | 0 |
-| `@noble/hashes` | 2.4.0 | Portable asynchronous scrypt and byte utilities | No lifecycle install scripts; zero runtime dependencies | 164 KiB compressed; 691,646 bytes unpacked | 0 |
-
-Both versions are exact-pinned. Installed with `npm install --save-exact
---ignore-scripts`; no install script ran or was approved. Existing
-`expo-crypto@57.0.4` and `expo-file-system@57.0.7` provide random bytes and
-file operations, respectively, so no Expo dependency or native build change
-was needed. `npm audit` remained at 55 total advisories (6 high, 44 moderate,
-5 low); production audit remained at 27 (6 high, 20 moderate, 1 low).
-Dependency audit delta: zero.
-
-Chosen KDF: scrypt `N=2^16, r=8, p=1, dkLen=32`, 16-byte salt, 12-byte nonce.
-The benchmark was 247.4 ms on Node 26.13.0 using about 64 MiB. Imports bound
-`N` to `2^15..2^16` and fix the other parameters. This development-machine
-result is not a mid-range-phone measurement.
-
-**Test and coverage evidence**
-
-The final `npm test -- --coverage` run passed 80/80 suites and 984/984 tests.
-The preceding integration-test run had one timeout because concurrent scrypt
-work exceeded Jest's default five-second limit; the test timeout was set to
-30 seconds without changing assertions, and the complete ordered gates were
-rerun successfully.
-
-| Coverage scope | Statements | Branches | Lines |
-|---|---:|---:|---:|
-| All instrumented files | 96.09% | 92.33% | 97.67% |
-| `src/data/` | 91.58% | 87.74% | 94.23% |
-| `src/domain/` | 96.92% | 93.05% | 98.32% |
-| `src/lib/` | 100% | 100% | 100% |
-
-| Instrumented file | Statements | Branches | Lines |
-|---|---:|---:|---:|
-| `src/domain/backupCrypto.ts` | 100% | 100% | 100% |
-| `src/domain/backup.ts` | 94.79% | 91.42% | 95.85% |
-| `src/data/createAppStore.ts` | 92.42% | 86.59% | 94.04% |
-
-The configured Jest coverage collection does not instrument route files such
-as `app/backup.tsx`; its import/export behavior is exercised by route tests.
-
-**Final six gates (Node `v26.13.0`, ordered)**
-
-| Gate | Exit code | Result |
-|---|---:|---|
-| `npm test -- --coverage` | 0 | 80 suites / 984 tests; coverage above |
-| `npx tsc --noEmit` | 0 | Passed |
-| `npx expo lint` | 0 | Passed without warnings |
-| `npx expo-doctor` | 0 | 21/21 checks passed |
-| `npx expo export --platform android` | 0 | Export completed |
-| `npx expo export --platform ios` | 0 | Export completed |
-
-**Spec conflicts and closest behavior**
-
-- Truncation has no dedicated requested error type, and GCM cannot identify
-  wrong passphrase versus tampering. Structurally malformed/truncated JSON is
-  `InvalidEnvelope`; valid structure with failed authentication is
-  `WrongPassphraseOrTampered`, whose message explains that distinction is
-  impossible.
-- Expo SDK 57's cross-platform system share sheet requires a local file URL,
-  and DocumentPicker's cache-copy mode provides reliable file reads. Thus the
-  explicit plain-export option temporarily writes a plaintext cache file and
-  deletes it after sharing; picked plain files are copied to cache and deleted
-  after reading. Encrypted export files contain ciphertext only, and decrypted
-  encrypted backups are never written to disk. This platform API constraint
-  is disclosed in README and the screen. A different platform-specific file
-  destination design is needed to satisfy literal no-plaintext-temp behavior
-  for those plain paths.
-- Noble's package documentation says its Argon2 implementation is unaudited
-  and slower in JavaScript. The selected audited portable fallback is async
-  scrypt; no native Argon2 dependency was added.
-
-**Physical-device checks not verified:** scrypt timing on an actual phone,
-native share sheet, file picker behavior, and large-font rendering at scales
-1.3 and 2.0. Layout tests are simulated.
+decisions and device checks.

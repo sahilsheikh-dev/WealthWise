@@ -3,15 +3,13 @@
   "main": "expo-router/entry",
   "version": "0.1.0",
   "engines": {
-    "node": ">=26.0.0 <27"
+    "node": ">=24.3.0 <25"
   },
   "dependencies": {
     "@expo-google-fonts/montserrat": "^0.4.2",
     "@expo/ui": "~57.0.26",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.9.1",
-    "@noble/ciphers": "2.4.0",
-    "@noble/hashes": "2.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.31",

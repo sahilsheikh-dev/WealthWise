@@ -4,7 +4,6 @@ import {
   backupFileName,
   canonicalJson,
   createBackup,
-  encryptedBackupFileName,
   parseBackup,
   summarizeData,
   validateImportData,
@@ -51,8 +50,6 @@ describe('backup validation and serialization', () => {
     });
 
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
-    expect(encryptedBackupFileName('2026-10-10T10:05:00.000Z'))
-      .toBe('wealthwise-backup-20261010-1005Z-encrypted.json');
   });
 
   it('round-trips typed insurance premium categories through current backups', async () => {

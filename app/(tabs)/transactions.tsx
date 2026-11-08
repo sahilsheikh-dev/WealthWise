@@ -166,9 +166,11 @@ export default function TransactionsScreen() {
               </AppText>
             </View>
             <View style={styles.balanceActions}>
-              <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
-                <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
-              </View>
+              {Math.abs(position.broughtForward) > 0 ? (
+                <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
+                  <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
+                </View>
+              ) : null}
             </View>
           </View>
           <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />

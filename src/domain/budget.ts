@@ -1375,7 +1375,6 @@ export type BudgetOverviewItem = {
   editable: boolean;
   source: { kind: 'line'; category: string }
     | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory }
-    | { kind: 'other-income'; category: string }
     | { kind: 'plan' | 'liability' | 'policy'; parentId: string };
 };
 
@@ -1488,22 +1487,15 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     return items;
   };
   const actualEarnedByCategory = new Map<EarnedIncomeCategory, number>();
-  const actualOtherIncomeByCategory = new Map<string, number>();
   for (const transaction of actualTransactions) {
-    if (transaction.type !== 'income') continue;
+    if (transaction.type !== 'income'
+      || (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(transaction.category)
+      || !isEarnedIncomeCategory(transaction.category)) continue;
     const category = transaction.category;
-    if (isEarnedIncomeCategory(category)
-      && !(NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(category)) {
-      actualEarnedByCategory.set(
-        category,
-        normalizeMoney((actualEarnedByCategory.get(category) ?? 0) + transaction.amount),
-      );
-    } else {
-      actualOtherIncomeByCategory.set(
-        category,
-        normalizeMoney((actualOtherIncomeByCategory.get(category) ?? 0) + transaction.amount),
-      );
-    }
+    actualEarnedByCategory.set(
+      category,
+      normalizeMoney((actualEarnedByCategory.get(category) ?? 0) + transaction.amount),
+    );
   }
 
   const remainingEarned = new Map(actualEarnedByCategory);
@@ -1533,34 +1525,6 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       kind: 'income',
       editable: true,
       source: { kind: 'income', incomeId: `actual:${category}`, category },
-    });
-  }
-  const remainingOtherIncome = new Map(actualOtherIncomeByCategory);
-  for (const otherIncome of budget.otherIncomes ?? []) {
-    const actual = Math.min(otherIncome.amount, remainingOtherIncome.get(otherIncome.category) ?? 0);
-    remainingOtherIncome.set(otherIncome.category, normalizeMoney(
-      (remainingOtherIncome.get(otherIncome.category) ?? 0) - actual,
-    ));
-    itemsForSection(incomeSectionId).push({
-      id: `other-income:${otherIncome.id}`,
-      title: otherIncome.name,
-      planned: normalizeMoney(otherIncome.amount),
-      actual: normalizeMoney(actual),
-      kind: 'income',
-      editable: false,
-      source: { kind: 'other-income', category: otherIncome.category },
-    });
-  }
-  for (const [category, actual] of remainingOtherIncome) {
-    if (actual <= 0) continue;
-    itemsForSection(incomeSectionId).push({
-      id: `other-income:actual:${category}`,
-      title: category,
-      planned: 0,
-      actual: normalizeMoney(actual),
-      kind: 'income',
-      editable: false,
-      source: { kind: 'other-income', category },
     });
   }
 

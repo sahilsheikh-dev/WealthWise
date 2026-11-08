@@ -1,24 +1,23 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: P25-B encrypted backups is complete. The research/decision
-  commit and implementation close-out are recorded in [PROGRESS.md](../PROGRESS.md).
-- Schema version: v13. No native module or persisted schema change was
-  introduced.
-- Test counts: 80 suites, 984 tests passed on Node 26.13.0 in the final
-  coverage run.
-- Coverage: `src/data/` 94.23% lines / 87.74% branches; `src/domain/` 98.32%
-  lines / 93.05% branches; pure `src/lib/` 100% / 100%. The new
-  `src/domain/backupCrypto.ts` has 100% line and branch coverage.
-- KDF: scrypt `N=2^16, r=8, p=1` took 247.4 ms on the Node 26.13.0 development
-  machine. Real-phone timing remains unverified.
-- All six final gates pass: coverage tests, TypeScript, Expo lint, Expo Doctor
-  21/21, Android export and iOS export. Exact exit codes are in the ledger.
-- Encrypted backups protect exported files only. On-device data remains
-  unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
-- Open release items: source-workbook records that do not map faithfully to
-  the current app schema are not imported; see [open-items.md](open-items.md).
+- Current task: Phase 25 part C (P25-C), release blockers and shared AI memory.
+- Current task state: Complete, with a follow-up consolidating AI instructions
+  into the single root `AGENTS.md`. Home order tests, Expo package alignment,
+  license/Node metadata, shared memory and all six automated release gates
+  pass; `npm audit` findings and device checks remain open.
+- Last implementation/test commit at final verification:
+  `ee1a23c156c7d08163cddd44a0f2e3061fb9aa6c`
+  (`fix: type Home card test lookup`); verify later documentation commits with
+  `git log`.
+- Schema version: v13 (`src/domain/schemas.ts`).
+- Test counts: 79 suites, 955 tests passed in the final P25-C coverage run on
+  2026-10-26.
+- Open release items: `npm audit` reports 8 advisories (5 high, 3 moderate);
+  confirm the license holder and complete physical-device QA.
+- On hold: Phase 24 reminders and notifications (CR-1); later accessibility,
+  performance, cleanup and release work remain in their planned phases.
 
 The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth for
 step verdicts, coverage, device checks and release records. Simulated UI tests

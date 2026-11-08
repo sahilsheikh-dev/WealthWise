@@ -31,22 +31,12 @@ implementation before changing archive semantics.
 
 ## Backups
 
-Backups keep the existing versioned JSON payload and SHA-256 checksum over
-canonical JSON. Import verifies the checksum against data as written, then
-migrates supported historical schemas, validates the current schema and
-linked-entity integrity, and refuses newer schemas. Encrypted exports wrap
-that payload in a versioned AES-256-GCM envelope; the header is authenticated
-as additional data and scrypt derives the key from a Unicode NFKC-normalized
-passphrase. The passphrase is transient; there is no recovery. Plain export
-remains an explicit, warned choice, and legacy plain imports remain supported.
-
-Encryption protects exported files only. On-device app data remains
-unencrypted and app lock is not encryption. Encrypted export writes
-ciphertext-only cache files and decrypts imports in memory. SDK 57's
-cross-platform sharing and picked-file APIs require temporary cache files for
-the explicit plain export and reading picked files; those files are deleted
-after use. The plaintext result of decrypting an encrypted backup is never
-written to disk.
+Backups are user-exported JSON with a format version, schema version, export
+timestamp, and SHA-256 checksum over canonical JSON. Import verifies the
+checksum against data as written, then migrates supported historical schemas,
+validates the current schema and linked-entity integrity, and refuses newer
+schemas. The checksum is not encryption or authentication; backups remain
+readable unless a future task changes this.
 
 ## Navigation and forms
 

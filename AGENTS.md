@@ -6,8 +6,8 @@ AI tool. Keep tool-specific instruction files out of the repository; update
 these shared instructions instead.
 
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
-(`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
-`engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
+(`package-lock.json` is present) and Node.js 24.3.0+ in the Node 24 LTS line;
+routes are in `app/`, not `src/app/`.
 
 ## Project rules
 
