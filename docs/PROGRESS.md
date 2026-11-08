@@ -9643,9 +9643,16 @@ Gradle build, version bump, or release preparation was performed.
   by`. P20-A-R1, P29-O1-R1 and P29-W-R1 are also in their original phases.
   Derived dashboard progress is 130/131; Phase 20 25/25, Phase 28 10/10,
   Phase 29 36/37, Phase 30 3/3.
-- Final gates, in order, and coverage will be recorded after the integrated
-  `develop` tree completes them. Expo exports are allowed; no EAS or Gradle
-  build, release preparation or version/schema bump is in scope.
+- Final integrated-`develop` gates all exit 0. Gate 1:
+  `npm test -- --coverage` — 98 suites, 1,242 passed, 1 skipped; coverage
+  95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%,
+  `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100% in all measures.
+  Gate 2 `npx tsc --noEmit` — 0; Gate 3 `npx expo lint` — 0; Gate 4
+  `npx expo-doctor` — 0 (21/21); Gate 5 Android export — 0 (5.5 MB);
+  Gate 6 iOS export — 0 (5.2 MB). The full run preceded only ledger/hash
+  documentation corrections; the focused ledger test passed afterward.
+  No EAS or Gradle build, release preparation or version/schema bump is in
+  scope.
 - Checklist results: N39 Fail, N40 Fail, N41 Not run (aggregate Pace graph,
   no stacked bar), N42 Not run (paid sync/Undo), and N43 Not run (Entries
   counts and schedule caps). Device header fields remain blank; physical
