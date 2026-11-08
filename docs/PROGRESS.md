@@ -98,7 +98,8 @@ are called out as such.
 | CR-3 | Open | `profile-form.tsx` and `transaction-form.tsx`: validation summaries share the horizontal footer row with Save, so Save is not full width while the summary is shown | 2026-10-14 |
 | P15-SEED | Unknown | No seed-backup prompt or matching commit was found in the available exports or Git history | unknown |
 | P15-LEDGER | Done | This commit merges both session records and checkpoints, records recovery `5aeefb9`, verifies form labels/save widths, removes the prompt archive, and tests ledger invariants | 2026-10-14 |
-| P15-FIX-R5 | Pending (implementation and focused tests verified; full gates blocked) | Shared bottom navigation and three Budget UI fixes; detailed source/test evidence is in Section 10. No commit created. | 2026-10-15 |
+| P15-FIX-R5 | Done (automated gates pass; device checks outstanding) | `9859d73` UI delivery; `798e8ef` Expo SDK patch alignment; full close-out and test corrections in P15-FIX-R6 closeout commit. | 2026-10-15 |
+| P15-FIX-R6 | Done | Baseline reproduced as green; replaced superseded SortChip layout assertions with current ChipRow structure; all tests, coverage, typecheck, lint, Doctor, and platform exports pass. See P15-FIX-R6 closeout commit and Section 10. | 2026-10-15 |
 | CR-2 | Done | This ledger commit merges the session histories/checkpoints and closes the backfill; unavailable raw transcripts remain disclosed in Section 8 | 2026-10-14 |
 | Phase 16 | Planned | Cleanup, unused dependency/dead-code review, bundle audit, README | 2026-10-13 |
 | Phase 17 | Planned | QA/release: property tests, QA checklist, release engineering, local diagnostics | 2026-10-13 |
@@ -195,7 +196,7 @@ one persisted write.
 - Coverage totals use per-file Istanbul summaries and independently sum line
   and branch counts: domain and pure `src/lib` >=90%; `src/data` excluding
   hooks >=85%.
-- Tabs, in order: Home, Txns, Goals, Budget.
+- Tabs, in order: Home, Transactions, Goals, Budget.
 - Add/Edit/Delete are icon actions. Deposit/Withdraw/Pay EMI/Log
   installment/Save/Clear due/Clear past dues are text with a small icon.
   `CardHeaderRow` or `ListRow` alone owns the edit pencil. Goal cards open the
@@ -236,7 +237,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 - Phase 1 uses Expo/React Native, TypeScript, Expo Router, bundled Montserrat
   and Feather, typed theme/components, and mobile-first screens; the initial
   static-only/no-persistence scope was superseded by later phases. The original
-  five-tab design (Home, Txns, Goals, Invest, More) was superseded by the
+  five-tab design (Home, Transactions, Goals, Invest, More) was superseded by the
   current four tabs.
 - Domain date calculations use UTC and explicit as-of dates. SIP schedules
   anchor to the plan start, not chained dates. Liability balance is a daily
@@ -281,7 +282,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   Indian-grouped values. The formal row cutoff is ₹1 crore; screen-reader
   output remains exact. `formatINRShort` retains its existing behavior.
 - Theme IDs are `system`, `light`, `dark`, `sky`, `mint`, `blush`, and
-  `midnight`. Tabs are Home, Txns, Goals, Budget.
+  `midnight`. Tabs are Home, Transactions, Goals, Budget.
 - Route kinds enumerate every route; form routes have close/discard handling,
   and stack routes have back/fallback behavior. Shared UI follows Section 3's
   text-versus-icon rules.
@@ -295,8 +296,8 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 | Earlier decision | Superseded by |
 |---|---|
 | Phase 1 static-only/no-persistence boundary | Later phases added persistence, domain actions, forms, and routes. |
-| Five tabs including Invest and More | FX-B2 established Home, Txns, Goals, Budget. |
-| P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Txns, Goals, Budget rule. |
+| Five tabs including Invest and More | FX-B2 established Home, Transactions, Goals, Budget. |
+| P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Transactions, Goals, Budget rule. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
 | Schema v1, then v2, v3, v4, or v5 as current | Successive migrations; current schema is v6. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |
@@ -375,7 +376,8 @@ evidence present in exports/checkpoints.
 | P15-FIX-R2 | 2 | 2026-10-13 | Recover interrupted work and fix baseline. | Superseded by R3 audit/repair. | `6771f37`, `c0ba0da` | Two visible-message assertions were replaced with weaker checks; R3 restored them. | verbatim in git at `5aeefb9` |
 | P15-FIX-R3 | 2 | 2026-10-13 | Audit FX-BASE and complete fixes with truthful gates. | Done; gates reported green twice. | `60b8c54`, `5f6f883`, `de94950`, `a3423ec`, `c1df77d`, `88d5190`, `b8bc4a1`, `5e2f78f`, `b205a84`, `862af8a`, `6627d03`, `f805481` | Restored UI messages/assertions; followed formal ₹1 crore cutoff over a conflicting example. | verbatim in git at `5aeefb9` |
 | P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
-| P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Implemented; five focused suites pass (158 tests). Full suite has two unchanged SortChip-layout failures; Expo Doctor reports five SDK patch mismatches. No commit. | none | No SortChip implementation, sorting logic, placement, or existing sorting assertions changed. Android/iOS device spacing is unverified. | verbatim current request |
+| P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Delivered in `9859d73`; R6 verified the full gates and corrected superseded layout expectations. Real-device checks remain outstanding. | `9859d73`; verification close-out in P15-FIX-R6 | No SortChip appearance, options, logic, or placement changes. The visible tab label is `Txns`; accessibility label remains `Transactions`. | verbatim prior request |
+| P15-FIX-R6 | 2 | 2026-10-15 | Close out R5: establish the green baseline, audit SortChip/header history, align Expo SDK patch versions, and rerun all gates. | Done; baseline 64 suites/659 tests, current 65 suites/669 tests, source coverage above floors, Doctor 21/21, both exports, TypeScript and lint pass. Device checks remain unverified. | `798e8ef` SDK patch alignment; this close-out commit | Updated only superseded layout assertions and the visible tab label; SortChip component and sorting logic untouched. No extra WIP commit because R5 source was already committed and the tree was clean. | verbatim current request |
 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer. | Unknown; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | This commit; no code changes beyond ledger test. | this commit | Earlier ledger task had already removed archive; form audit opened CR-3. | verbatim in current request |
 
@@ -409,19 +411,44 @@ evidence present in exports/checkpoints.
   656/656 tests each run; TypeScript; Expo lint; Android and iOS exports; and
   Expo Doctor (21/21 checks). Simulated font-scale tests are not device
   verification.
-- **P15-FIX-R5 verification (2026-10-15):** focused tests pass (5 suites,
-  158 tests); TypeScript, Expo lint, and Android/iOS exports exit 0. The full
-  `npm test -- --coverage` run is red (63 suites pass, 2 fail; 667/669 tests
-  pass) on unchanged SortChip layout expectations in
-  `SectionHeaderRow.test.tsx` and `TransactionsScreen.test.tsx`. Neither test
-  file nor the Transactions screen was changed; the SortChip in Budget was
-  not moved or restyled. Altering these protected placements/assertions to
-  satisfy the contradictory expectations is out of scope. Measured coverage
-  is still above the requested floors: domain 98.47% lines / 93.68% branches,
-  data 92.45% / 90.87%, pure lib 100% / 100%. Expo Doctor exits 1 (20/21)
-  because five Expo SDK packages are one patch behind; dependency manifests
-  were not changed. Layout/font-scale behavior was simulated; device
-  verification remains outstanding.
+- **P15-FIX-R5/R6 verification (2026-10-15):** the last green commit
+  `2e5d594` passed both target suites (24/24) and the full baseline
+  (`npm test -- --runInBand`: 64/64 suites, 659/659 tests). The then-current
+  tree reproduced two stale layout failures: `SectionHeaderRow.test.tsx`
+  required SortChip inside `SectionHeaderRow`, while current `ChipRow` layout
+  was intentional; `TransactionsScreen.test.tsx` expected a separate filter
+  scroller although the screen renders one horizontal `ChipRow`. The P15
+  ledger commit `d11af45` had reverted the 5aeefb9 ChipRow wrappers on
+  `(tabs)/budget.tsx`, `(tabs)/goals.tsx`, `transactions.tsx`, `assets.tsx`,
+  `budget-history.tsx`, `emergency-fund.tsx`, `investment-entries.tsx`,
+  `liabilities.tsx`, `liability-payments.tsx`, and `link-missing.tsx`; it also
+  moved the Transactions sort chip out of the shared ChipRow. That commit
+  changed the tab text from `Transactions` to `Txns`; `4178c28` later changed
+  it back to `Transactions`. `b92e145` was docs-only. `af76eec` subsequently
+  restored the ChipRow presentation, so the present code matches the intended
+  wrapper pattern. The two test assertions now require the current ChipRow
+  structure and the Transactions test mock models its horizontal scrolling
+  behavior. The visible tab label is `Txns`; accessibility remains
+  `Transactions`.
+- `npx expo install --check` reported dependencies up to date. The previously
+  committed `798e8ef` changed only `package.json` and `package-lock.json`;
+  `package.json` updated the direct ranges for `@expo/ui`, `expo`,
+  `expo-linking`, and `expo-router`. `expo-constants` was already accepted by
+  the current SDK check. Expo Doctor now passes 21/21. Full
+  `npm test -- --coverage` passes 65/65 suites and 669/669 tests. Aggregate
+  coverage: domain 98.47% lines / 93.68% branches, data excluding hooks
+  92.45% / 90.87%, and pure lib 100% / 100%. TypeScript, Expo lint, Android
+  export, and iOS export all exit 0. No source, schema, migration, or
+  financial-calculation changes were made in R6. The app was not exercised on
+  a physical Android/iOS device or development build; safe-area geometry,
+  native navigation behavior, and font scales 1.0/1.3/2.0 still need device
+  verification.
+- **Assumed:** R5 implementation already committed as `9859d73` satisfies the
+  requested preservation step; because the worktree was clean, no redundant
+  WIP commit was created. SDK patch alignment already existed in the separate
+  `798e8ef` package-only commit, so no duplicate `expo install --fix` or empty
+  chore commit was created. The visible tab label is `Txns` per the explicit
+  four-tab rule, while the accessibility label remains `Transactions`.
 - Final per-directory coverage: domain 2,120/2,153 lines (98.47%) and
   1,986/2,120 branches (93.68%); data excluding hooks 306/331 lines (92.45%)
   and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches
@@ -588,7 +615,11 @@ evidence for the fixes.
 | FX-E1 | Done | `src/lib/amountDisplay.ts`, `src/components/AmountText.tsx`, `app/emergency-fund.tsx`, Home/Goals emergency cards and passbook | `src/components/__tests__/RouteRenderSmoke.test.tsx` — exact labels for large balance/baseline figures; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — three-month target behavior; `AmountText.test.tsx` — exact accessibility |
 | FX-E2 | Done | `app/ef-allocation-form.tsx`, `src/domain/efAllocationActions.ts`, `src/data/createAppStore.ts` | `src/components/__tests__/EfAllocationForm.test.tsx` — each remaining control's label, hint and stored result plus orphaned-string scan; `src/data/__tests__/createAppStore.test.ts` — reset persisted state and one write |
 | CH-1 | Done | `src/domain/efAllocation.ts`, `src/domain/efAllocationActions.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/domain/links.ts`, `src/domain/holdingActions.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/data/createAppStore.ts`, `app/ef-allocation-form.tsx`, `app/emergency-fund.tsx` — custom buckets, metadata-based warning/allocation, link cascade and one-write plan save; v5→v6 migration/archive and v6 backups | `src/domain/__tests__/efAllocationCustom.test.ts` — action validation, moveTo, integrity, warning metadata and seeded 20,000-case paise proof; `src/data/__tests__/migrateV4.test.ts` — v5 defaults/deep preservation; `src/data/__tests__/createAppStore.test.ts` — v6 hydration/archive/erase and one-write save; `src/domain/__tests__/backup.test.ts` — v6 round-trip and v7 refusal; `src/domain/__tests__/schemas.test.ts` — custom bounds; `src/components/__tests__/EfAllocationForm.test.tsx` — custom option, totals, picker and single save; `src/components/__tests__/EmergencyGoalScreens.test.tsx` — linked rows and values; `src/components/__tests__/RouteRenderSmoke.test.tsx` — routes use v6 state |
-| P15-FIX-R5-1 Bottom navigation | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/_layout.tsx`, `src/components/ui.tsx`, `app/budget-history.tsx`, `app/month-review.tsx`, `src/components/form/FormScreen.tsx` | `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `RouteRenderSmoke.test.tsx` — shared tabs/order/labels/icons/selection/safe-area structure, touch target and simulated font scales. Android/iOS device spacing not verified. |
-| P15-FIX-R5-2 Budget actions | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — shared History/Month review action styling, selected-month review routing and review dot | `RouteRenderSmoke.test.tsx` — matched action style/minimum target and distinct routes under simulated font scale. |
-| P15-FIX-R5-3 Cash flow | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — opening, previous position, monthly flow and closing hierarchy; `budgetMonthView` calculations unchanged | `RouteRenderSmoke.test.tsx` — values/labels, positive/negative statuses, review navigation and normal-flow responsive layout. Device rendering not verified. |
-| P15-FIX-R5-4 Budget plan summary | Pending (implementation/focused tests pass; full gate blocked) | `app/(tabs)/budget.tsx` — summary card opens selected-month editor, template action remains independent, pencil removed, exact values preserved | `RouteRenderSmoke.test.tsx`, `EditActionOwnership.test.tsx` — edit/apply ownership, template modal, month route, populated/no-budget state and accessible financial values. |
+| P15-FIX-R5-1 Bottom navigation | Done (automated; device checks outstanding) | `app/(tabs)/_layout.tsx`, `src/components/ui.tsx`, `app/budget-history.tsx`, `app/month-review.tsx`, `src/components/form/FormScreen.tsx` | `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `RouteRenderSmoke.test.tsx` — shared tabs/order/labels/icons/selection/safe-area structure, touch target and simulated font scales. Android/iOS device spacing not verified. |
+| P15-FIX-R5-2 Budget actions | Done (automated; device checks outstanding) | `app/(tabs)/budget.tsx` — shared History/Month review action styling, selected-month review routing and review dot | `RouteRenderSmoke.test.tsx` — matched action style/minimum target and distinct routes under simulated font scale. |
+| P15-FIX-R5-3 Cash flow | Done (automated; device checks outstanding) | `app/(tabs)/budget.tsx` — opening, previous position, monthly flow and closing hierarchy; `budgetMonthView` calculations unchanged | `RouteRenderSmoke.test.tsx` — values/labels, positive/negative statuses, review navigation and normal-flow responsive layout. Device rendering not verified. |
+| P15-FIX-R5-4 Budget plan summary | Done (automated; device checks outstanding) | `app/(tabs)/budget.tsx` — summary card opens selected-month editor, template action remains independent, pencil removed, exact values preserved | `RouteRenderSmoke.test.tsx`, `EditActionOwnership.test.tsx` — edit/apply ownership, template modal, month route, populated/no-budget state and accessible financial values. |
+| P15-FIX-R6-A Baseline evidence | Done | No source changes; temporary worktree at `2e5d594` was removed after testing | The two requested suites passed 24/24; full `npm test -- --runInBand` passed 64 suites/659 tests. Current pre-fix failures were captured verbatim in the R6 report and summarized in Section 8. |
+| P15-FIX-R6-B Sort UI history and assertions | Done | `src/components/ui.tsx` — visible tab text restored to `Txns`; `src/components/__tests__/BottomTabBar.test.tsx`, `SectionHeaderRow.test.tsx`, `TransactionsScreen.test.tsx` — revised assertions for the intended ChipRow layout | Focused six-suite run passed 180 tests, including `src/lib/__tests__/sorting.test.ts`; full current coverage run passed 65 suites/669 tests. `src/components/SortChip.tsx` and `src/lib/sorting.ts` are unchanged. |
+| P15-FIX-R6-C Expo SDK alignment | Done | Existing separate `798e8ef` updates only `package.json` and `package-lock.json`; four direct Expo package ranges were bumped, while `expo-constants` was accepted unchanged | `npx expo install --check` — dependencies up to date; `npx expo-doctor` — 21/21; Android/iOS exports and full tests pass after alignment. |
+| P15-FIX-R6-D Gates and close-out | Done (automated; device checks outstanding) | `docs/PROGRESS.md` — R5/R6 status, assumptions, historical audit, and evidence | `npm test -- --coverage` — 65/65 suites, 669/669 tests; `npx tsc --noEmit`; `npx expo lint`; `npx expo-doctor` 21/21; Android/iOS exports; per-directory line/branch coverage; `git diff --check`. Native safe-area and font-scale checks remain for real devices. |
