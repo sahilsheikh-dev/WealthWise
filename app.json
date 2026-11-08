@@ -1,4 +1,4 @@
-  {
+{
   "expo": {
     "name": "WealthWise",
     "slug": "WealthWise",
@@ -9,22 +9,16 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.begawo.WealthWise"
+      "bundleIdentifier": "com.anonymous.WealthWise"
     },
     "android": {
-      "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "white",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
-      ],
-      "package": "com.begawo.WealthWise"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -35,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#000000",
+          "backgroundColor": "black",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -47,26 +41,11 @@
             "enableSceneSupport": true
           }
         }
-      ],
-      "@react-native-community/datetimepicker",
-      "expo-sharing",
-      "expo-secure-store",
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "Unlock Wealth Wise"
-        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "083ec971-b6bf-4f1b-b13e-5d163116b94b"
-      }
     }
   }
 }

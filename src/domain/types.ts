@@ -7,7 +7,6 @@ export type Transaction = {
   category: string;
   note: string;
   date: ISODate;
-  source?: { kind: 'holding-entry' | 'liability-payment' | 'ef-entry' | 'plan-log' | 'loan-payment'; parentId: string; entryId: string };
 };
 
 export type Goal = {
@@ -19,20 +18,12 @@ export type Goal = {
   auto?: 'ef';
 };
 
-export type InvestmentEntry = {
+export type LogEntry = {
   id: string;
   date: ISODate;
   amount: number;
   note: string;
-  kind?: 'Deposit' | 'Withdrawal' | 'EMI' | 'Prepayment';
-};
-
-export type LiabilityPayment = {
-  id: string;
-  date: ISODate;
-  amount: number;
-  note: string;
-  kind: 'EMI' | 'Prepayment' | 'Payment';
+  kind?: 'EMI' | 'Prepayment';
 };
 
 export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -56,8 +47,6 @@ export type ManualHolding = {
   type: HoldingType;
   invested: number;
   value: number;
-  valueAsOf?: ISODate;
-  logs?: InvestmentEntry[];
 };
 
 export type PlanHolding = {
@@ -71,49 +60,23 @@ export type PlanHolding = {
   stepUpPct: number;
   tenureYears: number;
   startDate: ISODate;
-  trackFrom: ISODate;
   opening: number;
   actualValue: number | null;
-  actualValueDate: ISODate | null;
-  logs: InvestmentEntry[];
+  logs: LogEntry[];
 };
 
 export type Holding = ManualHolding | PlanHolding;
 
-export type LiabilityType = 'Home loan' | 'Car loan' | 'Personal loan' | 'Education loan' | 'Credit card' | 'Borrowed money' | 'Other';
-export const LIABILITY_TYPES: LiabilityType[] = ['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other'];
-
-export type RecurringLiability = {
+export type Loan = {
   id: string;
   name: string;
-  type: LiabilityType;
-  kind: 'recurring';
   principal: number;
   ratePct: number;
-  startDate: ISODate;
-  payments: LiabilityPayment[];
   tenureMonths: number;
   emi: number;
-};
-
-export type OneTimeLiability = {
-  id: string;
-  name: string;
-  type: LiabilityType;
-  kind: 'one-time';
-  principal: number;
-  ratePct: number;
   startDate: ISODate;
-  payments: LiabilityPayment[];
-  dueDate: ISODate | null;
-  tenureMonths?: never;
-  emi?: never;
+  payments: LogEntry[];
 };
-
-export type Liability = RecurringLiability | OneTimeLiability;
-/** Legacy compile-time aliases retained only for old fixtures; persisted v2 never emits them. */
-export type LogEntry = InvestmentEntry & { kind?: 'Deposit' | 'Withdrawal' | 'EMI' | 'Prepayment' };
-export type Loan = Omit<RecurringLiability, 'kind' | 'type' | 'payments'> & { payments: LogEntry[] };
 
 export type EfEntry = {
   id: string;
@@ -132,7 +95,6 @@ export type AppData = {
   transactions: Transaction[];
   goals: Goal[];
   holdings: Holding[];
-  liabilities: Liability[];
+  loans: Loan[];
   efEntries: EfEntry[];
-  [key: string]: any;
 };

@@ -3,7 +3,6 @@ import {
   currentInstallmentAmount,
   estimatedValue,
   installmentsDue,
-  installmentsTracked,
   planProgressPct,
   planValue,
   projection,
@@ -23,10 +22,8 @@ const makePlan = (changes: Partial<PlanHolding> = {}): PlanHolding => ({
   stepUpPct: 0,
   tenureYears: 1,
   startDate: '2026-01-01',
-  trackFrom: '2026-01-01',
   opening: 0,
   actualValue: null,
-  actualValueDate: null,
   logs: [],
   ...changes,
 });
@@ -85,49 +82,10 @@ describe('SIP domain calculations', () => {
     expect(behindBy(plan, '2026-01-01')).toBe(0);
     expect(estimatedValue(plan, '2026-01-01')).toBe(3_500);
     expect(planValue(plan, '2026-03-01')).toBeCloseTo(500 + 1_000 * 1.12 ** (59 / 365) + 2_000 * 1.12 ** (28 / 365), 6);
-    expect(planValue({ ...plan, actualValue: 9_999, actualValueDate: '2026-03-01' }, '2026-03-01')).toBe(9_999);
+    expect(planValue({ ...plan, actualValue: 9_999 }, '2026-03-01')).toBe(9_999);
     expect(behindBy(makePlan(), '2026-06-01')).toBeGreaterThanOrEqual(0);
     expect(planProgressPct(makePlan())).toBe(0);
     expect(planProgressPct({ ...plan, amount: 0 })).toBe(0);
-  });
-
-  it('tracks only scheduled installments on or after trackFrom', () => {
-    const plan = makePlan({ startDate: '2026-01-01', trackFrom: '2026-03-01' });
-    expect(installmentsTracked(plan, '2026-04-01')).toBe(2);
-    expect(installmentsTracked({ ...plan, trackFrom: '2025-12-01' }, '2026-04-01')).toBe(4);
-    expect(installmentsTracked({ ...plan, trackFrom: '2026-05-01' }, '2026-04-01')).toBe(0);
-    expect(installmentsTracked({ ...plan, startDate: '2026-04-01', trackFrom: '2026-01-01' }, '2026-04-01')).toBe(1);
-    expect(behindBy({ ...plan, trackFrom: '2026-05-01' }, '2026-04-01')).toBe(0);
-    expect(behindBy(plan, '2026-01-01')).toBe(0);
-  });
-
-  it('grows dated actual snapshots and includes only later logs', () => {
-    const actualPlan = makePlan({
-      actualValue: 10_000,
-      actualValueDate: '2026-01-01',
-      logs: [
-        { id: 'before', date: '2025-12-31', amount: 500, note: '' },
-        { id: 'same', date: '2026-01-01', amount: 600, note: '' },
-        { id: 'after', date: '2026-07-02', amount: 1_000, note: '' },
-      ],
-    });
-    expect(planValue(actualPlan, '2026-01-01')).toBe(11_000);
-    expect(planValue(actualPlan, '2027-01-01')).toBeCloseTo(10_000 * 1.12 + 1_000 * 1.12 ** (183 / 365), 8);
-    expect(planValue({ ...actualPlan, actualValueDate: '2026-01-01', logs: [actualPlan.logs[0]!] }, '2026-01-01')).toBe(10_000);
-    const seedPlan = makePlan({
-      startDate: '2024-01-01',
-      trackFrom: '2026-07-01',
-      tenureYears: 34,
-      actualValue: 118_000,
-      actualValueDate: '2026-09-30',
-      logs: [
-        { id: 'jul', date: '2026-07-05', amount: 21_200, note: '' },
-        { id: 'aug', date: '2026-08-05', amount: 21_200, note: '' },
-        { id: 'sep', date: '2026-09-05', amount: 21_200, note: '' },
-      ],
-    });
-    expect(behindBy(seedPlan, '2026-10-10')).toBe(1);
-    expect(planValue(seedPlan, '2027-09-30')).toBeCloseTo(118_000 * 1.12, 6);
   });
 
   it('steps the installment amount on calendar anniversaries', () => {

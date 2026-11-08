@@ -3,8 +3,6 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
-import { useAppStore } from '../../src/data/store';
-import { choiceAsync } from '../../src/lib/confirm';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -13,62 +11,30 @@ type MenuRowProps = {
   icon: keyof typeof Feather.glyphMap;
   detail?: string;
   disabled?: boolean;
-  danger?: boolean;
   onPress?: () => void;
 };
 
 export default function MoreScreen() {
-  const { themePreference, toggleTheme } = useTheme();
-  const name = useAppStore((state) => state.data.settings.name);
-  const devActions = useAppStore((state) => state.devActions);
+  const { isDark, toggleTheme } = useTheme();
   return (
     <Screen>
       <ScreenHeader title="More" />
       <View style={styles.list}>
-        <MenuRow label="Your Name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
         <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
         <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
-        <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
-        <MenuRow label="Backup and Restore" icon="download" onPress={() => router.push('/backup')} />
-        <MenuRow label="Security" icon="lock" onPress={() => router.push('/security')} />
-        <MenuRow label="Erase all Data" icon="trash-2" danger onPress={() => router.push('/erase-data')} />
+        <MenuRow label="Export" icon="download" detail="Coming soon" disabled />
+        <MenuRow
+          label="Switch theme"
+          icon={isDark ? 'sun' : 'moon'}
+          detail={isDark ? 'Dark' : 'Light'}
+          onPress={toggleTheme}
+        />
       </View>
-      {__DEV__ && devActions ? (
-        <View style={styles.devList}>
-          <AppText style={[typography.label, styles.devHeading]}>DEVELOPER TOOLS</AppText>
-          <MenuRow
-            label="Load Demo Data"
-            icon="database"
-            onPress={() => {
-              void choiceAsync({
-                title: 'Load Demo Data?',
-                message: 'Replace local app data with the bundled sample data?',
-                choices: [{ id: 'load', label: 'Load Demo Data' }],
-              }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
-            }}
-          />
-          <MenuRow
-            label="Simulate Corrupt Storage"
-            icon="alert-triangle"
-            onPress={() => {
-              void choiceAsync({
-                title: 'Simulate Corrupt Storage?',
-                message: 'The app will restart and show its recovery screen.',
-                choices: [{ id: 'continue', label: 'Continue', destructive: true }],
-              }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });
-            }}
-          />
-        </View>
-      ) : null}
     </Screen>
   );
 }
 
-function themePreferenceLabel(preference: 'system' | 'dark' | 'light'): string {
-  return preference[0]!.toUpperCase() + preference.slice(1);
-}
-
-function MenuRow({ label, icon, detail, disabled = false, danger = false, onPress }: MenuRowProps) {
+function MenuRow({ label, icon, detail, disabled = false, onPress }: MenuRowProps) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -84,9 +50,9 @@ function MenuRow({ label, icon, detail, disabled = false, danger = false, onPres
         pressed && !disabled && styles.pressed,
       ]}>
       <View style={[styles.iconWrap, { backgroundColor: colors.surface2 }]}>
-        <Feather name={icon} size={17} color={disabled ? colors.text3 : danger ? colors.err : colors.primary} />
+        <Feather name={icon} size={17} color={disabled ? colors.text3 : colors.primary} />
       </View>
-      <AppText weight="semibold" style={[styles.label, danger && { color: colors.err }, disabled && { color: colors.text3 }]}>{label}</AppText>
+      <AppText weight="semibold" style={[styles.label, disabled && { color: colors.text3 }]}>{label}</AppText>
       {detail ? <AppText style={[typography.meta, { color: colors.text3 }]}>{detail}</AppText> : null}
       <Feather name="chevron-right" size={16} color={colors.text3} />
     </Pressable>
@@ -95,8 +61,6 @@ function MenuRow({ label, icon, detail, disabled = false, danger = false, onPres
 
 const styles = StyleSheet.create({
   list: { marginHorizontal: 20, marginTop: 12 },
-  devList: { marginHorizontal: 20, marginTop: 24 },
-  devHeading: { marginBottom: 4 },
   row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   iconWrap: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   label: { flex: 1, fontSize: 13 },

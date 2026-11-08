@@ -2,8 +2,6 @@ import type { ISODate, Transaction } from './types';
 
 export type TransactionMonthSummary = {
   income: number;
-  withdrawals: number;
-  earnedIncome: number;
   expense: number;
   invest: number;
   net: number;
@@ -18,8 +16,6 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
     .filter((transaction) => transaction.type === kind)
     .reduce((sum, transaction) => sum + transaction.amount, 0);
   const income = total('income');
-  const withdrawals = rows.filter((transaction) => transaction.type === 'income' && transaction.category === 'Withdrawal').reduce((sum, transaction) => sum + transaction.amount, 0);
-  const earnedIncome = income - withdrawals;
   const expense = total('expense');
   const invest = total('invest');
   return {
@@ -27,10 +23,8 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
     expense,
     invest,
     net: income - expense - invest,
-    withdrawals,
-    earnedIncome,
-    savedPct: earnedIncome === 0 ? null : (earnedIncome - expense) / earnedIncome * 100,
-    investedPct: earnedIncome === 0 ? null : invest / earnedIncome * 100,
+    savedPct: income === 0 ? null : (income - expense) / income * 100,
+    investedPct: income === 0 ? null : invest / income * 100,
     overspend: income > 0 ? Math.max(0, expense + invest - income) : 0,
   };
 }

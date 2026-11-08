@@ -1,11 +1,9 @@
-import { router } from 'expo-router';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   ActionRow,
   AppText,
-  Button,
   Card,
   Chip,
   ChipRow,
@@ -17,8 +15,6 @@ import {
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
-import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { valueStaleness } from '../../src/domain/holdingActions';
 import {
   buildPortfolioRows,
   filterRows,
@@ -26,10 +22,11 @@ import {
   portfolioTotals,
   type PortfolioRow,
 } from '../../src/domain/portfolio';
-import { behindBy, installmentsTracked, loggedCount, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { behindBy, installmentsDue, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
 import type { Holding, HoldingType } from '../../src/domain/types';
+import { useAppData } from '../../src/data/useAppData';
 import { todayISO } from '../../src/lib/clock';
-import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
+import { formatINR, formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -66,14 +63,18 @@ export default function InvestScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="New SIP"
-            onPress={() => router.push('/plan-form')}
+            onPress={() => {
+              // TODO(phase5)
+            }}
             style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New SIP</AppText>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Add Holding"
-            onPress={() => router.push('/holding-form')}
+            accessibilityLabel="Add holding"
+            onPress={() => {
+              // TODO(phase5)
+            }}
             style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>
           </Pressable>
@@ -118,24 +119,12 @@ export default function InvestScreen() {
           if (!holding) return null;
           return holding.kind === 'plan'
             ? <PlanCard key={row.id} holding={holding} asOf={asOf} />
-            : <HoldingItem key={row.id} row={row} holding={holding} asOf={asOf} />;
+            : <HoldingItem key={row.id} row={row} holding={holding} />;
         })}
         {visibleRows.length === 0 ? (
-          <>
-            <EmptyState title={data.holdings.some((holding) => holding.kind === 'plan') ? 'Nothing in this category yet' : 'No recurring plans yet'} subtitle="Your holdings will appear here." />
-            {!data.holdings.some((holding) => holding.kind === 'plan') ? (
-              <View style={styles.emptyAction}>
-                <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
-              </View>
-            ) : null}
-          </>
+          <EmptyState title="Nothing in this category yet" subtitle="Your holdings will appear here." />
         ) : null}
       </View>
-      {!data.holdings.some((holding) => holding.kind === 'plan') && visibleRows.length > 0 ? (
-        <View style={styles.emptyAction}>
-          <Button label="Add your first SIP" variant="primary" onPress={() => router.push('/plan-form')} />
-        </View>
-      ) : null}
       <AppText style={[typography.meta, styles.note, { color: colors.text3 }]}>
         Plan values are estimates unless an actual value is supplied.
       </AppText>
@@ -146,41 +135,19 @@ export default function InvestScreen() {
 function HoldingItem({
   row,
   holding,
-  asOf,
 }: {
   row: PortfolioRow;
   holding: Extract<Holding, { kind: 'manual' }>;
-  asOf: ReturnType<typeof todayISO>;
 }) {
-  const { colors } = useTheme();
-  const actions = useAppActions();
-  const staleness = valueStaleness(holding.valueAsOf, asOf);
   return (
-    <View style={styles.manualCard}>
-      <ListItem
-        title={holding.name}
-        subtitle={`${holding.type}, invested ${formatINR(row.invested)}`}
-        amount={formatINR(row.value)}
-        amountSub={row.gainPct === null ? '—' : `${row.gainPct > 0 ? '+' : ''}${row.gainPct.toFixed(1)}%`}
-        tone={row.gain >= 0 ? 'ok' : 'err'}
-        icon="briefcase"
-        onPress={() => router.push({ pathname: '/holding-form', params: { id: holding.id } })}
-      />
-      <View style={styles.staleLine}>
-        <AppText style={[typography.meta, { color: colors.text3 }]}>
-          {staleness.days === null ? 'Value date unknown' : staleness.stale
-            ? `Value not updated in ${staleness.days} days`
-            : `Updated ${formatDate(holding.valueAsOf!)}`}
-        </AppText>
-        {staleness.stale ? (
-          <Button
-            label="Confirm"
-            accessibilityLabel={`Confirm ${holding.name} value is still correct today`}
-            onPress={() => actions.confirmHoldingValue(holding.id)}
-          />
-        ) : null}
-      </View>
-    </View>
+    <ListItem
+      title={holding.name}
+      subtitle={`${holding.type}, invested ${formatINR(row.invested)}`}
+      amount={formatINR(row.value)}
+      amountSub={row.gainPct === null ? '—' : `${row.gainPct > 0 ? '+' : ''}${row.gainPct.toFixed(1)}%`}
+      tone={row.gain >= 0 ? 'ok' : 'err'}
+      icon="briefcase"
+    />
   );
 }
 
@@ -192,7 +159,7 @@ function PlanCard({
   asOf: ReturnType<typeof todayISO>;
 }) {
   const { colors } = useTheme();
-  const due = installmentsTracked(holding, asOf);
+  const due = installmentsDue(holding, asOf);
   const overdue = behindBy(holding, asOf);
   const planProjection = projection(holding);
   const currentValue = planValue(holding, asOf);
@@ -210,25 +177,29 @@ function PlanCard({
         <View style={styles.planValue}>
           <AppText weight="bold" style={typography.amount}>{formatINR(currentValue)}</AppText>
           <AppText style={[typography.meta, { color: colors.text3 }]}>
-            {holding.actualValue === null
-              ? 'Estimated value'
-              : `Actual value as of ${formatDate(holding.actualValueDate!)}`}
+            {holding.actualValue === null ? 'Estimated value' : 'Actual value'}
           </AppText>
         </View>
       </View>
       <ProgressBar percent={progress} />
       <AppText style={[typography.meta, styles.planDescription, { color: colors.text2 }]}>
         Invested {formatINR(planInvested(holding))}. Plan: {formatINRShort(contributionPlan)} in contributions.
-        {' '}{loggedTrackedCount(holding)} logged since tracking began, {due} due.
+        {' '}{loggedCount(holding)} logged · {due} due so far.
       </AppText>
       {overdue > 0 ? (
         <AppText style={[typography.meta, { color: colors.err, marginTop: 4 }]}>{overdue} behind</AppText>
       ) : null}
       <ActionRow
         actions={[
-          { label: 'Log installment', variant: 'primary', onPress: () => router.push({ pathname: '/plan-log-form', params: { planId: holding.id } }) },
-          { label: `Logs (${loggedCount(holding)})`, onPress: () => router.push({ pathname: '/plan-logs', params: { id: holding.id } }) },
-          { label: 'Edit', onPress: () => router.push({ pathname: '/plan-form', params: { id: holding.id } }) },
+          { label: 'Log installment', variant: 'primary', onPress: () => {
+            // TODO(phase5)
+          } },
+          { label: `Logs (${loggedCount(holding)})`, onPress: () => {
+            // TODO(phase5)
+          } },
+          { label: 'Edit', onPress: () => {
+            // TODO(phase5)
+          } },
         ]}
       />
     </View>
@@ -245,8 +216,5 @@ const styles = StyleSheet.create({
   planTitle: { flex: 1, minWidth: 0, gap: 3 },
   planValue: { maxWidth: '38%', alignItems: 'flex-end', gap: 3 },
   planDescription: { marginTop: 8, lineHeight: 18 },
-  manualCard: { marginBottom: 8 },
-  staleLine: { marginLeft: 56, marginTop: -8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   note: { marginHorizontal: 20, marginTop: 2, marginBottom: 16 },
-  emptyAction: { marginHorizontal: 20, marginTop: 10 },
 });

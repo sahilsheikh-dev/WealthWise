@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
@@ -27,7 +26,9 @@ export default function GoalsScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="New goal"
-          onPress={() => router.push('/goal-form')}
+          onPress={() => {
+            // TODO(phase5)
+          }}
           style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
           <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New goal</AppText>
         </Pressable>
@@ -40,27 +41,18 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <SectionTitle>Active Goals</SectionTitle>
+      <SectionTitle>Active goals</SectionTitle>
       {goals.map((goal) => {
         const saved = goalSaved(goal, emergencyBalance);
         const goalPercent = goalProgressPct(goal, saved);
-        const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         return (
-          <Pressable
-            key={goal.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}`}
-            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
               <View style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   Target {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
                 </AppText>
-                {targetYearPassed ? (
-                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
-                ) : null}
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
@@ -69,7 +61,7 @@ export default function GoalsScreen() {
               <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
             </View>
-          </Pressable>
+          </View>
         );
       })}
     </Screen>

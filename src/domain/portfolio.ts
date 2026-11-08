@@ -1,5 +1,5 @@
 import { efBalance } from './ef';
-import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
+import { planInvested, planValue, PERIODS_PER_YEAR } from './sip';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -19,9 +19,7 @@ export function holdingInvested(holding: Holding): number {
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
-  if (holding.kind === 'plan') return planValue(holding, asOf);
-  const cutoff = holding.valueAsOf;
-  return Math.max(0, holding.value + (holding.logs ?? []).filter((entry) => !cutoff || entry.date > cutoff).reduce((sum, entry) => sum + (entry.kind === 'Withdrawal' ? -entry.amount : entry.amount), 0));
+  return holding.kind === 'plan' ? planValue(holding, asOf) : holding.value;
 }
 
 function row(

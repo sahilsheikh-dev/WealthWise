@@ -11,8 +11,8 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { useAppData } from '../src/data/useAppData';
 import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
+import { useAppData } from '../src/data/useAppData';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
@@ -45,8 +45,10 @@ export default function EmergencyFundScreen() {
           <View style={styles.headerActionRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Log Emergency fund Entry"
-              onPress={() => router.push('/ef-entry-form')}
+              accessibilityLabel="Log emergency fund entry"
+              onPress={() => {
+                // TODO(phase5)
+              }}
               style={[styles.headerAction, { backgroundColor: colors.primaryDim }]}>
               <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>Log entry</AppText>
             </Pressable>
@@ -84,12 +86,7 @@ export default function EmergencyFundScreen() {
         <SectionTitle>Passbook</SectionTitle>
         <View style={styles.passbook}>
           {entries.map((entry) => (
-            <Pressable
-              key={entry.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatINR(Math.abs(entry.amount))} from ${formatDate(entry.date)}`}
-              onPress={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
-              style={[styles.passbookRow, { borderBottomColor: colors.border }]}>
+            <View key={entry.id} style={[styles.passbookRow, { borderBottomColor: colors.border }]}>
               <View style={styles.entryDetails}>
                 <AppText weight="bold" style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}>
                   {entry.amount < 0 ? '-' : '+'}{formatINR(Math.abs(entry.amount))}
@@ -97,7 +94,7 @@ export default function EmergencyFundScreen() {
                 <AppText style={[typography.meta, { color: colors.text3 }]}>{formatDate(entry.date)} · {entry.note}</AppText>
               </View>
               <AppText weight="bold" style={typography.amount}>{formatINR(entry.balance)}</AppText>
-            </Pressable>
+            </View>
           ))}
         </View>
       </Screen>

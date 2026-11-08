@@ -3,8 +3,5 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  },
-  "editor.suggest.showStatusBar": true,
-  "problems.showCurrentInStatus": true,
-  "telemetry.editStats.showStatusBar": true
+  }
 }

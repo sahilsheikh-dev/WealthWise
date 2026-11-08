@@ -40,11 +40,6 @@ export function installmentsDue(plan: PlanHolding, asOf: ISODate): number {
   return low;
 }
 
-export function installmentsTracked(plan: PlanHolding, asOf: ISODate): number {
-  const scheduledBeforeTracking = installmentsDue(plan, addDays(plan.trackFrom, -1));
-  return Math.max(0, installmentsDue(plan, asOf) - scheduledBeforeTracking);
-}
-
 export function currentInstallmentAmount(plan: PlanHolding, asOf: ISODate): number {
   if (asOf < plan.startDate) return plan.amount;
   const start = parseISO(plan.startDate);
@@ -75,44 +70,31 @@ export function projection(plan: PlanHolding): {
 }
 
 export function loggedTotal(plan: PlanHolding): number {
-  return plan.logs.filter((entry) => entry.kind === 'Deposit').reduce((total, entry) => total + entry.amount, 0);
+  return plan.logs.reduce((total, entry) => total + entry.amount, 0);
 }
 
 export function loggedCount(plan: PlanHolding): number {
   return plan.logs.length;
 }
 
-export function loggedTrackedCount(plan: PlanHolding): number {
-  return plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom).length;
-}
-
 export function behindBy(plan: PlanHolding, asOf: ISODate): number {
-  return Math.max(0, installmentsTracked(plan, asOf) - loggedTrackedCount(plan));
+  return Math.max(0, installmentsDue(plan, asOf) - loggedCount(plan));
 }
 
 export function estimatedValue(plan: PlanHolding, asOf: ISODate): number {
   const factor = 1 + plan.ratePct / 100;
   return plan.opening + plan.logs.reduce((total, entry) => {
     const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    return total + (entry.kind === 'Withdrawal' ? -1 : 1) * entry.amount * factor ** (elapsedDays / 365);
+    return total + entry.amount * factor ** (elapsedDays / 365);
   }, 0);
 }
 
 export function planInvested(plan: PlanHolding): number {
-  return Math.max(0, plan.opening + plan.logs.reduce((total, entry) => total + (entry.kind === 'Withdrawal' ? -entry.amount : entry.amount), 0));
+  return plan.opening + loggedTotal(plan);
 }
 
 export function planValue(plan: PlanHolding, asOf: ISODate): number {
-  if (plan.actualValue === null) return estimatedValue(plan, asOf);
-  const snapshotDate = plan.actualValueDate;
-  if (snapshotDate === null) throw new Error('Plan actual value requires a snapshot date');
-  const factor = 1 + plan.ratePct / 100;
-  const snapshotElapsed = Math.max(0, daysBetween(snapshotDate, asOf));
-  return plan.actualValue * factor ** (snapshotElapsed / 365) + plan.logs.reduce((total, entry) => {
-    if (entry.date <= snapshotDate) return total;
-    const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    return total + (entry.kind === 'Withdrawal' ? -1 : 1) * entry.amount * factor ** (elapsedDays / 365);
-  }, 0);
+  return plan.actualValue ?? estimatedValue(plan, asOf);
 }
 
 export function planProgressPct(plan: PlanHolding): number {

@@ -1,9 +1,9 @@
 import type {
-  AppData,
   EfEntry,
+  AppData,
   Goal,
   Holding,
-  Liability,
+  Loan,
   Transaction,
 } from '../domain/types';
 
@@ -13,7 +13,7 @@ export const transactions: Transaction[] = [
   { id: 'tx-rent', type: 'expense', amount: 15_000, category: 'Living', note: 'Rent and hostel', date: '2026-10-07' },
   { id: 'tx-family', type: 'expense', amount: 7_000, category: 'Family', note: 'Monty fees', date: '2026-10-07' },
   { id: 'tx-rd', type: 'invest', amount: 2_000, category: 'Investment', note: 'ICICI RD', date: '2026-10-08' },
-  { id: 'tx-emi', type: 'expense', amount: 6_281, category: 'EMI', note: 'Bank EMI', date: '2026-10-08' },
+  { id: 'tx-emi', type: 'expense', amount: 5_713, category: 'EMI', note: 'Bank EMI', date: '2026-10-08' },
 ];
 
 export const goals: Goal[] = [
@@ -31,7 +31,6 @@ export const holdings: Holding[] = [
     type: 'EPFO / PF',
     invested: 96_985,
     value: 135_385,
-    logs: [],
   },
   {
     id: 'holding-fd',
@@ -40,8 +39,6 @@ export const holdings: Holding[] = [
     type: 'Fixed deposit',
     invested: 110_000,
     value: 135_456,
-    valueAsOf: '2026-06-01',
-    logs: [],
   },
   {
     id: 'holding-sip',
@@ -54,37 +51,34 @@ export const holdings: Holding[] = [
     stepUpPct: 6,
     tenureYears: 34,
     startDate: '2024-01-01',
-    trackFrom: '2026-07-01',
     opening: 50_000,
-    actualValue: 118_000,
-    actualValueDate: '2026-09-30',
+    actualValue: 98_500,
     logs: [
-      { id: 'sip-jul', date: '2026-07-05', amount: 21_200, note: 'Monthly SIP', kind: 'Deposit' },
-      { id: 'sip-aug', date: '2026-08-05', amount: 21_200, note: 'Monthly SIP', kind: 'Deposit' },
-      { id: 'sip-sep', date: '2026-09-05', amount: 21_200, note: 'Monthly SIP', kind: 'Deposit' },
+      { id: 'sip-jul', date: '2026-07-05', amount: 21_200, note: 'Monthly SIP' },
+      { id: 'sip-aug', date: '2026-08-05', amount: 21_200, note: 'Monthly SIP' },
+      { id: 'sip-sep', date: '2026-09-05', amount: 21_200, note: 'Monthly SIP' },
     ],
   },
 ];
 
-export const liabilities: Liability[] = [
+export const loans: Loan[] = [
   {
-    id: 'loan-bank', kind: 'recurring', type: 'Other',
+    id: 'loan-bank',
     name: 'Bank EMI',
     principal: 330_000,
     ratePct: 11,
     tenureMonths: 72,
-    emi: 6_281,
+    emi: 5_713,
     startDate: '2026-04-01',
     payments: [
-      { id: 'emi-apr', date: '2026-04-05', amount: 6_281, note: '', kind: 'EMI' },
-      { id: 'emi-may', date: '2026-05-05', amount: 6_281, note: '', kind: 'EMI' },
-      { id: 'emi-jun', date: '2026-06-05', amount: 6_281, note: '', kind: 'EMI' },
-      { id: 'emi-jul', date: '2026-07-05', amount: 6_281, note: '', kind: 'EMI' },
-      { id: 'emi-aug', date: '2026-08-05', amount: 6_281, note: '', kind: 'EMI' },
-      { id: 'emi-sep', date: '2026-09-05', amount: 6_281, note: '', kind: 'EMI' },
+      { id: 'emi-apr', date: '2026-04-05', amount: 5_713, note: '', kind: 'EMI' },
+      { id: 'emi-may', date: '2026-05-05', amount: 5_713, note: '', kind: 'EMI' },
+      { id: 'emi-jun', date: '2026-06-05', amount: 5_713, note: '', kind: 'EMI' },
+      { id: 'emi-jul', date: '2026-07-05', amount: 5_713, note: '', kind: 'EMI' },
+      { id: 'emi-aug', date: '2026-08-05', amount: 5_713, note: '', kind: 'EMI' },
+      { id: 'emi-sep', date: '2026-09-05', amount: 5_713, note: '', kind: 'EMI' },
     ],
   },
-  { id: 'friend-loan', name: 'Friend', kind: 'one-time', type: 'Borrowed money', principal: 20_000, ratePct: 0, startDate: '2026-09-01', dueDate: '2026-12-31', payments: [{ id: 'friend-payment', date: '2026-09-15', amount: 5_000, note: 'Partial repayment', kind: 'Payment' }] },
 ];
 
 export const emergencyFundEntries: EfEntry[] = [
@@ -97,6 +91,6 @@ export const mockAppData: AppData = {
   transactions,
   goals,
   holdings,
-  liabilities,
+  loans,
   efEntries: emergencyFundEntries,
 };

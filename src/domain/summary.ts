@@ -1,43 +1,19 @@
 import { efBalance, monthlyBaseline, monthsCovered } from './ef';
 import { ensureEfGoal, goalProgressPct, goalSaved } from './goals';
-import type { LiabilitySummary } from './liability';
-import { liabilitySummary } from './liability';
+import { loanSummary } from './loan';
 import { holdingValue } from './portfolio';
-import type { AppData, ISODate, RecurringLiability } from './types';
+import type { AppData, ISODate, Loan } from './types';
+import type { LoanSummary } from './loan';
 
-// export function netWorth(data: AppData, asOf: ISODate): {
-//   assets: number;
-//   liabilities: number;
-//   netWorth: number;
-// } {
-//   const assets = data.holdings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0)
-//     + efBalance(data.efEntries);
-//   const liabilities = data.liabilities.reduce((sum, liability) => sum + liabilitySummary(liability, asOf, 0).balance, 0);
-//   return { assets, liabilities, netWorth: assets - liabilities };
-// }
-
-export function netWorth(data: AppData, asOf: ISODate) {
-  const holdings = data.holdings ?? [];
-  const efEntries = data.efEntries ?? [];
-  const liabilities = data.liabilities ?? [];
-
-  const assets =
-    holdings.reduce(
-      (sum, holding) => sum + holdingValue(holding, asOf),
-      0,
-    ) + efBalance(efEntries);
-
-  const totalLiabilities = liabilities.reduce(
-    (sum, liability) =>
-      sum + liabilitySummary(liability, asOf, 0).balance,
-    0,
-  );
-
-  return {
-    assets,
-    liabilities: totalLiabilities,
-    netWorth: assets - totalLiabilities,
-  };
+export function netWorth(data: AppData, asOf: ISODate): {
+  assets: number;
+  liabilities: number;
+  netWorth: number;
+} {
+  const assets = data.holdings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0)
+    + efBalance(data.efEntries);
+  const liabilities = data.loans.reduce((sum, loan) => sum + loanSummary(loan, asOf, 0).balance, 0);
+  return { assets, liabilities, netWorth: assets - liabilities };
 }
 
 export function homeSummary(data: AppData, asOf: ISODate): {
@@ -61,20 +37,18 @@ export function homeSummary(data: AppData, asOf: ISODate): {
   };
 }
 
-export type LiabilitiesOverview = {
+export type LoansOverview = {
   totalOutstanding: number;
   monthlyEmi: number;
   emiPctOfIncome: number | null;
   loanFreeBy: ISODate | 'never' | null;
-  items: LiabilitySummary[];
+  items: LoanSummary[];
 };
-export type LoansOverview = LiabilitiesOverview;
 
-export function liabilitiesOverview(data: AppData, asOf: ISODate, extra: number): LiabilitiesOverview {
-  const items = data.liabilities.map((liability) => liabilitySummary(liability, asOf, extra));
-  const activeLoans: { loan: RecurringLiability; summary: Extract<LiabilitySummary, { monthsLeft: number | null }> }[] = data.liabilities
-    .filter((liability): liability is RecurringLiability => liability.kind === 'recurring')
-    .map((loan) => ({ loan, summary: liabilitySummary(loan, asOf, extra) as Extract<LiabilitySummary, { monthsLeft: number | null }> }))
+export function loansOverview(data: AppData, asOf: ISODate, extra: number): LoansOverview {
+  const items = data.loans.map((loan) => loanSummary(loan, asOf, extra));
+  const activeLoans: { loan: Loan; summary: LoanSummary }[] = data.loans
+    .map((loan, index) => ({ loan, summary: items[index]! }))
     .filter(({ summary }) => !summary.cleared);
   const incomeBaseline = monthlyBaseline(data.transactions, 'income', asOf);
   const loanFreeBy: LoansOverview['loanFreeBy'] = activeLoans.length === 0
@@ -95,4 +69,3 @@ export function liabilitiesOverview(data: AppData, asOf: ISODate, extra: number)
     items,
   };
 }
-export const loansOverview = liabilitiesOverview;

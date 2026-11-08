@@ -1,9 +1,6 @@
-import { useAppStore } from './store';
+import { mockAppData } from '../mock/data';
+import type { AppData } from '../domain/types';
 
-export function useAppData() {
-  return useAppStore((state) => state.data);
-}
-
-export function useAppActions() {
-  return useAppStore((state) => state.actions);
+export function useAppData(): AppData {
+  return mockAppData;
 }
