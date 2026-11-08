@@ -5,12 +5,12 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
   Card,
-  ChipRow,
   DetailTabBar,
   ProgressBar,
   Screen,
@@ -212,9 +212,10 @@ export default function EmergencyFundScreen() {
           </Card>
         ) : null}
 
-        <ChipRow>
-          <SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />
-        </ChipRow>
+        <SectionHeaderRow
+          title="Emergency fund entries"
+          right={<SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />}
+        />
 
         <View style={styles.passbook}>
           {entries.map((entry) => (

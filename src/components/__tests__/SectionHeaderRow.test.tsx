@@ -96,12 +96,14 @@ describe('SectionHeaderRow', () => {
     ]));
   });
 
-  it('requires ChipRow for every SortChip', () => {
+  it('requires SectionHeaderRow for every SortChip except the Transactions filter-row placement', () => {
     const appDirectory = path.resolve(__dirname, '../../../app');
     const files = collectTsxFiles(appDirectory);
     let checkedChips = 0;
+    let transactionFilterRowChips = 0;
 
     for (const file of files) {
+      const isTransactionsRoute = file === path.join(appDirectory, '(tabs)/transactions.tsx');
       const source = ts.createSourceFile(
         file,
         fs.readFileSync(file, 'utf8'),
@@ -109,32 +111,48 @@ describe('SectionHeaderRow', () => {
         true,
         ts.ScriptKind.TSX,
       );
-      const visit = (node: ts.Node, insideChipRow: boolean): void => {
+      const visit = (node: ts.Node, insideSectionHeader: boolean, insideTransactionFilterRow: boolean): void => {
         if (ts.isJsxElement(node)) {
           const tag = node.openingElement.tagName.getText(source);
-          const insideRow = insideChipRow || tag === 'ChipRow';
-          visit(node.openingElement, insideRow);
-          node.children.forEach((child) => visit(child, insideRow));
-          visit(node.closingElement, insideRow);
+          const insideHeader = insideSectionHeader || tag === 'SectionHeaderRow';
+          const isTransactionFilterRow = node.openingElement.attributes.properties.some((attribute) =>
+            ts.isJsxAttribute(attribute)
+            && attribute.name.getText(source) === 'testID'
+            && attribute.initializer
+            && ts.isStringLiteral(attribute.initializer)
+            && attribute.initializer.text === 'transaction-filter-row',
+          );
+          const insideFilterRow = insideTransactionFilterRow || isTransactionFilterRow;
+          visit(node.openingElement, insideHeader, insideFilterRow);
+          node.children.forEach((child) => visit(child, insideHeader, insideFilterRow));
+          visit(node.closingElement, insideHeader, insideFilterRow);
           return;
         }
         if (ts.isJsxSelfClosingElement(node)) {
           const tag = node.tagName.getText(source);
+          const insideHeader = insideSectionHeader || tag === 'SectionHeaderRow';
           if (tag === 'SortChip') {
             checkedChips += 1;
-            if (!insideChipRow) {
-              throw new Error(`${path.relative(appDirectory, file)} SortChip is outside ChipRow.`);
+            if (isTransactionsRoute && insideTransactionFilterRow) {
+              transactionFilterRowChips += 1;
+              expect(insideSectionHeader).toBe(false);
+            } else {
+              if (!insideSectionHeader) {
+                throw new Error(`${path.relative(appDirectory, file)} SortChip is outside SectionHeaderRow.`);
+              }
             }
           }
-          node.attributes.properties.forEach((attribute) => visit(attribute, insideChipRow));
+          node.attributes.properties.forEach((attribute) =>
+            visit(attribute, insideHeader, insideTransactionFilterRow));
           return;
         }
-        node.forEachChild((child) => visit(child, insideChipRow));
+        node.forEachChild((child) => visit(child, insideSectionHeader, insideTransactionFilterRow));
       };
-      visit(source, false);
+      visit(source, false, false);
     }
 
     expect(checkedChips).toBeGreaterThan(0);
+    expect(transactionFilterRowChips).toBe(1);
   });
 });
 

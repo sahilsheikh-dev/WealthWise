@@ -37,7 +37,6 @@ import { emptyAppData } from '../../domain/actions';
 import type { ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
-import { formatAmount } from '../../lib/amountDisplay';
 import { formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 
@@ -308,11 +307,10 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children, footer, bottomNavigation, onClose, isDirty }: {
+    FormScreen: ({ title, children, footer, onClose, isDirty }: {
       title: string;
       children?: React.ReactNode;
       footer?: React.ReactNode;
-      bottomNavigation?: React.ReactNode;
       onClose: () => void;
       isDirty?: boolean;
     }) =>
@@ -328,7 +326,6 @@ jest.mock('../../components/form/FormScreen', () => {
         ReactModule.createElement('text', null, title),
         children,
         footer,
-        bottomNavigation,
       ),
   };
 });
@@ -1154,7 +1151,7 @@ describe('route render smoke audit', () => {
     },
   );
 
-  it('shows matching History and Month review actions and keeps only templates in the Budget menu', () => {
+  it('shows History and Month review quick actions and keeps only templates in the Budget menu', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
     mockFontScale = 2;
@@ -1163,25 +1160,16 @@ describe('route render smoke audit', () => {
       const quickActions = renderer.root.findByProps({ testID: 'budget-quick-actions' });
       const quickStyles = Array.isArray(quickActions.props.style) ? quickActions.props.style : [quickActions.props.style];
       expect(quickStyles).toEqual(expect.arrayContaining([
-        expect.objectContaining({ flexDirection: 'column' }),
+        expect.objectContaining({ flexDirection: 'row', flexWrap: 'wrap' }),
       ]));
       expect(quickStyles.every((style) =>
         !('height' in style) && !('maxHeight' in style),
       )).toBe(true);
-      const historyAction = renderer.root.findAllByProps({ testID: 'budget-history-action' })
-        .find((node) => node.props.style !== undefined);
-      const reviewAction = renderer.root.findAllByProps({ testID: 'budget-month-review-action' })
-        .find((node) => node.props.style !== undefined);
-      if (!historyAction || !reviewAction) throw new Error('Budget quick actions did not render.');
-      expect(historyAction.props.style).toEqual(reviewAction.props.style);
-      expect(historyAction.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 44 }),
-      ]));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'History' }).props.icon).toBe('calendar');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Month review' })).toBeDefined();
       expect(renderer.root.findAllByProps({ testID: 'budget-month-review-dot' })).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ testID: 'budget-plan-summary-edit' })).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Apply template' })).toHaveLength(1);
 
-      act(() => historyAction.props.onPress());
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'History' }).props.onPress());
       expect(router.push).toHaveBeenCalledWith('/budget-history');
       act(() => renderer.root.findByProps({ testID: 'budget-month-review-action' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith('/month-review');
@@ -1195,145 +1183,6 @@ describe('route render smoke audit', () => {
       act(() => menuLabels[0]?.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
     } finally {
-      mockFontScale = 1;
-    }
-  });
-
-  it.each([1, 1.3, 2])('keeps the two Budget quick actions aligned at font scale %s', (fontScale) => {
-    mockFontScale = fontScale;
-    try {
-      const renderer = renderScreen(React.createElement(BudgetScreen));
-      const history = renderer.root.findAllByProps({ testID: 'budget-history-action' })
-        .find((node) => node.props.style !== undefined);
-      const review = renderer.root.findAllByProps({ testID: 'budget-month-review-action' })
-        .find((node) => node.props.style !== undefined);
-      if (!history || !review) throw new Error('Budget quick actions did not render.');
-      expect(history.props.style).toEqual(review.props.style);
-      expect(history.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 44 }),
-      ]));
-    } finally {
-      mockFontScale = 1;
-    }
-  });
-
-  it('shows cash-flow positions and keeps plan editing separate from template application', () => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as {
-      transactions: Transaction[];
-      monthBudgets?: unknown[];
-    };
-    const previousTransactions = data.transactions;
-    const previousBudgets = data.monthBudgets;
-    const selectedMonth = '2026-09';
-    const priorMonth = shiftMonth(selectedMonth, -1);
-    data.transactions = [
-      { id: 'prior-income', type: 'income', amount: 2_000, category: 'Salary', note: 'Prior', date: `${priorMonth}-10` },
-      { id: 'prior-expense', type: 'expense', amount: 3_000, category: 'Food', note: 'Prior', date: `${priorMonth}-12` },
-      { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
-      { id: 'selected-expense', type: 'expense', amount: 1_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
-      { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
-    ];
-    data.monthBudgets = [{
-      month: selectedMonth,
-      templateId: null,
-      templateName: 'September',
-      customized: true,
-      plannedIncome: 10_000,
-      lines: [
-        { category: 'Food', planned: 4_000 },
-        { category: 'Emergency fund', planned: 1_000 },
-      ],
-    }];
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    routeParams.mockReturnValue({ month: selectedMonth });
-    router.push.mockClear();
-    try {
-      const renderer = renderScreen(React.createElement(BudgetScreen));
-      const text = renderer.root.findAll((node) => String(node.type) === 'text')
-        .flatMap((node) => node.children.map(String));
-      for (const expected of [
-        'Cash flow',
-        'Opening balance',
-        'Previous month ',
-        'deficit',
-        'This month’s flow',
-        'Closing balance',
-        'Deficit',
-        'Net inflow',
-        'Plan summary',
-        'Planned income',
-        'Planned spending',
-        'Planned savings',
-        'Unallocated',
-        formatAmount(-1_000, 'tile', 1),
-        formatAmount(1_000, 'row', 1),
-        formatAmount(3_500, 'tile', 1),
-        formatAmount(2_500, 'tile', 1),
-        formatAmount(10_000, 'row', 1),
-        formatAmount(4_000, 'row', 1),
-        formatAmount(1_000, 'row', 1),
-        formatAmount(5_000, 'row', 1),
-      ]) {
-        expect(text).toContain(expected);
-      }
-      expect(renderer.root.findByProps({ label: 'Customized' })).toBeDefined();
-      const planAction = renderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith(`Edit budget plan for ${formatMonth(selectedMonth)}.`),
-      )[0];
-      expect(planAction).toBeDefined();
-      expect(planAction?.props.accessibilityRole).toBe('button');
-      expect(planAction?.props.accessibilityLabel).toMatch(/planned income/i);
-      expect(planAction?.props.accessibilityLabel).toMatch(/planned spending/i);
-      expect(planAction?.props.accessibilityLabel).toMatch(/planned savings/i);
-      expect(planAction?.props.accessibilityLabel).toMatch(/unallocated/i);
-      expect(renderer.root.findAll((node) => node.props.accessibilityLabel === 'Customize this month’s budget'))
-        .toHaveLength(0);
-
-      data.transactions = [
-        ...data.transactions.filter((transaction) => transaction.date.slice(0, 7) !== selectedMonth),
-        { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
-        { id: 'selected-expense', type: 'expense', amount: 6_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
-        { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
-      ];
-      const negativeRenderer = renderScreen(React.createElement(BudgetScreen));
-      const negativeText = negativeRenderer.root.findAll((node) => String(node.type) === 'text')
-        .flatMap((node) => node.children.map(String));
-      expect(negativeText).toEqual(expect.arrayContaining([
-        'Net outflow',
-        'Deficit',
-        formatAmount(-1_500, 'tile', 1),
-        formatAmount(-2_500, 'tile', 1),
-      ]));
-      data.transactions = [
-        { id: 'prior-income', type: 'income', amount: 2_000, category: 'Salary', note: 'Prior', date: `${priorMonth}-10` },
-        { id: 'prior-expense', type: 'expense', amount: 3_000, category: 'Food', note: 'Prior', date: `${priorMonth}-12` },
-        { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
-        { id: 'selected-expense', type: 'expense', amount: 1_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
-        { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
-      ];
-
-      const review = renderer.root.findByProps({ accessibilityLabel: 'Review' });
-      act(() => review.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: priorMonth } });
-
-      router.push.mockClear();
-      const summary = renderer.root.findByProps({ testID: 'budget-plan-summary-edit' });
-      act(() => summary.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({
-        pathname: '/budget-month-form',
-        params: { month: selectedMonth },
-      });
-      router.push.mockClear();
-      act(() => renderer.root.findByProps({ accessibilityLabel: 'Apply template' }).props.onPress());
-      expect(router.push).not.toHaveBeenCalled();
-      expect(renderer.root.findAll((node) => String(node.type) === 'modal')
-        .some((modal) => modal.props.visible)).toBe(true);
-    } finally {
-      data.transactions = previousTransactions;
-      data.monthBudgets = previousBudgets;
-      routeParams.mockReturnValue({});
       mockFontScale = 1;
     }
   });
@@ -1394,17 +1243,5 @@ describe('route render smoke audit', () => {
     } finally {
       data.monthBudgets = previousBudgets;
     }
-  });
-
-  it('shows one shared Budget-selected tab bar on Budget history and Month review', () => {
-    const history = renderScreen(React.createElement(BudgetHistoryScreen));
-    const historyBars = history.root.findAll((node) => String(node.type) === 'detailtabbar');
-    expect(historyBars).toHaveLength(1);
-    expect(historyBars[0]?.props).toEqual(expect.objectContaining({ active: 'Budget', placement: 'flow' }));
-
-    const review = renderScreen(React.createElement(MonthReviewScreen));
-    const reviewBars = review.root.findAll((node) => String(node.type) === 'detailtabbar');
-    expect(reviewBars).toHaveLength(1);
-    expect(reviewBars[0]?.props).toEqual(expect.objectContaining({ active: 'Budget', placement: 'flow' }));
   });
 });

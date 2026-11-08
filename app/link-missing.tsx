@@ -5,8 +5,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SortChip } from '../src/components/SortChip';
-import { AppText, Button, ChipRow, EmptyState, ListItem, Screen } from '../src/components/ui';
+import { AppText, Button, EmptyState, ListItem, Screen } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
@@ -69,9 +70,10 @@ export default function LinkMissingScreen() {
               <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
               <AmountText value={total} tier="hero" weight="bold" />
             </View>
-            <ChipRow>
-              <SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />
-            </ChipRow>
+            <SectionHeaderRow
+              title="Unlinked entries"
+              right={<SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />}
+            />
             <View style={styles.list}>
               {entries.map((item) => {
                 const name = item.kind === 'ef'
