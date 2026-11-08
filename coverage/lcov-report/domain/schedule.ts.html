@@ -1,0 +1,235 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for domain/schedule.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">domain</a> schedule.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/77</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/57</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/20</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/25</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { addMonths, addDays, compareISO } from './dates';
+import { liabilityState } from './liability';
+import { installmentsTracked, PERIODS_PER_YEAR, scheduledDate, totalPeriods } from './sip';
+import type { AppData, ISODate, Liability, PlanHolding } from './types';
+&nbsp;
+export type ScheduleStatus = 'paid' | 'ongoing' | 'overdue' | 'upcoming';
+export type ScheduleRow = { id: string; index: number; dueDate: ISODate; amount: number; status: ScheduleStatus; paidOn?: ISODate; paidAmount?: number; entryId?: string; interest?: number; principal?: number; balanceAfter?: number };
+export type ScheduleSummary = { paid: number; ongoing: number; overdue: number; upcoming: number; nextDue: ScheduleRow | null; paidAmount: number; remainingPlanned: number };
+export type Schedule = { rows: ScheduleRow[]; summary: ScheduleSummary };
+&nbsp;
+function <span class="fstat-no" title="function not covered" >status(</span>dueDate: ISODate, nextDate: ISODate | null, asOf: ISODate): ScheduleStatus { <span class="cstat-no" title="statement not covered" >if (dueDate &gt; asOf) <span class="cstat-no" title="statement not covered" >return 'upcoming'; <span class="cstat-no" title="statement not covered" ></span></span>return nextDate !== null &amp;&amp; asOf &lt; nextDate ? 'ongoing' : 'overdue'; </span>}
+function <span class="fstat-no" title="function not covered" >summary(</span>rows: ScheduleRow[]): ScheduleSummary { const result = <span class="cstat-no" title="statement not covered" >{ paid: 0, ongoing: 0, overdue: 0, upcoming: 0, nextDue: null as ScheduleRow | null, paidAmount: 0, remainingPlanned: 0 };</span> <span class="cstat-no" title="statement not covered" >rows.forEach(<span class="fstat-no" title="function not covered" >(r</span>ow) =&gt; { <span class="cstat-no" title="statement not covered" >result[row.status] += 1; <span class="cstat-no" title="statement not covered" ></span>if (row.status !== 'paid') <span class="cstat-no" title="statement not covered" >result.remainingPlanned += row.amount; </span>else <span class="cstat-no" title="statement not covered" >result.paidAmount += row.paidAmount ?? row.amount; <span class="cstat-no" title="statement not covered" ></span></span>if (!result.nextDue &amp;&amp; row.status !== 'paid') <span class="cstat-no" title="statement not covered" >result.nextDue = row; </span></span>}); <span class="cstat-no" title="statement not covered" ></span>return result; </span>}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >planSchedule(</span>plan: PlanHolding, asOf: ISODate): Schedule {
+  const first = <span class="cstat-no" title="statement not covered" >Array.from({ length: totalPeriods(plan) }, <span class="fstat-no" title="function not covered" >(_</span>, k) =&gt; <span class="cstat-no" title="statement not covered" >k)</span>.find(<span class="fstat-no" title="function not covered" >(k</span>) =&gt; <span class="cstat-no" title="statement not covered" >scheduledDate(plan, k) &gt;= plan.trackFrom)</span> ?? totalPeriods(plan);</span>
+  const deposits = <span class="cstat-no" title="statement not covered" >plan.logs.filter(<span class="fstat-no" title="function not covered" >(e</span>ntry) =&gt; <span class="cstat-no" title="statement not covered" >entry.kind === 'Deposit' &amp;&amp; entry.date &gt;= plan.trackFrom)</span>.sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >compareISO(a.date, b.date) || a.id.localeCompare(b.id))</span>;</span>
+  const rows: ScheduleRow[] = <span class="cstat-no" title="statement not covered" >[];</span>
+<span class="cstat-no" title="statement not covered" >  for (let k = <span class="cstat-no" title="statement not covered" >first,</span> depositIndex = <span class="cstat-no" title="statement not covered" >0;</span> k &lt; totalPeriods(plan); k += 1) {</span>
+    const dueDate = <span class="cstat-no" title="statement not covered" >scheduledDate(plan, k);</span> const amount = <span class="cstat-no" title="statement not covered" >Math.round(plan.amount * (1 + plan.stepUpPct / 100) ** Math.floor(k / PERIODS_PER_YEAR[plan.frequency]) * 100) / 100;</span> const paid = <span class="cstat-no" title="statement not covered" >deposits[depositIndex++];</span>
+<span class="cstat-no" title="statement not covered" >    if (paid) <span class="cstat-no" title="statement not covered" >rows.push({ id: `plan-${plan.id}-${k}`, index: k, dueDate, amount, status: 'paid', paidOn: paid.date, paidAmount: paid.amount, entryId: paid.id });</span></span>
+    else { const nextDate = <span class="cstat-no" title="statement not covered" >k + 1 &lt; totalPeriods(plan) ? scheduledDate(plan, k + 1) : addDays(dueDate, plan.frequency === 'daily' ? 1 : plan.frequency === 'weekly' ? 7 : plan.frequency === 'monthly' ? 31 : 366);</span> <span class="cstat-no" title="statement not covered" >rows.push({ id: `plan-${plan.id}-${k}`, index: k, dueDate, amount, status: status(dueDate, nextDate, asOf) }); </span>}
+  }
+<span class="cstat-no" title="statement not covered" >  return { rows, summary: summary(rows) };</span>
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >planNextRows(</span>plan: PlanHolding, asOf: ISODate, count: number): ScheduleRow[] { <span class="cstat-no" title="statement not covered" >return planSchedule(plan, asOf).rows.filter(<span class="fstat-no" title="function not covered" >(r</span>ow) =&gt; <span class="cstat-no" title="statement not covered" >row.status !== 'paid')</span>.slice(0, count); </span>}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >recurringSchedule(</span>liability: Extract&lt;Liability, { kind: 'recurring' }&gt;, asOf: ISODate): Schedule {
+  const state = <span class="cstat-no" title="statement not covered" >liabilityState(liability, asOf);</span> const payments = <span class="cstat-no" title="statement not covered" >liability.payments.filter(<span class="fstat-no" title="function not covered" >(p</span>ayment) =&gt; <span class="cstat-no" title="statement not covered" >payment.kind === 'EMI')</span>.sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >compareISO(a.date, b.date) || a.id.localeCompare(b.id))</span>;</span> const rows: ScheduleRow[] = <span class="cstat-no" title="statement not covered" >[];</span> let paymentIndex = <span class="cstat-no" title="statement not covered" >0;</span> let balance = <span class="cstat-no" title="statement not covered" >state.balance;</span>
+<span class="cstat-no" title="statement not covered" >  for (let slot = <span class="cstat-no" title="statement not covered" >1;</span> slot &lt;= liability.tenureMonths; slot += 1) {</span>
+    const dueDate = <span class="cstat-no" title="statement not covered" >addMonths(liability.startDate, slot);</span> const payment = <span class="cstat-no" title="statement not covered" >payments[paymentIndex++];</span>
+<span class="cstat-no" title="statement not covered" >    if (payment) { <span class="cstat-no" title="statement not covered" >rows.push({ id: `liability-${liability.id}-${slot}`, index: slot, dueDate, amount: payment.amount, status: 'paid', paidOn: payment.date, paidAmount: payment.amount, entryId: payment.id }); <span class="cstat-no" title="statement not covered" ></span>continue; </span>}</span>
+<span class="cstat-no" title="statement not covered" >    if (balance &lt; 1) <span class="cstat-no" title="statement not covered" >break;</span></span>
+    const monthlyInterest = <span class="cstat-no" title="statement not covered" >balance * liability.ratePct / 1200;</span> const planned = <span class="cstat-no" title="statement not covered" >Math.min(liability.emi, balance + monthlyInterest);</span> const principal = <span class="cstat-no" title="statement not covered" >Math.max(0, planned - monthlyInterest);</span> <span class="cstat-no" title="statement not covered" >balance = Math.max(0, balance - principal);</span>
+    const nextDate = <span class="cstat-no" title="statement not covered" >slot &lt; liability.tenureMonths ? addMonths(liability.startDate, slot + 1) : addMonths(dueDate, 1);</span>
+<span class="cstat-no" title="statement not covered" >    rows.push({ id: `liability-${liability.id}-${slot}`, index: slot, dueDate, amount: liability.emi, status: status(dueDate, nextDate, asOf), interest: monthlyInterest, principal, balanceAfter: balance });</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return { rows, summary: summary(rows) };</span>
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >liabilitySchedule(</span>liability: Liability, asOf: ISODate): Schedule {
+<span class="cstat-no" title="statement not covered" >  if (liability.kind === 'recurring') <span class="cstat-no" title="statement not covered" >return recurringSchedule(liability, asOf);</span></span>
+  const state = <span class="cstat-no" title="statement not covered" >liabilityState(liability, asOf);</span> const dueDate = <span class="cstat-no" title="statement not covered" >liability.dueDate;</span> const row: ScheduleRow = <span class="cstat-no" title="statement not covered" >{ id: `liability-${liability.id}-one-time`, index: 0, dueDate: dueDate ?? asOf, amount: state.balance, status: state.balance &lt; 1 ? 'paid' : dueDate === null ? 'ongoing' : dueDate &gt; asOf ? 'upcoming' : 'ongoing' };</span>
+<span class="cstat-no" title="statement not covered" >  return { rows: [row], summary: summary([row]) };</span>
+}
+&nbsp;
+export type UpcomingDue = { kind: 'plan' | 'liability'; parentId: string; name: string; row: ScheduleRow };
+export function <span class="fstat-no" title="function not covered" >upcomingDue(</span>data: AppData, asOf: ISODate, limit = <span class="branch-0 cbranch-no" title="branch not covered" >5)</span>: UpcomingDue[] { const result: UpcomingDue[] = <span class="cstat-no" title="statement not covered" >[];</span> <span class="cstat-no" title="statement not covered" >data.holdings.forEach(<span class="fstat-no" title="function not covered" >(i</span>tem) =&gt; { <span class="cstat-no" title="statement not covered" >if (item.kind !== 'plan') <span class="cstat-no" title="statement not covered" >return; </span></span>const row = <span class="cstat-no" title="statement not covered" >planNextRows(item, asOf, 1)[0];</span> <span class="cstat-no" title="statement not covered" >if (row) <span class="cstat-no" title="statement not covered" >result.push({ kind: 'plan', parentId: item.id, name: item.name, row }); </span></span>}); <span class="cstat-no" title="statement not covered" ></span>data.liabilities.forEach(<span class="fstat-no" title="function not covered" >(i</span>tem) =&gt; { const row = <span class="cstat-no" title="statement not covered" >liabilitySchedule(item, asOf).rows.find(<span class="fstat-no" title="function not covered" >(e</span>ntry) =&gt; <span class="cstat-no" title="statement not covered" >entry.status !== 'paid')</span>;</span> <span class="cstat-no" title="statement not covered" >if (row) <span class="cstat-no" title="statement not covered" >result.push({ kind: 'liability', parentId: item.id, name: item.name, row }); </span></span>}); </span>const order: Record&lt;ScheduleStatus, number&gt; = <span class="cstat-no" title="statement not covered" >{ overdue: 0, ongoing: 1, upcoming: 2, paid: 3 };</span> <span class="cstat-no" title="statement not covered" >return result.sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >order[a.row.status] - order[b.row.status] || compareISO(a.row.dueDate, b.row.dueDate))</span>.slice(0, limit); </span>}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >scheduleTrackedCount(</span>plan: PlanHolding, asOf: ISODate): number { <span class="cstat-no" title="statement not covered" >return installmentsTracked(plan, asOf); </span>}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-10-10T08:41:45.596Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    
