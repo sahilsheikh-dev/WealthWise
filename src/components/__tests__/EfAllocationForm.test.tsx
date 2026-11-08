@@ -186,8 +186,8 @@ describe('emergency-fund allocation form', () => {
     });
     expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === 'Safe box')).toBe(true);
     const totalText = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-    expect(totalText).toContain('Total: 100.0%');
-    expect(totalText).toContain('Remaining: 0.0%');
+    expect(totalText).toContain('Total: 100.00%');
+    expect(totalText).toContain('Remaining: 0.00%');
 
     await act(async () => {
       renderer.root.findByProps({ label: 'Link assets: Safe box' }).props.onPress();
@@ -286,7 +286,7 @@ describe('emergency-fund allocation form', () => {
     });
     expect(renderer.root.findAllByProps({ accessibilityLabel: 'Cash allocation percentage' })).toHaveLength(0);
     expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('Remaining: 20.0%');
+      .toContain('Remaining: 20.00%');
   });
 
   it('rejects saving unless the live allocation total is exactly 100%', async () => {
@@ -301,6 +301,25 @@ describe('emergency-fund allocation form', () => {
       await Promise.resolve();
     });
     expect(mockSaveEfPlan).not.toHaveBeenCalled();
+  });
+
+  it('shows the invalid live total and disables Save before submission', async () => {
+    const renderer = renderForm();
+    const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
+    await act(async () => {
+      cashPercent.props.onChangeText('19.99');
+      await Promise.resolve();
+    });
+
+    expect(renderer.root.findByProps({ label: 'Save allocation' }).props.disabled).toBe(true);
+    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      .toContain('Total: 99.99%');
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).not.toHaveBeenCalled();
+    expect(mockState.writes).toBe(0);
     const errors = renderer.root.findAll((node) =>
       String(node.type) === 'formerror'
       && String(node.props.message).includes('Percentages must add up to 100%'));

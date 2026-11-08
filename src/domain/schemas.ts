@@ -277,10 +277,10 @@ const settingsSchema = z.object({
 
 export const efAllocationSchema = z.record(
   idSchema,
-  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 100)),
 ).refine((allocation) => {
   const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
-  return Math.abs(total - 100) < 0.0001;
+  return Math.abs(Number(total.toFixed(2)) - 100) < 0.005;
 }, { message: 'Percentages must add up to 100%', path: ['total'] }).nullable().optional();
 
 export const efCustomBucketSchema = z.strictObject({

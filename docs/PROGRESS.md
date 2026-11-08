@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 89% (49/55)
+Overall progress █████████░ 89% (50/56)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -69,7 +69,7 @@ Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (9/9)
-Phase 21         ██████████ 100% (3/3)
+Phase 21         ██████████ 100% (4/4)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
@@ -129,6 +129,7 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 normal-mode allocation display and responsive status; CR-38 editable allocation items, default buckets and menu opt-out. | 2026-10-17 |
+| P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
@@ -582,6 +583,35 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   P21-C font-scale and screen-reader tests are simulated: real OS scaling,
   rendered clipping, touch behavior, modal confirmation presentation and
   VoiceOver/TalkBack announcements remain unverified on a physical device.
+- DEC-P21C1-CR39: the crash reproduces when a v8 allocation contains a stale
+  fixed/custom bucket key such as `deleted-custom: 0`. `appDataSchema` checks
+  numeric range and total but not that allocation keys belong to the current
+  fixed/custom bucket set; `safeStorage` previously accepted that schema-valid
+  blob without running cross-record integrity. `EmergencyFundScreen` then
+  passed the stored record to `allocateAmounts`, whose stricter key validation
+  correctly threw. The form also accepted two-decimal input while its total
+  calculation rounded to one decimal, and Save stayed enabled for invalid
+  totals. Domain actions now reject unknown, negative and non-finite entries,
+  compare the total at two-decimal precision, and store a largest-remainder
+  canonical allocation. The form displays the hundredth-percent live total,
+  the validation message and a disabled Save. `resolveEfAllocation` is used by
+  the screen, form, allocation selector and hydration; invalid persisted
+  allocations are repaired once and their exact raw envelope is archived at
+  `.prerepair-efallocation`. `allocateAmounts` retains its throwing contract.
+  No schema-version change; v8 remains current.
+  Assumed: valid positive percentages are proportionally renormalized to
+  hundredth-percent units; stable fixed/custom bucket order breaks equal
+  remainders. If nothing valid remains, use the four P21-C default buckets
+  (10/40/35/15), not zero-valued entries for the other fixed categories.
+  Assumed: P21-C remains Done as previously delivered; P21-C1 is an additive
+  fourth Phase 21 entry rather than a rewrite of the earlier delivery.
+  Superseded assertions: the old `effectiveAllocation` partial-map expectation
+  that missing buckets inherit suggested percentages is replaced by resolver
+  normalization/default tests; invalid warning fixtures that summed above
+  100% are replaced by valid 100% mixes because warning selectors now resolve
+  allocation first; persisted full maps with zero-valued keys are replaced by
+  canonical positive-only allocation assertions. Form totals now display two
+  decimal places (`100.0%` → `100.00%`) so 99.99% does not appear complete.
 - DEC-P20I-CR35-36: Home due rows are non-interactive containers showing only
   title, amount, date and a compact check button; only the button opens the
   existing native Paid / Not paid confirmation. Oldest dues clear directly,
@@ -621,6 +651,12 @@ P20-G advances to v8, and subsequent phases leave it unchanged.
   preserved. At final audit, the current Budget worktree diff also contains
   import ordering and the pencil icon changing from `edit` to `edit-2`; this
   was left intact, and P21-C made no Budget screen code changes.
+  Re-verified at the start of P21-C1 with
+  `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`:
+  the commit changes only `app/(tabs)/budget.tsx`, removes the budget-menu
+  wiring and retains the user's missing Back to Transactions action; it has
+  no allocation-form diff. The current allocation form still has the exact
+  title “Edit allocation”. Preserve both.
   Related stale assertions are replaced as follows: the Transactions test's
   old expectation of an accessible red `-₹1,000` amount becomes an assertion
   that this amount is absent while the Shortfall text remains; reason:
@@ -993,12 +1029,13 @@ partial and linked rows. Phase 20 is 9/9 complete and Phase 23 is next.
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
 Implementation delivered: P21-A [former P19-D, split; CR-8, CR-13], P21-B
-[CR-14, CR-15, CR-20] and P21-C [CR-37, CR-38]. Schema version advanced from
-v6 to v7 in P21-A; P21-B and P21-C did not change the schema. Feature tests,
-typecheck, lint and both exports pass. CR-26 repaired the initial Expo Doctor
+[CR-14, CR-15, CR-20], P21-C [CR-37, CR-38] and P21-C1 [CR-39]. Schema
+version advanced from v6 to v7 in P21-A; later parts retain schema v8. The
+P21-C1 crash repair, allocation normalization, hydration archive, typecheck,
+lint, Doctor and both exports pass. CR-26 repaired the initial Expo Doctor
 config issue; the final 21/21 Doctor gate and all other required gates pass.
-Migration, linked asset integrity, backup import, cover, allocation editing
-and device-only limitations are recorded below.
+Migration, linked asset integrity, backup import, cover, allocation editing,
+crash recovery and device-only limitations are recorded below.
 
 ### Phase 22 — Demo data
 
@@ -1192,6 +1229,7 @@ evidence present in exports/checkpoints.
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
 | P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
 | P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund normal-mode status layout and all-item allocation editor (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28` | Assumed: existing fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. | current request |
+| P21-C1 | Phase 21 | — | — | 2026-10-17 | Repair malformed stored allocation crash and prevent invalid emergency-fund plan saves (CR-39). | Done; 70 suites / 786 tests and all six final gates pass; schema remains v8. | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Assumed: normalize positive known buckets by largest remainder; fall back to the four P21-C defaults (10/40/35/15). Preserve P21-C as previously delivered. | current request |
 | P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
@@ -1241,6 +1279,7 @@ evidence present in exports/checkpoints.
 | CR-36 | Put a text status to the right of every goal progress bar, including Emergency fund; at font scale 1.3+ stack status below and right-aligned. | Done | P20-I; Home and Goals tests cover all card rows and style contracts at 1, 1.3 and 2. |
 | CR-37 | Remove linked-asset details from normal Emergency fund mode and place allocation status beside the flexible progress bar, stacking at font scale 1.3+. | Done | P21-C; normal-mode content, no-menu behavior, flex/minWidth and status layout tests pass. |
 | CR-38 | Edit allocation items from a header add menu, remove any fixed/custom item with confirmation, retain goal asset links, and default to four items. | Done | P21-C; add choices, exact removal copy, 100% validation, custom metadata, preserved goal links and one-write save tests pass. |
+| CR-39 | Prevent Emergency fund from crashing on invalid/stale saved allocation data; validate at source, resolve every render input, and repair/archive invalid data once on hydration. | Done | P21-C1; malformed-data screen matrix, domain rejection/rounding, form blocking, exact raw archive, single write and idempotent hydration tests pass; schema v8 unchanged. |
 
 ## 8. Known issues and risks
 
@@ -1283,6 +1322,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
 - **P21-C device acceptance not verified:** actual OS font scaling and clipping of the allocation status at 1.3/2.0, touch behavior for the header plus/remove controls, native confirm-alert copy/layout and cancellation, allocation-form scrolling/keyboard behavior, and VoiceOver/TalkBack announcement of active items/status. Tests inspect component props and simulated styles only.
+- **P21-C1 device acceptance not verified:** open Emergency fund with a real legacy/stale allocation and verify the adjusted-total message, editor keyboard entry and disabled Save at 99.99/100.01, a valid save on iOS and Android, native font scaling/clipping of the repair line, and VoiceOver/TalkBack announcement. Hydration/archive correctness and one-write behavior are covered by tests; physical-device storage behavior is not.
 - **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. The final P20-E `npx expo-doctor` result is 21/21; Android and iOS exports, tests, typecheck and lint also pass, so P21/P22 gates remain green.
 - **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Final automated gates pass.
 - **P20-D CR-21 device acceptance not verified:** at the time of P20-D, bottom placement above physical iOS/Android home indicators, backdrop hit testing, scroll gestures with system font scale 2.0, and action-sheet clipping/keyboard interaction were unverified. CR-27 supersedes the sheet with a native confirmation; physical native alert button behavior remains unverified.
@@ -1442,7 +1482,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 3. **Phase 21 — Emergency fund as a goal-linked model** (Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
    allocation table (CR-14, CR-15); P21-C normal-mode presentation and
-   allocation item editing (CR-37, CR-38), with schema v8 unchanged.
+   allocation item editing (CR-37, CR-38); P21-C1 invalid-allocation crash
+   repair (CR-39), with schema v8 unchanged.
 4. **Phase 22 — Demo data** (Done): P22-A four months of linked demo data
    (CR-12).
 5. **Phase 23 — Insurance** (Planned) [P15-F].
@@ -1538,6 +1579,7 @@ and P21-A/B/C with CR-8, CR-13, CR-14, CR-15, CR-20, CR-37 and CR-38 are Done.
 | P21-A emergency-fund linked model [schema v7] | Done | v6→v7 migration, backups, premigration archive, link integrity, category remap and total preservation | `src/data/__tests__/migrate.test.ts`, `migrateV4.test.ts`, `safeStorage.test.ts`, `createAppStore.test.ts`; `src/domain/__tests__/backup.test.ts`, `goalLinks.test.ts`, `schemas.test.ts` |
 | P21-B emergency-fund cover/allocation | Done | Expense/salary fallback, truncation, minimum target, linked table and compact allocation UI | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`; `src/domain/__tests__/selectors.test.ts`, `efAllocationCustom.test.ts` |
 | P21-C allocation display and editor | Done | Normal-mode linked-name removal, responsive progress/status, default items, fixed/custom deletion and retained goal links; schema v8 unchanged | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `FormScreen.test.tsx`, `AppHeaderUsage.test.ts`; `src/domain/__tests__/efAllocation.test.ts`, `efAllocationCustom.test.ts`; `src/data/__tests__/createAppStore.test.ts`; `src/mock/__tests__/demoData.test.ts` |
+| P21-C1 allocation crash repair | Done | CR-39; strict domain action validation, resolver with largest-remainder normalization, safe render path, one-write hydration repair and exact raw archive; schema v8 unchanged | `src/domain/__tests__/efAllocation.test.ts`, `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `src/data/__tests__/createAppStore.test.ts`, `safeStorage.test.ts`, `src/domain/__tests__/schemas.test.ts` |
 
 #### Phase 21 initial gates (historical; Doctor issue resolved in CR-26)
 
@@ -1579,6 +1621,67 @@ lines (94.59%), 392/445 branches (88.09%); pure lib 107/107 lines and
 assertion mismatches: the new modal heading used an unapproved verb, and the
 edit-icon scanner rejected Budget's required CR-33 header action. Both were
 corrected; the final full coverage run passed.
+
+#### P21-C1 final gates (2026-10-17)
+
+| Gate | Result | Exit |
+|---|---|---:|
+| Focused allocation, hydration, form and screen regressions | 4 suites / 108 tests passed | 0 |
+| `npm test -- --coverage` | 70 suites / 786 tests passed. Statements 96.31%, branches 93.02%, functions 97.55%, lines 97.78%. | 0 |
+| `npx tsc --noEmit` | TypeScript passed | 0 |
+| `npx expo lint` | Lint passed | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported | 0 |
+| `npx expo export --platform ios` | iOS bundle exported | 0 |
+| `git diff --check` | No whitespace errors | 0 |
+
+Per-directory coverage aggregation, lines and branches reported separately,
+excluding tests and data hooks: domain 2250/2286 lines (98.43%), 2091/2231
+branches (93.72%); data 472/500 lines (94.40%), 409/466 branches (87.77%);
+pure lib 107/107 lines (100%), 126/126 branches (100%). These are aggregate
+counts; Jest's per-file Istanbul percentages are separate:
+
+| File | Lines | Branches |
+|---|---:|---:|
+| `src/domain/efAllocation.ts` | 100% | 95.45% |
+| `src/domain/efAllocationActions.ts` | 100% | 92.95% |
+| `src/domain/schemas.ts` | 92.27% | 90% |
+| `src/domain/backup.ts` | 97.85% | 96.22% |
+| `src/data/createAppStore.ts` | 92.62% | 88.46% |
+| `src/data/safeStorage.ts` | 96.36% | 93.93% |
+
+Aggregation script used with `coverage/coverage-final.json`:
+
+```js
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const raw = require('./coverage/coverage-final.json');
+const map = createCoverageMap(raw);
+const groups = Object.fromEntries(['domain', 'data', 'lib'].map((name) => [
+  name,
+  { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } },
+]));
+for (const file of map.files()) {
+  const rel = file.replace(`${process.cwd()}/`, '');
+  let group;
+  if (rel.startsWith('src/domain/')) group = 'domain';
+  else if (rel.startsWith('src/data/')
+    && !/(^|\\/)(hooks|use[A-Z][^/]*\\.[jt]sx?)($|\\/)/.test(rel)) group = 'data';
+  else if (rel.startsWith('src/lib/')) group = 'lib';
+  else continue;
+  const summary = map.fileCoverageFor(file).toSummary();
+  for (const metric of ['lines', 'branches']) {
+    groups[group][metric].covered += summary[metric].covered;
+    groups[group][metric].total += summary[metric].total;
+  }
+}
+for (const [name, metrics] of Object.entries(groups)) {
+  const output = Object.fromEntries(Object.entries(metrics).map(([metric, count]) => [
+    metric,
+    `${count.covered}/${count.total} (${(count.covered / count.total * 100).toFixed(2)}%)`,
+  ]));
+  console.log(name, JSON.stringify(output));
+}
+```
 
 #### Phase 22-A initial gates (historical; Doctor issue resolved in CR-26)
 

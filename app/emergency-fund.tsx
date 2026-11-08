@@ -10,7 +10,7 @@ import { emergencyFundBaseline, monthsCovered } from '../src/domain/ef';
 import {
   allocateAmounts,
   activeEfBucketMetadata,
-  effectiveAllocation,
+  resolveEfAllocation,
 } from '../src/domain/efAllocation';
 import { goalSavedFor } from '../src/domain/goalLinks';
 import { effectiveEmergencyTarget, ensureEfGoal } from '../src/domain/goals';
@@ -37,14 +37,14 @@ export default function EmergencyFundScreen() {
   const balance = goalSavedFor(emergencyGoal, data, asOf);
   const covered = monthsCovered(balance, base);
   const target = effectiveEmergencyTarget(emergencyGoal, base);
-  const allocation = effectiveAllocation(data.efAllocation, data.efCustomBuckets);
+  const { allocation, repaired } = resolveEfAllocation(data);
   const targetAmounts = allocateAmounts(balance, allocation, data.efCustomBuckets);
   const links = emergencyGoal.links;
   const linkedAssets = links.flatMap((link): { link: GoalLink; holding: Holding }[] => {
     const holding = data.holdings.find((item) => item.id === link.instrumentId);
     return holding ? [{ link, holding }] : [];
   });
-  const bucketRows = activeEfBucketMetadata(data.efAllocation, data.efCustomBuckets, data.efBucketLinks).map((bucket) => {
+  const bucketRows = activeEfBucketMetadata(allocation, data.efCustomBuckets, data.efBucketLinks).map((bucket) => {
     const holdings = (data.efBucketLinks[bucket.id] ?? []).flatMap((id) => {
       const holding = data.holdings.find((item) => item.id === id);
       const link = links.find((item) => item.instrumentId === id);
@@ -98,6 +98,11 @@ export default function EmergencyFundScreen() {
           editLabel="Edit emergency fund allocation"
           onEdit={() => router.push('/ef-allocation-form')}
         />
+        {repaired ? (
+          <AppText style={[typography.meta, { color: colors.text2 }]}>
+            Your allocation was adjusted to total 100%. Check it in Edit allocation.
+          </AppText>
+        ) : null}
         {linkedAssets.length === 0 ? (
           <View style={styles.emptyAllocation}>
             <EmptyState title="No assets linked" />
