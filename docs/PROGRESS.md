@@ -9774,6 +9774,10 @@ branches. Subtask counts are derived from the dashboard and are guarded by
   from dated entries / new / paired summary cells and descending date order
   across pending and dated rows / reason: make month status scannable like
   other paired financial metrics and present a single date-ordered timeline.
+- Local no-fast-forward integration: task commit `601a731` was merged into
+  Phase 29 by `22a0ec4`, then the phase was merged into local `develop`.
+  This continuation was not pushed.
+
 ### P29-O-R1 scope close-out (2026-11-08)
 
 - The P29-O inventory and P29-O1 implementation are retained. The P29-S owner
@@ -9786,8 +9790,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
   [open-items.md](memory/open-items.md).
 - The focused progress-ledger test passes: 10 tests. Phase 29 now derives to
   41/41; the dashboard, branch index, task register and regression assertions
-  agree. The phase branch is synced to the current `develop` baseline for PR
-  integration; no direct push to `develop` was made.
+  agree. Task and phase merges are local; no push was made.
 - The separately requested local `codex-changes` branch (`d033d6a`) was
   deleted at the owner's direction; its stale schema-v2 changes were not
   ported and no remote branch was touched.
