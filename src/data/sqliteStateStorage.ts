@@ -1,6 +1,7 @@
 import type { StateStorage } from 'zustand/middleware';
 
 type LegacyAuthority = { kind: 'value'; value: string } | { kind: 'deleted' };
+type HydrationSource = 'sqlite' | 'legacy' | 'legacy-authority' | 'empty';
 
 const LEGACY_AUTHORITY_PREFIX = 'wealthwise.sqlite.authority:';
 
@@ -35,24 +36,39 @@ export function createMigratingSQLiteStateStorage(
   onSQLiteFailure: (stage: string, error: unknown) => void = (stage, error) => {
     console.warn(`SQLite state storage ${stage} failed; continuing with legacy storage.`, error);
   },
+  onDiagnostic?: (line: string) => void,
 ): StateStorage {
   let useLegacyStorage = false;
+  let hydrationSource: HydrationSource = 'empty';
+  let lastWriteVerification = 'not-run';
 
-  const readLegacy = async (name: string): Promise<string | null> => {
+  const reportDiagnostic = () => {
+    onDiagnostic?.(`hydration source=${hydrationSource}; last-write verification=${lastWriteVerification}`);
+  };
+
+  const readLegacy = async (name: string): Promise<{ source: HydrationSource; value: string | null }> => {
     const rawAuthority = await legacyStorage.getItem(authorityKey(name));
     if (rawAuthority !== null) {
       const authority = readLegacyAuthority(rawAuthority);
-      return authority.kind === 'value' ? authority.value : null;
+      return {
+        source: 'legacy-authority',
+        value: authority.kind === 'value' ? authority.value : null,
+      };
     }
-    return legacyStorage.getItem(name);
+    const value = await legacyStorage.getItem(name);
+    return { source: value === null ? 'empty' : 'legacy', value };
   };
 
   const writeLegacy = async (name: string, value: string): Promise<void> => {
     const encodedAuthority = encodeLegacyAuthority({ kind: 'value', value });
     await legacyStorage.setItem(authorityKey(name), encodedAuthority);
     if (await legacyStorage.getItem(authorityKey(name)) !== encodedAuthority) {
+      lastWriteVerification = 'failed';
+      reportDiagnostic();
       throw new Error('Legacy storage did not preserve the authoritative value.');
     }
+    lastWriteVerification = 'legacy-authority';
+    reportDiagnostic();
     try {
       await legacyStorage.setItem(name, value);
     } catch (error) {
@@ -63,29 +79,50 @@ export function createMigratingSQLiteStateStorage(
   return {
     async getItem(name) {
       if (useLegacyStorage) {
-        return readLegacy(name);
+        const legacy = await readLegacy(name);
+        hydrationSource = legacy.source;
+        reportDiagnostic();
+        return legacy.value;
       }
       const rawAuthority = await legacyStorage.getItem(authorityKey(name));
       if (rawAuthority !== null) {
         const authority = readLegacyAuthority(rawAuthority);
+        hydrationSource = 'legacy-authority';
+        reportDiagnostic();
         return authority.kind === 'value' ? authority.value : null;
       }
       try {
         const current = await sqliteStorage.getItem(name);
-        return current !== null ? current : legacyStorage.getItem(name);
+        if (current !== null) {
+          hydrationSource = 'sqlite';
+          reportDiagnostic();
+          return current;
+        }
+        const legacyValue = await legacyStorage.getItem(name);
+        hydrationSource = legacyValue === null ? 'empty' : 'legacy';
+        reportDiagnostic();
+        return legacyValue;
       } catch (error) {
         useLegacyStorage = true;
         onSQLiteFailure('read', error);
         const legacy = await readLegacy(name);
-        if (legacy === null) {
+        hydrationSource = legacy.source;
+        reportDiagnostic();
+        if (legacy.value === null) {
           throw new Error('SQLite could not be read and no legacy copy is available.');
         }
-        return legacy;
+        return legacy.value;
       }
     },
     async setItem(name, value) {
       if (useLegacyStorage) {
-        await writeLegacy(name, value);
+        try {
+          await writeLegacy(name, value);
+        } catch (error) {
+          lastWriteVerification = 'failed';
+          reportDiagnostic();
+          throw error;
+        }
         return;
       }
       let fallbackAttempted = false;
@@ -125,19 +162,33 @@ export function createMigratingSQLiteStateStorage(
         }
         await legacyStorage.removeItem(name);
         await legacyStorage.removeItem(authorityKey(name));
+        lastWriteVerification = 'sqlite-verified';
+        reportDiagnostic();
       } catch (error) {
         if (fallbackAttempted) {
+          lastWriteVerification = 'failed';
+          reportDiagnostic();
           throw error;
         }
-        await fallBack('read or write', error);
+        try {
+          await fallBack('read or write', error);
+        } catch (fallbackError) {
+          lastWriteVerification = 'failed';
+          reportDiagnostic();
+          throw fallbackError;
+        }
       }
     },
     async removeItem(name) {
       const encodedAuthority = encodeLegacyAuthority({ kind: 'deleted' });
       await legacyStorage.setItem(authorityKey(name), encodedAuthority);
       if (await legacyStorage.getItem(authorityKey(name)) !== encodedAuthority) {
+        lastWriteVerification = 'failed';
+        reportDiagnostic();
         throw new Error('Legacy storage did not preserve the deletion marker.');
       }
+      lastWriteVerification = 'legacy-authority';
+      reportDiagnostic();
       let sqliteFailed = false;
       try {
         await sqliteStorage.removeItem(name);
@@ -149,6 +200,8 @@ export function createMigratingSQLiteStateStorage(
       await legacyStorage.removeItem(name);
       if (sqliteFailed) throw new Error('SQLite could not remove the persisted value; the legacy copy was removed.');
       await legacyStorage.removeItem(authorityKey(name));
+      lastWriteVerification = 'sqlite-verified';
+      reportDiagnostic();
     },
   };
 }
