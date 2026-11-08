@@ -52,23 +52,12 @@ export function AppText({
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
 }> & ComponentProps<typeof Text>) {
   const { colors } = useTheme();
-  const fontFamilies = {
-    '400': 'Montserrat_400Regular',
-    '500': 'Montserrat_500Medium',
-    '600': 'Montserrat_600SemiBold',
-    '700': 'Montserrat_700Bold',
-    normal: 'Montserrat_400Regular',
-    medium: 'Montserrat_500Medium',
-    bold: 'Montserrat_700Bold',
-  };
-  const requestedFamily = {
+  const fontFamily = {
     regular: 'Montserrat_400Regular',
     medium: 'Montserrat_500Medium',
     semibold: 'Montserrat_600SemiBold',
     bold: 'Montserrat_700Bold',
   }[weight];
-  const styleWeight = StyleSheet.flatten(style)?.fontWeight;
-  const fontFamily = (styleWeight && fontFamilies[String(styleWeight) as keyof typeof fontFamilies]) || requestedFamily;
   return (
     <Text {...props} style={[{ color: colors.text1, fontFamily }, style]}>
       {children}
@@ -176,17 +165,20 @@ export function Chip({
   selected = false,
   onPress,
   accessibilityLabel,
+  accessibilityHint,
 }: {
   label: string;
   selected?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ selected }}
       onPress={onPress}
       style={[
@@ -441,7 +433,7 @@ const styles = StyleSheet.create({
   track: { height: 5, marginTop: 11, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3, minWidth: 2 },
   chip: { minHeight: 44, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
-  chipRow: { alignItems: 'center', gap: 6, paddingHorizontal: 20 },
+  chipRow: { alignItems: 'center', gap: 6, paddingHorizontal: 20, marginTop: 10 },
   listItem: { minHeight: 60, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   listIcon: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   flexText: { flex: 1, minWidth: 0, gap: 3 },

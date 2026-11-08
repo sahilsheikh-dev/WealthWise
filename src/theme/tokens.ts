@@ -72,12 +72,12 @@ export const radii = {
 } as const;
 
 export const typography = {
-  h1: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.5 },
-  big: { fontSize: 30, fontWeight: '700' as const, letterSpacing: -1 },
-  label: { fontSize: 10, fontWeight: '600' as const },
-  name: { fontSize: 13, fontWeight: '600' as const },
-  meta: { fontSize: 11, fontWeight: '500' as const },
-  amount: { fontSize: 14, fontWeight: '700' as const },
-  chip: { fontSize: 11, fontWeight: '600' as const },
-  navLabel: { fontSize: 10, lineHeight: 14, fontWeight: '600' as const },
+  h1: { fontSize: 22, fontFamily: 'Montserrat_700Bold', letterSpacing: -0.5 },
+  big: { fontSize: 30, fontFamily: 'Montserrat_700Bold', letterSpacing: -1 },
+  label: { fontSize: 10, fontFamily: 'Montserrat_600SemiBold' },
+  name: { fontSize: 13, fontFamily: 'Montserrat_600SemiBold' },
+  meta: { fontSize: 11, fontFamily: 'Montserrat_500Medium' },
+  amount: { fontSize: 14, fontFamily: 'Montserrat_700Bold' },
+  chip: { fontSize: 11, fontFamily: 'Montserrat_600SemiBold' },
+  navLabel: { fontSize: 10, lineHeight: 14, fontFamily: 'Montserrat_600SemiBold' },
 } as const;

@@ -9,28 +9,50 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { RecoveryScreen } from '../src/components/RecoveryScreen';
+import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
+import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
 
 void SplashScreen.preventAutoHideAsync();
 
-function AppNavigator() {
+function AppContent() {
   const { colors, isDark } = useTheme();
+  const status = useAppStore((state) => state.status);
+  const recoveryReason = useAppStore((state) => state.recoveryReason);
   return (
-    <>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="loans" />
-        <Stack.Screen name="emergency-fund" />
-      </Stack>
-    </>
+      <StorageErrorBanner />
+      {status === 'recovery' ? (
+        <RecoveryScreen newerVersion={recoveryReason === 'newer-version'} />
+      ) : (
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+          }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="loans" />
+          <Stack.Screen name="emergency-fund" />
+          <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="name-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="plan-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="plan-log-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="loan-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="loan-payment-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="holding-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="plan-logs" />
+          <Stack.Screen name="loan-payments" />
+        </Stack>
+      )}
+    </View>
   );
 }
 
@@ -41,21 +63,24 @@ export default function RootLayout() {
     Montserrat_600SemiBold,
     Montserrat_700Bold,
   });
+  const hydrated = useAppStore((state) => state.hydrated);
 
   useEffect(() => {
-    if (loaded || error) {
+    if ((loaded || error) && hydrated) {
       void SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, hydrated]);
 
   if (error) throw error;
-  if (!loaded) return null;
+  if (!loaded || !hydrated) return null;
 
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppNavigator />
+        <AppContent />
       </ThemeProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({ root: { flex: 1 } });
