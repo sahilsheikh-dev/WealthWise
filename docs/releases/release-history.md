@@ -1,47 +1,79 @@
-# WealthWise release history
+# WealthWise – Release History
 
-Only verified, published GitHub Releases appear in the Published Releases
-table. Build records describe the artifact without exposing source identifiers
-or checksums.
+This document maintains the historical register of WealthWise releases.
 
-## Published releases
+Only successfully published GitHub Releases should be recorded here.
 
-| Version | Date | Type | Android download | Release notes | Status |
+## 1. Published Releases
+
+| Version | Release Date | Previous Version | Release Type | Status | GitHub Release |
 |---|---|---|---|---|---|
-| v1.0.0 | 2026-11-07 | Initial stable | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
+| v1.0.0 | 2026-11-07 | Initial | Initial stable release | Published | [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0) |
 
-More versions are listed on the [WealthWise releases page](https://github.com/sahilsheikh-dev/WealthWise/releases).
+## 2. Release Details
 
-## Builds
+### v1.0.0
 
-| EAS build ID | Profile | Android versionCode | Date | Status |
-|---|---|---:|---|---|
-| `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
+- Release notes: [v1.0.0.md](./published/v1.0.0.md)
+- GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
+- Tag: `v1.0.0` points to
+  `cac6fedc6242b495558f11cc6d7fe8551fd354ea`.
+- Target commit: `cac6fedc6242b495558f11cc6d7fe8551fd354ea` (the EAS source
+  commit and an ancestor of `origin/main`).
+- 2026-11-08 approved alignment: moved the tag from
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af` to the verified build source.
+  The runtime-path diff between source and target is empty because both
+  commits are identical. `git ls-remote --tags origin` resolves the annotated
+  tag to `cac6fedc6242b495558f11cc6d7fe8551fd354ea`;
+  `git merge-base --is-ancestor v1.0.0 origin/main` exited 0.
+- `gh release view v1.0.0` still confirms the APK asset name, size and digest.
+  Its stored `targetCommitish` field still reports the old target; no GitHub
+  release edit was made.
 
-The v1.0.0 Android APK artifact was verified against the published download.
-Both latest and versioned links returned HTTP 200 with a content length of
-112,133,413 bytes. The artifact digest was checked privately and is not
-published.
+## 3. Builds
 
-## Versioning
+| Version | Platform | Build number / versionCode | EAS build ID | Source commit | Artifact name / size | SHA-256 | Download link status | Profile | Date | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v1.0.0 | Android APK (app version 1.0.0) | 1 | `7addde9a-34df-4f00-a54a-b695c1578859` | `cac6fedc6242b495558f11cc6d7fe8551fd354ea` | `WealthWise-android.apk` / 112,133,413 bytes (~106.9 MiB) | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` | `curl -I -L`: latest HTTP 200, Content-Length 112133413; versioned HTTP 200, Content-Length 112133413; downloaded APK SHA-256 matches | preview | 2026-11-07 (completed 14:52 UTC) | EAS build finished; its artifact SHA-256 and size match the GitHub APK exactly. Owner release-body edit remains pending |
+
+## 4. Draft Releases
+
+Unpublished releases are stored in:
+
+`docs/releases/drafts/`
+
+Drafts must not be included in the published release history.
+
+## 5. Versioning Policy
 
 WealthWise follows Semantic Versioning:
 
-- MAJOR: breaking or incompatible changes.
-- MINOR: new backward-compatible features.
-- PATCH: backward-compatible bug fixes and maintenance.
+- MAJOR: Breaking or incompatible changes.
+- MINOR: New backward-compatible features.
+- PATCH: Backward-compatible bug fixes and maintenance.
 
-## Release record policy
+## 6. Historical Record Rules
 
-- Keep published versions in reverse chronological order.
-- Record only verified releases, their actual publication date, and release
-  type.
-- Link each Android APK through its versioned release asset and each note in
-  `published/`.
-- Never fabricate release or build data or overwrite a published record.
-- Keep unpublished notes in `drafts/`; move notes to `published/` only after
-  verifying successful publication.
-- Verify the APK digest before publication, but never publish the digest.
-- For both latest and versioned APK URLs, use `curl -I -L`; require HTTP 200
-  and the expected artifact size. Record the status and size in the release
-  verification record.
+1. Maintain reverse chronological order.
+2. Record only verified published releases.
+3. Include the actual publication date.
+4. Include the actual previous stable version.
+5. Link the actual GitHub Release.
+6. Link the permanent Markdown release notes in `published/`.
+7. Never overwrite historical entries.
+8. Never fabricate release information.
+9. Verify release tags against their actual target commits.
+10. Keep every published version's Markdown record in `published/`; never
+    leave published notes at the `docs/releases/` root or in `drafts/`.
+
+## 7. Update Procedure
+
+After every successful GitHub Release:
+
+1. Verify GitHub publication.
+2. Verify the release tag.
+3. Verify the target commit.
+4. Archive the final Markdown.
+5. Add a row to the Published Releases table.
+6. Update the release details.
+7. Verify all links.

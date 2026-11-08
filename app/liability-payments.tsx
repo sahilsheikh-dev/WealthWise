@@ -30,7 +30,8 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 type PendingEmiRow = Pick<ScheduleRow, 'id' | 'dueDate' | 'amount'> & { rowKind: 'pending-emi' };
 type PaidEmisHeaderRow = { rowKind: 'paid-emis-header'; id: string; count: number };
-type ListRow = PendingEmiRow | PaidEmisHeaderRow | LiabilityPayment;
+type DatedLiabilityRow = PendingEmiRow | LiabilityPayment;
+type ListRow = DatedLiabilityRow | PaidEmisHeaderRow;
 
 export default function LiabilityPaymentsScreen() {
   const { colors } = useTheme();
@@ -75,9 +76,16 @@ export default function LiabilityPaymentsScreen() {
   const paidEmisHeader: PaidEmisHeaderRow | null = paidEmiPayments.length > 0
     ? { rowKind: 'paid-emis-header', id: `paid-emis-${liability.id}`, count: paidEmiPayments.length }
     : null;
-  const listRows: ListRow[] = [
+  const datedRows: DatedLiabilityRow[] = [
     ...pendingEmiRows,
     ...otherPayments,
+  ].sort((left, right) => {
+    const leftDate = 'rowKind' in left ? left.dueDate : left.date;
+    const rightDate = 'rowKind' in right ? right.dueDate : right.date;
+    return rightDate.localeCompare(leftDate) || right.id.localeCompare(left.id);
+  });
+  const listRows: ListRow[] = [
+    ...datedRows,
     ...(paidEmisHeader ? [paidEmisHeader] : []),
     ...(paidEmisExpanded ? paidEmiPayments : []),
   ];
@@ -190,12 +198,24 @@ export default function LiabilityPaymentsScreen() {
         ) : null}
         {liability.kind === 'recurring' ? (
           <View style={styles.monthCounts}>
-            <AppText testID="completed-emi-months" style={[typography.meta, { color: colors.text2 }]}>
-              Completed {schedule.summary.paid} months
-            </AppText>
-            <AppText testID="pending-emi-months" style={[typography.meta, { color: colors.text2 }]}>
-              Pending {pendingEmiRows.length} months
-            </AppText>
+            <View testID="completed-emi-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+              <AppText style={[typography.label, { color: colors.text3 }]}>Completed months</AppText>
+              <AppText
+                testID="completed-emi-months"
+                accessibilityLabel={`Completed ${schedule.summary.paid} months`}
+                style={[typography.meta, styles.summaryValue]}>
+                {schedule.summary.paid}
+              </AppText>
+            </View>
+            <View testID="pending-emi-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+              <AppText style={[typography.label, { color: colors.text3 }]}>Pending months</AppText>
+              <AppText
+                testID="pending-emi-months"
+                accessibilityLabel={`Pending ${pendingEmiRows.length} months`}
+                style={[typography.meta, styles.summaryValue]}>
+                {pendingEmiRows.length}
+              </AppText>
+            </View>
           </View>
         ) : null}
       </Card>
@@ -273,9 +293,10 @@ const styles = StyleSheet.create({
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
   summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
-  monthCounts: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
+  monthCounts: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 4 },
   paidEmisToggle: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   summaryCell: { width: '48%', gap: 3 },
+  monthCountCell: { width: 'auto', flex: 1, minWidth: 0 },
   summaryValue: { minHeight: 18 },
   summaryNote: { marginTop: 7 },
   listContent: { paddingBottom: 120 },

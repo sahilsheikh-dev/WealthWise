@@ -131,6 +131,13 @@ describe('four-month demo data', () => {
       expect.objectContaining({ category: 'Domestic help', type: 'expense' }),
       expect.objectContaining({ category: 'Vet visit', type: 'expense', amount: 650 }),
     ]));
+    expect(budgetOverview(data, monthKey(today), today).pace?.sections.find(({ id }) =>
+      id === 'demo-section-pets',
+    )).toMatchObject({
+      name: 'Pets',
+      plannedToDate: 1_548.39,
+      actualToDate: 2_000,
+    });
     expect(data.budgetPlan).toMatchObject({
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),

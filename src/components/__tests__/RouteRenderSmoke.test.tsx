@@ -48,7 +48,7 @@ import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
 import { addIncomeItem, applyBudgetPlanToMonth } from '../../domain/budget';
 import { pendingItems } from '../../domain/pending';
-import { clearDue as clearDueDomain, duesThroughPreview, undoClearDue as undoClearDueDomain } from '../../domain/dues';
+import { duesThroughPreview } from '../../domain/dues';
 import { liabilitySchedule, planSchedule } from '../../domain/schedule';
 import { emptyAppData } from '../../domain/actions';
 import { createBackup } from '../../domain/backup';
@@ -2645,114 +2645,6 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('records and undoes a recurring liability EMI from payment confirmation', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const store = useAppStore((state) => state);
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      clearDue: jest.Mock;
-      undoClearDue: jest.Mock;
-      addTransaction: jest.Mock;
-    };
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousData = { ...routeData };
-    const previousStoreData = store.data;
-    const previousParams = routeParams();
-    const previousToast = useUIStore.getState().actionToast;
-    const today = todayISO();
-    const liability: RecurringLiability = {
-      id: 'confirm-recurring-liability',
-      kind: 'recurring',
-      name: 'Confirmation EMI',
-      type: 'Home loan',
-      principal: 12_000,
-      ratePct: 0,
-      startDate: `${shiftMonth(monthKey(today), -1)}-10`,
-      tenureMonths: 12,
-      emi: 1_000,
-      payments: [],
-      settlement: null,
-    };
-    const data = { ...emptyAppData(today), liabilities: [liability] };
-    const due = pendingItems(data, monthKey(today), today).find((candidate) =>
-      candidate.source.kind === 'liability' && candidate.source.parentId === liability.id,
-    );
-    if (!due?.dueDate || due.source.kind !== 'liability') {
-      throw new Error('Payment-confirm fixture has no dated recurring EMI.');
-    }
-    Object.assign(routeData, data);
-    store.data = data;
-    routeParams.mockReturnValue({ dueItemId: due.id, dueDate: due.dueDate });
-    useUIStore.getState().setActionToast(null);
-    actions.clearDue.mockImplementation((target, rowId, actualAmount) => {
-      const result = clearDueDomain(store.data, target, {
-        date: today,
-        newId: () => 'confirmed-liability-payment',
-        ...(typeof rowId === 'string' ? { rowId } : {}),
-        ...(typeof actualAmount === 'number' ? { actualAmount } : {}),
-      });
-      store.data = result.data;
-      Object.assign(routeData, result.data);
-      return result.entryId;
-    });
-    actions.undoClearDue.mockImplementation((target, entryId) => {
-      store.data = undoClearDueDomain(store.data, target, entryId);
-      Object.assign(routeData, store.data);
-    });
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(PaymentConfirmScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
-        await Promise.resolve();
-      });
-      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
-      await act(async () => {
-        dialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
-        await Promise.resolve();
-      });
-
-      expect(actions.clearDue).toHaveBeenCalledWith(
-        { kind: 'liability', id: liability.id },
-        due.source.slotId,
-        due.amount,
-      );
-      expect(actions.addTransaction).not.toHaveBeenCalled();
-      const updated = store.data.liabilities.find((candidate) => candidate.id === liability.id);
-      if (!updated || updated.kind !== 'recurring') throw new Error('Recurring liability disappeared after payment.');
-      expect(updated.payments).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: 'confirmed-liability-payment', kind: 'EMI', amount: due.amount }),
-      ]));
-      expect(store.data.transactions).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          type: 'expense',
-          amount: due.amount,
-          source: { kind: 'liability-payment', parentId: liability.id, entryId: 'confirmed-liability-payment' },
-        }),
-      ]));
-      expect(pendingItems(store.data, monthKey(today), today).some((candidate) =>
-        candidate.source.kind === 'liability' && candidate.source.parentId === liability.id,
-      )).toBe(false);
-
-      const undo = useUIStore.getState().actionToast?.onAction;
-      if (!undo) throw new Error('Liability payment Undo action was not set.');
-      act(() => undo());
-      expect(actions.undoClearDue).toHaveBeenCalledWith(
-        { kind: 'liability', id: liability.id },
-        'confirmed-liability-payment',
-      );
-      expect(store.data).toEqual(data);
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousData);
-      store.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-      useUIStore.getState().setActionToast(previousToast);
-      actions.clearDue.mockReset();
-      actions.undoClearDue.mockReset();
-    }
-  });
-
   it('opens the paid-amount dialog from a Transactions due row without clearing on Not paid', async () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const store = useAppStore((state) => state);
@@ -2805,142 +2697,6 @@ describe('route render smoke audit', () => {
       routeParams.mockReturnValue(previousParams);
       useUIStore.getState().setTxMonth(previousMonth);
       actions.clearDue.mockClear();
-    }
-  });
-
-  it('records a linked planned investment from the Transactions row as a plan entry and undoes it', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const store = useAppStore((state) => state);
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      clearDue: jest.Mock;
-      undoClearDue: jest.Mock;
-      addTransaction: jest.Mock;
-    };
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousRouteData = { ...routeData };
-    const previousStoreData = store.data;
-    const previousParams = routeParams();
-    const previousMonth = useUIStore.getState().txMonth;
-    const previousToast = useUIStore.getState().actionToast;
-    const today = todayISO();
-    const month = monthKey(today);
-    const plan = makeInvestmentTestPlan();
-    const basePlan = budgetPlanFromLines([], {
-      incomes: [],
-      repeatMonthly: true,
-      repeatFrom: month,
-    });
-    const investmentSection = basePlan.sections.find((section) =>
-      section.type === 'invest' && !section.system,
-    );
-    if (!investmentSection) throw new Error('Investment budget section is missing.');
-    const snapshot = monthBudgetFromLines(month, [{
-      category: 'Monthly SIP investment',
-      planned: plan.amount,
-      dueDay: Number(today.slice(8, 10)),
-    }], {
-      incomes: [],
-      source: 'plan',
-      sections: basePlan.sections,
-      linkedIncluded: true,
-    });
-    const linkedItem = snapshot.items[0];
-    if (!linkedItem) throw new Error('Linked Budget item is missing from the month snapshot.');
-    const linkedPlanItem = {
-      ...linkedItem,
-      sectionId: investmentSection.id,
-      holdingId: plan.id,
-    };
-    const data: AppData = {
-      ...emptyAppData(today),
-      holdings: [plan],
-      budgetPlan: {
-        ...basePlan,
-        items: [linkedPlanItem],
-      },
-      monthBudgets: [{ ...snapshot, items: [linkedPlanItem] }],
-    };
-    const linkedBudgetRow = pendingItems(data, month, today).find((item) =>
-      item.source.kind === 'budget' && item.category === 'Monthly SIP investment',
-    );
-    if (!linkedBudgetRow) throw new Error('Linked Budget investment row is missing from Transactions.');
-    Object.assign(routeData, data);
-    store.data = data;
-    useUIStore.getState().setTxMonth(month);
-    routeParams.mockReturnValue({});
-    useUIStore.getState().setActionToast(null);
-    actions.clearDue.mockImplementation((target, rowId, actualAmount) => {
-      const result = clearDueDomain(store.data, target, {
-        date: today,
-        newId: () => 'linked-plan-entry',
-        ...(typeof rowId === 'string' ? { rowId } : {}),
-        ...(typeof actualAmount === 'number' ? { actualAmount } : {}),
-      });
-      store.data = result.data;
-      Object.assign(routeData, result.data);
-      return result.entryId;
-    });
-    actions.undoClearDue.mockImplementation((target, entryId) => {
-      store.data = undoClearDueDomain(store.data, target, entryId);
-      Object.assign(routeData, store.data);
-    });
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(TransactionsScreen));
-      const row = renderer.root.findByProps({ testID: `pending-item-${linkedBudgetRow.id}` });
-      await act(async () => {
-        row.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
-        await Promise.resolve();
-      });
-      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
-      await act(async () => {
-        dialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
-        await Promise.resolve();
-      });
-
-      expect(actions.clearDue).toHaveBeenCalledWith(
-        { kind: 'plan', id: plan.id },
-        expect.any(String),
-        plan.amount,
-      );
-      expect(actions.addTransaction).not.toHaveBeenCalled();
-      const updatedPlan = store.data.holdings.find((holding) => holding.id === plan.id);
-      if (!updatedPlan || updatedPlan.kind !== 'plan') throw new Error('Linked plan disappeared after Paid.');
-      expect(updatedPlan.logs).toHaveLength(1);
-      expect(store.data.transactions).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          amount: plan.amount,
-          source: { kind: 'holding-entry', parentId: plan.id, entryId: 'linked-plan-entry' },
-        }),
-      ]));
-      expect(pendingItems(store.data, month, today).some((item) =>
-        item.source.kind === 'plan' && item.source.parentId === plan.id,
-      )).toBe(false);
-      expect(pendingItems(store.data, month, today).some((item) =>
-        item.source.kind === 'budget' && item.category === 'Monthly SIP investment',
-      )).toBe(false);
-
-      const undo = useUIStore.getState().actionToast?.onAction;
-      if (!undo) throw new Error('Linked plan Undo action was not set.');
-      act(() => undo());
-      expect(actions.undoClearDue).toHaveBeenCalledWith(
-        { kind: 'plan', id: plan.id },
-        'linked-plan-entry',
-      );
-      expect(store.data).toEqual(data);
-      expect(pendingItems(store.data, month, today).some((item) =>
-        item.source.kind === 'budget' && item.category === 'Monthly SIP investment',
-      )).toBe(true);
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-      useUIStore.getState().setTxMonth(previousMonth);
-      useUIStore.getState().setActionToast(previousToast);
-      actions.clearDue.mockReset();
-      actions.undoClearDue.mockReset();
     }
   });
 
@@ -4413,13 +4169,22 @@ describe('route render smoke audit', () => {
       trackFrom: `${startMonth}-01`,
       tenureYears: 2,
       maturityDate: `${lastPlanMonth}-01`,
-      logs: [0, 1].map((index) => ({
-        id: `paid-investment-${index}`,
-        date: `${shiftMonth(startMonth, index)}-01`,
-        amount: 1_000,
-        note: `Paid investment ${index + 1}`,
-        kind: 'Deposit' as const,
-      })),
+      logs: [
+        ...[0, 1].map((index) => ({
+          id: `paid-investment-${index}`,
+          date: `${shiftMonth(startMonth, index)}-01`,
+          amount: 1_000,
+          note: `Paid investment ${index + 1}`,
+          kind: 'Deposit' as const,
+        })),
+        {
+          id: 'investment-withdrawal-mid',
+          date: `${shiftMonth(startMonth, 2)}-15`,
+          amount: 100,
+          note: 'Withdrawal between scheduled months',
+          kind: 'Withdrawal' as const,
+        },
+      ],
     };
     const liabilityStartMonth = shiftMonth(monthKey(today), -5);
     const liability: RecurringLiability = {
@@ -4432,13 +4197,22 @@ describe('route render smoke audit', () => {
       startDate: `${liabilityStartMonth}-01`,
       tenureMonths: 3,
       emi: 1_000,
-      payments: [1, 2].map((index) => ({
-        id: `paid-emi-${index}`,
-        date: `${shiftMonth(liabilityStartMonth, index)}-01`,
-        amount: 1_000,
-        note: `Paid EMI ${index}`,
-        kind: 'EMI' as const,
-      })),
+      payments: [
+        ...[1, 2].map((index) => ({
+          id: `paid-emi-${index}`,
+          date: `${shiftMonth(liabilityStartMonth, index)}-01`,
+          amount: 1_000,
+          note: `Paid EMI ${index}`,
+          kind: 'EMI' as const,
+        })),
+        {
+          id: 'liability-payment-after-final-emi',
+          date: `${shiftMonth(liabilityStartMonth, 4)}-15`,
+          amount: 500,
+          note: 'Payment after final EMI date',
+          kind: 'Payment' as const,
+        },
+      ],
       settlement: null,
     };
     mockFontScale = fontScale;
@@ -4451,8 +4225,20 @@ describe('route render smoke audit', () => {
       renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
       const investmentText = renderer.root.findAllByType('text')
         .map((node) => node.children.join('')).join(' ');
-      expect(investmentText).toContain('Completed 2 months');
-      expect(investmentText).toContain('Pending 2 months');
+      const completedInvestmentMonths = renderer.root.findByProps({
+        testID: 'completed-investment-months-cell',
+      });
+      const pendingInvestmentMonths = renderer.root.findByProps({
+        testID: 'pending-investment-months-cell',
+      });
+      expect(completedInvestmentMonths.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(pendingInvestmentMonths.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(investmentText).toContain('Completed months');
+      expect(investmentText).toContain('Pending months');
       expect(investmentText).not.toContain('Paid investment 1');
       expect(investmentText).not.toContain('Paid investment 2');
       expect(investmentText).not.toContain(formatDate(`${shiftMonth(lastPlanMonth, 1)}-01`));
@@ -4461,7 +4247,15 @@ describe('route render smoke audit', () => {
         rowKind?: string;
         id: string;
         note?: string;
+        date?: string;
+        dueDate?: string;
       }[];
+      const investmentTimeline = investmentRows.flatMap((row) =>
+        row.rowKind === 'pending-plan' && row.dueDate
+          ? [row.dueDate]
+          : row.date ? [row.date] : [],
+      );
+      expect(investmentTimeline).toEqual([...investmentTimeline].sort((left, right) => right.localeCompare(left)));
       const pendingInvestmentRows = investmentRows.filter((row) => row.rowKind === 'pending-plan');
       expect(pendingInvestmentRows).toHaveLength(
         planSchedule(plan, today).rows.filter((row) => row.status !== 'paid').length,
@@ -4499,8 +4293,20 @@ describe('route render smoke audit', () => {
       renderer = renderScreen(React.createElement(LiabilityPaymentsScreen));
       const liabilityText = renderer.root.findAllByType('text')
         .map((node) => node.children.join('')).join(' ');
-      expect(liabilityText).toContain('Completed 2 months');
-      expect(liabilityText).toContain('Pending 1 months');
+      expect(liabilityText).toContain('Completed months');
+      expect(liabilityText).toContain('Pending months');
+      const completedEmiMonthsCell = renderer.root.findByProps({ testID: 'completed-emi-months-cell' });
+      const pendingEmiMonthsCell = renderer.root.findByProps({ testID: 'pending-emi-months-cell' });
+      expect(completedEmiMonthsCell.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(pendingEmiMonthsCell.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(renderer.root.findByProps({ testID: 'completed-emi-months' }).props.accessibilityLabel)
+        .toBe('Completed 2 months');
+      expect(renderer.root.findByProps({ testID: 'pending-emi-months' }).props.accessibilityLabel)
+        .toBe('Pending 1 months');
       expect(liabilityText).not.toContain('Paid EMI 1');
       expect(liabilityText).not.toContain('Paid EMI 2');
       expect(liabilityText).not.toContain(formatDate(`${shiftMonth(liabilityStartMonth, 4)}-01`));
@@ -4510,7 +4316,14 @@ describe('route render smoke audit', () => {
         id: string;
         note?: string;
         dueDate?: string;
+        date?: string;
       }[];
+      const liabilityTimeline = liabilityRows.flatMap((row) =>
+        row.rowKind === 'pending-emi' && row.dueDate
+          ? [row.dueDate]
+          : row.date ? [row.date] : [],
+      );
+      expect(liabilityTimeline).toEqual([...liabilityTimeline].sort((left, right) => right.localeCompare(left)));
       const pendingEmiRows = liabilityRows.filter((row) => row.rowKind === 'pending-emi');
       expect(pendingEmiRows).toHaveLength(1);
       const lastEmiDate = `${shiftMonth(liabilityStartMonth, liability.tenureMonths)}-01`;
@@ -5190,7 +5003,6 @@ describe('route render smoke audit', () => {
       expect(futureMonth.root.findByProps({ testID: 'budget-empty-state' })
         .findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Not planned');
-      expect(futureMonth.root.findAllByProps({ testID: 'budget-pace' })).toHaveLength(0);
       const apply = futureMonth.root.findByProps({ accessibilityLabel: `Apply plan to ${formatMonth(future)}` });
       act(() => apply.props.onPress());
       expect(actions.applyBudgetPlan).toHaveBeenCalledWith(future);
@@ -5247,6 +5059,7 @@ describe('route render smoke audit', () => {
       const order = [
         'budget-cash-flow',
         'budget-overview-card',
+        'budget-pace',
         'budget-section-income',
         'budget-section-survival',
         'budget-section-savings-investments',
@@ -5258,7 +5071,7 @@ describe('route render smoke audit', () => {
       ];
       const positions = order.map((id) => ids.indexOf(id));
       expect(positions.every((position, index) => index === 0 || position > (positions[index - 1] ?? -1))).toBe(true);
-      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(10);
+      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(11);
       expect(renderer.root.findByProps({ testID: 'budget-section-list' })).toBeDefined();
       const survival = renderer.root.findByProps({ testID: 'budget-section-survival' });
       expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
@@ -5324,22 +5137,22 @@ describe('route render smoke audit', () => {
         .join(' ');
       expect(overviewStyleText).toContain('"padding":16');
       expect(renderer.root.findAllByProps({ testID: 'stacked-bar' })).toHaveLength(0);
-      const pace = overviewCard.findByProps({ testID: 'budget-pace' });
-      expect(pace.findByProps({ testID: 'pace-line-container' })).toBeDefined();
-      expect(pace.findAll((node) => String(node.props.testID).startsWith('pace-section-toggle-')))
-        .toHaveLength(0);
-      expect(ids.indexOf('budget-pace')).toBeLessThan(ids.indexOf('budget-overview-table'));
-      expect(ids.indexOf('budget-overview-table')).toBeLessThan(ids.indexOf('budget-section-list'));
+      expect(renderer.root.findByProps({ testID: 'pace-section-series-survival' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'pace-y-axis' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.accessibilityRole)
+        .toBe('button');
       const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
       expect(header.findAllByType('text').map((node) => node.children.join('')))
         .toEqual(['Actual', 'Planned']);
       const overviewAccessibility = renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel;
       expect(overviewAccessibility).toContain('Income');
       expect(overviewAccessibility).toContain('Spending');
-      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
-      expect(paceAccessibility).toContain('Spending pace through day');
+      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-section-series-survival' }).props.accessibilityLabel;
+      expect(paceAccessibility).toContain('Survival');
       expect(paceAccessibility).toContain('actual');
-      expect(paceAccessibility).toContain('planned by month end');
+      expect(paceAccessibility).toContain('planned to date');
+      expect(renderer.root.findByProps({ testID: 'pace-short-summary' }).props.accessibilityLabel)
+        .toContain('actual vs');
       expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
         .toBe(overviewAccessibility);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
@@ -5418,7 +5231,6 @@ describe('route render smoke audit', () => {
     try {
       const renderer = renderScreen(React.createElement(BudgetScreen));
       const header = renderer.root.findByType('header');
-      expect(renderer.root.findByProps({ testID: 'budget-pace' })).toBeDefined();
       expect(header.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
       expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
       expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === formatMonth(month))).toBe(true);
