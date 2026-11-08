@@ -9,7 +9,7 @@ requests at runtime.
 - [For users](#for-users)
 - [Features](#features)
 - [Download](#download)
-- [What's new in v1.0.0](#whats-new-in-v100)
+- [What's new in v1.1.0](#whats-new-in-v110)
 - [Screenshots](#screenshots)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
@@ -62,12 +62,13 @@ Release date: 2026-11-07
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
-### What's new in v1.0.0
+### What's new in v1.1.0
 
-The initial stable release brings together budgets, transactions, goals,
-investments, liabilities, insurance policies, local reminders and portable
-backups. It also includes accessibility, font-scale and long-history
-reliability improvements. See the [v1.0.0 changelog](CHANGELOG.md).
+Release 2 makes recurring income count only in due months, restores the
+aggregate Budget Pace graph, and keeps linked paid investment/liability
+records in sync. Entries now show schedule progress and collapsed paid
+history, stop at maturity or the final EMI, and edited values survive restart.
+See the [v1.1.0 changelog](CHANGELOG.md).
 
 ### Screenshots
 
