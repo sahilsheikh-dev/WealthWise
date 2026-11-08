@@ -29,12 +29,12 @@
 - Release 2 code changes are complete: recurrence-aware income summaries and
   editable non-due rows, verified persistence-source precedence, shared paid
   sync/Undo, capped Entries schedules, and the restored aggregate Pace graph
-  without the stacked bar. N39 and N40 remain Fail pending device re-test;
-  N41-N43 remain Not run. Device model, Android version, tester and date fields
-  remain blank. P28-F release preparation and integration are complete on
+  without the stacked bar. The owner reported N39-N43 Pass and the checklist
+  records those results. Device model, Android version and tester fields remain
+  blank. P28-F release preparation and integration are complete on
   `release/v1.1.0`; version, changelog, README What's new and draft notes are
   committed. The README Download remains v1.0.0 until publication. Owner APK
-  build, device re-test, v1.1.0 tag and publication remain pending.
+  build, v1.1.0 tag and publication remain pending.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
   and a final tree equal to main. The later route-diagnostic and ledger
@@ -109,8 +109,10 @@
   release approval rules and committed draft workflow are documented under
   `docs/releases/`. P28-C-R2 records the v1.0.0 APK asset and download details;
   P28-C-R3 verifies the public links, EAS artifact and approved tag alignment.
-  The owner entered Pass for all 43 device checklist rows. No build,
-  submission, GitHub release-body edit or branch push was made.
+  An earlier owner checklist marked all 43 rows Pass; subsequent Release 2
+  verification superseded N39-N43, which the owner has now reported Pass again.
+  No build, submission, GitHub release-body edit or branch push was made in
+  that earlier task.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
