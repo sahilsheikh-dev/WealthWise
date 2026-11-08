@@ -35,6 +35,15 @@
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
+- P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
+  month counts in two-column summary cells and sort pending schedule rows with
+  dated entries (newest first). Route regressions pass at font scales 1.0,
+  1.3 and 2.0; all six ordered gates exit 0. Gate 1 on the reopened Phase 29
+  branch: 98 suites, 1,242 passed, 1 skipped; coverage is
+  95.96/92.01/98.01/97.62% overall, `src/data`
+  91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
+  `src/lib` 100% in all measures. No schema change. Device verification and
+  phase integration remain pending.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and

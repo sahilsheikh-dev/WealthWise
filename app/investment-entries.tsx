@@ -28,12 +28,15 @@ import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS, sortItems } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 type OpeningRow = { rowKind: 'opening'; id: string; amount: number };
-type PendingPlanRow = Pick<ScheduleRow, 'id' | 'dueDate' | 'amount'> & { rowKind: 'pending-plan' };
+type PendingPlanRow = Pick<ScheduleRow, 'id' | 'dueDate' | 'amount' | 'status'> & {
+  rowKind: 'pending-plan';
+  date: ScheduleRow['dueDate'];
+};
 type PaidInvestmentsHeaderRow = { rowKind: 'paid-investments-header'; id: string; count: number };
 type ListRow = OpeningRow | PendingPlanRow | PaidInvestmentsHeaderRow | InvestmentEntry;
 
@@ -91,14 +94,25 @@ export default function InvestmentEntriesScreen() {
   const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
   const pendingPlanRows: PendingPlanRow[] = recurringPlan?.rows
     .filter((row) => row.status !== 'paid')
-    .map(({ id, dueDate, amount }) => ({ rowKind: 'pending-plan', id, dueDate, amount })) ?? [];
+    .map(({ id, dueDate, amount, status }) => ({
+      rowKind: 'pending-plan',
+      id,
+      dueDate,
+      date: dueDate,
+      amount,
+      status,
+    })) ?? [];
+  const chronologicalRows = sortItems(
+    [...pendingPlanRows, ...otherEntries],
+    entrySortList,
+    entrySorting.spec,
+  );
   const paidInvestmentsHeader: PaidInvestmentsHeaderRow | null = paidInvestmentEntries.length > 0
     ? { rowKind: 'paid-investments-header', id: `paid-investments-${holding.id}`, count: paidInvestmentEntries.length }
     : null;
   const listRows: ListRow[] = [
     { rowKind: 'opening', id: `opening-${holding.id}`, amount: openingAmount },
-    ...pendingPlanRows,
-    ...otherEntries,
+    ...chronologicalRows,
     ...(paidInvestmentsHeader ? [paidInvestmentsHeader] : []),
     ...(paidInvestmentsExpanded ? paidInvestmentEntries : []),
   ];
@@ -221,13 +235,25 @@ export default function InvestmentEntriesScreen() {
             <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>
               Next due {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
             </AppText>
-            <View style={styles.monthCounts}>
-              <AppText testID="completed-investment-months" style={[typography.meta, { color: colors.text2 }]}>
-                Completed {recurringPlan?.summary.paid ?? 0} months
-              </AppText>
-              <AppText testID="pending-investment-months" style={[typography.meta, { color: colors.text2 }]}>
-                Pending {pendingPlanRows.length} months
-              </AppText>
+            <View testID="investment-month-counts" style={styles.summaryGrid}>
+              <View testID="completed-investment-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+                <AppText style={[typography.label, { color: colors.text3 }]}>Completed months</AppText>
+                <AppText
+                  testID="completed-investment-months"
+                  accessibilityLabel={`Completed ${recurringPlan?.summary.paid ?? 0} months`}
+                  style={[typography.meta, styles.summaryValue]}>
+                  {recurringPlan?.summary.paid ?? 0}
+                </AppText>
+              </View>
+              <View testID="pending-investment-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+                <AppText style={[typography.label, { color: colors.text3 }]}>Pending months</AppText>
+                <AppText
+                  testID="pending-investment-months"
+                  accessibilityLabel={`Pending ${pendingPlanRows.length} months`}
+                  style={[typography.meta, styles.summaryValue]}>
+                  {pendingPlanRows.length}
+                </AppText>
+              </View>
             </View>
             {holding.stopDate ? (
               <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
@@ -367,12 +393,12 @@ function formatReturn(summary: ReturnType<typeof holdingFinancialSummary>['retur
 
 const styles = StyleSheet.create({
   summaryLine: { marginTop: 7, fontSize: 12 },
-  monthCounts: { marginTop: 7, flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
   paidInvestmentsToggle: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
   summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
   summaryCell: { width: '48%', gap: 3 },
+  monthCountCell: { width: 'auto', flex: 1, minWidth: 0 },
   summaryValue: { minHeight: 18 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },

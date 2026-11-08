@@ -4413,13 +4413,22 @@ describe('route render smoke audit', () => {
       trackFrom: `${startMonth}-01`,
       tenureYears: 2,
       maturityDate: `${lastPlanMonth}-01`,
-      logs: [0, 1].map((index) => ({
-        id: `paid-investment-${index}`,
-        date: `${shiftMonth(startMonth, index)}-01`,
-        amount: 1_000,
-        note: `Paid investment ${index + 1}`,
-        kind: 'Deposit' as const,
-      })),
+      logs: [
+        ...[0, 1].map((index) => ({
+          id: `paid-investment-${index}`,
+          date: `${shiftMonth(startMonth, index)}-01`,
+          amount: 1_000,
+          note: `Paid investment ${index + 1}`,
+          kind: 'Deposit' as const,
+        })),
+        {
+          id: 'investment-withdrawal-mid',
+          date: `${shiftMonth(startMonth, 2)}-15`,
+          amount: 100,
+          note: 'Withdrawal between scheduled months',
+          kind: 'Withdrawal' as const,
+        },
+      ],
     };
     const liabilityStartMonth = shiftMonth(monthKey(today), -5);
     const liability: RecurringLiability = {
@@ -4432,13 +4441,22 @@ describe('route render smoke audit', () => {
       startDate: `${liabilityStartMonth}-01`,
       tenureMonths: 3,
       emi: 1_000,
-      payments: [1, 2].map((index) => ({
-        id: `paid-emi-${index}`,
-        date: `${shiftMonth(liabilityStartMonth, index)}-01`,
-        amount: 1_000,
-        note: `Paid EMI ${index}`,
-        kind: 'EMI' as const,
-      })),
+      payments: [
+        ...[1, 2].map((index) => ({
+          id: `paid-emi-${index}`,
+          date: `${shiftMonth(liabilityStartMonth, index)}-01`,
+          amount: 1_000,
+          note: `Paid EMI ${index}`,
+          kind: 'EMI' as const,
+        })),
+        {
+          id: 'liability-payment-after-final-emi',
+          date: `${shiftMonth(liabilityStartMonth, 4)}-15`,
+          amount: 500,
+          note: 'Payment after final EMI date',
+          kind: 'Payment' as const,
+        },
+      ],
       settlement: null,
     };
     mockFontScale = fontScale;
@@ -4451,8 +4469,20 @@ describe('route render smoke audit', () => {
       renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
       const investmentText = renderer.root.findAllByType('text')
         .map((node) => node.children.join('')).join(' ');
-      expect(investmentText).toContain('Completed 2 months');
-      expect(investmentText).toContain('Pending 2 months');
+      const completedInvestmentMonths = renderer.root.findByProps({
+        testID: 'completed-investment-months-cell',
+      });
+      const pendingInvestmentMonths = renderer.root.findByProps({
+        testID: 'pending-investment-months-cell',
+      });
+      expect(completedInvestmentMonths.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(pendingInvestmentMonths.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(investmentText).toContain('Completed months');
+      expect(investmentText).toContain('Pending months');
       expect(investmentText).not.toContain('Paid investment 1');
       expect(investmentText).not.toContain('Paid investment 2');
       expect(investmentText).not.toContain(formatDate(`${shiftMonth(lastPlanMonth, 1)}-01`));
@@ -4461,7 +4491,15 @@ describe('route render smoke audit', () => {
         rowKind?: string;
         id: string;
         note?: string;
+        date?: string;
+        dueDate?: string;
       }[];
+      const investmentTimeline = investmentRows.flatMap((row) =>
+        row.rowKind === 'pending-plan' && row.dueDate
+          ? [row.dueDate]
+          : row.date ? [row.date] : [],
+      );
+      expect(investmentTimeline).toEqual([...investmentTimeline].sort((left, right) => right.localeCompare(left)));
       const pendingInvestmentRows = investmentRows.filter((row) => row.rowKind === 'pending-plan');
       expect(pendingInvestmentRows).toHaveLength(
         planSchedule(plan, today).rows.filter((row) => row.status !== 'paid').length,
@@ -4499,8 +4537,20 @@ describe('route render smoke audit', () => {
       renderer = renderScreen(React.createElement(LiabilityPaymentsScreen));
       const liabilityText = renderer.root.findAllByType('text')
         .map((node) => node.children.join('')).join(' ');
-      expect(liabilityText).toContain('Completed 2 months');
-      expect(liabilityText).toContain('Pending 1 months');
+      expect(liabilityText).toContain('Completed months');
+      expect(liabilityText).toContain('Pending months');
+      const completedEmiMonthsCell = renderer.root.findByProps({ testID: 'completed-emi-months-cell' });
+      const pendingEmiMonthsCell = renderer.root.findByProps({ testID: 'pending-emi-months-cell' });
+      expect(completedEmiMonthsCell.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(pendingEmiMonthsCell.props.style[1]).toEqual(
+        expect.objectContaining({ flex: 1, minWidth: 0 }),
+      );
+      expect(renderer.root.findByProps({ testID: 'completed-emi-months' }).props.accessibilityLabel)
+        .toBe('Completed 2 months');
+      expect(renderer.root.findByProps({ testID: 'pending-emi-months' }).props.accessibilityLabel)
+        .toBe('Pending 1 months');
       expect(liabilityText).not.toContain('Paid EMI 1');
       expect(liabilityText).not.toContain('Paid EMI 2');
       expect(liabilityText).not.toContain(formatDate(`${shiftMonth(liabilityStartMonth, 4)}-01`));
@@ -4510,7 +4560,14 @@ describe('route render smoke audit', () => {
         id: string;
         note?: string;
         dueDate?: string;
+        date?: string;
       }[];
+      const liabilityTimeline = liabilityRows.flatMap((row) =>
+        row.rowKind === 'pending-emi' && row.dueDate
+          ? [row.dueDate]
+          : row.date ? [row.date] : [],
+      );
+      expect(liabilityTimeline).toEqual([...liabilityTimeline].sort((left, right) => right.localeCompare(left)));
       const pendingEmiRows = liabilityRows.filter((row) => row.rowKind === 'pending-emi');
       expect(pendingEmiRows).toHaveLength(1);
       const lastEmiDate = `${shiftMonth(liabilityStartMonth, liability.tenureMonths)}-01`;
