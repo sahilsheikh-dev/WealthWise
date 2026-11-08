@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
@@ -57,6 +57,7 @@ export default function TransactionsScreen() {
   const params = useLocalSearchParams<{ category?: string; month?: string }>();
   const routeCategory = typeof params.category === 'string' ? params.category : '';
   const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const data = useAppData();
   const month = useUIStore((state) => state.txMonth);
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -133,7 +134,11 @@ export default function TransactionsScreen() {
         <View style={[styles.cashCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}`}
+            accessibilityLabel={`${balanceExpanded ? 'Collapse' : 'Expand'} ${position.label}, ${formatAmount(position.amount, 'exact', 1)}${
+              Math.abs(position.broughtForward) > 0
+                ? `, From ${formatMonth(shiftMonth(month, -1)).slice(0, 3)} ${formatAmount(position.broughtForward, 'exact', 1)}`
+                : ''
+            }`}
             onPress={() => setBalanceExpanded((expanded) => !expanded)}
             style={styles.balanceHeading}>
             <View style={styles.balanceTitle}>
@@ -153,6 +158,11 @@ export default function TransactionsScreen() {
               <BalanceLine label="Brought forward" value={position.broughtForward} />
               <BalanceLine label="Income" value={position.income} />
               <BalanceLine label="Other money in" value={position.otherMoneyIn} />
+              {position.otherMoneyIn > 0 ? (
+                <AppText style={typography.meta}>
+                  Includes {formatAmount(position.otherMoneyIn, 'exact', 1)} from withdrawals, borrowing, loan proceeds and own funds
+                </AppText>
+              ) : null}
               <BalanceLine label="Spent" value={position.spent} />
               <BalanceLine label="Invested" value={position.invested} />
               {visibleReview ? (
@@ -203,10 +213,30 @@ export default function TransactionsScreen() {
         </View>
 
         <View style={styles.metrics}>
-          <StatPill label="Income" value={formatAmount(summary.income, 'tile', 1)} tone="ok" />
-          <StatPill label="Expense" value={formatAmount(summary.expense, 'tile', 1)} tone="err" />
-          <StatPill label="Invested" value={formatAmount(summary.invest, 'tile', 1)} tone="primary" />
+          <StatPill
+            label="Income"
+            value={<AmountText value={summary.income} tier="tile" />}
+            accessibilityLabel={`Income, ${formatAmount(summary.income, 'exact', 1)}`}
+            tone="ok"
+          />
+          <StatPill
+            label="Expense"
+            value={<AmountText value={summary.expense} tier="tile" />}
+            accessibilityLabel={`Expense, ${formatAmount(summary.expense, 'exact', 1)}`}
+            tone="err"
+          />
+          <StatPill
+            label="Invested"
+            value={<AmountText value={summary.invest} tier="tile" />}
+            accessibilityLabel={`Invested, ${formatAmount(summary.invest, 'exact', 1)}`}
+            tone="primary"
+          />
         </View>
+        {summary.earnedIncome === 0 ? (
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            No earned income logged this month
+          </AppText>
+        ) : null}
 
         {summary.overspend > 0 ? (
           <WarningBanner>
@@ -266,7 +296,8 @@ export default function TransactionsScreen() {
                     key={item.id}
                     title={item.note || item.category}
                     subtitle={linked ? `${item.category}\n→ ${linked.label}` : item.category}
-                    amount={`${tone.symbol}${formatAmount(item.amount, 'row', 1)}`}
+                    amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
+                    accessibilityLabel={`${item.note || item.category}, ${item.category}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}
@@ -328,7 +359,7 @@ const styles = StyleSheet.create({
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
-  cashCard: { marginHorizontal: 20, minHeight: 60, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
+  cashCard: { marginHorizontal: 20, minHeight: 60, maxHeight: 64, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, justifyContent: 'center', gap: 6 },
   balanceHeading: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5 },
@@ -336,8 +367,6 @@ const styles = StyleSheet.create({
   balanceLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
   reviewDot: { width: 6, height: 6, borderRadius: 3 },
-  reviewBanner: { marginHorizontal: 20, marginTop: 12, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  reviewCopy: { flex: 1 },
   modalScrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
   movementSheet: { padding: 20, paddingBottom: 34, borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 6 },
   sheetTitle: { fontSize: 18, marginBottom: 8 },

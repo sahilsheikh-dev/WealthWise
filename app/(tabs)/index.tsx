@@ -27,6 +27,7 @@ import { upcomingDue } from '../../src/domain/schedule';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { budgetMonthView } from '../../src/domain/budget';
 import { homeSummary } from '../../src/domain/summary';
+import { expenseCategoryBreakdown } from '../../src/domain/transactions';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -51,6 +52,7 @@ export default function HomeScreen() {
   const today = todayISO();
   const summary = homeSummary(data, today);
   const monthBudget = budgetMonthView(data, today.slice(0, 7));
+  const spendingByCategory = expenseCategoryBreakdown(data.transactions, today.slice(0, 7));
   const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
@@ -76,8 +78,20 @@ export default function HomeScreen() {
         <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AmountText value={summary.netWorth} tier="hero" tone={summary.netWorth < 0 ? 'err' : 'primary'} weight="bold" style={[typography.big, styles.netWorth]} />
         <StatPillRow>
-          <StatPill label="Assets" value={formatAmount(summary.assets, 'tile', 1)} tone="ok" onPress={() => router.push('/assets' as Href)} />
-          <StatPill label="Liabilities" value={formatAmount(summary.liabilities, 'tile', 1)} tone="err" onPress={() => router.push('/liabilities')} />
+          <StatPill
+            label="Assets"
+            value={<AmountText value={summary.assets} tier="tile" />}
+            accessibilityLabel={`Assets, ${formatAmount(summary.assets, 'exact', 1)}`}
+            tone="ok"
+            onPress={() => router.push('/assets' as Href)}
+          />
+          <StatPill
+            label="Liabilities"
+            value={<AmountText value={summary.liabilities} tier="tile" />}
+            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
+            tone="err"
+            onPress={() => router.push('/liabilities')}
+          />
           <StatPill
             label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
@@ -86,9 +100,18 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
-      <Pressable accessibilityRole="button" accessibilityLabel="Open this month's budget" onPress={() => router.push('/budget')}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={monthBudget.budget
+          ? `Open this month's budget. This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)} spent`
+          : "Open this month's budget"}
+        onPress={() => router.push('/(tabs)/budget')}>
         <Card style={styles.monthBudgetCard}>
-          <AppText weight="semibold">
+          <AppText
+            weight="semibold"
+            accessibilityLabel={monthBudget.budget
+              ? `This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)} spent`
+              : 'Plan your month'}>
             {monthBudget.budget ? (
               <>This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> of <AmountText value={monthBudget.plannedSpend} tier="tile" /> spent</>
             ) : 'Plan your month'}
@@ -102,6 +125,20 @@ export default function HomeScreen() {
           <AppText style={[typography.meta, { color: colors.primary }]}>Open budget</AppText>
         </Card>
       </Pressable>
+
+      {spendingByCategory.length > 0 ? (
+        <>
+          <SectionTitle>Spending by category</SectionTitle>
+          <Card style={styles.categoryBreakdown}>
+            {spendingByCategory.map(({ category, amount }) => (
+              <View key={category} style={[styles.categoryRow, { borderBottomColor: colors.border }]}>
+                <AppText style={{ color: colors.text2 }}>{category}</AppText>
+                <AmountText value={amount} tier="row" weight="semibold" />
+              </View>
+            ))}
+          </Card>
+        </>
+      ) : null}
 
       {nudge.show ? (
         <Card style={styles.backupCard}>
@@ -218,14 +255,18 @@ export default function HomeScreen() {
           <Pressable
             key={goal.id}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, ${goal.year}, ${pct.toFixed(1)}% funded`}
+            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
             accessibilityHint="Opens this goal for editing"
             onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
             style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalTop}>
               <View style={styles.goalNameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>Target <AmountText value={target} tier="row" /> · {goal.year}</AppText>
+                <AppText
+                  style={[typography.meta, { color: colors.text3 }]}
+                  accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
+                  Target <AmountText value={target} tier="row" /> · {goal.year}
+                </AppText>
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
@@ -239,8 +280,16 @@ export default function HomeScreen() {
             </View>
             <ProgressBar percent={pct} />
             <View style={styles.goalAmounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}><AmountText value={saved} tier="row" /> saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}><AmountText value={Math.max(0, target - saved)} tier="row" /> left</AppText>
+              <AppText
+                style={[typography.meta, { color: colors.ok }]}
+                accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
+                <AmountText value={saved} tier="row" /> saved
+              </AppText>
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
+                <AmountText value={Math.max(0, target - saved)} tier="row" /> left
+              </AppText>
             </View>
             {goal.auto !== 'ef' ? (
               <AppText style={[typography.meta, { color: colors.text2 }]}>
@@ -255,10 +304,16 @@ export default function HomeScreen() {
             ) : null}
             {goal.auto === 'ef' ? (
               <>
-                <AppText style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}>
+                <AppText
+                  style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
+                  accessibilityLabel={`Minimum 3 months of expenses: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
                   Minimum 3 months of expenses: <AmountText value={minimum ?? 0} tier="row" />
                 </AppText>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
+                <AppText
+                  style={[typography.meta, { color: colors.text3 }]}
+                  accessibilityLabel={summary.expenseBaseline <= 0
+                    ? 'Add expenses to calculate your 3-month minimum'
+                    : `Based on an average of ${formatAmount(summary.expenseBaseline, 'exact', 1)} monthly expenses`}>
                   {summary.expenseBaseline <= 0
                     ? 'Add expenses to calculate your 3-month minimum'
                     : <>Based on an average of <AmountText value={summary.expenseBaseline} tier="row" /> monthly expenses</>}
@@ -279,6 +334,8 @@ const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
   monthBudgetCard: { gap: 8 },
+  categoryBreakdown: { gap: 4 },
+  categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
   storageActions: { gap: 8, marginTop: 8 },

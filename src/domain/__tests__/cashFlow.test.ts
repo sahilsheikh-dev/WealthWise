@@ -78,6 +78,53 @@ describe('cash flow positions', () => {
     });
   });
 
+  it('counts current-month entries through today, carries across an empty month, and leaves past closes unchanged', () => {
+    const transactions = [
+      tx('jan-income', '2026-01-10', 'income', 1_000, 'Salary'),
+      tx('jan-expense', '2026-01-11', 'expense', 250, 'Food'),
+      tx('mar-income', '2026-03-01', 'income', 300, 'Salary'),
+      tx('mar-today-expense', '2026-03-10', 'expense', 100, 'Food'),
+      tx('mar-today-invest', '2026-03-10', 'invest', 50, 'Stocks / ETF'),
+      tx('mar-future-income', '2026-03-11', 'income', 900, 'Salary'),
+      tx('mar-future-expense', '2026-03-12', 'expense', 800, 'Food'),
+      tx('mar-future-invest', '2026-03-13', 'invest', 700, 'Stocks / ETF'),
+    ];
+
+    expect(availableBalance(transactions, '2026-03', '2026-03-10')).toEqual({
+      label: 'Available balance',
+      amount: 900,
+      broughtForward: 750,
+      income: 300,
+      otherMoneyIn: 0,
+      spent: 100,
+      invested: 50,
+    });
+    expect(availableBalance(transactions, '2026-01', '2026-03-10')).toEqual({
+      label: 'Closing balance',
+      amount: 750,
+      broughtForward: 0,
+      income: 1_000,
+      otherMoneyIn: 0,
+      spent: 250,
+      invested: 0,
+    });
+  });
+
+  it('returns zero without prior transactions and preserves a negative current balance', () => {
+    expect(availableBalance([], '2026-03', '2026-03-10')).toEqual({
+      label: 'Available balance',
+      amount: 0,
+      broughtForward: 0,
+      income: 0,
+      otherMoneyIn: 0,
+      spent: 0,
+      invested: 0,
+    });
+    expect(availableBalance([
+      tx('overspent', '2026-03-01', 'expense', 100, 'Food'),
+    ], '2026-03', '2026-03-10').amount).toBe(-100);
+  });
+
   it('reports shortfalls numerically, handles missing history, and matches closed positions', () => {
     const transactions = [
       tx('income', '2026-01-01', 'income', 200, 'Salary'),

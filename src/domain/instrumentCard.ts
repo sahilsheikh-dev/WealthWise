@@ -4,7 +4,9 @@ import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planPr
 import { planSchedule } from './schedule';
 import type { ISODate } from './types';
 import type { PortfolioRow } from './portfolio';
-import { formatDate, formatINR, formatINRShort } from '../lib/format';
+import { formatDate } from '../lib/format';
+
+export type InstrumentCardTextSegment = { text: string } | { amount: number };
 
 export type InstrumentCardAction = {
   id: 'deposit' | 'withdraw' | 'schedule' | 'entries' | 'edit' | 'confirm';
@@ -21,13 +23,13 @@ export type InstrumentCardStatus = {
 export type InstrumentCardModel = {
   kind: PortfolioRow['kind'];
   name: string;
-  subtitle: string;
+  subtitle: InstrumentCardTextSegment[];
   value: number;
   valueCaption: string;
   progressPct: number;
   progressCaption: string;
-  description: string;
-  nextLine?: string;
+  description: InstrumentCardTextSegment[];
+  nextLine?: InstrumentCardTextSegment[];
   behindLine?: string;
   statuses: InstrumentCardStatus[];
   pendingDueCount?: number;
@@ -52,14 +54,16 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     return {
       kind: 'auto-ef',
       name: row.name,
-      subtitle: 'Emergency fund, auto-synced',
+      subtitle: [{ text: 'Emergency fund, auto-synced' }],
       value: row.value,
       valueCaption: 'Current value',
       progressPct: sharePct,
       progressCaption: `${sharePct.toFixed(1)}% of your assets`,
-      description: ctx.monthlyExpenseBaseline > 0 && covered !== null
-        ? `${covered.toFixed(1)} months of expenses covered`
-        : 'Log expenses to see months covered',
+      description: [{
+        text: ctx.monthlyExpenseBaseline > 0 && covered !== null
+          ? `${covered.toFixed(1)} months of expenses covered`
+          : 'Log expenses to see months covered',
+      }],
       statuses: [],
       headerAction: { id: 'edit', label: 'Edit' },
       actions: [
@@ -90,7 +94,11 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     return {
       kind: 'plan',
       name: holding.name,
-      subtitle: `${holding.type}, Monthly ${formatINR(holding.amount)}, ${holding.stepUpPct}% step-up, ${holding.tenureYears} yrs, ${holding.ratePct}% p.a.`,
+      subtitle: [
+        { text: `${holding.type}, Monthly ` },
+        { amount: holding.amount },
+        { text: `, ${holding.stepUpPct}% step-up, ${holding.tenureYears} yrs, ${holding.ratePct}% p.a.` },
+      ],
       value: currentValue,
       valueCaption: holding.actualValue === null
         ? 'Estimated value'
@@ -99,9 +107,18 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
           : 'Actual value',
       progressPct,
       progressCaption: '',
-      description: `Invested ${formatINR(planInvested(holding))}. Plan: ${formatINRShort(projectionData.totalContributions)} in contributions. ${loggedTrackedCount(holding)} logged since tracking began, ${tracked} due.`,
+      description: [
+        { text: 'Invested ' },
+        { amount: planInvested(holding) },
+        { text: '. Plan: ' },
+        { amount: projectionData.totalContributions },
+        { text: ` in contributions. ${loggedTrackedCount(holding)} logged since tracking began, ${tracked} due.` },
+      ],
       ...(schedule.summary.nextDue ? {
-        nextLine: `Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatINR(schedule.summary.nextDue.amount)}`,
+        nextLine: [
+          { text: `Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ` },
+          { amount: schedule.summary.nextDue.amount },
+        ],
       } : {}),
       ...(overdue > 0 && schedule.summary.nextDue ? { behindLine: `${overdue} behind` } : {}),
       statuses,
@@ -125,12 +142,19 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
   return {
     kind: 'manual',
     name: holding.name,
-    subtitle: `${holding.type}, invested ${formatINR(row.invested)}`,
+    subtitle: [
+      { text: `${holding.type}, invested ` },
+      { amount: row.invested },
+    ],
     value: row.value,
     valueCaption,
     progressPct: sharePct,
     progressCaption: `${sharePct.toFixed(1)}% of your assets`,
-    description: `${row.gain >= 0 ? 'Gain' : 'Loss'} ${formatINR(Math.abs(row.gain))}${row.gainPct === null ? '' : ` (${row.gainPct.toFixed(1)}%)`}`,
+    description: [
+      { text: `${row.gain >= 0 ? 'Gain' : 'Loss'} ` },
+      { amount: Math.abs(row.gain) },
+      { text: row.gainPct === null ? '' : ` (${row.gainPct.toFixed(1)}%)` },
+    ],
     statuses: stale.stale ? [{ label: 'Stale value', tone: 'neutral' }] : [],
     headerAction: { id: 'edit', label: 'Edit' },
     actions: [

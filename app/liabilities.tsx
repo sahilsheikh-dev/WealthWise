@@ -85,7 +85,12 @@ export default function LiabilitiesScreen() {
                 : `Debt-free by ${formatMonth(overview.debtFreeBy.slice(0, 7))}`}
           </AppText>
           <StatPillRow>
-            <StatPill label="Monthly EMI" value={formatAmount(overview.monthlyEmi, 'tile', 1)} tone="err" />
+            <StatPill
+              label="Monthly EMI"
+              value={<AmountText value={overview.monthlyEmi} tier="tile" />}
+              accessibilityLabel={`Monthly EMI, ${formatAmount(overview.monthlyEmi, 'exact', 1)}`}
+              tone="err"
+            />
             <StatPill label="Of income" value={overview.emiPctOfIncome === null ? '—' : `${overview.emiPctOfIncome.toFixed(1)}%`} />
           </StatPillRow>
           {overview.incomeSource === 'salary' ? (
@@ -154,17 +159,33 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
             {liability.ratePct}% p.a. · {liability.tenureMonths} months · Since {formatDate(liability.startDate)}
         </AppText>}
         value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
-        valueCaption={<AppText style={[typography.meta, { color: colors.err }]}><AmountText value={liability.emi} tier="row" />/mo</AppText>}
+        valueCaption={(
+          <AppText
+            accessibilityLabel={`${formatAmount(liability.emi, 'exact', 1)} per month`}
+            style={[typography.meta, { color: colors.err }]}>
+            <AmountText value={liability.emi} tier="row" />/mo
+          </AppText>
+        )}
         editLabel={`Edit ${liability.name}`}
         onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
       />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
-        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+        <AppText
+          accessibilityLabel={`Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
+          style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
           Next: {formatDate(schedule.summary.nextDue.dueDate)}, <AmountText value={schedule.summary.nextDue.amount} tier="row" />
         </AppText>
       ) : null}
-      <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
+      <AppText
+        accessibilityLabel={`Paid ${formatAmount(summary.paidTotal, 'exact', 1)}. Interest accrued ${formatAmount(summary.interestAccrued, 'exact', 1)}.${
+          summary.cleared
+            ? ' Cleared'
+            : summary.monthsLeft === null
+              ? ' EMI is too low to clear this liability'
+              : ` ${summary.monthsLeft} months left · Payoff ${formatMonth(payoffDate(summary.monthsLeft, asOf).slice(0, 7))}.`
+        }`}
+        style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Paid <AmountText value={summary.paidTotal} tier="row" />. Interest accrued <AmountText value={summary.interestAccrued} tier="row" />.
         {'\n'}{summary.cleared
           ? 'Cleared'
@@ -222,11 +243,15 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
-        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+        <AppText
+          accessibilityLabel={`Next: ${liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
+          style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
           Next: {liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, <AmountText value={schedule.summary.nextDue.amount} tier="row" />
         </AppText>
       ) : null}
-      <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
+      <AppText
+        accessibilityLabel={`Due ${liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid ${formatAmount(summary.paidTotal, 'exact', 1)}${overdue ? ` Overdue by ${summary.overdueDays} days` : ''}`}
+        style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Due {liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid <AmountText value={summary.paidTotal} tier="row" />
         {overdue ? `\nOverdue by ${summary.overdueDays} days` : ''}
       </AppText>
