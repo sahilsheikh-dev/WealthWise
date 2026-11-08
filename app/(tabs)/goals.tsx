@@ -42,13 +42,15 @@ export default function GoalsScreen() {
         const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         return (
-          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Pressable
+            key={goal.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${goal.name}, target ${formatINRShort(target)}, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
+            accessibilityHint="Opens this goal for editing"
+            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Edit ${goal.name}`}
-                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-                style={styles.nameBlock}>
+              <View style={styles.nameBlock}>
                 <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   Target {formatINRShort(target)} · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
@@ -56,7 +58,7 @@ export default function GoalsScreen() {
                 {targetYearPassed ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
-              </Pressable>
+              </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
             <ProgressBar percent={goalPercent} />
@@ -79,7 +81,7 @@ export default function GoalsScreen() {
                 ) : null}
               </>
             ) : null}
-          </View>
+          </Pressable>
         );
       })}
     </Screen>

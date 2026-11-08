@@ -65,6 +65,7 @@ jest.mock('react-native', () => {
   const node = (name: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
     ReactModule.createElement(name, props, children);
   return {
+    PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     View: node('view'),

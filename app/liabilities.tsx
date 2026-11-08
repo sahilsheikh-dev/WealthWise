@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
-import { IconButton } from '../src/components/IconButton';
+import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import {
   ActionRow,
   AppText,
@@ -121,23 +121,16 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
     : payoffDate(summary.monthsLeftWithExtra, asOf);
   return (
     <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={styles.liabilityHeader}>
-        <View style={styles.liabilityTitle}>
-          <AppText weight="semibold" style={typography.name}>{liability.name}</AppText>
-          <AppText style={[typography.meta, { color: colors.text3 }]}>
+      <CardHeaderRow
+        title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
+        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.ratePct}% p.a. · {liability.tenureMonths} months · Since {formatDate(liability.startDate)}
-          </AppText>
-        </View>
-        <View style={styles.amountBlock}>
-          <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
-          <AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>
-        </View>
-        <IconButton
-          icon="edit-2"
-          label={`Edit ${liability.name}`}
-          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
-        />
-      </View>
+        </AppText>}
+        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
+        valueCaption={<AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>}
+        editLabel={`Edit ${liability.name}`}
+        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
@@ -184,22 +177,15 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
   const overdue = summary.overdueDays !== undefined && !summary.cleared;
   return (
     <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={styles.liabilityHeader}>
-        <View style={styles.liabilityTitle}>
-          <AppText weight="semibold" style={typography.name}>{liability.name}</AppText>
-          <AppText style={[typography.meta, { color: colors.text3 }]}>
+      <CardHeaderRow
+        title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
+        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
-          </AppText>
-        </View>
-        <View style={styles.amountBlock}>
-          <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
-        </View>
-        <IconButton
-          icon="edit-2"
-          label={`Edit ${liability.name}`}
-          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
-        />
-      </View>
+        </AppText>}
+        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
+        editLabel={`Edit ${liability.name}`}
+        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
@@ -236,9 +222,6 @@ const styles = StyleSheet.create({
   extraInput: { minWidth: 82, paddingVertical: 6, fontSize: 13, textAlign: 'right', fontFamily: 'Montserrat_600SemiBold' },
   inputError: { marginTop: 5 },
   liabilityCard: { marginHorizontal: 20, marginTop: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
-  liabilityHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  liabilityTitle: { flex: 1, minWidth: 0, gap: 3 },
-  amountBlock: { alignItems: 'flex-end', gap: 3 },
   liabilityStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 7 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },

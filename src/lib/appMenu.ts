@@ -25,6 +25,7 @@ export function buildAppMenu({
   if (isDev) {
     items.push(
       { label: 'Load demo data', icon: 'database' },
+      { label: 'Generate stress-test data', icon: 'database', destructive: true },
       { label: 'Simulate corrupt storage', icon: 'alert-triangle', destructive: true },
     );
   }

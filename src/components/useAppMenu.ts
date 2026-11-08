@@ -51,6 +51,12 @@ export function useAppMenu(): HeaderMenuItem[] {
           message: 'Replace local app data with the bundled sample data?',
           choices: [{ id: 'load', label: 'Load Demo Data' }],
         }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
+      } else if (item.label === 'Generate stress-test data' && devActions) {
+        void choiceAsync({
+          title: 'Generate stress-test data?',
+          message: 'Replace your transactions with 20,000 local test entries to check storage limits and list performance.',
+          choices: [{ id: 'generate', label: 'Generate data', destructive: true }],
+        }).then((choice) => { if (choice === 'generate') devActions.loadStressData(); });
       } else if (item.label === 'Simulate corrupt storage' && devActions) {
         void choiceAsync({
           title: 'Simulate Corrupt Storage?',
