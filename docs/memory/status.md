@@ -6,7 +6,9 @@
   local `develop`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
   unreleased Release 2 history; the stable-main rule applies prospectively.
-  Final plain pushes and remote verification are still pending.
+  Authorized plain pushes are complete and remotely verified: main, develop,
+  all 30 phase branches, `history/by-phase`, and all 30 phase completion tags.
+  The `v1.0.0` tag was not changed; no force push was used.
 - Final ordered gates on `develop`: all six exit 0. Gate 1 has 98 suites,
   1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
