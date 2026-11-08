@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText } from '../ui';
 import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { AppText } from '../ui';
 import { FieldError } from './FieldError';
 
 export function SegmentedControl<T extends string>({
@@ -13,7 +13,7 @@ export function SegmentedControl<T extends string>({
   error,
   size = 'regular',
 }: {
-  label: string;
+  label?: string;
   value: T;
   options: readonly { label: string; value: T }[];
   onChange: (value: T) => void;
@@ -23,7 +23,12 @@ export function SegmentedControl<T extends string>({
   const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
-      <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
+      <View style={styles.row}>
+        {label ? (
+          <AppText style={[ typography.meta, styles.label, { color: colors.text2 } ]} numberOfLines={1} >
+              {label}
+          </AppText>
+        ) : null}
       <View style={[
         styles.control,
         size === 'compact' ? styles.compactControl : undefined,
@@ -49,13 +54,14 @@ export function SegmentedControl<T extends string>({
                 typography.chip,
                 size === 'compact' ? styles.compactOptionText : undefined,
                 { color: selected ? colors.primary : colors.text3 },
-              ]}>
+              ]} numberOfLines={1} >
                 {option.label}
               </AppText>
             </Pressable>
           );
         })}
       </View>
+    </View>
       <FieldError message={error} />
     </View>
   );
@@ -63,6 +69,14 @@ export function SegmentedControl<T extends string>({
 
 const styles = StyleSheet.create({
   wrap: { gap: 5 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  label: {
+    flexShrink: 0,
+  },
   control: { minHeight: 48, flexDirection: 'row', gap: 5, padding: 4, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   compactControl: { minHeight: 40, gap: 3, padding: 2, borderRadius: 10 },
   option: { minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent', borderRadius: 11 },

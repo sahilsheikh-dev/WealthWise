@@ -239,7 +239,7 @@ jest.mock('../../components/AppHeader', () => {
       menu,
     }: {
       title: string;
-      rightActions?: { label: string; onPress: () => void }[];
+      rightActions?: { label: string; icon: string; showIndicator?: boolean; onPress: () => void }[];
       menu?: { label: string; onPress: () => void }[];
     }) => {
       const [menuOpen, setMenuOpen] = ReactModule.useState(false);
@@ -248,6 +248,8 @@ jest.mock('../../components/AppHeader', () => {
         ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
           key: action.label,
           accessibilityLabel: action.label,
+          icon: action.icon,
+          showIndicator: action.showIndicator,
           onPress: action.onPress,
         }, action.label)),
         ...(menu ? [
@@ -359,15 +361,23 @@ jest.mock('../../components/form/TextField', () => {
 jest.mock('../../components/form/MoneyField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    MoneyField: ({ label = 'Amount', accessibilityLabel, ...props }: {
+    MoneyField: ({ label, accessibilityLabel, ...props }: {
       label?: string;
       accessibilityLabel?: string;
       [key: string]: unknown;
     }) => ReactModule.createElement('moneyfield', {
       ...props,
       label,
-      accessibilityLabel: accessibilityLabel ?? `${label} in rupees`,
-    }, label),
+      accessibilityLabel,
+    }, label ?? ''),
+  };
+});
+
+jest.mock('../../components/form/PercentField', () => {
+  const ReactModule = jest.requireActual('react') as typeof import('react');
+  return {
+    PercentField: ({ label, ...props }: { label?: string; [key: string]: unknown }) =>
+      ReactModule.createElement('percentfield', { ...props, label }, label ?? ''),
   };
 });
 
@@ -418,7 +428,7 @@ jest.mock('../../theme/useTheme', () => ({
   },
 }));
 
-jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
+jest.mock('@expo/vector-icons', () => ({ Feather: () => null, Ionicons: () => null }));
 
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
@@ -524,7 +534,7 @@ describe('route render smoke audit', () => {
     ['Emergency fund entry form edit', React.createElement(EfEntryFormScreen)],
   ];
 
-  it.each([1, 1.3, 2])('groups compact budget inputs with accessible touch targets at font scale %s', (fontScale) => {
+  it.each([1, 1.3, 2])('groups compact budget inputs with accessible touch targets at font scale %s', async (fontScale) => {
     mockFontScale = fontScale;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     try {
@@ -532,12 +542,19 @@ describe('route render smoke audit', () => {
       const templateForm = renderScreen(React.createElement(BudgetTemplateFormScreen));
       expect(templateForm.root.findAll((node) => node.type === 'text' && node.props.children === 'Set up your budget inputs'))
         .toHaveLength(1);
-      const startingPoint = templateForm.root.findByProps({ label: 'Starting point' });
+      expect(templateForm.root.findAll((node) =>
+        node.type === 'text' && node.props.children === 'Starting point',
+      )).toHaveLength(1);
+      const startingPoint = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').find((node) =>
+        node.props.options?.some((option: { value: string }) => option.value === 'five-group'),
+      );
+      if (!startingPoint) throw new Error('Budget starting point control did not render.');
       expect(startingPoint.props.options).toEqual([
         { label: 'Five-group plan (recommended)', value: 'five-group' },
         { label: 'Start blank', value: 'blank' },
       ]);
-      expect(startingPoint.props.size).toBe('compact');
+      expect(startingPoint.props.value).toBe('five-group');
+      expect(startingPoint.props.error).toBeUndefined();
 
       const groups = [
         ['survival', 'Survival (Needs)', true],
@@ -568,19 +585,46 @@ describe('route render smoke audit', () => {
         .toHaveLength(9);
       expect(templateForm.root.findAllByProps({ children: 'Line type' }))
         .toHaveLength(0);
-      const modeControl = templateForm.root.findAllByProps({ label: 'Enter as' })[0];
+      const modeControl = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').find((node) =>
+        node.props.label === 'Enter as' && node.props.options?.[0]?.value === 'amount',
+      );
       if (!modeControl) throw new Error('Budget entry mode control did not render.');
-      expect(modeControl.props.size).toBe('compact');
       expect(modeControl.props.options).toEqual([
         { label: 'Amount (₹)', value: 'amount' },
         { label: '% of income', value: 'percent' },
       ]);
-      expect(templateForm.root.findByProps({ accessibilityLabel: 'Planned monthly income' }).props.size)
-        .toBe('compact');
+      expect(modeControl.props.value).toBe('amount');
+      expect(modeControl.props.error).toBeUndefined();
+      const templateIncome = templateForm.root.findByProps({ accessibilityLabel: 'Planned monthly income' });
+      expect(templateIncome.props.label).toBe('Planned monthly income');
+      expect(templateIncome.props.value).toBeDefined();
       const foodAmount = templateForm.root.findAll((node) => String(node.type) === 'moneyfield')
         .find((node) => node.props.accessibilityLabel === 'Food planned amount');
       if (!foodAmount) throw new Error('Compact planned amount input did not render.');
-      expect(foodAmount.props.size).toBe('compact');
+      expect(foodAmount.props.label).toBe('Planned amount');
+      expect(foodAmount.props.value).toBe('');
+      expect(foodAmount.props.error).toBeUndefined();
+      const lineModeControls = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').filter((node) =>
+        node.props.options?.[0]?.value === 'amount',
+      );
+      const foodMode = lineModeControls[1];
+      if (!foodMode) throw new Error('Food input mode control did not render.');
+      await act(async () => {
+        foodMode.props.onChange('percent');
+        await Promise.resolve();
+      });
+      const foodPercent = templateForm.root.findAll((node) => String(node.type) === 'percentfield')
+        .find((node) => node.props.accessibilityLabel === 'Food percent of income');
+      if (!foodPercent) throw new Error('Food percentage component did not render.');
+      expect(foodPercent.props.label).toBe('Percent of income');
+      expect(foodPercent.props.value).toBe('');
+      expect(foodPercent.props.error).toBeUndefined();
+      await act(async () => {
+        foodPercent.props.onChangeText('15');
+        await Promise.resolve();
+      });
+      expect(templateForm.root.findAll((node) => String(node.type) === 'percentfield')
+        .find((node) => node.props.accessibilityLabel === 'Food percent of income')?.props.value).toBe('15');
 
       const unexpectedHeader = templateForm.root.findByProps({ testID: 'budget-category-group-unexpected-extras' });
       act(() => unexpectedHeader.props.onPress());
@@ -594,10 +638,21 @@ describe('route render smoke audit', () => {
       const survivalHeader = monthForm.root.findByProps({ testID: 'budget-category-group-survival' });
       expect(survivalHeader.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
       expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Food planned amount' })).toHaveLength(2);
-      expect(monthForm.root.findAll((node) => String(node.type) === 'moneyfield')
-        .find((node) => node.props.accessibilityLabel === 'Food planned amount')?.props.size)
-        .toBe('compact');
-      expect(monthForm.root.findAllByProps({ label: 'Enter as' })[0]?.props.size).toBe('compact');
+      const monthModeControls = monthForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').filter((node) =>
+        node.props.options?.[0]?.value === 'amount',
+      );
+      const monthMode = monthModeControls[1];
+      expect(monthMode.props.options).toEqual([
+        { label: 'Amount (₹)', value: 'amount' },
+        { label: '% of income', value: 'percent' },
+      ]);
+      expect(monthMode.props.value).toBe('amount');
+      const monthFood = monthForm.root.findAll((node) => String(node.type) === 'moneyfield')
+        .find((node) => node.props.accessibilityLabel === 'Food planned amount');
+      if (!monthFood) throw new Error('Monthly Food amount component did not render.');
+      expect(monthFood.props.label).toBe('Food');
+      expect(monthFood.props.value).toBeDefined();
+      expect(monthFood.props.error).toBeUndefined();
       expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(0);
       act(() => monthForm.root.findByProps({ testID: 'budget-category-group-savings-investments' }).props.onPress());
       expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(2);
@@ -1110,7 +1165,11 @@ describe('route render smoke audit', () => {
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     let editRenderer: TestRenderer.ReactTestRenderer | undefined;
     try {
-      act(() => renderer.root.findByProps({ label: 'Investment type' }).props.onChange('one-time'));
+      const kindControl = renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol').find((node) =>
+        node.props.options?.some((option: { value: string }) => option.value === 'one-time'),
+      );
+      if (!kindControl) throw new Error('Investment kind control did not render.');
+      act(() => kindControl.props.onChange('one-time'));
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Opening balance' })).toHaveLength(0);
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Latest actual value' })).toHaveLength(0);
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Actual value date' })).toHaveLength(0);
@@ -1238,76 +1297,59 @@ describe('route render smoke audit', () => {
     },
   );
 
-  it('shows three Budget actions and removes the header menu', () => {
+  it('shows ordered Budget header icons, keeps the menu hidden, and navigates from the header', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
-    mockFontScale = 2;
     try {
       const renderer = renderScreen(React.createElement(BudgetScreen));
-      const quickActions = renderer.root.findByProps({ testID: 'budget-quick-actions' });
-      const quickStyles = Array.isArray(quickActions.props.style) ? quickActions.props.style : [quickActions.props.style];
-      expect(quickStyles).toEqual(expect.arrayContaining([expect.objectContaining({ flexWrap: 'wrap' })]));
-      expect(quickStyles.every((style) =>
-        !('height' in style) && !('maxHeight' in style),
-      )).toBe(true);
-      const historyAction = renderer.root.findAllByProps({ testID: 'budget-history-action' })
-        .find((node) => node.props.style !== undefined);
-      const reviewAction = renderer.root.findAllByProps({ testID: 'budget-month-review-action' })
-        .find((node) => node.props.style !== undefined);
-      const templatesAction = renderer.root.findAllByProps({ testID: 'budget-templates-action' })
-        .find((node) => node.props.style !== undefined);
-      if (!historyAction || !reviewAction || !templatesAction) throw new Error('Budget quick actions did not render.');
-      for (const action of [historyAction, reviewAction, templatesAction]) {
-        expect(action.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ minHeight: 44 })]));
-        expect(action.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ width: '47%' })]));
-      }
-      expect(renderer.root.findAllByProps({ testID: 'budget-month-review-dot' })).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ testID: 'budget-plan-summary-edit' })).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Apply template' })).toHaveLength(1);
-
-      act(() => historyAction.props.onPress());
-      expect(router.push).toHaveBeenCalledWith('/budget-history');
-      act(() => reviewAction.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/month-review');
       const header = renderer.root.findByType('header');
+      const actions = header.findAllByType('button');
+      expect(actions.map((action) => action.props.accessibilityLabel)).toEqual([
+        'History', 'Month review', 'Templates',
+      ]);
+      expect(actions.map((action) => action.props.icon)).toEqual(['clock', 'check-circle', 'layers']);
+      expect(actions.map((action) => action.props.showIndicator)).toEqual([undefined, false, undefined]);
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Apply template' })).toHaveLength(1);
+      expect(renderer.root.findAllByProps({ testID: 'budget-quick-actions' })).toHaveLength(0);
+      act(() => actions[0]?.props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/budget-history');
+      act(() => actions[1]?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/month-review');
       expect(header.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
-      act(() => templatesAction.props.onPress());
+      act(() => actions[2]?.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
     } finally {
-      mockFontScale = 1;
+      expect(router.push).toHaveBeenCalledTimes(3);
     }
   });
 
-  it.each([1, 1.3, 2])('keeps all three Budget quick actions equal and unclipped at font scale %s', (fontScale) => {
-    mockFontScale = fontScale;
+  it('marks a reviewable month in the Budget header and opens that month review', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
+    const previousTransactions = data.transactions;
+    const reviewMonth = shiftMonth(todayISO().slice(0, 7), -1);
+    data.transactions = [{
+      id: 'pending-budget-review',
+      type: 'income',
+      amount: 100,
+      category: 'Salary',
+      note: 'Prior income',
+      date: `${reviewMonth}-10`,
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
     try {
       const renderer = renderScreen(React.createElement(BudgetScreen));
-      const actions = [
-        renderer.root.findAllByProps({ testID: 'budget-history-action' }).find((node) => node.props.style !== undefined),
-        renderer.root.findAllByProps({ testID: 'budget-month-review-action' }).find((node) => node.props.style !== undefined),
-        renderer.root.findAllByProps({ testID: 'budget-templates-action' }).find((node) => node.props.style !== undefined),
-      ];
-      if (actions.some((action) => !action)) throw new Error('Budget quick actions did not render.');
-      const styles = actions.map((action) => action?.props.style);
-      expect(styles[0]).toEqual(styles[1]);
-      expect(styles[1]).toEqual(styles[2]);
-      expect(styles[0]).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 44 }),
-      ]));
-      expect(styles[0]).toEqual(expect.arrayContaining([
-        expect.objectContaining(fontScale >= 1.3 ? { width: '47%' } : { flex: 1 }),
-      ]));
-      const quickActions = renderer.root.findByProps({ testID: 'budget-quick-actions' });
-      const quickStyles = Array.isArray(quickActions.props.style) ? quickActions.props.style : [quickActions.props.style];
-      expect(quickStyles.some((style) => style?.flexWrap === 'wrap')).toBe(fontScale >= 1.3);
-      for (const action of actions) {
-        const label = action?.findByType('text');
-        expect(label?.props.numberOfLines).toBe(1);
-        expect(label?.props.adjustsFontSizeToFit).toBe(true);
-        expect(label?.props.minimumFontScale).toBe(0.75);
-      }
+      const header = renderer.root.findByType('header');
+      const review = header.findByProps({ accessibilityLabel: 'Month review, review pending' });
+      expect(review.props.icon).toBe('check-circle');
+      expect(review.props.showIndicator).toBe(true);
+      act(() => review.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: '/month-review',
+        params: { month: reviewMonth },
+      });
     } finally {
-      mockFontScale = 1;
+      data.transactions = previousTransactions;
     }
   });
 
@@ -1511,7 +1553,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('marks and opens the most recent reviewable month from the Budget quick action', () => {
+  it('marks and opens the most recent reviewable month from the Budget header action', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as {
       transactions: Transaction[];
     };
@@ -1529,9 +1571,8 @@ describe('route render smoke audit', () => {
     router.push.mockClear();
     try {
       const renderer = renderScreen(React.createElement(BudgetScreen));
-      expect(renderer.root.findByProps({ testID: 'budget-month-review-dot' })).toBeDefined();
-      const action = renderer.root.findByProps({ testID: 'budget-month-review-action' });
-      expect(action.props.accessibilityLabel).toBe(`Month review, ${formatMonth(reviewMonth)} needs review`);
+      const action = renderer.root.findByProps({ accessibilityLabel: 'Month review, review pending' });
+      expect(action.props.showIndicator).toBe(true);
       act(() => action.props.onPress());
       expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: reviewMonth } });
     } finally {

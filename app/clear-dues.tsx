@@ -7,15 +7,15 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { AppText, Button, Card, EmptyState, WarningBanner } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
-import { useAppActions } from '../src/data/useAppData';
 import { useUIStore } from '../src/data/uiStore';
-import { amortizedBalanceAfter } from '../src/domain/liability';
+import { useAppActions } from '../src/data/useAppData';
 import { pendingDues, type DueTarget } from '../src/domain/dues';
+import { amortizedBalanceAfter } from '../src/domain/liability';
 import type { PlanHolding, RecurringLiability } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatMonth } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { typography } from '../src/theme/tokens';
 
 type Mode = 'settle' | 'record';
@@ -131,8 +131,8 @@ export default function ClearDuesScreen() {
           </AppText>
         ))}
       </Card>
+      <AppText weight="semibold">How should these past installments be handled?</AppText>
       <SegmentedControl
-        label="How should these past installments be handled?"
         value={mode}
         options={[
           { label: 'Already paid', value: 'settle' },

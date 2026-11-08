@@ -3,8 +3,8 @@ import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 
-import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
+import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { PercentField } from '../src/components/form/PercentField';
@@ -16,11 +16,11 @@ import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, suggestTemplate } from '../src/domain/budget';
-import type { BudgetTemplateLine } from '../src/domain/types';
-import { todayISO } from '../src/lib/clock';
 import { incomeBaselineFor } from '../src/domain/summary';
 import { transactionCategoryLabel } from '../src/domain/transactions';
+import type { BudgetTemplateLine } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
+import { todayISO } from '../src/lib/clock';
 
 type TemplateForm = {
   name: string;
@@ -161,8 +161,8 @@ export default function BudgetTemplateFormScreen() {
           <AppText style={{ opacity: 0.8 }}>
             {incomeBaseline === null ? 'Enter your monthly income to start.' : `Suggested from your income history: ${formatAmount(incomeBaseline, 'exact', 1)}`}
           </AppText>
+          <AppText weight="semibold">Starting point</AppText>
           <SegmentedControl
-            label="Starting point"
             value={suggestMode}
             options={[
               { label: 'Five-group plan (recommended)', value: 'five-group' },

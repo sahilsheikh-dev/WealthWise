@@ -147,7 +147,6 @@ export default function LiabilityPaymentsScreen() {
       />
       <View style={styles.segment}>
         <SegmentedControl
-          label="View"
           value={tab}
           options={[{ label: 'Schedule', value: 'Schedule' }, { label: 'Payments', value: 'Payments' }]}
           onChange={setTab}
