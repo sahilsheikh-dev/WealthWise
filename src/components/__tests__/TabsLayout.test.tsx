@@ -99,10 +99,10 @@ describe('bottom tab layout', () => {
     const tab = renderer.root.findByProps({ testID: 'bottom-tab-transactions' });
     const label = renderer.root.findByProps({ testID: 'bottom-tab-label-transactions' });
     expect(label.props.children).toBe('Transactions');
-    expect(label.props.numberOfLines).toBeUndefined();
+    expect(label.props.numberOfLines).toBe(1);
     expect(label.props.allowFontScaling).toBe(true);
-    expect(label.props.adjustsFontSizeToFit).toBeUndefined();
-    expect(label.props.minimumFontScale).toBeUndefined();
+    expect(label.props.adjustsFontSizeToFit).toBe(true);
+    expect(label.props.minimumFontScale).toBe(0.75);
     expect(label.props.style).toEqual(expect.arrayContaining([
       expect.objectContaining({ alignSelf: 'stretch', flexShrink: 1, textAlign: 'center' }),
     ]));

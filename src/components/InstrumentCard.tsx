@@ -22,12 +22,12 @@ export function InstrumentCard({
   goalCount?: number;
 }) {
   const { colors } = useTheme();
-  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'list' | 'check-circle' | 'refresh-cw' | 'pause' | 'play'> = {
+  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
     deposit: 'plus',
     withdraw: 'arrow-down-left',
+    schedule: 'calendar',
     entries: 'list',
-    update: 'refresh-cw',
-    stop: 'pause',
+    confirm: 'check-circle',
   };
   return (
     <Pressable
@@ -54,9 +54,7 @@ export function InstrumentCard({
           Goals: {goalCount}
         </AppText>
       ) : null}
-      {model.progressPct !== undefined ? (
-        <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
-      ) : null}
+      <ProgressBar percent={model.progressPct} tone={model.statuses.some((status) => status.tone === 'err') ? 'err' : 'primary'} />
       {model.progressCaption ? (
         <AppText style={[typography.meta, styles.progressCaption, { color: colors.text3 }]}>{model.progressCaption}</AppText>
       ) : null}
@@ -81,11 +79,6 @@ export function InstrumentCard({
         style={[typography.meta, styles.description, { color: colors.text2 }]}>
         {renderAmountSegments(model.description)}
       </AppText>
-      {model.helperLine ? (
-        <AppText style={[typography.meta, styles.helperLine, { color: colors.text3 }]}>
-          {model.helperLine}
-        </AppText>
-      ) : null}
       {model.statuses.length ? (
         <View style={styles.statuses}>
           {model.statuses.map((status) => <StatusBadge key={status.label} label={status.label} tone={status.tone} />)}
@@ -104,7 +97,7 @@ export function InstrumentCard({
               }}
               disabled={action.disabled}
               accessibilityHint={action.accessibilityHint}
-              icon={action.id === 'stop' && action.label === 'Resume investment' ? 'play' : actionIcons[action.id]}
+              icon={actionIcons[action.id]}
               variant={action.id === 'deposit' ? 'primary' : 'soft'}
               style={styles.action}
             />
@@ -135,7 +128,6 @@ const styles = StyleSheet.create({
   progressCaption: { marginTop: 5 },
   nextLine: { marginTop: 5 },
   description: { marginTop: 7, lineHeight: 18 },
-  helperLine: { marginTop: 5 },
   statuses: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7 },
   actions: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   action: { flexGrow: 1 },

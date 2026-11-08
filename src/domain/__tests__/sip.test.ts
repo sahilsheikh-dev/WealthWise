@@ -1,6 +1,7 @@
 import {
   behindBy,
   currentInstallmentAmount,
+  estimatedValue,
   installmentsDue,
   installmentsTracked,
   loggedCount,
@@ -63,7 +64,7 @@ describe('SIP domain calculations', () => {
     expect(result.totalContributions).toBe(bruteContributions);
   });
 
-  it('calculates scheduled deposits with calendar dates and a bounded search', () => {
+  it('calculates due installments with calendar dates and a bounded search', () => {
     const monthEndPlan = makePlan({ startDate: '2026-01-31', tenureYears: 2 });
     expect(scheduledDate(monthEndPlan, 1)).toBe('2026-02-28');
     expect(installmentsDue(monthEndPlan, '2026-03-01')).toBe(2);
@@ -77,7 +78,7 @@ describe('SIP domain calculations', () => {
     expect(scheduledDate(makePlan({ frequency: 'daily' }), 2)).toBe('2026-01-03');
   });
 
-  it('clamps behind counts and values plans from actual value or posted entries', () => {
+  it('clamps behind counts and values plans from actual value or estimate', () => {
     const plan = makePlan({
       opening: 500,
       logs: [
@@ -87,8 +88,8 @@ describe('SIP domain calculations', () => {
     });
 
     expect(behindBy(plan, '2026-01-01')).toBe(0);
-    expect(planValue(plan, '2026-01-01')).toBe(1_500);
-    expect(planValue(plan, '2026-03-01')).toBe(3_500);
+    expect(estimatedValue(plan, '2026-01-01')).toBe(3_500);
+    expect(planValue(plan, '2026-03-01')).toBeCloseTo(500 + 1_000 * 1.12 ** (59 / 365) + 2_000 * 1.12 ** (28 / 365), 6);
     expect(planValue({ ...plan, actualValue: 9_999, actualValueDate: '2026-03-01' }, '2026-03-01')).toBe(9_999);
     expect(behindBy(makePlan(), '2026-06-01')).toBeGreaterThanOrEqual(0);
     expect(planProgressPct(makePlan())).toBe(0);
@@ -109,10 +110,10 @@ describe('SIP domain calculations', () => {
     expect(loggedCount(plan)).toBe(2);
     expect(loggedTrackedCount(plan)).toBe(1);
     expect(planInvested(plan)).toBe(0);
-    expect(planValue(plan, '2026-02-20')).toBe(0);
+    expect(estimatedValue(plan, '2026-02-20')).toBe(0);
   });
 
-  it('tracks only scheduled deposits on or after trackFrom', () => {
+  it('tracks only scheduled installments on or after trackFrom', () => {
     const plan = makePlan({ startDate: '2026-01-01', trackFrom: '2026-03-01' });
     expect(installmentsTracked(plan, '2026-04-01')).toBe(2);
     expect(installmentsTracked({ ...plan, trackFrom: '2025-12-01' }, '2026-04-01')).toBe(4);
@@ -122,7 +123,7 @@ describe('SIP domain calculations', () => {
     expect(behindBy(plan, '2026-01-01')).toBe(0);
   });
 
-  it('keeps dated actual snapshots fixed and includes only later logs', () => {
+  it('grows dated actual snapshots and includes only later logs', () => {
     const actualPlan = makePlan({
       actualValue: 10_000,
       actualValueDate: '2026-01-01',
@@ -133,8 +134,8 @@ describe('SIP domain calculations', () => {
       ],
     });
 
-    expect(planValue(actualPlan, '2026-01-01')).toBe(10_000);
-    expect(planValue(actualPlan, '2027-01-01')).toBe(11_000);
+    expect(planValue(actualPlan, '2026-01-01')).toBe(11_000);
+    expect(planValue(actualPlan, '2027-01-01')).toBeCloseTo(10_000 * 1.12 + 1_000 * 1.12 ** (183 / 365), 8);
     expect(planValue({ ...actualPlan, actualValueDate: '2026-01-01', logs: [actualPlan.logs[0]!] }, '2026-01-01')).toBe(10_000);
     const seedPlan = makePlan({
       startDate: '2024-01-01',
@@ -149,7 +150,7 @@ describe('SIP domain calculations', () => {
       ],
     });
     expect(behindBy(seedPlan, '2026-10-10')).toBe(1);
-    expect(planValue(seedPlan, '2027-09-30')).toBe(118_000);
+    expect(planValue(seedPlan, '2027-09-30')).toBeCloseTo(118_000 * 1.12, 6);
   });
 
   it('subtracts withdrawals dated after an actual-value snapshot and ignores earlier withdrawals', () => {
@@ -166,7 +167,7 @@ describe('SIP domain calculations', () => {
     expect(planValue(plan, '2026-10-10')).toBe(8_500);
   });
 
-  it('steps the recurring deposit amount on calendar anniversaries', () => {
+  it('steps the installment amount on calendar anniversaries', () => {
     const plan = makePlan({ amount: 1_000, stepUpPct: 10, tenureYears: 3, startDate: '2024-06-15' });
     expect(currentInstallmentAmount(plan, '2024-06-14')).toBe(1_000);
     expect(currentInstallmentAmount(plan, '2025-06-14')).toBe(1_000);

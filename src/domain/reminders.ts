@@ -1,6 +1,5 @@
 import { addDays, addMonths, monthKey, shiftMonth } from './dates';
-import { holdingCapabilities } from './holdingCapabilities';
-import { createPendingItemsReader } from './pending';
+import { pendingItems } from './pending';
 import type { AppData, ISODate } from './types';
 import { formatAmount } from '../lib/amountDisplay';
 
@@ -10,10 +9,9 @@ export type ReminderPreferences = {
   dayBefore: boolean;
   sameDay: boolean;
   showAmounts: boolean;
-  updateValues?: boolean;
 };
 
-export type ReminderKind = 'day-before' | 'same-day' | 'update-values';
+export type ReminderKind = 'day-before' | 'same-day';
 
 export type ReminderTarget = {
   dueItemId: string;
@@ -42,9 +40,7 @@ function searchHorizon(data: AppData, today: ISODate): string {
     if (month > latestMonth) latestMonth = month;
   };
   for (const holding of data.holdings) {
-    if (holding.kind === 'plan' && holdingCapabilities(holding.type).recurring) {
-      extendTo(addMonths(holding.startDate, holding.tenureYears * 12));
-    }
+    if (holding.kind === 'plan') extendTo(addMonths(holding.startDate, holding.tenureYears * 12));
   }
   for (const liability of data.liabilities) {
     if (liability.kind === 'recurring') {
@@ -54,7 +50,7 @@ function searchHorizon(data: AppData, today: ISODate): string {
     }
   }
   for (const policy of data.policies) {
-    extendTo(policy.trackFrom);
+    extendTo(addMonths(policy.startDate, policy.premiumYears * 12));
     if (policy.endDate) extendTo(policy.endDate);
   }
   for (const budget of data.monthBudgets ?? []) {
@@ -87,31 +83,13 @@ export function planReminders(
   }
   const today = localDate(now);
   localFireTime(today, settings.localTime);
-  if (!settings.enabled || limit === 0
-    || (!settings.dayBefore && !settings.sameDay && !settings.updateValues)) return [];
+  if (!settings.enabled || limit === 0 || (!settings.dayBefore && !settings.sameDay)) return [];
 
   const reminders: PlannedReminder[] = [];
   const firstMonth = monthKey(today);
   const lastMonth = searchHorizon(data, today);
-  if (settings.updateValues) {
-    for (let month = firstMonth; month <= lastMonth; month = shiftMonth(month, 1)) {
-      const dueDate = `${month}-01`;
-      const scheduled = localFireTime(dueDate, settings.localTime);
-      if (scheduled.timestamp <= now.getTime()) continue;
-      reminders.push({
-        id: `update-values:${month}`,
-        dueItemId: 'update-values',
-        kind: 'update-values',
-        fireAt: scheduled.value,
-        title: settings.hidePreviews ? 'Wealth Wise' : 'Update holding values',
-        body: settings.hidePreviews ? 'Review your finances' : 'Review your holding values this month.',
-        target: { dueItemId: 'update-values', dueDate },
-      });
-    }
-  }
-  const getPendingItems = createPendingItemsReader(data, today);
   for (let month = firstMonth; month <= lastMonth; month = shiftMonth(month, 1)) {
-    for (const item of getPendingItems(month)) {
+    for (const item of pendingItems(data, month, today)) {
       if (!item.dueDate) continue;
       const candidates: { kind: ReminderKind; date: ISODate }[] = [];
       if (settings.dayBefore) candidates.push({ kind: 'day-before', date: addDays(item.dueDate, -1) });

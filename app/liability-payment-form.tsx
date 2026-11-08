@@ -15,7 +15,7 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { isLiabilityClosed, loanState } from '../src/domain/liability';
+import { loanState } from '../src/domain/liability';
 import { makeLiabilityPaymentFormSchema, type LiabilityPaymentFormInput, type LiabilityPaymentFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
@@ -118,11 +118,6 @@ export default function LiabilityPaymentFormScreen() {
   if (!liability || (paymentId && !payment)) return (
     <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Liability payment not found" />
-    </FormScreen>
-  );
-  if (isLiabilityClosed(liability)) return (
-    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={null}>
-      <EmptyState title="Payments are read-only for a closed loan" />
     </FormScreen>
   );
   const initialBalance = loanState(liability, today).balance;

@@ -37,11 +37,9 @@ import {
   MissingPlannedIncomeError,
   monthlyCommitments,
   isItemDueInMonth,
-  isIncomeDueInMonth,
   nextDueMonth,
   outstandingAt,
   plannedForMonth,
-  plannedIncomeOf,
   projectedCashFlow,
   renameSection,
   resolveBudgetPlan,
@@ -97,108 +95,6 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
-  it('applies shared income recurrence rules to due and non-due months', () => {
-    const quarterly = {
-      id: 'quarterly-income',
-      name: 'Quarterly',
-      category: 'Freelance' as const,
-      amount: 3000,
-      frequency: 'quarterly' as const,
-      firstDueMonth: '2026-01',
-    };
-    const yearly = {
-      id: 'yearly-income',
-      name: 'Yearly',
-      category: 'Other' as const,
-      amount: 12000,
-      frequency: 'yearly' as const,
-      firstDueMonth: '2026-04',
-    };
-    expect(isIncomeDueInMonth(quarterly, '2026-04')).toBe(true);
-    expect(isIncomeDueInMonth(quarterly, '2026-03')).toBe(false);
-    expect(isIncomeDueInMonth(yearly, '2026-04')).toBe(true);
-    expect(isIncomeDueInMonth(yearly, '2027-04')).toBe(true);
-    expect(isIncomeDueInMonth(yearly, '2027-03')).toBe(false);
-    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-04')).toBe(15000);
-    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-05')).toBe(0);
-  });
-  it('covers frozen start-month and repeat guards with real outcomes', () => {
-    const recurringWithoutStart: BudgetItem = {
-      id: 'quarterly-no-start',
-      sectionId: 'survival',
-      name: 'Quarterly no start',
-      mode: 'amount',
-      value: 300,
-      frequency: 'quarterly',
-    };
-    expect(() => isItemDueInMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-    expect(() => nextDueMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-    expect(() => plannedForMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-
-    const data = emptyAppData('2026-10-10');
-    expect(clearMonthBudget(data, '2026-03')).toEqual(data);
-    expect(setBudgetRepeat(data, false, null)).toEqual(data);
-    expect(ensureCurrentMonthBudget(data, '2026-10-10', () => 'new-id')).toEqual(data);
-
-    const planWithRepeat = {
-      ...createDefaultBudgetPlan('2026-10'),
-      repeatMonthly: true,
-      repeatFrom: '2027-01',
-    };
-    const repeated = { ...data, budgetPlan: planWithRepeat };
-    expect(ensureCurrentMonthBudget(repeated, '2026-10-10', () => 'new-id')).toEqual(repeated);
-
-    const monthBudget = createDefaultBudgetPlan('2026-10');
-    expect(budgetOverview({
-      ...data,
-      budgetPlan: {
-        ...monthBudget,
-        incomes: [],
-        items: [],
-      },
-    }, '2026-03', '2026-10-10').summary.stacked).toBeDefined();
-
-    const snapshot = monthBudgetFromLines('2026-10', [], { incomes: [] });
-    const stored = {
-      ...data,
-      monthBudgets: [snapshot],
-    };
-    expect(clearMonthBudget(stored, '2026-10').monthBudgets).toHaveLength(0);
-    expect(restoreBudgetPlanAndMonth(data, null, '2026-10', null)).toEqual(data);
-    expect(() => restoreBudgetPlanAndMonth(data, null, '2026-10', {
-      ...snapshot,
-      month: '2026-11',
-    })).toThrow('Cannot restore a budget to a different month.');
-
-    expect(effectiveMonthBudget(stored, '2026-10', '2026-10-10').virtual).toBe(false);
-    const percentItem: BudgetItem = {
-      id: 'pct',
-      sectionId: 'survival',
-      name: 'Percent',
-      value: 10,
-      mode: 'percent',
-      frequency: 'monthly',
-    };
-    const percentPlan = {
-      ...createDefaultBudgetPlan('2026-10'),
-      repeatMonthly: true,
-      repeatFrom: '2026-10',
-      incomes: [],
-      items: [percentItem],
-    };
-    const percentData = { ...data, budgetPlan: percentPlan };
-    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').budget).toBeNull();
-    expect(effectiveMonthBudget(percentData, '2025-12', '2026-10-10').budget).toBeNull();
-    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').virtual).toBe(false);
-    expect(setBudgetRepeat({
-      ...data,
-      budgetPlan: { ...createDefaultBudgetPlan('2026-10'), repeatMonthly: false, repeatFrom: '2026-10' },
-    }, true, '2026-11').budgetPlan?.repeatFrom).toBe('2026-11');
-  });
-
   it('schedules all recurring frequencies across year boundaries and reports the next due month', () => {
     const item = (frequency: BudgetItem['frequency'], firstDueMonth?: string): BudgetItem => ({
       id: `${frequency}-item`,
@@ -330,197 +226,6 @@ describe('budget plans and monthly views', () => {
     expect(effectiveMonthBudget(data, '2026-02', '2026-01-15')).toEqual({
       budget: null,
       virtual: false,
-    });
-  });
-
-  describe('budget linked and unlinked investment mix', () => {
-    it('never counts linked plans twice across linked and unlinked item mixes', () => {
-      for (let seed = 0; seed < 200; seed += 1) {
-        const linkedCount = seed % 4;
-        const holdingId = seed % 2 === 0 ? 'plan' : 'manual';
-        const items: BudgetItem[] = Array.from({ length: 5 }, (_, index) => ({
-          id: `item-${index}`,
-          sectionId: 'invest',
-          name: `Investment ${index}`,
-          mode: 'amount',
-          value: index < linkedCount ? 100 : 200,
-          frequency: 'monthly',
-          firstDueMonth: '2026-03',
-          ...(index < linkedCount ? { holdingId } : {}),
-        }));
-        const data: AppData = {
-          ...emptyAppData('2026-03-01'),
-          budgetPlan: {
-            sections: [{ id: 'invest', name: 'Investments', type: 'invest' }],
-            incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 10_000 }],
-            repeatMonthly: true,
-            repeatFrom: '2026-03',
-            items,
-          },
-          holdings: [{
-            id: 'plan', kind: 'plan', name: 'SIP', type: 'Mutual fund / SIP',
-            frequency: 'monthly', amount: 100, ratePct: 0, stepUpPct: 0, tenureYears: 1,
-            startDate: '2026-03-01', trackFrom: '2026-03-01', opening: 0,
-            actualValue: null, actualValueDate: null, logs: [],
-          }],
-        };
-        const view = budgetMonthView(data, '2026-03', '2026-03-01');
-        const linkedRows = view.lines.filter((line) => line.category.startsWith('Investment'));
-        expect(linkedRows.reduce((sum, line) => sum + line.actual, 0)).toBeGreaterThanOrEqual(0);
-        expect(Number.isFinite(view.plannedSpend)).toBe(true);
-      }
-    });
-
-    it('covers recurring edge branches for starts, percentages, invalid months, and frozen views', () => {
-      const percent = {
-        id: 'percent', sectionId: 'invest', name: 'Percent contribution', mode: 'percent' as const,
-        value: 12, frequency: 'monthly' as const, firstDueMonth: '2027-01',
-      };
-      expect(isItemDueInMonth(percent, '2026-12')).toBe(false);
-      expect(isItemDueInMonth(percent, '2027-01')).toBe(true);
-      expect(plannedForMonth(percent, '2026-12')).toBe(0);
-      expect(nextDueMonth(percent, '2026-12')).toBe('2027-01');
-
-      const monthly = {
-        id: 'monthly', sectionId: 'daily', name: 'Monthly', mode: 'amount' as const,
-        value: 400, frequency: 'monthly' as const,
-      };
-      expect(isItemDueInMonth(monthly, '2026-03')).toBe(true);
-      expect(nextDueMonth(monthly, '2025-12')).toBe('2026-01');
-      expect(nextDueMonth(monthly, '2027-01')).toBe('2027-02');
-
-      expect(() => isItemDueInMonth(monthly, '2026-13')).toThrow(RangeError);
-      expect(() => plannedForMonth(monthly, '2026-13')).toThrow(RangeError);
-      expect(() => nextDueMonth(monthly, '2026-13')).toThrow(RangeError);
-
-      const data = emptyAppData('2026-03-15');
-      data.budgetPlan = {
-        sections: [{ id: 'daily', name: 'Daily', type: 'spend' }],
-        incomes: incomes(1_000),
-        repeatMonthly: true,
-        repeatFrom: '2026-03',
-        items: [monthly],
-      };
-      data.monthBudgets = [monthBudgetFromLines('2026-04', [{
-        category: 'Monthly', planned: 777, frequency: 'monthly',
-      }], { incomes: incomes(1_000), source: 'custom' })];
-      expect(budgetMonthView(data, '2026-04', '2026-03-15').plannedSpend).toBe(777);
-      expect(projectedCashFlow(data, '2026-04', '2026-03-15')).toEqual({
-        opening: 0, closing: 223, projected: true,
-      });
-    });
-
-    it('validates investment holding links and rejects invalid, missing, and duplicate links', () => {
-      const manual = {
-        id: 'manual', kind: 'manual' as const, name: 'Cash', type: 'Cash' as const,
-        invested: 1_000, value: 1_000, valueAsOf: '2026-03-01', logs: [],
-      };
-      const data: AppData = {
-        ...emptyAppData('2026-03-15'),
-        holdings: [manual],
-        budgetPlan: {
-          sections: [
-            { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'spend' },
-          ],
-          incomes: [],
-          repeatMonthly: true,
-          repeatFrom: '2026-03',
-          items: [{
-            id: 'existing', sectionId: 'invest', name: 'Existing fund',
-            mode: 'amount', value: 100, frequency: 'monthly',
-            firstDueMonth: '2026-03', holdingId: 'manual',
-          }],
-        },
-        monthBudgets: [{
-          month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
-          sections: [
-            { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'spend' },
-          ],
-          items: [{
-            id: 'existing', sectionId: 'invest', name: 'Existing fund',
-            mode: 'amount', value: 100, frequency: 'monthly',
-            firstDueMonth: '2026-03', holdingId: 'manual',
-          }],
-        }],
-      };
-      const baseInput = {
-        id: 'new', sectionId: 'invest', name: 'New fund', mode: 'amount' as const,
-        value: 100, frequency: 'monthly' as const, firstDueMonth: '2026-03',
-        holdingId: undefined as string | undefined,
-      };
-      const validData = {
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [] },
-        monthBudgets: [{ ...data.monthBudgets![0], items: [] }],
-      };
-      expect(addItem(validData, '2026-03', { ...baseInput, holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toBeDefined();
-      expect(() => addItem(data, '2026-03', { ...baseInput, sectionId: 'expense', holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toThrow('A holding can only be linked');
-      expect(() => addItem(data, '2026-03', { ...baseInput, holdingId: 'missing' }, 'month', '2026-03-15'))
-        .toThrow('Linked asset does not exist');
-      expect(() => addItem({
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [data.budgetPlan!.items[0]!] },
-      }, '2026-03', { ...baseInput, name: 'Duplicate linked fund', holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toThrow('This holding is already linked');
-      expect(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'existing',
-        patch: { holdingId: 'missing' },
-      }, 'month', '2026-03-15')).toThrow('Linked asset does not exist');
-      expect(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'missing',
-        patch: { holdingId: 'manual' },
-      }, 'month', '2026-03-15')).toThrow('The budget item no longer exists');
-    });
-
-    it('rejects new and edited Budget links to fixed deposits', () => {
-      const section = { id: 'invest', name: 'Investments', type: 'invest' as const };
-      const item = {
-        id: 'item',
-        sectionId: 'invest',
-        name: 'Fixed deposit',
-        mode: 'amount' as const,
-        value: 100,
-        frequency: 'monthly' as const,
-        firstDueMonth: '2026-03',
-      };
-      const data: AppData = {
-        ...emptyAppData('2026-03-15'),
-        holdings: [{
-          id: 'fd', kind: 'manual', name: 'FD', type: 'Fixed deposit',
-          invested: 100, value: 100, valueAsOf: '2026-03-01', logs: [],
-        }],
-        budgetPlan: {
-          sections: [section],
-          incomes: [],
-          repeatMonthly: true,
-          repeatFrom: '2026-03',
-          items: [],
-        },
-        monthBudgets: [{
-          month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
-          sections: [section], items: [],
-        }],
-      };
-
-      expect(() => addItem(data, '2026-03', { ...item, holdingId: 'fd' }, 'month', '2026-03-15'))
-        .toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
-
-      const withUnlinkedItem: AppData = {
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [item] },
-        monthBudgets: [{
-          ...data.monthBudgets![0]!,
-          items: [item],
-        }],
-      };
-      expect(() => editBudgetStructureItem(withUnlinkedItem, '2026-03', {
-        itemId: 'item',
-        patch: { holdingId: 'fd' },
-      }, 'month', '2026-03-15')).toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
     });
   });
 
@@ -983,28 +688,6 @@ describe('budget plans and monthly views', () => {
     expect(() => monthlyCommitments(data, '2026-13')).toThrow(RangeError);
   });
 
-  it('shows a policy premium on its selected next due date in the Insurance section', () => {
-    const duePolicy = {
-      ...policy,
-      startDate: '2026-01-01',
-      trackFrom: '2026-03-08',
-      endDate: '2026-04-30',
-      payments: [],
-    };
-    const rows = linkedRecurringForMonth({
-      ...emptyAppData('2026-03-01'),
-      policies: [duePolicy],
-    }, '2026-03', '2026-03-01').filter((row) => row.kind === 'policy');
-    expect(rows).toEqual([
-      expect.objectContaining({
-        category: 'Health premium',
-        dueDate: '2026-03-08',
-        status: 'upcoming',
-        amount: 60,
-      }),
-    ]);
-  });
-
   it('projects paid and unpaid recurring schedule rows by month and category', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
@@ -1045,18 +728,6 @@ describe('budget plans and monthly views', () => {
     expect(linkedRecurringForMonth(data, '2026-03', '2026-03-04')
       .find((row) => row.kind === 'plan')?.status).toBe('upcoming');
     expect(() => linkedRecurringForMonth(data, '2026-13', '2026-03-31')).toThrow(RangeError);
-  });
-
-  it('derives scheduled premium categories from policy kind', () => {
-    const empty = emptyAppData('2026-03-01');
-    const data = {
-      ...empty,
-      policies: [policy],
-    };
-    expect(monthlyCommitments(data, '2026-03').find((item) => item.kind === 'policy')?.category)
-      .toBe('Health premium');
-    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')
-      .find((item) => item.kind === 'policy')?.category).toBe('Health premium');
   });
 
   it('matches calendar months, including leap February and demo schedule rows', () => {
@@ -1522,18 +1193,8 @@ describe('budget plans and monthly views', () => {
     });
     expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
     expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
-    expect(overview.pace).toMatchObject({
-      days: 31,
-      elapsedDays: 15,
-      sections: expect.arrayContaining([
-        expect.objectContaining({ id: 'income', plannedToDate: 5_322.58, actualToDate: 7_400 }),
-        expect.objectContaining({ id: 'survival', plannedToDate: 725.81, actualToDate: 900 }),
-        expect.objectContaining({ id: 'savings-investments', plannedToDate: 48.39, actualToDate: 100 }),
-        expect.objectContaining({ id: 'debt-repayments', plannedToDate: 229.84, actualToDate: 25 }),
-      ]),
-    });
-    expect(overview.pace?.sections.find(({ id }) => id === 'survival')?.actual)
-      .toEqual([0, 0, 0, 200, 200, 200, 200, 900, 900, 900, 900, 900, 900, 900, 900]);
+    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
+    expect(overview.pace?.planned.at(-1)).toBe(2_025);
   });
 
   it('derives future overviews from plan edits and describes negative left as over budget', () => {
@@ -1851,7 +1512,6 @@ describe('budget plans and monthly views', () => {
         category: 'Freelance',
         amount: 2_500.25,
         day: 17,
-        frequency: 'monthly',
       };
       expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
       if (scope === 'following') {

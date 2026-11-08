@@ -1,7 +1,6 @@
 import { allocateAmounts, SUGGESTED_EF_ALLOCATION, allocationWarnings } from '../efAllocation';
 import {
   InvalidAllocationError,
-  repairEfLinkedHoldings,
   saveEfPlan,
   setEfBucketLinks,
 } from '../efAllocationActions';
@@ -246,36 +245,6 @@ describe('custom emergency-fund options', () => {
       allocation,
       links: { bank: ['holding-a'], existing: ['holding-a'] },
     }, () => 'unused')).toThrow('only be linked once');
-  });
-
-  it('repairs dangling EF bucket and goal links without changing live links or net worth inputs', () => {
-    const live = {
-      id: 'holding-live', kind: 'manual' as const, name: 'FD cash', type: 'Fixed deposit' as const,
-      invested: 300_000, value: 300_000, logs: [],
-    };
-    const data = {
-      ...empty(),
-      holdings: [live],
-      efBucketLinks: { 'fd-rd': ['holding-live', 'holding-deleted'], cash: ['holding-deleted'] },
-      goals: empty().goals.map((goal) =>
-        goal.auto === 'ef'
-          ? {
-            ...goal,
-            links: [
-              { instrumentId: 'holding-live' },
-              { instrumentId: 'holding-deleted' },
-            ],
-          }
-          : goal),
-    };
-    const resolution = repairEfLinkedHoldings(data);
-    expect(resolution.repaired).toBe(true);
-    expect(resolution.data.efBucketLinks).toEqual({ 'fd-rd': ['holding-live'], cash: [] });
-    const efGoal = resolution.data.goals.find((goal) => goal.auto === 'ef');
-    expect(efGoal?.links).toEqual([{ instrumentId: 'holding-live' }]);
-    const liveHolding = resolution.data.holdings.find((holding) => holding.id === 'holding-live');
-    expect(liveHolding?.kind === 'manual' ? liveHolding.value : null).toBe(300_000);
-    expect(repairEfLinkedHoldings(resolution.data).repaired).toBe(false);
   });
 
   it('cascades holding deletion through emergency-fund links', () => {

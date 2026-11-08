@@ -10,12 +10,13 @@ import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { FormSection } from '../src/components/form/FormSection';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { isValidISO } from '../src/domain/dates';
-import type { Policy, PolicyFrequency, PolicyKind } from '../src/domain/types';
+import type { Policy, PolicyFrequency, PolicyKind, PolicyStatus } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
@@ -35,21 +36,21 @@ const policyFormSchema = z.object({
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid premium.')
     .transform(Number).pipe(z.number().positive().max(10_000_000)),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
-  customIntervalMonths: z.string(),
-  nextDueDate: z.string(),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  startDate: z.string(),
+  hasEndDate: z.boolean(),
+  endDate: z.string(),
   policyNumber: optionalText(30),
   sumAssured: optionalAmountSchema,
+  nominee: optionalText(40),
   note: optionalText(120),
+  status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
 }).superRefine((values, context) => {
-  if (!isValidISO(values.nextDueDate)) {
-    context.addIssue({ code: 'custom', path: ['nextDueDate'], message: 'Choose a valid next due date.' });
+  if (!isValidISO(values.startDate)) {
+    context.addIssue({ code: 'custom', path: ['startDate'], message: 'Choose a valid start date.' });
   }
-  if (values.frequency === 'custom') {
-    const interval = Number(values.customIntervalMonths);
-    if (!Number.isInteger(interval) || interval < 1 || interval > 120) {
-      context.addIssue({ code: 'custom', path: ['customIntervalMonths'], message: 'Enter an interval from 1 to 120 months.' });
-    }
+  if (values.hasEndDate && (!isValidISO(values.endDate) || values.endDate <= values.startDate)) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must be after the start date.' });
   }
 });
 
@@ -70,17 +71,20 @@ const frequencyOptions: readonly DropdownOption[] = [
   { value: 'quarterly', title: 'Quarterly' },
   { value: 'half-yearly', title: 'Half-yearly' },
   { value: 'yearly', title: 'Yearly' },
-  { value: 'custom', title: 'Custom' },
+];
+const statusOptions: readonly DropdownOption[] = [
+  { value: 'active', title: 'Active' },
+  { value: 'lapsed', title: 'Lapsed' },
+  { value: 'matured', title: 'Matured' },
+  { value: 'cancelled', title: 'Cancelled' },
 ];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function PolicyFormScreen() {
   const { colors } = useTheme();
-  const { id, kind: requestedKind, name: requestedName } = useLocalSearchParams<{ id?: string; kind?: string; name?: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const policyId = Array.isArray(id) ? id[0] : id;
-  const initialKind = Array.isArray(requestedKind) ? requestedKind[0] : requestedKind;
-  const initialName = Array.isArray(requestedName) ? requestedName[0] : requestedName;
   const policy = useAppStore((state) => state.data.policies.find((item) => item.id === policyId));
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -95,20 +99,23 @@ export default function PolicyFormScreen() {
     mode: 'onTouched',
     reValidateMode: 'onChange',
     defaultValues: {
-      name: policy?.name ?? initialName ?? '',
+      name: policy?.name ?? '',
       insurer: policy?.insurer ?? '',
-      kind: policy?.kind ?? (isPolicyKind(initialKind) ? initialKind : 'other'),
+      kind: policy?.kind ?? 'other',
       premium: policy ? String(policy.premium) : '',
       frequency: policy?.frequency ?? 'yearly',
-      customIntervalMonths: policy?.customIntervalMonths === undefined ? '1' : String(policy.customIntervalMonths),
-      nextDueDate: policy?.trackFrom ?? today,
+      startDate: policy?.startDate ?? today,
+      hasEndDate: policy?.endDate !== undefined,
+      endDate: policy?.endDate ?? today,
       policyNumber: policy?.policyNumber ?? '',
       sumAssured: policy?.sumAssured === undefined ? '' : String(policy.sumAssured),
+      nominee: policy?.nominee ?? '',
       note: policy?.note ?? '',
+      status: policy?.status ?? 'active',
     },
   });
+  const hasEndDate = useWatch({ control, name: 'hasEndDate' });
   const kind = useWatch({ control, name: 'kind' });
-  const frequency = useWatch({ control, name: 'frequency' });
 
   if (editing && !policy) {
     return (
@@ -122,7 +129,7 @@ export default function PolicyFormScreen() {
     if (!policy) return;
     const confirmed = await confirmAsync({
       title: `Delete ${policy.name}?`,
-      message: 'Upcoming premium dues will be removed. Recorded payments stay in Transactions.',
+      message: 'Recorded premium payments stay in Transactions.',
       confirmLabel: 'Delete',
       destructive: true,
     });
@@ -133,7 +140,7 @@ export default function PolicyFormScreen() {
   };
 
   const save = handleSubmit((values) => {
-    const patch = buildPolicyPatch(values);
+    const patch: Partial<Omit<Policy, 'id' | 'payments'>> = buildPolicyPatch(values);
     if (policy) actions.updatePolicy(policy.id, patch);
     else {
       actions.addPolicy({
@@ -143,10 +150,10 @@ export default function PolicyFormScreen() {
         kind: values.kind,
         premium: values.premium,
         frequency: values.frequency,
-        startDate: values.nextDueDate,
-        status: 'active',
+        startDate: values.startDate,
+        status: values.status,
         premiumYears: 80,
-        trackFrom: values.nextDueDate,
+        trackFrom: values.startDate,
         currentValue: null,
         valueAsOf: null,
       });
@@ -215,8 +222,8 @@ export default function PolicyFormScreen() {
           name="kind"
           render={({ field }) => (
             <Dropdown
-              label="Type"
-              accessibilityLabel="Policy type"
+              label="Kind"
+              accessibilityLabel="Policy kind"
               value={field.value}
               options={kindOptions}
               onChange={(value) => {
@@ -256,33 +263,17 @@ export default function PolicyFormScreen() {
             />
           )}
         />
-        {frequency === 'custom' ? (
-          <Controller
-            control={control}
-            name="customIntervalMonths"
-            render={({ field }) => (
-              <TextField
-                label="Custom interval (months)"
-                accessibilityLabel="Custom interval in months"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.customIntervalMonths?.message}
-              />
-            )}
-          />
-        ) : null}
         <Controller
           control={control}
-          name="nextDueDate"
+          name="startDate"
           render={({ field }) => (
             <DateField
-              label="Next due date"
-              accessibilityLabel="Next premium due date"
+              label="Start date"
+              accessibilityLabel="Policy start date"
               value={field.value}
               onChange={field.onChange}
-              maximumDate="2100-12-31"
-              error={errors.nextDueDate?.message}
+              maximumDate={today}
+              error={errors.startDate?.message}
             />
           )}
         />
@@ -302,6 +293,29 @@ export default function PolicyFormScreen() {
         />
         <Controller
           control={control}
+          name="hasEndDate"
+          render={({ field }) => (
+            <SwitchRow label="End date enabled" value={field.value} onValueChange={field.onChange} />
+          )}
+        />
+        {hasEndDate ? (
+          <Controller
+            control={control}
+            name="endDate"
+            render={({ field }) => (
+              <DateField
+                label="End date"
+                accessibilityLabel="Policy end date"
+                value={field.value}
+                onChange={field.onChange}
+                maximumDate="2100-12-31"
+                error={errors.endDate?.message}
+              />
+            )}
+          />
+        ) : null}
+        <Controller
+          control={control}
           name="policyNumber"
           render={({ field }) => (
             <TextField
@@ -312,6 +326,21 @@ export default function PolicyFormScreen() {
               onBlur={field.onBlur}
               error={errors.policyNumber?.message}
               maxLength={30}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="nominee"
+          render={({ field }) => (
+            <TextField
+              label="Nominee"
+              accessibilityLabel="Nominee"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.nominee?.message}
+              maxLength={40}
             />
           )}
         />
@@ -330,6 +359,24 @@ export default function PolicyFormScreen() {
             />
           )}
         />
+        {policy ? (
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <Dropdown
+                label="Status"
+                accessibilityLabel="Policy status"
+                value={field.value}
+                options={statusOptions}
+                onChange={(value) => {
+                  if (isPolicyStatus(value)) field.onChange(value);
+                }}
+                error={errors.status?.message}
+              />
+            )}
+          />
+        ) : null}
         {kind === 'life-savings' || kind === 'ulip' ? (
           <AppText style={[typography.meta, { color: colors.text3 }]}>
             Savings value remains managed with your investment records.
@@ -340,20 +387,20 @@ export default function PolicyFormScreen() {
   );
 }
 
-function buildPolicyPatch(values: PolicyFormOutput): Partial<Omit<Policy, 'id' | 'payments' | 'status'>> {
+function buildPolicyPatch(values: PolicyFormOutput): Partial<Omit<Policy, 'id' | 'payments'>> {
   return {
     name: values.name,
     insurer: values.insurer,
     kind: values.kind,
     premium: values.premium,
     frequency: values.frequency,
-    ...(values.frequency === 'custom'
-      ? { customIntervalMonths: Number(values.customIntervalMonths) }
-      : { customIntervalMonths: undefined }),
-    trackFrom: values.nextDueDate,
-    policyNumber: values.policyNumber,
-    sumAssured: values.sumAssured,
-    note: values.note,
+    startDate: values.startDate,
+    status: values.status,
+    ...(values.policyNumber === undefined ? {} : { policyNumber: values.policyNumber }),
+    ...(values.sumAssured === undefined ? {} : { sumAssured: values.sumAssured }),
+    ...(values.hasEndDate ? { endDate: values.endDate } : { endDate: undefined }),
+    ...(values.nominee === undefined ? {} : { nominee: values.nominee }),
+    ...(values.note === undefined ? {} : { note: values.note }),
     ...(values.kind === 'life-savings' || values.kind === 'ulip'
       ? {}
       : { currentValue: null, valueAsOf: null }),
@@ -366,8 +413,11 @@ function isPolicyKind(value: string): value is PolicyKind {
 }
 
 function isPolicyFrequency(value: string): value is PolicyFrequency {
-  return value === 'monthly' || value === 'quarterly' || value === 'half-yearly'
-    || value === 'yearly' || value === 'custom';
+  return value === 'monthly' || value === 'quarterly' || value === 'half-yearly' || value === 'yearly';
+}
+
+function isPolicyStatus(value: string): value is PolicyStatus {
+  return value === 'active' || value === 'lapsed' || value === 'matured' || value === 'cancelled';
 }
 
 const styles = StyleSheet.create({ footer: { gap: 8 } });

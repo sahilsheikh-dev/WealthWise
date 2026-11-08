@@ -19,7 +19,6 @@ import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
 import { NotificationResponseHandler, ReminderRuntime } from '../src/components/ReminderRuntime';
-import { FirstLaunchReminderPrompt } from '../src/components/FirstLaunchReminderPrompt';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
@@ -65,6 +64,7 @@ function AppContent() {
                 <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="cover-goal-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="policy-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entries" />
                 <Stack.Screen name="liability-payments" />
@@ -81,7 +81,6 @@ function AppContent() {
               </Stack>
               <NotificationResponseHandler />
               <ActionToastHost />
-              <FirstLaunchReminderPrompt />
               </>
             ) : <OnboardingScreen />}
           </LockGate>

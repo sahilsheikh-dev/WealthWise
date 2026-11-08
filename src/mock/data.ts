@@ -7,6 +7,7 @@ import type {
   Transaction,
 } from '../domain/types';
 import { defaultBudgetSections, defaultBudgetSectionIdFor } from '../domain/budget';
+import { defaultCoverGoals } from '../domain/coverGoals';
 
 const mockBudgetSections = defaultBudgetSections();
 const mockBudgetPlanItems = [
@@ -190,6 +191,7 @@ export const mockAppData: AppData = {
   holdings,
   liabilities,
   policies,
+  coverGoals: defaultCoverGoals(),
   budget: {
     plannedIncome: 50_000,
     lines: [
@@ -213,10 +215,10 @@ export const mockAppData: AppData = {
   },
   budgetPlan: {
     incomes: [
-      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1, frequency: 'monthly' },
-      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15, frequency: 'monthly' },
-      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000, frequency: 'monthly' },
-      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500, frequency: 'monthly' },
+      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1 },
+      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15 },
+      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000 },
+      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500 },
     ],
     sections: mockBudgetSections.map((section) => ({ ...section })),
     items: mockBudgetPlanItems.map((line, index) => ({
@@ -233,10 +235,10 @@ export const mockAppData: AppData = {
     month: '2026-10',
     source: 'plan',
     incomes: [
-      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1, frequency: 'monthly' },
-      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15, frequency: 'monthly' },
-      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000, frequency: 'monthly' },
-      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500, frequency: 'monthly' },
+      { id: 'mock-income-salary', name: 'Salary', category: 'Salary', amount: 47_000, day: 1 },
+      { id: 'mock-income-freelance', name: 'Freelance', category: 'Freelance', amount: 3_000, day: 15 },
+      { id: 'mock-income-rental', name: 'Rental', category: 'Rental', amount: 4_000 },
+      { id: 'mock-income-business', name: 'Business', category: 'Business', amount: 2_500 },
     ],
     sections: mockBudgetSections.map((section) => ({ ...section })),
     items: mockBudgetPlanItems.map((line, index) => ({

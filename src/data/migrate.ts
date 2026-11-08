@@ -1,10 +1,7 @@
-import {
-  policySchema,
-  SCHEMA_VERSION,
-} from '../domain/schemas';
+import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
 import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
-import { policySchedule } from '../domain/policySchedule';
+import { defaultCoverGoals } from '../domain/coverGoals';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -658,13 +655,7 @@ export function migrateV11ToV12(data: unknown): unknown {
   };
   return {
     ...data,
-    coverGoals: [
-      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-      { type: 'health', targetMode: 'amount' },
-      { type: 'motor', targetMode: 'active-only' },
-      { type: 'home', targetMode: 'active-only' },
-      { type: 'other', targetMode: 'active-only' },
-    ],
+    coverGoals: defaultCoverGoals(),
     ...(data.budgetPlan === null || data.budgetPlan === undefined
       ? {}
       : { budgetPlan: moveLegacyInsuranceItems(data.budgetPlan) }),
@@ -694,157 +685,6 @@ export function migrateV12ToV13(data: unknown): unknown {
       : { budgetPlan: migrateBudget(data.budgetPlan) }),
     ...(Array.isArray(data.monthBudgets)
       ? { monthBudgets: data.monthBudgets.map(migrateBudget) }
-      : {}),
-  };
-}
-
-export function migrateV13ToV14(persisted: unknown): unknown {
-  if (!isRecord(persisted)) return persisted;
-  const migrateBudget = (budget: unknown): unknown => budget;
-  return {
-    ...persisted,
-    ...(persisted.budgetPlan === null || persisted.budgetPlan === undefined
-      ? {}
-      : { budgetPlan: migrateBudget(persisted.budgetPlan) }),
-    ...(Array.isArray(persisted.monthBudgets)
-      ? { monthBudgets: persisted.monthBudgets.map(migrateBudget) }
-      : {}),
-  };
-}
-
-export function migrateV14ToV15(persisted: unknown): unknown {
-  if (!isRecord(persisted) || !Array.isArray(persisted.coverGoals)) return persisted;
-  const names: Record<string, string> = {
-    'term-life': 'Term life',
-    health: 'Health',
-    motor: 'Motor',
-    home: 'Home',
-    other: 'Other',
-  };
-  const coverGoals = persisted.coverGoals.map((goal) => {
-    if (!isRecord(goal) || typeof goal.type !== 'string' || typeof goal.targetMode !== 'string') return goal;
-    const target = goal.targetMode === 'income-multiple' && typeof goal.targetValue === 'number'
-      ? { mode: 'income-multiple', value: goal.targetValue }
-      : goal.targetMode === 'amount' && typeof goal.targetValue === 'number'
-        ? { mode: 'amount', value: goal.targetValue }
-        : goal.targetMode === 'amount' && goal.targetValue === undefined
-          ? { mode: 'none' }
-          : goal.targetMode === 'active-only' && goal.targetValue === undefined
-            ? { mode: 'active-only' }
-            : null;
-    if (target === null) return goal;
-    return {
-      id: `cover-${goal.type}`,
-      name: names[goal.type] ?? goal.type,
-      kind: goal.type,
-      target,
-    };
-  });
-  return { ...persisted, coverGoals };
-}
-
-export function migrateV15ToV16(persisted: unknown): unknown {
-  if (!isRecord(persisted) || !Array.isArray(persisted.holdings)) return persisted;
-  const budgets = [
-    persisted.budgetPlan,
-    ...(Array.isArray(persisted.monthBudgets) ? persisted.monthBudgets : []),
-  ];
-  const hasBudgetSchedule = (holdingId: unknown) => budgets.some((budget) =>
-    isRecord(budget) &&
-    Array.isArray(budget.items) &&
-    budget.items.some((item) => isRecord(item) && item.holdingId === holdingId),
-  );
-  let changed = false;
-  const holdings = persisted.holdings.map((holding) => {
-    if (!isRecord(holding)) return holding;
-    const combinedType = holding.type === 'Fixed deposit / RD' || holding.type === 'FD / RD';
-    const hasSchedule = holding.kind === 'plan' || hasBudgetSchedule(holding.id);
-    const scheduledFixedDeposit = holding.type === 'Fixed deposit' && hasSchedule;
-    if (!combinedType && !scheduledFixedDeposit) return holding;
-    const hasEntries = Array.isArray(holding.logs) && holding.logs.length > 0;
-    changed = true;
-    return {
-      ...holding,
-      type: combinedType && !hasEntries && !hasSchedule
-        ? 'Fixed deposit'
-        : 'Recurring deposit',
-    };
-  });
-  return changed ? { ...persisted, holdings } : persisted;
-}
-
-export function migrateV16ToV17(persisted: unknown): unknown {
-  if (!isRecord(persisted) || !Array.isArray(persisted.policies)) {
-    throw new PersistedVersionError(16, 'unknown-version');
-  }
-  const policies = persisted.policies.map((policy) => {
-    if (!isRecord(policy)) throw new PersistedVersionError(16, 'unknown-version');
-    const { coverGoalId: _coverGoalId, ...withoutCoverGoal } = policy;
-    return withoutCoverGoal;
-  });
-  const { coverGoals: _coverGoals, ...withoutCoverGoals } = persisted;
-  return { ...withoutCoverGoals, policies };
-}
-
-export function migrateV17ToV18(persisted: unknown, options: Pick<V6ToV7Options, 'today'>): unknown {
-  if (!isRecord(persisted) || !Array.isArray(persisted.policies)) {
-    throw new PersistedVersionError(17, 'unknown-version');
-  }
-  const policies = persisted.policies.map((value) => {
-    if (!isRecord(value) || typeof value.id !== 'string' || !Array.isArray(value.payments)) {
-      throw new PersistedVersionError(17, 'unknown-version');
-    }
-    const parsed = policySchema.safeParse(value);
-    if (!parsed.success) throw new PersistedVersionError(17, 'unknown-version');
-    const policy = parsed.data;
-    const dueDates = new Map<string, string>();
-    for (const row of policySchedule(policy, options.today).rows) {
-      if (row.status === 'paid' && row.entryId !== undefined) dueDates.set(row.entryId, row.dueDate);
-    }
-    const payments = value.payments.map((entry) => {
-      if (!isRecord(entry) || typeof entry.id !== 'string') {
-        throw new PersistedVersionError(17, 'unknown-version');
-      }
-      const dueDate = dueDates.get(entry.id);
-      return dueDate === undefined ? entry : { ...entry, dueDate };
-    });
-    return { ...value, payments };
-  });
-  return { ...persisted, policies };
-}
-
-export function migrateV18ToV19(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV19ToV20(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV20ToV21(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV21ToV22(persisted: unknown): unknown {
-  if (!isRecord(persisted)) return persisted;
-  const migrateBudget = (budget: unknown): unknown => {
-    if (!isRecord(budget) || !Array.isArray(budget.incomes)) return budget;
-    return {
-      ...budget,
-      incomes: budget.incomes.map((income) =>
-        isRecord(income)
-          ? { ...income, frequency: 'monthly' }
-          : income,
-      ),
-    };
-  };
-  return {
-    ...persisted,
-    ...(persisted.budgetPlan === null || persisted.budgetPlan === undefined
-      ? {}
-      : { budgetPlan: migrateBudget(persisted.budgetPlan) }),
-    ...(Array.isArray(persisted.monthBudgets)
-      ? { monthBudgets: persisted.monthBudgets.map(migrateBudget) }
       : {}),
   };
 }
@@ -885,18 +725,6 @@ export function migratePersisted(
     }
     if (fromVersion <= 11) result = migrateV11ToV12(result);
     if (fromVersion <= 12) result = migrateV12ToV13(result);
-    if (fromVersion <= 13) result = migrateV13ToV14(result);
-    if (fromVersion <= 14) result = migrateV14ToV15(result);
-    if (fromVersion <= 15) result = migrateV15ToV16(result);
-    if (fromVersion <= 16) result = migrateV16ToV17(result);
-    if (fromVersion <= 17) {
-      if (!options) throw new PersistedVersionError(17, 'unknown-version');
-      result = migrateV17ToV18(result, options);
-    }
-    if (fromVersion <= 18) result = migrateV18ToV19(result);
-    if (fromVersion <= 19) result = migrateV19ToV20(result);
-    if (fromVersion <= 20) result = migrateV20ToV21(result);
-    if (fromVersion <= 21) result = migrateV21ToV22(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

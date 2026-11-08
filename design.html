@@ -697,7 +697,7 @@
     const planForm = h => form({
       title: h ? 'Edit SIP / recurring plan' : 'New SIP / recurring plan', val: h || { type: RECUR_T[0], freq: 'monthly', rate: 12, step: 0, tenure: 10, start: iso(), opening: 0 },
       del: h && (() => S.inv = S.inv.filter(x => x !== h)),
-      fields: [{ k: 'name', l: 'Name', r: 1, n: 40 }, { k: 'type', l: 'Type', t: 'select', o: RECUR_T }, { k: 'freq', l: 'Frequency', t: 'select', o: Object.keys(PER) }, { k: 'amt', l: 'Amount per deposit (₹)', t: 'number', r: 1, min: 1, max: 1e7 },
+      fields: [{ k: 'name', l: 'Name', r: 1, n: 40 }, { k: 'type', l: 'Type', t: 'select', o: RECUR_T }, { k: 'freq', l: 'Frequency', t: 'select', o: Object.keys(PER) }, { k: 'amt', l: 'Amount per installment (₹)', t: 'number', r: 1, min: 1, max: 1e7 },
       { k: 'rate', l: 'Expected return / interest (% p.a.)', t: 'number', r: 1, min: 0, max: 30 }, { k: 'step', l: 'Annual step-up (%)', t: 'number', min: 0, max: 50 }, { k: 'tenure', l: 'Tenure (years)', t: 'number', r: 1, i: 1, min: 1, max: 50 }, { k: 'start', l: 'Start date', t: 'date', r: 1 },
       { k: 'opening', l: 'Already invested before logging (₹, optional)', t: 'number', min: 0, max: 1e10 }, { k: 'actual', l: 'Latest actual value (₹, optional, overrides the estimate)', t: 'number', min: 0, max: 1e10 }],
       check: o => dup(S.inv, o.name, h?.id) ? { name: 'A holding with this name exists' } : {},
@@ -776,8 +776,8 @@
       const p = sipProj(h), n = sipNow(h), late = n.due - n.got;
       return `<div class="it"><div class="rw"><div><div class="nm">${esc(h.name)}</div><div class="mt">${h.type}, ${cap(h.freq)} ${inr(n.cur)}, ${h.step}% step-up, ${h.tenure} yrs, ${h.rate}% p.a.</div></div><div class="r"><div class="am">${inr(hVal(h))}</div><div class="mt">${h.actual != null ? 'Actual value' : 'Estimated value'}</div></div></div>
  ${prog(pct(n.paid, p.inv), 'var(--pr)')}
- <div class="st">Invested ${inr(hInv(h))}. Plan: ${sh(p.inv)} of contributions grows to about ${sh(p.fv)} by maturity. ${n.due ? `${n.got} of ${n.due} deposits logged.` : 'Starts ' + fdate(h.start) + '.'}${late > 0 ? ` <b style="color:var(--er)">${late} behind.</b>` : ''}</div>
- <div class="acts"><button class="bs p" data-a="logSip" data-id="${h.id}">Deposit</button><button class="bs" data-a="sipLogs" data-id="${h.id}">Entries (${n.got})</button><button class="bs" data-a="editInv" data-id="${h.id}">Edit</button></div></div>`
+ <div class="st">Invested ${inr(hInv(h))}. Plan: ${sh(p.inv)} of contributions grows to about ${sh(p.fv)} by maturity. ${n.due ? `${n.got} of ${n.due} installments logged.` : 'Starts ' + fdate(h.start) + '.'}${late > 0 ? ` <b style="color:var(--er)">${late} behind.</b>` : ''}</div>
+ <div class="acts"><button class="bs p" data-a="logSip" data-id="${h.id}">Log installment</button><button class="bs" data-a="sipLogs" data-id="${h.id}">Logs (${n.got})</button><button class="bs" data-a="editInv" data-id="${h.id}">Edit</button></div></div>`
     };
     const vInv = () => {
       const T = tot(), all = [...S.inv.map(h => ({ id: h.id, h, name: h.name, type: h.type, inv: hInv(h), val: hVal(h), plan: isPlan(h) })), { id: 'ef', name: 'Emergency fund', type: 'Emergency fund', inv: T.ef, val: T.ef, auto: 1 }],

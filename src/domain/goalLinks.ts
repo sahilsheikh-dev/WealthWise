@@ -1,5 +1,5 @@
 import { addDays, addMonths, parseISO } from './dates';
-import { holdingContributions, holdingValue } from './portfolio';
+import { holdingInvested, holdingValue } from './portfolio';
 import { planValue, PERIODS_PER_YEAR } from './sip';
 import type { AppData, Goal, GoalLink, ISODate, PlanHolding, Policy } from './types';
 
@@ -39,7 +39,7 @@ function linkedValue(data: AppData, instrumentId: string, asOf: ISODate): number
 
 function linkedInvested(data: AppData, instrumentId: string): number | undefined {
   const holding = data.holdings.find((item) => item.id === instrumentId);
-  if (holding) return holdingContributions(holding);
+  if (holding) return holdingInvested(holding);
   const policy = data.policies.find((item) => item.id === instrumentId && isSavingsPolicy(item));
   return policy ? policyInvested(policy) : undefined;
 }
@@ -55,7 +55,7 @@ export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstr
     name: holding.name,
     kind: holding.kind,
     value: holdingValue(holding, asOf),
-    invested: holdingContributions(holding),
+    invested: holdingInvested(holding),
   }));
   const policies = data.policies.filter(isSavingsPolicy).map((policy): LinkableInstrument => ({
     id: policy.id,
@@ -208,9 +208,7 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
     for (const state of states) {
       const monthlyRate = (1 + state.plan.ratePct / 100) ** (1 / 12) - 1;
       const elapsedMonths = Math.max(0, monthIndex(simulationDate) - monthIndex(state.plan.startDate));
-      const active = simulationDate >= state.plan.startDate
-        && elapsedMonths < state.plan.tenureYears * 12
-        && (!state.plan.stopDate || simulationDate <= state.plan.stopDate);
+      const active = simulationDate >= state.plan.startDate && elapsedMonths < state.plan.tenureYears * 12;
       const annualStep = Math.floor(Math.max(0, elapsedMonths - 1) / 12);
       const annualAmount = state.plan.amount * (1 + state.plan.stepUpPct / 100) ** annualStep;
       const monthlyContribution = active

@@ -60,16 +60,6 @@ function plannedHolding(changes: Partial<PlanHolding> = {}): PlanHolding {
 }
 
 describe('reminder planner', () => {
-  it('does not plan reminders for a fixed deposit with legacy schedule fields', () => {
-    const data = {
-      ...emptyAppData('2024-02-01'),
-      holdings: [plannedHolding({ type: 'Fixed deposit', tenureYears: 20 })],
-    };
-
-    expect(planReminders(data, preferences, new Date(2024, 1, 1, 8), 60))
-      .toEqual([]);
-  });
-
   it('includes unpaid plans, recurring liabilities, active policies, and skips manual or inactive sources', () => {
     const manual: ManualHolding = {
       id: 'manual',
@@ -128,42 +118,6 @@ describe('reminder planner', () => {
     expect(reminders.some((item) => item.dueItemId.startsWith('due:policy:policy:'))).toBe(true);
     expect(reminders.some((item) => item.dueItemId.includes('ended-policy'))).toBe(false);
     expect(reminders.some((item) => item.dueItemId.includes('manual'))).toBe(false);
-  });
-
-  it('plans a reminder for a premium due the following week', () => {
-    const policy: Policy = {
-      id: 'next-week-policy',
-      name: 'Next week policy',
-      insurer: 'Insurer',
-      kind: 'health',
-      premium: 50,
-      frequency: 'monthly',
-      startDate: '2026-10-01',
-      status: 'active',
-      premiumYears: 1,
-      trackFrom: '2026-10-23',
-      endDate: '2026-12-31',
-      currentValue: null,
-      valueAsOf: null,
-      payments: [],
-    };
-    const reminders = planReminders({
-      ...emptyAppData('2026-10-16'),
-      policies: [policy],
-    }, preferences, new Date(2026, 9, 16, 8), 60);
-    expect(reminders).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: 'day-before',
-        dueItemId: 'due:policy:next-week-policy:policy:0',
-        target: expect.objectContaining({ dueDate: '2026-10-23' }),
-      }),
-      expect.objectContaining({
-        kind: 'same-day',
-        dueItemId: 'due:policy:next-week-policy:policy:0',
-        target: expect.objectContaining({ dueDate: '2026-10-23' }),
-      }),
-    ]));
-    expect(reminders).toHaveLength(6);
   });
 
   it('plans the day before and same-day local times with deterministic targets', () => {
@@ -339,25 +293,6 @@ describe('reminder planner', () => {
       10,
     )).toEqual([]);
     expect(planReminders(data, preferences, now, 0)).toEqual([]);
-  });
-
-  it('plans one optional monthly values reminder without payment reminders', () => {
-    const data = emptyAppData('2024-02-01');
-    const reminders = planReminders(data, {
-      ...preferences,
-      dayBefore: false,
-      sameDay: false,
-      updateValues: true,
-    }, new Date(2024, 1, 1, 8), 2);
-    expect(reminders).toHaveLength(2);
-    expect(reminders[0]).toMatchObject({
-      id: 'update-values:2024-02',
-      kind: 'update-values',
-      target: { dueItemId: 'update-values', dueDate: '2024-02-01' },
-      fireAt: '2024-02-01T09:00',
-    });
-    expect(planReminders(data, preferences, new Date(2024, 1, 1, 8), 2))
-      .toEqual([]);
   });
 
   it('rejects invalid limits, dates, and local times', () => {

@@ -8,6 +8,7 @@ import {
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
+import { coverGoalSummaries } from '../../domain/coverGoals';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
@@ -69,7 +70,7 @@ describe('four-month demo data', () => {
     expect(data.efCustomBuckets).toHaveLength(3);
   });
 
-  it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
+  it('includes the required active and lapsed policy demo records', () => {
     expect(data.policies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
@@ -77,8 +78,13 @@ describe('four-month demo data', () => {
       expect.objectContaining({ id: 'demo-policy-home', kind: 'home', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
     ]));
-    expect(data.policies.find((policy) => policy.id === 'demo-policy-term-life')?.premium).toBeGreaterThan(0);
-    expect(data.policies.some((policy) => policy.kind === 'life-savings')).toBe(false);
+    expect(coverGoalSummaries(data, today)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'term-life', state: 'gap' }),
+      expect.objectContaining({ type: 'health', target: 2_000_000 }),
+      expect.objectContaining({ type: 'motor', state: 'covered' }),
+      expect.objectContaining({ type: 'home', state: 'covered' }),
+      expect.objectContaining({ type: 'other', state: 'missing' }),
+    ]));
     expect(data.transactions.filter((transaction) => transaction.source?.kind === 'policy-payment')
       .map((transaction) => transaction.category)).toEqual(expect.arrayContaining([
       'Health premium',
@@ -104,16 +110,12 @@ describe('four-month demo data', () => {
           expect.objectContaining({ type: 'expense', category }),
         ]));
       }
-      for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
+      for (const category of INVESTMENT_FORM_CATEGORIES) {
         expect(rows).toEqual(expect.arrayContaining([
           expect.objectContaining({ type: 'invest', category }),
         ]));
       }
     }
-    expect(data.transactions.filter((transaction) =>
-      transaction.type === 'invest'
-      && transaction.source?.kind === 'holding-entry'
-      && transaction.source.parentId === 'demo-holding-recurring-deposit')).toHaveLength(2);
     expect(BUDGET_GROUPS.every((group) => group.categories.length > 0)).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'amount')).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'percent')).toBe(true);
@@ -130,13 +132,6 @@ describe('four-month demo data', () => {
       expect.objectContaining({ category: 'Domestic help', type: 'expense' }),
       expect.objectContaining({ category: 'Vet visit', type: 'expense', amount: 650 }),
     ]));
-    expect(budgetOverview(data, monthKey(today), today).pace?.sections.find(({ id }) =>
-      id === 'demo-section-pets',
-    )).toMatchObject({
-      name: 'Pets',
-      plannedToDate: 1_548.39,
-      actualToDate: 2_000,
-    });
     expect(data.budgetPlan).toMatchObject({
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),
@@ -263,7 +258,7 @@ describe('four-month demo data', () => {
     )).toBe(true);
   });
 
-  it('includes an overdue SIP, upcoming EMI, future-month due, later payment, and planned budget rows', () => {
+  it('includes an overdue SIP, upcoming EMI, future-month due, later installment, and planned budget rows', () => {
     const currentMonth = monthKey(today);
     const futureMonth = shiftMonth(currentMonth, 1);
     const pending = [

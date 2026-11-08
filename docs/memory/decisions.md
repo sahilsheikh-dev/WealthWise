@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Decisions
 
@@ -8,25 +8,6 @@ authoritative rationale and history.
 
 - [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
 - [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
-- [DEC-P29F3](../PROGRESS.md#dec-p29f3-assertion-and-coverage-correction)
-- [DEC-P29F4](../PROGRESS.md#dec-p29f4-final-stabilization-audit)
-- [DEC-P29E-HOLDING-DELETE](../PROGRESS.md#dec-p29e-holding-delete-owner-decision-and-acceptance-correction)
-- [DEC-P29H-ASSET-VALUATION](../PROGRESS.md#dec-p29h-asset-valuation)
-- [DEC-P29I-CAPABILITIES](../PROGRESS.md#dec-p29i-capabilities--schema-v16-migration)
-- [DEC-P29J-LIABILITY-AUDIT](../PROGRESS.md#dec-p29j-liability-audit)
-- [DEC-P29L-SIMPLE-INSURANCE](../PROGRESS.md#dec-p29l-simple-insurance)
-- [DEC-P29M2-POLICY-DUE-IDENTITY](../PROGRESS.md#dec-p29m2-policy-due-identity)
-- [DEC-P29O-LEDGER-INVENTORY](../PROGRESS.md#dec-p29o-ledger-inventory--step-1-report-only-inventory)
-- [DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE](../PROGRESS.md#dec-p29s-cancel-ledger-only-storage-redesign-2026-11-05)
-- [DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT](../PROGRESS.md#dec-p29t-historical-entry-snapshot--p29-t-decision-2026-11-05)
-- [DEC-P29U-LEGACY-VALUATION-COMPAT](../PROGRESS.md#dec-p29u-legacy-valuation-compat-2026-11-05)
-- [DEC-P29V-SQLITE-VERIFIED-FALLBACK](../PROGRESS.md#dec-p29v-sqlite-verified-fallback)
-- [DEC-P29V-DATE-STRESS-BOUNDS](../PROGRESS.md#dec-p29v-date-stress-bounds)
-- [DEC-P29V-BACKUP-ROUNDTRIP](../PROGRESS.md#dec-p29v-backup-roundtrip)
-- [DEC-P29W-FORECLOSURE-RECORD](../PROGRESS.md#dec-p29w-foreclosure-record)
-- [DEC-P29Q-STORAGE-STOP](../PROGRESS.md#dec-p29q-storage-stop--measured-persistence-limit-and-proposal-2026-11-04)
-- [DEC-P29Q-SQLITE-APPROVAL](../PROGRESS.md#dec-p29q-sqlite-approval--approved-storage-and-benchmark-follow-through-2026-11-04)
-- [DEC-P29N-REMINDERS-PROMPT](../PROGRESS.md#dec-p29n-reminders-prompt)
 - [DEC-P24A](../PROGRESS.md#dec-p24a-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)

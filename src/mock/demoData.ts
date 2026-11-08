@@ -15,6 +15,7 @@ import {
   plannedForMonth,
 } from '../domain/budget';
 import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
+import { defaultCoverGoals } from '../domain/coverGoals';
 import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
@@ -72,7 +73,7 @@ const INVESTMENT_AMOUNTS: Record<string, number> = {
 const INVESTMENT_HOLDING_IDS: Record<string, string> = {
   'Mutual fund / SIP': 'demo-holding-mutual-fund',
   'Stocks / ETF': 'demo-holding-stocks',
-  'Fixed deposit / RD': 'demo-holding-recurring-deposit',
+  'Fixed deposit / RD': 'demo-holding-fd',
   'Gold / Silver': 'demo-holding-gold',
   'Other investments': 'demo-holding-epf',
 };
@@ -485,8 +486,7 @@ export function buildDemoData(today: ISODate): AppData {
   const budgetPlan: BudgetPlan = {
     incomes: [
       { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
-      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15, frequency: 'quarterly', firstDueMonth: months[0] },
-      { id: 'demo-income-bonus', name: 'Annual bonus', category: 'Other', amount: 25_000, day: 20, frequency: 'yearly', firstDueMonth: months[0] },
+      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15 },
     ],
     sections: [
       ...defaultBudgetSections(),
@@ -503,6 +503,11 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
+    coverGoals: defaultCoverGoals().map((goal) => goal.type === 'term-life'
+      ? { ...goal, targetValue: 12 }
+      : goal.type === 'health'
+        ? { ...goal, targetValue: 2_000_000 }
+        : goal),
     budget: null,
     budgetPlan,
     monthBudgets: [],
@@ -628,7 +633,7 @@ export function buildDemoData(today: ISODate): AppData {
   }
 
   for (const month of months) {
-    for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
+    for (const category of INVESTMENT_FORM_CATEGORIES) {
       const holdingId = INVESTMENT_HOLDING_IDS[category];
       if (!holdingId) throw new Error(`No demo holding for investment category ${category}.`);
       data = addInvestmentEntry(data, holdingId, {
@@ -649,7 +654,7 @@ export function buildDemoData(today: ISODate): AppData {
       date: dueDate,
       amount: plan.amount,
       kind: 'Deposit',
-      note: 'Recurring deposit',
+      note: 'Recurring deposit installment',
     }, id, today);
   }
 

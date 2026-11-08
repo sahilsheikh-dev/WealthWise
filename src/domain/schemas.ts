@@ -1,56 +1,38 @@
 import { z } from 'zod';
 
 import { formatINR } from '../lib/format';
-import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from './dates';
+import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
-import { holdingCapabilities } from './holdingCapabilities';
 import {
   EARNED_INCOME_CATEGORIES,
   NON_EARNED_INCOME_CATEGORIES,
-  HOLDING_TYPES,
+  COVER_POLICY_TYPES,
   THEME_IDS,
   type AppData,
   type ISODate,
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 13;
 
-export function makeStopRecurringFormSchema(
-  today: ISODate,
-  logs: { date: ISODate; kind: 'Deposit' | 'Withdrawal' }[],
-) {
-  const lastPaidDate = logs
-    .filter((entry) => entry.kind === 'Deposit')
-    .map((entry) => entry.date)
-    .sort()
-    .at(-1);
-  return z.object({
-    stopDate: z.string()
-      .refine((value) => isValidISO(value) && value >= '1900-01-01', 'Enter a valid stop date')
-      .refine((value) => value <= today, 'Stop date cannot be in the future')
-      .refine((value) => !lastPaidDate || value >= lastPaidDate, 'Stop date cannot be before the last paid entry'),
-  });
-}
-
-const isoDateSchema = z.string().refine(
-  (value) => isValidISO(value) && value >= '1900-01-01',
-  'Enter a valid date',
-);
+const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
 const moneySchema = z.number().finite().min(-100_000_000_000).max(100_000_000_000);
 const frequencySchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
-const holdingTypeSchema = z.enum(HOLDING_TYPES);
-const valuationFields = {
-  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
-  ratePct: moneySchema.min(0).max(100).optional(),
-  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
-  maturityDate: isoDateSchema.optional(),
-  latestPrice: moneySchema.positive().optional(),
-  priceAsOf: isoDateSchema.optional(),
-};
+const holdingTypeSchema = z.enum([
+  'Mutual fund / SIP',
+  'Stocks / ETF',
+  'Fixed deposit',
+  'Recurring deposit',
+  'EPFO / PF',
+  'Savings account',
+  'Cash',
+  'Gold',
+  'Silver',
+  'Other',
+]);
 const investmentEntrySchema = z.object({
   id: idSchema,
   date: isoDateSchema,
@@ -58,7 +40,6 @@ const investmentEntrySchema = z.object({
   note: z.string(),
   kind: z.enum(['Deposit', 'Withdrawal']),
   snapshotAdjustment: moneySchema.optional(),
-  price: moneySchema.positive().optional(),
 });
 const liabilityPaymentSchema = z.object({
   id: idSchema,
@@ -76,7 +57,7 @@ const transactionSchema = z.object({
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
-    kind: z.enum(['holding-entry', 'liability-payment', 'liability-closure-charge', 'policy-payment', 'liability-origin']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -87,7 +68,7 @@ const goalSchema = z.object({
   name: z.string(),
   target: moneySchema,
   saved: moneySchema,
-  year: z.number().int().finite().min(1900).max(2100),
+  year: z.number().int().finite(),
   auto: z.literal('ef').optional(),
   links: z.array(z.object({
     instrumentId: idSchema,
@@ -95,7 +76,7 @@ const goalSchema = z.object({
   })).default([]),
 });
 
-export const manualHoldingSchema = z.object({
+const manualHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('manual'),
   name: z.string(),
@@ -103,23 +84,14 @@ export const manualHoldingSchema = z.object({
   invested: moneySchema,
   value: moneySchema,
   valueAsOf: isoDateSchema.optional(),
-  ...valuationFields,
   logs: z.array(investmentEntrySchema),
-}).superRefine((holding, context) => {
-  if (holding.valuationMethod === 'accrual' && holding.ratePct === undefined) {
-    context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Accrual valuation requires an annual rate' });
-  }
-  if ((holding.latestPrice === undefined) !== (holding.priceAsOf === undefined)) {
-    context.addIssue({ code: 'custom', path: ['priceAsOf'], message: 'Latest price and price date must both be set or both be absent' });
-  }
 });
 
-export const planHoldingSchema = z.object({
+const planHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('plan'),
   name: z.string(),
   type: holdingTypeSchema,
-  ...valuationFields,
   frequency: frequencySchema,
   amount: moneySchema,
   ratePct: moneySchema,
@@ -130,25 +102,14 @@ export const planHoldingSchema = z.object({
   opening: moneySchema,
   actualValue: moneySchema.nullable(),
   actualValueDate: isoDateSchema.nullable(),
-  stopDate: isoDateSchema.optional(),
   logs: z.array(investmentEntrySchema),
 }).superRefine((holding, context) => {
-  if (!holdingCapabilities(holding.type).recurring) {
-    context.addIssue({
-      code: 'custom',
-      path: ['type'],
-      message: `${holding.type} does not support a recurring deposit schedule.`,
-    });
-  }
   if ((holding.actualValue === null) !== (holding.actualValueDate === null)) {
     context.addIssue({
       code: 'custom',
       path: ['actualValueDate'],
       message: 'Actual value and snapshot date must both be set or both be null',
     });
-  }
-  if ((holding.latestPrice === undefined) !== (holding.priceAsOf === undefined)) {
-    context.addIssue({ code: 'custom', path: ['priceAsOf'], message: 'Latest price and price date must both be set or both be absent' });
   }
 });
 
@@ -165,34 +126,15 @@ const liabilitySettlementSchema = z.object({
   asOf: isoDateSchema,
   balance: moneySchema.min(0),
 });
-const liabilityClosureSchema = z.object({
-  date: isoDateSchema,
-  paymentId: idSchema,
-  note: z.string().max(200).optional(),
-  chargeTransactionId: idSchema.optional(),
-});
 const recurringLiabilitySchema = z.object({
   ...liabilityBaseSchema,
   kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200),
   emi: moneySchema.positive(),
   settlement: liabilitySettlementSchema.nullable(),
-  closure: liabilityClosureSchema.optional(),
 }).superRefine((liability, context) => {
   if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
-  }
-  if (liability.closure) {
-    if (liability.closure.date < addMonths(liability.startDate, 1)) {
-      context.addIssue({ code: 'custom', path: ['closure', 'date'], message: 'Closure cannot predate the first payment' });
-    }
-    if (liability.settlement?.asOf !== liability.closure.date || liability.settlement.balance !== 0) {
-      context.addIssue({ code: 'custom', path: ['closure'], message: 'Closed liabilities require a zero settlement on the closure date' });
-    }
-    const payment = liability.payments.find((entry) => entry.id === liability.closure?.paymentId);
-    if (!payment || payment.kind !== 'Prepayment' || payment.date !== liability.closure.date) {
-      context.addIssue({ code: 'custom', path: ['closure', 'paymentId'], message: 'Closure must reference its dated prepayment' });
-    }
   }
   if (liability.payments.some((payment) => payment.kind === 'Payment')) {
     context.addIssue({ code: 'custom', path: ['payments'], message: 'Recurring liabilities use EMI or prepayment entries' });
@@ -217,16 +159,14 @@ const policyPaymentSchema = z.object({
   date: isoDateSchema,
   amount: moneySchema.positive(),
   note: z.string(),
-  dueDate: isoDateSchema.optional(),
 });
-export const policySchema = z.object({
+const policySchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
   kind: policyKindSchema,
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
-  customIntervalMonths: z.number().int().min(1).max(120).optional(),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
   startDate: isoDateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
   policyNumber: z.string().max(30).optional(),
@@ -250,10 +190,30 @@ export const policySchema = z.object({
   if ((policy.currentValue === null) !== (policy.valueAsOf === null)) {
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
   }
-  if (policy.frequency === 'custom' && policy.customIntervalMonths === undefined) {
-    context.addIssue({ code: 'custom', path: ['customIntervalMonths'], message: 'Custom frequency requires an interval in months.' });
+});
+const coverGoalSchema = z.object({
+  type: z.enum(COVER_POLICY_TYPES),
+  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
+  targetValue: moneySchema.min(0).optional(),
+}).superRefine((goal, context) => {
+  if (goal.targetMode === 'income-multiple'
+    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
+  }
+  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
   }
 });
+const coverGoalsSchema = z.array(coverGoalSchema).length(COVER_POLICY_TYPES.length)
+  .superRefine((goals, context) => {
+    const seen = new Set<string>();
+    goals.forEach((goal, index) => {
+      if (seen.has(goal.type)) {
+        context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+      }
+      seen.add(goal.type);
+    });
+  });
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
@@ -269,20 +229,12 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
-const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
-const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetIncomeSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
   category: z.enum(earnedIncomeCategories),
   amount: moneySchema.positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
-  frequency: budgetItemFrequencySchema,
-  firstDueMonth: budgetFirstDueMonthSchema,
-}).superRefine((item, context) => {
-  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
-    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
-  }
 });
 const budgetOtherIncomeSchema = z.strictObject({
   id: idSchema,
@@ -292,6 +244,8 @@ const budgetOtherIncomeSchema = z.strictObject({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetItemSchedulingFields = {
   frequency: budgetItemFrequencySchema,
   firstDueMonth: budgetFirstDueMonthSchema,
@@ -333,7 +287,6 @@ const budgetItemSchema = z.strictObject({
   value: moneySchema.min(0).max(1_000_000_000),
   dueDay: budgetDueDaySchema,
   ...budgetItemSchedulingFields,
-  holdingId: idSchema.optional(),
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
@@ -494,6 +447,7 @@ export const appDataSchema = z.object({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
+  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
@@ -724,8 +678,6 @@ const holdingTypeFormSchema = z.enum([
   'Other',
 ]);
 const frequencyFormSchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
-const valuationMethodFormSchema = z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']);
-const compoundingFormSchema = z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']);
 const optionalRate = (max: number, message: string, emptyZero = false) => {
   const rate = z.string().trim()
     .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), message)
@@ -745,9 +697,6 @@ export function makePlanFormSchema(
     frequency: frequencyFormSchema,
     amount: moneyInputSchema({ minimum: 0.01, maximum: 10_000_000, maximumMessage: 'Amount is too large' }),
     ratePct: optionalRate(30, 'Enter a rate between 0 and 30'),
-    valuationMethod: valuationMethodFormSchema.default('manual'),
-    compounding: compoundingFormSchema.default('yearly'),
-    maturityDate: z.string().trim().default(''),
     stepUpPct: optionalRate(50, 'Enter a step-up between 0 and 50', true),
     tenureYears: z.string().trim().refine((value) => /^\d+$/.test(value), 'Enter whole years from 1 to 50')
       .transform(Number).refine((value) => value >= 1 && value <= 50, 'Enter whole years from 1 to 50'),
@@ -762,15 +711,7 @@ export function makePlanFormSchema(
     opening: value.opening ?? 0,
     actualValue: value.actualValue ?? null,
     actualValueDate: value.actualValueDate || null,
-    maturityDate: value.maturityDate || undefined,
   })).superRefine((value, context) => {
-    if (!holdingCapabilities(value.type).recurring) {
-      context.addIssue({
-        code: 'custom',
-        path: ['type'],
-        message: `${value.type} does not support a recurring deposit schedule.`,
-      });
-    }
     if (isValidISO(value.trackFrom) && value.trackFrom < value.startDate) {
       context.addIssue({ code: 'custom', path: ['trackFrom'], message: "Tracking can't start before the plan" });
     } else if (value.trackFrom && !isValidISO(value.trackFrom)) {
@@ -789,12 +730,9 @@ export function makePlanFormSchema(
       } else if (value.actualValueDate < value.startDate) {
         context.addIssue({ code: 'custom', path: ['actualValueDate'], message: 'Value date is before the plan started' });
       }
-      if (value.maturityDate && (!isValidISO(value.maturityDate) || value.maturityDate < value.startDate)) {
-        context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Enter a maturity date on or after the plan start date' });
-      }
     }
     if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
-      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged deposit is dated before this start date' });
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged installment is dated before this start date' });
     }
   });
 }
@@ -808,10 +746,6 @@ export function makeInvestmentEntryFormSchema(
     date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
       .refine((date) => !isValidISO(date) || ctx.startDate === null || date >= ctx.startDate, 'Date is before the plan started'),
     amount: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000, maximumMessage: 'Amount is too large' }),
-    price: z.union([
-      z.literal(''),
-      moneyInputSchema({ minimum: 0.01, maximum: Number.MAX_SAFE_INTEGER }),
-    ]).default('').transform((value) => value === '' ? undefined : value),
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
   }).superRefine((value, context) => {
     if (value.kind === 'Withdrawal' && value.amount > ctx.currentValue) {
@@ -821,13 +755,6 @@ export function makeInvestmentEntryFormSchema(
         message: `Exceeds the current value of ${formatINR(ctx.currentValue)}`,
       });
     }
-  });
-}
-
-export function makeHoldingValuationFormSchema(today: ISODate) {
-  return z.object({
-    value: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
-    date: dateInputSchema().refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future'),
   });
 }
 
@@ -933,7 +860,10 @@ export function makeGoalFormSchema(
   today: ISODate,
   ctx: { otherNames: string[]; locked: boolean; existingYear?: number; minTarget?: number },
 ) {
-  const yearMessage = 'Enter a year between 1900 and 2100';
+  const year = Number(today.slice(0, 4));
+  const yearMessage = `Enter a year between ${year} and ${year + 60}`;
+  const isAllowedYear = (value: number) =>
+    (value >= year && value <= year + 60) || value === ctx.existingYear;
   return z.object({
     name: z.string().transform((name) => name.trim())
       .refine((name) => ctx.locked || (name.length >= 1 && name.length <= 40), 'Enter a name up to 40 characters')
@@ -946,48 +876,28 @@ export function makeGoalFormSchema(
       instrumentId: idSchema,
     })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
-        .transform(Number).refine((value) => value >= 1900 && value <= 2100, yearMessage),
+      .transform(Number).refine(isAllowedYear, yearMessage),
   }).superRefine((value, context) => {
     if (!ctx.locked && value.saved > value.target) {
       context.addIssue({ code: 'custom', path: ['saved'], message: "Saved can't exceed the target" });
     }
-    const minTarget = ctx.minTarget;
-    if (ctx.locked && minTarget !== undefined && minTarget > 0 && value.target < minTarget) {
+    if (ctx.locked && (ctx.minTarget ?? 0) > 0 && value.target < (ctx.minTarget ?? 0)) {
       context.addIssue({
         code: 'custom',
         path: ['target'],
-        message: `Emergency fund target must be at least 3 months of cover (${formatINR(minTarget)})`,
+        message: `Emergency fund target must be at least 3 months of cover (${formatINR(ctx.minTarget ?? 0)})`,
       });
     }
   });
 }
 
-export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean }) {
+export function makeHoldingFormSchema(ctx: { otherNames: string[] }) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
     type: holdingTypeFormSchema,
     invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
     value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
-    valuationMethod: valuationMethodFormSchema.default('manual'),
-    ratePct: z.union([z.literal(''), optionalRate(100, 'Enter a rate between 0 and 100')])
-      .default('').transform((value) => value === '' ? undefined : value),
-    compounding: compoundingFormSchema.default('yearly'),
-    maturityDate: z.string().trim().default('').transform((value) => value || undefined),
-  }).superRefine((value, context) => {
-    if (ctx.entriesExist && !holdingCapabilities(value.type).entries) {
-      context.addIssue({
-        code: 'custom',
-        path: ['type'],
-        message: 'Remove the existing entries before changing this holding to Fixed deposit.',
-      });
-    }
-    if (value.maturityDate && !isValidISO(value.maturityDate)) {
-      context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Enter a valid maturity date' });
-    }
-    if (value.valuationMethod === 'accrual' && value.ratePct === undefined) {
-      context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Enter an annual rate for accrual valuation' });
-    }
   });
 }
 
@@ -1014,22 +924,6 @@ export function makeLiabilityPaymentFormSchema(
   });
 }
 
-export function makeLiabilityClosureFormSchema(today: ISODate, firstPaymentDate: ISODate) {
-  return z.object({
-    date: dateInputSchema()
-      .refine((date) => !isValidISO(date) || date <= today, 'Date cannot be in the future')
-      .refine((date) => !isValidISO(date) || date >= firstPaymentDate, 'Date cannot be before the first payment'),
-    amountPaid: moneyInputSchema({ minimum: 0.01, maximum: 100_000_000_000 }),
-    note: z.string().trim().max(200, 'Keep the note under 200 characters'),
-  });
-}
-
-export function makeLiabilityClosureNoteSchema() {
-  return z.object({
-    note: z.string().trim().max(200, 'Keep the note under 200 characters'),
-  });
-}
-
 export type PlanFormInput = z.input<ReturnType<typeof makePlanFormSchema>>;
 export type PlanFormOutput = z.output<ReturnType<typeof makePlanFormSchema>>;
 export type InvestmentEntryFormInput = z.input<ReturnType<typeof makeInvestmentEntryFormSchema>>;
@@ -1038,10 +932,6 @@ export type LiabilityFormInput = z.input<ReturnType<typeof makeLiabilityFormSche
 export type LiabilityFormOutput = z.output<ReturnType<typeof makeLiabilityFormSchema>>;
 export type LiabilityPaymentFormInput = z.input<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
 export type LiabilityPaymentFormOutput = z.output<ReturnType<typeof makeLiabilityPaymentFormSchema>>;
-export type LiabilityClosureFormInput = z.input<ReturnType<typeof makeLiabilityClosureFormSchema>>;
-export type LiabilityClosureFormOutput = z.output<ReturnType<typeof makeLiabilityClosureFormSchema>>;
-export type LiabilityClosureNoteFormInput = z.input<ReturnType<typeof makeLiabilityClosureNoteSchema>>;
-export type LiabilityClosureNoteFormOutput = z.output<ReturnType<typeof makeLiabilityClosureNoteSchema>>;
 export type GoalFormInput = z.input<ReturnType<typeof makeGoalFormSchema>>;
 export type GoalFormOutput = z.output<ReturnType<typeof makeGoalFormSchema>>;
 export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>;

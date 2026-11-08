@@ -333,6 +333,7 @@ describe('transaction add form', () => {
   it.each([
     ['Mutual fund / SIP', 'invest-mf', 'Mutual fund / SIP'],
     ['Stocks / ETF', 'invest-stocks', 'Stocks / ETF'],
+    ['Fixed deposit / RD', 'invest-fd', 'Fixed deposit'],
     ['Fixed deposit / RD', 'invest-rd', 'Recurring deposit'],
     ['Gold / Silver', 'invest-gold', 'Gold'],
     ['Other investments', 'invest-other', 'EPFO / PF'],
@@ -395,33 +396,6 @@ describe('transaction add form', () => {
     const matchingLine = view.lines.find((line) => line.category === category);
     const savingsGroup = view.unbudgetedByGroup.find((item) => item.groupId === 'savings-investments');
     expect((matchingLine?.actual ?? 0) + (savingsGroup?.amount ?? 0)).toBe(150);
-  });
-
-  it('does not offer fixed deposits for transaction-linked investment deposits', async () => {
-    mockData.holdings = [{
-      id: 'fixed',
-      kind: 'manual',
-      name: 'Fixed deposit',
-      type: 'Fixed deposit',
-      invested: 1_000,
-      value: 1_000,
-      logs: [],
-    }];
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<TransactionFormScreen />);
-    });
-    if (!renderer) throw new Error('Transaction form renderer was not created.');
-    const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
-    if (!typeControl) throw new Error('Transaction type selector was not rendered.');
-    await act(async () => typeControl.props.onChange('invest'));
-    const investment = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
-    )[0];
-    if (!investment) throw new Error('Investment selector was not rendered.');
-
-    expect(investment.props.choices).not.toContain('fixed');
   });
 
   it.each(['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const)(

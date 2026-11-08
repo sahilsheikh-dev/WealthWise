@@ -11,15 +11,6 @@ import {
   migrateV10ToV11,
   migrateV11ToV12,
   migrateV12ToV13,
-  migrateV13ToV14,
-  migrateV14ToV15,
-  migrateV15ToV16,
-  migrateV16ToV17,
-  migrateV17ToV18,
-  migrateV18ToV19,
-  migrateV19ToV20,
-  migrateV20ToV21,
-  migrateV21ToV22,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -120,7 +111,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 23)).toThrow(
+    expect(() => migratePersisted({}, 14)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -179,60 +170,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 22)).toBe(persisted);
-  });
-
-  it('migrates v18 to v19 without changing any persisted holding values', () => {
-    const data = mockAppData;
-    expect(migrateV18ToV19(data)).toBe(data);
-    expect(migratePersisted({ data }, 18)).toEqual({ data: migrateV21ToV22(data) });
-    expect(() => migratePersisted({}, 23)).toThrow(
-      expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
-    );
-  });
-
-  it('migrates v19 to v20 without adding closure metadata to existing liabilities', () => {
-    const data = mockAppData;
-    expect(migrateV19ToV20(data)).toBe(data);
-    expect(migratePersisted({ data }, 19)).toEqual({ data: migrateV21ToV22(data) });
-  });
-
-  it('migrates v20 to v21 without changing recurring-plan or holding values', () => {
-    const data = mockAppData;
-    expect(migrateV20ToV21(data)).toBe(data);
-    expect(migratePersisted({ data }, 20)).toEqual({ data: migrateV21ToV22(data) });
-  });
-
-  it('migrates v21 income items to monthly recurrence', () => {
-    const data = {
-      ...mockAppData,
-      budgetPlan: mockAppData.budgetPlan && {
-        ...mockAppData.budgetPlan,
-        incomes: mockAppData.budgetPlan.incomes.map((income) => ({ ...income })),
-      },
-      monthBudgets: mockAppData.monthBudgets?.map((budget) => ({
-        ...budget,
-        incomes: budget.incomes.map((income) => ({ ...income })),
-      })),
-    };
-    const migrated = migrateV21ToV22(data);
-    expect(migratePersisted({ data }, 21)).toEqual({ data: migrated });
-    const migratedRecord = migrated as Record<string, unknown>;
-    const plan = migratedRecord.budgetPlan as { incomes: Record<string, unknown>[] } | null;
-    expect(plan?.incomes.every((income) => income.frequency === 'monthly' && income.firstDueMonth === undefined)).toBe(true);
-  });
-
-  it('migrates v13 to v14 without changing any persisted fields', () => {
-    const data = {
-      ...mockAppData,
-      budgetPlan: mockAppData.budgetPlan && {
-        ...mockAppData.budgetPlan,
-        items: mockAppData.budgetPlan.items.map((item) => ({ ...item })),
-      },
-    };
-    expect(migrateV13ToV14(data)).toEqual(data);
-    expect(migratePersisted({ data }, 13, { today: '2026-11-04', newId: () => 'unused' }))
-      .toEqual({ data: migrateV21ToV22(data) });
+    expect(migratePersisted(persisted, 13)).toBe(persisted);
   });
 
   it('adds monthly recurrence to v12 plan and snapshot items without changing other fields', () => {
@@ -259,15 +197,15 @@ describe('schema migration', () => {
       budgetPlan: { items: 'malformed', retained: true },
       monthBudgets: [{ items: [null] }],
     });
-    expect(migratePersisted({ data: legacy }, 12, { today: '2026-11-04', newId: () => 'unused' })).toMatchObject({
+    expect(migratePersisted({ data: legacy }, 12)).toMatchObject({
       data: { budgetPlan: { items: expect.arrayContaining([expect.objectContaining({ frequency: 'monthly' })]) } },
     });
-    expect(() => migratePersisted({}, 23)).toThrow(
+    expect(() => migratePersisted({}, 14)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
   });
 
-  it('seeds legacy v12 cover goals before the v17 migration removes them', () => {
+  it('seeds every v12 cover goal while preserving v11 data', () => {
     const legacy = makeV11Fixture();
     expect(migrateV11ToV12(legacy)).toEqual({
       ...legacy,
@@ -279,192 +217,9 @@ describe('schema migration', () => {
         { type: 'other', targetMode: 'active-only' },
       ],
     });
-
     expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
-    const migrated = migratePersisted({ data: legacy }, 11, {
-      today: '2026-11-04',
-      newId: () => 'unused',
-    }) as { data: Record<string, unknown> };
-    expect(migrated.data).not.toHaveProperty('coverGoals');
-  });
-
-  it('migrates v14 cover-goal bytes through v15, then removes the superseded data in v17', () => {
-    const legacy = {
-      ...mockAppData,
-      coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 12 },
-        { type: 'health', targetMode: 'amount', targetValue: 900_000 },
-        { type: 'motor', targetMode: 'active-only' },
-        { type: 'home', targetMode: 'active-only' },
-        { type: 'other', targetMode: 'active-only' },
-      ],
-    };
-    const expected = {
-      ...legacy,
-      coverGoals: [
-        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 12 } },
-        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'amount', value: 900_000 } },
-        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-      ],
-    };
-    expect(migrateV14ToV15(legacy)).toEqual(expected);
-    const { coverGoals: _coverGoals, ...currentData } = expected;
-    expect(migratePersisted({ data: legacy }, 14, {
-      today: '2026-11-04',
-      newId: () => 'unused',
-    })).toEqual({ data: migrateV21ToV22(currentData) });
-    expect(legacy.coverGoals[0]).toEqual({
-      type: 'term-life', targetMode: 'income-multiple', targetValue: 12,
-    });
-  });
-
-  it('splits legacy combined FD/RD holdings by entries and schedule without changing other data', () => {
-      const data = {
-        ...mockAppData,
-        holdings: [
-          {
-            id: 'combined-empty',
-            kind: 'manual',
-            name: 'Unstarted deposit',
-            type: 'FD / RD',
-            invested: 1_000,
-            value: 1_000,
-            logs: [],
-          },
-          {
-            id: 'combined-entry',
-            kind: 'manual',
-            name: 'Deposited monthly',
-            type: 'Fixed deposit / RD',
-            invested: 1_000,
-            value: 1_100,
-            logs: [{ id: 'old-entry', date: '2026-10-01', amount: 100, note: 'kept', kind: 'Deposit' }],
-          },
-          {
-            id: 'combined-schedule',
-            kind: 'plan',
-            name: 'Scheduled deposit',
-            type: 'FD / RD',
-            frequency: 'monthly',
-            logs: [],
-          },
-          {
-            id: 'already-fixed-plan',
-            kind: 'plan',
-            name: 'Scheduled fixed',
-            type: 'Fixed deposit',
-            frequency: 'monthly',
-            logs: [],
-          },
-          {
-            id: 'already-fixed',
-            kind: 'manual',
-            name: 'Already fixed',
-            type: 'Fixed deposit',
-            invested: 500,
-            value: 550,
-            logs: [{ id: 'legacy-fixed-entry', date: '2026-10-02', amount: 50, note: 'preserve', kind: 'Withdrawal' }],
-          },
-          {
-            id: 'already-fixed-linked',
-            kind: 'manual',
-            name: 'Fixed deposit with a Budget schedule',
-            type: 'Fixed deposit',
-            invested: 500,
-            value: 550,
-            logs: [],
-          },
-          {
-            id: 'already-recurring',
-            kind: 'plan',
-            name: 'Already recurring',
-            type: 'Recurring deposit',
-            frequency: 'monthly',
-            logs: [],
-          },
-        ],
-        budgetPlan: { items: [{ id: 'budget-item', holdingId: 'already-fixed-linked' }] },
-      };
-      const originalHoldings = data.holdings;
-      const migrated = migrateV15ToV16(data) as typeof data;
-      expect(migrated.holdings.map(({ id, type }) => ({ id, type }))).toEqual([
-        { id: 'combined-empty', type: 'Fixed deposit' },
-        { id: 'combined-entry', type: 'Recurring deposit' },
-        { id: 'combined-schedule', type: 'Recurring deposit' },
-        { id: 'already-fixed-plan', type: 'Recurring deposit' },
-        { id: 'already-fixed', type: 'Fixed deposit' },
-        { id: 'already-fixed-linked', type: 'Recurring deposit' },
-        { id: 'already-recurring', type: 'Recurring deposit' },
-      ]);
-      expect(migrated.holdings[1]?.logs).toEqual(data.holdings[1]?.logs);
-      expect(migrated.holdings[3]?.logs).toEqual(data.holdings[3]?.logs);
-      expect(migrated.budgetPlan).toEqual(data.budgetPlan);
-      expect(migrated).toMatchObject({ transactions: data.transactions, goals: data.goals, efBucketLinks: data.efBucketLinks });
-      expect(data.holdings).toBe(originalHoldings);
-      expect(migratePersisted({ data }, 15, {
-        today: '2026-11-04',
-        newId: () => 'unused',
-      })).toEqual({ data: migrateV21ToV22(migrated) });
-  });
-
-  it('leaves already-separated v15 holdings and malformed non-data inputs unchanged', () => {
-    const alreadySeparated = {
-      holdings: [{ id: 'fixed', type: 'Fixed deposit' }, { id: 'recurring', type: 'Recurring deposit' }],
-    };
-    expect(migrateV15ToV16(alreadySeparated)).toBe(alreadySeparated);
-    expect(migrateV15ToV16({ holdings: null })).toEqual({ holdings: null });
-    expect(migrateV15ToV16(null)).toBeNull();
-  });
-
-  it('removes only cover goals and policy assignments when migrating v16 to v17', () => {
-    const data = {
-      ...mockAppData,
-      coverGoals: [{ id: 'legacy-cover', name: 'Legacy', kind: 'health', target: { mode: 'none' } }],
-      policies: mockAppData.policies.map((policy) => ({ ...policy, coverGoalId: 'legacy-cover' })),
-    };
-    const migrated = migrateV16ToV17(data) as Record<string, unknown>;
-    const { coverGoals: _coverGoals, ...withoutGoals } = data;
-    expect(migrated).toEqual({
-      ...withoutGoals,
-      policies: data.policies.map(({ coverGoalId: _coverGoalId, ...policy }) => policy),
-    });
-    expect(migratePersisted({ data }, 16, { today: '2026-11-04', newId: () => 'unused' }))
-      .toEqual({ data: migrateV21ToV22(migrated) });
-    expect(() => migratePersisted(data, 23)).toThrow(
-      new PersistedVersionError(23, 'future-version'),
-    );
-  });
-
-  it('adds dueDate only to payments matched by the v17 FIFO schedule', () => {
-    const policy = {
-      ...mockAppData.policies[0],
-      frequency: 'monthly' as const,
-      trackFrom: '2026-11-07',
-      endDate: '2026-12-31',
-      payments: [
-        { id: 'before-tracking', date: '2026-11-06', amount: 500, note: '' },
-        { id: 'first-slot', date: '2026-11-08', amount: 500, note: '' },
-        { id: 'second-slot', date: '2026-12-10', amount: 500, note: '' },
-        { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
-      ],
-    };
-    if (!policy) throw new Error('Expected the policy migration fixture.');
-    const legacy = { ...mockAppData, policies: [policy] };
-    const migrated = migrateV17ToV18(legacy, { today: '2026-12-15' }) as typeof legacy;
-    expect(migrated.policies[0]?.payments).toEqual([
-      { id: 'before-tracking', date: '2026-11-06', amount: 500, note: '' },
-      { id: 'first-slot', date: '2026-11-08', amount: 500, note: '', dueDate: '2026-11-07' },
-      { id: 'second-slot', date: '2026-12-10', amount: 500, note: '', dueDate: '2026-12-07' },
-      { id: 'unmatched', date: '2026-12-11', amount: 500, note: '' },
-    ]);
-    expect(migratePersisted({ data: legacy }, 17, {
-      today: '2026-12-15',
-      newId: () => 'unused',
-    })).toEqual({ data: migrateV21ToV22(migrated) });
-    expect(() => migrateV17ToV18({ policies: [null] }, { today: '2026-12-15' }))
-      .toThrow(new PersistedVersionError(17, 'unknown-version'));
+    const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
+    expect(migrated.data.coverGoals).toHaveLength(5);
   });
 
   it('moves legacy manual Insurance items into the current Insurance system section', () => {

@@ -5,7 +5,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { DateField } from '../src/components/form/DateField';
-import { HelperText } from '../src/components/form/HelperText';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
@@ -16,7 +15,6 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingValue } from '../src/domain/portfolio';
 import { makeInvestmentEntryFormSchema, type InvestmentEntryFormInput, type InvestmentEntryFormOutput } from '../src/domain/schemas';
 import { currentInstallmentAmount } from '../src/domain/sip';
@@ -37,7 +35,6 @@ export default function InvestmentEntryFormScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
-  const capabilities = holding ? holdingCapabilities(holding.type) : null;
   const entry = holding?.logs.find((item) => item.id === entryId);
   const linked = entry ? data.transactions.some((transaction) => transaction.source?.kind === 'holding-entry' && transaction.source.entryId === entry.id) : false;
   const currentValue = holding
@@ -56,15 +53,14 @@ export default function InvestmentEntryFormScreen() {
   const { control, handleSubmit, formState: { isDirty, isSubmitting, errors } } = useForm<InvestmentEntryFormInput, undefined, InvestmentEntryFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: entry
-      ? { kind: entry.kind, date: entry.date, amount: String(entry.amount), price: entry.price === undefined ? '' : String(entry.price), note: entry.note }
+      ? { kind: entry.kind, date: entry.date, amount: String(entry.amount), note: entry.note }
       : {
-        kind: requestedKind ?? (capabilities && !capabilities.entries ? 'Withdrawal' : 'Deposit'),
+        kind: requestedKind ?? 'Deposit',
         date: requestedDate ?? today,
         amount: requestedAmount
           ?? (holding?.kind === 'plan' && requestedKind !== 'Withdrawal'
             ? String(Math.round(currentInstallmentAmount(holding, today) * 100) / 100)
             : ''),
-        price: '',
         note: '',
       },
   });
@@ -81,7 +77,7 @@ export default function InvestmentEntryFormScreen() {
     }
     submitting.current = true;
     try {
-      if (entry) actions.updateInvestmentEntry(holding.id, entry.id, { date: values.date, amount: values.amount, price: values.price, note: values.note });
+      if (entry) actions.updateInvestmentEntry(holding.id, entry.id, { date: values.date, amount: values.amount, note: values.note });
       else actions.addInvestmentEntry(holding.id, values);
       const state = useAppStore.getState();
       if (state.lastError) void confirmAsync({ title: 'Could not save log', message: state.lastError, confirmLabel: 'OK' });
@@ -107,9 +103,6 @@ export default function InvestmentEntryFormScreen() {
     });
   };
   if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment entry not found" /></FormScreen>;
-  if (!entry && requestedKind === 'Deposit' && capabilities && !capabilities.entries) {
-    return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Fixed deposits do not accept new deposits. Record a maturity withdrawal instead." /></FormScreen>;
-  }
   return (
     <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={isDirty}
       headerAction={entry ? { label: 'Delete investment entry', onPress: remove } : undefined}
@@ -122,31 +115,15 @@ export default function InvestmentEntryFormScreen() {
       {entry ? <ReadOnlyRow label="Entry type" value={entry.kind} /> : (
         <Controller control={control} name="kind" render={({ field }) => (
           <SegmentedControl
-            value={field.value ?? ''}
-            options={capabilities?.entries
-              ? [{ label: 'Deposit', value: 'Deposit' }, { label: 'Withdrawal', value: 'Withdrawal' }]
-              : [{ label: 'Maturity withdrawal', value: 'Withdrawal' }]}
+            value={field.value}
+            options={[{ label: 'Deposit', value: 'Deposit' }, { label: 'Withdrawal', value: 'Withdrawal' }]}
             onChange={field.onChange}
           />
         )} />
       )}
-      {!capabilities?.entries ? <ReadOnlyRow label="Purpose" value="Maturity payout" /> : null}
-      <Controller control={control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Entry date" />} />
+      <Controller control={control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Installment date" />} />
       <Controller control={control} name="amount" render={({ field }) => <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
-      {holding && ['Mutual fund / SIP', 'Stocks / ETF', 'Gold', 'Silver'].includes(holding.type) ? (
-        <>
-          <Controller control={control} name="price" render={({ field }) => <MoneyField
-            label="Price per unit (optional)"
-            accessibilityLabel="Entry price per unit"
-            value={field.value ?? ''}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.price?.message}
-          />} />
-          <HelperText>For a deposit, units are calculated as amount ÷ price. Enter prices by hand.</HelperText>
-        </>
-      ) : null}
-      <Controller control={control} name="note" render={({ field }) => <TextField label="Note" accessibilityLabel="Entry note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />} />
+      <Controller control={control} name="note" render={({ field }) => <TextField label="Note" accessibilityLabel="Installment note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />} />
       {entry ? <ReadOnlyRow label="Linked transaction" value={linked ? 'Yes' : 'No'} /> : null}
     </FormScreen>
   );

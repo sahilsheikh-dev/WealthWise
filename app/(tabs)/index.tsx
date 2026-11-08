@@ -8,11 +8,11 @@ import { AppHeader } from '../../src/components/AppHeader';
 import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
-import { PaidAmountDialog } from '../../src/components/PaidAmountDialog';
 import {
   AppText,
   Button,
   Card,
+  EmptyState,
   Screen,
   StatPill,
   StatPillRow,
@@ -24,6 +24,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
+import { coverGoalSummaries } from '../../src/domain/coverGoals';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
@@ -33,6 +34,7 @@ import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
+import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -57,6 +59,8 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
+  const coverGoals = coverGoalSummaries(data, today);
+  const termLifeGoal = coverGoals.find((goal) => goal.type === 'term-life');
   const insuranceSummary = policySummary(data, today);
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
@@ -69,7 +73,6 @@ export default function HomeScreen() {
   }
   const spendingExpanded = spendingState.expanded;
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
-  const [homePayment, setHomePayment] = useState<PendingItem | null>(null);
   const persistedBytes = useUIStore((state) => state.persistedBytes);
   const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
@@ -115,34 +118,81 @@ export default function HomeScreen() {
       Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
       return;
     }
-    setHomePayment(item);
-  };
-  const saveHomePayment = (actualAmount: number) => {
-    const item = homePayment;
-    if (!item || !item.dueDate) return;
-    const source = item.source;
-    if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
-    const target: DueTarget = { kind: source.kind, id: source.parentId };
-    if (!item.actionable) {
-      const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
+    const clearThrough = preview !== null && preview.count > 1;
+    const extra = clearThrough && preview
+      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
+      : '';
+    const confirmed = await confirmAsync({
+      title: 'Was this paid?',
+      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
+      confirmLabel: 'Paid',
+      cancelLabel: 'Not paid',
+    });
+    if (!confirmed) return;
+
+    if (clearThrough && preview) {
+      const entryIds = actions.clearDuesThrough(target, item.dueDate);
       if (!entryIds || useAppStore.getState().lastError) {
         Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
         return;
       }
-      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
-        actions.undoClearDuesThrough(target, entryIds);
-      } });
-    } else {
-      const entryId = actions.clearDue(target, source.slotId, actualAmount);
-      if (!entryId || useAppStore.getState().lastError) {
-        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      const sourceKind = target.kind === 'plan'
+        ? 'holding-entry'
+        : target.kind === 'liability' ? 'liability-payment' : 'policy-payment';
+      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
+        transaction.source?.kind === sourceKind
+        && transaction.source.parentId === target.id
+        && transaction.source.entryId === entryId,
+      ));
+      if (transactions.some((transaction) => transaction === undefined)) {
+        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
         return;
       }
-      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
-        actions.undoClearDue(target, entryId);
-      } });
+      let total = 0;
+      for (const transaction of transactions) {
+        if (!transaction) {
+          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+          return;
+        }
+        total += transaction.amount;
+      }
+      setActionToast({
+        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
+        actionLabel: 'Undo',
+        onAction: () => {
+          actions.undoClearDuesThrough(target, entryIds);
+          const error = useAppStore.getState().lastError;
+          if (error) Alert.alert('Unable to undo', error);
+        },
+      });
+      return;
     }
-    setHomePayment(null);
+
+    const entryId = actions.clearDue(target, item.source.slotId);
+    if (!entryId || useAppStore.getState().lastError) {
+      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      return;
+    }
+    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
+      (candidate.source?.kind === 'holding-entry'
+        || candidate.source?.kind === 'liability-payment'
+        || candidate.source?.kind === 'policy-payment')
+      && candidate.source.parentId === target.id
+      && candidate.source.entryId === entryId,
+    );
+    if (!transaction) {
+      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
+      return;
+    }
+    setActionToast({
+      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
+      actionLabel: 'Undo',
+      onAction: () => {
+        actions.undoClearDue(target, entryId);
+        const error = useAppStore.getState().lastError;
+        if (error) Alert.alert('Unable to undo', error);
+      },
+    });
   };
   return (
     <Screen>
@@ -165,8 +215,6 @@ export default function HomeScreen() {
             tone="err"
             onPress={() => router.push('/liabilities')}
           />
-        </StatPillRow>
-        <StatPillRow>
           <StatPill
             label="Emergency fund"
             value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
@@ -177,18 +225,6 @@ export default function HomeScreen() {
             }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
-          />
-          <StatPill
-            label="Insurance"
-            value={data.policies.length === 0
-              ? 'No policies yet'
-              : <AmountText value={insuranceSummary.totalCover} tier="tile" />}
-            accessibilityLabel={data.policies.length === 0
-              ? 'Insurance, No policies yet'
-              : `Insurance, total cover ${formatAmount(insuranceSummary.totalCover, 'exact', 1)}`}
-            tone="primary"
-            onPress={() => router.push(data.policies.length === 0 ? '/policy-form' : '/insurance')}
-            testID="home-insurance-card"
           />
         </StatPillRow>
       </Card>
@@ -332,6 +368,70 @@ export default function HomeScreen() {
         </>
       ) : null}
 
+      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Insurance</AppText>
+      <Pressable
+        testID="home-insurance-card"
+        accessibilityRole="button"
+        accessibilityLabel="Open Insurance"
+        accessibilityHint="Opens insurance policies and cover goals"
+        onPress={() => router.push('/insurance')}>
+        <Card style={styles.insuranceCard}>
+          {data.policies.length === 0 ? (
+            <>
+              <EmptyState title="No policies yet" />
+              <Button
+                label="Add policy"
+                icon="plus"
+                variant="primary"
+                onPress={(event) => {
+                  event.stopPropagation();
+                  router.push('/policy-form');
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <View
+                testID="home-insurance-row-total-cover"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
+                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
+                </View>
+              </View>
+              <View
+                testID="home-insurance-row-yearly-premium"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
+                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
+                </View>
+              </View>
+              {insuranceSummary.nextRenewal ? (
+                <View
+                  testID="home-insurance-row-next-renewal"
+                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
+                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                    <View style={styles.insuranceRenewalDetails}>
+                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
+                      </AppText>
+                    </View>
+                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
+                  </View>
+                </View>
+              ) : null}
+              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
+                <View testID="home-insurance-term-progress">
+                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
+                </View>
+              ) : null}
+            </>
+          )}
+        </Card>
+      </Pressable>
+
       <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Goal Progress</AppText>
       <View testID="home-goals-section">
         <Card style={styles.goalsCard}>
@@ -434,14 +534,6 @@ export default function HomeScreen() {
           })}
         </Card>
       </View>
-      <PaidAmountDialog
-        visible={homePayment !== null}
-        title={homePayment?.title ?? ''}
-        dueAmount={homePayment?.amount ?? 0}
-        dueDate={homePayment?.dueDate}
-        onPaid={saveHomePayment}
-        onNotPaid={() => setHomePayment(null)}
-      />
     </Screen>
   );
 }
@@ -469,7 +561,7 @@ const styles = StyleSheet.create({
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dueActionsStacked: { justifyContent: 'flex-end' },
-  markPaidButton: { minHeight: 44, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
+  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goalsCard: { paddingVertical: 4 },
   goalRow: { paddingVertical: 14 },

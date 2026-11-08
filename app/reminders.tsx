@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
@@ -16,7 +15,6 @@ import { planReminders } from '../src/domain/reminders';
 import { formatDate } from '../src/lib/format';
 import { reminderNotificationAdapter } from '../src/lib/reminderNotifications';
 import type { ReminderPermissionState } from '../src/lib/reminderPermissions';
-import { enableReminderPreferences } from '../src/lib/reminderPreferences';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -43,20 +41,13 @@ function errorText(error: unknown): string {
 }
 
 export default function RemindersScreen() {
-  const params = useLocalSearchParams<{ setup?: string }>();
   const { colors } = useTheme();
   const { settings: securitySettings } = useSecuritySettings();
   const data = useAppStore((state) => state.data);
   const [preferences, setPreferences] = useState<PersistedReminderPreferences | null>(null);
   const [permission, setPermission] = useState<ReminderPermissionState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(() =>
-    params.setup === 'denied'
-      ? 'Notification permission was not granted. Reminders remain off.'
-      : params.setup === 'blocked'
-        ? 'Allow notifications in system settings to turn reminders on.'
-        : null,
-  );
+  const [message, setMessage] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
@@ -106,22 +97,21 @@ export default function RemindersScreen() {
     setBusy(true);
     setMessage(null);
     try {
-      const result = await enableReminderPreferences(preferences, {
-        getPermissionState: reminderNotificationAdapter.getPermissionState,
-        requestPermission: reminderNotificationAdapter.requestPermission,
-        save: async (next) => {
-          const meta = await metaStore.updateMeta({ reminders: next });
-          return meta.reminders ?? DEFAULT_REMINDER_PREFERENCES;
-        },
-      });
-      setPermission(result.permission);
-      if (result.permission !== 'granted') {
-        setMessage(result.permission === 'blocked'
+      const current = await reminderNotificationAdapter.getPermissionState();
+      const next = current === 'granted'
+        ? current
+        : current === 'blocked'
+          ? current
+          : await reminderNotificationAdapter.requestPermission();
+      setPermission(next);
+      if (next !== 'granted') {
+        setMessage(next === 'blocked'
           ? 'Allow notifications in system settings to turn reminders on.'
           : 'Notification permission was not granted. Reminders remain off.');
         return;
       }
-      setPreferences(result.preferences);
+      const meta = await metaStore.updateMeta({ reminders: { ...preferences, enabled: true } });
+      setPreferences(meta.reminders ?? DEFAULT_REMINDER_PREFERENCES);
     } catch (error) {
       setMessage(errorText(error));
     } finally {
@@ -235,12 +225,6 @@ export default function RemindersScreen() {
               disabled={busy}
               onValueChange={(value) => void save({ ...preferences, showAmounts: value })}
             />
-            <SwitchRow
-              label="Monthly update-values reminder"
-              value={preferences.updateValues ?? false}
-              disabled={busy}
-              onValueChange={(value) => void save({ ...preferences, updateValues: value })}
-            />
             <AppText style={[typography.meta, { color: colors.text3, lineHeight: 19 }]}>
               Hide app previews overrides this setting and keeps notification text generic.
             </AppText>
@@ -259,9 +243,7 @@ export default function RemindersScreen() {
                   </AppText>
                   <AppText style={[typography.meta, { color: colors.text2 }]}>{item.body}</AppText>
                 </View>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  {item.kind === 'update-values' ? 'Monthly' : item.kind === 'day-before' ? 'Day before' : 'Due day'}
-                </AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>{item.kind === 'day-before' ? 'Day before' : 'Due day'}</AppText>
               </View>
             ))}
           </Card>

@@ -1,9 +1,6 @@
 import {
   budgetLineActual,
-  customBudgetCategories,
   effectiveMonthBudget,
-  isIncomeDueInMonth,
-  plannedIncomeOf,
   plannedForMonth,
 } from './budget';
 import { monthEndDate } from './cashFlow';
@@ -11,7 +8,6 @@ import { monthKey } from './dates';
 import { investCategoryFor } from './links';
 import { isInsuranceBudgetCategory, policyPremiumCategory } from './policyCategories';
 import { policySchedule } from './policySchedule';
-import { holdingCapabilities } from './holdingCapabilities';
 import { liabilitySchedule, planSchedule } from './schedule';
 import type { AppData, ISODate, Transaction } from './types';
 
@@ -34,13 +30,6 @@ export type PendingItem = {
   status: PendingStatus;
   source: PendingSource;
   actionable: boolean;
-};
-
-type PendingScheduleCache = {
-  plans: Map<string, ReturnType<typeof planSchedule>>;
-  liabilities: Map<string, ReturnType<typeof liabilitySchedule>>;
-  policies: Map<string, ReturnType<typeof policySchedule>>;
-  customCategories: ReadonlySet<string> | null;
 };
 
 function validateMonth(month: string): void {
@@ -69,28 +58,6 @@ function compareItems(left: PendingItem, right: PendingItem): number {
 }
 
 export function pendingItems(data: AppData, month: string, today: ISODate): PendingItem[] {
-  return createPendingItemsReader(data, today)(month);
-}
-
-export function createPendingItemsReader(
-  data: AppData,
-  today: ISODate,
-): (month: string) => PendingItem[] {
-  const cache: PendingScheduleCache = {
-    plans: new Map(),
-    liabilities: new Map(),
-    policies: new Map(),
-    customCategories: null,
-  };
-  return (month) => pendingItemsWithCache(data, month, today, cache);
-}
-
-function pendingItemsWithCache(
-  data: AppData,
-  month: string,
-  today: ISODate,
-  cache: PendingScheduleCache,
-): PendingItem[] {
   validateMonth(month);
   const items: PendingItem[] = [];
   const representedCategories = new Set<string>();
@@ -99,13 +66,8 @@ function pendingItemsWithCache(
   );
 
   for (const holding of data.holdings) {
-    if (holding.kind !== 'plan' || !holdingCapabilities(holding.type).recurring) continue;
-    let schedule = cache.plans.get(holding.id);
-    if (!schedule) {
-      schedule = planSchedule(holding, today);
-      cache.plans.set(holding.id, schedule);
-    }
-    const rows = schedule.rows;
+    if (holding.kind !== 'plan') continue;
+    const rows = planSchedule(holding, today).rows;
     const firstUnpaid = rows.find((row) => row.status !== 'paid');
     const category = investCategoryFor(holding.type);
     for (const row of rows) {
@@ -127,12 +89,7 @@ function pendingItemsWithCache(
 
   for (const liability of data.liabilities) {
     if (liability.kind === 'one-time' && liability.dueDate === null) continue;
-    let schedule = cache.liabilities.get(liability.id);
-    if (!schedule) {
-      schedule = liabilitySchedule(liability, today);
-      cache.liabilities.set(liability.id, schedule);
-    }
-    const rows = schedule.rows;
+    const rows = liabilitySchedule(liability, today).rows;
     const firstUnpaid = rows.find((row) => row.status !== 'paid');
     for (const row of rows) {
       if (row.status === 'paid' || monthKey(row.dueDate) !== month) continue;
@@ -157,12 +114,7 @@ function pendingItemsWithCache(
 
   for (const policy of data.policies) {
     if (policy.status !== 'active') continue;
-    let schedule = cache.policies.get(policy.id);
-    if (!schedule) {
-      schedule = policySchedule(policy, today);
-      cache.policies.set(policy.id, schedule);
-    }
-    const rows = schedule.rows;
+    const rows = policySchedule(policy, today).rows;
     const firstUnpaid = rows.find((row) => row.status !== 'paid');
     const category = policyPremiumCategory(policy.kind);
     for (const row of rows) {
@@ -193,7 +145,6 @@ function pendingItemsWithCache(
       );
     }
     for (const income of budget.incomes) {
-      if (!isIncomeDueInMonth(income, month)) continue;
       if (income.day === undefined) continue;
       const earned = earnedByCategory.get(income.category) ?? 0;
       const applied = Math.min(earned, income.amount);
@@ -228,10 +179,9 @@ function pendingItemsWithCache(
       );
       const planned = item.mode === 'amount'
         ? plannedValue
-        : Math.round(plannedValue * plannedIncomeOf(budget, month) / 100);
+        : Math.round(plannedValue * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
       const remaining = Math.max(0, planned - budgetLineActual(data, month, category, {
         excludePolicyPayments: true,
-        customCategories: cache.customCategories ??= customBudgetCategories(data),
       }));
       if (remaining === 0) continue;
       const dueDate = dueDateForLine(month, item.dueDay);

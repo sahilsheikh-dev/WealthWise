@@ -5,6 +5,7 @@ import {
   deletePolicy,
   DuplicatePolicyError,
   PolicyGoalLinkError,
+  setPolicyStatus,
   updatePolicy,
 } from '../policyActions';
 import type { Policy } from '../types';
@@ -78,47 +79,6 @@ describe('policyActions', () => {
     expect(data.policies).toEqual([]);
   });
 
-  it('retains hidden legacy fields and savings-policy goal links when editing a policy', () => {
-    const retainedPolicy = {
-      ...policy,
-      kind: 'life-savings' as const,
-      status: 'matured' as const,
-      nominee: 'Family',
-      endDate: '2040-01-01',
-      premiumYears: 20,
-      currentValue: 25_000,
-      valueAsOf: '2026-01-01',
-    };
-    const data = {
-      ...emptyAppData('2026-03-01'),
-      policies: [retainedPolicy],
-      goals: [{
-        id: 'savings-goal',
-        name: 'Savings goal',
-        target: 100_000,
-        saved: 0,
-        year: 2030,
-        links: [{ instrumentId: retainedPolicy.id }],
-      }],
-    };
-    const edited = updatePolicy(data, {
-      id: retainedPolicy.id,
-      patch: { name: 'Renamed savings policy', trackFrom: '2026-03-01' },
-    });
-    expect(edited.policies[0]).toMatchObject({
-      name: 'Renamed savings policy',
-      kind: 'life-savings',
-      status: 'matured',
-      nominee: 'Family',
-      endDate: '2040-01-01',
-      premiumYears: 20,
-      trackFrom: '2026-03-01',
-      currentValue: 25_000,
-      valueAsOf: '2026-01-01',
-    });
-    expect(edited.goals).toEqual(data.goals);
-  });
-
   it('throws for duplicate and missing policy IDs', () => {
     expect(() => addPolicy({ ...emptyAppData('2026-03-01'), policies: [policy] }, policy))
       .toThrow(DuplicatePolicyError);
@@ -150,7 +110,7 @@ describe('policyActions', () => {
     }
   });
 
-  it('deletes a policy without deleting its insurance transaction', () => {
+  it('sets status and deletes a policy without deleting its insurance transaction', () => {
     const savings = { ...policy, kind: 'life-savings' as const, currentValue: 1_000, valueAsOf: '2026-02-01' };
     const otherPolicy = { ...policy, id: 'other-policy', payments: [
       { id: 'other-payment', date: '2026-02-01', amount: 50, note: '' },
@@ -201,6 +161,9 @@ describe('policyActions', () => {
       }],
       efBucketLinks: { cash: [savings.id, holding.id] },
     };
+    const inactive = setPolicyStatus(data, { id: savings.id, status: 'lapsed' });
+    expect(inactive.policies[0]?.status).toBe('lapsed');
+    expect(setPolicyStatus(inactive, { id: savings.id, status: 'lapsed' })).toBe(inactive);
     const deleted = deletePolicy(data, { id: savings.id });
     expect(deleted.policies).toEqual([otherPolicy]);
     expect(deleted.transactions).toEqual([{
@@ -232,8 +195,10 @@ describe('policyActions', () => {
     expect(data.policies).toEqual([savings, otherPolicy]);
   });
 
-  it('throws typed not-found errors for policy deletes', () => {
+  it('throws typed not-found errors for status changes and deletes', () => {
     const empty = emptyAppData('2026-03-01');
+    expect(() => setPolicyStatus(empty, { id: 'missing', status: 'active' }))
+      .toThrow('Policy with id "missing" was not found');
     expect(() => deletePolicy(empty, { id: 'missing' }))
       .toThrow('Policy with id "missing" was not found');
   });

@@ -30,18 +30,9 @@ jest.mock('../TopAnchoredSheet', () => {
     TopAnchoredSheet: ({
       visible,
       onClose,
-      centered,
-      contentStyle,
-      sheetTestID,
       children,
-    }: React.PropsWithChildren<{
-      visible: boolean;
-      onClose: () => void;
-      centered?: boolean;
-      contentStyle?: unknown;
-      sheetTestID?: string;
-    }>) => visible
-      ? ReactModule.createElement('sheet', { onClose, centered, contentStyle, sheetTestID }, children)
+    }: React.PropsWithChildren<{ visible: boolean; onClose: () => void }>) => visible
+      ? ReactModule.createElement('sheet', { onClose }, children)
       : null,
   };
 });
@@ -79,7 +70,7 @@ describe('Dropdown', () => {
     expect(renderer.root.findAll((node) => String(node.type) === 'icon').map((node) => node.props.name)).toContain('chevron-down');
   });
 
-  it('opens a centered sheet with grouped titles, checks selection, and closes on selection', () => {
+  it('shows grouped titles only, checks the selected option, and closes on selection', () => {
     const onChange = jest.fn();
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
@@ -91,8 +82,6 @@ describe('Dropdown', () => {
     act(() => renderer?.root.findByProps({ testID: 'dropdown-control' }).props.onPress());
     const sheet = renderer.root.findAll((node) => String(node.type) === 'sheet')[0];
     if (!sheet) throw new Error('Dropdown sheet was not rendered.');
-    expect(sheet.props.centered).toBe(true);
-    expect(sheet.props.sheetTestID).toBe('dropdown-sheet');
     expect(sheet.findAllByType('text').map((node) => node.children.join(''))).toEqual([
       'Essentials', 'Food', 'Rent', 'Other', 'Pets',
     ]);

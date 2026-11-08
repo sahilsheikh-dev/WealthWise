@@ -17,13 +17,11 @@ const reminderPreferencesSchema = z.strictObject({
   dayBefore: z.boolean(),
   sameDay: z.boolean(),
   showAmounts: z.boolean(),
-  updateValues: z.boolean().optional(),
 });
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
   nudgeDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   storageWarnDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  remindersPromptHandled: z.boolean().optional(),
   sortSpecs: z.record(z.string(), sortSpecSchema).optional(),
   reminders: reminderPreferencesSchema.optional(),
 });
@@ -37,7 +35,6 @@ export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   dayBefore: true,
   sameDay: true,
   showAmounts: false,
-  updateValues: false,
 };
 
 export function createMetaStore(storage: StateStorage) {
