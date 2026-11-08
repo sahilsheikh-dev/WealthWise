@@ -9,15 +9,12 @@
   The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
   branches, `history/by-phase`, and all 30 phase completion tags at that time.
   The `v1.0.0` tag was not changed; no force push was used.
-- PRs #1-#5 are merged in order: Phase 28 to develop (#1), release to main
-  (#2), main back to develop (#3), audit task to Phase 28 (#4), and Phase 28
-  to develop (#5). The contributor-credit correction and owner-reported
-  N39-N43 results are available on both main and develop. The additional
-  branch-audit correction is on develop; release-to-main and back-merge PRs
-  are the remaining integration steps. Current remote tips:
-  `origin/main` `91e0cc2`, `origin/develop` `c4be8e8`,
-  `origin/phase/28-qa-and-release` `5ae2bd6`, and
-  `origin/release/v1.1.0` `87945c3`.
+- Release 2 PRs #1-#7 follow the chronological flow: Phase 28 to develop (#1),
+  release to main (#2), main back to develop (#3), audit task to Phase 28
+  (#4), Phase 28 to develop (#5), release branch to main (#6), and main back
+  to develop (#7). The contributor-credit correction and owner-reported
+  N39-N43 results are on main and develop; the audit records are carried
+  through the same release/back-merge path.
 - GitHub branch audit found 35 remote heads: main, develop, the read-only
   `history/by-phase` archive, all 30 phase branches, `release/v1.1.0`, and the
   current audit task branch.
@@ -59,17 +56,18 @@
 - Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
   latest commits on their respective phase branches. Tags were not moved;
   whether to update them remains an owner decision.
-- Branch audit (2026-11-08): PRs #1-#5 are merged and their branch tips are
-  remotely verified. Audit records are now in `develop`; the release branch
-  sync and PR to main/back-merge remain. The v1.1.0 tag and publication remain
-  pending owner build and approval. `codex-changes`, `phase/25-release-and-backups`, and
+- Branch audit (2026-11-08): the chronological PR path carries the task
+  correction through Phase 28, develop, the release branch and main, then
+  back-merges main into develop. The relevant branch refs are verified in the
+  GitHub PRs. The v1.1.0 tag and publication remain pending owner build and
+  approval. `codex-changes`, `phase/25-release-and-backups`, and
   `task/P28-E-phase-history` remain outside the merged Release 2 chain; the
   `history/by-phase` branch is a read-only archive. No unrelated branch or
   tag was changed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
-  are integrated through PRs #1-#3. P28-F-R2-R1 audit records are integrated
-  into develop via PRs #4-#5; release-to-main and back-merge follow. No tag or
-  release publication was made.
+  are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
+  to follow task -> Phase 28 -> develop -> release -> main -> develop. No tag
+  or release publication was made.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,
