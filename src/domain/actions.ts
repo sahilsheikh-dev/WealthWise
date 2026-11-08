@@ -16,6 +16,11 @@ export function emptyAppData(asOf: ISODate): AppData {
     goals: ensureEfGoal([], { expenseBaseline: 0, asOf }),
     holdings: [],
     liabilities: [],
+    policies: [],
+    budget: null,
+    budgetTemplates: [],
+    defaultBudgetTemplateId: null,
+    monthBudgets: [],
     efEntries: [],
     efAllocation: null,
   };

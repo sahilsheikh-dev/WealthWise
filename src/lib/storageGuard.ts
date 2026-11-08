@@ -11,11 +11,16 @@ export function storageLevel(bytes: number): 'ok' | 'warn' | 'critical' {
   return 'ok';
 }
 
-export function storageSummary(bytes: number): string {
+export function shouldShowStorageWarning(bytes: number, dismissedUntil: string | undefined, today: string): boolean {
   const level = storageLevel(bytes);
+  if (level === 'ok') return false;
+  if (level === 'critical') return true;
+  return dismissedUntil === undefined || dismissedUntil <= today;
+}
+
+export function storageSummary(bytes: number): string {
   const unit = bytes < 1024 ? 'B' : bytes < 1024 * 1024 ? 'KB' : 'MB';
   const value = bytes < 1024 ? bytes : bytes < 1024 * 1024 ? bytes / 1024 : bytes / (1024 * 1024);
   const rounded = Number(value.toFixed(1));
-  const next = level === 'critical' ? 'about 2 MB' : 'about 2 MB';
-  return `${rounded} ${unit} of ${next}`;
+  return `${rounded} ${unit} of about 2 MB`;
 }

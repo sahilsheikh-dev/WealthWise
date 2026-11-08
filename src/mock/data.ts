@@ -4,6 +4,7 @@ import type {
   Goal,
   Holding,
   Liability,
+  Policy,
   Transaction,
 } from '../domain/types';
 
@@ -18,10 +19,10 @@ export const transactions: Transaction[] = [
 ];
 
 export const goals: Goal[] = [
-  { id: 'goal-portfolio', name: 'First ₹5L portfolio', target: 500_000, saved: 315_841, year: 2026 },
-  { id: 'goal-home', name: 'Home - Nagpur', target: 10_000_000, saved: 0, year: 2041 },
-  { id: 'goal-farm', name: 'Poultry farm', target: 200_000, saved: 0, year: 2026 },
-  { id: 'goal-emergency', name: 'Emergency fund', target: 300_000, saved: 155_000, year: 2028, auto: 'ef' },
+  { id: 'goal-portfolio', name: 'First ₹5L portfolio', target: 500_000, saved: 315_841, year: 2026, links: [{ instrumentId: 'holding-sip', share: 30 }] },
+  { id: 'goal-home', name: 'Home - Nagpur', target: 10_000_000, saved: 0, year: 2041, links: [{ instrumentId: 'policy-savings', share: 25 }] },
+  { id: 'goal-farm', name: 'Poultry farm', target: 200_000, saved: 0, year: 2026, links: [] },
+  { id: 'goal-emergency', name: 'Emergency fund', target: 300_000, saved: 155_000, year: 2028, auto: 'ef', links: [] },
 ];
 
 export const holdings: Holding[] = [
@@ -86,6 +87,7 @@ export const liabilities: Liability[] = [
       { id: 'emi-aug', date: '2026-08-05', amount: 6_281, note: '', kind: 'EMI' },
       { id: 'emi-sep', date: '2026-09-05', amount: 6_281, note: '', kind: 'EMI' },
     ],
+    settlement: null,
   },
   {
     id: 'liability-friend',
@@ -102,6 +104,23 @@ export const liabilities: Liability[] = [
   },
 ];
 
+export const policies: Policy[] = [{
+  id: 'policy-savings',
+  name: 'Future Builder',
+  insurer: 'Wealth Life',
+  kind: 'life-savings',
+  premium: 18_000,
+  frequency: 'yearly',
+  startDate: '2022-01-15',
+  premiumYears: 20,
+  trackFrom: '2026-01-15',
+  coverAmount: 500_000,
+  currentValue: 82_500,
+  valueAsOf: '2026-09-30',
+  maturityDate: '2042-01-15',
+  payments: [],
+}];
+
 export const emergencyFundEntries: EfEntry[] = [
   { id: 'ef-opening', date: '2026-08-10', amount: 153_000, note: 'Opening balance' },
   { id: 'ef-september', date: '2026-09-08', amount: 2_000, note: 'ICICI RD transfer' },
@@ -113,6 +132,11 @@ export const mockAppData: AppData = {
   goals,
   holdings,
   liabilities,
+  policies,
+  budget: {
+    plannedIncome: 50_000,
+    lines: [{ category: 'Food', planned: 8_000 }, { category: 'Mutual fund / SIP', planned: 10_000 }],
+  },
   efEntries: emergencyFundEntries,
   efAllocation: null,
 };

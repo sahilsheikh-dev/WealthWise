@@ -1,7 +1,11 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
+import { Pressable } from 'react-native';
+import { router } from 'expo-router';
 
 import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
+import GoalsScreen from '../../../app/(tabs)/goals';
+import { useUIStore } from '../../data/uiStore';
 import { emptyAppData } from '../../domain/actions';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
@@ -14,6 +18,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
 jest.mock('../../data/store', () => ({
   useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
+  metaStore: {
+    getMeta: async () => ({}),
+    updateSortSpec: async () => ({}),
+  },
 }));
 jest.mock('../../data/metaStore', () => ({
   createMetaStore: () => ({ getMeta: async () => ({}), updateMeta: async () => ({}) }),
@@ -48,12 +56,14 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
+    Chip: node('chip'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
     StatPill: node('pill'),
     StatPillRow: node('pillrow'),
     StatusBadge: node('badge'),
+    WarningBanner: node('warning'),
   };
 });
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
@@ -63,14 +73,78 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
+    Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: object) => styles },
+    Text: node('text'),
     View: node('view'),
   };
 });
 
 describe('Home screen theme smoke', () => {
+  it('opens a goal editor on the first card tap from Home and Goals', async () => {
+    const goal = { id: 'goal-tap', name: 'Trip', target: 50_000, saved: 1_000, year: 2027, links: [] };
+    mockData.goals = [goal];
+    const expectedRoute = { pathname: '/goal-form', params: { id: goal.id } };
+    let home: TestRenderer.ReactTestRenderer | undefined;
+    let goals: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      home = TestRenderer.create(<HomeScreen />);
+      goals = TestRenderer.create(<GoalsScreen />);
+      await Promise.resolve();
+    });
+    if (!home || !goals) throw new Error('Goal screens did not render.');
+    jest.clearAllMocks();
+
+    for (const renderer of [home, goals]) {
+      const card = renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.includes('Edit Trip'),
+      )[0];
+      if (!card) throw new Error('Goal card is not accessible.');
+      act(() => card.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith(expectedRoute);
+    }
+    act(() => {
+      home?.unmount();
+      goals?.unmount();
+    });
+    mockData.goals = [];
+  });
+
+  it('opens the Emergency fund route from its Home summary pill with one tap', async () => {
+    jest.clearAllMocks();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    const emergencyFundPill = renderer.root.findByProps({ label: 'Emergency Fund' });
+    act(() => emergencyFundPill.props.onPress());
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/emergency-fund');
+    act(() => renderer?.unmount());
+  });
+
+  it('keeps the critical storage warning visible without a dismissal action', async () => {
+    act(() => useUIStore.setState({ persistedBytes: 1_600_000 }));
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    expect(renderer.root.findAll((node) => String(node.type) === 'warning')).toHaveLength(1);
+    expect(renderer.root.findAllByType('button').filter((node) => node.props.label === 'Open backup')).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ label: 'Dismiss for 7 days' })).toHaveLength(0);
+    act(() => {
+      renderer?.unmount();
+      useUIStore.setState({ persistedBytes: null });
+    });
+  });
+
   it.each(THEME_IDS)('renders Home with the %s palette', async (id) => {
     mockThemeId.current = id;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -81,6 +155,32 @@ describe('Home screen theme smoke', () => {
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
     expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
-    assertNoVerbText(renderer.root);
+    assertNoVerbText(renderer.root, { screen: 'home' });
+    await act(async () => renderer?.unmount());
+  });
+
+  it.each([1, 1.3, 2])('renders Home quick actions at font scale %s', async (fontScale) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
+    const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
+      node.props.accessibilityRole === 'button'
+      && ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'].includes(
+        node.props.accessibilityLabel,
+      ),
+    );
+    expect(quickActionButtons).toHaveLength(4);
+    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(4);
+    expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
+      'Add Transaction',
+      'New Investment',
+      'New Liability',
+      'Log Emergency Fund',
+    ]);
+    assertNoVerbText(renderer.root, { screen: 'home' });
+    act(() => renderer?.unmount());
   });
 });

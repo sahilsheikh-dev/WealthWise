@@ -25,6 +25,16 @@ describe('savingsLine', () => {
     });
   });
 
+  it('uses earned income wording when any tracked non-earned inflow is present', () => {
+    expect(savingsLine({
+      income: 60_000,
+      earnedIncome: 40_000,
+      withdrawals: 0,
+      nonEarnedIncome: 20_000,
+      rates: { savedPct: 50, investedPct: 10 },
+    })).toMatchObject({ kind: 'rates', basis: 'earned income' });
+  });
+
   it('preserves the existing income-based wording when there are no withdrawals', () => {
     expect(savingsLine({
       income: 50_000,

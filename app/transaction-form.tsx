@@ -45,8 +45,12 @@ const noInvestmentChoice = '__no-investment__';
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function TransactionFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, type: initialTypeParam } = useLocalSearchParams<{ id?: string; type?: string }>();
   const transactionId = Array.isArray(id) ? id[0] : id;
+  const initialTypeValue = Array.isArray(initialTypeParam) ? initialTypeParam[0] : initialTypeParam;
+  const initialType: Transaction['type'] = initialTypeValue === 'income' || initialTypeValue === 'invest'
+    ? initialTypeValue
+    : 'expense';
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -117,8 +121,8 @@ export default function TransactionFormScreen() {
       amount: '',
       date: today,
       note: '',
-      type: 'expense',
-      category: TRANSACTION_CATEGORIES.expense[0],
+      type: initialType,
+      category: TRANSACTION_CATEGORIES[initialType][0],
       instrumentId: undefined,
     },
   });

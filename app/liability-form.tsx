@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
@@ -14,10 +14,11 @@ import { PercentField } from '../src/components/form/PercentField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
-import { Button, EmptyState } from '../src/components/ui';
+import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { emiAuto } from '../src/domain/liability';
+import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOutput } from '../src/domain/schemas';
 import { LIABILITY_TYPES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
@@ -32,8 +33,9 @@ const kindOptions = [
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilityFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, received: receivedParam } = useLocalSearchParams<{ id?: string; received?: string }>();
   const liabilityId = Array.isArray(id) ? id[0] : id;
+  const openedForReceipt = (Array.isArray(receivedParam) ? receivedParam[0] : receivedParam) === '1';
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -63,6 +65,7 @@ export default function LiabilityFormScreen() {
             startDate: liability.startDate,
             emi: String(liability.emi),
             dueDate: '',
+            received: false,
           }
           : {
             kind: 'one-time',
@@ -74,6 +77,7 @@ export default function LiabilityFormScreen() {
             dueDate: liability.dueDate ?? '',
             tenureMonths: '',
             emi: '',
+            received: false,
           }
         : {
           kind: 'recurring',
@@ -85,13 +89,17 @@ export default function LiabilityFormScreen() {
           startDate: today,
           emi: '',
           dueDate: '',
+          received: openedForReceipt,
         },
     });
   const kind = useWatch({ control, name: 'kind' });
   const principal = useWatch({ control, name: 'principal' });
   const rate = useWatch({ control, name: 'ratePct' });
+  const startDate = useWatch({ control, name: 'startDate' });
+  const liabilityType = useWatch({ control, name: 'type' });
   const tenure = useWatch({ control, name: 'tenureMonths' });
   const emi = useWatch({ control, name: 'emi' });
+  const received = useWatch({ control, name: 'received' });
   const principalValue = Number(principal);
   const rateValue = Number(rate);
   const tenureValue = Number(tenure);
@@ -100,6 +108,25 @@ export default function LiabilityFormScreen() {
     ? emiAuto(principalValue, rateValue, tenureValue)
     : null;
   const underTenure = calculated !== null && Number(emi) > 0 && Number(emi) * tenureValue < principalValue;
+  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
+  const [outstandingBalance, setOutstandingBalance] = useState('');
+  const previewPastDues = !liabilityId && kind === 'recurring' && startDate < today
+    && principalValue > 0 && Number.isFinite(principalValue) && Number.isFinite(rateValue)
+    && Number.isFinite(tenureValue) && tenureValue > 0 && (Number(emi) > 0 || calculated !== null)
+    ? pendingDues({
+      id: 'past-dues-preview',
+      kind: 'recurring',
+      name: 'Preview',
+      type: liabilityType,
+      principal: principalValue,
+      ratePct: rateValue,
+      startDate,
+      tenureMonths: tenureValue,
+      emi: Number(emi) > 0 ? Number(emi) : calculated ?? 0,
+      payments: [],
+      settlement: null,
+    }, today)
+    : null;
 
   const close = () => {
     if (!isDirty) return router.back();
@@ -111,15 +138,40 @@ export default function LiabilityFormScreen() {
       destructive: true,
     }).then((discard) => { if (discard) router.back(); });
   };
-  const save = (values: LiabilityFormOutput) => {
+  const save = async (values: LiabilityFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
     try {
       if (liabilityId) {
-        const { kind: _kind, ...patch } = values;
+        const { kind: _kind, received: _received, ...patch } = values;
         actions.updateLiability(liabilityId, patch);
       }
-      else actions.addLiability(values);
+      else if (values.received) {
+        const { received: _received, ...input } = values;
+        actions.recordMoneyMovement({
+          kind: 'loan-received',
+          amount: values.principal,
+          date: values.startDate,
+          liability: input,
+        });
+      }
+      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
+        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
+          title: 'Record past installments?',
+          message: `This will record ${previewPastDues.count} installments totalling ${formatINR(previewPastDues.amount)} on their due dates.`,
+          confirmLabel: `Record ${previewPastDues.count} installments`,
+          cancelLabel: 'Review',
+        });
+        if (!confirmed) return;
+        actions.addLiabilityWithHistory(
+          (({ received: _received, ...input }) => input)(values),
+          pastInstallmentsMode,
+          outstandingBalance.trim() ? Number(outstandingBalance) : undefined,
+        );
+      } else {
+        const { received: _received, ...input } = values;
+        actions.addLiability(input);
+      }
       const error = useAppStore.getState().lastError;
       if (error) void confirmAsync({ title: 'Could not save liability', message: error, confirmLabel: 'OK' });
       else router.back();
@@ -130,7 +182,8 @@ export default function LiabilityFormScreen() {
   const remove = () => {
     if (!liability) return;
     const linkedCount = useAppStore.getState().data.transactions.filter((transaction) =>
-      transaction.source?.kind === 'liability-payment' && transaction.source.parentId === liability.id,
+      (transaction.source?.kind === 'liability-payment' || transaction.source?.kind === 'liability-origin') &&
+      transaction.source.parentId === liability.id,
     ).length;
     void choiceAsync({
       title: 'Delete liability?',
@@ -179,6 +232,21 @@ export default function LiabilityFormScreen() {
       <Controller control={control} name="type" render={({ field }) => (
         <ChoiceField label="Type" choices={[...LIABILITY_TYPES]} value={field.value} onChange={field.onChange} error={errors.type?.message} />
       )} />
+      {!liabilityId ? (
+        <Controller control={control} name="received" render={({ field }) => (
+          <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <AppText weight="semibold">I received this money in my account</AppText>
+              <HelperText>Also record the loan proceeds as money received.</HelperText>
+            </View>
+            <Switch
+              accessibilityLabel="I received this money in my account"
+              value={field.value}
+              onValueChange={field.onChange}
+            />
+          </View>
+        )} />
+      ) : null}
       <Controller control={control} name="principal" render={({ field }) => (
         <MoneyField label={kind === 'one-time' ? 'Amount borrowed' : 'Principal'} accessibilityLabel={kind === 'one-time' ? 'Amount borrowed' : 'Liability principal'} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.principal?.message} />
       )} />
@@ -214,6 +282,38 @@ export default function LiabilityFormScreen() {
           />
         )} />
       )}
+      {!liabilityId && !received && kind === 'recurring' && startDate < today ? (
+        <View style={{ gap: 8 }}>
+          <SegmentedControl
+            label="Past installments"
+            value={pastInstallmentsMode}
+            options={[
+              { label: 'Already paid', value: 'settle' },
+              { label: 'Show as due', value: 'show' },
+              { label: 'Record as paid', value: 'record' },
+            ]}
+            onChange={setPastInstallmentsMode}
+          />
+          {previewPastDues ? (
+            <HelperText>
+              {previewPastDues.count} past installments · {formatINR(previewPastDues.amount)}
+            </HelperText>
+          ) : null}
+          {pastInstallmentsMode === 'settle' ? (
+            <>
+              <MoneyField
+                label="Outstanding balance today"
+                accessibilityLabel="Outstanding balance today"
+                value={outstandingBalance}
+                onChangeText={setOutstandingBalance}
+              />
+              <HelperText>
+                If this loan started in the past, enter what you still owe so old EMIs do not show as due.
+              </HelperText>
+            </>
+          ) : null}
+        </View>
+      ) : null}
     </FormScreen>
   );
 }

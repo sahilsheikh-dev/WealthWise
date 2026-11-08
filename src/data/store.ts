@@ -7,12 +7,15 @@ import type { StateStorage } from 'zustand/middleware';
 import { todayISO } from '../lib/clock';
 import { LOCK_SETTINGS_KEY } from '../lib/securitySettings';
 import { createAppStore } from './createAppStore';
+import { createMetaStore } from './metaStore';
 
 const asyncStorage: StateStorage = {
   getItem: (name) => AsyncStorage.getItem(name),
   setItem: (name, value) => AsyncStorage.setItem(name, value),
   removeItem: (name) => AsyncStorage.removeItem(name),
 };
+
+export const metaStore = createMetaStore(asyncStorage);
 
 export const useAppStore = createAppStore(asyncStorage, {
   newId: () => Crypto.randomUUID(),

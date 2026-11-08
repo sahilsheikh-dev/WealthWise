@@ -16,6 +16,9 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData.current }));
+jest.mock('../../data/store', () => ({
+  metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
+}));
 jest.mock('../../data/metaStore', () => ({
   createMetaStore: () => ({ getMeta: async () => ({}), updateMeta: async () => ({}) }),
 }));
@@ -41,6 +44,7 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
+    Chip: node('chip'),
     DetailTabBar: node('tabbar'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
@@ -57,8 +61,10 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
+    Modal: node('modal'),
     Pressable: node('pressable'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    Text: node('text'),
     View: node('view'),
   };
 });
@@ -74,6 +80,7 @@ function fixture(storedTarget: number, expenses: number): AppData {
       saved: 0,
       year: 2028,
       auto: 'ef',
+      links: [],
     }],
     transactions: expenses > 0 ? [{
       id: 'rent',
@@ -104,7 +111,7 @@ describe('three-month emergency target screens', () => {
         await Promise.resolve();
       });
       if (!home) throw new Error('Home did not render.');
-      assertNoVerbText(home.root);
+      assertNoVerbText(home.root, { screen: 'home' });
       const homeText = home.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       const goalsRenderer = (() => {
         let renderer: TestRenderer.ReactTestRenderer | undefined;

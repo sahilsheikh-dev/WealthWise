@@ -29,9 +29,15 @@ describe('immutable app actions', () => {
         saved: 0,
         year: 2028,
         auto: 'ef',
+        links: [],
       }],
       holdings: [],
       liabilities: [],
+      policies: [],
+      budget: null,
+      budgetTemplates: [],
+      defaultBudgetTemplateId: null,
+      monthBudgets: [],
       efEntries: [],
       efAllocation: null,
     });
@@ -102,8 +108,8 @@ describe('immutable app actions', () => {
     const data = {
       ...base(),
       goals: [
-        { id: 'ef', name: 'Emergency fund', target: 300_000, saved: 0, year: 2028, auto: 'ef' as const },
-        { id: 'trip', name: 'Trip', target: 10_000, saved: 0, year: 2028 },
+        { id: 'ef', name: 'Emergency fund', target: 300_000, saved: 0, year: 2028, auto: 'ef' as const, links: [] },
+        { id: 'trip', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
       ],
     };
     const before = data;

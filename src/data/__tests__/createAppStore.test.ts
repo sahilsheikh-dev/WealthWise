@@ -9,8 +9,9 @@ import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
+import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
-import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
@@ -67,6 +68,283 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('stores a budget template and month snapshot with one write per action', async () => {
+    const storage = new MemoryStorage();
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: emptyAppData('2026-03-01') }, version: 5,
+    }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `budget-${++nextId}`,
+      today: () => '2026-10-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+
+    let writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplate({
+      name: 'Monthly', plannedIncome: 20_000,
+      lines: [{ category: 'Food', mode: 'percent', value: 20 }],
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.setDefaultBudgetTemplate('budget-1');
+    expect(storage.setItemCalls - writes).toBe(1);
+    writes = storage.setItemCalls;
+    store.getState().actions.applyTemplateToMonth({ month: '2026-03', templateId: 'budget-1' });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 4_000 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    writes = storage.setItemCalls;
+    store.getState().actions.createBudgetTemplateAndApply({
+      name: 'Atomic', plannedIncome: 10_000, lines: [{ category: 'Bills', mode: 'amount', value: 1_000 }],
+    }, '2026-04');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.monthBudgets).toHaveLength(2);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('applies the default template after hydration and persists the current-month snapshot once', async () => {
+    const storage = new MemoryStorage();
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetTemplates: [{
+        id: 'default', name: 'Default', plannedIncome: 20_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 5_000 }],
+      }],
+      defaultBudgetTemplateId: 'default',
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 5 }));
+    const store = createAppStore(storage, {
+      newId: () => 'unused', today: () => '2026-03-15', isDev: false,
+    });
+    await waitForHydration(store);
+    expect(store.getState().data.monthBudgets?.[0]?.month).toBe('2026-03');
+    expect(storage.setItemCalls).toBe(1);
+  });
+
+  it('records a shortfall allocation atomically with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      transactions: [
+        { id: 'income', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-01-01' },
+        { id: 'expense', type: 'expense' as const, amount: 300, category: 'Living', note: '', date: '2026-01-02' },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `movement-${++nextId}`,
+      today: () => '2026-02-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'borrowed', amount: 50, lenderName: 'Friend' },
+    ]);
+
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.liabilities).toHaveLength(1);
+    expect(store.getState().data.transactions).toHaveLength(3);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const movementWrites = storage.setItemCalls;
+    store.getState().actions.recordMoneyMovement({
+      kind: 'borrowed-in', lenderName: 'Aunt', amount: 30, date: '2026-01-15',
+    });
+    expect(storage.setItemCalls - movementWrites).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const referenceBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'own-funds', amount: 500, note: 'Too much' },
+    ]);
+    expect(store.getState().data).toBe(referenceBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
+  it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-01'),
+      holdings: [{
+        id: 'asset',
+        kind: 'manual' as const,
+        name: 'Savings',
+        type: 'Savings account' as const,
+        invested: 500,
+        value: 1_000,
+        valueAsOf: '2026-10-01',
+        logs: [],
+      }],
+      goals: [
+        ...emptyAppData('2026-10-01').goals,
+        { id: 'goal', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    actions.setGoalLinks('goal', [{ instrumentId: 'asset', share: 75 }]);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
+      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const dataBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    actions.setGoalLinks('missing-goal', [{ instrumentId: 'asset', share: 25 }]);
+    expect(store.getState().data).toBe(dataBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
+  it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+    const allocation = { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 };
+
+    store.getState().actions.setEfAllocation(allocation);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.efAllocation).toEqual(allocation);
+    const relaunchedStore = makeStore(storage);
+    await waitForHydration(relaunchedStore);
+    expect(relaunchedStore.getState().data.efAllocation).toEqual(allocation);
+    store.getState().actions.resetEfAllocation();
+    expect(store.getState().data.efAllocation).toBeNull();
+  });
+
+  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      holdings: [{
+        id: 'past-plan',
+        kind: 'plan' as const,
+        name: 'Past plan',
+        type: 'Mutual fund / SIP' as const,
+        frequency: 'monthly' as const,
+        amount: 100,
+        ratePct: 0,
+        stepUpPct: 0,
+        tenureYears: 1,
+        startDate: '2026-08-01',
+        trackFrom: '2026-08-01',
+        opening: 0,
+        actualValue: null,
+        actualValueDate: null,
+        logs: [],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `due-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+
+    let writesBefore = storage.setItemCalls;
+    const entryId = actions.clearDue({ kind: 'plan', id: 'past-plan' });
+    expect(entryId).toBe('due-1');
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    writesBefore = storage.setItemCalls;
+    const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
+      mode: 'settle',
+      addSkippedToOpening: true,
+    });
+    expect(summary?.count).toBeGreaterThan(0);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('persists clear undo and each add-with-history action in exactly one write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `history-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const assertOneWrite = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+
+    assertOneWrite(() => actions.addPlan({
+      name: 'Today plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-10-10',
+      trackFrom: '2026-10-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }));
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan || plan.kind !== 'plan') throw new Error('Test plan was not created.');
+    let entryId: string | undefined;
+    const beforeClear = storage.setItemCalls;
+    entryId = actions.clearDue({ kind: 'plan', id: plan.id });
+    expect(storage.setItemCalls - beforeClear).toBe(1);
+    expect(entryId).toBeDefined();
+    assertOneWrite(() => actions.undoClearDue({ kind: 'plan', id: plan.id }, entryId ?? ''));
+
+    assertOneWrite(() => actions.addPlanWithHistory({
+      name: 'Past plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-08-10',
+      trackFrom: '2026-08-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }, 'settle'));
+    assertOneWrite(() => actions.addLiabilityWithHistory({
+      kind: 'recurring',
+      name: 'Past liability',
+      type: 'Personal loan',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-08-10',
+      tenureMonths: 12,
+      emi: 100,
+    }, 'settle'));
+    assertOneWrite(() => actions.addPolicyWithHistory({
+      name: 'Past policy',
+      insurer: '',
+      kind: 'health',
+      premium: 50,
+      frequency: 'monthly',
+      startDate: '2026-08-10',
+      premiumYears: 1,
+      trackFrom: '2026-08-10',
+      coverAmount: null,
+      currentValue: null,
+      valueAsOf: null,
+      maturityDate: null,
+    }, 'settle'));
+  });
+
   it.each([
     ['same day', '2026-10-10', '2026-10-10', 5_000],
     ['later day', '2026-10-09', '2026-10-10', 5_000],
@@ -283,6 +561,29 @@ describe('createAppStore persistence', () => {
     expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2'))
       .toHaveLength(writesAfterMigration);
   });
+
+  it('hydrates v4 into v5, archives the original bytes once, and removes that archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const v4 = makeV4Fixture();
+    const raw = JSON.stringify({ state: { data: v4 }, version: 4 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.goals.every((goal) => goal.links.length === 0)).toBe(true);
+    expect(first.getState().data.liabilities.find((entry) => entry.kind === 'recurring')?.settlement).toBeNull();
+    expect(first.getState().data.policies).toEqual([]);
+    expect(first.getState().data.budget).toBeNull();
+    expect(storage.values.get('wealthwise.app.v1.premigration.v4')).toBe(raw);
+    const archivedWrites = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4').length;
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4'))
+      .toHaveLength(archivedWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has('wealthwise.app.v1.premigration.v4')).toBe(false);
+  });
+
   it('starts empty with an emergency fund goal and rehydrates transactions across instances', async () => {
     const storage = new MemoryStorage();
     const first = makeStore(storage);
@@ -542,6 +843,23 @@ describe('createAppStore persistence', () => {
     await dev!.simulateCorruption();
     expect(storage.values.get('wealthwise.app.v1')).toBe('{not json');
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces transactions with 20,000 stress entries using one persisted write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { isDev: true, newId: () => `stress-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().devActions;
+    if (!actions) throw new Error('Developer stress action is unavailable.');
+    const existingGoals = store.getState().data.goals;
+    const writesBefore = storage.setItemCalls;
+
+    actions.loadStressData();
+
+    expect(store.getState().data.transactions).toHaveLength(20_000);
+    expect(store.getState().data.goals).toBe(existingGoals);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
   });
 
   it('reports an unavailable reload when simulating corruption without a reload dependency', async () => {
@@ -821,6 +1139,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   const secureStore = new Map([['wealthwise.lock.v1', '{"enabled":true}']]);
   storage.values.set('wealthwise.app.v1.premigration.v1', 'original-v1-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v3', 'original-v3-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v4', 'original-v4-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -840,6 +1160,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.preimport',
     'wealthwise.app.v1.premigration.v1',
     'wealthwise.app.v1.premigration.v2',
+    'wealthwise.app.v1.premigration.v3',
+    'wealthwise.app.v1.premigration.v4',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',

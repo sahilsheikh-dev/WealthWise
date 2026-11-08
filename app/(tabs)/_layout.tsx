@@ -15,7 +15,7 @@ const tabIcons = {
 
 const tabLabels = {
   index: 'Home',
-  transactions: 'Txns',
+  transactions: 'Transactions',
   goals: 'Goals',
 } as const;
 
@@ -51,12 +51,12 @@ export default function TabsLayout() {
         },
       })}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="transactions" options={{ title: 'Txns' }} />
+      <Tabs.Screen name="transactions" options={{ title: 'Transactions' }} />
       <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 60, marginTop: 10 },
+  tabContent: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 100, marginTop: 10, },
 });

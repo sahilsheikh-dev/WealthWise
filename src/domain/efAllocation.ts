@@ -84,43 +84,36 @@ function normalizeAllocation(allocation: Partial<EfAllocation> | null | undefine
   }, {} as EfAllocation);
 }
 
-export function effectiveAllocation(allocation: EfAllocation | null | undefined): EfAllocation {
-  return normalizeAllocation(allocation ?? SUGGESTED_EF_ALLOCATION);
+export function effectiveAllocation(allocation: Partial<EfAllocation> | null | undefined): EfAllocation {
+  return normalizeAllocation(allocation);
 }
 
 export function allocateAmounts(balance: number, allocation: EfAllocation): Record<EfBucketId, number> {
   const balancePaise = Math.max(0, Math.round(Math.abs(balance) * 100));
   const totals = normalizeAllocation(allocation);
-  const cents = EF_BUCKETS.map((id) => ({ id, paise: (balancePaise * totals[id]) / 100 }));
-  const allocated = EF_BUCKETS.reduce((acc, id) => {
-    const entry = cents.find((item) => item.id === id)!;
-    acc[id] = Math.floor(entry.paise);
-    return acc;
-  }, {} as Record<EfBucketId, number>);
-  const remainder = balancePaise - Object.values(allocated).reduce((sum, value) => sum + value, 0);
-  const order = cents
-    .map((item) => ({
-      id: item.id,
-      fraction: item.paise - Math.floor(item.paise),
-    }))
-    .sort((a, b) => b.fraction - a.fraction);
-
-  for (let index = 0; index < Math.max(0, remainder); index += 1) {
-    const current = order[index % order.length];
-    allocated[current.id] += 1;
+  if (!validateAllocation(totals)) {
+    throw new RangeError('Allocation must contain percentages that total 100%.');
   }
 
-  const result = EF_BUCKETS.reduce((acc, id) => {
-    acc[id] = Number((allocated[id] / 100).toFixed(2));
+  const shares = EF_BUCKETS.map((id, index) => {
+    const numerator = balancePaise * Math.round(totals[id] * 10);
+    return { id, index, amount: Math.floor(numerator / 1000), remainder: numerator % 1000 };
+  });
+  let unallocatedPaise = balancePaise - shares.reduce((sum, share) => sum + share.amount, 0);
+  const byLargestRemainder = [...shares].sort((left, right) =>
+    right.remainder - left.remainder || left.index - right.index,
+  );
+  for (const share of byLargestRemainder) {
+    if (unallocatedPaise === 0) break;
+    const bucket = shares[share.index];
+    bucket.amount += 1;
+    unallocatedPaise -= 1;
+  }
+
+  const result = shares.reduce((acc, share) => {
+    acc[share.id] = share.amount / 100;
     return acc;
   }, {} as Record<EfBucketId, number>);
-  const sum = Number(Object.values(result).reduce((acc, value) => acc + value, 0).toFixed(2));
-  const currentBalance = Number(Math.abs(balance).toFixed(2));
-  const adjustment = currentBalance - sum;
-  if (adjustment !== 0) {
-    const id = order[0].id;
-    result[id] = Number((result[id] + adjustment).toFixed(2));
-  }
   return result;
 }
 

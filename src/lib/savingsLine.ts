@@ -2,6 +2,7 @@ type SavingsSummary = {
   income: number;
   earnedIncome: number;
   withdrawals: number;
+  nonEarnedIncome?: number;
   rates: { savedPct: number; investedPct: number } | null;
 };
 
@@ -23,7 +24,7 @@ export function savingsLine(summary: SavingsSummary): SavingsLine {
   }
   return {
     kind: 'rates',
-    basis: summary.withdrawals > 0 ? 'earned income' : 'income',
+    basis: (summary.nonEarnedIncome ?? summary.withdrawals) > 0 ? 'earned income' : 'income',
     savedPct: summary.rates.savedPct,
     investedPct: summary.rates.investedPct,
     withdrawals: summary.withdrawals,

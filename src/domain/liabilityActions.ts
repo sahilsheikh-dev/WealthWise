@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 export type AddLiabilityInput =
-  | (Omit<RecurringLiability, 'id' | 'payments' | 'emi'> & { emi: number | null })
+  | (Omit<RecurringLiability, 'id' | 'payments' | 'emi' | 'settlement'> & { emi: number | null })
   | Omit<OneTimeLiability, 'id' | 'payments'>;
 export type LiabilityPatch = Partial<
   Pick<RecurringLiability, 'name' | 'type' | 'principal' | 'ratePct' | 'startDate' | 'tenureMonths'>
@@ -46,6 +46,7 @@ export function addLiability(data: AppData, input: AddLiabilityInput, newId: () 
       id: newId(),
       emi: input.emi ?? emiAuto(input.principal, input.ratePct, input.tenureMonths),
       payments: [],
+      settlement: null,
     }
     : { ...input, id: newId(), payments: [] };
   if (liability.kind === 'one-time') assertLiabilityDates(liability);
@@ -69,6 +70,14 @@ export function updateLiability(data: AppData, id: string, patch: LiabilityPatch
     assertLiabilityDates(updated);
   }
   const transactions = data.transactions.map((transaction) => {
+    if (transaction.source?.kind === 'liability-origin' &&
+      transaction.source.parentId === id &&
+      (transaction.note === current.name || transaction.note === `${current.name} proceeds`)) {
+      return {
+        ...transaction,
+        note: transaction.note === current.name ? updated.name : `${updated.name} proceeds`,
+      };
+    }
     if (transaction.source?.kind !== 'liability-payment' || transaction.source.parentId !== id) return transaction;
     const payment = current.payments.find((entry) => entry.id === transaction.source?.entryId);
     const expectedOldNote = payment ? transactionNote(current.name, payment.kind) : '';
@@ -92,9 +101,14 @@ export function deleteLiability(
   const transactions = options.linkedTransactions === 'delete'
     ? data.transactions.filter((transaction) =>
       !(transaction.source?.kind === 'liability-payment' &&
-        transaction.source.parentId === id && paymentIds.has(transaction.source.entryId)),
+        transaction.source.parentId === id && paymentIds.has(transaction.source.entryId)) &&
+      !(transaction.source?.kind === 'liability-origin' && transaction.source.parentId === id),
     )
     : data.transactions.map((transaction) => {
+      if (transaction.source?.kind === 'liability-origin' && transaction.source.parentId === id) {
+        const { source: _source, ...ordinary } = transaction;
+        return ordinary;
+      }
       if (transaction.source?.kind !== 'liability-payment' || transaction.source.parentId !== id) return transaction;
       const { source: _source, ...ordinary } = transaction;
       return ordinary;

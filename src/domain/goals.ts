@@ -1,5 +1,6 @@
 import { parseISO } from './dates';
-import type { Goal, ISODate } from './types';
+import { goalSavedFor } from './goalLinks';
+import type { AppData, Goal, ISODate } from './types';
 
 export const EF_MIN_MONTHS = 3;
 
@@ -52,6 +53,7 @@ export function ensureEfGoal(
         saved: 0,
         year: parseISO(options.asOf).y + 2,
         auto: 'ef',
+        links: [],
       };
       remaining = goals.map((goal) => ({ ...goal }));
     }
@@ -67,9 +69,11 @@ export function goalProgressPct(goal: Goal, saved: number): number {
 
 export function goalView(
   goal: Goal,
-  ctx: { emergencyBalance: number; expenseBaseline: number },
+  ctx: { emergencyBalance: number; expenseBaseline: number; data?: AppData; asOf?: ISODate },
 ): { target: number; saved: number; pct: number; minimum?: number; raised?: boolean } {
-  const saved = goalSaved(goal, ctx.emergencyBalance);
+  const saved = ctx.data && ctx.asOf
+    ? goalSavedFor(goal, ctx.data, ctx.asOf, ctx.emergencyBalance)
+    : goalSaved(goal, ctx.emergencyBalance);
   if (goal.auto !== 'ef') return { target: goal.target, saved, pct: goalProgressPct(goal, saved) };
   const effective = effectiveEmergencyTarget(goal, ctx.expenseBaseline);
   return {
@@ -81,13 +85,20 @@ export function goalView(
   };
 }
 
-export function goalTotals(goals: Goal[], emergencyBalance: number, expenseBaseline: number): {
+export function goalTotals(
+  goals: Goal[],
+  emergencyBalance: number,
+  expenseBaseline: number,
+  data?: AppData,
+  asOf?: ISODate,
+): {
   target: number;
   saved: number;
   pct: number;
 } {
   const target = goals.reduce((total, goal) =>
-    total + goalView(goal, { emergencyBalance, expenseBaseline }).target, 0);
-  const saved = goals.reduce((total, goal) => total + goalView(goal, { emergencyBalance, expenseBaseline }).saved, 0);
+    total + goalView(goal, { emergencyBalance, expenseBaseline, data, asOf }).target, 0);
+  const saved = goals.reduce((total, goal) =>
+    total + goalView(goal, { emergencyBalance, expenseBaseline, data, asOf }).saved, 0);
   return { target, saved, pct: target <= 0 ? 0 : Math.min(100, Math.max(0, saved / target * 100)) };
 }
