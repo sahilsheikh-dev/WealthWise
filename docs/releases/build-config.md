@@ -110,15 +110,20 @@ submission track, submission date and store status when submitted. Do not
 infer a successful build or submission from a command being started.
 
 Before publishing a GitHub release, download the `android-apk` EAS artifact,
-rename it exactly `WealthWise-android.apk`, and attach it to the release draft
-with `gh release upload`. Verify both latest and versioned download links
-using `curl -I -L`; both final responses must be HTTP 200. Record each final
-status and `Content-Length`; require the expected artifact size. Verify the
-APK digest privately against the EAS artifact before publication, and never
-publish the digest. Keep the root README Download block byte-identical to the
-latest published release Download block. Update the README Download and
+rename it exactly `WealthWise-android.apk`, and attach it to the current
+release with `gh release upload`. When a newer version is published, rename
+the previous release asset to `WealthWise-android-vX.Y.Z.apk` and update its
+historical Download link to that exact asset; never use `/latest/` for an old
+version. Verify the latest link and every affected versioned link using
+`curl -I -L`; all final responses must be HTTP 200. Record each final status
+and `Content-Length`; require the expected artifact size. Verify APK digests
+privately against the EAS artifact before publication, and never include them
+in human-authored release material. GitHub may expose a platform-generated
+asset digest that cannot be removed by editing the release. Keep the root
+README Download block byte-identical to the latest published release Download
+block. Update the README Download and
 What's new sections and the releases-page link for every release. Record the
 APK EAS build ID, `versionCode`, profile, date and status in the Builds table;
-do not include source commits or digests. A release is incomplete until both
-links return HTTP 200 with the expected size and the README, published notes,
+do not include source commits or digests. A release is incomplete until the
+links return HTTP 200 with expected sizes and the README, published notes,
 `release-history.md` and GitHub assets agree.

@@ -24,6 +24,10 @@
   recorded in the release history. PRs #11-#15 merged task -> Phase 28 ->
   develop -> release -> main -> develop; all four remote trees match and the
   v1.1.0 tag remains unchanged.
+- **P28-F-R3-R2 historical asset rollover:** v1.0.0 now downloads from its
+  own versioned APK filename and URL; the generic old URL returns 404. Its
+  GitHub release body matches the checksum-free published note. Latest and
+  affected versioned URLs return HTTP 200 with the expected sizes.
 - **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
@@ -58,10 +62,10 @@
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and
   release-only main merges apply prospectively; no history rewrite was made.
-- **v1.0.0 GitHub release body (owner action):** the canonical body is
-  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
-  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
-  No release edit was made in P28-C-R3.
+- **P28-F-R3-R2 Git integration:** the local release-policy, ledger and test
+  commit is not pushed. After explicit push authorization, raise its task PR
+  into `phase/28-qa-and-release` and follow the chronological phase -> develop
+  -> release -> main -> develop PR flow.
 - **v1.1.0 release integrity:** the owner explicitly approved the `preview`
   profile and reused versionCode 1 for this release. For future releases,
   restore the configured `android-apk` profile and increment versionCode.

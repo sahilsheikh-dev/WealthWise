@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (140/141)
+Overall progress ██████████ 99% (141/142)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (17/17)
+Phase 28         ██████████ 100% (18/18)
 Phase 29         ██████████ 98% (39/40)
 Phase 30         ██████████ 100% (3/3)
 ```
@@ -184,12 +184,13 @@ Phase 30         ██████████ 100% (3/3)
 | P28-D | — | Done | Established shared branching, commit and gate rules; added contributor/security guidance and GitHub templates. `develop` bootstrapped at `a258579c4b580d6f3a157b8d13de53334aa8d34d`; rule applies prospectively to legacy unreleased history. All six gates pass; Gate 1: 98 suites, 1,230 passed, 1 skipped. | 2026-11-08 |
 | P28-E | — | Done; Revised by P28-E-R1 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the read-only 131-commit archive. 512 original commits are mapped exactly once; final archive tree equals main. | 2026-11-08 |
 | P28-E-R1 | — | Done | Close out the phase-history evidence and record final integrated Release 2 gates, branch integrations, and remaining device/release follow-ups. | 2026-11-08 |
-| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3 and P28-F-R3-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, then by P28-F-R3-R1 for the completed publication PR chain. | 2026-11-08 |
+| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1 and P28-F-R3-R2 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, and P28-F-R3-R2 for historical asset rollover and checksum removal. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
 | P28-F-R2-R1 | — | Done; Revised by P28-F-R3 | Corrected stale branch/GitHub audit records; task and Phase 28 PRs are integrated into develop, with release and back-merge PRs carrying the correction through main. Latest six ordered gates pass: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; TypeScript, lint, Doctor 21/21, Android export and iOS export all pass. At that revision v1.1.0 was untagged; publication is recorded by P28-F-R3. | 2026-11-08 |
-| P28-F-R3 | — | Done; Revised by P28-F-R3-R1 | Published v1.1.0 after verifying the owner-uploaded APK against the EAS artifact, exact tag target, release notes, README parity and both public download links. Owner-approved exceptions: EAS `preview` profile and Android `versionCode` 1. | 2026-11-08 |
+| P28-F-R3 | — | Done; Revised by P28-F-R3-R1 and P28-F-R3-R2 | Published v1.1.0 after verifying the owner-uploaded APK against the EAS artifact, exact tag target, release notes, README parity and both public download links. Owner-approved exceptions: EAS `preview` profile and Android `versionCode` 1. | 2026-11-08 |
 | P28-F-R3-R1 | — | Done | Recorded the complete publication PR chain (#11-#15) and verified the merged GitHub branch/tree and tag state. | 2026-11-08 |
+| P28-F-R3-R2 | — | Done | Renamed the superseded v1.0.0 APK to a versioned asset, updated its download block and GitHub release body to remove the published checksum, and aligned release policy, history and tests. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -472,9 +473,12 @@ are not authorized unless explicitly requested.
   block and latest published Download block are identical; older notes use
   versioned links. Every release updates the README Download and What's new
   sections and its releases-page link. Verify the APK digest privately before
-  publication; never publish the digest in README, notes, release body or
-  history. Verify both latest and versioned links with `curl -I -L`; require
-  HTTP 200 and the expected artifact size. The Builds table records EAS build
+  publication; never include it in human-authored release material. GitHub
+  may expose a platform-generated asset digest that cannot be removed by
+  editing the release. Verify the current latest URL and every affected
+  versioned URL with `curl -I -L`; require HTTP 200 and the expected artifact
+  size. Rename each superseded asset to `WealthWise-android-vX.Y.Z.apk` and
+  use that release's version-specific URL. The Builds table records EAS build
   ID, profile, Android `versionCode`, date and status, but no source commit or
   digest.
 - No cloud or network at runtime. Domain logic is pure: no React/Expo imports,
@@ -2838,13 +2842,14 @@ import equality test; it changes no application behavior. The `npm audit
 force fix or install-script approval occurred.
 
 P28-C-R2 records the v1.0.0 APK asset uploaded to the GitHub release:
-`WealthWise-android.apk`, 112,133,413 bytes, SHA-256
-`ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`. At that
+`WealthWise-android.apk`, 112,133,413 bytes; its digest was verified privately.
+At that
 revision, the latest and versioned public URLs returned HTTP 404
 (Content-Length 9) while the repository was private, and build metadata was
 owner to supply. P28-C-R3 superseded those observations after the repository
 became public, verified the asset/build, and aligned the tag with explicit
-approval. The GitHub release-body edit remains an owner action.
+approval. P28-F-R3-R2 later renamed the superseded asset, updated its link and
+removed the human-authored checksum from the GitHub body.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -2971,6 +2976,7 @@ evidence present in exports/checkpoints.
 | P28-F-R2-R1 | Phase 28 | P28-F-R2 | current | 2026-11-08 | Correct stale PR/GitHub sync records after the Release 2 follow-up PRs merged. | Done; PR #4 merged the task correction into Phase 28, PR #5 merged Phase 28 into develop, PR #6 integrated the release branch into main, and PR #7 is the main-to-develop back-merge. The correction follows task -> phase -> develop -> release -> main -> develop. PRs #1-#3 record the earlier Release 2 follow-ups. Latest six ordered gates pass: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; Gates 2-6 exit 0. At this revision `v1.1.0` was untagged; Revised by P28-F-R3 for publication. | Task commit `0b07f9d`; PR #4 merge `3fc4c3b`; Phase 28 sync `645969d`; Phase 28 merge `5ae2bd6`; PR #5 merge `c4be8e8`; PR #6 release merge `e868468`; PR #7 is the back-merge. | Old: status and open-item records said device results and contributor corrections were local-only despite PRs having merged. New: the chronological PR path and verified GitHub availability are recorded. Reason: align the project record with actual remote refs and PR state. | current request |
 | P28-F-R3 | Phase 28 | P28-F | current | 2026-11-08 | Publish the approved v1.1.0 release and align release documentation. | Done; GitHub release [v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0) is published with the exact asset name. The annotated tag peels to the verified EAS source commit. The uploaded APK matched the EAS artifact; latest and versioned URLs returned HTTP 200 with `Content-Length: 112147677`. The README and published-note Download blocks match; v1.0.0 uses its versioned URL. Owner-approved exceptions: `preview` profile and reused versionCode 1. All six ordered gates exit 0: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall; `src/data` 91.03/87.39/94.46/94.17%; `src/domain` 96.95/92.85/98.80/98.32%; `src/lib` 100%; TypeScript, lint, Doctor 21/21 and Android/iOS exports pass. Revised by P28-F-R3-R1 for actual PR and remote branch evidence. | Publication task `9dd350c`; PR #11 task-to-Phase 28 merge `a2f9db2`; PR #12 Phase 28-to-develop merge `3e2a5a8`; PR #13 develop-to-release merge `d4d69fa`; PR #14 release-to-main merge `b0aeef9`; PR #15 main-to-develop merge `6f5df18`. | Old: v1.1.0 was a dated-TBD draft and README still pointed to v1.0.0. New: v1.1.0 is published, both APK links and exact expected size are verified, and latest/older Download blocks are correct. Reason: complete the approved release without publishing a digest or committing the APK. | current request |
 | P28-F-R3-R1 | Phase 28 | P28-F-R3 | current | 2026-11-08 | Record the publication PR chain and verify that the merged v1.1.0 branch state is aligned. | Done; PR #11 merged task to Phase 28 (`a2f9db2`), #12 merged Phase 28 to develop (`3e2a5a8`), #13 merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged the release branch to main (`b0aeef9`), and #15 back-merged main to develop (`6f5df18`). The remote `main`, `develop`, `release/v1.1.0`, and `phase/28-qa-and-release` trees are identical. The v1.1.0 tag remains unchanged at verified source `da111707`; both download URLs return HTTP 200 and 112,147,677 bytes. The original publication task branch was deleted after PR #11; the Phase 28 branch is retained. | Task record commit `421e53f`; publication PR chain #11-#15 with merge commits listed in P28-F-R3. | Old: publication PR/merge IDs and final remote tree state were pending. New: all five PRs are merged, remote trees match, the tag target is unchanged, and the publication task branch is removed. Reason: complete the requested chronological GitHub integration audit. | current request |
+| P28-F-R3-R2 | Phase 28 | P28-F-R3 | current | 2026-11-08 | Correct historical APK download routing and remove the v1.0.0 digest from the human-authored release body. | Done; renamed v1.0.0 asset without re-upload, updated its Download block and made the GitHub body byte-match the canonical note. Versioned v1.0.0 URL: HTTP 200, 112,133,413 bytes; former generic URL: HTTP 404. Latest and v1.1.0 URLs: HTTP 200, 112,147,677 bytes. v1.0.0 tag and v1.1.0 asset unchanged. Ordered gates: Gate 1 initially exited 1 because the derived Phase 28 branch-index count remained 17; after correcting it to 18, the final run passed with 98 suites, 1,244 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 exit 0 and Expo Doctor 21/21. | Local docs/test task branch; public GitHub release asset and body updated. | Old: the superseded v1.0.0 asset used the generic filename and its human-authored body exposed the digest; the branch index count was stale at 17 while the dashboard derived 18. New: versioned asset URL/name and checksum-free body are aligned, and branch index says 18. Reason: keep historical downloads version-specific, remove the authored checksum and keep derived ledger tests consistent. | current request |
 | P20-N-R1 | Phase 20 | — | current | 2026-11-08 | Replace Budget's stacked allocation bar with per-section actual-versus-planned Pace. | Red route test before production edits: expected zero stacked bars, received two at font scales 1.0, 1.3 and 2.0. After the change, chart/domain/route/demo suites pass (4 suites, 247 tests). The full Gate 1 passed 97 suites, 1,227 tests passed, 1 skipped; Gates 2-4 passed. Exports were skipped under the no-build instruction. | `f904769` (`feat: add section-based Budget Pace chart`). | Old: stacked-bar proportion assertions and global spending-pace assertions. New: section timelines, dashed/solid pairs, toggles, axes, accessibility, and contrast; route asserts no stacked bar. Reason: the chart now compares actual and planned pace by section. | current request |
 | P30-A | Phase 30 | — | current | 2026-11-08 | Diagnose edited values that appear stale after actions or restart. | Three restart tests fail: failed SQLite write, SQLite read-back mismatch and temporary legacy fallback all restore old SQLite bytes. Real store action JSON/fresh hydration match; all eight mounted screen refresh checks and previous-state immutability checks pass. | Diagnosis commit: `a251c3a60a0d0ef8b101d9721246c05f8559d41f` (`test: reproduce persisted value loss after restart`). | Confirmed stale SQLite preference. Not confirmed: UI memoization/React Compiler, module-level caches (none found), in-place mutation, broad/missing subscriptions, or route-param object caching. | current request |
 | P30-B | Phase 30 | — | current | 2026-11-08 | Fix confirmed persisted-value loss and expose failed writes. | All three restart reproductions now pass; deletion tombstones also prevent stale SQLite values returning. A mounted StorageErrorBanner test confirms an unpersistable update is announced. | Implementation commit: `ec019effd1b1f29190885c4effb5235be50898cd` (`fix: prefer verified fallback data after restart`). | The old adapter selected SQLite first after process restart despite a newer legacy fallback. A durable, read-back-verified authority marker now resolves source precedence; old failed-write assertions were replaced by restart-passing assertions because the newest verified value must win. | current request |
@@ -9385,8 +9391,8 @@ Gradle build, version bump, or release preparation was performed.
 - Step commits: P28-C-R2 README `144a847`, published note `1742174`, release
   rules `181aa44`, Builds record `356ec56`; P28-A-R1 test `f8ae2ad`.
 - `gh release view v1.0.0` verified the uploaded asset name
-  `WealthWise-android.apk`, size 112,133,413 bytes (about 106.9 MiB), and
-  SHA-256 `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`.
+  `WealthWise-android.apk`, size 112,133,413 bytes (about 106.9 MiB); its
+  digest was verified privately.
   At that time, `gh repo view` reported the repository as private and
   unauthenticated links returned HTTP 404. This historical result was
   superseded by P28-C-R3 after the repository became public.
@@ -9699,7 +9705,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 17 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 18 |
 | 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 40 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 

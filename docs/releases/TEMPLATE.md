@@ -20,6 +20,12 @@ Release date: YYYY-MM-DD
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
+The current release asset is named `WealthWise-android.apk`. When this
+version is superseded, rename its asset to
+`WealthWise-android-vX.Y.Z.apk` and update only this version's Download block
+to the matching versioned release URL. Never point an older release to the
+`/latest/` route. Do not include an APK checksum in release material.
+
 ## What's new in vX.Y.Z
 
 [One or two sentences summarizing verified user-visible changes.]
