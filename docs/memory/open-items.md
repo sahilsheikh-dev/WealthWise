@@ -37,13 +37,11 @@
   keeps N39 and N40 at Fail until the repaired behavior is re-tested on-device;
   N41-N43 remain Not run. Device model, Android version, tester and date remain
   blank. Physical-device re-test is pending.
-- **Local checklist commit is not pushed:** its subject was corrected at the
-  owner's request, and the report commit was replayed unchanged. See the
-  old-to-new hash mapping and tree verification in
-  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 owner steps:** P28-F is preparing `release/v1.1.0`; its build,
-  N39-N43 device re-test, v1.1.0 tag and publication remain pending owner
-  action. No EAS/Gradle build or GitHub release edit is authorized.
+- **v1.1.0 owner steps:** P28-F release preparation and integration are
+  complete; `release/v1.1.0` was merged/pushed to main and back-merged/pushed
+  to develop. The Android APK build, N39-N43 device re-test, v1.1.0 tag and
+  publication remain pending owner action. No EAS/Gradle build or GitHub
+  release edit was performed.
 - **Stale phase tags (owner decision):** `phase-28-complete` and
   `phase-29-complete` target commits behind their current phase branch tips.
   No tag was moved. Decide whether to retain or update them in a separately
