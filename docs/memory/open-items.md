@@ -17,8 +17,9 @@
   contributor credits in v1.0.0, and the template requires release-specific,
   verified contributors. This correction is included in PRs #1-#3.
 - **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
-  merged Phase 28 into develop. The release-branch PR to main and main-to-
-  develop back-merge are the remaining integration steps.
+  merged Phase 28 into develop; PR #6 carries the release branch to main and
+  PR #7 is the main-to-develop back-merge. The full sequence preserves
+  task -> phase -> develop -> release -> main -> develop.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -56,9 +57,8 @@
   wait for owner APK build and approval before tagging or publishing.
 - **Branch publication audit:** GitHub currently exposes 35 heads: main,
   develop, `history/by-phase`, all 30 phase branches, `release/v1.1.0`, and
-  the current audit task branch. PRs #1-#5 are merged; the audit correction is
-  in develop, with release-to-main and back-merge PRs remaining. Remote
-  `main`/`develop` trees currently differ. `codex-changes`,
+  the current audit task branch. PRs #1-#7 form the chronological Release 2
+  follow-up and audit path. `codex-changes`,
   `phase/25-release-and-backups` and `task/P28-E-phase-history` remain outside
   this PR chain; `history/by-phase` remains a read-only archive. The v1.1.0
   tag is absent pending owner build/approval.
