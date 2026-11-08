@@ -2650,9 +2650,39 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 ### Phase 27 — Cleanup
 
-Planned P27-A: dead-code/dependency review (including whether
-`SectionHeaderRow` and `fitsInline` remain used after the ChipRow redesign),
-bundle audit, README and a robust schedule benchmark.
+- **P27-A complete (2026-11-07):** report committed first as `b805fb1`.
+  Dead-code cleanup was committed as `a8a2d78`; dependency cleanup as
+  `61714ec`; and the robust schedule benchmark as `dd0c930`. The canonical
+  inventory is [P27-A-report.md](P27-A-report.md).
+- Knip and ts-prune were run. Knip's high-confidence orphan production paths
+  were verified by grep and removed: `SectionHeaderRow`, `fitsInline`,
+  `BudgetCategorySections`, and the standalone `scripts/dryRunMigration.ts`.
+  Orphaned tests for removed code were removed; this did not delete tests to
+  gain coverage. `src/lib/sorting.ts` remains protected, so legacy
+  `monthReview` metadata stays unchanged. `app/(tabs)/index.tsx` and
+  `app/(tabs)/budget.tsx` were not edited.
+- `@expo/ui`, `expo-device`, `expo-glass-effect`, `expo-image`,
+  `expo-symbols`, and `expo-web-browser` had no source/config reference and
+  were removed from direct dependencies. Config-required Expo dependencies,
+  Expo native packages used by transitive tooling, and Expo build/plugins were
+  retained. No install-script approval or audit-force operation was performed.
+- Current `npm audit --omit=dev --json` reported 7 vulnerability nodes (4
+  moderate, 3 high), not the 27 mentioned in the task or the historical 67 in
+  older ledger notes; the attached snapshot was not an audit record.
+  SDK-57-compatible patch fixes were not offered by npm, and only Expo SDK/Router
+  major-owner decisions remain.
+- Android export measured 16,674,443 bytes (15.90 MiB, 69 files); iOS export
+  measured 15,396,647 bytes (14.68 MiB, 65 files). The largest file on each
+  platform is the single Hermes bundle. No unused source asset was proven by
+  `check:assets`; branding checks pass.
+- The 50-year daily schedule benchmark now asserts exactly 18,250 rows and uses
+  a generous 60-second safety ceiling instead of the previous 10-second
+  wall-clock assertion.
+- Gate results after every implementation commit: Gate 1 0, Gate 2 0, Gate 3 0,
+  Gate 4 0, Gate 5 0, Gate 6 0. Final Gate 1 passed 91 suites/1192 tests: 1191
+  passed and 1 skipped. Coverage is `src/data` 749/798 lines (93.86%) and
+  780/896 branches (87.05%); `src/domain` 3549/3609 lines (98.34%) and
+  3480/3747 branches (92.87%); `src/lib` 107/107 and 126/126 (100%).
 
 ### Phase 28 — QA and release
 
