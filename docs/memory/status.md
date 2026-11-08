@@ -3,28 +3,25 @@
 # Status
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
-  integrated into local `develop`. `develop` began at main baseline
+  integrated into GitHub `main` and `develop`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
   unreleased Release 2 history; the stable-main rule applies prospectively.
   The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
   branches, `history/by-phase`, and all 30 phase completion tags at that time.
   The `v1.0.0` tag was not changed; no force push was used.
-- P28-F release `v1.1.0` is on GitHub `main` (`1d56d1a`) and was back-merged
-  into the GitHub `develop` tip at `becbe1f`. Local develop includes the
-  contributor-correction merge `4ed7019`; local `phase/28-qa-and-release`
-  is `67ef4d2`; GitHub
-  `origin/develop` remains `becbe1f` and `origin/phase/28-qa-and-release`
-  remains `98fa079`. The P28-F-R1 device results and P28-F-R2 contributor
-  correction are integrated locally but not pushed. Main and local develop do
-  not have identical trees.
-- GitHub branch audit found 33 remote heads: main, develop, the read-only
-  `history/by-phase` archive, and all 30 phase branches. The local
-  `release/v1.1.0` branch itself is not on GitHub, though its release changes
-  are in main. Local branches not merged into develop are `codex-changes`,
-  `phase/25-release-and-backups`, `task/P28-E-phase-history`, and the
-  read-only `history/by-phase` archive.
-- Final ordered gates on current local `develop`: all six exit 0. Gate 1 has
-  98 suites, 1,243 passed, 1 skipped; coverage is
+- Release 2 PRs #1-#7 follow the chronological flow: Phase 28 to develop (#1),
+  release to main (#2), main back to develop (#3), audit task to Phase 28
+  (#4), Phase 28 to develop (#5), release branch to main (#6), and main back
+  to develop (#7). The contributor-credit correction and owner-reported
+  N39-N43 results are on main and develop; the audit records are carried
+  through the same release/back-merge path.
+- GitHub branch audit found 34 remote heads: main, develop, the read-only
+  `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
+  The merged audit task branch was deleted after integration.
+  Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
+  and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
+- Latest six ordered gates on the Release 2 audit worktree all exit 0. Gate 1
+  has 98 suites, 1,243 passed, 1 skipped; coverage is
   95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
@@ -59,21 +56,18 @@
 - Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
   latest commits on their respective phase branches. Tags were not moved;
   whether to update them remains an owner decision.
-- Branch audit (2026-11-08): GitHub has the release code on `main`, but does
-  not yet have the later N39-N43 checklist update or P28-F-R2 contributor
-  correction. The P28-F-R1 device-results task and P28-F-R2 credit correction
-  are each merged task -> Phase 28 -> develop. R2 commits are task `4f5b5f4`,
-  Phase 28 merge `67ef4d2`, and develop merge `4ed7019`; these local commits
-  are not pushed. Local Phase 28 is ahead of its remote. The local
-  `release/v1.1.0` branch is integrated into main but has no corresponding
-  remote branch; v1.1.0 is intentionally untagged. The only local branches not
-  merged into develop are `codex-changes`, `phase/25-release-and-backups`,
-  `history/by-phase` (read-only archive), and `task/P28-E-phase-history`.
-  No push or publication was performed for this follow-up.
-- P28-F-R2 contributor credits now match the linked contributor entries in
-  v1.0.0. The v1.1.0 template specifies release-specific verification and
-  rejects generic/previous-release attribution. Regression tests and all six
-  gates pass. Changes are locally integrated but not pushed.
+- Branch audit (2026-11-08): the chronological PR path carries the task
+  correction through Phase 28, develop, the release branch and main, then
+  back-merges main into develop. The relevant branch refs are verified in the
+  GitHub PRs. The v1.1.0 tag and publication remain pending owner build and
+  approval. `codex-changes`, `phase/25-release-and-backups`, and
+  `task/P28-E-phase-history` remain outside the merged Release 2 chain; the
+  `history/by-phase` branch is a read-only archive. No unrelated branch or
+  tag was changed.
+- P28-F-R2 contributor-credit correction and owner-reported device results
+  are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
+  to follow task -> Phase 28 -> develop -> release -> main -> develop. No tag
+  or release publication was made.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,
@@ -82,8 +76,8 @@
   95.96/92.01/98.01/97.62% overall, `src/data`
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
   `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
-  Phase 29 merge `22a0ec4` are integrated into local `develop`; no push was
-  made for this continuation. Physical-device verification remains pending.
+  Phase 29 merge `22a0ec4` are included in GitHub main/develop through the
+  Release 2 PR chain. Physical-device verification remains pending.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
