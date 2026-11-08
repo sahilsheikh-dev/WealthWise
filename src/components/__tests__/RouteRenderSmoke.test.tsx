@@ -4551,6 +4551,7 @@ describe('route render smoke audit', () => {
       expect(futureMonth.root.findByProps({ testID: 'budget-empty-state' })
         .findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Not planned');
+      expect(futureMonth.root.findAllByProps({ testID: 'budget-pace' })).toHaveLength(0);
       const apply = futureMonth.root.findByProps({ accessibilityLabel: `Apply plan to ${formatMonth(future)}` });
       act(() => apply.props.onPress());
       expect(actions.applyBudgetPlan).toHaveBeenCalledWith(future);
@@ -4607,7 +4608,6 @@ describe('route render smoke audit', () => {
       const order = [
         'budget-cash-flow',
         'budget-overview-card',
-        'budget-pace',
         'budget-section-income',
         'budget-section-survival',
         'budget-section-savings-investments',
@@ -4619,7 +4619,7 @@ describe('route render smoke audit', () => {
       ];
       const positions = order.map((id) => ids.indexOf(id));
       expect(positions.every((position, index) => index === 0 || position > (positions[index - 1] ?? -1))).toBe(true);
-      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(11);
+      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(10);
       expect(renderer.root.findByProps({ testID: 'budget-section-list' })).toBeDefined();
       const survival = renderer.root.findByProps({ testID: 'budget-section-survival' });
       expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
@@ -4685,22 +4685,22 @@ describe('route render smoke audit', () => {
         .join(' ');
       expect(overviewStyleText).toContain('"padding":16');
       expect(renderer.root.findAllByProps({ testID: 'stacked-bar' })).toHaveLength(0);
-      expect(renderer.root.findByProps({ testID: 'pace-section-series-survival' })).toBeDefined();
-      expect(renderer.root.findByProps({ testID: 'pace-y-axis' })).toBeDefined();
-      expect(renderer.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.accessibilityRole)
-        .toBe('button');
+      const pace = overviewCard.findByProps({ testID: 'budget-pace' });
+      expect(pace.findByProps({ testID: 'pace-line-container' })).toBeDefined();
+      expect(pace.findAll((node) => String(node.props.testID).startsWith('pace-section-toggle-')))
+        .toHaveLength(0);
+      expect(ids.indexOf('budget-pace')).toBeLessThan(ids.indexOf('budget-overview-table'));
+      expect(ids.indexOf('budget-overview-table')).toBeLessThan(ids.indexOf('budget-section-list'));
       const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
       expect(header.findAllByType('text').map((node) => node.children.join('')))
         .toEqual(['Actual', 'Planned']);
       const overviewAccessibility = renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel;
       expect(overviewAccessibility).toContain('Income');
       expect(overviewAccessibility).toContain('Spending');
-      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-section-series-survival' }).props.accessibilityLabel;
-      expect(paceAccessibility).toContain('Survival');
+      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
+      expect(paceAccessibility).toContain('Spending pace through day');
       expect(paceAccessibility).toContain('actual');
-      expect(paceAccessibility).toContain('planned to date');
-      expect(renderer.root.findByProps({ testID: 'pace-short-summary' }).props.accessibilityLabel)
-        .toContain('actual vs');
+      expect(paceAccessibility).toContain('planned by month end');
       expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
         .toBe(overviewAccessibility);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
@@ -4779,6 +4779,7 @@ describe('route render smoke audit', () => {
     try {
       const renderer = renderScreen(React.createElement(BudgetScreen));
       const header = renderer.root.findByType('header');
+      expect(renderer.root.findByProps({ testID: 'budget-pace' })).toBeDefined();
       expect(header.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
       expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
       expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === formatMonth(month))).toBe(true);
