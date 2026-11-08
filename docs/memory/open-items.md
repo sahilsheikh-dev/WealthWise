@@ -39,6 +39,12 @@
   screen updates across relevant flows on device.
 - **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
   Pace graph, per-section controls, contrast and scalable layout on device.
+- **P29-W-R1 physical-device check:** automated route tests inspect pending
+  liability EMI rows and verify the schedule stops at the last EMI date, but
+  native rendering and font scaling still need device confirmation.
+- **Requested task integration and P28-E history archive:** P29-W-R1 is complete
+  locally on its task branch; phase merges, the read-only history archive,
+  authorized plain pushes and remote verification have not yet been completed.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund

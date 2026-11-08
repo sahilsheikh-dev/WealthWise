@@ -23,7 +23,7 @@
   Gate 1 `npm test -- --coverage` exit 0; Gate 2 `npx tsc --noEmit` exit 0;
   Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 0. Gates 5-6
   (Expo exports) were skipped to honor the explicit no-build boundary.
-- Current task: Release 2 stabilization is implemented and committed locally.
+- Prior task: Release 2 stabilization is implemented and committed locally.
   P29-AB-R1 fixes recurring-income consumers; P30-A/B/C reproduce and repair
   stale persisted values and add source guards; P20-N-R1 replaces the stacked
   bar with accessible per-section actual/planned Pace lines (`f904769`). No
@@ -38,6 +38,13 @@
   91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
   `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
   because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
+- Current continuation: P29-W-R1 is complete locally on
+  `task/P29-W-R1-liability-entries`. A route regression now inspects actual
+  pending EMI list rows, not just summary text, and confirms they stop at the
+  last scheduled EMI date at font scales 1.0, 1.3 and 2.0. Focused route tests
+  pass (2 suites, 5 tests); TypeScript passes. Phase integration is pending.
+  The broader authorized task still includes P28-E history organization and
+  final task-branch integration.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
