@@ -648,7 +648,7 @@ export function buildDemoData(today: ISODate): AppData {
       date: dueDate,
       amount: plan.amount,
       kind: 'Deposit',
-      note: 'Recurring deposit installment',
+      note: 'Recurring deposit',
     }, id, today);
   }
 

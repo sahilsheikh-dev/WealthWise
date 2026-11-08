@@ -22,10 +22,9 @@ export function InstrumentCard({
   goalCount?: number;
 }) {
   const { colors } = useTheme();
-  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'calendar' | 'list' | 'check-circle'> = {
+  const actionIcons: Record<Exclude<InstrumentCardAction['id'], 'edit'>, 'plus' | 'arrow-down-left' | 'list' | 'check-circle'> = {
     deposit: 'plus',
     withdraw: 'arrow-down-left',
-    schedule: 'calendar',
     entries: 'list',
     confirm: 'check-circle',
   };

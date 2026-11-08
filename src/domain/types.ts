@@ -52,6 +52,58 @@ export type InvestmentEntry = {
   snapshotAdjustment?: number;
 };
 
+export const LEDGER_ENTRY_KINDS = ['deposit', 'withdrawal', 'valueUpdate'] as const;
+export type LedgerEntryKind = (typeof LEDGER_ENTRY_KINDS)[number];
+export const VALUATION_METHODS = [
+  'balance',
+  'balanceInterest',
+  'accrual',
+  'manual',
+  'unitsPrice',
+] as const;
+export type ValuationMethod = (typeof VALUATION_METHODS)[number];
+export const COMPOUNDING_FREQUENCIES = [
+  'monthly',
+  'quarterly',
+  'halfYearly',
+  'yearly',
+  'simple',
+] as const;
+export type CompoundingFrequency = (typeof COMPOUNDING_FREQUENCIES)[number];
+
+export type HoldingLedgerEntry = {
+  id: string;
+  date: ISODate;
+  kind: LedgerEntryKind;
+  amount: number;
+  note: string;
+  slotDate?: ISODate;
+  price?: number;
+  units?: number;
+  transactionId?: string;
+};
+
+export type RecurringPlan = {
+  frequency: Frequency;
+  amount: number;
+  start: ISODate;
+  end?: ISODate;
+  trackFrom?: ISODate;
+  stepUpPct?: number;
+};
+
+export type LedgerHolding = {
+  id: string;
+  name: string;
+  type: HoldingType;
+  entries: HoldingLedgerEntry[];
+  valuationMethod: ValuationMethod;
+  rate?: number;
+  compounding?: CompoundingFrequency;
+  maturityDate?: ISODate;
+  recurring?: RecurringPlan;
+};
+
 export type LiabilityPayment = {
   id: string;
   date: ISODate;
@@ -300,3 +352,5 @@ export type AppData = {
   efCustomBuckets: EfCustomBucket[];
   efBucketLinks: Record<string, string[]>;
 };
+
+export type LedgerAppData = Omit<AppData, 'holdings'> & { holdings: LedgerHolding[] };

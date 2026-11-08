@@ -38,7 +38,7 @@ describe('buildInstrumentCardModel', () => {
     expect(model.valueCaption).toContain('Value not updated in');
     expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
     expect(model.headerAction.id).toBe('edit');
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'confirm']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'confirm']);
   });
 
   it('uses fresh manual value dates without stale actions', () => {
@@ -51,7 +51,7 @@ describe('buildInstrumentCardModel', () => {
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
     expect(model.valueCaption).toBe('Updated 1 Oct 2026');
     expect(model.statuses).toEqual([]);
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries']);
   });
 
   it('keeps legacy fixed-deposit entries visible without offering new deposits', () => {
@@ -83,7 +83,7 @@ describe('buildInstrumentCardModel', () => {
     expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({ disabled: true });
   });
 
-  it('shows next due and schedule actions for a plan, with overdue and completed states', () => {
+  it('shows next due and the common holding actions for a plan, with overdue and completed states', () => {
     const overdueData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
@@ -98,7 +98,7 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.behindLine).toMatch(/\d+ behind/);
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');
-    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'schedule']);
+    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
 
     const completedData = {
       ...mockAppData,
@@ -133,7 +133,7 @@ describe('buildInstrumentCardModel', () => {
     expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Current value');
     expect(() => buildInstrumentCardModel({
       id: 'missing', kind: 'manual', name: 'Missing', type: 'Other',
-      invested: 0, value: 0, gain: 0, gainPct: null,
+      invested: 0, value: 0, gain: 0, costRecovered: false, gainPct: null,
     }, context)).toThrow('missing its holding');
   });
 

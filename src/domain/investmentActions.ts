@@ -24,7 +24,7 @@ function getHolding(data: AppData, id: string): Holding {
 
 function entryNote(holding: Holding, kind: InvestmentEntry['kind']): string {
   if (kind === 'Withdrawal') return `${holding.name} withdrawal`;
-  return holding.kind === 'plan' ? `${holding.name} installment` : `${holding.name} deposit`;
+  return `${holding.name} deposit`;
 }
 
 function linkedTransaction(holding: Holding, entry: InvestmentEntry, id: string): Transaction {

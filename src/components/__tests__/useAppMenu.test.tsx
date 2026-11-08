@@ -3,13 +3,14 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import { useAppMenu } from '../useAppMenu';
 import { useUIStore } from '../../data/uiStore';
+import { choiceAsync } from '../../lib/confirm';
 
 const mockRouterPush = jest.fn();
 const mockAlert = jest.fn();
 const mockConfirmAsync = jest.fn(async (_options: object) => true);
 const mockPathname: { current: string } = { current: '/' };
 const mockState: {
-  devActions?: { loadDemoData: jest.Mock };
+  devActions?: { loadDemoData: jest.Mock; loadStressData: jest.Mock };
   actions: { undoImport: jest.Mock };
 } = {
   devActions: undefined,
@@ -37,6 +38,7 @@ describe('useAppMenu', () => {
     mockRouterPush.mockClear();
     mockAlert.mockClear();
     mockConfirmAsync.mockReset().mockResolvedValue(true);
+    jest.mocked(choiceAsync).mockReset().mockResolvedValue(null);
     mockState.devActions = undefined;
     mockState.actions.undoImport = jest.fn(async () => ({ ok: true as const }));
     useUIStore.getState().setActionToast(null);
@@ -68,7 +70,7 @@ describe('useAppMenu', () => {
   it('shows the demo-loaded Undo / OK popup without navigating, then restores data and shows a toast', async () => {
     const loadDemoData = jest.fn(async () => ({ ok: true as const }));
     const undoImport = jest.fn(async () => ({ ok: true as const }));
-    mockState.devActions = { loadDemoData };
+    mockState.devActions = { loadDemoData, loadStressData: jest.fn() };
     mockState.actions.undoImport = undoImport;
     const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };
     function CaptureMenu() {
@@ -86,6 +88,7 @@ describe('useAppMenu', () => {
         await Promise.resolve();
         await Promise.resolve();
       });
+
       expect(mockConfirmAsync).toHaveBeenCalledWith({
         title: 'Load demo data?',
         message: 'Replace local app data with four months of sample data?',
@@ -112,6 +115,55 @@ describe('useAppMenu', () => {
     } finally {
       act(() => renderer?.unmount());
       useUIStore.getState().setActionToast(null);
+    }
+  });
+
+  it('loads a selected stress tier, reports hydration/render timing, and offers Undo', async () => {
+    const loadStressData = jest.fn(async () => ({ ok: true as const, loadMs: 125 }));
+    mockState.devActions = { loadDemoData: jest.fn(), loadStressData };
+    mockState.actions.undoImport = jest.fn(async () => ({ ok: true as const }));
+    jest.mocked(choiceAsync).mockResolvedValue('200-daily');
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (callback) => {
+      callback(0);
+      return 0;
+    };
+    const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };
+    function CaptureMenu() {
+      menuRef.current = useAppMenu();
+      return null;
+    }
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
+    if (!renderer) throw new Error('Menu hook did not render.');
+    try {
+      const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/200y)');
+      if (!loadItem) throw new Error('Stress-data menu action did not render.');
+      await act(async () => {
+        loadItem.onPress();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(choiceAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Load stress data?',
+        choices: expect.arrayContaining([
+          expect.objectContaining({ id: '50' }),
+          expect.objectContaining({ id: '100' }),
+          expect.objectContaining({ id: '200' }),
+          expect.objectContaining({ id: '200-daily' }),
+        ]),
+      }));
+      expect(loadStressData).toHaveBeenCalledWith(200, true);
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Stress data loaded',
+        expect.stringMatching(/Build, validate, save and replace: 125 ms\. First render after replace: \d+ ms\./),
+        expect.arrayContaining([expect.objectContaining({ text: 'Undo' }), { text: 'OK' }]),
+      );
+    } finally {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+      act(() => renderer?.unmount());
     }
   });
 });

@@ -1,8 +1,7 @@
 import { valueStaleness } from './holdingActions';
 import { holdingCapabilities } from './holdingCapabilities';
-import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from './sip';
+import { behindBy, installmentsTracked, loggedTrackedCount, planProgressPct, projection } from './sip';
 import { planSchedule } from './schedule';
-import { investmentEntryTotals } from './investmentReturns';
 import { isCashOrBankHoldingType } from './portfolio';
 import type { ISODate } from './types';
 import type { PortfolioRow } from './portfolio';
@@ -11,7 +10,7 @@ import { formatDate } from '../lib/format';
 export type InstrumentCardTextSegment = { text: string } | { amount: number };
 
 export type InstrumentCardAction = {
-  id: 'deposit' | 'withdraw' | 'schedule' | 'entries' | 'edit' | 'confirm';
+  id: 'deposit' | 'withdraw' | 'entries' | 'edit' | 'confirm';
   label: string;
   disabled?: boolean;
   accessibilityHint?: string;
@@ -60,7 +59,6 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     const projectionData = projection(holding);
     const overdue = behindBy(holding, ctx.asOf);
     const tracked = installmentsTracked(holding, ctx.asOf);
-    const currentValue = planValue(holding, ctx.asOf);
     const progressPct = planProgressPct(holding);
     const summary = row.returnSummary;
     const returnText = formatReturnText(summary);
@@ -72,6 +70,10 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       statuses.push({ label: `${schedule.summary.overdue} overdue`, tone: 'err' });
     }
     if (!schedule.summary.nextDue) statuses.push({ label: 'Completed', tone: 'ok' });
+    const helperLines = [
+      ...(row.costRecovered ? ['Cost recovered'] : []),
+      ...(hasBackdatedEntries ? ['Entries dated before the last valuation are assumed included in it.'] : []),
+    ];
     return {
       kind: 'plan',
       name: holding.name,
@@ -80,7 +82,7 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { amount: holding.amount },
         { text: `, ${holding.stepUpPct}% step-up, ${holding.tenureYears} yrs, ${holding.ratePct}% p.a.` },
       ],
-      value: currentValue,
+      value: row.value,
       valueCaption: holding.actualValue === null
         ? 'Current value'
         : holding.actualValueDate
@@ -90,14 +92,12 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       progressCaption: '',
       description: [
         { text: 'Invested ' },
-        { amount: planInvested(holding) },
+        { amount: row.invested },
         { text: `, ${returnText}. Plan: ` },
         { amount: projectionData.totalContributions },
         { text: ` in contributions. ${loggedTrackedCount(holding)} logged since tracking began, ${tracked} due.` },
       ],
-      ...(hasBackdatedEntries ? {
-        helperLine: 'Entries dated before the last valuation are assumed included in it.',
-      } : {}),
+      ...(helperLines.length > 0 ? { helperLine: helperLines.join(' ') } : {}),
       ...(schedule.summary.nextDue ? {
         nextLine: [
           { text: `Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ` },
@@ -110,9 +110,9 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       pendingDueAmount: schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0,
       headerAction: { id: 'edit', label: 'Edit' },
       actions: [
-        ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Log installment' }] : []),
+        ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
-        ...(capabilities.recurring ? [{ id: 'schedule' as const, label: `Schedule (${holding.logs.length})` }] : []),
+        { id: 'entries', label: 'Entries' },
       ],
     };
   }
@@ -127,10 +127,10 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
   const summary = row.returnSummary;
   const returnText = formatReturnText(summary);
   const cashOrBank = isCashOrBankHoldingType(holding.type);
-  const entryTotals = investmentEntryTotals(holding.logs);
   const hasBackdatedEntries = Boolean(holding.valueAsOf)
     && holding.logs.some((entry) => entry.date < (holding.valueAsOf ?? ''));
   const helperLines = [
+    ...(row.costRecovered ? ['Cost recovered'] : []),
     ...(hasBackdatedEntries ? ['Entries dated before the last valuation are assumed included in it.'] : []),
     ...(!capabilities.entries && holding.logs.length > 0 ? ['Entries from earlier are kept.'] : []),
   ];
@@ -146,10 +146,8 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     progressCaption: cashOrBank ? '' : `${sharePct.toFixed(1)}% of your assets`,
     description: cashOrBank
       ? [
-        { text: 'Deposited ' },
-        { amount: entryTotals.deposits },
-        { text: '. Withdrawn ' },
-        { amount: entryTotals.withdrawals },
+        { text: 'Invested ' },
+        { amount: row.invested },
       ]
       : [
         { text: `${row.gain >= 0 ? 'Gain' : 'Loss'} ` },
@@ -162,7 +160,7 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     actions: [
       ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
       { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
-      ...(capabilities.entries || holding.logs.length > 0 ? [{ id: 'entries' as const, label: `Entries (${holding.logs.length})` }] : []),
+      { id: 'entries', label: 'Entries' },
       ...(stale.stale ? [{ id: 'confirm' as const, label: 'Confirm' }] : []),
     ],
   };
