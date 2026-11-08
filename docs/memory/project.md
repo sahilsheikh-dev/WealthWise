@@ -41,9 +41,9 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 97 suites, 1228 tests (1227 passed; one opt-in stress benchmark
-  skipped) in the Release 2 stabilization Gate 1 run on 2026-11-08. Gates 1-4
-  exited 0; Expo exports were skipped under the no-build constraint. See
+- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
+  skipped) in the P28-D Gate 1 run on 2026-11-08. All six ordered gates exited
+  0. See
   [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 

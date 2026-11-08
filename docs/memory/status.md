@@ -1,35 +1,59 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
-- Commit-subject enforcement is active in the repository: the old behavior
-  allowed non-descriptive placeholder subjects; the new POSIX hook requires a
-  supported Conventional Commit subject and rejects placeholders. The reason
-  is to make scope clear and keep unrelated work separate; proposed subjects
-  and staged diff-stats are shown before commits. Enable it with
-  `git config core.hooksPath .githooks`. Focused tests cover accepted and
-  rejected subjects. Its implementation Gate 1 had 93 suites, 1,205 passed,
-  1 skipped; 95.90%
-  statements, 91.89% branches, 97.75% functions, 97.57% lines overall.
-  `src/data`: 90.63/86.95/93.07/93.92%; `src/domain`:
-  96.96/92.82/98.79/98.31%; pure `src/lib`: 100% in all four measures.
-  Gate 1 `npm test -- --coverage` exit 0; Gate 2 `npx tsc --noEmit` exit 0;
-  Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 0. Gates 5-6
-  (Expo exports) were skipped to honor the explicit no-build boundary.
-- Current task: Release 2 stabilization is implemented and committed locally.
-  P29-AB-R1 fixes recurring-income consumers; P30-A/B/C reproduce and repair
-  stale persisted values and add source guards; P20-N-R1 replaces the stacked
-  bar with accessible per-section actual/planned Pace lines (`f904769`). No
-  schema or version bump, release preparation, build, export or push occurred.
-  P30 confirms SQLite winning over newer verified fallback data after restart;
-  mounted-screen refresh, selector/memoization, module-cache, prior-state
-  mutation, and route-param hypotheses were not reproduced by the harness.
-  The device checklist now marks N39 and N40 Fail and N41 Not run; device
-  re-test and v1.1.0 release preparation remain pending. The full Gate 1 run
-  has 97 suites, 1,227 passed, 1 skipped; coverage is 95.96% statements,
-  92.01% branches, 98.01% functions and 97.62% lines overall. `src/data`:
-  91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
-  `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
-  because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
+- Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
+  P29-AB-R2, P29-O1-R1, P29-W-R1 and the Phase 30 work are integrated into
+  local `develop`. `develop` began at main baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
+  unreleased Release 2 history; the stable-main rule applies prospectively.
+  Authorized plain pushes are complete and remotely verified: main, develop,
+  all 30 phase branches, `history/by-phase`, and all 30 phase completion tags.
+  The `v1.0.0` tag was not changed; no force push was used.
+- Final ordered gates on `develop`: all six exit 0. Gate 1 has 98 suites,
+  1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62% overall,
+  `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
+  TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
+  succeed. No EAS/Gradle build, v1.1.0 tag or publication has occurred.
+- Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
+  has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
+  overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, and `src/lib` 100%; Expo Doctor is 21/21.
+- Commit-subject enforcement is active: the POSIX hook requires supported
+  Conventional Commit types and rejects placeholders. Its reason is to keep
+  scope explicit and unrelated changes separate. Enable it with
+  `git config core.hooksPath .githooks`; hook and documentation tests pass.
+- Release 2 code changes are complete: recurrence-aware income summaries and
+  editable non-due rows, verified persistence-source precedence, shared paid
+  sync/Undo, capped Entries schedules, and the restored aggregate Pace graph
+  without the stacked bar. N39 and N40
+  remain Fail pending device re-test; N41-N43 remain Not run. Device model,
+  Android version, tester and date fields remain blank. P28-F is preparing
+  v1.1.0 on `release/v1.1.0`; version, changelog, README What's new and draft
+  notes are in progress. The README Download remains v1.0.0 until publication.
+  Build, device re-test, v1.1.0 tag and publication remain pending owner action.
+- P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
+  unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
+  and a final tree equal to main. The later route-diagnostic and ledger
+  revisions are outside the read-only snapshot. Full details are in
+  [PROGRESS.md](../PROGRESS.md).
+- Protected hashes reverified with `git hash-object`: Budget
+  `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
+  `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
+  device/release follow-ups are recorded in [open-items.md](open-items.md).
+- Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
+  latest commits on their respective phase branches. Tags were not moved;
+  whether to update them remains an owner decision.
+- P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
+  month counts in two-column summary cells and sort pending schedule rows with
+  dated entries (newest first). Route regressions pass at font scales 1.0,
+  1.3 and 2.0; all six ordered gates exit 0. Gate 1 on the reopened Phase 29
+  branch: 98 suites, 1,242 passed, 1 skipped; coverage is
+  95.96/92.01/98.01/97.62% overall, `src/data`
+  91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
+  `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
+  Phase 29 merge `22a0ec4` are integrated into local `develop`; no push was
+  made for this continuation. Physical-device verification remains pending.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -187,12 +211,11 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 97 suites, 1228 tests (1227 passed; one opt-in stress benchmark
-  skipped) in the latest Release 2 stabilization run.
-- Latest validated run: 97 suites, 1228 tests (1227 passed, 1 skipped) on
-  2026-11-08; Gates 1-4 exit 0. Expo exports were not run because builds are
-  outside task scope. Coverage and exact commands are recorded in
-  [PROGRESS.md](../PROGRESS.md).
+- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
+  skipped) in the P28-D run.
+- Latest validated run: 98 suites, 1231 tests (1230 passed, 1 skipped) on
+  2026-11-08; all six gates exit 0. Coverage and exact commands are recorded
+  in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
