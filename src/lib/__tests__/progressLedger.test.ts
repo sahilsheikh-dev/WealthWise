@@ -178,7 +178,7 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 30]) {
+    for (const phase of [20, 21, 22, 23, 25, 28, 30]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       expect(count?.done).toBe(count?.total);
