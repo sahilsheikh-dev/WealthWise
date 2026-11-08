@@ -69,6 +69,7 @@ jest.mock('react-native', () => {
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     View: node('view'),
+    Modal: node('modal'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
   };
 });
@@ -102,7 +103,7 @@ describe('Transactions screen withdrawals-only month', () => {
     if (!renderer) throw new Error('Transactions renderer was not created.');
     const text = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
     expect(text).toContain('No earned income logged this month');
-    expect(text).toContain('Includes ₹5,000 withdrawn from investments');
+    expect(text).toContain('Includes ₹5,000 from withdrawals, borrowing, loan proceeds and own funds');
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);

@@ -46,8 +46,7 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
       : null;
   }
   if (source.kind === 'liability-origin') {
-    const liability = data.liabilities.find((entry) =>
-      entry.id === source.parentId && entry.id === source.entryId && entry.kind === 'one-time');
+    const liability = data.liabilities.find((entry) => entry.id === source.parentId && entry.id === source.entryId);
     return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
   }
   const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
@@ -124,6 +123,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     let entry: { amount: number; date: string } | undefined;
     let expectedType: Transaction['type'] | undefined;
     let expectedCategory: string | undefined;
+    let validLiabilityOrigin = true;
     if (source.kind === 'holding-entry') {
       const holding = data.holdings.find((item) => item.id === source.parentId);
       entry = holding?.logs.find((item) => item.id === source.entryId);
@@ -139,10 +139,14 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       expectedCategory = 'Insurance';
     } else if (source.kind === 'liability-origin') {
       const liability = data.liabilities.find((item) =>
-        item.id === source.parentId && item.id === source.entryId && item.kind === 'one-time');
-      entry = liability ? { amount: liability.principal, date: liability.startDate } : undefined;
+        item.id === source.parentId && item.id === source.entryId);
+      entry = liability ? { amount: transaction.amount, date: transaction.date } : undefined;
       expectedType = 'income';
-      expectedCategory = 'Borrowed';
+      validLiabilityOrigin = liability !== undefined &&
+        transaction.amount <= liability.principal &&
+        (transaction.category === 'Borrowed'
+          ? transaction.amount === liability.principal && transaction.date === liability.startDate
+          : transaction.category === 'Loan proceeds' && transaction.date >= liability.startDate);
     } else {
       const efGoal = data.goals.find((goal) => goal.auto === 'ef');
       entry = efGoal?.id === source.parentId
@@ -156,7 +160,8 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       transaction.amount !== Math.abs(entry.amount) ||
       transaction.date !== entry.date ||
       transaction.type !== expectedType ||
-      (expectedCategory !== undefined && transaction.category !== expectedCategory)
+      (expectedCategory !== undefined && transaction.category !== expectedCategory) ||
+      !validLiabilityOrigin
     ) {
       add('linked-drift', 'Linked transaction fields differ from the source entry.', ['transactions', index]);
     }

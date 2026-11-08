@@ -19,6 +19,8 @@ import LiabilityFormScreen from '../../../app/liability-form';
 import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
+import MoneyMovementFormScreen from '../../../app/money-movement-form';
+import MonthReviewScreen from '../../../app/month-review';
 import OnboardingScreen from '../../../app/onboarding';
 import ProfileFormScreen from '../../../app/profile-form';
 import SecurityScreen from '../../../app/security';
@@ -26,9 +28,12 @@ import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
-import { shiftMonth } from '../../domain/dates';
+import { monthKey, shiftMonth } from '../../domain/dates';
+import { emptyAppData } from '../../domain/actions';
 import { useUIStore } from '../../data/uiStore';
+import { useAppStore } from '../../data/store';
 import { formatMonth } from '../../lib/format';
+import { todayISO } from '../../lib/clock';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -115,6 +120,9 @@ jest.mock('../../data/store', () => {
       addTransaction: jest.fn(),
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
+      recordMoneyMovement: jest.fn(),
+      fundShortfall: jest.fn(),
+      allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
       updateEfEntry: jest.fn(),
       deleteEfEntry: jest.fn(),
@@ -163,6 +171,9 @@ jest.mock('../../data/useAppData', () => {
       addTransaction: jest.fn(),
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
+      recordMoneyMovement: jest.fn(),
+      fundShortfall: jest.fn(),
+      allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
       updateEfEntry: jest.fn(),
       deleteEfEntry: jest.fn(),
@@ -353,6 +364,8 @@ describe('route render smoke audit', () => {
     ['Home', React.createElement(HomeScreen)],
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
+    ['Month review empty state', React.createElement(MonthReviewScreen)],
+    ['Money movement invalid state', React.createElement(MoneyMovementFormScreen)],
     ['Backup', React.createElement(BackupScreen)],
     ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
@@ -415,6 +428,39 @@ describe('route render smoke audit', () => {
     act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
     expect(monthLabel()).not.toBe(previousMonthLabel);
     expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
+  });
+
+  it.each(['borrowed-in', 'repay', 'withdraw', 'own-funds'])('renders the %s movement form', (kind) => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    routeParams.mockReturnValue({ kind });
+    const renderer = renderScreen(React.createElement(MoneyMovementFormScreen));
+    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
+    routeParams.mockReturnValue({});
+  });
+
+  it.each([
+    ['shortfall', 'expense', 100],
+    ['surplus', 'income', 100],
+  ] as const)('renders the %s month review allocation builder', (mode, type, amount) => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const selectedMonth = shiftMonth(monthKey(todayISO()), -1);
+    const data = {
+      ...emptyAppData(`${selectedMonth}-01`),
+      transactions: [{
+        id: `review-${mode}`,
+        type,
+        amount,
+        category: type === 'expense' ? 'Living' : 'Salary',
+        note: 'Review smoke',
+        date: `${selectedMonth}-10`,
+      }],
+    };
+    useAppStore((state) => state).data = data;
+    routeParams.mockReturnValue({ month: selectedMonth });
+    const renderer = renderScreen(React.createElement(MonthReviewScreen));
+    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
+    useAppStore((state) => state).data = emptyAppData(todayISO());
+    routeParams.mockReturnValue({});
   });
 
   it('explains the first SIP installment and installment tracking dates', () => {

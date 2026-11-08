@@ -208,6 +208,7 @@ describe('transaction selectors', () => {
     const summary = monthSummary(transactions, '2026-10');
     expect(summary).toMatchObject({
       income: 50_000,
+      nonEarnedIncome: 0,
       expense: 27_713,
       invest: 2_000,
       net: 20_287,
@@ -235,6 +236,7 @@ describe('transaction selectors', () => {
     expect(includesWithdrawal).toMatchObject({
       income: 50_000,
       withdrawals: 10_000,
+      nonEarnedIncome: 10_000,
       earnedIncome: 40_000,
       net: 26_000,
       rates: { savedPct: 50, investedPct: 10 },
@@ -251,7 +253,7 @@ describe('transaction selectors', () => {
       tx('withdrawal', 'income', 10_000, '2026-10-02', 'Withdrawal', 'Withdrawal'),
       tx('borrowed', 'income', 15_000, '2026-10-03', 'Borrowed', 'Borrowed'),
       tx('own-funds', 'income', 5_000, '2026-10-04', 'Own funds', 'Own funds'),
-    ], '2026-10')).toMatchObject({ income: 70_000, withdrawals: 10_000, earnedIncome: 40_000 });
+    ], '2026-10')).toMatchObject({ income: 70_000, withdrawals: 10_000, earnedIncome: 40_000, nonEarnedIncome: 30_000 });
     expect(monthSummary([
       tx('expense', 'expense', 100, '2026-10-01'),
     ], '2026-10')).toMatchObject({ income: 0, expense: 100, rates: null });

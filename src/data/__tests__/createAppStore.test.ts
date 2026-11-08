@@ -68,6 +68,50 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('records a shortfall allocation atomically with one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      transactions: [
+        { id: 'income', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-01-01' },
+        { id: 'expense', type: 'expense' as const, amount: 300, category: 'Living', note: '', date: '2026-01-02' },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    let nextId = 0;
+    const store = createAppStore(storage, {
+      newId: () => `movement-${++nextId}`,
+      today: () => '2026-02-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'borrowed', amount: 50, lenderName: 'Friend' },
+    ]);
+
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.liabilities).toHaveLength(1);
+    expect(store.getState().data.transactions).toHaveLength(3);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const movementWrites = storage.setItemCalls;
+    store.getState().actions.recordMoneyMovement({
+      kind: 'borrowed-in', lenderName: 'Aunt', amount: 30, date: '2026-01-15',
+    });
+    expect(storage.setItemCalls - movementWrites).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const referenceBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    store.getState().actions.fundShortfall('2026-01', [
+      { kind: 'own-funds', amount: 500, note: 'Too much' },
+    ]);
+    expect(store.getState().data).toBe(referenceBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
   it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
     const storage = new MemoryStorage();
     const initial = {
