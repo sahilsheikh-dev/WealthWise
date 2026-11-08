@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -16,6 +17,7 @@ import {
   StatPillRow,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import {
   allocateAmounts,
   allocationWarnings,
@@ -27,6 +29,7 @@ import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } fro
 import { ensureEfGoal, goalView } from '../src/domain/goals';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -35,12 +38,13 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 export default function EmergencyFundScreen() {
   const { colors } = useTheme();
   const data = useAppData();
+  const sorting = useSort('emergencyFund');
   const asOf = todayISO();
   const balance = efBalance(data.efEntries);
   const baseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const covered = monthsCovered(balance, baseline);
   const fundMilestones = milestones(balance, baseline);
-  const entries = efPassbook(data.efEntries);
+  const entries = sorting.sort(efPassbook(data.efEntries));
   const allocation = effectiveAllocation(data.efAllocation);
   const allocationAmounts = allocateAmounts(balance, allocation);
   const allocationAlerts = allocationWarnings(allocation);
@@ -148,6 +152,9 @@ export default function EmergencyFundScreen() {
         ) : null}
 
         <SectionTitle>Passbook</SectionTitle>
+        <View style={styles.sortRow}>
+          <SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />
+        </View>
         <View style={styles.passbook}>
           {entries.map((entry) => (
             <SharedListRow
@@ -185,6 +192,7 @@ const styles = StyleSheet.create({
   allocationLabel: { flex: 1 },
   allocationAmount: { minWidth: 100, textAlign: 'right' },
   basedOn: { marginTop: 8 },
+  sortRow: { marginHorizontal: 20, marginTop: 8 },
   passbook: { marginHorizontal: 20 },
   passbookRow: { minHeight: 66, borderBottomWidth: StyleSheet.hairlineWidth },
   passbookContents: { flexDirection: 'row', alignItems: 'center', gap: 8 },

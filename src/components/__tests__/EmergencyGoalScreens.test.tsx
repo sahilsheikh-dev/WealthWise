@@ -16,6 +16,9 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData.current }));
+jest.mock('../../data/store', () => ({
+  metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
+}));
 jest.mock('../../data/metaStore', () => ({
   createMetaStore: () => ({ getMeta: async () => ({}), updateMeta: async () => ({}) }),
 }));
@@ -41,6 +44,7 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
+    Chip: node('chip'),
     DetailTabBar: node('tabbar'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
@@ -57,6 +61,7 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
+    Modal: node('modal'),
     Pressable: node('pressable'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),

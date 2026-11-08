@@ -263,14 +263,20 @@ describe('transaction selectors', () => {
     const txs = [
       tx('b', 'expense', 3, '2026-10-02', 'Rent'),
       tx('c', 'invest', 4, '2026-10-02', 'Index fund'),
+      tx('other-investment', 'invest', 5, '2026-10-03', 'Other', 'Other'),
+      tx('other-expense', 'expense', 6, '2026-10-03', 'Other', 'Other'),
       tx('a', 'income', 2, '2026-10-01', 'Salary'),
       tx('z', 'expense', 1, '2026-09-30', 'Rent'),
     ];
     expect(filterTransactions(txs, { month: '2026-10', type: 'all', query: ' RENT ' }).map((item) => item.id)).toEqual(['b']);
     expect(filterTransactions(txs, { month: '2026-10', type: 'income', query: '' }).map((item) => item.id)).toEqual(['a']);
+    expect(filterTransactions(txs, {
+      month: '2026-10', type: 'invest', query: '', category: 'Other investments',
+    }).map((item) => item.id)).toEqual(['other-investment']);
     const filtered = filterTransactions(txs, { month: '2026-10', type: 'all', query: '' });
-    expect(filtered.map((item) => item.id)).toEqual(['c', 'b', 'a']);
+    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'c', 'b', 'a']);
     expect(groupByDate(filtered).map((group) => [group.date, group.items.map((item) => item.id)])).toEqual([
+      ['2026-10-03', ['other-investment', 'other-expense']],
       ['2026-10-02', ['c', 'b']],
       ['2026-10-01', ['a']],
     ]);

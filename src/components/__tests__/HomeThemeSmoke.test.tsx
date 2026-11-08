@@ -18,6 +18,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true
 jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
 jest.mock('../../data/store', () => ({
   useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
+  metaStore: {
+    getMeta: async () => ({}),
+    updateSortSpec: async () => ({}),
+  },
 }));
 jest.mock('../../data/metaStore', () => ({
   createMetaStore: () => ({ getMeta: async () => ({}), updateMeta: async () => ({}) }),
@@ -52,6 +56,7 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
+    Chip: node('chip'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
@@ -68,6 +73,7 @@ jest.mock('react-native', () => {
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
+    Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: object) => styles },

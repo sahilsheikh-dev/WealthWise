@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -17,7 +17,9 @@ import {
   WarningBanner,
 } from '../../src/components/ui';
 import { AppHeader } from '../../src/components/AppHeader';
+import { SortChip } from '../../src/components/SortChip';
 import { useUIStore } from '../../src/data/uiStore';
+import { useSort } from '../../src/data/useSort';
 import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
 import { describeSource } from '../../src/domain/links';
@@ -25,6 +27,7 @@ import { monthPositionAt, reviewableMonths } from '../../src/domain/cashFlow';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { todayISO } from '../../src/lib/clock';
 import { savingsLine } from '../../src/lib/savingsLine';
 import { swipeIntent } from '../../src/lib/swipe';
@@ -41,16 +44,24 @@ const transactionTone = {
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function TransactionsScreen() {
+  const params = useLocalSearchParams<{ category?: string; month?: string }>();
+  const routeCategory = typeof params.category === 'string' ? params.category : '';
   const { colors } = useTheme();
   const data = useAppData();
   const month = useUIStore((state) => state.txMonth);
   const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const sorting = useSort('transactions');
   const [filter, setFilter] = useState<Filter>('all');
+  const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
+  const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
   const [movementSheetOpen, setMovementSheetOpen] = useState(false);
   const [dismissedReview, setDismissedReview] = useState<string | null>(null);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
+  useEffect(() => {
+    if (params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)) setTxMonth(params.month);
+  }, [params.month, setTxMonth]);
   const monthPanResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
       !touchingChips && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
@@ -67,10 +78,18 @@ export default function TransactionsScreen() {
     [data, month, today],
   );
   const savings = savingsLine(summary);
-  const rows = useMemo(
-    () => filterTransactions(data.transactions, { month, type: filter, query }),
-    [data.transactions, filter, month, query],
+  const creationOrder = useMemo(
+    () => new Map(data.transactions.map((transaction, index) => [transaction.id, index])),
+    [data.transactions],
   );
+  const filteredRows = useMemo(
+    () => filterTransactions(data.transactions, { month, type: filter, query, category: categoryFilter }).map((transaction) => ({
+      ...transaction,
+      sortCreatedIndex: creationOrder.get(transaction.id) ?? 0,
+    })),
+    [categoryFilter, creationOrder, data.transactions, filter, month, query],
+  );
+  const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
   const movements = [
@@ -203,6 +222,14 @@ export default function TransactionsScreen() {
                 onPress={() => setFilter(item)}
               />
             ))}
+            {categoryFilter ? (
+              <Chip
+                label={`Category: ${categoryFilter} ×`}
+                selected
+                onPress={() => setCategoryOverride('')}
+              />
+            ) : null}
+            <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
           </ChipRow>
         </View>
         <SearchField
