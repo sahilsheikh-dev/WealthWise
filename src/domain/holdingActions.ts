@@ -42,6 +42,12 @@ export function deleteHolding(
       ...goal,
       links: goal.links.filter((link) => link.instrumentId !== id),
     })),
+    efBucketLinks: Object.fromEntries(
+      Object.entries(result.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds.filter((holdingId) => holdingId !== id),
+      ]),
+    ),
   };
 }
 

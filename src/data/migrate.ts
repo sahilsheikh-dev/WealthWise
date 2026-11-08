@@ -134,6 +134,26 @@ export function migrateV4ToV5(data: unknown): unknown {
   };
 }
 
+export function migrateV5ToV6(data: unknown): unknown {
+  if (
+    !isRecord(data) ||
+    !isRecord(data.settings) ||
+    !Array.isArray(data.transactions) ||
+    !Array.isArray(data.goals) ||
+    !Array.isArray(data.holdings) ||
+    !Array.isArray(data.liabilities) ||
+    !Array.isArray(data.policies) ||
+    !Array.isArray(data.efEntries)
+  ) {
+    throw new PersistedVersionError(5, 'unknown-version');
+  }
+  return {
+    ...data,
+    efCustomBuckets: [],
+    efBucketLinks: {},
+  };
+}
+
 export function migratePersisted(persisted: unknown, fromVersion: number): unknown {
   if (fromVersion === SCHEMA_VERSION) return persisted;
   if (fromVersion > SCHEMA_VERSION) throw new PersistedVersionError(fromVersion, 'future-version');
@@ -146,6 +166,7 @@ export function migratePersisted(persisted: unknown, fromVersion: number): unkno
     if (fromVersion <= 2) result = migrateV2ToV3(result);
     if (fromVersion <= 3) result = migrateV3ToV4(result);
     if (fromVersion <= 4) result = migrateV4ToV5(result);
+    if (fromVersion <= 5) result = migrateV5ToV6(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

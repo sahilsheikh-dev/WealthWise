@@ -2,11 +2,11 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../src/components/AppHeader';
 import { AmountText } from '../src/components/AmountText';
+import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
-import { SortChip } from '../src/components/SortChip';
 import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
+import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -31,8 +31,8 @@ import {
 } from '../src/domain/portfolio';
 import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
-import { todayISO } from '../src/lib/clock';
 import { formatAmount } from '../src/lib/amountDisplay';
+import { todayISO } from '../src/lib/clock';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -139,14 +139,12 @@ export default function AssetsScreen() {
       </Card>
 
       <SectionHeaderRow
-        title={filter === 'Recurring' ? 'SIPs and plans' : 'Assets'}
-        right={(
-          <SortChip
-            options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-            spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-            onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-          />
-        )}
+        title={filter === 'Recurring' ? 'Recurring investments' : 'Investments'}
+        right={<SortChip
+          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+        />}
       />
       <ChipRow>
         {filters.map((item) => (

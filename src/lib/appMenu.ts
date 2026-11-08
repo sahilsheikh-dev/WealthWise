@@ -7,22 +7,18 @@ export type AppMenuItem = {
 };
 
 export function buildAppMenu({
-  hasUnlinked,
   isDev,
   themeLabel,
 }: {
-  hasUnlinked: boolean;
   isDev: boolean;
   themeLabel: string;
 }): AppMenuItem[] {
   const items: AppMenuItem[] = [
-    { label: 'Budget history', icon: 'calendar' },
     { label: 'Backup and restore', icon: 'download' },
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },
     { label: 'Theme', description: `Current theme: ${themeLabel}`, icon: 'sliders' },
   ];
-  if (hasUnlinked) items.push({ label: 'Link missing transactions', icon: 'link' });
   if (isDev) {
     items.push(
       { label: 'Load demo data', icon: 'database' },
@@ -31,6 +27,5 @@ export function buildAppMenu({
     );
   }
   items.push({ label: 'Erase all data', icon: 'trash-2', destructive: true });
-  items.splice(items.length - 1, 0, { label: 'Month review', icon: 'calendar' });
   return items;
 }

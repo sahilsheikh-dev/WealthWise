@@ -1,4 +1,4 @@
-import { migratePersisted, migrateV3ToV4, migrateV4ToV5 } from '../migrate';
+import { migratePersisted, migrateV3ToV4, migrateV4ToV5, migrateV5ToV6 } from '../migrate';
 import { mockAppData } from '../../mock/data';
 import { makeV4Fixture } from '../testFixtures/v1';
 
@@ -36,6 +36,8 @@ describe('migrate v3 to v4', () => {
         policies: [],
         budget: null,
         efAllocation: null,
+        efCustomBuckets: [],
+        efBucketLinks: {},
       },
     });
   });
@@ -51,11 +53,25 @@ describe('migrate v3 to v4', () => {
     };
     expect(migrateV4ToV5(v4)).toEqual(expected);
     expect(migratePersisted({ data: v4, metadata: { retained: true } }, 4))
-      .toEqual({ data: expected, metadata: { retained: true } });
+      .toEqual({
+        data: { ...expected, efCustomBuckets: [], efBucketLinks: {} },
+        metadata: { retained: true },
+      });
   });
 
   it('rejects malformed v4 envelopes instead of returning partial data', () => {
     expect(() => migrateV4ToV5({ ...makeV4Fixture(), goals: [null] }))
       .toThrow(expect.objectContaining({ name: 'PersistedVersionError', fromVersion: 4, reason: 'unknown-version' }));
+  });
+
+  it('adds only empty custom allocation fields to v5 data', () => {
+    const v5 = {
+      ...makeV4Fixture(),
+      goals: makeV4Fixture().goals.map((goal) => ({ ...goal, links: [] })),
+      liabilities: makeV4Fixture().liabilities.map((liability) => ({ ...liability, settlement: null })),
+      policies: [],
+      budget: null,
+    };
+    expect(migrateV5ToV6(v5)).toEqual({ ...v5, efCustomBuckets: [], efBucketLinks: {} });
   });
 });

@@ -142,4 +142,6 @@ export const mockAppData: AppData = {
   },
   efEntries: emergencyFundEntries,
   efAllocation: null,
+  efCustomBuckets: [],
+  efBucketLinks: {},
 };

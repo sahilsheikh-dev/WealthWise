@@ -109,7 +109,18 @@ export const SORT_OPTIONS = {
     { key: 'percentUsed', label: 'Percent used' },
     { key: 'name', label: 'Name' },
   ],
-  budgetHistory: [{ key: 'month', label: 'Month' }],
+  budgetHistory: [
+    { key: 'month', label: 'Month' },
+    { key: 'plannedSpend', label: 'Planned spend' },
+    { key: 'actualSpend', label: 'Actual spend' },
+    { key: 'plannedSave', label: 'Planned saving' },
+    { key: 'actualInvested', label: 'Actual invested' },
+    { key: 'savingsRate', label: 'Savings rate' },
+    { key: 'closing', label: 'Closing balance' },
+    { key: 'outstanding', label: 'Outstanding amount' },
+    { key: 'templateName', label: 'Template name' },
+    { key: 'customized', label: 'Customized' },
+  ],
   monthReview: [{ key: 'month', label: 'Month' }],
   linkMissing: [
     { key: 'date', label: 'Date' },
@@ -146,6 +157,12 @@ function valueFor(item: object, key: string, index: number): unknown {
     const createdIndex: unknown = Reflect.get(item, 'sortCreatedIndex');
     return typeof createdIndex === 'number' ? createdIndex : index;
   }
+  if (key === 'outstanding') {
+    const outstanding: unknown = Reflect.get(item, 'outstanding');
+    return typeof outstanding === 'object' && outstanding !== null
+      ? Reflect.get(outstanding, 'amount')
+      : undefined;
+  }
   const aliases: Record<string, string[]> = {
     targetYear: ['targetYear', 'year'],
     targetAmount: ['targetAmount', 'target'],
@@ -158,6 +175,7 @@ function valueFor(item: object, key: string, index: number): unknown {
     premium: ['premium', 'premiumAmount'],
     cover: ['cover', 'coverAmount'],
     percentUsed: ['percentUsed', 'usedPct'],
+    savingsRate: ['savingsRatePct'],
     month: ['month'],
   };
   for (const field of aliases[key] ?? [key]) {
@@ -214,7 +232,7 @@ export function sortItems<T extends object>(
 }
 
 function itemId(item: object, index: number): string {
-  for (const key of ['id', 'entryId', 'slotKey']) {
+  for (const key of ['id', 'entryId', 'slotKey', 'month']) {
     const value: unknown = Reflect.get(item, key);
     if (typeof value === 'string') return value;
   }

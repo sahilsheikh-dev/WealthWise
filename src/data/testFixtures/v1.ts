@@ -136,3 +136,14 @@ export function makeV3Fixture() {
 export function makeV4Fixture() {
   return { ...makeV3Fixture(), efAllocation: null };
 }
+
+export function makeV5Fixture() {
+  const v4 = makeV4Fixture();
+  return {
+    ...v4,
+    goals: v4.goals.map((goal) => ({ ...goal, links: [] })),
+    liabilities: v4.liabilities.map((liability) => ({ ...liability, settlement: null })),
+    policies: [],
+    budget: null,
+  };
+}

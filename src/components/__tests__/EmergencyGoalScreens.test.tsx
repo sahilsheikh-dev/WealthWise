@@ -106,6 +106,11 @@ function renderedText(root: TestRenderer.ReactTestInstance): string {
   return collect(root);
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyle));
+  return typeof style === 'object' && style !== null ? style as Record<string, unknown> : {};
+}
+
 describe('three-month emergency target screens', () => {
   it.each(THEME_IDS.flatMap((themeId) => scenarios.map((scenario) => ({ ...scenario, themeId }))))(
     'shows effective goal targets across Home, Goals, and Emergency fund $label with $themeId theme',
@@ -159,4 +164,41 @@ describe('three-month emergency target screens', () => {
       }
     },
   );
+
+  it('shows custom allocation rows, linked holding values, and wrap-safe styles', () => {
+    const empty = emptyAppData('2026-10-11');
+    mockData.current = {
+      ...empty,
+      holdings: [{
+        id: 'holding-cash', kind: 'manual', name: 'Savings account', type: 'Savings account',
+        invested: 2_500, value: 2_500, logs: [],
+      }],
+      efCustomBuckets: [{
+        id: 'custom-reserve', name: 'Home reserve', access: 'instant', marketLinked: false,
+      }],
+      efBucketLinks: { 'custom-reserve': ['holding-cash'] },
+      efAllocation: {
+        cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
+        stocks: 0, insurance: 0, other: 0, 'custom-reserve': 10,
+      },
+    };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
+    if (!renderer) throw new Error('Emergency fund did not render.');
+    const text = renderedText(renderer.root);
+    expect(text).toContain('Home reserve');
+    expect(text).toContain('Savings account');
+    expect(text).toContain('Linking does not move money or change your net worth.');
+    expect(text).toContain('Do not record the same money as both an emergency fund balance and an investment.');
+    expect(renderer.root.findByProps({
+      accessibilityLabel: 'Linked ₹2,500 of ₹0 planned',
+    })).toBeDefined();
+
+    const customRow = renderer.root.findAll((node) => flattenStyle(node.props.style).paddingVertical === 8)[0];
+    expect(customRow).toBeDefined();
+    expect(flattenStyle(customRow?.props.style)).toMatchObject({ gap: 8, paddingVertical: 8, borderBottomWidth: 1 });
+    const chip = renderer.root.findAll((node) => flattenStyle(node.props.style).borderRadius === 16)[0];
+    expect(chip).toBeDefined();
+    expect(flattenStyle(chip?.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap', minHeight: 34 });
+  });
 });

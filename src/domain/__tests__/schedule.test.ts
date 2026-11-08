@@ -63,6 +63,8 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
   policies: [],
   budget: null,
   efEntries: [],
+  efCustomBuckets: [],
+  efBucketLinks: {},
 });
 
 describe('plan schedules', () => {

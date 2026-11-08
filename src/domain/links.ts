@@ -1,4 +1,5 @@
 import { BUDGET_CATEGORIES } from './schemas';
+import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
@@ -97,6 +98,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
     { name: 'policies', ids: data.policies.map(({ id }) => id) },
     { name: 'efEntries', ids: data.efEntries.map(({ id }) => id) },
+    { name: 'efCustomBuckets', ids: data.efCustomBuckets.map(({ id }) => id) },
     { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
     { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
     { name: 'policyPayments', ids: data.policies.flatMap((item) => item.payments.map(({ id }) => id)) },
@@ -170,6 +172,50 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   const efGoals = data.goals.filter((goal) => goal.auto === 'ef');
   if (efGoals.length !== 1) {
     add('emergency-goal-count', `Expected exactly one emergency fund goal, found ${efGoals.length}.`, ['goals']);
+  }
+  if (data.efCustomBuckets.length > 8) {
+    add('too-many-ef-custom-buckets', 'Emergency fund supports up to 8 custom options.', ['efCustomBuckets']);
+  }
+  const efBucketIds = new Set<string>([...EF_BUCKETS, ...data.efCustomBuckets.map(({ id }) => id)]);
+  const efBucketNames = new Set(EF_BUCKETS.map((id) => EF_BUCKET_META[id].label.trim().toLowerCase()));
+  for (const [index, bucket] of data.efCustomBuckets.entries()) {
+    const name = bucket.name.trim();
+    const normalizedName = name.toLowerCase();
+    if (name.length < 1 || name.length > 24 || name !== bucket.name) {
+      add('invalid-ef-bucket-name', 'Custom emergency fund option names must be 1 to 24 characters.', ['efCustomBuckets', index, 'name']);
+    }
+    if (efBucketNames.has(normalizedName)) {
+      add('duplicate-ef-bucket-name', 'Custom emergency fund option names must be unique and differ from fixed options.', ['efCustomBuckets', index, 'name']);
+    }
+    if (EF_BUCKETS.some((fixedId) => fixedId === bucket.id)) {
+      add('duplicate-ef-bucket-id', 'Custom emergency fund option IDs must differ from fixed options.', ['efCustomBuckets', index, 'id']);
+    }
+    efBucketNames.add(normalizedName);
+  }
+  if (data.efAllocation) {
+    for (const bucketId of Object.keys(data.efAllocation)) {
+      if (!efBucketIds.has(bucketId)) {
+        add('missing-ef-allocation-bucket', 'Emergency fund allocation references an unknown option.', ['efAllocation', bucketId]);
+      }
+    }
+  }
+  for (const [bucketId, holdingIds] of Object.entries(data.efBucketLinks)) {
+    if (!efBucketIds.has(bucketId)) {
+      add('missing-ef-bucket-link-target', 'Emergency fund investment links reference an unknown option.', ['efBucketLinks', bucketId]);
+    }
+    if (holdingIds.length > 10) {
+      add('too-many-ef-bucket-links', 'Link up to 10 investments per emergency fund option.', ['efBucketLinks', bucketId]);
+    }
+    const seenHoldingIds = new Set<string>();
+    holdingIds.forEach((holdingId, index) => {
+      if (!data.holdings.some((holding) => holding.id === holdingId)) {
+        add('missing-ef-linked-holding', 'Emergency fund link does not point at an existing holding.', ['efBucketLinks', bucketId, index]);
+      }
+      if (seenHoldingIds.has(holdingId)) {
+        add('duplicate-ef-linked-holding', 'An investment can only be linked once to an option.', ['efBucketLinks', bucketId, index]);
+      }
+      seenHoldingIds.add(holdingId);
+    });
   }
   for (const holding of data.holdings) {
     for (const [index, entry] of holding.logs.entries()) {

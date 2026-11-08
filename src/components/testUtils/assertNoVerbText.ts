@@ -8,6 +8,7 @@ const EMPTY_STATE_CTA_TEXTS = new Set([
   'Add a liability',
   'Add entry',
   'Add payment',
+  'Add one more of tenure, interest rate or EMI so we can work out the rest',
 ]);
 
 function flattenText(node: ReactTestInstance): string {

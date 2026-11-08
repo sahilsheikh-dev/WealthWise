@@ -2,31 +2,30 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
+import { AppHeader } from '../src/components/AppHeader';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
+import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Card,
-  ChipRow,
   DetailTabBar,
   EmptyState,
   Screen,
   StatusBadge,
 } from '../src/components/ui';
-import { AppHeader } from '../src/components/AppHeader';
-import { ListRow as SharedListRow } from '../src/components/ListRow';
-import { SortChip } from '../src/components/SortChip';
-import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { liabilitySummary } from '../src/domain/liability';
 import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
-import { todayISO } from '../src/lib/clock';
-import { formatDate } from '../src/lib/format';
 import { formatAmount } from '../src/lib/amountDisplay';
-import { AmountText } from '../src/components/AmountText';
+import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
+import { formatDate } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -155,13 +154,11 @@ export default function LiabilityPaymentsScreen() {
         />
       </View>
       <SectionHeaderRow
-        title={tab}
+        title={tab === 'Schedule' ? 'Installments' : 'Payments'}
         right={tab === 'Schedule'
           ? <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
           : <SortChip options={SORT_OPTIONS.payments} spec={paymentSorting.spec} onChange={paymentSorting.setSpec} />}
       />
-      <ChipRow>
-      </ChipRow>
       {tab === 'Schedule' ? (
         <>
           <Card>

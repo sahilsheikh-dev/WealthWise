@@ -2,12 +2,12 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
-import { AmountText } from '../src/components/AmountText';
 import { DueActions } from '../src/components/DueActions';
-import { SortChip } from '../src/components/SortChip';
 import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
+import { SortChip } from '../src/components/SortChip';
 import {
   ActionRow,
   AppText,
@@ -27,9 +27,9 @@ import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -127,6 +127,7 @@ export default function LiabilitiesScreen() {
           title="Liabilities"
           right={<SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />}
         />
+
         {sortedLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}

@@ -1,4 +1,4 @@
-import { emiAuto, emiCoversInterest, isCleared, liabilitySummary, loanState, monthsLeft, payoffDate } from '../liability';
+import { emiAuto, emiCoversInterest, isCleared, liabilitySummary, loanState, monthsLeft, payoffDate, solveLoan } from '../liability';
 import type { OneTimeLiability, RecurringLiability } from '../types';
 
 const makeLiability = (changes: Partial<RecurringLiability> = {}): RecurringLiability => ({
@@ -20,6 +20,76 @@ describe('liability calculations', () => {
   it('computes rounded EMIs, including zero interest', () => {
     expect(emiAuto(100_000, 12, 12)).toBe(8_885);
     expect(emiAuto(12_000, 0, 12)).toBe(1_000);
+  });
+
+  describe('loan solver', () => {
+    it('calculates a two-decimal EMI and zero-interest values', () => {
+      expect(solveLoan({ principal: 1_000_000, ratePct: 10, tenureMonths: 12 })).toMatchObject({
+        emi: 87_915.89,
+        solved: 'emi',
+      });
+      expect(solveLoan({ principal: 12_000, ratePct: 0, tenureMonths: 12 })).toMatchObject({
+        emi: 1_000,
+        solved: 'emi',
+      });
+      expect(solveLoan({ principal: 12_000, ratePct: 0, emi: 1_000 })).toMatchObject({
+        tenureMonths: 12,
+        lastPayment: 1_000,
+        solved: 'tenure',
+      });
+      expect(solveLoan({ principal: 12_000, tenureMonths: 12, emi: 1_000 })).toMatchObject({
+        ratePct: 0,
+        solved: 'rate',
+      });
+    });
+
+    it('recovers rates and tenures across 2,000 seeded cases', () => {
+      let seed = 20261010;
+      const random = () => {
+        seed = (seed * 16_807) % 2_147_483_647;
+        return (seed - 1) / 2_147_483_646;
+      };
+      for (let index = 0; index < 2_000; index += 1) {
+        const principal = 1_000_000 + random() * 10_000_000;
+        const ratePct = 1 + random() * 30;
+        const tenureMonths = 1 + Math.floor(random() * 480);
+        const emi = solveLoan({ principal, ratePct, tenureMonths }).emi;
+        expect(emi).not.toBeNull();
+        if (emi === null) throw new Error('Expected the EMI calculation to return a value');
+        const recoveredRate = solveLoan({ principal, tenureMonths, emi }).ratePct;
+        expect(recoveredRate).not.toBeNull();
+        if (recoveredRate === null) throw new Error('Expected the rate calculation to return a value');
+        expect(Math.abs(recoveredRate - ratePct)).toBeLessThanOrEqual(0.01);
+        const recoveredTenure = solveLoan({ principal, ratePct, emi }).tenureMonths;
+        expect(recoveredTenure).not.toBeNull();
+        if (recoveredTenure === null) throw new Error('Expected the tenure calculation to return a value');
+        expect(Math.abs(recoveredTenure - tenureMonths)).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('returns a mismatch warning without replacing the entered EMI', () => {
+      expect(solveLoan({ principal: 1_000_000, ratePct: 10, tenureMonths: 12, emi: 90_000 })).toMatchObject({
+        emi: 90_000,
+        solved: 'none',
+        warnings: [{ kind: 'emi-mismatch', calculatedEmi: 87_915.89 }],
+      });
+      expect(solveLoan({ principal: 1_000_000, ratePct: 10, tenureMonths: 12, emi: 88_000 }).warnings).toEqual([]);
+    });
+
+    it('reports input and repayment errors', () => {
+      const failure = (input: Parameters<typeof solveLoan>[0], message: string) => {
+        expect(() => solveLoan(input)).toThrow(message);
+      };
+      failure({ principal: 0 }, 'Principal must be greater than zero');
+      failure({ principal: 1, ratePct: 101, tenureMonths: 1 }, 'Interest rate must be between 0 and 100%');
+      failure({ principal: 1, ratePct: 0, tenureMonths: 601 }, 'Tenure must be between 1 and 600 whole months');
+      failure({ principal: 1, ratePct: 0, tenureMonths: 1, emi: 0 }, 'EMI must be greater than zero');
+      failure({ principal: 1_000, tenureMonths: 12, emi: 80 }, 'EMI is too low to repay this loan in that time');
+      failure({ principal: 1_000, ratePct: 12, emi: 1 }, 'EMI does not even cover the monthly interest');
+      failure({ principal: 1_000_000_000, ratePct: 0, emi: 1 }, 'Calculated tenure exceeds 600 months');
+      failure({ principal: 1_000, tenureMonths: 1, emi: 1_000_000 }, 'Interest rate must be between 0 and 100% to match this EMI');
+      expect(solveLoan({ principal: 1_000 }).solved).toBe('none');
+    });
   });
 
   it('preserves the existing recurring balance and payoff math', () => {

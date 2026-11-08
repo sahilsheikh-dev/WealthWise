@@ -11,7 +11,7 @@ import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
-import { makeV1Fixture, makeV2Fixture, makeV4Fixture } from '../testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
@@ -71,7 +71,7 @@ describe('createAppStore persistence', () => {
   it('stores a budget template and month snapshot with one write per action', async () => {
     const storage = new MemoryStorage();
     storage.values.set('wealthwise.app.v1', JSON.stringify({
-      state: { data: emptyAppData('2026-03-01') }, version: 5,
+      state: { data: emptyAppData('2026-03-01') }, version: 6,
     }));
     let nextId = 0;
     const store = createAppStore(storage, {
@@ -114,7 +114,7 @@ describe('createAppStore persistence', () => {
       }],
       defaultBudgetTemplateId: 'default',
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 5 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 6 }));
     const store = createAppStore(storage, {
       newId: () => 'unused', today: () => '2026-03-15', isDev: false,
     });
@@ -132,7 +132,7 @@ describe('createAppStore persistence', () => {
         { id: 'expense', type: 'expense' as const, amount: 300, category: 'Living', note: '', date: '2026-01-02' },
       ],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
     let nextId = 0;
     const store = createAppStore(storage, {
       newId: () => `movement-${++nextId}`,
@@ -167,6 +167,59 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls).toBe(writesBeforeFailure);
   });
 
+  it.each(['recurring', 'one-time'] as const)(
+    'records received %s liability proceeds with one persisted write',
+    async (kind) => {
+      const storage = new MemoryStorage();
+      let nextId = 0;
+      const store = makeStore(storage, { newId: () => `received-${++nextId}` });
+      await waitForHydration(store);
+      const liability = kind === 'recurring'
+        ? {
+          kind,
+          type: 'Personal loan' as const,
+          name: 'Personal loan',
+          principal: 20_000,
+          ratePct: 8,
+          tenureMonths: 12,
+          emi: null,
+          startDate: '2026-10-01',
+        }
+        : {
+          kind,
+          type: 'Borrowed money' as const,
+          name: 'Friend',
+          principal: 20_000,
+          ratePct: 0,
+          dueDate: '2027-01-01',
+          startDate: '2026-10-01',
+        };
+      const writesBefore = storage.setItemCalls;
+
+      store.getState().actions.recordMoneyMovement({
+        kind: 'loan-received',
+        amount: 20_000,
+        date: '2026-10-01',
+        liability,
+      });
+
+      const result = store.getState();
+      expect(storage.setItemCalls - writesBefore).toBe(1);
+      expect(result.data.liabilities).toHaveLength(1);
+      expect(result.data.transactions.at(-1)).toMatchObject({
+        type: 'income',
+        amount: 20_000,
+        date: '2026-10-01',
+        category: kind === 'recurring' ? 'Loan proceeds' : 'Borrowed',
+        source: {
+          kind: 'liability-origin',
+          parentId: result.data.liabilities[0]?.id,
+        },
+      });
+      expect(validateIntegrity(result.data)).toEqual([]);
+    },
+  );
+
   it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
     const storage = new MemoryStorage();
     const initial = {
@@ -186,7 +239,7 @@ describe('createAppStore persistence', () => {
         { id: 'goal', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
       ],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
     const store = makeStore(storage);
     await waitForHydration(store);
     const actions = store.getState().actions;
@@ -226,6 +279,43 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efAllocation).toBeNull();
   });
 
+  it('saves custom buckets, percentages, and investment links in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    let nextId = 0;
+    const store = makeStore(storage, { newId: () => `ef-plan-${++nextId}` });
+    await waitForHydration(store);
+    store.getState().actions.addHolding({
+      name: 'Savings', type: 'Savings account', invested: 1_000, value: 1_000,
+    });
+    const holding = store.getState().data.holdings[0];
+    if (!holding) throw new Error('Expected the added holding.');
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.saveEfPlan({
+      customBuckets: [{ id: 'draft-1', name: 'Safe box', access: 'instant', marketLinked: false }],
+      allocation: {
+        cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
+        stocks: 0, insurance: 0, other: 0, 'draft-1': 10,
+      },
+      links: { 'draft-1': [holding.id] },
+    });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.efCustomBuckets).toEqual([{
+      id: 'ef-plan-2', name: 'Safe box', access: 'instant', marketLinked: false,
+    }]);
+    expect(store.getState().data.efCustomBuckets[0]?.id).toBe('ef-plan-2');
+    expect(store.getState().data.efBucketLinks).toEqual({ 'ef-plan-2': [holding.id] });
+    expect(store.getState().data.efAllocation?.['ef-plan-2']).toBe(10);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const writesBeforeDelete = storage.setItemCalls;
+    store.getState().actions.deleteHolding(holding.id);
+    expect(storage.setItemCalls - writesBeforeDelete).toBe(1);
+    expect(store.getState().data.efBucketLinks).toEqual({ 'ef-plan-2': [] });
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
   it('clears one due and bulk-settles dues with one persisted write per action', async () => {
     const storage = new MemoryStorage();
     const initial = {
@@ -248,7 +338,7 @@ describe('createAppStore persistence', () => {
         logs: [],
       }],
     };
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 6 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `due-${++id}` });
     await waitForHydration(store);
@@ -564,7 +654,7 @@ describe('createAppStore persistence', () => {
       .toHaveLength(writesAfterMigration);
   });
 
-  it('hydrates v4 into v5, archives the original bytes once, and removes that archive on erase', async () => {
+  it('hydrates v4 into v6, archives the original bytes once, and removes that archive on erase', async () => {
     const storage = new MemoryStorage();
     const v4 = makeV4Fixture();
     const raw = JSON.stringify({ state: { data: v4 }, version: 4 });
@@ -584,6 +674,27 @@ describe('createAppStore persistence', () => {
       .toHaveLength(archivedWrites);
     await second.getState().actions.eraseAllData();
     expect(storage.values.has('wealthwise.app.v1.premigration.v4')).toBe(false);
+  });
+
+  it('hydrates v5 into v6, archives exact bytes once, and removes the archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const v5 = makeV5Fixture();
+    const raw = JSON.stringify({ state: { data: v5 }, version: 5 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.efCustomBuckets).toEqual([]);
+    expect(first.getState().data.efBucketLinks).toEqual({});
+    expect(first.getState().data.liabilities).toEqual(v5.liabilities);
+    expect(storage.values.get('wealthwise.app.v1.premigration.v5')).toBe(raw);
+    const archiveWrites = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v5');
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v5')).toHaveLength(archiveWrites.length);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has('wealthwise.app.v1.premigration.v5')).toBe(false);
   });
 
   it('starts empty with an emergency fund goal and rehydrates transactions across instances', async () => {
@@ -1143,6 +1254,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v3', 'original-v3-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v4', 'original-v4-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v5', 'original-v5-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -1164,6 +1276,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v2',
     'wealthwise.app.v1.premigration.v3',
     'wealthwise.app.v1.premigration.v4',
+    'wealthwise.app.v1.premigration.v5',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',

@@ -3,8 +3,8 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { AppHeader } from '../../src/components/AppHeader';
 import { AmountText } from '../../src/components/AmountText';
+import { AppHeader } from '../../src/components/AppHeader';
 import { IconButton } from '../../src/components/IconButton';
 import {
   AppText,
@@ -22,15 +22,15 @@ import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
-import { addDays } from '../../src/domain/dates';
-import { upcomingDue } from '../../src/domain/schedule';
-import { goalProjection } from '../../src/domain/goalLinks';
 import { budgetMonthView } from '../../src/domain/budget';
+import { addDays } from '../../src/domain/dates';
+import { goalProjection } from '../../src/domain/goalLinks';
+import { upcomingDue } from '../../src/domain/schedule';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown } from '../../src/domain/transactions';
+import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { formatAmount } from '../../src/lib/amountDisplay';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
 import { typography } from '../../src/theme/tokens';
@@ -100,6 +100,36 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
+
+      <View style={styles.quickActions}>
+        {HOME_QUICK_ACTIONS.map((action) => (
+          <View
+            key={action.label}
+            style={styles.quickAction}>
+            <IconButton
+              icon={action.icon}
+              label={action.label}
+              labelPosition="below"
+              onPress={() => {
+              if (action.id === 'transaction') {
+                router.push('/transaction-form');
+                return;
+              }
+              if (action.id === 'investment') {
+                router.push('/investment-form' as Href);
+                return;
+              }
+              if (action.id === 'liability') {
+                router.push('/liability-form');
+                return;
+              }
+              router.push('/ef-entry-form');
+            }}
+            />
+          </View>
+        ))}
+      </View>
+
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={monthBudget.budget
@@ -184,67 +214,40 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
-      <View style={styles.quickActions}>
-        {HOME_QUICK_ACTIONS.map((action) => (
-          <View
-            key={action.label}
-            style={styles.quickAction}>
-            <IconButton
-              icon={action.icon}
-              label={action.label}
-              labelPosition="below"
-              onPress={() => {
-              if (action.id === 'transaction') {
-                router.push('/transaction-form');
-                return;
-              }
-              if (action.id === 'investment') {
-                router.push('/investment-form' as Href);
-                return;
-              }
-              if (action.id === 'liability') {
-                router.push('/liability-form');
-                return;
-              }
-              router.push('/ef-entry-form');
-            }}
-            />
-          </View>
-        ))}
-      </View>
-
       {dueItems.length > 0 ? (
-        <Card style={styles.upcomingCard}>
-          <AppText weight="semibold" style={typography.name}>Upcoming and due</AppText>
-          {dueItems.map((item) => {
-            const noDueDate = item.kind === 'liability'
-              && data.liabilities.some((liability) => liability.id === item.parentId && liability.kind === 'one-time' && liability.dueDate === null);
-            return (
-              <Pressable
-                key={`${item.kind}:${item.parentId}:${item.row.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`${item.name}, ${item.row.status}, ${formatAmount(item.row.amount, 'exact', 1)}`}
-                onPress={() => router.push(item.kind === 'plan'
-                  ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
-                  : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
-                style={[styles.dueRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.dueTitle}>
-                  <AppText weight="semibold" style={typography.name} numberOfLines={1}>{item.name}</AppText>
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>
-                    {noDueDate ? 'No due date' : formatDate(item.row.dueDate)}
-                  </AppText>
-                </View>
-                <View style={styles.dueRight}>
-                  <AmountText value={item.row.amount} tier="row" weight="semibold" style={typography.meta} />
-                  <StatusBadge
-                    label={item.row.status}
-                    tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
-                  />
-                </View>
-              </Pressable>
-            );
-          })}
-        </Card>
+        <>
+          <SectionTitle>Upcoming and due</SectionTitle>
+          <Card style={styles.upcomingCard}>
+            {dueItems.map((item) => {
+              const noDueDate = item.kind === 'liability'
+                && data.liabilities.some((liability) => liability.id === item.parentId && liability.kind === 'one-time' && liability.dueDate === null);
+              return (
+                <Pressable
+                  key={`${item.kind}:${item.parentId}:${item.row.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${item.name}, ${item.row.status}, ${formatAmount(item.row.amount, 'exact', 1)}`}
+                  onPress={() => router.push(item.kind === 'plan'
+                    ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
+                    : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
+                  style={[styles.dueRow, { borderBottomColor: colors.border }]}>
+                  <View style={styles.dueTitle}>
+                    <AppText weight="semibold" style={typography.name} numberOfLines={1}>{item.name}</AppText>
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>
+                      {noDueDate ? 'No due date' : formatDate(item.row.dueDate)}
+                    </AppText>
+                  </View>
+                  <View style={styles.dueRight}>
+                    <AmountText value={item.row.amount} tier="row" weight="semibold" style={typography.meta} />
+                    <StatusBadge
+                      label={item.row.status}
+                      tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
+                    />
+                  </View>
+                </Pressable>
+              );
+            })}
+          </Card>
+        </>
       ) : null}
 
       <SectionTitle>Goal Progress</SectionTitle>
