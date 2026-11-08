@@ -3,7 +3,7 @@ import { classifySlot, generateSlots, matchEntriesFIFO, summarizeSlots } from '.
 import type { PlanSchedule, ScheduleRow } from './schedule';
 import type { Policy } from './types';
 
-const MONTHS_PER_PAYMENT: Record<Policy['frequency'], number> = {
+const MONTHS_PER_PAYMENT: Record<Exclude<Policy['frequency'], 'single'>, number> = {
   monthly: 1,
   quarterly: 3,
   'half-yearly': 6,
@@ -11,7 +11,9 @@ const MONTHS_PER_PAYMENT: Record<Policy['frequency'], number> = {
 };
 
 function dueDateAt(policy: Policy, index: number): string {
-  return addMonths(policy.startDate, index * MONTHS_PER_PAYMENT[policy.frequency]);
+  return addMonths(policy.startDate, policy.frequency === 'single'
+    ? 0
+    : index * MONTHS_PER_PAYMENT[policy.frequency]);
 }
 
 function firstTrackedIndex(policy: Policy, count: number): number {
@@ -21,11 +23,9 @@ function firstTrackedIndex(policy: Policy, count: number): number {
 }
 
 export function policySchedule(policy: Policy, asOf: string): PlanSchedule {
-  if (policy.status !== 'active') return { rows: [], summary: summarizeSlots([]) };
-  let count = (policy.premiumYears ?? 0) * (12 / MONTHS_PER_PAYMENT[policy.frequency]);
-  while (count > 0 && policy.endDate !== undefined && dueDateAt(policy, count - 1) > policy.endDate) {
-    count -= 1;
-  }
+  const count = policy.frequency === 'single'
+    ? 1
+    : (policy.premiumYears ?? 0) * (12 / MONTHS_PER_PAYMENT[policy.frequency]);
   const first = firstTrackedIndex(policy, count);
   const slots = generateSlots(
     count,

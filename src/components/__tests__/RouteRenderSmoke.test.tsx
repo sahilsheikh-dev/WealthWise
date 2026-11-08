@@ -4,19 +4,17 @@ import TestRenderer, { act } from 'react-test-renderer';
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
 import BudgetScreen from '../../../app/(tabs)/budget';
-import BudgetIncomeFormScreen from '../../../app/budget-income-form';
-import BudgetItemFormScreen from '../../../app/budget-item-form';
-import BudgetSectionFormScreen from '../../../app/budget-section-form';
+import BudgetHistoryScreen from '../../../app/budget-history';
+import BudgetMonthFormScreen from '../../../app/budget-month-form';
+import BudgetTemplateFormScreen from '../../../app/budget-template-form';
+import BudgetTemplatesScreen from '../../../app/budget-templates';
 import ClearDuesScreen from '../../../app/clear-dues';
-import CoverGoalFormScreen from '../../../app/cover-goal-form';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
-import EfBucketFormScreen from '../../../app/ef-bucket-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import HomeScreen from '../../../app/(tabs)';
-import InsuranceScreen from '../../../app/insurance';
 import InvestmentEntryFormScreen from '../../../app/investment-entry-form';
 import InvestmentEntriesScreen from '../../../app/investment-entries';
 import InvestmentFormScreen from '../../../app/investment-form';
@@ -25,40 +23,28 @@ import LiabilityFormScreen from '../../../app/liability-form';
 import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
+import MonthReviewScreen from '../../../app/month-review';
 import OnboardingScreen from '../../../app/onboarding';
-import PolicyFormScreen from '../../../app/policy-form';
 import ProfileFormScreen from '../../../app/profile-form';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
 import TransactionsScreen from '../../../app/(tabs)/transactions';
+import { PendingItemActionSheet } from '../PendingItemActionSheet';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
-import { AmountText } from '../AmountText';
-import { Dropdown } from '../Dropdown';
-import { DueActions } from '../DueActions';
-import { IconButton } from '../IconButton';
 import { monthKey, shiftMonth } from '../../domain/dates';
-import { pendingItems } from '../../domain/pending';
-import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability } from '../../domain/types';
+import type { AppData, ManualHolding, OneTimeLiability, PlanHolding, Transaction } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
 import { formatAmount } from '../../lib/amountDisplay';
-import { formatDate, formatINR, formatMonth } from '../../lib/format';
+import { formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
+import { buildAppMenu } from '../../lib/appMenu';
 import { buildDemoData } from '../../mock/demoData';
-import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 let mockFontScale = 1;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
-const mockKeyboardListeners: Record<string, (event: { endCoordinates: { height: number } }) => void> = {};
-const mockConfirmAsync = jest.fn(async (_options: {
-  title: string;
-  message: string;
-  confirmLabel: string;
-  cancelLabel?: string;
-}) => true);
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -133,15 +119,6 @@ jest.mock('../../data/store', () => {
       holdings: [],
       liabilities: [],
       policies: [],
-      coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-        { type: 'health', targetMode: 'amount' },
-        { type: 'motor', targetMode: 'active-only' },
-        { type: 'home', targetMode: 'active-only' },
-        { type: 'other', targetMode: 'active-only' },
-      ],
-      budgetPlan: null,
-      monthBudgets: [],
       efAllocation: null,
       efCustomBuckets: [],
       efBucketLinks: {},
@@ -167,11 +144,6 @@ jest.mock('../../data/store', () => {
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
-      addPolicy: jest.fn(),
-      updatePolicy: jest.fn(),
-      deletePolicy: jest.fn(),
-      addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -181,27 +153,8 @@ jest.mock('../../data/store', () => {
       addInvestmentEntry: jest.fn(),
       updateInvestmentEntry: jest.fn(),
       deleteInvestmentEntry: jest.fn(),
-      clearDue: jest.fn(),
-      clearDuesThrough: jest.fn(),
-      undoClearDue: jest.fn(),
-      undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
-      saveBudgetPlan: jest.fn(),
-      saveAndApplyBudgetPlan: jest.fn(),
-      applyBudgetPlan: jest.fn(),
-      restoreMonthBudget: jest.fn(),
-      restoreBudgetPlanAndMonth: jest.fn(),
-      editBudgetItem: jest.fn(),
-      removeBudgetItem: jest.fn(),
-      addSection: jest.fn(),
-      renameSection: jest.fn(),
-      deleteSection: jest.fn(),
-      addBudgetItem: jest.fn(),
-      addBudgetIncome: jest.fn(),
-      editBudgetIncome: jest.fn(),
-      editBudgetStructureItem: jest.fn(),
-      deleteBudgetStructureItem: jest.fn(),
     },
   };
 
@@ -226,15 +179,6 @@ jest.mock('../../data/useAppData', () => {
     holdings: [],
     liabilities: [],
     policies: [],
-    coverGoals: [
-      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-      { type: 'health', targetMode: 'amount' },
-      { type: 'motor', targetMode: 'active-only' },
-      { type: 'home', targetMode: 'active-only' },
-      { type: 'other', targetMode: 'active-only' },
-    ],
-    budgetPlan: null,
-    monthBudgets: [],
     efAllocation: null,
     efCustomBuckets: [],
     efBucketLinks: {},
@@ -262,11 +206,6 @@ jest.mock('../../data/useAppData', () => {
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
-      addPolicy: jest.fn(),
-      updatePolicy: jest.fn(),
-      deletePolicy: jest.fn(),
-      addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -276,27 +215,8 @@ jest.mock('../../data/useAppData', () => {
       addInvestmentEntry: jest.fn(),
       updateInvestmentEntry: jest.fn(),
       deleteInvestmentEntry: jest.fn(),
-      clearDue: jest.fn(),
-      clearDuesThrough: jest.fn(),
-      undoClearDue: jest.fn(),
-      undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
-      saveBudgetPlan: jest.fn(),
-      saveAndApplyBudgetPlan: jest.fn(),
-      applyBudgetPlan: jest.fn(),
-      restoreMonthBudget: jest.fn(),
-      restoreBudgetPlanAndMonth: jest.fn(),
-      editBudgetItem: jest.fn(),
-      removeBudgetItem: jest.fn(),
-      addSection: jest.fn(),
-      renameSection: jest.fn(),
-      deleteSection: jest.fn(),
-      addBudgetItem: jest.fn(),
-      addBudgetIncome: jest.fn(),
-      editBudgetIncome: jest.fn(),
-      editBudgetStructureItem: jest.fn(),
-      deleteBudgetStructureItem: jest.fn(),
     },
   };
 
@@ -313,40 +233,23 @@ jest.mock('../../components/AppHeader', () => {
       title,
       rightActions,
       menu,
-      menuPlacement,
       menuIndicator,
     }: {
       title: string;
-      rightActions?: {
-        label: string;
-        icon: string;
-        onPress: () => void;
-        expanded?: boolean;
-        showIndicator?: boolean;
-      }[];
+      rightActions?: { label: string; icon: string; onPress: () => void }[];
       menu?: { label: string; onPress: () => void }[];
-      menuPlacement?: 'leading' | 'trailing';
       menuIndicator?: boolean;
     }) => {
       const [menuOpen, setMenuOpen] = ReactModule.useState(false);
       return ReactModule.createElement('header', null,
         ReactModule.createElement('text', null, title),
-        ...(menu && menuPlacement === 'leading' ? [
-          ReactModule.createElement('button', {
-            key: 'more-options',
-            accessibilityLabel: 'More options',
-            menuIndicator,
-          }, 'More options'),
-        ] : []),
         ...(rightActions ?? []).map((action) => ReactModule.createElement('button', {
           key: action.label,
           accessibilityLabel: action.label,
-          accessibilityState: action.expanded === undefined ? {} : { expanded: action.expanded },
           icon: action.icon,
-          showIndicator: action.showIndicator,
           onPress: action.onPress,
-        }, action.label, action.showIndicator ? ReactModule.createElement('view', { testID: 'header-action-indicator' }) : null)),
-        ...(menu && menuPlacement !== 'leading' ? [
+        }, action.label)),
+        ...(menu ? [
           ReactModule.createElement('button', {
             key: 'more-options',
             accessibilityLabel: 'More options',
@@ -408,39 +311,26 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children, footer, bottomNavigation, onClose, isDirty, leftAction, headerAction }: {
+    FormScreen: ({ title, children, footer, bottomNavigation, onClose, isDirty }: {
       title: string;
       children?: React.ReactNode;
       footer?: React.ReactNode;
       bottomNavigation?: React.ReactNode;
       onClose: () => void;
       isDirty?: boolean;
-      leftAction?: { label: string; onPress: () => void } | null;
-      headerAction?: { label: string; onPress: () => void };
     }) =>
       ReactModule.createElement(
         'screen',
         null,
-        ReactModule.createElement(
-          'view',
-          { testID: 'form-shell' },
-          ReactModule.createElement('view', { testID: 'form-shell-header' },
-            leftAction === null ? null : ReactModule.createElement('button', {
-              accessibilityRole: 'button',
-              accessibilityLabel: leftAction?.label ?? 'Back',
-              onPress: leftAction?.onPress ?? onClose,
-              isDirty,
-            }),
-            headerAction ? ReactModule.createElement('button', {
-              accessibilityRole: 'button',
-              accessibilityLabel: headerAction.label,
-              onPress: headerAction.onPress,
-            }) : null,
-            ReactModule.createElement('text', null, title),
-          ),
-          ReactModule.createElement('view', { testID: 'form-shell-body' }, children),
-          ReactModule.createElement('view', { testID: 'form-shell-footer' }, footer),
-        ),
+        ReactModule.createElement('button', {
+          accessibilityRole: 'button',
+          accessibilityLabel: 'Close',
+          onPress: onClose,
+          isDirty,
+        }),
+        ReactModule.createElement('text', null, title),
+        children,
+        footer,
         bottomNavigation,
       ),
   };
@@ -529,7 +419,7 @@ jest.mock('../../components/form/FormErrorBanner', () => {
 
 jest.mock('../../lib/confirm', () => ({
   choiceAsync: async () => null,
-  confirmAsync: (...args: Parameters<typeof mockConfirmAsync>) => mockConfirmAsync(...args),
+  confirmAsync: async () => true,
 }));
 
 jest.mock('../../theme/useTheme', () => ({
@@ -557,12 +447,6 @@ jest.mock('react-native', () => {
     Alert: { alert: jest.fn() },
     BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
     FlatList,
-    Keyboard: {
-      addListener: (event: string, listener: (event: { endCoordinates: { height: number } }) => void) => {
-        mockKeyboardListeners[event] = listener;
-        return { remove: jest.fn() };
-      },
-    },
     KeyboardAvoidingView: node('keyboard-avoiding-view'),
     Modal: node('modal'),
     Platform: { OS: 'ios' },
@@ -609,60 +493,23 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
-function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  const scope = renderer.root.findAll((node) => {
-    const options = node.props.options;
-    return String(node.type) === 'segmentedcontrol'
-      && Array.isArray(options)
-      && options.some((option: unknown) => typeof option === 'object'
-        && option !== null && 'label' in option && option.label === 'This month only');
-  })[0];
-  if (!scope) throw new Error('Budget scope control was not rendered.');
-  return scope;
-}
-
-function selectDropdownOption(
-  renderer: TestRenderer.ReactTestRenderer | undefined,
-  fieldLabel: string,
-  optionTitle: string,
-) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  openDropdown(renderer, fieldLabel);
-  const option = renderer.root.findAllByProps({ accessibilityLabel: optionTitle })
-    .find((node) => node.props.accessibilityRole === 'radio');
-  if (!option) throw new Error(`Dropdown option ${optionTitle} was not rendered.`);
-  act(() => option.props.onPress());
-}
-
-function openDropdown(
-  renderer: TestRenderer.ReactTestRenderer,
-  fieldLabel: string,
-) {
-  const field = renderer.root.findAllByProps({ accessibilityLabel: fieldLabel })
-    .find((node) => typeof node.props.onPress === 'function');
-  if (!field) throw new Error(`Dropdown field ${fieldLabel} was not rendered.`);
-  act(() => field.props.onPress());
-}
-
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
     ['Home', React.createElement(HomeScreen)],
     ['Budget', React.createElement(BudgetScreen)],
-    ['Budget section form', React.createElement(BudgetSectionFormScreen)],
-    ['Budget item form', React.createElement(BudgetItemFormScreen)],
-    ['Budget income form', React.createElement(BudgetIncomeFormScreen)],
+    ['Budget templates', React.createElement(BudgetTemplatesScreen)],
+    ['Budget template form', React.createElement(BudgetTemplateFormScreen)],
+    ['Budget month form', React.createElement(BudgetMonthFormScreen)],
+    ['Budget history', React.createElement(BudgetHistoryScreen)],
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
+    ['Month review empty state', React.createElement(MonthReviewScreen)],
     ['Backup', React.createElement(BackupScreen)],
     ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
     ['Emergency fund', React.createElement(EmergencyFundScreen)],
-    ['Insurance', React.createElement(InsuranceScreen)],
-    ['Cover goal form', React.createElement(CoverGoalFormScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
-    ['Emergency fund allocation item form', React.createElement(EfBucketFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
@@ -678,14 +525,141 @@ describe('route render smoke audit', () => {
     ['Liability payment form edit', React.createElement(LiabilityPaymentFormScreen)],
     ['Liabilities', React.createElement(LiabilitiesScreen)],
     ['Liability payments', React.createElement(LiabilityPaymentsScreen)],
-    ['Policy form edit', React.createElement(PolicyFormScreen)],
-    ['Policy form create', React.createElement(PolicyFormScreen)],
     ['Investment entries', React.createElement(InvestmentEntriesScreen)],
     ['Investment form create', React.createElement(InvestmentFormScreen)],
     ['Investment form edit', React.createElement(InvestmentFormScreen)],
     ['Investment entry form create', React.createElement(InvestmentEntryFormScreen)],
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
   ];
+
+  it.each([1, 1.3, 2])('groups compact budget inputs with accessible touch targets at font scale %s', async (fontScale) => {
+    mockFontScale = fontScale;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    try {
+      routeParams.mockReturnValue({ wizard: '1' });
+      const templateForm = renderScreen(React.createElement(BudgetTemplateFormScreen));
+      expect(templateForm.root.findAll((node) => node.type === 'text' && node.props.children === 'Set up your budget inputs'))
+        .toHaveLength(1);
+      expect(templateForm.root.findAll((node) =>
+        node.type === 'text' && node.props.children === 'Starting point',
+      )).toHaveLength(1);
+      const startingPoint = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').find((node) =>
+        node.props.options?.some((option: { value: string }) => option.value === 'five-group'),
+      );
+      if (!startingPoint) throw new Error('Budget starting point control did not render.');
+      expect(startingPoint.props.options).toEqual([
+        { label: 'Five-group plan (recommended)', value: 'five-group' },
+        { label: 'Start blank', value: 'blank' },
+      ]);
+      expect(startingPoint.props.value).toBe('five-group');
+      expect(startingPoint.props.error).toBeUndefined();
+
+      const groups = [
+        ['survival', 'Survival (Needs)', true],
+        ['savings-investments', 'Savings and Investments', false],
+        ['wants', 'Wants', false],
+        ['festival-donations-culture', 'Festival, Donations, Culture', false],
+        ['unexpected-extras', 'Unexpected Extras', false],
+      ] as const;
+      for (const [id, name, expanded] of groups) {
+        const header = templateForm.root.findByProps({ testID: `budget-category-group-${id}` });
+        expect(header.props.accessibilityRole).toBe('button');
+        expect(header.props.accessibilityState).toEqual({ expanded });
+        expect(header.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
+        expect('height' in header.props.style).toBe(false);
+        expect('maxHeight' in header.props.style).toBe(false);
+        const title = templateForm.root.findAllByProps({ children: name })[0];
+        if (!title) throw new Error(`${id} group title did not render.`);
+        expect(title.props.style).toEqual(expect.objectContaining({ flex: 1, flexShrink: 1 }));
+        const subtotal = templateForm.root.findAll((node) =>
+          typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith(`${name} subtotal`),
+        );
+        expect(subtotal.length).toBeGreaterThan(0);
+      }
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Food planned amount' })).toHaveLength(2);
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Health planned amount' })).toHaveLength(2);
+      expect(templateForm.root.findAllByProps({ children: 'Enter as' }))
+        .toHaveLength(9);
+      expect(templateForm.root.findAllByProps({ children: 'Line type' }))
+        .toHaveLength(0);
+      const modeControl = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').find((node) =>
+        node.props.label === 'Enter as' && node.props.options?.[0]?.value === 'amount',
+      );
+      if (!modeControl) throw new Error('Budget entry mode control did not render.');
+      expect(modeControl.props.options).toEqual([
+        { label: 'Amount (₹)', value: 'amount' },
+        { label: '% of income', value: 'percent' },
+      ]);
+      expect(modeControl.props.value).toBe('amount');
+      expect(modeControl.props.error).toBeUndefined();
+      const templateIncome = templateForm.root.findByProps({ accessibilityLabel: 'Planned monthly income' });
+      expect(templateIncome.props.label).toBe('Planned monthly income');
+      expect(templateIncome.props.value).toBeDefined();
+      const foodAmount = templateForm.root.findAll((node) => String(node.type) === 'moneyfield')
+        .find((node) => node.props.accessibilityLabel === 'Food planned amount');
+      if (!foodAmount) throw new Error('Compact planned amount input did not render.');
+      expect(foodAmount.props.label).toBe('Planned amount');
+      expect(foodAmount.props.value).toBe('');
+      expect(foodAmount.props.error).toBeUndefined();
+      const lineModeControls = templateForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').filter((node) =>
+        node.props.options?.[0]?.value === 'amount',
+      );
+      const foodMode = lineModeControls[1];
+      if (!foodMode) throw new Error('Food input mode control did not render.');
+      await act(async () => {
+        foodMode.props.onChange('percent');
+        await Promise.resolve();
+      });
+      const foodPercent = templateForm.root.findAll((node) => String(node.type) === 'percentfield')
+        .find((node) => node.props.accessibilityLabel === 'Food percent of income');
+      if (!foodPercent) throw new Error('Food percentage component did not render.');
+      expect(foodPercent.props.label).toBe('Percent of income');
+      expect(foodPercent.props.value).toBe('');
+      expect(foodPercent.props.error).toBeUndefined();
+      await act(async () => {
+        foodPercent.props.onChangeText('15');
+        await Promise.resolve();
+      });
+      expect(templateForm.root.findAll((node) => String(node.type) === 'percentfield')
+        .find((node) => node.props.accessibilityLabel === 'Food percent of income')?.props.value).toBe('15');
+
+      const unexpectedHeader = templateForm.root.findByProps({ testID: 'budget-category-group-unexpected-extras' });
+      act(() => unexpectedHeader.props.onPress());
+      expect(templateForm.root.findByProps({ testID: 'budget-category-group-unexpected-extras' }).props.accessibilityState)
+        .toEqual({ expanded: true });
+      expect(templateForm.root.findAllByProps({ accessibilityLabel: 'Health planned amount' }).length).toBeGreaterThan(0);
+
+      act(() => templateForm.unmount());
+      routeParams.mockReturnValue({ month: '2026-10' });
+      const monthForm = renderScreen(React.createElement(BudgetMonthFormScreen));
+      const survivalHeader = monthForm.root.findByProps({ testID: 'budget-category-group-survival' });
+      expect(survivalHeader.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Food planned amount' })).toHaveLength(2);
+      const monthModeControls = monthForm.root.findAll((node) => String(node.type) === 'segmentedcontrol').filter((node) =>
+        node.props.options?.[0]?.value === 'amount',
+      );
+      const monthMode = monthModeControls[1];
+      expect(monthMode.props.options).toEqual([
+        { label: 'Amount (₹)', value: 'amount' },
+        { label: '% of income', value: 'percent' },
+      ]);
+      expect(monthMode.props.value).toBe('amount');
+      const monthFood = monthForm.root.findAll((node) => String(node.type) === 'moneyfield')
+        .find((node) => node.props.accessibilityLabel === 'Food planned amount');
+      if (!monthFood) throw new Error('Monthly Food amount component did not render.');
+      expect(monthFood.props.label).toBe('Food');
+      expect(monthFood.props.value).toBeDefined();
+      expect(monthFood.props.error).toBeUndefined();
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(0);
+      act(() => monthForm.root.findByProps({ testID: 'budget-category-group-savings-investments' }).props.onPress());
+      expect(monthForm.root.findAllByProps({ accessibilityLabel: 'Mutual fund / SIP planned amount' })).toHaveLength(2);
+      act(() => monthForm.unmount());
+    } finally {
+      routeParams.mockReturnValue({});
+      mockFontScale = 1;
+    }
+  });
 
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -694,12 +668,7 @@ describe('route render smoke audit', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Route did not render.');
-    const screenKind = name === 'Home'
-      ? 'home'
-      : name.startsWith('Budget item form') || name.startsWith('Budget income form')
-        ? 'budget-form'
-        : undefined;
-    assertNoVerbText(renderer.root, { screen: screenKind });
+    assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
   });
 
   it('renders every registered screen with the four-month demo data', () => {
@@ -727,882 +696,60 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('renders each route form with representative create and edit entry params', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const storeState = useAppStore((state) => state);
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousParams = routeParams();
-    const demoData = buildDemoData(todayISO());
-    const goal = demoData.goals[0];
-    const transaction = demoData.transactions[0];
-    const plan = demoData.holdings.find((holding) => holding.kind === 'plan');
-    const liability = demoData.liabilities.find((item) => item.payments.length > 0);
-    const policy = demoData.policies[0];
-    const entryHolding = demoData.holdings.find((holding) => holding.logs.length > 0);
-    const budgetSection = demoData.budgetPlan?.sections.find((section) => section.system === undefined);
-    const budgetItem = demoData.budgetPlan?.items.find((item) => item.sectionId === budgetSection?.id);
-    const budgetIncome = demoData.budgetPlan?.incomes[0];
-
-    if (!goal || !transaction || !plan || !liability?.payments[0] || !policy
-      || !entryHolding?.logs[0] || !budgetSection || !budgetItem || !budgetIncome) {
-      throw new Error('Demo data is missing a route-form edit fixture.');
-    }
-    const forms: [string, Record<string, string>, React.ReactElement][] = [
-      ['Profile', {}, React.createElement(ProfileFormScreen)],
-      ['Goal create', {}, React.createElement(GoalFormScreen)],
-      ['Goal edit', { id: goal.id }, React.createElement(GoalFormScreen)],
-      ['Transaction create from Budget', {
-        type: 'expense', category: 'Food', amount: '100', date: todayISO(),
-      }, React.createElement(TransactionFormScreen)],
-      ['Transaction edit from list/detail', { id: transaction.id }, React.createElement(TransactionFormScreen)],
-      ['Investment plan create from Transaction', { fromTransaction: '1' }, React.createElement(InvestmentFormScreen)],
-      ['Investment plan edit', { id: plan.id }, React.createElement(InvestmentFormScreen)],
-      ['Liability create from Home/list', {}, React.createElement(LiabilityFormScreen)],
-      ['Liability edit', { id: liability.id }, React.createElement(LiabilityFormScreen)],
-      ['Liability payment add from due/list', {
-        liabilityId: liability.id, kind: 'Payment', amount: '1', date: todayISO(),
-      }, React.createElement(LiabilityPaymentFormScreen)],
-      ['Liability payment edit', {
-        liabilityId: liability.id, paymentId: liability.payments[0].id,
-      }, React.createElement(LiabilityPaymentFormScreen)],
-      ['Policy edit', { id: policy.id }, React.createElement(PolicyFormScreen)],
-      ['Policy create', {}, React.createElement(PolicyFormScreen)],
-      ['Budget section create', { month: todayISO().slice(0, 7), type: 'spend', scope: 'following' },
-        React.createElement(BudgetSectionFormScreen)],
-      ['Budget section rename', {
-        month: todayISO().slice(0, 7), sectionId: budgetSection.id, scope: 'month',
-      }, React.createElement(BudgetSectionFormScreen)],
-      ['Budget item add', {
-        month: todayISO().slice(0, 7), sectionId: budgetSection.id, scope: 'following',
-      }, React.createElement(BudgetItemFormScreen)],
-      ['Budget item edit', {
-        month: todayISO().slice(0, 7), sectionId: budgetItem.sectionId, itemId: budgetItem.id, scope: 'month',
-      }, React.createElement(BudgetItemFormScreen)],
-      ['Budget income add', { month: todayISO().slice(0, 7), scope: 'following' },
-        React.createElement(BudgetIncomeFormScreen)],
-      ['Budget income edit', {
-        month: todayISO().slice(0, 7), incomeId: budgetIncome.id, scope: 'month',
-      }, React.createElement(BudgetIncomeFormScreen)],
-      ...demoData.coverGoals.map((goal) => [
-        `Cover target ${goal.type}`,
-        { type: goal.type },
-        React.createElement(CoverGoalFormScreen),
-      ] as [string, Record<string, string>, React.ReactElement]),
-      ['Insurance from Goals/Budget/Home', {}, React.createElement(InsuranceScreen)],
-      ['Investment entry add', { holdingId: entryHolding.id, kind: 'Deposit', date: todayISO() },
-        React.createElement(InvestmentEntryFormScreen)],
-      ['Investment entry edit', {
-        holdingId: entryHolding.id, entryId: entryHolding.logs[0].id,
-      }, React.createElement(InvestmentEntryFormScreen)],
-      ['Clear dues from Home/Transactions', { kind: 'plan', id: plan.id },
-        React.createElement(ClearDuesScreen)],
-      ['Emergency fund allocation', {}, React.createElement(EfAllocationFormScreen)],
-      ['Emergency fund allocation item create', {}, React.createElement(EfBucketFormScreen)],
-      ['Emergency fund allocation item edit', { id: demoData.efCustomBuckets[0]?.id ?? '' },
-        React.createElement(EfBucketFormScreen)],
-    ];
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-
-    try {
-      Object.assign(routeData, demoData);
-      storeState.data = demoData;
-      for (const [name, params, screen] of forms) {
-        routeParams.mockReturnValue(params);
-        renderer = renderScreen(screen);
-        if (renderer.root.findAll((node) => String(node.type) === 'screen').length === 0
-          || renderer.root.findAll((node) => String(node.type) === 'text').length === 0) {
-          throw new Error(`${name} did not render a form screen and title.`);
-        }
-        act(() => renderer?.unmount());
-        renderer = undefined;
-      }
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-    }
-  });
-
-  it.each([1.3, 2])('renders Budget route forms in the shared shell at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const storeState = useAppStore((state) => state);
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousParams = routeParams();
-    const month = monthKey(todayISO());
-    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-      incomes: [{ id: 'salary-row', name: 'Salary', category: 'Salary', amount: 10_000 }],
-    });
-    plan.sections.push({ id: 'pets', name: 'Pets', type: 'spend' });
-    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
-      incomes: plan.incomes,
-    });
-    snapshot.sections = plan.sections.map((section) => ({ ...section }));
-    Object.assign(routeData, {
-      budgetPlan: plan,
-      monthBudgets: [snapshot],
-      transactions: [],
-    });
-    storeState.data = routeData;
-    mockFontScale = fontScale;
-
-    try {
-      const forms = [
-        {
-          name: 'section create',
-          screen: BudgetSectionFormScreen,
-          params: { month, type: 'spend', scope: 'following' },
-          title: 'Add category',
-          editing: false,
-        },
-        {
-          name: 'section edit',
-          screen: BudgetSectionFormScreen,
-          params: { month, sectionId: 'pets', scope: 'month' },
-          title: 'Rename category',
-          editing: true,
-        },
-        {
-          name: 'item create',
-          screen: BudgetItemFormScreen,
-          params: { month, sectionId: 'pets' },
-          title: 'Add item',
-          editing: false,
-        },
-        {
-          name: 'item edit',
-          screen: BudgetItemFormScreen,
-          params: { month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' },
-          title: 'Edit item',
-          editing: true,
-        },
-        {
-          name: 'income create',
-          screen: BudgetIncomeFormScreen,
-          params: { month, scope: 'following' },
-          title: 'Add income',
-          editing: false,
-        },
-        {
-          name: 'income edit',
-          screen: BudgetIncomeFormScreen,
-          params: { month, incomeId: 'salary-row', scope: 'month' },
-          title: 'Edit income',
-          editing: true,
-        },
-      ];
-      plan.items.push({ id: 'pet-care', sectionId: 'pets', name: 'Pet care', mode: 'amount', value: 300 });
-      snapshot.items = plan.items.map((item) => ({ ...item }));
-      for (const form of forms) {
-        routeParams.mockReturnValue(form.params);
-        const renderer = renderScreen(React.createElement(form.screen));
-        expect(renderer.root.findByProps({ testID: 'form-shell' })).toBeDefined();
-        expect(renderer.root.findByProps({ testID: 'form-shell-header' })).toBeDefined();
-        expect(renderer.root.findByProps({ testID: 'form-shell-body' })).toBeDefined();
-        expect(renderer.root.findByProps({ testID: 'form-shell-footer' })).toBeDefined();
-        expect(renderer.root.findByProps({ accessibilityLabel: 'Back' })).toBeDefined();
-        expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
-        expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
-          .toContain(form.title);
-        if (form.name.startsWith('item')) {
-          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
-          expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
-            .not.toContain('Custom');
-          expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
-            .toContain('Section · Pets');
-        }
-        if (form.editing && !form.name.startsWith('section')) {
-          expect(renderer.root.findByProps({
-            accessibilityLabel: form.name.startsWith('item') ? 'Delete item' : 'Delete income',
-          })).toBeDefined();
-        }
-        expect(budgetScopeControl(renderer).props.value)
-          .toBe(form.params.scope === 'month' ? 'month' : 'following');
-        act(() => renderer.unmount());
-      }
-    } finally {
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-      mockFontScale = 1;
-    }
-  });
-
-  it('saves Budget route forms with scope, Undo, validation and edit-only delete actions', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const storeState = useAppStore((state) => state);
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      addSection: jest.Mock;
-      renameSection: jest.Mock;
-      addBudgetItem: jest.Mock;
-      editBudgetStructureItem: jest.Mock;
-      deleteBudgetStructureItem: jest.Mock;
-      addBudgetIncome: jest.Mock;
-      editBudgetIncome: jest.Mock;
-      removeBudgetItem: jest.Mock;
-      restoreBudgetPlanAndMonth: jest.Mock;
-    };
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousParams = routeParams();
-    const month = monthKey(todayISO());
-    const salary = { id: 'salary-row', name: 'Salary', category: 'Salary' as const, amount: 10_000 };
-    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-      incomes: [salary],
-      repeatMonthly: true,
-      repeatFrom: month,
-    });
-    plan.sections.push({ id: 'pets', name: 'Pets', type: 'spend' });
-    plan.items.push({ id: 'pet-care', sectionId: 'pets', name: 'Pet care', mode: 'amount', value: 300 });
-    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
-      incomes: [salary],
-    });
-    snapshot.sections = plan.sections.map((section) => ({ ...section }));
-    snapshot.items = plan.items.map((item) => ({ ...item }));
-    Object.assign(routeData, { budgetPlan: plan, monthBudgets: [snapshot], transactions: [] });
-    storeState.data = routeData;
-    storeState.lastError = null;
-    for (const action of Object.values(actions)) action.mockClear();
-    useUIStore.getState().setActionToast(null);
-
+  it('anchors the Home due sheet above the safe area and keeps actions scrollable at font scale 2', () => {
+    const onClose = jest.fn();
+    const onViewSchedule = jest.fn();
+    mockFontScale = 2;
+    mockSafeAreaInsets = { top: 0, right: 0, bottom: 30, left: 0 };
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
-      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
-      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Budget item frequency' }).props.options)
-        .toEqual([
-          { value: 'monthly', title: 'Monthly' },
-          { value: 'quarterly', title: 'Quarterly' },
-          { value: 'half-yearly', title: 'Half-yearly' },
-          { value: 'yearly', title: 'Yearly' },
-        ]);
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
-        renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
-        budgetScopeControl(renderer).props.onChange('month');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
-        sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 500, frequency: 'monthly',
-      }, 'month', todayISO());
-      const itemSaveToast = useUIStore.getState().actionToast;
-      expect(itemSaveToast?.actionLabel).toBe('Undo');
-      act(() => itemSaveToast?.onAction?.());
-      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
-      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      const frequencyDropdown = renderer.root.findAllByType(Dropdown)
-        .find((node) => node.props.label === 'Frequency');
-      if (!frequencyDropdown) throw new Error('Budget item frequency control missing.');
-      const frequencyControl = renderer.root.findAllByProps({
-        accessibilityLabel: 'Budget item frequency',
-      }).find((node) => typeof node.props.onPress === 'function');
-      if (!frequencyControl) throw new Error('Budget item frequency button missing.');
-      act(() => frequencyControl.props.onPress());
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Quarterly' }).props.onPress());
-      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
-      const firstDueMonth = shiftMonth(month, 3);
-      const firstDueDropdown = renderer.root.findAllByType(Dropdown)
-        .find((node) => node.props.label === 'First due month');
-      if (!firstDueDropdown) throw new Error('First due month control missing.');
-      expect(firstDueDropdown.props.options).toHaveLength(12);
-      expect(firstDueDropdown.props.options[0]).toMatchObject({ value: month });
-      const firstDueControl = renderer.root.findAllByProps({
-        accessibilityLabel: 'Budget item first due month',
-      }).find((node) => typeof node.props.onPress === 'function');
-      if (!firstDueControl) throw new Error('First due month button missing.');
-      act(() => firstDueControl.props.onPress());
-      act(() => renderer?.root.findByProps({ accessibilityLabel: formatMonth(firstDueMonth) }).props.onPress());
-      const valueTypeControl = renderer.root.findAll((node) =>
-        String(node.type) === 'segmentedcontrol' && node.props.label === 'Value type',
-      )[0];
-      expect(valueTypeControl?.props.options).toEqual([{ label: 'Amount', value: 'amount' }]);
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Quarterly pet care');
-        renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('700');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.addBudgetItem).toHaveBeenLastCalledWith(month, {
-        sectionId: 'pets',
-        name: 'Quarterly pet care',
-        mode: 'amount',
-        value: 700,
-        frequency: 'quarterly',
-        firstDueMonth,
-      }, 'following', todayISO());
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
-      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Delete item' })).toBeDefined();
-      expect(budgetScopeControl(renderer).props.value).toBe('month');
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet boarding');
-        renderer?.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', {
-        name: 'Pet boarding', mode: 'amount', value: 300, dueDay: 12,
-        frequency: 'monthly', firstDueMonth: null,
-      }, 'month', todayISO());
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      actions.deleteBudgetStructureItem.mockClear();
-      actions.restoreBudgetPlanAndMonth.mockClear();
-      routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
-      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Delete item?',
-        message: expect.stringContaining('Pet care'),
+      renderer = renderScreen(React.createElement(PendingItemActionSheet, {
+        item: {
+          id: 'sheet-due',
+          kind: 'due',
+          title: 'Monthly plan',
+          category: 'Mutual fund / SIP',
+          amount: 1_000,
+          dueDate: '2026-10-15',
+          status: 'overdue',
+          source: { kind: 'plan', parentId: 'sheet-plan', slotId: 'plan:1' },
+          actionable: true,
+        },
+        today: '2026-10-16',
+        onClose,
+        onViewSchedule,
       }));
-      expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', 'month', todayISO());
-      const itemDeleteToast = useUIStore.getState().actionToast;
-      expect(itemDeleteToast?.actionLabel).toBe('Undo');
-      act(() => itemDeleteToast?.onAction?.());
-      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, scope: 'following' });
-      renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Trips');
-        const type = renderer?.root.findAll((node) => String(node.type) === 'segmentedcontrol')
-          .find((node) => node.props.options?.some((option: { value: string }) => option.value === 'invest'));
-        type?.props.onChange('invest');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.addSection).toHaveBeenCalledWith(month, { name: 'Trips', type: 'invest' }, 'following', todayISO());
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, sectionId: 'pets', name: 'Pets', scope: 'month' });
-      renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Animal care');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, scope: 'following' });
-      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
-        renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('1500');
-        selectDropdownOption(renderer, 'Income category', 'Freelance');
-        renderer?.root.findByProps({ accessibilityLabel: 'Income day' }).props.onChangeText('15');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
-        name: 'Consulting', amount: 1500, category: 'Freelance', day: 15,
-      }, 'following', todayISO());
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
-      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Contract income');
-        renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12500');
-        selectDropdownOption(renderer, 'Income category', 'Freelance');
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, 'salary-row', {
-        name: 'Contract income', amount: 12500, category: 'Freelance',
-      }, 'month', todayISO());
-      const incomeRenderer = renderer;
-      if (!incomeRenderer) throw new Error('Budget income form renderer was not created.');
-      expect(incomeRenderer.root.findByProps({ accessibilityLabel: 'Delete income' })).toBeDefined();
-      act(() => incomeRenderer.unmount());
-      renderer = undefined;
-
-      actions.removeBudgetItem.mockClear();
-      actions.restoreBudgetPlanAndMonth.mockClear();
-      routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
-      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
-      await act(async () => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Delete income' }).props.onPress();
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-      expect(actions.removeBudgetItem).toHaveBeenCalledWith(month, {
-        kind: 'income', incomeId: 'salary-row', category: 'Salary',
-      }, 'month', todayISO());
-      const incomeDeleteToast = useUIStore.getState().actionToast;
-      expect(incomeDeleteToast?.actionLabel).toBe('Undo');
-      act(() => incomeDeleteToast?.onAction?.());
-      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
-      renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      actions.addBudgetItem.mockClear();
-      await act(async () => {
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(actions.addBudgetItem).not.toHaveBeenCalled();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Save' }).props.disabled).toBe(true);
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      storeState.lastError = null;
-      routeParams.mockReturnValue(previousParams);
-      useUIStore.getState().setActionToast(null);
-    }
-  });
-
-  it('wires Budget section, item, income and unbudgeted entry points to routes', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const storeState = useAppStore((state) => state);
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      deleteSection: jest.Mock;
-      restoreBudgetPlanAndMonth: jest.Mock;
-    };
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousParams = routeParams();
-    const month = monthKey(todayISO());
-    const salary = { id: 'salary-row', name: 'Salary', category: 'Salary' as const, amount: 10_000 };
-    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-      incomes: [salary],
-      repeatMonthly: true,
-      repeatFrom: month,
-    });
-    plan.sections.push({ id: 'pets', name: 'Pets', type: 'spend' });
-    plan.items.push({ id: 'pet-care', sectionId: 'pets', name: 'Pet care', mode: 'amount', value: 300 });
-    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], { incomes: [salary] });
-    snapshot.sections = plan.sections.map((section) => ({ ...section }));
-    snapshot.items = plan.items.map((item) => ({ ...item }));
-    Object.assign(routeData, {
-      budgetPlan: plan,
-      monthBudgets: [snapshot],
-      transactions: [{ id: 'vet', type: 'expense', amount: 350, category: 'Vet visit', note: '', date: todayISO() }],
-    });
-    storeState.data = routeData;
-    routeParams.mockReturnValue({ month });
-    router.push.mockClear();
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(BudgetScreen));
-      const root = renderer.root;
-      const sectionActions = (sectionId: string) => root.findByProps({ testID: `budget-section-actions-${sectionId}` });
-      act(() => root.findByProps({ accessibilityLabel: 'Add category' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-section-form',
-        params: { month, type: 'spend', scope: 'following' },
-      });
-      act(() => sectionActions('pets').findByProps({ accessibilityLabel: 'Add item' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-item-form',
-        params: { month, sectionId: 'pets', scope: 'following' },
-      });
-      act(() => sectionActions('pets').findByProps({ accessibilityLabel: 'Rename section' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-section-form',
-        params: { month, sectionId: 'pets', name: 'Pets', type: 'spend', scope: 'month' },
-      });
-      act(() => sectionActions('income').findByProps({ accessibilityLabel: 'Add income' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-income-form',
-        params: { month, scope: 'following' },
-      });
-      act(() => root.findByProps({ accessibilityLabel: 'Edit Pet care' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-item-form',
-        params: { month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' },
-      });
-      act(() => root.findByProps({ accessibilityLabel: 'Edit Vet visit' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-item-form',
-        params: { month, sectionId: 'survival', name: 'Vet visit', scope: 'following' },
-      });
-      act(() => root.findByProps({ accessibilityLabel: 'Edit Salary' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/budget-income-form',
-        params: { month, incomeId: 'salary-row', scope: 'month' },
-      });
-      const alert = jest.requireMock('react-native').Alert.alert as jest.Mock;
-      alert.mockClear();
-      act(() => sectionActions('pets').findByProps({ accessibilityLabel: 'Delete section' }).props.onPress());
-      expect(alert.mock.calls.at(-1)?.[1]).toContain('Pets and its 1 item');
-      const deleteOptions = alert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[] | undefined;
-      const following = deleteOptions?.find((option) => option.text === 'This and following months');
-      if (!following?.onPress) throw new Error('Section delete scope options were not shown.');
-      act(() => following.onPress?.());
-      expect(actions.deleteSection).toHaveBeenCalledWith(month, 'pets', 'following', todayISO());
-      const deleteToast = useUIStore.getState().actionToast;
-      expect(deleteToast?.actionLabel).toBe('Undo');
-      act(() => deleteToast?.onAction?.());
-      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-    }
-  });
-
-  it('wires Insurance entry points and keeps the insurance screen usable at large font scales', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const storeState = useAppStore((state) => state);
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousFontScale = mockFontScale;
-    const router = jest.requireMock('expo-router').router as {
-      push: jest.Mock;
-    };
-    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      clearDue: jest.Mock;
-      undoClearDue: jest.Mock;
-    };
-    const demoData = buildDemoData(todayISO());
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-
-    const assertInsuranceLink = (screen: React.ReactElement, label: string, testID?: string) => {
-      renderer = renderScreen(screen);
-      const link = testID
-        ? renderer.root.findByProps({ testID })
-        : renderer.root.findByProps({ accessibilityLabel: label });
-      act(() => link.props.onPress({ stopPropagation: jest.fn() }));
-      expect(router.push).toHaveBeenLastCalledWith('/insurance');
-      act(() => renderer?.unmount());
-      renderer = undefined;
-    };
-
-    try {
-      Object.assign(routeData, demoData);
-      storeState.data = demoData;
-      router.push.mockClear();
-      assertInsuranceLink(React.createElement(GoalsScreen), 'Insurance cover');
-      assertInsuranceLink(React.createElement(BudgetScreen), 'Manage policies');
-      assertInsuranceLink(React.createElement(HomeScreen), '', 'home-insurance-cover-link');
-      const duePolicy = demoData.policies.find((policy) => policy.status === 'active');
-      if (!duePolicy) throw new Error('Demo data has no policy due fixture.');
-      const dueData = {
-        ...demoData,
-        policies: demoData.policies.map((policy) => policy.id === duePolicy.id
-          ? { ...policy, startDate: todayISO(), endDate: undefined, payments: [] }
-          : policy),
-      };
-      Object.assign(routeData, dueData);
-      storeState.data = dueData;
-      renderer = renderScreen(React.createElement(HomeScreen));
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Paid' }).length)
-        .toBeGreaterThan(0);
-      act(() => renderer?.unmount());
-      renderer = undefined;
-      Object.assign(routeData, demoData);
-      storeState.data = demoData;
-
-      mockFontScale = 1.3;
-      const insuranceRenderer = renderScreen(React.createElement(InsuranceScreen));
-      renderer = insuranceRenderer;
-      const insuranceRoot = insuranceRenderer.root;
-      const header = insuranceRoot.findByType('header');
-      const headerActions = header.findAllByType('button').map((button) => button.props.accessibilityLabel);
-      expect(headerActions).toEqual(['Filter', 'Add policy']);
-
-      const coverCards = insuranceRoot.findByProps({ testID: 'insurance-cover-goals' })
-        .findAll((node) => typeof node.props.testID === 'string'
-          && node.props.testID.startsWith('cover-goal-card-'));
-      expect([...new Set(coverCards.map((card) => card.props.testID))]).toEqual([
-        'cover-goal-card-term-life',
-        'cover-goal-card-health',
-        'cover-goal-card-motor',
-        'cover-goal-card-home',
-        'cover-goal-card-other',
-      ]);
-      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-term-life' });
-      const goalPressable = termLifeCard.findAll((node) => String(node.type) === 'pressable')[0];
-      const lastGoalChild = goalPressable?.children.at(-1);
-      expect(typeof lastGoalChild === 'object' && lastGoalChild !== null && 'props' in lastGoalChild
-        ? lastGoalChild.props.testID
-        : undefined).toBe('cover-goal-progress-term-life');
-      expect(insuranceRoot.findByProps({ testID: 'term-life-income-line' })).toBeDefined();
-
-      const activePolicy = demoData.policies.find((policy) => policy.status === 'active');
-      if (!activePolicy) throw new Error('Demo data has no active policy fixture.');
-      const policyPressable = insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` });
-      const policyCard = policyPressable.parent ?? policyPressable;
-      const actions = policyCard.findAll((node) => {
-        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
-        return styles.some((style) => typeof style === 'object' && style !== null
-          && 'flexDirection' in style && style.flexDirection === 'column')
-          && styles.some((style) => typeof style === 'object' && style !== null
-            && 'borderTopWidth' in style);
-      });
-      expect(actions).toBeDefined();
-      const paidButton = policyCard.findAllByType('button')
-        .find((button) => button.props.accessibilityLabel === 'Paid');
-      if (!paidButton) throw new Error('Active policy has no Paid action.');
-      screenActions.clearDue.mockReturnValueOnce('paid-policy-entry');
-      await act(async () => {
-        paidButton.props.onPress();
-        await Promise.resolve();
-      });
-      const undo = useUIStore.getState().actionToast?.onAction;
-      if (!undo) throw new Error('Paid action did not expose Undo.');
-      act(() => undo());
-      expect(screenActions.clearDue).toHaveBeenCalledWith(
-        { kind: 'policy', id: activePolicy.id },
-        expect.any(String),
-      );
-      expect(screenActions.undoClearDue).toHaveBeenCalledWith(
-        { kind: 'policy', id: activePolicy.id },
-        'paid-policy-entry',
-      );
-
-      const filterButton = header.findByProps({ accessibilityLabel: 'Filter' });
-      act(() => filterButton.props.onPress());
-      expect(insuranceRoot.findByProps({ testID: 'insurance-filter-panel' })).toBeDefined();
-      for (const status of ['All', 'Active', 'Lapsed', 'Matured', 'Cancelled']) {
-        expect(insuranceRoot.findAllByProps({ accessibilityLabel: status }).length).toBeGreaterThan(0);
-      }
-      const lapsedPolicy = demoData.policies.find((policy) => policy.status === 'lapsed');
-      if (!lapsedPolicy) throw new Error('Demo data has no lapsed policy fixture.');
-      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'Lapsed' })[0]?.props.onPress());
-      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${lapsedPolicy.id}` }).length)
-        .toBeGreaterThan(0);
-      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${activePolicy.id}` })).toHaveLength(0);
-      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'All' })[0]?.props.onPress());
-      const searchField = insuranceRoot.findByProps({ accessibilityLabel: 'Search policies' });
-      act(() => searchField.props.onChangeText('no matching policy'));
-      expect(insuranceRoot.findByProps({ title: 'No matches' })).toBeDefined();
-      act(() => searchField.props.onClear());
-      act(() => insuranceRoot.findByProps({ accessibilityLabel: 'Add policy' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/policy-form');
-      act(() => insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/policy-form',
-        params: { id: activePolicy.id },
-      });
-      act(() => insuranceRenderer.unmount());
-      renderer = undefined;
-      useUIStore.getState().setActionToast(null);
-
-      const noIncomeData = {
-        ...demoData,
-        budgetPlan: null,
-        monthBudgets: [],
-        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
-      };
-      Object.assign(routeData, noIncomeData);
-      storeState.data = noIncomeData;
-      mockFontScale = 2;
-      const largeTextRenderer = renderScreen(React.createElement(InsuranceScreen));
-      renderer = largeTextRenderer;
-      expect(largeTextRenderer.root.findAllByProps({ testID: 'term-life-income-line' })).toHaveLength(0);
-      const largeTextRow = largeTextRenderer.root.findAll((node) => {
-        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
-        return styles.some((style) => typeof style === 'object' && style !== null
-          && 'flexDirection' in style && style.flexDirection === 'column')
-          && styles.some((style) => typeof style === 'object' && style !== null && 'minHeight' in style);
-      });
-      expect(largeTextRow).toBeDefined();
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      mockFontScale = previousFontScale;
-      useUIStore.getState().setActionToast(null);
-      screenActions.clearDue.mockClear();
-      screenActions.undoClearDue.mockClear();
-    }
-  });
-
-  it('renders policy create/edit fields and every cover-target mode', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      deletePolicy: jest.Mock;
-    };
-    const router = jest.requireMock('expo-router').router as { back: jest.Mock };
-    const storeState = useAppStore((state) => state);
-    const previousRouteData = { ...routeData };
-    const previousStoreData = storeState.data;
-    const previousParams = routeParams();
-    const demoData = buildDemoData(todayISO());
-    const policy = demoData.policies[0];
-    if (!policy) throw new Error('Demo data has no policy form fixture.');
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-
-    try {
-      Object.assign(routeData, demoData);
-      storeState.data = demoData;
-      routeParams.mockReturnValue({});
-      renderer = renderScreen(React.createElement(PolicyFormScreen));
-      const createLabels = [
-        'Policy name',
-        'Insurer',
-        'Policy kind',
-        'Premium',
-        'Premium frequency',
-        'Policy start date',
-        'Sum assured',
-        'Policy number',
-        'Nominee',
-        'Policy note',
-      ];
-      for (const label of createLabels) {
-        expect(renderer.root.findAllByProps({ accessibilityLabel: label }).length)
-          .toBeGreaterThan(0);
-      }
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' })).toHaveLength(0);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Policy start date' }).props.maximumDate)
-        .toBe(todayISO());
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy end date' })).toHaveLength(0);
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ id: policy.id });
-      renderer = renderScreen(React.createElement(PolicyFormScreen));
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' }).length)
-        .toBeGreaterThan(0);
-      screenActions.deletePolicy.mockClear();
-      mockConfirmAsync.mockClear();
-      router.back.mockClear();
-      const deleteButton = renderer.root.findByProps({ accessibilityLabel: 'Delete policy' });
-      await act(async () => {
-        deleteButton.props.onPress();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: `Delete ${policy.name}?`,
-        message: 'Recorded premium payments stay in Transactions.',
-      }));
-      expect(screenActions.deletePolicy).toHaveBeenCalledWith(policy.id);
-      expect(router.back).toHaveBeenCalled();
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      const noIncomeData = {
-        ...demoData,
-        budgetPlan: null,
-        monthBudgets: [],
-        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
-      };
-      Object.assign(routeData, noIncomeData);
-      storeState.data = noIncomeData;
-      for (const [type, expectedMode] of [
-        ['term-life', 'income-multiple'],
-        ['health', 'amount'],
-        ['motor', 'active-only'],
-        ['home', 'active-only'],
-        ['other', 'active-only'],
-      ] as const) {
-        routeParams.mockReturnValue({ type });
-        renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-        const mode = renderer.root.findByType(Dropdown);
-        expect(mode.props.value).toBe(expectedMode);
-        if (type === 'term-life') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'text')
-            .some((node) => node.children.join('').includes(
-              'Add income or a planned budget to calculate the target amount.',
-            ))).toBe(true);
-        }
-        if (expectedMode === 'active-only') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
-        }
-        act(() => mode.props.onChange('amount'));
-        expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(1);
-        act(() => renderer?.unmount());
-        renderer = undefined;
-      }
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      storeState.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-      screenActions.deletePolicy.mockClear();
-      mockConfirmAsync.mockClear();
-    }
-  });
-
-  it('offers assets already linked to another goal and adds them without a share field', () => {
-    const storeState = useAppStore((state) => state) as { data: AppData };
-    const previousData = storeState.data;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousParams = routeParams();
-    const today = todayISO();
-    const plan = makeInvestmentTestPlan();
-    const goal = {
-      id: 'goal-under-test',
-      name: 'Goal under test',
-      target: 10_000,
-      saved: 0,
-      year: 2030,
-      links: [],
-    };
-    const otherGoal = {
-      id: 'other-goal',
-      name: 'Other goal',
-      target: 10_000,
-      saved: 0,
-      year: 2031,
-      links: [{ instrumentId: plan.id, share: 100 }],
-    };
-    let form: TestRenderer.ReactTestRenderer | undefined;
-
-    try {
-      storeState.data = { ...emptyAppData(today), goals: [goal, otherGoal], holdings: [plan] };
-      routeParams.mockReturnValue({ id: goal.id });
-      form = renderScreen(React.createElement(GoalFormScreen));
-      act(() => form?.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
-      const picker = form.root.findByProps({ testID: 'goal-asset-picker-sheet' });
-      expect(picker.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ maxHeight: 506.4 }),
+      const currentRenderer = renderer;
+      if (!currentRenderer) throw new Error('Due action sheet did not render.');
+      const container = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet' });
+      expect(container.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ flex: 1, justifyContent: 'flex-end' }),
+        expect.objectContaining({ paddingBottom: 42 }),
       ]));
-      expect(form.root.findByProps({ testID: 'goal-asset-picker-sheet-modal' }).props.visible).toBe(true);
-      expect(form.root.findByProps({ testID: 'goal-asset-picker-sheet-backdrop' })).toBeDefined();
-
-      const availableAsset = form.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Link Test plan, current value '),
-      )[0];
-      if (!availableAsset) throw new Error('An asset linked to another goal was unavailable.');
-      act(() => availableAsset.props.onPress());
-
-      expect(form.root.findAll((node) => node.type === 'text' && node.children.includes('Test plan'))).toHaveLength(1);
-      expect(form.root.findAll((node) => node.type === 'button' && node.children.includes('Link an asset'))).toHaveLength(1);
-      expect(form.root.findAll((node) => node.type === 'text' && node.children.includes('Share of asset (%)'))).toHaveLength(0);
-      const linked = storeState.data.goals.find((item) => item.id === goal.id);
-      expect(linked?.links).toEqual([]);
+      const sheet = currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-content' });
+      expect(sheet.props.style).toEqual(expect.arrayContaining([
+        expect.objectContaining({ maxHeight: 506.4 }),
+        expect.objectContaining({ borderTopLeftRadius: 18, borderTopRightRadius: 18 }),
+      ]));
+      expect(sheet.props.scrollEnabled).toBe(true);
+      expect(currentRenderer.root.findAll((node) =>
+        node.type === 'button' && ['Pay', 'Clear due', 'View schedule', 'Close'].includes(String(node.children[0])),
+      )).toHaveLength(4);
+      act(() => currentRenderer.root.findByProps({ testID: 'pending-item-action-sheet-backdrop' }).props.onPress());
+      expect(onClose).toHaveBeenCalledTimes(1);
     } finally {
-      act(() => form?.unmount());
-      storeState.data = previousData;
-      routeParams.mockReturnValue(previousParams);
+      if (renderer) act(() => renderer?.unmount());
+      mockFontScale = 1;
+      mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
     }
   });
 
-  it('keeps Home spending collapsed and asks before changing a due', async () => {
+  it('keeps Home spending collapsed without budget actions and opens due actions', () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
     const previousData = { ...routeData };
     const today = todayISO();
+    const router = jest.requireMock('expo-router').router as { push: jest.Mock };
     const textOf = (renderer: TestRenderer.ReactTestRenderer) =>
       renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
     let home: TestRenderer.ReactTestRenderer | undefined;
@@ -1610,14 +757,14 @@ describe('route render smoke audit', () => {
     try {
       Object.assign(routeData, emptyAppData(today));
       home = renderScreen(React.createElement(HomeScreen));
-      expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
-        .toBe('Show spending by category');
+      expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
+        .toEqual({ expanded: false });
       expect(home.root.findAllByProps({ accessibilityLabel: 'Open budget' })).toHaveLength(0);
       expect(home.root.findAllByProps({ accessibilityLabel: 'Apply budget' })).toHaveLength(0);
       expect(home.root.findAllByProps({ testID: 'home-spending-details' })).toHaveLength(0);
       act(() => home?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
-      expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
-        .toBe('Hide spending by category');
+      expect(home.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
+        .toEqual({ expanded: true });
       expect(home.root.findAllByType('text').some((node) =>
         node.children.includes('No spending recorded this month.'),
       )).toBe(true);
@@ -1628,9 +775,14 @@ describe('route render smoke audit', () => {
 
       Object.assign(routeData, {
         ...emptyAppData(today),
-        monthBudgets: [monthBudgetFromLines(today.slice(0, 7), [{ category: 'Food', planned: 1_000 }], {
-          incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
-        })],
+        monthBudgets: [{
+          month: today.slice(0, 7),
+          templateId: null,
+          templateName: null,
+          customized: true,
+          plannedIncome: 10_000,
+          lines: [{ category: 'Food', planned: 1_000 }],
+        }],
       });
       home = renderScreen(React.createElement(HomeScreen));
       expect(home.root.findAllByProps({ accessibilityLabel: 'Open budget' })).toHaveLength(0);
@@ -1642,13 +794,10 @@ describe('route render smoke audit', () => {
         ...emptyAppData(today),
         holdings: [makeInvestmentTestPlan()],
       });
-      mockConfirmAsync.mockClear();
-      mockConfirmAsync.mockResolvedValue(false);
       mockFontScale = 2;
       home = renderScreen(React.createElement(HomeScreen));
-      const dueHome = home;
-      const dueRow = dueHome.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:'),
+      const dueRow = home.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-due:'),
       )[0];
       if (!dueRow) throw new Error('Home due item did not render.');
       expect(dueRow.findAll((node) =>
@@ -1658,451 +807,18 @@ describe('route render smoke audit', () => {
           && style.flexDirection === 'column',
         ),
       ).length).toBeGreaterThan(0);
-      expect(dueRow.props.onPress).toBeUndefined();
-      expect(textOf(dueHome)).toContain('Test plan');
-      expect(textOf(dueHome)).toContain(formatAmount(1_000, 'exact', 1));
-      expect(textOf(dueHome)).toContain(formatDate(today));
-      const markPaid = dueRow.findByProps({ accessibilityLabel: 'Paid' });
-      expect(markPaid.type).toBe('button');
-      expect(markPaid.children).toContain('Paid');
-      expect(mockConfirmAsync).not.toHaveBeenCalled();
-      await act(async () => {
-        markPaid.props.onPress();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(today)}`,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
-      });
-      expect(textOf(dueHome)).toContain('Test plan');
-      expect(dueHome.root.findAll((node) =>
-        node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
-      )).toHaveLength(0);
-      expect(dueHome.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
-      expect(dueRow.props.onPress).toBeUndefined();
-      await act(async () => {
-        markPaid.props.onPress();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledTimes(2);
-      const actions = (jest.requireMock('../../data/useAppData') as {
-        useAppActions: () => { clearDue: jest.Mock };
-      }).useAppActions();
-      expect(actions.clearDue).not.toHaveBeenCalled();
-    } finally {
-      act(() => home?.unmount());
-      Object.assign(routeData, previousData);
-      mockFontScale = 1;
-      mockConfirmAsync.mockResolvedValue(true);
-    }
-  });
-
-  it.each([1.3, 2])('stacks Home due content and the text payment action at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousData = { ...routeData };
-    mockFontScale = fontScale;
-    let home: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      Object.assign(routeData, {
-        ...emptyAppData(todayISO()),
-        holdings: [makeInvestmentTestPlan()],
-      });
-      home = renderScreen(React.createElement(HomeScreen));
-      const dueRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-'),
+      act(() => dueRow.props.onPress());
+      expect(home.root.findByProps({ testID: 'pending-item-action-sheet' })).toBeDefined();
+      expect(textOf(home)).toContain('Test plan');
+      expect(textOf(home)).toContain('Due ');
+      const viewSchedule = home.root.findAll((node) =>
+        node.type === 'button' && node.children.includes('View schedule'),
       )[0];
-      if (!dueRow) throw new Error('Home due item did not render.');
-      expect(dueRow.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ alignItems: 'stretch', flexDirection: 'column' }),
-      ]));
-      const actions = dueRow.find((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-actions-'),
-      );
-      expect(actions?.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ justifyContent: 'flex-end' }),
-      ]));
-      expect(dueRow.findByProps({ accessibilityLabel: 'Paid' }).type).toBe('button');
+      if (!viewSchedule) throw new Error('View schedule action did not render.');
+      act(() => viewSchedule.props.onPress());
+      expect(router.push).toHaveBeenCalledWith('/investment-entries?id=investment-plan-test');
     } finally {
       act(() => home?.unmount());
-      Object.assign(routeData, previousData);
-      mockFontScale = 1;
-    }
-  });
-
-  it('clears a confirmed Home due with Undo and previews earlier dues', async () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const actions = (jest.requireMock('../../data/useAppData') as {
-      useAppActions: () => {
-        clearDue: jest.Mock;
-        clearDuesThrough: jest.Mock;
-        undoClearDue: jest.Mock;
-        undoClearDuesThrough: jest.Mock;
-      };
-    }).useAppActions();
-    const store = useAppStore((state) => state);
-    const previousRouteData = { ...routeData };
-    const previousStoreData = store.data;
-    const previousToast = useUIStore.getState().actionToast;
-    const today = todayISO();
-    const currentMonth = monthKey(today);
-    const oldMonth = shiftMonth(currentMonth, -4);
-    const singlePlan = makeInvestmentTestPlan();
-    const laterPlan = { ...singlePlan, id: 'older-plan', startDate: `${oldMonth}-01`, trackFrom: `${oldMonth}-01` };
-    const addLinkedTransactions = (entryIds: string[], linkedPlan: PlanHolding) => {
-      store.data = {
-        ...store.data,
-        transactions: [
-          ...store.data.transactions,
-          ...entryIds.map((entryId) => ({
-            id: `tx-${entryId}`,
-            type: 'invest' as const,
-            amount: 1_000,
-            category: linkedPlan.type,
-            note: linkedPlan.name,
-            date: today,
-            source: { kind: 'holding-entry' as const, parentId: linkedPlan.id, entryId },
-          })),
-        ],
-      };
-    };
-    let home: TestRenderer.ReactTestRenderer | undefined;
-
-    try {
-      Object.assign(routeData, { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] });
-      store.data = routeData;
-      actions.clearDue.mockImplementation((_target, _slotId) => {
-        addLinkedTransactions(['paid-entry'], singlePlan);
-        return 'paid-entry';
-      });
-      mockConfirmAsync.mockResolvedValue(true);
-      useUIStore.getState().setActionToast(null);
-      home = renderScreen(React.createElement(HomeScreen));
-      const oldestRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:investment-plan-test'),
-      )[0];
-      if (!oldestRow) throw new Error('Oldest due row did not render.');
-      const markPaid = oldestRow.findByProps({ accessibilityLabel: 'Paid' });
-      await act(async () => {
-        markPaid.props.onPress();
-        await Promise.resolve();
-      });
-      expect(actions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, expect.any(String));
-      expect(useUIStore.getState().actionToast?.message).toBe(`${formatAmount(1_000, 'exact', 1)} marked as paid`);
-      const singleUndo = useUIStore.getState().actionToast?.onAction;
-      if (!singleUndo) throw new Error('Single-due Undo action was not set.');
-      act(() => singleUndo());
-      expect(actions.undoClearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, 'paid-entry');
-      act(() => home?.unmount());
-      home = undefined;
-
-      Object.assign(routeData, { ...emptyAppData(today), holdings: [laterPlan] });
-      store.data = routeData;
-      actions.clearDuesThrough.mockImplementation((_target, _dueDate) => {
-        const entryIds = ['paid-older-1', 'paid-older-2', 'paid-current'];
-        addLinkedTransactions(entryIds, laterPlan);
-        return entryIds;
-      });
-      actions.undoClearDuesThrough.mockClear();
-      mockConfirmAsync.mockClear();
-      useUIStore.getState().setActionToast(null);
-      home = renderScreen(React.createElement(HomeScreen));
-      const laterRow = home.root.findAll((node) =>
-        typeof node.props.testID === 'string' && node.props.testID.startsWith('home-due-row-due:plan:older-plan:'),
-      )[0];
-      if (!laterRow) throw new Error('Later due row did not render.');
-      const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Paid' });
-      const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
-      expect(preview.count).toBeGreaterThan(1);
-      const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
-      await act(async () => {
-        laterMarkPaid.props.onPress();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: expectedMessage,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
-      });
-      expect(actions.clearDuesThrough).toHaveBeenCalledWith({ kind: 'plan', id: laterPlan.id }, currentMonth + '-01');
-      const throughUndo = useUIStore.getState().actionToast?.onAction;
-      if (!throughUndo) throw new Error('Clear-through Undo action was not set.');
-      act(() => throughUndo());
-      expect(actions.undoClearDuesThrough).toHaveBeenCalledWith(
-        { kind: 'plan', id: laterPlan.id },
-        ['paid-older-1', 'paid-older-2', 'paid-current'],
-      );
-    } finally {
-      act(() => home?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-      useUIStore.getState().setActionToast(previousToast);
-      mockConfirmAsync.mockResolvedValue(true);
-    }
-  });
-
-  it.each([1, 1.3, 2])('places goal details above a final progress bar without status text at font scale %s', async (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousData = { ...routeData };
-    const today = todayISO();
-    const plan = makeInvestmentTestPlan();
-    const data: AppData = {
-      ...emptyAppData(today),
-      holdings: [plan],
-      goals: [{
-        id: 'goal-travel',
-        name: 'Travel',
-        target: 50_000,
-        saved: 5_000,
-        year: 2028,
-        links: [{ instrumentId: plan.id }],
-      }, {
-        id: 'goal-emergency',
-        name: 'Emergency fund',
-        target: 100_000,
-        saved: 0,
-        year: 2028,
-        auto: 'ef',
-        links: [],
-      }],
-    };
-    let home: TestRenderer.ReactTestRenderer | undefined;
-    let goals: TestRenderer.ReactTestRenderer | undefined;
-    mockFontScale = fontScale;
-
-    try {
-      Object.assign(routeData, data);
-      home = renderScreen(React.createElement(HomeScreen));
-      goals = renderScreen(React.createElement(GoalsScreen));
-      if (!home || !goals) throw new Error('Goal screens did not render.');
-
-      for (const screen of [home, goals]) {
-        const rows = screen.root.findAll((node) =>
-          node.type === 'view' && node.props.testID === 'goal-progress-row',
-        );
-        expect(rows.length).toBeGreaterThanOrEqual(2);
-        expect(screen.root.findAllByType('text').some((node) =>
-          node.children.includes('Emergency fund'),
-        )).toBe(true);
-        for (const row of rows) {
-          const bar = row.find((node) =>
-            node.type === 'view' && node.props.testID === 'goal-progress-bar',
-          );
-          if (!bar) throw new Error('Goal progress bar did not render.');
-          expect(bar.props.style).toEqual(expect.objectContaining({ width: '100%' }));
-          expect(row.children).toHaveLength(1);
-          expect(row.children.map((child) => typeof child === 'string' ? child : child.props.testID))
-            .toEqual(['goal-progress-bar']);
-          const siblingIds = row.parent?.children.map((child) =>
-            typeof child === 'string' ? child : child.props.testID,
-          );
-          expect(siblingIds?.at(-1)).toBe('goal-progress-row');
-        }
-        const visibleText = screen.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-        expect(visibleText).toContain('Projected');
-        expect(visibleText).not.toMatch(/\b(?:Behind|On track|Ahead)\b|Not reachable with current contributions/);
-      }
-    } finally {
-      act(() => {
-        home?.unmount();
-        goals?.unmount();
-      });
-      Object.assign(routeData, previousData);
-      mockFontScale = 1;
-    }
-  });
-
-  it.each([1, 1.3, 2])('renders Home goals as rows in one divided card at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousData = { ...routeData };
-    mockFontScale = fontScale;
-    Object.assign(routeData, {
-      ...emptyAppData(todayISO()),
-      goals: [
-        { id: 'home-goal-a', name: 'Goal A', target: 20_000, saved: 2_000, year: 2028, links: [] },
-        { id: 'home-goal-b', name: 'Goal B', target: 30_000, saved: 3_000, year: 2029, links: [] },
-        { id: 'home-goal-c', name: 'Goal C', target: 40_000, saved: 4_000, year: 2030, links: [] },
-      ],
-    });
-    let home: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      home = renderScreen(React.createElement(HomeScreen));
-      const section = home.root.findByProps({ testID: 'home-goals-section' });
-      expect(section.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
-      const rowsByTestId = new Map(section.findAll((node) =>
-        typeof node.props.testID === 'string'
-        && node.props.testID.startsWith('home-goal-row-'),
-      ).map((node) => [node.props.testID as string, node]));
-      const rows = [...rowsByTestId.values()];
-      expect(rows.map((row) => row.props.testID)).toEqual([
-        'home-goal-row-goal-emergency',
-        'home-goal-row-home-goal-a',
-        'home-goal-row-home-goal-b',
-      ]);
-      expect(rows[0]?.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ borderBottomWidth: 1 }),
-      ]));
-      expect(rows[1]?.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ borderBottomWidth: 1 }),
-      ]));
-      expect(rows[2]?.props.style).not.toEqual(expect.arrayContaining([
-        expect.objectContaining({ borderBottomWidth: 1 }),
-      ]));
-    } finally {
-      act(() => home?.unmount());
-      Object.assign(routeData, previousData);
-      mockFontScale = 1;
-    }
-  });
-
-  it.each([1.3, 2])('opens asset and liability editing from the card body at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousData = { ...routeData };
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    mockFontScale = fontScale;
-    const today = todayISO();
-    const dueDate = `${shiftMonth(monthKey(today), 1)}-01`;
-    Object.assign(routeData, {
-      ...emptyAppData(today),
-      holdings: [{
-        id: 'tap-cash',
-        kind: 'manual' as const,
-        name: 'Tap cash',
-        type: 'Cash' as const,
-        invested: 10_000,
-        value: 10_000,
-        valueAsOf: today,
-        logs: [],
-      }],
-      liabilities: [{
-        id: 'tap-liability',
-        kind: 'one-time' as const,
-        name: 'Tap liability',
-        type: 'Borrowed money' as const,
-        principal: 20_000,
-        ratePct: 0,
-        startDate: today,
-        dueDate,
-        payments: [],
-      }, {
-        id: 'tap-recurring-liability',
-        kind: 'recurring' as const,
-        name: 'Tap recurring liability',
-        type: 'Other' as const,
-        principal: 20_000,
-        ratePct: 0,
-        startDate: `${shiftMonth(monthKey(today), -2)}-01`,
-        tenureMonths: 12,
-        emi: 2_000,
-        settlement: null,
-        payments: [],
-      }],
-    });
-    let assets: TestRenderer.ReactTestRenderer | undefined;
-    let liabilities: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      router.push.mockClear();
-      assets = renderScreen(React.createElement(AssetsScreen));
-      const assetCard = assets.root.findByProps({ testID: 'asset-card-manual-Tap cash' });
-      expect(assetCard.props.accessibilityRole).toBe('button');
-      expect(assetCard.props.accessibilityLabel).toBe('Edit Tap cash');
-      expect(assetCard.props.accessibilityHint).toBe('Opens this asset for editing');
-      expect(assetCard.findAllByType(IconButton)).toHaveLength(0);
-      act(() => assetCard.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/investment-form?id=tap-cash');
-
-      router.push.mockClear();
-      const deposit = assetCard.findByProps({ accessibilityLabel: 'Deposit' });
-      const stopPropagation = jest.fn();
-      router.push.mockClear();
-      act(() => deposit.props.onPress({ stopPropagation }));
-      expect(stopPropagation).toHaveBeenCalledTimes(1);
-      expect(router.push).toHaveBeenLastCalledWith('/investment-entry-form?holdingId=tap-cash&kind=Deposit');
-      expect(router.push).not.toHaveBeenCalledWith('/investment-form?id=tap-cash');
-      act(() => assets?.unmount());
-      assets = undefined;
-
-      liabilities = renderScreen(React.createElement(LiabilitiesScreen));
-      const liabilityCard = liabilities.root.findByProps({ testID: 'liability-card-tap-liability' });
-      const liabilityContent = liabilityCard.findByProps({ testID: 'liability-card-content-tap-liability' });
-      expect(liabilityCard.props.accessibilityRole).toBe('button');
-      expect(liabilityCard.props.accessibilityLabel).toBe('Edit Tap liability');
-      expect(liabilityCard.props.accessibilityHint).toBe('Opens this liability for editing');
-      expect(liabilityCard.findAllByType(IconButton)).toHaveLength(0);
-      const liabilityNodes = liabilityContent.findAll(() => true);
-      const progressIndex = liabilityNodes.findIndex((node) => node.type === 'progress');
-      const actionsIndex = liabilityNodes.findIndex((node) =>
-        node.props.testID === 'liability-card-actions-tap-liability',
-      );
-      expect(progressIndex).toBeGreaterThan(0);
-      expect(actionsIndex).toBeGreaterThan(progressIndex);
-      expect(liabilityNodes.slice(progressIndex + 1, actionsIndex)
-        .every((node) => node.type !== 'text')).toBe(true);
-      const oneTimeActionContainer = liabilityContent.findByProps({
-        testID: 'liability-card-actions-tap-liability',
-      });
-      expect(oneTimeActionContainer.children.map((child) =>
-        typeof child === 'string' ? child : String(child.type),
-      )).toEqual(['view']);
-      expect(oneTimeActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
-      const paymentActions = liabilityContent.findAll((node) => String(node.type) === 'actionrow')[0];
-      if (!paymentActions) throw new Error('One-time liability action row did not render.');
-      expect(paymentActions.props.stopParentPress).toBe(true);
-      act(() => liabilityCard.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/liability-form',
-        params: { id: 'tap-liability' },
-      });
-      const recurringCard = liabilities.root.findByProps({ testID: 'liability-card-tap-recurring-liability' });
-      const recurringContent = recurringCard.findByProps({ testID: 'liability-card-content-tap-recurring-liability' });
-      expect(recurringCard.findAllByType(IconButton)).toHaveLength(0);
-      const recurringNodes = recurringContent.findAll(() => true);
-      const recurringProgressIndex = recurringNodes.findIndex((node) => node.type === 'progress');
-      const recurringActionsIndex = recurringNodes.findIndex((node) =>
-        node.props.testID === 'liability-card-actions-tap-recurring-liability',
-      );
-      expect(recurringProgressIndex).toBeGreaterThan(0);
-      expect(recurringActionsIndex).toBeGreaterThan(recurringProgressIndex);
-      expect(recurringNodes.slice(recurringProgressIndex + 1, recurringActionsIndex)
-        .every((node) => node.type !== 'text')).toBe(true);
-      const recurringActionContainer = recurringContent.findByProps({
-        testID: 'liability-card-actions-tap-recurring-liability',
-      });
-      expect(recurringActionContainer.children.map((child) =>
-        typeof child === 'string' ? child : String(child.type),
-      )).toEqual(['view']);
-      expect(recurringActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
-      const recurringActionRow = recurringContent.findAll((node) => String(node.type) === 'actionrow')[0];
-      if (!recurringActionRow) throw new Error('Recurring liability action row did not render.');
-      expect(recurringActionRow.props.stopParentPress).toBe(true);
-      const dueActions = recurringContent.findByType(DueActions);
-      expect(dueActions.props.stopParentPress).toBe(true);
-      const clearDue = recurringCard.findByProps({ accessibilityLabel: 'Clear due' });
-      const clearDueStopPropagation = jest.fn();
-      const dataActions = (jest.requireMock('../../data/useAppData') as {
-        useAppActions: () => { clearDue: jest.Mock };
-      }).useAppActions();
-      router.push.mockClear();
-      act(() => clearDue.props.onPress({ stopPropagation: clearDueStopPropagation }));
-      expect(clearDueStopPropagation).toHaveBeenCalledTimes(1);
-      expect(dataActions.clearDue).toHaveBeenCalledWith({ kind: 'liability', id: 'tap-recurring-liability' });
-      expect(router.push).not.toHaveBeenCalledWith({
-        pathname: '/liability-form',
-        params: { id: 'tap-recurring-liability' },
-      });
-      expect(recurringCard.props.accessibilityLabel).toBe('Edit Tap recurring liability');
-      act(() => recurringCard.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/liability-form',
-        params: { id: 'tap-recurring-liability' },
-      });
-    } finally {
-      act(() => {
-        assets?.unmount();
-        liabilities?.unmount();
-      });
       Object.assign(routeData, previousData);
       mockFontScale = 1;
     }
@@ -2123,17 +839,19 @@ describe('route render smoke audit', () => {
         { id: 'income', type: 'income', amount: 1_000, category: 'Salary', note: '', date: `${month}-01` },
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: `${month}-02` },
       ],
-      monthBudgets: [monthBudgetFromLines(month, [
+      monthBudgets: [{
+        month,
+        templateId: null,
+        templateName: null,
+        customized: true,
+        plannedIncome: 1_000,
+        lines: [
           { category: 'Food', planned: 300 },
           { category: 'Shopping', planned: 200 },
           { category: 'Other investments', planned: 75 },
-        ], {
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-      })],
+        ],
+      }],
     };
-    expect(pendingItems(data, month, today)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: 'budget', title: 'Food', amount: 200 }),
-    ]));
     Object.assign(routeData, data);
     store.data = data;
     act(() => useUIStore.getState().setTxMonth(month));
@@ -2155,48 +873,22 @@ describe('route render smoke audit', () => {
       const balanceText = balance.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       expect(balanceText).toContain('Closing balance');
       expect(balanceText).not.toContain('NaN');
-      expect(renderer.root.findAllByProps({ testID: 'pending-items-toggle' })).toHaveLength(0);
-      const pendingHeader = renderer.root.findByProps({ testID: 'pending-items-header' });
-      expect(pendingHeader.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('3 payments due of total');
-      const pendingList = renderer.root.findByProps({ testID: 'pending-items-list' });
-      const pendingCard = renderer.root.findByProps({ testID: 'pending-items-section' })
-        .findAll((node) => String(node.type) === 'card')[0];
-      if (!pendingCard) throw new Error('Due payments Card did not render.');
-      expect(pendingList.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
-      )).toHaveLength(1);
-      expect(pendingList.findAllByProps({ children: 'Paid' })).toHaveLength(3);
-      expect(pendingList.findAllByProps({ children: 'Pay' })).toHaveLength(0);
-      const firstDueRow = pendingList.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
-      );
-      if (!firstDueRow) throw new Error('Filtered due row did not render.');
-      expect(firstDueRow.props.accessibilityLabel).toContain('Food');
-      expect(firstDueRow.props.accessibilityLabel).not.toContain('Overdue');
-      expect(firstDueRow.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ borderBottomWidth: 1 }),
-      ]));
+      const pendingToggle = renderer.root.findByProps({ testID: 'pending-items-toggle' });
+      expect(pendingToggle.props.accessibilityState).toEqual({ expanded: false });
+      expect(renderer.root.findAllByProps({ testID: 'pending-items-list' })).toHaveLength(0);
 
       expect(renderer.root.findAllByProps({ accessibilityLabel: `Review ${formatMonth(month)}` }).length)
         .toBeGreaterThan(0);
-      act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
       act(() => renderer.root.findByProps({ accessibilityLabel: 'Invested' }).props.onPress());
+      act(() => renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.onPress());
       expect(renderer.root.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-3`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Other investments`,
       )).toHaveLength(1);
       expect(renderer.root.findAll((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
+        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:Food`,
       )).toHaveLength(0);
-      const lastDueRow = renderer.root.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-3`,
-      );
-      if (!lastDueRow) throw new Error('Filtered last due row did not render.');
-      expect(lastDueRow.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ borderBottomWidth: 0 }),
-      ]));
-      expect(renderer.root.findByProps({ testID: 'pending-items-header' }).findAllByType('text')
-        .map((node) => node.children.join('')).join(' ')).toContain(formatAmount(75, 'exact', 1));
+      expect(renderer.root.findByProps({ testID: 'pending-items-toggle' }).props.accessibilityLabel)
+        .toContain(formatAmount(75, 'exact', 1));
       act(() => renderer.unmount());
 
       const negativeData: AppData = {
@@ -2211,53 +903,15 @@ describe('route render smoke audit', () => {
       const negativeBalance = negativeRenderer.root.findByProps({ testID: 'available-balance-card' });
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
-      expect(negativeRenderer.root.findAllByProps({ testID: 'pending-items-section' })).toHaveLength(0);
-      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
-        .toHaveLength(0);
+      const negativeAmount = negativeBalance.findByProps({ accessibilityLabel: '-₹1,000' });
+      expect(Array.isArray(negativeAmount.props.style) ? negativeAmount.props.style : [negativeAmount.props.style]).toEqual(expect.arrayContaining([
+        expect.objectContaining({ color: expect.any(String) }),
+      ]));
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
       act(() => useUIStore.getState().setTxMonth(previousTxMonth));
-      mockFontScale = 1;
-    }
-  });
-
-  it.each([1.3, 2])('stacks Transactions due rows at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const previousMonth = useUIStore.getState().txMonth;
-    const today = todayISO();
-    const month = monthKey(today);
-    const data: AppData = {
-      ...emptyAppData(today),
-      monthBudgets: [monthBudgetFromLines(month, [{ category: 'Food', planned: 300 }], {
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-      })],
-    };
-    Object.assign(routeData, data);
-    store.data = data;
-    act(() => useUIStore.getState().setTxMonth(month));
-    mockFontScale = fontScale;
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(TransactionsScreen));
-      const row = renderer.root.find((node) =>
-        node.type === 'view' && node.props.testID === `pending-item-budget:${month}:fixture-item-1`,
-      );
-      if (!row) throw new Error('Transactions due row did not render.');
-      expect(row.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ alignItems: 'stretch', flexDirection: 'column' }),
-      ]));
-      expect(row.findAllByProps({ accessibilityLabel: 'Paid' })).toHaveLength(1);
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-      act(() => useUIStore.getState().setTxMonth(previousMonth));
       mockFontScale = 1;
     }
   });
@@ -2336,9 +990,14 @@ describe('route render smoke audit', () => {
         plannedIncome: 123_456_789,
         lines: [{ category: 'Food', planned: 123_456_789 }],
       },
-      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 123_456_789 }], {
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 123_456_789 }],
-      })],
+      monthBudgets: [{
+        month: '2026-10',
+        templateId: null,
+        templateName: null,
+        customized: false,
+        plannedIncome: 123_456_789,
+        lines: [{ category: 'Food', planned: 123_456_789 }],
+      }],
     };
     Object.assign(routeData, data);
     store.data = data;
@@ -2373,7 +1032,7 @@ describe('route render smoke audit', () => {
         label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
       )).toBe(true);
       expect(labelsFor(React.createElement(BudgetScreen)).some((label) =>
-        label.includes(`${exactB} spent of ${exactA}`),
+        label.includes(`${exactB} of ${exactA}`),
       )).toBe(true);
       expect(labelsFor(React.createElement(TransactionsScreen))).toEqual(expect.arrayContaining([
         `Income, ${exactA}`,
@@ -2386,33 +1045,21 @@ describe('route render smoke audit', () => {
   });
 
   const formScreens = screens.filter(([name]) =>
-    /form|money movement invalid|clear past dues|erase data/i.test(name),
+    /form|month review|money movement invalid|clear past dues/i.test(name),
   );
 
-  it.each(formScreens)('%s exposes the shared Back action and receives its dirty state', async (_name, screen) => {
+  it.each(formScreens)('%s exposes Close and receives its dirty state', async (_name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(screen);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Form route did not render.');
-    const close = renderer.root.findAllByProps({ accessibilityLabel: 'Back' })
-      .find((node) => typeof node.props.isDirty === 'boolean');
-    if (!close) throw new Error('The full-screen form Close action was not rendered.');
+    const close = renderer.root.findByProps({ accessibilityLabel: 'Close' });
     expect(close.props.accessibilityRole).toBe('button');
     expect(close.props.onPress).toEqual(expect.any(Function));
     expect(typeof close.props.isDirty).toBe('boolean');
     act(() => renderer?.unmount());
-  });
-
-  it('keeps onboarding as a no-back entry form with its Continue footer', async () => {
-    const renderer = renderScreen(React.createElement(OnboardingScreen));
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Back' })).toHaveLength(0);
-    expect(renderer.root.findAll((node) => String(node.type) === 'text')
-      .some((node) => node.children.join('') === 'Welcome to Wealth Wise')).toBe(true);
-    expect(renderer.root.findAll((node) => String(node.type) === 'button')
-      .some((node) => node.props.accessibilityLabel === 'Continue')).toBe(true);
-    act(() => renderer.unmount());
   });
 
   it.each([
@@ -2593,13 +1240,15 @@ describe('route render smoke audit', () => {
 
   it.each([
     ['Transactions', () => React.createElement(TransactionsScreen)],
+    ['Budget spending', () => React.createElement(BudgetScreen)],
+    ['Budget history', () => React.createElement(BudgetHistoryScreen)],
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
-  ])('%s exposes its SortChip in the existing location or inline filter panel', (name, makeScreen) => {
+  ])('%s exposes its SortChip', (name, makeScreen) => {
     const appData = jest.requireMock('../../data/useAppData').useAppData() as {
       holdings: object[];
       liabilities: object[];
@@ -2629,11 +1278,10 @@ describe('route render smoke audit', () => {
     };
     appData.holdings = name === 'Investment entries' ? [holding] : [];
     appData.liabilities = name === 'Liability payments' ? [liability] : [];
-    appData.monthBudgets = name === 'Budget spending' ? [monthBudgetFromLines(
-      todayISO().slice(0, 7),
-      [{ category: 'Food', planned: 500 }],
-      { incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 1000 }] },
-    )] : [];
+    appData.monthBudgets = name === 'Budget spending' ? [{
+      month: todayISO().slice(0, 7), templateId: null, templateName: null, customized: false,
+      plannedIncome: 1000, lines: [{ category: 'Food', planned: 500 }],
+    }] : [];
     storeData.holdings = name === 'Link missing transactions' ? [holding] : [];
     storeData.liabilities = [];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
@@ -2646,387 +1294,40 @@ describe('route render smoke audit', () => {
         : {});
 
     const renderer = renderScreen(makeScreen());
-    const filteredScreenPanel: Record<string, string> = {
-      Transactions: 'transaction-filter-panel',
-      Goals: 'goal-filter-panel',
-      Assets: 'asset-filter-panel',
-      Liabilities: 'liability-filter-panel',
-    };
-    const panelTestID = filteredScreenPanel[name];
-    if (panelTestID) {
-      expect(renderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Sort:'),
-      )).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ testID: panelTestID })).toHaveLength(0);
-      const filterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
-      expect(filterButton.props.accessibilityState).toEqual({ expanded: false });
-      act(() => filterButton.props.onPress());
-      expect(renderer.root.findByProps({ testID: panelTestID })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.accessibilityState)
-        .toEqual({ expanded: true });
-      if (name === 'Transactions') {
-        expect(renderer.root.findAll((node) =>
-          ['All', 'Income', 'Expense', 'Invested'].includes(String(node.props.accessibilityLabel)),
-        ).length).toBeGreaterThanOrEqual(4);
-        const investedChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'Invested');
-        if (!investedChip) throw new Error('Invested filter chip did not render.');
-        act(() => investedChip.props.onPress());
-        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'Invested')?.props.selected)
-          .toBe(true);
-      } else if (name === 'Assets') {
-        expect(renderer.root.findAll((node) =>
-          ['All', 'Recurring', 'Mutual fund / SIP'].includes(String(node.props.accessibilityLabel)),
-        ).length).toBeGreaterThanOrEqual(3);
-        const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'Recurring');
-        if (!recurringChip) throw new Error('Recurring filter chip did not render.');
-        act(() => recurringChip.props.onPress());
-        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'Recurring')?.props.selected)
-          .toBe(true);
-      } else if (name === 'Liabilities') {
-        expect(renderer.root.findAll((node) =>
-          ['All', 'Recurring', 'One-time'].includes(String(node.props.accessibilityLabel)),
-        ).length).toBeGreaterThanOrEqual(3);
-        const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'One-time');
-        if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
-        act(() => oneTimeChip.props.onPress());
-        expect(renderer.root.findAll((node) => String(node.type) === 'chip')
-          .find((node) => node.props.accessibilityLabel === 'One-time')?.props.selected)
-          .toBe(true);
-      } else {
-        expect(renderer.root.findAll((node) =>
-          typeof node.props.accessibilityLabel === 'string'
-          && node.props.accessibilityLabel.startsWith('Sort:'),
-        )).toHaveLength(1);
-      }
-      if (name === 'Transactions' || name === 'Assets' || name === 'Liabilities') {
-        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
-        expect(renderer.root.findAll((node) =>
-          String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
-        )).toHaveLength(1);
-      }
-      const header = renderer.root.findAllByType('header')[0];
-      const headerActionLabels = header?.findAll((node) =>
-        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'More options']
-          .includes(String(node.props.accessibilityLabel)),
-      ).map((node) => node.props.accessibilityLabel);
-      expect(headerActionLabels?.at(-1)).toBe(name === 'Transactions'
-        ? 'Add transaction'
-        : name === 'Goals'
-          ? 'New goal'
-          : name === 'Assets'
-            ? 'New investment'
-            : 'Add a liability');
-      expect(headerActionLabels).toContain('Filter');
-      if (name === 'Transactions') {
-        expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);
-      }
-    } else {
-      expect(renderer.root.findAll((node) =>
+    expect(renderer.root.findAll((node) =>
       typeof node.props.accessibilityLabel === 'string'
       && node.props.accessibilityLabel.startsWith('Sort:'),
-      )).toHaveLength(1);
-    }
+    )).toHaveLength(1);
     act(() => renderer.unmount());
     routeParams.mockReturnValue({});
   });
 
-  it('filters recurring and one-time liabilities and shows a no-matches state', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const recurringA: RecurringLiability = {
-      id: 'filter-liability-a',
-      kind: 'recurring',
-      name: 'Alpha recurring',
-      type: 'Home loan',
-      principal: 12_000,
-      ratePct: 0,
-      startDate: '2026-01-01',
-      tenureMonths: 24,
-      emi: 500,
-      payments: [],
-      settlement: null,
-    };
-    const recurringB: RecurringLiability = {
-      ...recurringA,
-      id: 'filter-liability-b',
-      name: 'Beta recurring',
-    };
-    const oneTime: OneTimeLiability = {
-      id: 'filter-one-time',
-      kind: 'one-time',
-      name: 'Friend loan',
-      type: 'Borrowed money',
-      principal: 1_000,
-      ratePct: 0,
-      startDate: '2026-01-01',
-      dueDate: null,
-      payments: [],
-    };
-    const data: AppData = {
-      ...emptyAppData(todayISO()),
-      liabilities: [recurringA, oneTime, recurringB],
-    };
-    Object.assign(routeData, data);
-    store.data = data;
+  it('lists every Budget history sort key in the SortChip menu', () => {
+    const renderer = renderScreen(React.createElement(BudgetHistoryScreen));
+    const sortButton = renderer.root.find((node) =>
+      typeof node.props.accessibilityLabel === 'string'
+      && node.props.accessibilityLabel.startsWith('Sort:'),
+    );
+    act(() => sortButton.props.onPress());
 
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(LiabilitiesScreen));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-      const cardIds = () => renderer?.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && typeof node.props.testID === 'string'
-        && node.props.testID.startsWith('liability-card-filter-'),
-      ).map((node) => node.props.testID) ?? [];
-      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-        .find((node) => node.props.accessibilityLabel === 'Recurring');
-      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
-      act(() => recurringChip.props.onPress());
-      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
-      expect(renderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Sort:'),
-      )).toHaveLength(1);
-
-      const oneTimeChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-        .find((node) => node.props.accessibilityLabel === 'One-time');
-      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
-      act(() => oneTimeChip.props.onPress());
-      expect(cardIds()).toEqual(['liability-card-filter-one-time']);
-
-      act(() => recurringChip.props.onPress());
-      expect(cardIds().sort()).toEqual(['liability-card-filter-liability-a', 'liability-card-filter-liability-b']);
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-    }
-  });
-
-  it('shows No matches when a liability kind has no records', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const data: AppData = {
-      ...emptyAppData(todayISO()),
-      liabilities: [{
-        id: 'only-one-time',
-        kind: 'one-time',
-        name: 'Friend loan',
-        type: 'Borrowed money',
-        principal: 1_000,
-        ratePct: 0,
-        startDate: '2026-01-01',
-        dueDate: null,
-        payments: [],
-      }],
-    };
-    Object.assign(routeData, data);
-    store.data = data;
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(LiabilitiesScreen));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-      const recurringChip = renderer.root.findAll((node) => String(node.type) === 'chip')
-        .find((node) => node.props.accessibilityLabel === 'Recurring');
-      if (!recurringChip) throw new Error('Recurring liability filter did not render.');
-      act(() => recurringChip.props.onPress());
-      expect(renderer.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-    }
-  });
-
-  it('searches assets by trimmed case-insensitive name or type and composes with type filters', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const assets: ManualHolding[] = [
-      { id: 'gold-antique', kind: 'manual', name: 'Antique collection', type: 'Gold', invested: 1_000, value: 1_500, logs: [] },
-      { id: 'gold-retirement', kind: 'manual', name: 'Retirement reserve', type: 'Gold', invested: 1_000, value: 1_100, logs: [] },
-      { id: 'cash-type', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
-    ];
-    const data: AppData = { ...emptyAppData(todayISO()), holdings: assets };
-    Object.assign(routeData, data);
-    store.data = data;
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      const screen = renderScreen(React.createElement(AssetsScreen));
-      renderer = screen;
-      const search = screen.root.findByProps({ accessibilityLabel: 'Search assets' });
-      act(() => search.props.onChangeText('  gOlD  '));
-      const assetCards = () => screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && typeof node.props.testID === 'string'
-        && node.props.testID.startsWith('asset-card-'),
-      ).map((node) => node.props.testID) ?? [];
-      expect(assetCards()).toEqual(['asset-card-manual-Antique collection', 'asset-card-manual-Retirement reserve']);
-
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-      const sortChip = screen.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Sort:'),
-      )[0];
-      if (!sortChip) throw new Error('Asset sort control did not render with the filter panel.');
-      act(() => sortChip.props.onPress());
-      const nameOption = screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
-      )[0];
-      if (!nameOption) throw new Error('Asset name sort option did not render.');
-      act(() => nameOption.props.onPress());
-      expect(assetCards()).toEqual(['asset-card-manual-Retirement reserve', 'asset-card-manual-Antique collection']);
-
-      const cashChip = screen.root.findAll((node) => String(node.type) === 'chip')
-        .find((node) => node.props.accessibilityLabel === 'Cash');
-      if (!cashChip) throw new Error('Cash asset filter did not render.');
-      act(() => cashChip.props.onPress());
-      expect(screen.root.findAllByProps({ title: 'No matches' })).not.toHaveLength(0);
-
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' CASH '));
-      expect(assetCards()).toEqual(['asset-card-manual-Emergency cash']);
-      act(() => screen.unmount());
-      renderer = renderScreen(React.createElement(AssetsScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Search assets' }).props.value).toBe('');
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-    }
-  });
-
-  it('searches liabilities by trimmed case-insensitive name or type alongside the kind filter', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const oneTime: OneTimeLiability = {
-      id: 'search-friend',
-      kind: 'one-time',
-      name: 'Friend loan',
-      type: 'Borrowed money',
-      principal: 1_000,
-      ratePct: 0,
-      startDate: '2026-01-01',
-      dueDate: null,
-      payments: [],
-    };
-    const other: OneTimeLiability = { ...oneTime, id: 'search-bank', name: 'Bank', type: 'Personal loan' };
-    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, oneTime] };
-    Object.assign(routeData, data);
-    store.data = data;
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      const screen = renderScreen(React.createElement(LiabilitiesScreen));
-      renderer = screen;
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-      const oneTimeChip = screen.root.findAll((node) => String(node.type) === 'chip')
-        .find((node) => node.props.accessibilityLabel === 'One-time');
-      if (!oneTimeChip) throw new Error('One-time liability filter did not render.');
-      act(() => oneTimeChip.props.onPress());
-      const search = screen.root.findByProps({ accessibilityLabel: 'Search liabilities' });
-      act(() => search.props.onChangeText('  LOAN  '));
-      const liabilityCards = () => screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && typeof node.props.testID === 'string'
-        && node.props.testID.startsWith('liability-card-search-'),
-      ).map((node) => node.props.testID) ?? [];
-      const sortChip = screen.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Sort:'),
-      )[0];
-      if (!sortChip) throw new Error('Liability sort control did not render with the filter panel.');
-      act(() => sortChip.props.onPress());
-      const nameOption = screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
-      )[0];
-      if (!nameOption) throw new Error('Name sort option did not render.');
-      act(() => nameOption.props.onPress());
-      expect(liabilityCards()).toEqual(['liability-card-search-friend', 'liability-card-search-bank']);
-
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  fRiEnD  '));
-      expect(liabilityCards()).toEqual(['liability-card-search-friend']);
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  personal loan '));
-      expect(liabilityCards()).toEqual(['liability-card-search-bank']);
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('nothing'));
-      expect(screen.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
-      act(() => screen.unmount());
-      renderer = renderScreen(React.createElement(LiabilitiesScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.value).toBe('');
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-    }
-  });
-
-  it('searches goals by trimmed case-insensitive name and shows No matches', () => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const goals: Goal[] = [
-      { id: 'search-road-trip', name: 'Road trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
-      { id: 'search-japan-trip', name: 'Japan trip', target: 100_000, saved: 10_000, year: 2028, links: [] },
-    ];
-    const data: AppData = { ...emptyAppData(todayISO()), goals };
-    Object.assign(routeData, data);
-    store.data = data;
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      const screen = renderScreen(React.createElement(GoalsScreen));
-      renderer = screen;
-      const search = screen.root.findByProps({ accessibilityLabel: 'Search goals' });
-      act(() => search.props.onChangeText('  tRiP  '));
-      const goalNames = () => screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Edit '),
-      ).map((node) => node.props.accessibilityLabel.slice(5).split(',')[0]) ?? [];
-      expect(goalNames()).toEqual(['Road trip', 'Japan trip']);
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-      const sortChip = screen.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Sort:'),
-      )[0];
-      if (!sortChip) throw new Error('Goal sort control did not render with the filter panel.');
-      act(() => sortChip.props.onPress());
-      const nameOption = screen.root.findAll((node) =>
-        String(node.type) === 'pressable'
-        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
-      )[0];
-      if (!nameOption) throw new Error('Goal name sort option did not render.');
-      act(() => nameOption.props.onPress());
-      expect(goalNames()).toEqual(['Japan trip', 'Road trip']);
-      act(() => screen.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText('not here'));
-      expect(goalNames()).toHaveLength(0);
-      expect(screen.root.findAll((node) =>
-        String(node.type) === 'empty' && node.props.title === 'No matches',
-      )).toHaveLength(1);
-      act(() => screen.unmount());
-      renderer = renderScreen(React.createElement(GoalsScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Search goals' }).props.value).toBe('');
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
+    const menu = renderer.root.find((node) => String(node.type) === 'modal' && node.props.visible === true);
+    const options = menu.findAll((node) => node.props.accessibilityState?.selected !== undefined)
+      .map((node) => node.findAll((child) => String(child.type) === 'text')
+        .map((text) => text.children.join(''))
+        .join(''));
+    for (const label of [
+      'Month',
+      'Planned spend',
+      'Actual spend',
+      'Planned saving',
+      'Actual invested',
+      'Savings rate',
+      'Closing balance',
+      'Outstanding amount',
+      'Template name',
+      'Customized',
+    ]) {
+      expect(options.some((option) => option.includes(label))).toBe(true);
     }
   });
 
@@ -3035,8 +1336,7 @@ describe('route render smoke audit', () => {
     const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
     const previousMonthLabel = monthLabel();
     const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
-    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-panel' });
+    const chipSurface = renderer.root.findByProps({ testID: 'transaction-filter-row' });
     const responder = () => renderer.root.findAll(
       (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
     )[0];
@@ -3052,6 +1352,31 @@ describe('route render smoke audit', () => {
     act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
     expect(monthLabel()).not.toBe(previousMonthLabel);
     expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
+  });
+
+  it.each([
+    ['shortfall', 'expense', 100],
+    ['surplus', 'income', 100],
+  ] as const)('renders the %s month review allocation builder', (mode, type, amount) => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const selectedMonth = shiftMonth(monthKey(todayISO()), -1);
+    const data = {
+      ...emptyAppData(`${selectedMonth}-01`),
+      transactions: [{
+        id: `review-${mode}`,
+        type,
+        amount,
+        category: type === 'expense' ? 'Living' : 'Salary',
+        note: 'Review smoke',
+        date: `${selectedMonth}-10`,
+      }],
+    };
+    useAppStore((state) => state).data = data;
+    routeParams.mockReturnValue({ month: selectedMonth });
+    const renderer = renderScreen(React.createElement(MonthReviewScreen));
+    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
+    useAppStore((state) => state).data = emptyAppData(todayISO());
+    routeParams.mockReturnValue({});
   });
 
   it('explains the first SIP installment and installment tracking dates', () => {
@@ -3152,10 +1477,7 @@ describe('route render smoke audit', () => {
       expect(sheetText.find((node) => node.props.accessibilityLabel)?.props.accessibilityLabel)
         .toContain('₹10,000');
       act(() => sheet.props.onRequestClose());
-      const infoModal = renderer.root.findAll((node) =>
-        String(node.type) === 'modal' && node.props.testID === undefined,
-      )[0];
-      expect(infoModal?.props.visible).toBe(false);
+      expect(renderer.root.find((node) => String(node.type) === 'modal').props.visible).toBe(false);
     } finally {
       if (renderer) act(() => renderer?.unmount());
       storeState.data.holdings = previousHoldings;
@@ -3177,7 +1499,7 @@ describe('route render smoke audit', () => {
   });
 
   it.each(['Festival', 'Donation', 'Gifts'] as const)(
-    'shows the %s budget line in its overview section',
+    'opens the %s transactions from its budget line',
     (category) => {
       const data = jest.requireMock('../../data/useAppData').useAppData() as {
         transactions: unknown[];
@@ -3187,24 +1509,35 @@ describe('route render smoke audit', () => {
       const previousBudgets = data.monthBudgets;
       const month = todayISO().slice(0, 7);
       data.transactions = [];
-      data.monthBudgets = [monthBudgetFromLines(month, ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
+      data.monthBudgets = [{
+        month,
+        templateId: null,
+        templateName: null,
+        customized: false,
+        plannedIncome: 10_000,
+        lines: ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
           category: lineCategory,
           planned: 500,
-        })), {
-        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
-      })];
+        })),
+      }];
       const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
       routeParams.mockReturnValue({ month });
+      router.push.mockClear();
 
       try {
         const renderer = renderScreen(React.createElement(BudgetScreen));
-        const categoryRows = renderer.root.findAll((node) =>
-          String(node.type) === 'view'
-          &&
-          node.props.testID === `budget-row-line:${month}:${category}`,
-        );
-        expect(categoryRows).toHaveLength(1);
-        expect(categoryRows[0]?.findByProps({ accessibilityLabel: `Edit ${category}` })).toBeDefined();
+        const categoryLine = renderer.root.findAll((node) =>
+          node.props.accessibilityRole === 'button'
+          && typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith(`${category}:`),
+        )[0];
+        if (!categoryLine) throw new Error(`${category} budget line did not render.`);
+        act(() => categoryLine.props.onPress());
+        expect(router.push).toHaveBeenCalledWith({
+          pathname: '/(tabs)/transactions',
+          params: { month, category },
+        });
       } finally {
         data.transactions = previousTransactions;
         data.monthBudgets = previousBudgets;
@@ -3213,334 +1546,57 @@ describe('route render smoke audit', () => {
     },
   );
 
-  it('shows setup for an empty month and applies the plan for an unplanned future month', () => {
+  it('keeps the no-budget prompt in one card with both setup actions and empty bills state', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      applyBudgetPlan: jest.Mock;
-      saveAndApplyBudgetPlan: jest.Mock;
-    };
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    const previous = {
-      monthBudgets: data.monthBudgets,
-      budgetPlan: data.budgetPlan,
-      holdings: data.holdings,
-      liabilities: data.liabilities,
-      policies: data.policies,
-      transactions: data.transactions,
-    };
-    const future = shiftMonth(monthKey(todayISO()), 1);
+    const previous = { monthBudgets: data.monthBudgets, holdings: data.holdings, liabilities: data.liabilities, transactions: data.transactions };
     data.monthBudgets = [];
-    data.budgetPlan = null;
     data.holdings = [];
     data.liabilities = [];
-    data.policies = [];
     data.transactions = [];
-    routeParams.mockReturnValue({});
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     router.push.mockClear();
     try {
-      const empty = renderScreen(React.createElement(BudgetScreen));
-      expect(empty.root.findByProps({ testID: 'budget-empty-state' })
-        .findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('No budget yet');
-      act(() => empty.root.findByProps({ accessibilityLabel: 'Create budget' }).props.onPress());
-      expect(actions.saveAndApplyBudgetPlan).toHaveBeenCalledWith(
-        expect.objectContaining({ repeatMonthly: true, repeatFrom: monthKey(todayISO()), items: [] }),
-        monthKey(todayISO()),
-      );
-      act(() => empty.unmount());
-
-      data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000 }],
-      });
-      routeParams.mockReturnValue({ month: future });
-      actions.applyBudgetPlan.mockClear();
-      const futureMonth = renderScreen(React.createElement(BudgetScreen));
-      expect(futureMonth.root.findByProps({ testID: 'budget-empty-state' })
-        .findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('Not planned');
-      const apply = futureMonth.root.findByProps({ accessibilityLabel: `Apply plan to ${formatMonth(future)}` });
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      const noBudget = renderer.root.findByProps({ testID: 'budget-no-plan-card' });
+      expect(noBudget.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
+      expect(noBudget.findAll((node) => String(node.type) === 'card').some((card) =>
+        card.findAll((child) => String(child.type) === 'card').length > 1,
+      )).toBe(false);
+      expect(noBudget.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('No budget for this month');
+      expect(noBudget.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Apply a saved template or set one up. Planned items appear in Transactions as due payments.');
+      const apply = noBudget.findByProps({ accessibilityLabel: 'Apply template' });
+      expect(apply.props.variant).toBe('primary');
+      expect(apply.props.style).toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
       act(() => apply.props.onPress());
-      expect(actions.applyBudgetPlan).toHaveBeenCalledWith(future);
-      act(() => futureMonth.unmount());
-    } finally {
-      Object.assign(data, previous);
-      routeParams.mockReturnValue({});
-    }
-  });
-
-  it.each([1, 1.3, 2])('renders overview and section Cards with responsive edit rows at font scale %s', (fontScale) => {
-    mockFontScale = fontScale;
-    const previousInsets = mockSafeAreaInsets;
-    mockSafeAreaInsets = { top: 24, right: 0, bottom: 0, left: 0 };
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previous = { monthBudgets: data.monthBudgets, transactions: data.transactions };
-    const month = monthKey(todayISO());
-    data.transactions = [
-      { id: 'salary', type: 'income', amount: 500, category: 'Salary', note: '', date: todayISO() },
-      { id: 'food', type: 'expense', amount: 50, category: 'Food', note: '', date: todayISO() },
-      { id: 'transport', type: 'expense', amount: 25, category: 'Transport', note: '', date: todayISO() },
-    ];
-    data.monthBudgets = [monthBudgetFromLines(month, [
-      { category: 'Food', planned: 200 },
-      {
-        category: 'Quarterly maintenance',
-        planned: 0,
-        frequency: 'quarterly',
-        firstDueMonth: month,
-      },
-      {
-        category: 'Annual renewal',
-        planned: 0,
-        frequency: 'yearly',
-        firstDueMonth: shiftMonth(month, -1),
-      },
-      { category: 'Transport', planned: 100 },
-    ], {
-      incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
-    })];
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue({ month });
-    try {
-      const renderer = renderScreen(React.createElement(BudgetScreen));
-      const budgetHeader = renderer.root.findByType('header');
-      expect(budgetHeader.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(1);
-      expect(budgetHeader.findAllByProps({ accessibilityLabel: 'Edit budget' })).toHaveLength(0);
-      const ids = renderer.root.findAll((node) =>
-        String(node.type) === 'view' && typeof node.props.testID === 'string',
-      ).map((node) => node.props.testID);
-      const order = [
-        'budget-cash-flow',
-        'budget-overview-card',
-        'budget-pace',
-        'budget-section-income',
-        'budget-section-survival',
-        'budget-section-savings-investments',
-        'budget-section-wants',
-        'budget-section-festival-donations-culture',
-        'budget-section-unexpected-extras',
-        'budget-section-debt-repayments',
-        'budget-section-insurance',
-      ];
-      const positions = order.map((id) => ids.indexOf(id));
-      expect(positions.every((position, index) => index === 0 || position > (positions[index - 1] ?? -1))).toBe(true);
-      expect(renderer.root.findAll((node) => String(node.type) === 'card')).toHaveLength(11);
-      expect(renderer.root.findByProps({ testID: 'budget-section-list' })).toBeDefined();
-      const survival = renderer.root.findByProps({ testID: 'budget-section-survival' });
-      expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('Survival (Needs)');
-      expect(renderer.root.findByProps({ testID: 'budget-row-line:' + month + ':Food' })).toBeDefined();
-      const foodRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Food` });
-      expect(foodRow.findByProps({ accessibilityLabel: 'Edit Food' })).toBeDefined();
-      expect(foodRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('Food');
-      expect(renderer.root.findAll((node) =>
-        ['badge', 'chip', 'progress'].includes(String(node.type)),
-      )).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ testID: 'budget-plan-summary' })).toHaveLength(0);
-      const sectionActions = survival.findByProps({ testID: 'budget-section-actions-survival' });
-      for (const label of ['Rename section', 'Delete section', 'Add item']) {
-        expect(sectionActions.findAll((node) =>
-          String(node.type) === 'pressable' && node.props.accessibilityLabel === label,
-        )).toHaveLength(1);
-      }
-      expect(sectionActions.findAll((node) => String(node.type) === 'pressable').every((button) => {
-        const style = JSON.stringify(button.props.style);
-        return style.includes('"width":44') && style.includes('"height":44')
-          && typeof button.props.accessibilityHint === 'string';
-      })).toBe(true);
-      expect(sectionActions.findAll((node) =>
-        node.props.name === 'edit-2' || node.props.name === 'trash-2' || node.props.name === 'plus',
-      ).map((node) => node.props.name)).toEqual(['edit-2', 'trash-2', 'plus']);
-      expect(survival.findAll((node) => String(node.type) === 'pressable'
-        && node.props.accessibilityState?.expanded !== undefined)).toHaveLength(0);
-      expect(survival.findAll((node) => String(node.type) === 'card')).toHaveLength(1);
-      const foodRowText = foodRow.findAllByType('text').map((node) => node.children.join('')).join(' ');
-      expect(foodRowText).toContain('Food');
-      expect(foodRowText).toContain('50');
-      expect(foodRow.findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([50, 200]);
-      expect(foodRow.findAll((node) => typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Food, '))[0]?.props.accessibilityLabel)
-        .toBe(`Food, ${formatAmount(50, 'exact', 1)} of ${formatAmount(200, 'exact', 1)}`);
-      const quarterlyRow = renderer.root.findByProps({
-        testID: `budget-row-line:${month}:Quarterly maintenance`,
-      });
-      expect(quarterlyRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain('Quarterly maintenance · Quarterly');
-      const annualRow = renderer.root.findByProps({
-        testID: `budget-row-line:${month}:Annual renewal`,
-      });
-      expect(annualRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
-        .toContain(`Next due ${formatDate(`${shiftMonth(month, 11)}-01`).slice(2)}`);
-      const transportRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Transport` });
-      expect(JSON.stringify(foodRow.props.style)).toContain('"borderBottomWidth":1');
-      expect(JSON.stringify(transportRow.props.style)).not.toContain('"borderBottomWidth":1');
-      const sectionHeader = renderer.root.findByProps({ testID: 'budget-section-header-survival' });
-      expect(JSON.stringify(sectionHeader.props.style)).toContain(
-        `"flexDirection":"${fontScale >= 1.3 ? 'column' : 'row'}"`,
-      );
-      const sectionActionRow = renderer.root.findByProps({ testID: 'budget-section-actions-survival' });
-      if (fontScale >= 1.3) {
-        expect(JSON.stringify(sectionActionRow.props.style)).toContain('"alignSelf":"flex-end"');
-      }
-      const overviewCard = renderer.root.findByProps({ testID: 'budget-overview-card' });
-      const overviewStyleText = overviewCard.findAll((node) => node.props.style !== undefined)
-        .map((node) => JSON.stringify(node.props.style))
-        .join(' ');
-      expect(overviewStyleText).toContain('"padding":16');
-      expect(renderer.root.findByProps({ testID: 'stacked-track' }).props.style)
-        .toEqual(expect.arrayContaining([expect.objectContaining({ height: 12, width: '100%' })]));
-      const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
-      expect(header.findAllByType('text').map((node) => node.children.join('')))
-        .toEqual(['Actual', 'Planned']);
-      const overviewAccessibility = renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel;
-      for (const label of ['Income', 'Spending', 'Investing', 'Left']) {
-        const labelIndex = overviewAccessibility.indexOf(label);
-        const actualIndex = overviewAccessibility.indexOf(' actual and ', labelIndex);
-        const plannedIndex = overviewAccessibility.indexOf(' planned', actualIndex);
-        expect(labelIndex).toBeGreaterThanOrEqual(0);
-        expect(actualIndex).toBeGreaterThan(labelIndex);
-        expect(plannedIndex).toBeGreaterThan(actualIndex);
-      }
-      expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
-        .toBe(overviewAccessibility);
-      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
-        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([500, 1_000]);
-      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
-        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
-      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
-      expect(paceAccessibility.indexOf(' actual;')).toBeLessThan(paceAccessibility.indexOf(' planned'));
-      expect(['income', 'spending', 'investing', 'left'].map((name) =>
-        renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
-      )).toHaveLength(4);
-      expect(overviewCard.findAll((node) =>
-        String(JSON.stringify(node.props.style)).includes('"position":"absolute"'),
-      )).toHaveLength(0);
-      const rowContainer = renderer.root.findAll((node) =>
-        String(node.type) === 'view' && node.props.testID === `budget-row-line:${month}:Food`,
-      )[0];
-      if (!rowContainer) throw new Error('Food overview row did not render.');
-      const expectedDirection = fontScale >= 1.3 ? 'column' : 'row';
-      expect(rowContainer.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ flexDirection: expectedDirection }),
-      ]));
-    } finally {
-      Object.assign(data, previous);
-      routeParams.mockReturnValue({});
-      mockFontScale = 1;
-      mockSafeAreaInsets = previousInsets;
-    }
-  });
-
-  it('opens plan item editing as a scoped budget-item route', async () => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    const month = monthKey(todayISO());
-    const previous = { monthBudgets: data.monthBudgets, budgetPlan: data.budgetPlan };
-    const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 200 }], {
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-    });
-    data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-      repeatMonthly: true,
-      repeatFrom: month,
-    });
-    const snapshotItemId = snapshot.items.find((item) => item.name === 'Food')?.id;
-    if (!snapshotItemId) throw new Error('Food snapshot item fixture missing.');
-    data.monthBudgets = [snapshot];
-    routeParams.mockReturnValue({ month });
-    router.push.mockClear();
-
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(BudgetScreen));
-      if (!renderer) throw new Error('Budget screen renderer was not created.');
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Edit Food' }).props.onPress());
+      expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === 'Apply a template'))
+        .toBe(true);
+      act(() => noBudget.findByProps({ accessibilityLabel: 'Set up budget' }).props.onPress());
       expect(router.push).toHaveBeenCalledWith({
-        pathname: '/budget-item-form',
-        params: { month, sectionId: 'survival', itemId: snapshotItemId, scope: 'month' },
+        pathname: '/budget-template-form',
+        params: { wizard: '1' },
       });
+      expect(renderer.root.findByProps({ testID: 'budget-bills-list' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('No bills due this month');
     } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(data, previous);
-      routeParams.mockReturnValue({});
+      data.monthBudgets = previous.monthBudgets;
+      data.holdings = previous.holdings;
+      data.liabilities = previous.liabilities;
+      data.transactions = previous.transactions;
     }
   });
 
-  it('preserves the routed month, hides category management in past months, and keeps Cash flow labels', () => {
+  it.each([1, 1.3, 2])('renders compact bills rows and clear controls at font scale %s', (fontScale) => {
+    mockFontScale = fontScale;
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousBudgets = data.monthBudgets;
-    const month = '2026-09';
-    data.monthBudgets = [monthBudgetFromLines(month, [], {
-      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-    })];
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    routeParams.mockReturnValue({ month });
-    router.push.mockClear();
-    try {
-      const renderer = renderScreen(React.createElement(BudgetScreen));
-      const header = renderer.root.findByType('header');
-      expect(header.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
-      expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
-      expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === formatMonth(month))).toBe(true);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Opening balance' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Closing balance' })).toBeDefined();
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Back to Transactions' })).toHaveLength(0);
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Review' })).toHaveLength(0);
-      expect(header.findAllByProps({ accessibilityLabel: 'Add category' })).toHaveLength(0);
-    } finally {
-      data.monthBudgets = previousBudgets;
-      routeParams.mockReturnValue({});
-    }
-  });
-
-  it('limits forward navigation to 24 months and keeps past months read-only', () => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousBudgets = data.monthBudgets;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const current = monthKey(todayISO());
-    const past = shiftMonth(current, -1);
-    data.monthBudgets = [monthBudgetFromLines(past, [{ category: 'Food', planned: 500 }], {
-      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-    })];
-    routeParams.mockReturnValue({ month: past });
-    try {
-      const pastRenderer = renderScreen(React.createElement(BudgetScreen));
-      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Edit Food' })).toHaveLength(0);
-      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Rename section' })).toHaveLength(0);
-      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Delete section' })).toHaveLength(0);
-      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Add item' })).toHaveLength(0);
-      expect(pastRenderer.root.findAllByProps({ accessibilityLabel: 'Add income' })).toHaveLength(0);
-      act(() => pastRenderer.unmount());
-
-      routeParams.mockReturnValue({ month: shiftMonth(current, 24) });
-      const futureRenderer = renderScreen(React.createElement(BudgetScreen));
-      expect(futureRenderer.root.findByProps({ accessibilityLabel: 'Next month' }).props.disabled).toBe(true);
-      act(() => futureRenderer.unmount());
-    } finally {
-      data.monthBudgets = previousBudgets;
-      routeParams.mockReturnValue({});
-    }
-  });
-
-  it('opens linked plan, liability, and policy rows in their edit routes', () => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previous = {
-      monthBudgets: data.monthBudgets,
-      holdings: data.holdings,
-      liabilities: data.liabilities,
-      policies: data.policies,
-      transactions: data.transactions,
-    };
+    const previous = { monthBudgets: data.monthBudgets, holdings: data.holdings, liabilities: data.liabilities, transactions: data.transactions };
     const month = monthKey(todayISO());
-    data.monthBudgets = [monthBudgetFromLines(month, [], {
-      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
-    })];
     data.transactions = [];
+    data.liabilities = [];
     data.holdings = [{
-      id: 'overview-plan',
+      id: 'bills-plan',
       kind: 'plan',
       name: 'Monthly SIP',
       type: 'Mutual fund / SIP',
@@ -3549,99 +1605,369 @@ describe('route render smoke audit', () => {
       ratePct: 0,
       stepUpPct: 0,
       tenureYears: 1,
-      startDate: `${month}-05`,
-      trackFrom: `${month}-05`,
+      startDate: `${month}-01`,
+      trackFrom: `${month}-01`,
       opening: 0,
       actualValue: null,
       actualValueDate: null,
       logs: [],
     }];
-    data.liabilities = [{
-      id: 'overview-liability',
-      kind: 'one-time',
-      name: 'Friend loan',
-      type: 'Borrowed money',
-      principal: 500,
-      ratePct: 0,
-      startDate: `${month}-01`,
-      dueDate: `${month}-15`,
-      payments: [],
+    data.monthBudgets = [{
+      month,
+      templateId: null,
+      templateName: null,
+      customized: false,
+      plannedIncome: 1_000,
+      lines: [{ category: 'Food', planned: 200 }],
     }];
-    data.policies = [{
-      id: 'overview-policy',
-      name: 'Health policy',
-      insurer: 'Example',
-      kind: 'health',
-      premium: 60,
-      frequency: 'monthly',
-      startDate: `${month}-05`,
-      status: 'active',
-      premiumYears: 1,
-      trackFrom: `${month}-05`,
-      currentValue: null,
-      valueAsOf: null,
-      payments: [],
+    try {
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      const bills = renderer.root.findByProps({ testID: 'budget-bills-section' });
+      const list = bills.findByProps({ testID: 'budget-bills-list' });
+      const cards = list.findAll((node) => String(node.type) === 'card');
+      expect(cards).toHaveLength(1);
+      expect(bills.findByProps({ testID: 'budget-bills-header' }).props.style)
+        .toMatchObject({ justifyContent: 'space-between', flexDirection: 'row' });
+      expect(bills.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('2 due');
+      const rowIds = new Set(list.findAll((node) =>
+        node.props.testID === 'pending-item-due:plan:bills-plan:plan:0'
+        || node.props.testID === `pending-item-budget:${month}:Food`,
+      ).map((row) => row.props.testID));
+      expect(rowIds).toEqual(new Set([
+        'pending-item-due:plan:bills-plan:plan:0',
+        `pending-item-budget:${month}:Food`,
+      ]));
+      const rows = [...rowIds].map((testID) => list.findByProps({ testID }));
+      for (const row of rows) {
+        expect(row.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ borderBottomWidth: 1 })]));
+        expect(row.findAllByProps({ accessibilityLabel: 'Clear due' })).toHaveLength(1);
+      }
+      const sipRow = rows.find((row) => row.props.testID === 'pending-item-due:plan:bills-plan:plan:0');
+      if (!sipRow) throw new Error('SIP due row did not render.');
+      const details = sipRow.findAll((node) =>
+        String(node.type) === 'view' && node.props.style?.some?.((style: unknown) =>
+          typeof style === 'object' && style !== null && 'justifyContent' in style,
+        ),
+      )[0];
+      expect(details).toBeDefined();
+      if (fontScale >= 1.3) {
+        expect(details?.props.style).toEqual(expect.arrayContaining([
+          expect.objectContaining({ flexDirection: 'column' }),
+        ]));
+      } else {
+        expect(details?.props.style).toEqual(expect.arrayContaining([
+          expect.objectContaining({ flexDirection: 'row' }),
+        ]));
+      }
+    } finally {
+      data.monthBudgets = previous.monthBudgets;
+      data.holdings = previous.holdings;
+      data.liabilities = previous.liabilities;
+      data.transactions = previous.transactions;
+      mockFontScale = 1;
+    }
+  });
+
+  it('shows one Budget menu with ordered Budget items followed by Home menu entries', () => {
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    const renderer = renderScreen(React.createElement(BudgetScreen));
+    const header = renderer.root.findByType('header');
+    expect(header.findAllByType('button').map((button) => button.props.accessibilityLabel))
+      .toEqual(['More options']);
+    expect(header.findAllByProps({ testID: 'header-menu-indicator' })).toHaveLength(0);
+    act(() => header.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+    const menuLabels = header.findAllByType('button').slice(1)
+      .map((button) => button.props.accessibilityLabel);
+    const standardLabels = buildAppMenu({
+      isDev: typeof __DEV__ !== 'undefined' && __DEV__,
+      themeLabel: 'System',
+    }).map(({ label }) => label);
+    expect(menuLabels).toEqual([
+      'Budget history',
+      'Month review',
+      'Budget templates',
+      ...standardLabels,
+    ]);
+    const menuItems = header.findAllByType('button').slice(1);
+    act(() => menuItems[0]?.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-history');
+    act(() => menuItems[1]?.props.onPress());
+    expect(router.push).toHaveBeenLastCalledWith('/month-review');
+    act(() => menuItems[2]?.props.onPress());
+    expect(router.push).toHaveBeenLastCalledWith('/budget-templates');
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Apply template' })).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ testID: 'budget-quick-actions' })).toHaveLength(0);
+  });
+
+  it('marks a reviewable month in the Budget header and opens that month review', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
+    const previousTransactions = data.transactions;
+    const reviewMonth = shiftMonth(todayISO().slice(0, 7), -1);
+    data.transactions = [{
+      id: 'pending-budget-review',
+      type: 'income',
+      amount: 100,
+      category: 'Salary',
+      note: 'Prior income',
+      date: `${reviewMonth}-10`,
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      const header = renderer.root.findByType('header');
+      const menuButton = header.findByProps({ accessibilityLabel: 'More options' });
+      expect(menuButton.props.menuIndicator).toBe(true);
+      expect(header.findAllByProps({ testID: 'header-menu-indicator' })).toHaveLength(1);
+      act(() => menuButton.props.onPress());
+      const review = header.findByProps({ accessibilityLabel: 'Month review, review pending' });
+      act(() => review.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: '/month-review',
+        params: { month: reviewMonth },
+      });
+    } finally {
+      data.transactions = previousTransactions;
+    }
+  });
+
+  it('expands earned-income sources and labels unexpected spending clearly', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
+    const store = useAppStore((state) => state);
+    const originalRouteData = { transactions: routeData.transactions, monthBudgets: routeData.monthBudgets };
+    const originalStoreData = {
+      transactions: store.data.transactions,
+      monthBudgets: store.data.monthBudgets,
+    };
+    const month = todayISO().slice(0, 7);
+    const transactions: Transaction[] = [
+      { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: `${month}-01` },
+      { id: 'rental', type: 'income', amount: 500, category: 'Rental', note: '', date: `${month}-02` },
+      { id: 'borrowed', type: 'income', amount: 200, category: 'Borrowed', note: '', date: `${month}-03` },
+      { id: 'unexpected', type: 'expense', amount: 100, category: 'Unexpected', note: '', date: `${month}-04` },
+      { id: 'other-investment', type: 'invest', amount: 150, category: 'Other investments', note: '', date: `${month}-05` },
+    ];
+    const monthBudgets = [{
+      month,
+      templateId: null,
+      templateName: null,
+      customized: false,
+      plannedIncome: 1_000,
+      lines: [
+        { category: 'Unexpected', planned: 200 },
+        { category: 'Other investments', planned: 300 },
+      ],
+    }];
+    Object.assign(routeData, { transactions, monthBudgets });
+    Object.assign(store.data, { transactions, monthBudgets });
+    try {
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      act(() => renderer.root.findByProps({ testID: 'budget-income-summary' }).props.onPress());
+      const renderedText = renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String))
+        .join(' ');
+      expect(renderedText).toContain('Income planned versus actual');
+      expect(renderedText).toContain('Rental');
+      expect(renderedText).toContain('Salary');
+      expect(renderedText).toContain('Income above plan');
+      expect(renderedText).toContain('Other money in (not income)');
+      expect(renderedText).toContain('Unexpected extras');
+    } finally {
+      Object.assign(routeData, originalRouteData);
+      Object.assign(store.data, originalStoreData);
+    }
+  });
+
+  it('shows earned income by source and separates other money in on Month review', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
+    const store = useAppStore((state) => state);
+    const originalRouteData = { transactions: routeData.transactions };
+    const originalStoreTransactions = store.data.transactions;
+    const reviewMonth = shiftMonth(monthKey(todayISO()), -1);
+    const transactions: Transaction[] = [
+      { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: `${reviewMonth}-01` },
+      { id: 'rental', type: 'income', amount: 500, category: 'Rental', note: '', date: `${reviewMonth}-02` },
+      { id: 'borrowed', type: 'income', amount: 200, category: 'Borrowed', note: '', date: `${reviewMonth}-03` },
+      { id: 'expense', type: 'expense', amount: 100, category: 'Food', note: '', date: `${reviewMonth}-04` },
+    ];
+    Object.assign(routeData, { transactions });
+    store.data.transactions = transactions;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    routeParams.mockReturnValue({ month: reviewMonth });
+    try {
+      const renderer = renderScreen(React.createElement(MonthReviewScreen));
+      const text = renderer.root.findAllByType('text')
+        .flatMap((node) => node.children.map(String))
+        .join(' ');
+      expect(text).toContain('Income by source');
+      expect(text).toMatch(new RegExp(`Salary\\s*·\\s*${formatAmount(1_000, 'exact', 1)}`));
+      expect(text).toMatch(new RegExp(`Rental\\s*·\\s*${formatAmount(500, 'exact', 1)}`));
+      expect(text).toMatch(new RegExp(`Other money in \\(not income\\)\\s*·\\s*${formatAmount(200, 'exact', 1)}`));
+    } finally {
+      Object.assign(routeData, originalRouteData);
+      store.data.transactions = originalStoreTransactions;
+      routeParams.mockReturnValue({});
+    }
+  });
+
+  it('shows cash-flow positions and keeps plan editing separate from template application', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as {
+      transactions: Transaction[];
+      monthBudgets?: unknown[];
+    };
+    const previousTransactions = data.transactions;
+    const previousBudgets = data.monthBudgets;
+    const selectedMonth = '2026-09';
+    const priorMonth = shiftMonth(selectedMonth, -1);
+    data.transactions = [
+      { id: 'prior-income', type: 'income', amount: 2_000, category: 'Salary', note: 'Prior', date: `${priorMonth}-10` },
+      { id: 'prior-expense', type: 'expense', amount: 3_000, category: 'Food', note: 'Prior', date: `${priorMonth}-12` },
+      { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
+      { id: 'selected-expense', type: 'expense', amount: 1_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
+      { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
+    ];
+    data.monthBudgets = [{
+      month: selectedMonth,
+      templateId: null,
+      templateName: 'September',
+      customized: true,
+      plannedIncome: 10_000,
+      lines: [
+        { category: 'Food', planned: 4_000 },
+        { category: 'Other investments', planned: 1_000 },
+      ],
     }];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    routeParams.mockReturnValue({ month });
-    router.push.mockClear();
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      const activeRenderer = renderScreen(React.createElement(BudgetScreen));
-      renderer = activeRenderer;
-      act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Monthly SIP' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({ pathname: '/investment-form', params: { id: 'overview-plan' } });
-      act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Friend loan' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({ pathname: '/liability-form', params: { id: 'overview-liability' } });
-      const policyRow = activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Health premium' });
-      act(() => policyRow.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith({ pathname: '/policy-form', params: { id: 'overview-policy' } });
-    } finally {
-      if (renderer) act(() => renderer?.unmount());
-      Object.assign(data, previous);
-      routeParams.mockReturnValue({});
-    }
-  });
-
-  it.each([
-    [-0, 0, 'neutral'],
-    [-0.001, 0, 'neutral'],
-    [0, 0, 'neutral'],
-    [0.004, 0, 'neutral'],
-    [1500, 1500, 'primary'],
-    [-1500, -1500, 'err'],
-  ] as const)('normalizes Budget closing balance %s with matching tone and accessible label', (input, expected, tone) => {
-    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousTransactions = data.transactions;
-    const selectedMonth = '2026-09';
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     routeParams.mockReturnValue({ month: selectedMonth });
-    data.transactions = input < 0
-      ? [{ id: 'balance-expense', type: 'expense', amount: Math.abs(input), category: 'Food', note: '', date: `${selectedMonth}-10` }]
-      : input > 0
-        ? [{ id: 'balance-income', type: 'income', amount: input, category: 'Salary', note: '', date: `${selectedMonth}-10` }]
-        : [];
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    router.push.mockClear();
     try {
-      renderer = renderScreen(React.createElement(BudgetScreen));
-      const closingAmount = renderer.root.findByProps({ testID: 'budget-cash-flow' })
-        .findAllByType(AmountText)
-        .find((node) => node.props.value === expected && node.props.tone === tone);
-      if (!closingAmount) throw new Error('Budget closing balance did not render.');
-      expect(closingAmount.props.value).toBe(expected);
-      expect(closingAmount.props.tone).toBe(tone);
-      expect(closingAmount.findAll((node) =>
-        node.props.accessibilityLabel === formatINR(expected),
-      ).length).toBeGreaterThan(0);
-      expect(closingAmount.findAll((node) =>
-        node.type === 'text' && node.children.join('') === formatAmount(expected, 'row', 1),
-      ).length).toBeGreaterThan(0);
+      const renderer = renderScreen(React.createElement(BudgetScreen));
+      const text = renderer.root.findAll((node) => String(node.type) === 'text')
+        .flatMap((node) => node.children.map(String));
+      for (const expected of [
+        'Cash flow',
+        'Opening balance',
+        'Previous month ',
+        'deficit',
+        'This month’s flow',
+        'Closing balance',
+        'Deficit',
+        'Net inflow',
+        'Plan summary',
+        'Planned income',
+        'Planned spending',
+        'Planned savings',
+        'Unallocated',
+        formatAmount(-1_000, 'tile', 1),
+        formatAmount(1_000, 'row', 1),
+        formatAmount(3_500, 'tile', 1),
+        formatAmount(2_500, 'tile', 1),
+        formatAmount(10_000, 'row', 1),
+        formatAmount(4_000, 'row', 1),
+        formatAmount(1_000, 'row', 1),
+        formatAmount(5_000, 'row', 1),
+      ]) {
+        expect(text).toContain(expected);
+      }
+      expect(renderer.root.findByProps({ label: 'Customized' })).toBeDefined();
+      const planAction = renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith(`Edit budget plan for ${formatMonth(selectedMonth)}.`),
+      )[0];
+      expect(planAction).toBeDefined();
+      expect(planAction?.props.accessibilityRole).toBe('button');
+      expect(planAction?.props.accessibilityLabel).toMatch(/planned income/i);
+      expect(planAction?.props.accessibilityLabel).toMatch(/planned spending/i);
+      expect(planAction?.props.accessibilityLabel).toMatch(/planned savings/i);
+      expect(planAction?.props.accessibilityLabel).toMatch(/unallocated/i);
+      expect(renderer.root.findAll((node) => node.props.accessibilityLabel === 'Customize this month’s budget'))
+        .toHaveLength(0);
+
+      data.transactions = [
+        ...data.transactions.filter((transaction) => transaction.date.slice(0, 7) !== selectedMonth),
+        { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
+        { id: 'selected-expense', type: 'expense', amount: 6_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
+        { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
+      ];
+      const negativeRenderer = renderScreen(React.createElement(BudgetScreen));
+      const negativeText = negativeRenderer.root.findAll((node) => String(node.type) === 'text')
+        .flatMap((node) => node.children.map(String));
+      expect(negativeText).toEqual(expect.arrayContaining([
+        'Net outflow',
+        'Deficit',
+        formatAmount(-1_500, 'tile', 1),
+        formatAmount(-2_500, 'tile', 1),
+      ]));
+      data.transactions = [
+        { id: 'prior-income', type: 'income', amount: 2_000, category: 'Salary', note: 'Prior', date: `${priorMonth}-10` },
+        { id: 'prior-expense', type: 'expense', amount: 3_000, category: 'Food', note: 'Prior', date: `${priorMonth}-12` },
+        { id: 'selected-income', type: 'income', amount: 5_000, category: 'Salary', note: 'Current', date: `${selectedMonth}-10` },
+        { id: 'selected-expense', type: 'expense', amount: 1_000, category: 'Food', note: 'Current', date: `${selectedMonth}-12` },
+        { id: 'selected-invest', type: 'invest', amount: 500, category: 'Fund', note: 'Current', date: `${selectedMonth}-14` },
+      ];
+
+      const review = renderer.root.findByProps({ accessibilityLabel: 'Review' });
+      act(() => review.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: priorMonth } });
+
+      router.push.mockClear();
+      const summary = renderer.root.findByProps({ testID: 'budget-plan-summary-edit' });
+      act(() => summary.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: '/budget-month-form',
+        params: { month: selectedMonth },
+      });
+      router.push.mockClear();
+      act(() => renderer.root.findByProps({ accessibilityLabel: 'Apply template' }).props.onPress());
+      expect(router.push).not.toHaveBeenCalled();
+      expect(renderer.root.findAll((node) => String(node.type) === 'modal')
+        .some((modal) => modal.props.visible)).toBe(true);
     } finally {
-      if (renderer) act(() => renderer?.unmount());
       data.transactions = previousTransactions;
+      data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
+      mockFontScale = 1;
     }
   });
 
+  it('returns from Budget history to the tab with the selected month', () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as {
+      monthBudgets?: unknown[];
+    };
+    const previousBudgets = data.monthBudgets;
+    const month = '2026-09';
+    data.monthBudgets = [{
+      month,
+      templateId: null,
+      templateName: 'September',
+      customized: false,
+      plannedIncome: 10_000,
+      lines: [{ category: 'Food', planned: 2_000 }],
+    }];
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+    router.push.mockClear();
+    try {
+      const renderer = renderScreen(React.createElement(BudgetHistoryScreen));
+      const row = renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith(`Open budget for ${formatMonth(month)}, closing balance`),
+      )[0];
+      if (!row) throw new Error('Selected month budget history row was not rendered.');
+      act(() => row.props.onPress());
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month } });
+    } finally {
+      data.monthBudgets = previousBudgets;
+    }
+  });
+
+  it('shows no tab bar on Budget history or Month review stack routes', () => {
+    const history = renderScreen(React.createElement(BudgetHistoryScreen));
+    expect(history.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
+
+    const review = renderScreen(React.createElement(MonthReviewScreen));
+    expect(review.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
+  });
 });

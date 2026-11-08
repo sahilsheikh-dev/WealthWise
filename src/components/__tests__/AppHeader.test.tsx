@@ -132,7 +132,7 @@ describe('AppHeader', () => {
   });
 
   it('renders only the supplied right-side content for every menu/action combination', () => {
-    const menu = [{ label: 'Only menu', icon: 'edit-2' as const, onPress: jest.fn() }];
+    const menu = [{ label: 'Only menu', icon: 'edit' as const, onPress: jest.fn() }];
     const action = { icon: 'plus' as const, label: 'Add', onPress: jest.fn() };
     const cases = [
       { props: { title: 'Actions', rightActions: [action] }, expected: ['Add'] },
@@ -170,41 +170,100 @@ describe('AppHeader', () => {
     expect(title?.props.numberOfLines).toBe(1);
   });
 
-  it('orders a leading menu before Filter and leaves plus at the far right', () => {
+  it('shows the ordered Budget menu, review dot, navigation and Home menu entries', () => {
+    const history = jest.fn();
+    const review = jest.fn();
+    const templates = jest.fn();
+    const budgetMenu = [
+      { icon: 'calendar' as const, label: 'Budget history', onPress: history },
+      { icon: 'edit' as const, label: 'Month review, review pending', onPress: review },
+      { icon: 'database' as const, label: 'Budget templates', onPress: templates },
+      { icon: 'download' as const, label: 'Backup and restore', onPress: mockMenuAction },
+      { icon: 'lock' as const, label: 'Security', onPress: mockMenuAction },
+      { icon: 'user' as const, label: 'Profile', onPress: mockMenuAction },
+      { icon: 'sliders' as const, label: 'Theme', onPress: mockMenuAction },
+      { icon: 'trash-2' as const, label: 'Erase all data', onPress: mockMenuAction },
+    ];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(
-        <AppHeader
-          title="Transactions"
-          menuPlacement="leading"
-          menu={[]}
-          rightActions={[
-            { icon: 'filter', label: 'Filter', onPress: jest.fn(), expanded: false, showIndicator: true },
-            { icon: 'plus', label: 'Add transaction', onPress: jest.fn() },
-          ]}
-        />,
+        <AppHeader title="Budget" menu={budgetMenu} menuIndicator />,
       );
     });
-    if (!renderer) throw new Error('Transactions header did not render.');
-    const actions = renderer.root.findAll((node) =>
-      String(node.type) === 'pressable' && node.props.accessibilityRole === 'button',
-    );
-    expect(actions.map((action) => action.props.accessibilityLabel))
-      .toEqual(['More options', 'Filter', 'Add transaction']);
-    expect(actions[1]?.props.accessibilityState).toMatchObject({ expanded: false });
+    if (!renderer) throw new Error('Budget header did not render.');
+    const moreOptions = renderer.root.findByProps({ accessibilityLabel: 'More options' });
+    expect(moreOptions.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ width: 44, height: 44 }),
+    ]));
     expect(renderer.root.findAll((node) =>
-      String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
+      String(node.type) === 'view' && node.props.testID === 'header-menu-indicator',
+    )).toHaveLength(1);
+    act(() => moreOptions.props.onPress());
+    const menuItems = renderer.root.findAllByProps({ accessibilityRole: 'menuitem' });
+    expect(menuItems.map((item) => item.props.accessibilityLabel)).toEqual([
+      'Budget history',
+      'Month review, review pending',
+      'Budget templates',
+      'Backup and restore',
+      'Security',
+      'Profile',
+      'Theme',
+      'Erase all data',
+    ]);
+    act(() => menuItems[0]?.props.onPress());
+    act(() => menuItems[1]?.props.onPress());
+    act(() => menuItems[2]?.props.onPress());
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(review).toHaveBeenCalledTimes(1);
+    expect(templates).toHaveBeenCalledTimes(1);
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'feather' && ['calendar', 'edit', 'database'].includes(String(node.props.name)),
+    )).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'History' })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Templates' })).toHaveLength(0);
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'pressable' && node.props.accessibilityLabel === 'More options',
     )).toHaveLength(1);
   });
 
-  it('keeps the Budget header free of a menu when explicitly disabled', () => {
+  it('omits the review dot when there is no reviewable month', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
-      renderer = TestRenderer.create(<AppHeader title="Budget" showDefaultMenu={false} />);
+      renderer = TestRenderer.create(<AppHeader title="Budget" menu={[]} />);
     });
     if (!renderer) throw new Error('Budget header did not render.');
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
-    expect(renderer.root.findAllByProps({ accessibilityRole: 'menuitem' })).toHaveLength(0);
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'view' && node.props.testID === 'header-menu-indicator',
+    )).toHaveLength(0);
+  });
+
+  it('keeps explicit menu items ahead of the standard Home menu items', () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <AppHeader title="Budget" menu={[
+          { icon: 'calendar', label: 'Budget history', onPress: jest.fn() },
+          { icon: 'edit', label: 'Month review', onPress: jest.fn() },
+          { icon: 'database', label: 'Budget templates', onPress: jest.fn() },
+          ...[
+            { icon: 'download' as const, label: 'Backup and restore' },
+            { icon: 'lock' as const, label: 'Security' },
+            { icon: 'user' as const, label: 'Profile' },
+            { icon: 'sliders' as const, label: 'Theme' },
+            { icon: 'trash-2' as const, label: 'Erase all data' },
+          ].map((item) => ({ ...item, onPress: mockMenuAction })),
+        ]} />,
+      );
+    });
+    const currentRenderer = renderer;
+    if (!currentRenderer) throw new Error('Budget header did not render.');
+    act(() => currentRenderer.root.findByProps({ accessibilityLabel: 'More options' }).props.onPress());
+    expect(currentRenderer.root.findAllByProps({ accessibilityRole: 'menuitem' })
+      .map((item) => item.props.accessibilityLabel))
+      .toEqual([
+        'Budget history', 'Month review', 'Budget templates',
+        'Backup and restore', 'Security', 'Profile', 'Theme', 'Erase all data',
+      ]);
   });
 
   it('preserves two-line title fitting for headers with no more than two actions', () => {

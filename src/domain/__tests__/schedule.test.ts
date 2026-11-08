@@ -1,6 +1,5 @@
 import { upcomingDue, liabilitySchedule, planNextRows, planSchedule } from '../schedule';
 import { behindBy, scheduledDate } from '../sip';
-import { defaultCoverGoals } from '../coverGoals';
 import type {
   AppData,
   ManualHolding,
@@ -62,9 +61,7 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
   holdings,
   liabilities,
   policies: [],
-  coverGoals: defaultCoverGoals(),
   budget: null,
-  budgetPlan: null,
   efCustomBuckets: [],
   efBucketLinks: {},
 });

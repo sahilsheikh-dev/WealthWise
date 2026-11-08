@@ -17,14 +17,6 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
-import {
-  addPolicy as addPolicyData,
-  deletePolicy as deletePolicyData,
-  setPolicyStatus as setPolicyStatusData,
-  updatePolicy,
-  type PolicyPatch,
-} from '../domain/policyActions';
-import { setCoverGoalTarget as setCoverGoalTargetData } from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -48,39 +40,33 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
+  addEfCustomBucket,
+  deleteEfCustomBucket,
+  renameEfCustomBucket,
+  resetEfAllocation,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
+  setEfCustomBucketAccess,
   type EfPlanDraft,
 } from '../domain/efAllocationActions';
 import {
-  applyBudgetPlanToMonth,
+  applyTemplateToMonth,
   clearMonthBudget,
+  createBudgetTemplate,
+  createBudgetTemplateAndApply,
   customizeMonthBudget,
-  addSection as addBudgetSectionData,
-  addIncomeItem as addBudgetIncomeData,
-  renameSection as renameBudgetSectionData,
-  changeSectionType as changeBudgetSectionTypeData,
-  deleteSection as deleteBudgetSectionData,
-  addItem as addBudgetItemData,
-  editItem as editBudgetItemStructureData,
-  deleteItem as deleteBudgetItemData,
-  editBudgetItem as editBudgetItemData,
-  editBudgetIncome as editBudgetIncomeData,
-  ensureCurrentMonthBudget,
-  removeBudgetItem as removeBudgetItemData,
-  restoreMonthBudget,
-  restoreBudgetPlanAndMonth,
-  saveAndApplyBudgetPlan,
-  setBudgetPlan,
-  setBudgetRepeat,
+  deleteBudgetTemplate,
+  ensureMonthBudget,
+  saveMonthAsTemplate,
+  setDefaultBudgetTemplate,
+  updateBudgetTemplate,
 } from '../domain/budget';
-import { resolveEfAllocation, type EfAllocation } from '../domain/efAllocation';
+import type { EfAllocation } from '../domain/efAllocation';
 import {
   addLiabilityWithHistory,
   addPlanWithHistory,
   addPolicyWithHistory,
-  addPolicyPayment as addPolicyPaymentData,
   clearDue,
   clearDuesThrough,
   clearPastDues,
@@ -94,16 +80,8 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
+  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
 } from '../domain/types';
-import type {
-  BudgetIncomeInput,
-  BudgetIncomeUpdateInput,
-  BudgetItemPatch,
-  BudgetItemScope,
-  BudgetItemSource,
-  BudgetItemValues,
-} from '../domain/budget';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -140,12 +118,6 @@ export type AppActions = {
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
-  addPolicyPayment: (policyId: string, payment: Omit<PolicyPayment, 'id'>) => void;
-  updatePolicy: (id: string, patch: PolicyPatch) => void;
-  addPolicy: (input: AddPolicyInput) => void;
-  setPolicyStatus: (id: string, status: PolicyStatus) => void;
-  deletePolicy: (id: string) => void;
-  setCoverGoalTarget: (input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number }) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -158,34 +130,27 @@ export type AppActions = {
   fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
   allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
   recordMoneyMovement: (movement: MoneyMovement) => void;
-  saveBudgetPlan: (plan: BudgetPlan | null) => void;
-  saveAndApplyBudgetPlan: (plan: BudgetPlan, month: string) => void;
-  applyBudgetPlan: (month: string) => void;
-  setBudgetRepeat: (repeatMonthly: boolean, repeatFrom: string | null) => void;
-  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: { category: string; planned: number; dueDay?: number }[] }, today: ISODate) => void;
-  restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
-  restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
-  editBudgetItem: (
-    month: string, source: BudgetItemSource, values: BudgetItemValues, scope: BudgetItemScope, today: ISODate,
-  ) => void;
-  removeBudgetItem: (month: string, source: BudgetItemSource, scope: BudgetItemScope, today: ISODate) => void;
-  addSection: (month: string, input: Pick<BudgetSection, 'name' | 'type'>, scope: BudgetItemScope, today: ISODate) => void;
-  renameSection: (month: string, sectionId: string, name: string, scope: BudgetItemScope, today: ISODate) => void;
-  changeSectionType: (month: string, sectionId: string, type: BudgetSection['type'], scope: BudgetItemScope, today: ISODate) => void;
-  deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
-  addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
-  addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
-  editBudgetIncome: (month: string, incomeId: string, values: BudgetIncomeUpdateInput, scope: BudgetItemScope, today: ISODate) => void;
-  editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
-  deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
+  createBudgetTemplate: (input: Omit<BudgetTemplate, 'id'>) => void;
+  createBudgetTemplateAndApply: (input: Omit<BudgetTemplate, 'id'>, month: string) => void;
+  updateBudgetTemplate: (id: string, patch: Partial<Omit<BudgetTemplate, 'id'>>) => void;
+  deleteBudgetTemplate: (id: string) => void;
+  setDefaultBudgetTemplate: (id: string | null) => void;
+  applyTemplateToMonth: (input: { month: string; templateId: string; plannedIncome?: number | null }) => void;
+  customizeMonthBudget: (month: string, input: { plannedIncome: number | null; lines?: BudgetLine[] }) => void;
   clearMonthBudget: (month: string) => void;
-  ensureCurrentMonthBudget: (today: ISODate) => void;
+  saveMonthAsTemplate: (month: string, name: string) => void;
+  ensureMonthBudget: (month: string, today: ISODate) => void;
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
+  resetEfAllocation: () => void;
+  addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
+  renameEfCustomBucket: (bucketId: string, name: string) => void;
+  setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
+  deleteEfCustomBucket: (bucketId: string, options?: { moveTo?: string }) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -394,62 +359,6 @@ export function createAppStore(
             newId: deps.newId,
           }).data);
         },
-        addPolicyPayment(policyId, payment) {
-          applyDataAction((data) => addPolicyPaymentData(data, { policyId, payment }, deps.newId).data);
-        },
-        updatePolicy(id, patch) {
-          const previous = get().data;
-          applyDataAction((data) => updatePolicy(data, { id, patch }));
-          const previousPolicy = previous.policies.find((policy) => policy.id === id);
-          if (get().lastError === null && get().data !== previous
-            && previousPolicy && patch.status !== undefined && patch.status !== previousPolicy.status) {
-            useUIStore.getState().setActionToast({
-              message: 'Policy status updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        addPolicy(input) {
-          applyDataAction((data) => addPolicyData(data, {
-            ...input,
-            id: deps.newId(),
-            payments: [],
-          }));
-        },
-        setPolicyStatus(id, status) {
-          const previous = get().data;
-          applyDataAction((data) => setPolicyStatusData(data, { id, status }));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Policy status updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        deletePolicy(id) {
-          const previous = get().data;
-          applyDataAction((data) => deletePolicyData(data, { id }));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Policy deleted.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
-        setCoverGoalTarget(input) {
-          const previous = get().data;
-          applyDataAction((data) => setCoverGoalTargetData(data, input));
-          if (get().lastError === null && get().data !== previous) {
-            useUIStore.getState().setActionToast({
-              message: 'Cover goal updated.',
-              actionLabel: 'Undo',
-              onAction: () => set({ data: previous, lastError: null }),
-            });
-          }
-        },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
         },
@@ -488,71 +397,35 @@ export function createAppStore(
         recordMoneyMovement(movement) {
           applyDataAction((data) => recordMoneyMovement(data, movement, deps.newId, deps.today()));
         },
-        saveBudgetPlan(plan) {
-          applyDataAction((data) => setBudgetPlan(data, plan));
+        createBudgetTemplate(input) {
+          applyDataAction((data) => createBudgetTemplate(data, input, deps.newId));
         },
-        saveAndApplyBudgetPlan(plan, month) {
-          applyDataAction((data) => saveAndApplyBudgetPlan(data, plan, month, {
-            newId: deps.newId,
-            today: deps.today(),
-          }));
+        createBudgetTemplateAndApply(input, month) {
+          applyDataAction((data) => createBudgetTemplateAndApply(data, input, month, deps.newId));
         },
-        applyBudgetPlan(month) {
-          applyDataAction((data) => applyBudgetPlanToMonth(data, month, {
-            newId: deps.newId,
-            today: deps.today(),
-          }));
+        updateBudgetTemplate(id, patch) {
+          applyDataAction((data) => updateBudgetTemplate(data, id, patch));
         },
-        setBudgetRepeat(repeatMonthly, repeatFrom) {
-          applyDataAction((data) => setBudgetRepeat(data, repeatMonthly, repeatFrom));
+        deleteBudgetTemplate(id) {
+          applyDataAction((data) => deleteBudgetTemplate(data, id));
         },
-        customizeMonthBudget(month, input, today) {
-          applyDataAction((data) => customizeMonthBudget(data, month, input, today));
+        setDefaultBudgetTemplate(id) {
+          applyDataAction((data) => setDefaultBudgetTemplate(data, id));
         },
-        restoreMonthBudget(month, budget) {
-          applyDataAction((data) => restoreMonthBudget(data, month, budget));
+        applyTemplateToMonth(input) {
+          applyDataAction((data) => applyTemplateToMonth(data, input));
         },
-        restoreBudgetPlanAndMonth(plan, month, budget) {
-          applyDataAction((data) => restoreBudgetPlanAndMonth(data, plan, month, budget));
-        },
-        editBudgetItem(month, source, values, scope, today) {
-          applyDataAction((data) => editBudgetItemData(data, month, source, values, scope, today));
-        },
-        removeBudgetItem(month, source, scope, today) {
-          applyDataAction((data) => removeBudgetItemData(data, month, source, scope, today));
-        },
-        addSection(month, input, scope, today) {
-          applyDataAction((data) => addBudgetSectionData(data, month, { ...input, id: deps.newId() }, scope, today));
-        },
-        renameSection(month, sectionId, name, scope, today) {
-          applyDataAction((data) => renameBudgetSectionData(data, month, { sectionId, name }, scope, today));
-        },
-        changeSectionType(month, sectionId, type, scope, today) {
-          applyDataAction((data) => changeBudgetSectionTypeData(data, month, { sectionId, type }, scope, today));
-        },
-        deleteSection(month, sectionId, scope, today) {
-          applyDataAction((data) => deleteBudgetSectionData(data, month, { sectionId }, scope, today));
-        },
-        addBudgetItem(month, input, scope, today) {
-          applyDataAction((data) => addBudgetItemData(data, month, { ...input, id: deps.newId() }, scope, today));
-        },
-        addBudgetIncome(month, input, scope, today) {
-          applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
-        },
-        editBudgetIncome(month, incomeId, values, scope, today) {
-          applyDataAction((data) => editBudgetIncomeData(data, month, { incomeId, values }, scope, today));
-        },
-        editBudgetStructureItem(month, itemId, patch, scope, today) {
-          applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));
-        },
-        deleteBudgetStructureItem(month, itemId, scope, today) {
-          applyDataAction((data) => deleteBudgetItemData(data, month, { itemId }, scope, today));
+        customizeMonthBudget(month, input) {
+          applyDataAction((data) => customizeMonthBudget(data, month, input));
         },
         clearMonthBudget(month) {
           applyDataAction((data) => clearMonthBudget(data, month));
         },
-        ensureCurrentMonthBudget(today) {
-          applyDataAction((data) => ensureCurrentMonthBudget(data, today, deps.newId));
+        saveMonthAsTemplate(month, name) {
+          applyDataAction((data) => saveMonthAsTemplate(data, month, name, deps.newId));
+        },
+        ensureMonthBudget(month, today) {
+          applyDataAction((data) => ensureMonthBudget(data, month, today));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));
@@ -577,6 +450,21 @@ export function createAppStore(
         },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
+        },
+        resetEfAllocation() {
+          applyDataAction(resetEfAllocation);
+        },
+        addEfCustomBucket(input) {
+          applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
+        },
+        renameEfCustomBucket(bucketId, name) {
+          applyDataAction((data) => renameEfCustomBucket(data, bucketId, name));
+        },
+        setEfCustomBucketAccess(bucketId, access) {
+          applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
+        },
+        deleteEfCustomBucket(bucketId, options) {
+          applyDataAction((data) => deleteEfCustomBucket(data, bucketId, options));
         },
         setEfBucketLinks(bucketId, holdingIds) {
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
@@ -691,13 +579,6 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v4`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v12`);
-            await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
@@ -783,14 +664,10 @@ export function createAppStore(
             goals: ensureEfGoal(data.goals, { expenseBaseline, asOf: deps.today() }),
           };
         }
-        const allocationResolution = resolveEfAllocation(data);
-        const allocationNeedsRepair = allocationResolution.repaired;
-        if (allocationNeedsRepair) {
-          data = { ...data, efAllocation: allocationResolution.allocation };
-        }
         const today = deps.today();
+        const month = today.slice(0, 7);
         const beforeEnsure = data;
-        data = ensureCurrentMonthBudget(data, today, deps.newId);
+        data = ensureMonthBudget(data, month, today);
         const budgetWasEnsured = data !== beforeEnsure;
         let undoImport: { savedAt: ISODate } | null = null;
         try {
@@ -813,7 +690,7 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
-        if (budgetWasEnsured || allocationNeedsRepair) storeApi.setState({ data });
+        if (budgetWasEnsured) storeApi.getState().actions.ensureMonthBudget(month, today);
       },
     },
   ));

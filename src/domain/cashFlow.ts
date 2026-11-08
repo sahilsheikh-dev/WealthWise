@@ -29,12 +29,6 @@ export type AvailableBalance = {
   invested: number;
 };
 
-export function normalizeMoney(amount: number): number {
-  if (!Number.isFinite(amount)) throw new RangeError('Money amount must be finite.');
-  const rounded = Math.sign(amount) * Math.round((Math.abs(amount) + Number.EPSILON) * 100) / 100;
-  return rounded === 0 ? 0 : rounded;
-}
-
 export function monthEndDate(month: string): ISODate {
   const nextMonth = shiftMonth(month, 1);
   const year = Number(nextMonth.slice(0, 4));
@@ -68,7 +62,7 @@ export function monthPositions(transactions: Transaction[]): MonthPosition[] {
     const ownFunds = sum(rows, (row) => row.type === 'income' && row.category === 'Own funds');
     const expense = sum(rows, (row) => row.type === 'expense');
     const invest = sum(rows, (row) => row.type === 'invest');
-    const closing = normalizeMoney(opening + income - expense - invest);
+    const closing = opening + income - expense - invest;
     positions.push({
       month, opening, earnedIncome, withdrawals, borrowed, loanProceeds, ownFunds,
       expense, invest, closing,

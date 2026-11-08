@@ -9,26 +9,10 @@ const mockConfirmAsync = jest.fn();
 const mockSetActionToast = jest.fn();
 const mockStoreState = {
   lastError: null as string | null,
-  data: {
-    transactions: [] as {
-      id: string;
-      amount: number;
-      date: string;
-      type?: 'income' | 'expense' | 'invest';
-      category?: string;
-      note?: string;
-      source?: { kind: string; parentId: string; entryId: string };
-    }[],
-  },
+  data: { transactions: [] as { id: string; amount: number; date: string; source?: { kind: string; parentId: string; entryId: string } }[] },
 };
 const mockActions = {
-  addTransaction: jest.fn((input: {
-    type: 'income' | 'expense' | 'invest';
-    amount: number;
-    category: string;
-    note: string;
-    date: string;
-  }) => {
+  addTransaction: jest.fn((input: { amount: number; date: string }) => {
     mockStoreState.data.transactions.push({ id: 'budget-transaction', ...input });
   }),
   deleteTransaction: jest.fn((id: string) => {
@@ -145,7 +129,7 @@ describe('pending item Pay navigation', () => {
   });
 
   it('opens a budget transaction with its category, amount, date, and pending-only investment mode', () => {
-    pressPay(item({ kind: 'budget', category: 'Other investments', type: 'invest' }, 'Other investments'));
+    pressPay(item({ kind: 'budget', category: 'Other investments' }, 'Other investments'));
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/transaction-form',
       params: {
@@ -160,163 +144,6 @@ describe('pending item Pay navigation', () => {
 });
 
 describe('later due and planned item actions', () => {
-  it('clears a manual Insurance budget due as an expense in Insurance', () => {
-    const due = item({ kind: 'budget', category: 'Insurance', type: 'expense' }, 'Insurance');
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(<PendingItemActions item={due} today="2026-10-12" />);
-    });
-    if (!renderer) throw new Error('Insurance budget actions did not render.');
-    const clearButton = renderer.root.findAllByType('button')
-      .find((button) => button.children.join('') === 'Clear due');
-    if (!clearButton) throw new Error('Insurance budget clear action was not rendered.');
-    act(() => clearButton.props.onPress());
-    expect(mockActions.addTransaction).toHaveBeenCalledWith({
-      type: 'expense',
-      amount: 125,
-      category: 'Insurance',
-      note: '',
-      date: '2026-10-12',
-    });
-    expect(mockStoreState.data.transactions.at(-1)).toMatchObject({
-      type: 'expense',
-      amount: 125,
-      category: 'Insurance',
-      date: '2026-10-12',
-    });
-  });
-
-  it('uses the Transactions Paid label for a direct oldest-due clear and offers Undo', () => {
-    mockActions.clearDue.mockImplementation(() => {
-      mockStoreState.data.transactions = [{
-        id: 'cleared-entry',
-        amount: 125,
-        date: '2026-10-12',
-        source: { kind: 'holding-entry', parentId: 'sip-1', entryId: 'cleared-entry' },
-      }];
-      return 'cleared-entry';
-    });
-    const due = item({ kind: 'plan', parentId: 'sip-1', slotId: 'slot-1' });
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(
-        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Paid" />,
-      );
-    });
-    if (!renderer) throw new Error('Compact due action did not render.');
-    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
-      .toEqual(['Paid']);
-    act(() => renderer?.root.findByType('button').props.onPress());
-    expect(mockActions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'slot-1');
-    expect(mockConfirmAsync).not.toHaveBeenCalled();
-    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Marked ₹125 as paid',
-      actionLabel: 'Undo',
-      onAction: expect.any(Function),
-    }));
-    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
-    toast.onAction();
-    expect(mockActions.undoClearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'cleared-entry');
-  });
-
-  it('supports the Received label for income dues', () => {
-    const due = item({ kind: 'budget', category: 'Food', type: 'expense' });
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(
-        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Received" />,
-      );
-    });
-    if (!renderer) throw new Error('Compact income action did not render.');
-    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
-      .toEqual(['Received']);
-  });
-
-  it('clears a compact budget row directly as Marked as paid and offers undo', () => {
-    const planned = item({ kind: 'budget', category: 'Food', type: 'expense' });
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => { renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" compact />); });
-    if (!renderer) throw new Error('Compact budget actions did not render.');
-    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
-      .toEqual(['Marked as paid']);
-    act(() => renderer?.root.findByType('button').props.onPress());
-    expect(mockActions.addTransaction).toHaveBeenCalledWith({
-      type: 'expense',
-      amount: 125,
-      category: 'Food',
-      note: '',
-      date: '2026-10-12',
-    });
-
-    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Marked ₹125 as paid',
-      actionLabel: 'Undo',
-      onAction: expect.any(Function),
-    }));
-    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
-    toast.onAction();
-    expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
-  });
-
-  it('records an income due as one Received transaction with undo', () => {
-    const due = item({ kind: 'income', incomeId: 'salary-1' }, 'Salary');
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(
-        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Received" />,
-      );
-    });
-    if (!renderer) throw new Error('Income due actions did not render.');
-    act(() => renderer?.root.findByType('button').props.onPress());
-    expect(mockActions.addTransaction).toHaveBeenCalledTimes(1);
-    expect(mockActions.addTransaction).toHaveBeenCalledWith({
-      type: 'income',
-      amount: 125,
-      category: 'Salary',
-      note: 'Scheduled item',
-      date: '2026-10-12',
-    });
-    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Received ₹125',
-      actionLabel: 'Undo',
-      onAction: expect.any(Function),
-    }));
-    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
-    act(() => toast.onAction());
-    expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
-  });
-
-  it('uses the compact paid action for later dues and confirms the exact clear-through preview', async () => {
-    mockConfirmAsync.mockResolvedValue(true);
-    const laterDue = {
-      ...item({ kind: 'plan', parentId: 'sip-1', slotId: 'slot-3' }, 'Mutual fund / SIP'),
-      dueDate: '2026-12-10',
-      actionable: false,
-    };
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<PendingItemActions item={laterDue} today="2026-10-12" compact />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Compact later-due actions did not render.');
-    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
-      .toEqual(['Marked as paid']);
-    await act(async () => {
-      renderer?.root.findByType('button').props.onPress();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(mockConfirmAsync).toHaveBeenCalledWith({
-      title: 'Clear dues?',
-      message: 'Clear 3 dues through 10 Dec 2026? This includes 2 earlier dues, ₹250 total.',
-      confirmLabel: 'Clear due',
-    });
-    expect(mockActions.clearDuesThrough).toHaveBeenCalledWith(
-      { kind: 'plan', id: 'sip-1' },
-      '2026-12-10',
-    );
-  });
-
   it('asks before clearing later installments, records one through action and provides one undo', async () => {
     mockConfirmAsync.mockResolvedValue(true);
     const laterDue = {
@@ -360,7 +187,7 @@ describe('later due and planned item actions', () => {
   });
 
   it('clears a planned budget row as a transaction and offers undo', () => {
-    const planned = item({ kind: 'budget', category: 'Food', type: 'expense' });
+    const planned = item({ kind: 'budget', category: 'Food' });
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<PendingItemActions item={planned} today="2026-10-12" />); });
     if (!renderer) throw new Error('Budget actions did not render.');

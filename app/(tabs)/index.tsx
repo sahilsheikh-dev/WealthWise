@@ -1,38 +1,37 @@
+import { Feather } from '@expo/vector-icons';
 import { router, useIsFocused, type Href } from 'expo-router';
-import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
-import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
+import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import {
   AppText,
   Button,
   Card,
+  ProgressBar,
   Screen,
+  SectionTitle,
   StatPill,
   StatPillRow,
-  WarningBanner
+  WarningBanner,
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
-import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
-import { useAppActions, useAppData } from '../../src/data/useAppData';
+import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
-import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
-import { coverGoalSummaries } from '../../src/domain/coverGoals';
+import { budgetMonthView } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
-import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
-import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -40,7 +39,7 @@ import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export const HOME_QUICK_ACTIONS = [
-  { id: 'transaction', label: 'New Transaction', icon: 'file-plus' },
+  { id: 'transaction', label: 'Add Transaction', icon: 'file-plus' },
   { id: 'investment', label: 'New Investment', icon: 'trending-up' },
   { id: 'liability', label: 'New Liability', icon: 'credit-card' },
 ] as const;
@@ -50,16 +49,12 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { fontScale } = useWindowDimensions();
   const isFocused = useIsFocused();
   const data = useAppData();
-  const actions = useAppActions();
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const coverGaps = coverGoalSummaries(data, today)
-    .filter((goal) => goal.state === 'gap' || goal.state === 'missing');
-  const monthBudget = budgetMonthView(data, month, today);
+  const monthBudget = budgetMonthView(data, month);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
     .filter((item) => item.kind === 'due')
@@ -69,9 +64,9 @@ export default function HomeScreen() {
     setSpendingState({ focused: isFocused, expanded: false });
   }
   const spendingExpanded = spendingState.expanded;
+  const [selectedDue, setSelectedDue] = useState<PendingItem | null>(null);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
-  const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
@@ -87,110 +82,6 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
-  const createBudget = () => {
-    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(month), month);
-    const error = useAppStore.getState().lastError;
-    if (error) {
-      Alert.alert('Could not create budget', error);
-      return;
-    }
-    setActionToast({
-      message: 'Budget created',
-      actionLabel: 'Undo',
-      onAction: () => actions.restoreBudgetPlanAndMonth(null, month, previousMonth),
-    });
-  };
-  const handleDuePress = async (item: PendingItem) => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
-    if (!item.dueDate) {
-      Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
-      return;
-    }
-    const target: DueTarget = { kind: item.source.kind, id: item.source.parentId };
-    const preview = item.actionable
-      ? null
-      : duesThroughPreview(data, target, item.dueDate, today);
-    if (preview && preview.count === 0) {
-      Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
-      return;
-    }
-    const clearThrough = preview !== null && preview.count > 1;
-    const extra = clearThrough && preview
-      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
-      : '';
-    const confirmed = await confirmAsync({
-      title: 'Was this paid?',
-      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
-      confirmLabel: 'Paid',
-      cancelLabel: 'Not paid',
-    });
-    if (!confirmed) return;
-
-    if (clearThrough && preview) {
-      const entryIds = actions.clearDuesThrough(target, item.dueDate);
-      if (!entryIds || useAppStore.getState().lastError) {
-        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
-        return;
-      }
-      const sourceKind = target.kind === 'plan'
-        ? 'holding-entry'
-        : target.kind === 'liability' ? 'liability-payment' : 'policy-payment';
-      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
-        transaction.source?.kind === sourceKind
-        && transaction.source.parentId === target.id
-        && transaction.source.entryId === entryId,
-      ));
-      if (transactions.some((transaction) => transaction === undefined)) {
-        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
-        return;
-      }
-      let total = 0;
-      for (const transaction of transactions) {
-        if (!transaction) {
-          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
-          return;
-        }
-        total += transaction.amount;
-      }
-      setActionToast({
-        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
-        actionLabel: 'Undo',
-        onAction: () => {
-          actions.undoClearDuesThrough(target, entryIds);
-          const error = useAppStore.getState().lastError;
-          if (error) Alert.alert('Unable to undo', error);
-        },
-      });
-      return;
-    }
-
-    const entryId = actions.clearDue(target, item.source.slotId);
-    if (!entryId || useAppStore.getState().lastError) {
-      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
-      return;
-    }
-    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
-      (candidate.source?.kind === 'holding-entry'
-        || candidate.source?.kind === 'liability-payment'
-        || candidate.source?.kind === 'policy-payment')
-      && candidate.source.parentId === target.id
-      && candidate.source.entryId === entryId,
-    );
-    if (!transaction) {
-      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
-      return;
-    }
-    setActionToast({
-      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
-      actionLabel: 'Undo',
-      onAction: () => {
-        actions.undoClearDue(target, entryId);
-        const error = useAppStore.getState().lastError;
-        if (error) Alert.alert('Unable to undo', error);
-      },
-    });
-  };
   return (
     <Screen>
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
@@ -225,23 +116,6 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
-      {coverGaps.length > 0 ? (
-        <Pressable
-          testID="home-insurance-cover-link"
-          accessibilityRole="button"
-          accessibilityLabel={`Insurance cover, ${coverGaps.length} goals need review`}
-          accessibilityHint="Opens insurance cover goals and policies"
-          onPress={() => router.push('/insurance')}
-          style={[styles.coverLink, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.coverLinkText}>
-            <AppText weight="semibold">Insurance cover</AppText>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              {coverGaps.length} {coverGaps.length === 1 ? 'cover goal' : 'cover goals'} to review
-            </AppText>
-          </View>
-          <AppText style={[typography.meta, { color: colors.primary }]}>View</AppText>
-        </Pressable>
-      ) : null}
 
       <View style={styles.quickActions}>
         {HOME_QUICK_ACTIONS.map((action) => (
@@ -272,15 +146,23 @@ export default function HomeScreen() {
       </View>
 
       <Card style={styles.categoryBreakdown}>
-        <BudgetSummaryToggle
-          label="This month:"
-          spent={monthBudget.actualSpend}
-          planned={monthBudget.plannedSpend}
-          expanded={spendingExpanded}
-          accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+        <AppText
+          weight="semibold"
+          accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
+          This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
+        </AppText>
+        <Pressable
           testID="home-spending-toggle"
-          topBorder
-          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}>
+          accessibilityRole="button"
+          accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+          accessibilityState={{ expanded: spendingExpanded }}
+          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}
+          style={[styles.spendingToggle, { borderTopColor: colors.border }]}>
+          <AppText style={{ color: colors.primary }}>
+            {spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+          </AppText>
+          <Feather name={spendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+        </Pressable>
         {spendingExpanded ? spendingByCategory.length > 0 ? (
           <View testID="home-spending-details" style={styles.categoryRows}>
             {spendingByCategory.map(({ category, amount }) => (
@@ -291,17 +173,6 @@ export default function HomeScreen() {
             ))}
           </View>
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
-        {!monthBudget.budget ? (
-          <Button
-            label={data.budgetPlan ? 'Apply budget' : 'Create budget'}
-            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Create budget'}
-            onPress={() => {
-              if (!data.budgetPlan) createBudget();
-              else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
-            }}
-          />
-        ) : null}
-        </BudgetSummaryToggle>
       </Card>
 
       {nudge.show ? (
@@ -350,140 +221,131 @@ export default function HomeScreen() {
 
       {dueItems.length > 0 ? (
         <>
-          <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Upcoming and due</AppText>
+          <SectionTitle>Upcoming and due</SectionTitle>
           <Card style={styles.upcomingCard}>
             {dueItems.map((item) => (
-              <View
+              <PendingItemRow
                 key={item.id}
-                testID={`home-due-row-${item.id}`}
-                style={[
-                  styles.dueRow,
-                  fontScale >= 1.3 && styles.dueRowStacked,
-                  { borderBottomColor: colors.border },
-                ]}>
-                <View style={styles.dueTitle}>
-                  <AppText weight="regular">
-                    Due <AmountText value={item.amount} tier="row" weight="semibold" /> for {item.title} on {item.dueDate ? formatDate(item.dueDate) : 'Date unavailable'}
-                  </AppText>
-                </View>
-                <View
-                  testID={`home-due-actions-${item.id}`}
-                  style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
-                  <Button
-                    label={'Paid'}
-                    accessibilityHint="Confirms whether this scheduled item was paid."
-                    style={styles.markPaidButton}
-                    onPress={() => { void handleDuePress(item); }}
-                  />
-                </View>
-              </View>
+                item={item}
+                onPress={() => setSelectedDue(item)}
+              />
             ))}
           </Card>
         </>
       ) : null}
+      <PendingItemActionSheet
+        item={selectedDue}
+        today={today}
+        onClose={() => setSelectedDue(null)}
+        onViewSchedule={(item) => {
+          setSelectedDue(null);
+          if (item.source.kind === 'plan') {
+            router.push(`/investment-entries?id=${encodeURIComponent(item.source.parentId)}` as Href);
+          } else if (item.source.kind === 'liability') {
+            router.push({ pathname: '/liability-payments', params: { id: item.source.parentId } });
+          }
+        }}
+      />
 
-      <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Goal Progress</AppText>
-      <View testID="home-goals-section">
-        <Card style={styles.goalsCard}>
-          {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }, index, goals) => {
-            const projection = goalProjection(goal, data, today);
-            const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
-            return (
-              <Pressable
-                key={goal.id}
-                testID={`home-goal-row-${goal.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
-                accessibilityHint="Opens this goal for editing"
-                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-                style={[
-                  styles.goalRow,
-                  index < goals.length - 1 && styles.goalRowDivider,
-                  { borderBottomColor: colors.border },
-                ]}>
-                <View style={styles.goalTop}>
-                  <View style={styles.goalNameBlock}>
-                    <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
-                      Target <AmountText value={target} tier="row" /> · {goal.year}
-                    </AppText>
-                    {targetYearPassed ? (
-                      <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
-                    ) : null}
-                    {goal.links.length > 0 ? (
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
-                      </AppText>
-                    ) : null}
-                  </View>
-                  <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
-                </View>
-                <View style={styles.goalAmounts}>
-                  <AppText
-                    style={[typography.meta, { color: colors.ok }]}
-                    accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
-                    <AmountText value={saved} tier="row" /> saved
+      <SectionTitle>Goal Progress</SectionTitle>
+      {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
+        const projection = goalProjection(goal, data, today);
+        const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
+        return (
+          <Pressable
+            key={goal.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${pct.toFixed(1)}% funded`}
+            accessibilityHint="Opens this goal for editing"
+            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.goalTop}>
+              <View style={styles.goalNameBlock}>
+                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+                <AppText
+                  style={[typography.meta, { color: colors.text3 }]}
+                  accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
+                  Target <AmountText value={target} tier="row" /> · {goal.year}
+                </AppText>
+                {targetYearPassed ? (
+                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
+                ) : null}
+                {goal.links.length > 0 ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
                   </AppText>
-                  <AppText
-                    style={[typography.meta, { color: colors.text3 }]}
-                    accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
-                    <AmountText value={Math.max(0, target - saved)} tier="row" /> left
-                  </AppText>
-                </View>
-                {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
+                ) : null}
+              </View>
+              <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
+            </View>
+            <ProgressBar percent={pct} />
+            <View style={styles.goalAmounts}>
+              <AppText
+                style={[typography.meta, { color: colors.ok }]}
+                accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
+                <AmountText value={saved} tier="row" /> saved
+              </AppText>
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
+                <AmountText value={Math.max(0, target - saved)} tier="row" /> left
+              </AppText>
+            </View>
+            {goal.auto !== 'ef' ? (
+              <AppText style={[typography.meta, { color: colors.text2 }]}>
+                {projection.projectedDate === 'Already reached'
+                  ? 'Already reached'
+                  : projection.projectedDate
+                    ? `Projected ${formatDate(projection.projectedDate)} · ${projection.status === 'ahead'
+                      ? 'Ahead'
+                      : projection.status === 'on-track' ? 'On track' : 'Behind'}`
+                    : 'Not reachable with current contributions'}
+              </AppText>
+            ) : null}
+            {goal.auto === 'ef' ? (
+              <>
+                <AppText
+                  style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
+                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
+                  Minimum 3 months of cover: <AmountText value={minimum ?? 0} tier="row" />
+                </AppText>
+                <AppText
+                  style={[typography.meta, { color: colors.text3 }]}
+                  accessibilityLabel={summary.emergencyBaseSource === 'expenses'
+                    ? `Based on your average monthly expenses, ${formatAmount(summary.expenseBaseline, 'exact', 1)}`
+                    : summary.emergencyBaseSource === 'salary'
+                      ? 'Based on your monthly income'
+                      : 'Add your monthly income to see cover'}>
+                  {summary.emergencyBaseSource === 'expenses'
+                    ? <>Based on your average monthly expenses: <AmountText value={summary.expenseBaseline} tier="row" /></>
+                    : summary.emergencyBaseSource === 'salary'
+                      ? 'Based on your monthly income'
+                      : 'Add your monthly income to see cover'}
+                </AppText>
+                <View style={styles.emergencyGoalActions}>
                   <AppText style={[typography.meta, { color: colors.text2 }]}>
-                    Projected {formatDate(projection.projectedDate)}
+                    {summary.emergencyMonths === null
+                      ? '—'
+                      : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo of cover`}
                   </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Track emergency fund"
+                    onPress={(event) => {
+                      event.stopPropagation?.();
+                      router.push('/emergency-fund');
+                    }}>
+                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+                  </Pressable>
+                </View>
+                {raised ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
                 ) : null}
-                {goal.auto === 'ef' ? (
-                  <>
-                    <AppText
-                      style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
-                      accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
-                      Minimum 3 months of cover: <AmountText value={minimum ?? 0} tier="row" />
-                    </AppText>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={summary.emergencyBaseSource === 'expenses'
-                        ? `Based on your average monthly expenses, ${formatAmount(summary.expenseBaseline, 'exact', 1)}`
-                        : summary.emergencyBaseSource === 'salary'
-                          ? 'Based on your monthly income'
-                          : 'Add your monthly income to see cover'}>
-                      {summary.emergencyBaseSource === 'expenses'
-                        ? <>Based on your average monthly expenses: <AmountText value={summary.expenseBaseline} tier="row" /></>
-                        : summary.emergencyBaseSource === 'salary'
-                          ? 'Based on your monthly income'
-                          : 'Add your monthly income to see cover'}
-                    </AppText>
-                    <View style={styles.emergencyGoalActions}>
-                      <AppText style={[typography.meta, { color: colors.text2 }]}>
-                        {summary.emergencyMonths === null
-                          ? '—'
-                          : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo of cover`}
-                      </AppText>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Track emergency fund"
-                        onPress={(event) => {
-                          event.stopPropagation?.();
-                          router.push('/emergency-fund');
-                        }}>
-                        <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
-                      </Pressable>
-                    </View>
-                    {raised ? (
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
-                    ) : null}
-                  </>
-                ) : null}
-                <GoalProgressRow percent={pct} />
-              </Pressable>
-            );
-          })}
-        </Card>
-      </View>
+              </>
+            ) : null}
+          </Pressable>
+        );
+      })}
     </Screen>
   );
 }
@@ -494,6 +356,7 @@ const styles = StyleSheet.create({
   categoryBreakdown: { gap: 10 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  spendingToggle: { minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
@@ -501,33 +364,14 @@ const styles = StyleSheet.create({
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   upcomingCard: { gap: 7 },
   dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  dueRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
-  dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dueActionsStacked: { justifyContent: 'flex-end' },
-  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
+  dueRight: { alignItems: 'flex-end', gap: 4 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
-  goalsCard: { paddingVertical: 4 },
-  goalRow: { paddingVertical: 14 },
-  goalRowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
+  goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   goalNameBlock: { flex: 1, minWidth: 0, gap: 3 },
   goalPercent: { fontSize: 12 },
   goalAmounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   goalMinimum: { marginTop: 7 },
   emergencyGoalActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  coverLink: {
-    minHeight: 60,
-    marginHorizontal: 20,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  coverLinkText: { flex: 1, minWidth: 0 },
 });

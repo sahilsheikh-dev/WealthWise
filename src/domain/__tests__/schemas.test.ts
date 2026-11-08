@@ -1,7 +1,6 @@
 import { mockAppData } from '../../mock/data';
 import { validateImportData } from '../backup';
-import { BUDGET_GROUPS } from '../budget';
-import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
+import { BUDGET_CATEGORY_WEIGHTS, BUDGET_GROUPS } from '../budget';
 import {
   appDataSchema,
   BUDGET_CATEGORIES,
@@ -15,7 +14,6 @@ import {
   makePlanFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
-  makeBudgetItemEditSchema,
   makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
@@ -31,76 +29,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version thirteen', () => {
+  it('accepts the typed mock app data and exports schema version seven', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(13);
-    expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
-  });
-
-  it('validates cover goal uniqueness and target-mode bounds', () => {
-    const goals = mockAppData.coverGoals;
-    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: goals.slice(1) }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: [...goals, { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.type === 'term-life'
-        ? { ...goal, targetValue: 51 }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.type === 'term-life'
-        ? { ...goal, targetValue: 0 }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.type === 'health'
-        ? { ...goal, targetMode: 'amount', targetValue: -1 }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.type === 'health'
-        ? { ...goal, targetMode: 'income-multiple' }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.type === 'motor'
-        ? { ...goal, targetValue: 1 }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: undefined }).success).toBe(false);
-  });
-
-  it('continues loading legacy goal links with explicit shares', () => {
-    const holding = mockAppData.holdings[0];
-    if (!holding) throw new Error('Mock holding fixture missing');
-    const legacy = {
-      ...mockAppData,
-      goals: [{
-        id: 'legacy-goal',
-        name: 'Legacy goal',
-        target: 1_000,
-        saved: 0,
-        year: 2030,
-        links: [{ instrumentId: holding.id, share: 100 }],
-      }],
-    };
-
-    expect(appDataSchema.parse(legacy).goals[0]?.links).toEqual([
-      { instrumentId: holding.id, share: 100 },
-    ]);
-    const imported = validateImportData(legacy);
-    expect(imported.ok).toBe(true);
-    if (!imported.ok) throw new Error(`Legacy backup was rejected: ${imported.reason}`);
-    expect(imported.data.goals.find((goal) => goal.id === 'legacy-goal')?.links).toEqual([
-      { instrumentId: holding.id, share: 100 },
-    ]);
+    expect(SCHEMA_VERSION).toBe(7);
   });
 
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
@@ -121,79 +52,33 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
   });
 
-  it('validates the budget plan and stored month snapshots', () => {
+  it('validates budget templates and stored month snapshots', () => {
     const budgeted = {
       ...mockAppData,
-      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 20, dueDay: 31 }], {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 50_000, day: 1 }],
-      }),
-      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 10_000, dueDay: 31 }], {
-        source: 'plan',
-        incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
-        linkedIncluded: true,
-      })],
+      budgetTemplates: [{
+        id: 'template', name: 'Monthly', plannedIncome: 50_000,
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 20 }],
+      }],
+      defaultBudgetTemplateId: 'template',
+      monthBudgets: [{
+        month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
+        plannedIncome: 50_000, lines: [{ category: 'Food', planned: 10_000 }],
+      }],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], value: 101 }] },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], sectionId: 'wants' }] },
+      budgetTemplates: [{
+        ...budgeted.budgetTemplates[0],
+        lines: [{ category: 'Food', mode: 'percent', value: 101 }],
+      }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
       monthBudgets: [{
         ...budgeted.monthBudgets[0],
-        items: [{ ...budgeted.monthBudgets[0].items[0], sectionId: 'missing-section' }],
+        lines: [{ category: 'Not a category', planned: 10 }],
       }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], mode: 'amount', value: 10, dueDay: 0 }] },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{
-        ...budgeted.monthBudgets[0],
-        items: [{ ...budgeted.monthBudgets[0].items[0], dueDay: 32 }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{ ...budgeted.budgetPlan.items[0], frequency: 'quarterly' }],
-      },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{
-          ...budgeted.budgetPlan.items[0],
-          frequency: 'quarterly',
-          firstDueMonth: '2026-10',
-        }],
-      },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{
-          ...budgeted.budgetPlan.items[0],
-          frequency: 'quarterly',
-          firstDueMonth: '2026-10',
-          mode: 'amount',
-          value: 500,
-        }],
-      },
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{ ...budgeted.monthBudgets[0], linkedIncluded: 'yes' }],
     }).success).toBe(false);
   });
 
@@ -264,26 +149,11 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      liabilities: mockAppData.liabilities.map((item) => item.id === recurring.id
-        ? {
-          ...recurring,
-          payments: [{
-            id: 'invalid-payment',
-            date: '2026-03-31',
-            amount: 100,
-            note: '',
-            kind: 'Payment',
-          }],
-        }
-        : item),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
       policies: [{ ...policy, premium: 10_000_001 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      policies: [{ ...policy, kind: 'term-life', currentValue: 1 }],
+      policies: [{ ...policy, kind: 'term', currentValue: 1 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
@@ -302,66 +172,8 @@ describe('appDataSchema', () => {
       ...mockAppData,
       liabilities: [{ ...oneTime, settlement: null }],
     }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...oneTime,
-        dueDate: '2026-03-01',
-        startDate: '2026-03-02',
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...oneTime,
-        payments: [{
-          id: 'invalid-payment',
-          date: '2026-03-31',
-          amount: 100,
-          note: '',
-          kind: 'EMI',
-        }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, policyNumber: 'P'.repeat(31) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, nominee: 'N'.repeat(41) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, note: 'N'.repeat(121) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, sumAssured: -1 }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, sumAssured: 0 }],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, endDate: policy.startDate }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, currentValue: 1, valueAsOf: null }],
-    }).success).toBe(false);
     expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
-    expect(BUDGET_CATEGORIES).toContain('Recharge');
-    expect(TRANSACTION_CATEGORIES.expense).toContain('Recharge');
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
-    expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining([
-      'Insurance premium',
-      'Term life premium',
-      'Health premium',
-      'Motor premium',
-      'Home premium',
-    ]));
     expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
   });
 
@@ -400,39 +212,6 @@ describe('makeTransactionFormSchema', () => {
   it('normalizes and rounds valid amount and trimmed note strings', () => {
     expect(schema.parse(validInput)).toMatchObject({ amount: 1500.5, note: 'October' });
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
-  });
-
-  it('accepts legacy and typed insurance expense categories in the transaction form', () => {
-    for (const category of [
-      'Insurance',
-      'Recharge',
-      'Insurance premium',
-      'Term life premium',
-      'Health premium',
-      'Motor premium',
-      'Home premium',
-    ]) {
-      expect(schema.safeParse({ ...validInput, category }).success).toBe(true);
-    }
-  });
-
-  it('accepts a custom category only in the selected month budget', () => {
-    const customSchema = makeTransactionFormSchema('2026-10-10', {}, {
-      instruments: [],
-      withdrawable: {},
-      mode: 'create',
-      allowUnlinkedInvestment: true,
-      budgetCategoriesForMonth: (type, date) =>
-        type === 'expense' && date.startsWith('2026-11') ? ['Pet care'] : [],
-    });
-    const customExpense = { ...validInput, category: 'Pet care' };
-    expect(customSchema.safeParse(customExpense).success).toBe(false);
-    expect(customSchema.safeParse({ ...customExpense, date: '2026-11-01' }).success).toBe(true);
-    expect(customSchema.safeParse({
-      ...customExpense,
-      type: 'invest',
-      date: '2026-11-01',
-    }).success).toBe(false);
   });
 
   it('requires the appropriate instrument for investment and withdrawal transaction modes', () => {
@@ -713,31 +492,14 @@ describe('makeTransactionFormSchema', () => {
     if (!result.success) expect(result.error.issues.some((issue) => issue.path[0] === 'amount')).toBe(true);
   });
 
-  it('accepts comma grouping, validates calendar dates and permits the 24-month planning horizon', () => {
+  it('accepts comma grouping and rejects invalid calendar/future dates with the right errors', () => {
     expect(schema.parse({ ...validInput, amount: '1,500.50', date: '2026-10-10' }).date).toBe('2026-10-10');
     const invalidDate = schema.safeParse({ ...validInput, date: '2026-02-30' });
     expect(invalidDate.success).toBe(false);
     if (!invalidDate.success) expect(invalidDate.error.issues[0]?.message).toBe('Enter a valid date');
-    expect(schema.safeParse({ ...validInput, date: '2026-10-11' }).success).toBe(true);
-    const beyondPlanningHorizon = schema.safeParse({ ...validInput, date: '2028-11-01' });
-    expect(beyondPlanningHorizon.success).toBe(false);
-    if (!beyondPlanningHorizon.success) {
-      expect(beyondPlanningHorizon.error.issues[0]?.message)
-        .toBe('Date cannot be more than 24 months ahead');
-    }
-  });
-
-  it('validates budget-item edit amount and optional due day', () => {
-    const editSchema = makeBudgetItemEditSchema();
-    expect(editSchema.parse({ amount: '0', day: '31', scope: 'month' }))
-      .toEqual({ amount: 0, day: 31, scope: 'month' });
-    expect(editSchema.parse({ amount: '500.50', day: '', scope: 'following' }))
-      .toEqual({ amount: 500.5, day: undefined, scope: 'following' });
-    for (const day of ['0', '32', '2.5', 'no']) {
-      expect(editSchema.safeParse({ amount: '1', day, scope: 'month' }).success).toBe(false);
-    }
-    expect(editSchema.safeParse({ amount: '-1', day: '', scope: 'month' }).success).toBe(false);
-    expect(editSchema.safeParse({ amount: '', day: '', scope: 'month' }).success).toBe(false);
+    const future = schema.safeParse({ ...validInput, date: '2026-10-11' });
+    expect(future.success).toBe(false);
+    if (!future.success) expect(future.error.issues[0]?.message).toBe('Date cannot be in the future');
   });
 
   it('enforces note length and the category list for the chosen type', () => {
@@ -755,6 +517,7 @@ describe('makeTransactionFormSchema', () => {
     const budgetCategories = [
       ...BUDGET_CATEGORIES,
       ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
+      ...Object.values(BUDGET_CATEGORY_WEIGHTS).flatMap((weights) => Object.keys(weights)),
     ];
     expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
     expect(INVESTMENT_FORM_CATEGORIES).not.toContain('Emergency fund');

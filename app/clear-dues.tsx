@@ -71,7 +71,7 @@ export default function ClearDuesScreen() {
       title: mode === 'settle' ? 'Mark past dues as already paid?' : 'Record past payments?',
       message: `This will handle ${pending.count} dues totalling ${formatAmount(pending.amount, 'exact', 1)}.${recordWarning}`,
       confirmLabel: 'Confirm',
-      cancelLabel: 'Cancel',
+      cancelLabel: 'Review',
     });
     if (!confirmed) return;
     setBusy(true);
@@ -97,7 +97,7 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );

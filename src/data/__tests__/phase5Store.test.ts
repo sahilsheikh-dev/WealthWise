@@ -52,7 +52,7 @@ describe('Phase 5 store integration', () => {
       store.getState().data.goals.find(({ auto }) => auto === 'ef')!,
       store.getState().data,
       '2026-10-10',
-    )).toBe(50_000);
+    )).toBe(30_000);
 
     const restored = createStore(storage, () => `restored-${++id}`);
     await hydrated(restored);

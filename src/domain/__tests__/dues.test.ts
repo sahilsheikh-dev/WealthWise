@@ -76,11 +76,12 @@ const policy = (changes: Partial<Policy> = {}): Policy => ({
   premium: 50,
   frequency: 'monthly',
   startDate: '2026-01-01',
-  status: 'active',
   premiumYears: 1,
   trackFrom: '2026-01-01',
+  coverAmount: null,
   currentValue: null,
   valueAsOf: null,
+  maturityDate: null,
   payments: [],
   ...changes,
 });
@@ -190,45 +191,14 @@ describe('pending dues', () => {
     expect(dues[0]).toMatchObject({ kind: 'policy', parentId: 'policy', name: 'Health cover' });
   });
 
-  it('generates a one-period yearly policy schedule with one slot', () => {
+  it('generates a single-premium policy schedule with one slot', () => {
     const schedule = policySchedule(policy({
-      frequency: 'yearly',
-      premiumYears: 1,
+      frequency: 'single',
       startDate: '2026-01-31',
       trackFrom: '2026-01-31',
     }), '2026-02-01');
     expect(schedule.rows).toHaveLength(1);
-    expect(schedule.rows[0]).toMatchObject({ dueDate: '2026-01-31', amount: 50, status: 'ongoing' });
-  });
-
-  it.each([
-    ['monthly', 12, ['2024-01-31', '2024-02-29', '2024-03-31']],
-    ['quarterly', 4, ['2024-01-31', '2024-04-30', '2024-07-31']],
-    ['half-yearly', 2, ['2024-01-31', '2024-07-31']],
-    ['yearly', 1, ['2024-01-31']],
-  ] as const)('schedules each %s frequency with calendar month-end clamping', (frequency, count, dates) => {
-    const schedule = policySchedule(policy({
-      frequency,
-      premiumYears: 1,
-      startDate: '2024-01-31',
-      trackFrom: '2024-01-01',
-    }), '2024-01-31');
-    expect(schedule.rows).toHaveLength(count);
-    expect(schedule.rows.slice(0, dates.length).map((row) => row.dueDate)).toEqual(dates);
-  });
-
-  it('stops policy dues after endDate and suppresses dues for inactive policies', () => {
-    const active = policySchedule(policy({
-      frequency: 'yearly',
-      premiumYears: 5,
-      startDate: '2026-01-31',
-      trackFrom: '2026-01-31',
-      endDate: '2028-01-30',
-    }), '2026-01-01');
-    expect(active.rows.map((row) => row.dueDate)).toEqual(['2026-01-31', '2027-01-31']);
-    const inactive = policy({ status: 'lapsed' });
-    expect(policySchedule(inactive, '2026-01-01').rows).toEqual([]);
-    expect(pendingDues(inactive, '2026-03-01')).toMatchObject({ count: 0, amount: 0, rows: [] });
+    expect(schedule.rows[0]).toMatchObject({ dueDate: '2026-01-31', amount: 50, status: 'overdue' });
   });
 
   it('starts policy tracking at the selected date and FIFO-matches existing payments', () => {
@@ -359,7 +329,7 @@ describe('one-tap dues and undo', () => {
     });
     expect(policyResult.data.transactions.find((transaction) => transaction.source?.kind === 'policy-payment')).toMatchObject({
       type: 'expense',
-      category: 'Health premium',
+      category: 'Insurance',
       note: 'Health cover premium',
       amount: 50,
       source: { kind: 'policy-payment', parentId: 'policy', entryId: 'policy-1' },
@@ -616,11 +586,12 @@ describe('bulk due handling', () => {
       premium: 50,
       frequency: 'monthly',
       startDate: '2026-01-01',
-      status: 'active',
       premiumYears: 1,
       trackFrom: '2026-01-01',
+      coverAmount: null,
       currentValue: null,
       valueAsOf: null,
+      maturityDate: null,
     }, { mode: 'record', asOf: '2026-02-01', newId: (() => { let id = 0; return () => `new-policy-${++id}`; })() });
     expect(policyResult.data.policies).toHaveLength(1);
     expect(policyResult.data.transactions).toHaveLength(2);

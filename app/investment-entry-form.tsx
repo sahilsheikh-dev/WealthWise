@@ -102,7 +102,7 @@ export default function InvestmentEntryFormScreen() {
       if (!useAppStore.getState().lastError) router.back();
     });
   };
-  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment entry not found" /></FormScreen>;
+  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment entry not found" /></FormScreen>;
   return (
     <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={isDirty}
       headerAction={entry ? { label: 'Delete investment entry', onPress: remove } : undefined}

@@ -6,7 +6,6 @@ import { Modal, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { ChoiceField } from '../src/components/form/ChoiceField';
-import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -66,7 +65,7 @@ export default function InvestmentFormScreen() {
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [kind, setKind] = useState<InvestmentKind>('recurring');
   const [name, setName] = useState('');
-  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment not found" /></FormScreen>;
+  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment not found" /></FormScreen>;
   if (holding?.kind === 'plan') return <PlanEditor plan={holding} onNameChange={setName} />;
   if (holding?.kind === 'manual') return <ManualEditor holding={holding} onNameChange={setName} />;
   return (
@@ -194,7 +193,7 @@ function PlanEditor({
           title: 'Record past installments?',
           message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
           confirmLabel: `Record ${previewPastDues.count} installments`,
-          cancelLabel: 'Cancel',
+          cancelLabel: 'Review',
         });
         if (!confirmed) return;
         actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);
@@ -368,7 +367,7 @@ function PlanFields({
     <>
       <FormSection title="Basics">
         <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={holdingTypes.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+        <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Holding type" choices={holdingTypes} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
         <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">

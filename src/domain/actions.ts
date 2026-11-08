@@ -1,5 +1,4 @@
 import { ensureEfGoal } from './goals';
-import { defaultCoverGoals } from './coverGoals';
 import { LinkedTransactionError } from './links';
 import type { AppData, ISODate, Settings, Transaction } from './types';
 
@@ -18,9 +17,9 @@ export function emptyAppData(asOf: ISODate): AppData {
     holdings: [],
     liabilities: [],
     policies: [],
-    coverGoals: defaultCoverGoals(),
     budget: null,
-    budgetPlan: null,
+    budgetTemplates: [],
+    defaultBudgetTemplateId: null,
     monthBudgets: [],
     efAllocation: null,
     efCustomBuckets: [],

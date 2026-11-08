@@ -4,7 +4,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useAppStore } from '../data/store';
 import { useAppActions } from '../data/useAppData';
 import { duesThroughPreview, type DueTarget } from '../domain/dues';
-import { pendingActionLabel, pendingTransactionType, type PendingItem } from '../domain/pending';
+import { pendingTransactionType, type PendingItem } from '../domain/pending';
 import { formatAmount } from '../lib/amountDisplay';
 import { formatDate } from '../lib/format';
 import { confirmAsync } from '../lib/confirm';
@@ -15,14 +15,10 @@ export function PendingItemActions({
   item,
   today,
   onClose,
-  compact = false,
-  actionLabel,
 }: {
   item: PendingItem;
   today: string;
   onClose?: () => void;
-  compact?: boolean;
-  actionLabel?: string;
 }) {
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -69,12 +65,12 @@ export function PendingItemActions({
     if (!item.actionable) return;
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
-    if (item.source.kind === 'budget' || item.source.kind === 'income') {
+    if (item.source.kind === 'budget') {
       actions.addTransaction({
         type: pendingTransactionType(item),
         amount: item.amount,
         category: item.category,
-        note: item.source.kind === 'income' ? item.title : '',
+        note: '',
         date: today,
       });
       const state = useAppStore.getState();
@@ -95,7 +91,7 @@ export function PendingItemActions({
       };
     } else {
       const source = item.source;
-      if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
+      if (source.kind !== 'plan' && source.kind !== 'liability') return;
       const target: DueTarget = { kind: source.kind, id: source.parentId };
       const entryId = actions.clearDue(target, source.slotId);
       const state = useAppStore.getState();
@@ -103,11 +99,7 @@ export function PendingItemActions({
         Alert.alert('Could not clear due', state.lastError ?? 'The due could not be recorded.');
         return;
       }
-      const sourceKind = source.kind === 'plan'
-        ? 'holding-entry'
-        : source.kind === 'liability'
-          ? 'liability-payment'
-          : 'policy-payment';
+      const sourceKind = source.kind === 'plan' ? 'holding-entry' : 'liability-payment';
       const transaction = state.data.transactions.find((row) =>
         row.source?.kind === sourceKind
         && row.source.parentId === source.parentId
@@ -124,9 +116,7 @@ export function PendingItemActions({
       };
     }
     setActionToast({
-      message: pendingTransactionType(item) === 'income'
-        ? `Received ${formatAmount(clearedAmount, 'exact', 1)}`
-        : `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
+      message: `Marked ${formatAmount(clearedAmount, 'exact', 1)} as paid`,
       actionLabel: 'Undo',
       onAction: undo,
     });
@@ -134,7 +124,7 @@ export function PendingItemActions({
   };
 
   const clearThrough = async () => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
     if (!item.dueDate) {
       Alert.alert('Could not clear due', 'This due does not have a scheduled date.');
       return;
@@ -158,11 +148,7 @@ export function PendingItemActions({
       Alert.alert('Could not clear due', state.lastError ?? 'The dues could not be recorded.');
       return;
     }
-    const sourceKind = target.kind === 'plan'
-      ? 'holding-entry'
-      : target.kind === 'liability'
-        ? 'liability-payment'
-        : 'policy-payment';
+    const sourceKind = target.kind === 'plan' ? 'holding-entry' : 'liability-payment';
     const transactions = entryIds.map((entryId) => state.data.transactions.find((row) =>
       row.source?.kind === sourceKind
       && row.source.parentId === target.id
@@ -183,22 +169,6 @@ export function PendingItemActions({
     });
     onClose?.();
   };
-
-  if (compact) {
-    return (
-      <View style={styles.actions}>
-        <Button
-          label={actionLabel ?? pendingActionLabel(pendingTransactionType(item))}
-          icon={actionLabel ? undefined : 'check'}
-          onPress={() => {
-            if (item.actionable) clear();
-            else void clearThrough();
-          }}
-          style={styles.compactButton}
-        />
-      </View>
-    );
-  }
 
   return item.kind === 'budget' ? (
     <View style={styles.actions}>

@@ -11,20 +11,14 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
-import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
-import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
-import { monthEndDate } from '../src/domain/cashFlow';
-import { customBudgetCategories } from '../src/domain/budget';
-import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
+import { monthKey } from '../src/domain/dates';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
-import { suggestPolicyForTransaction } from '../src/domain/coverGoals';
 import { holdingValue } from '../src/domain/portfolio';
 import {
   INVESTMENT_FORM_CATEGORIES,
@@ -73,7 +67,6 @@ export default function TransactionFormScreen() {
   const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
   const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
-  const customCategories = useMemo(() => customBudgetCategories(data), [data]);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const setTxMonth = useUIStore((state) => state.setTxMonth);
@@ -115,10 +108,8 @@ export default function TransactionFormScreen() {
       withdrawable,
       mode,
       allowUnlinkedInvestment: pendingMode && !editing,
-      budgetCategoriesForMonth: (type, date) =>
-        budgetItemCategoriesForTransaction(data, date.slice(0, 7), today, type),
     }),
-    [data, editing, instruments, legacyCategories, mode, pendingMode, today, withdrawable],
+    [editing, instruments, legacyCategories, mode, pendingMode, today, withdrawable],
   );
   const submitting = useRef(false);
   const {
@@ -138,49 +129,25 @@ export default function TransactionFormScreen() {
       type: transaction.type,
       category: transaction.category,
       instrumentId: transaction.source?.kind === 'holding-entry' ? transaction.source.parentId : undefined,
-      linkToPolicy: false,
     } : {
       amount: requestedAmount ?? '',
       date: requestedDate ?? today,
       note: '',
       type: initialType,
       category: (() => {
-        const initialDate = requestedDate && isValidISO(requestedDate) ? requestedDate : today;
-        const categories = initialType === 'income'
-          ? TRANSACTION_CATEGORIES.income
-          : [
-            ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
-            ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
-          ];
+        const categories = initialType === 'invest'
+          ? INVESTMENT_FORM_CATEGORIES
+          : TRANSACTION_CATEGORIES[initialType];
         return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
           ? requestedCategoryParam
           : categories[0] ?? '';
       })(),
       instrumentId: undefined,
-      linkToPolicy: false,
     },
   });
   const selectedType = useWatch({ control, name: 'type' });
   const selectedCategory = useWatch({ control, name: 'category' });
   const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
-  const selectedDate = useWatch({ control, name: 'date' }) ?? today;
-  const selectedAmount = useWatch({ control, name: 'amount' }) ?? '';
-  const selectedNote = useWatch({ control, name: 'note' }) ?? '';
-  const suggestionTransaction: Transaction = {
-    id: transaction?.id ?? 'policy-premium-draft',
-    type: selectedType ?? 'expense',
-    amount: Number(selectedAmount) || 0,
-    category: selectedCategory ?? '',
-    date: selectedDate,
-    note: selectedNote,
-    ...(transaction?.source ? { source: transaction.source } : {}),
-  };
-  const suggestedPolicy = suggestPolicyForTransaction(data, suggestionTransaction);
-  const showPolicyLink = !transactionId && suggestedPolicy !== null;
-
-  useEffect(() => {
-    setValue('linkToPolicy', showPolicyLink, { shouldDirty: false });
-  }, [setValue, showPolicyLink, suggestedPolicy?.id]);
 
   useEffect(() => {
     if (!lastCreatedInstrumentId) return;
@@ -222,33 +189,9 @@ export default function TransactionFormScreen() {
   const derivedCategory = selectedInstrument
     ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
-  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
-  const categorySections = useMemo(
-    () => selectedType === 'income'
-      ? []
-      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType),
-    [data, selectedMonth, selectedType, today],
-  );
-  const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
-  const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
-    section.categories.map((choice) => ({
-      value: choice.category,
-      title: transactionCategoryLabel(choice.category, selectedType ?? 'expense', customCategories),
-      group: section.name,
-    })),
-  );
-  for (const category of choices) {
-    if (!categoryOptions.some((option) => option.value === category)) {
-      categoryOptions.push({
-        value: category,
-        title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
-        group: 'Other',
-      });
-    }
-  }
 
   const save = async (values: TransactionFormOutput) => {
-    const { instrumentId, linkToPolicy: shouldLinkPolicy, ...transactionValues } = values;
+    const { instrumentId, ...transactionValues } = values;
     const input: Omit<Transaction, 'id'> = transactionValues;
     if (transactionId && linkedEditable) {
       actions.updateLinkedTransaction(transactionId, {
@@ -263,12 +206,6 @@ export default function TransactionFormScreen() {
       actions.linkExistingTransaction(transactionId, instrumentId, values.note);
     } else if (transactionId) {
       actions.updateTransaction(transactionId, input);
-    } else if (shouldLinkPolicy && suggestedPolicy) {
-      actions.addPolicyPayment(suggestedPolicy.id, {
-        date: values.date,
-        amount: values.amount,
-        note: values.note,
-      });
     } else if (instrumentId && (values.type === 'invest' || values.type === 'income' && values.category === 'Withdrawal')) {
       actions.addInstrumentTransaction({
         kind: values.type === 'invest' ? 'deposit' : 'withdrawal',
@@ -318,7 +255,7 @@ export default function TransactionFormScreen() {
 
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );
@@ -388,7 +325,7 @@ export default function TransactionFormScreen() {
           <>
             <ReadOnlyRow label="Type" value={transaction.type} />
             <ReadOnlyRow label="Amount" value={formatAmount(transaction.amount, 'exact', 1)} />
-            <ReadOnlyRow label="Category" value={transactionCategoryLabel(linkedEditable ? derivedCategory : transaction.category, transaction.type, customCategories)} />
+            <ReadOnlyRow label="Category" value={transactionCategoryLabel(linkedEditable ? derivedCategory : transaction.category, transaction.type)} />
             <ReadOnlyRow label="Date" value={transaction.date} />
           </>
         ) : (
@@ -417,7 +354,7 @@ export default function TransactionFormScreen() {
             ) : (
               <>
                 <ReadOnlyRow label="Type" value={transaction.type} />
-                <ReadOnlyRow label="Category" value={transactionCategoryLabel(transaction.category, transaction.type, customCategories)} />
+                <ReadOnlyRow label="Category" value={transactionCategoryLabel(transaction.category, transaction.type)} />
               </>
             )}
             <Controller
@@ -455,9 +392,7 @@ export default function TransactionFormScreen() {
                     />
                   )}
                 />
-                <View>
-                  <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
-                </View>
+                <ReadOnlyRow label="Category" value={selectedInstrument ? derivedCategory : selectedCategory || 'Choose an investment'} />
               </>
             ) : null}
             {!transaction?.source && selectedType !== 'invest' ? (
@@ -465,45 +400,16 @@ export default function TransactionFormScreen() {
                 control={control}
                 name="category"
                 render={({ field }) => (
-                  selectedType === 'expense' ? (
-                    <Dropdown
-                      label="Category"
-                      accessibilityLabel="Category"
-                      value={field.value}
-                      options={categoryOptions}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
-                  ) : (
-                    <ChoiceField
-                      label="Category"
-                      value={field.value}
-                      choices={choices}
-                      choiceLabels={Object.fromEntries(choices.map((category) => [
-                        category, transactionCategoryLabel(category, selectedType, customCategories),
-                      ]))}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
-                  )
-                )}
-              />
-            ) : null}
-            {showPolicyLink && suggestedPolicy ? (
-              <Controller
-                control={control}
-                name="linkToPolicy"
-                render={({ field }) => (
-                  <SwitchRow
-                    label={`Link to ${suggestedPolicy.name}?`}
-                    value={field.value ?? false}
-                    onValueChange={field.onChange}
+                  <ChoiceField
+                    label="Category"
+                    value={field.value}
+                    choices={choices}
+                    choiceLabels={Object.fromEntries(choices.map((category) => [category, transactionCategoryLabel(category, selectedType)]))}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                    }}
+                    error={errors.category?.message}
                   />
                 )}
               />
@@ -532,7 +438,7 @@ export default function TransactionFormScreen() {
               control={control}
               name="date"
               render={({ field }) => (
-                <DateField value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
+                <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} />
               )}
             />
           </>
