@@ -3,8 +3,13 @@ import { join } from 'node:path';
 
 const root = process.cwd();
 const publishedDirectory = join(root, 'docs', 'releases', 'published');
-const latestDownloadUrl =
-  'https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk';
+const releasesBaseUrl = 'https://github.com/sahilsheikh-dev/WealthWise/releases';
+
+function readLatestVersion(contents: string): string {
+  const versionMatch = contents.match(/^Latest version: (v\d+\.\d+\.\d+)$/m);
+  if (!versionMatch?.[1]) throw new Error('Download block has no semantic version.');
+  return versionMatch[1];
+}
 
 function readDownloadBlock(contents: string, filePath: string): string {
   const lines = contents.split(/\r?\n/);
@@ -27,41 +32,65 @@ describe('published release download documentation', () => {
   it('keeps README and the latest published Download blocks identical', () => {
     const readmePath = join(root, 'README.md');
     const readme = readDownloadBlock(readFileSync(readmePath, 'utf8'), readmePath);
-    const versionMatch = readme.match(/^Latest version: (v\d+\.\d+\.\d+)$/m);
-    if (!versionMatch?.[1]) throw new Error('README Download block has no semantic version.');
+    const version = readLatestVersion(readme);
 
-    const publishedPath = join(publishedDirectory, `${versionMatch[1]}.md`);
+    const publishedPath = join(publishedDirectory, `${version}.md`);
     const published = readDownloadBlock(readFileSync(publishedPath, 'utf8'), publishedPath);
+    expect(readme).toContain(
+      `${releasesBaseUrl}/latest/download/WealthWise-android-latest-${version}.apk`,
+    );
     expect(published).toBe(readme);
   });
 
   it('uses each older release versioned asset link, never the latest route', () => {
     const readmePath = join(root, 'README.md');
     const readme = readDownloadBlock(readFileSync(readmePath, 'utf8'), readmePath);
-    const versionMatch = readme.match(/^Latest version: (v\d+\.\d+\.\d+)$/m);
-    if (!versionMatch?.[1]) throw new Error('README Download block has no semantic version.');
+    const latestVersion = readLatestVersion(readme);
 
     const olderPublishedFiles = readdirSync(publishedDirectory)
-      .filter((file) => /^v\d+\.\d+\.\d+\.md$/.test(file) && file !== `${versionMatch[1]}.md`);
+      .filter((file) => /^v\d+\.\d+\.\d+\.md$/.test(file) && file !== `${latestVersion}.md`);
 
     for (const file of olderPublishedFiles) {
       const filePath = join(publishedDirectory, file);
       const block = readDownloadBlock(readFileSync(filePath, 'utf8'), filePath);
       const version = file.slice(0, -'.md'.length);
-      expect(block).not.toContain(latestDownloadUrl);
+      expect(block).not.toContain('/latest/');
       expect(block).toContain(
-        `https://github.com/sahilsheikh-dev/WealthWise/releases/download/${version}/WealthWise-android.apk`,
+        `${releasesBaseUrl}/download/${version}/WealthWise-android-${version}.apk`,
+      );
+      expect(block).not.toContain(`WealthWise-android-latest-${version}.apk`);
+    }
+  });
+
+  it('uses each release asset filename in release history', () => {
+    const readmePath = join(root, 'README.md');
+    const readme = readDownloadBlock(readFileSync(readmePath, 'utf8'), readmePath);
+    const latestVersion = readLatestVersion(readme);
+
+    const releaseHistoryPath = join(root, 'docs', 'releases', 'release-history.md');
+    const releaseHistory = readFileSync(releaseHistoryPath, 'utf8');
+    const publishedFiles = readdirSync(publishedDirectory)
+      .filter((file) => /^v\d+\.\d+\.\d+\.md$/.test(file));
+
+    for (const file of publishedFiles) {
+      const version = file.slice(0, -'.md'.length);
+      const assetName = version === latestVersion
+        ? `WealthWise-android-latest-${version}.apk`
+        : `WealthWise-android-${version}.apk`;
+      expect(releaseHistory).toContain(
+        `${releasesBaseUrl}/download/${version}/${assetName}`,
       );
     }
   });
 
   it('does not publish commit identifiers or APK digests in the README or release notes', () => {
     const readmePath = join(root, 'README.md');
+    const releaseHistoryPath = join(root, 'docs', 'releases', 'release-history.md');
     const publishedFiles = readdirSync(publishedDirectory)
       .filter((file) => /^v\d+\.\d+\.\d+\.md$/.test(file))
       .map((file) => join(publishedDirectory, file));
 
-    for (const filePath of [readmePath, ...publishedFiles]) {
+    for (const filePath of [readmePath, releaseHistoryPath, ...publishedFiles]) {
       const contents = readFileSync(filePath, 'utf8');
       expect(contents).not.toMatch(/\b[0-9a-f]{40}\b|\b[0-9a-f]{64}\b/i);
       if (filePath !== readmePath) {
