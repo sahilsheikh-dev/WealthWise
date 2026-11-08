@@ -372,12 +372,12 @@ default-item, validation and save/rehydration coverage.
 
 ## 3. Standing rules
 
-- **R1 — Dirty-file preflight:** list every dirty file before other work. If
-  files are dirty, inspect their diff and commit exactly those named files
-  before proceeding, using a Conventional Commit subject derived from the
-  actual changes. If dirty files cover unrelated areas, make one commit per
-  area and name only the files in that area. Never use a generic checkpoint
-  subject and never revert owner edits.
+- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
+  before other work. If files are dirty, run `git diff --stat` and inspect
+  their complete diff, then commit exactly those named files with a
+  Conventional Commit subject that states what changed. Use one commit per
+  unrelated area. The subject must not use a legacy placeholder; never bypass
+  the commit hook. Preserve owner edits and never revert them.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
   as `<ID>-R<n>`; add `Revised by <ID>-R<n>` to the original row. Create a new
@@ -1421,7 +1421,8 @@ changes.
   P25-C preflight (2026-10-26): the worktree contained only the user's
   `package.json` and `package-lock.json` SDK patch update. It was committed
   unchanged as `ff349515887dae09ac5ebc34776ec2754ed80dbe`
-  (`chore: user manual changes (checkpoint)`), and both changed paths are
+  (historical subject, superseded by CM-1 enforcement:
+  `chore: user manual changes (checkpoint)`), and both changed paths are
   included above. All earlier non-Copilot commit paths listed above were
   re-audited; the user-owned Home order and Budget cash-flow labels remain
   untouched.
@@ -2871,6 +2872,7 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
+| CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `docs: enforce descriptive commit subjects` (hash to be recorded in the next ledger update). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
 | P01 | Phase 1 | — | 1 | unknown | Mobile foundation, design system and static screens. | Done (user-confirmed in app, 2026-10-15). | none identified | Partial prompt and later review unavailable. | reconstructed |
 | P02 | Phase 2 | — | 1 | unknown | Pure domain logic and computed screens. | Done (user-confirmed in app, 2026-10-15). | none identified | Early self-import, unnecessary extras, missing tests/config and unwired screens; later resolution reported only. | reconstructed |
 | P03 | Phase 3 | — | 1 | unknown | Validated local persistence and transaction forms. | Done (user-confirmed in app, 2026-10-15). | none identified | Native force-quit persistence not verified. | reconstructed |
@@ -8969,9 +8971,10 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 - Archived the final notes in `docs/releases/published/v1.0.0.md`, updated release
   configuration/history/index and the memory status/open items, and removed
   the published draft.
-- Pre-publication worktree edits were checkpointed exactly in
+- Pre-publication worktree edits were committed exactly in
   `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15`
-  (`chore: user manual changes (checkpoint)`). That checkpoint included the
+  (historical subject, superseded by CM-1 enforcement:
+  `chore: user manual changes (checkpoint)`). That commit included the
   deletion of the placeholder `docs/releases/v1.0.0.md`; the permanent record
   was recreated as requested after publication. The owner's release README
   line reflow was preserved.
@@ -9072,8 +9075,9 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   versioning, draft preparation, explicit publication approval, and archival
   of published release notes and history. It prohibits inventing release
   details, publishing without approval, and overwriting published records.
-- The user-added files were preserved and checkpointed exactly in
-  `9b9066b` (`chore: user manual changes (checkpoint)`), verified as a commit.
+- The user-added files were preserved and committed exactly in
+  `9b9066b` (historical subject, superseded by CM-1 enforcement:
+  `chore: user manual changes (checkpoint)`), verified as a commit.
   No release build or tag was performed by this documentation setup.
 - Release metadata remains unverified: `release-config.md` has `UPDATE_ME`
   repository identity fields; `release-history.md` marks v1.0.0 as Verify; and
@@ -9303,7 +9307,8 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 
 - Reviewed commit `3ed74ba2ae338c9722ce49ed77f38222d15ebb7b`: its only change
   was replacing the 43 device checklist results from `Not run` with `Pass`.
-  Reworded it from `chore: user manual changes (checkpoint)` to
+  Reworded its historical subject (superseded by CM-1 enforcement) from
+  `chore: user manual changes (checkpoint)` to
   `docs: record owner Android device test results`
   (`cc7eded7b5f5ba8dee957f96a1ab5725cd08e796`).
 - Verified old and new commit trees are identical. Replayed the following

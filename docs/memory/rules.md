@@ -4,13 +4,14 @@
 
 ## Invariants
 
-- **R1 — Dirty-file preflight:** list every dirty file before other work. If
-  files are dirty, inspect their diff and commit exactly those named files
-  before proceeding, using a Conventional Commit subject derived from the
-  actual changes. If dirty files cover unrelated areas, make one commit per
-  area and name only the files in that area. Never use a generic checkpoint
-  subject. Preserve owner edits; never use checkout, restore, stash, reset, or
-  old-code reapplication to revert them.
+- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
+  before other work. If files are dirty, run `git diff --stat` and inspect
+  their complete diff, then commit exactly those named files with a
+  Conventional Commit subject that states what changed. Use one commit per
+  unrelated area. The subject must not use a legacy placeholder; never bypass
+  the commit hook. Preserve owner edits and never revert them.
+- Enable commit-message enforcement in each clone with
+  `git config core.hooksPath .githooks`.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
   as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say

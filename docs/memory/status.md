@@ -1,6 +1,17 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
+- Commit-subject enforcement is active in the repository: the old behavior
+  allowed non-descriptive placeholder subjects; the new POSIX hook requires a
+  supported Conventional Commit subject and rejects placeholders. Enable it
+  with `git config core.hooksPath .githooks`. Focused tests cover accepted and
+  rejected subjects. Gate 1: 93 suites, 1,205 passed, 1 skipped; 95.90%
+  statements, 91.89% branches, 97.75% functions, 97.57% lines overall.
+  `src/data`: 90.63/86.95/93.07/93.92%; `src/domain`:
+  96.96/92.82/98.79/98.31%; pure `src/lib`: 100% in all four measures.
+  Gate 1 `npm test -- --coverage` exit 0; Gate 2 `npx tsc --noEmit` exit 0;
+  Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 0. Gates 5-6
+  (Expo exports) were skipped to honor the explicit no-build boundary.
 - Current task: P28-C-R3 is complete; no application behavior changed. The
   public latest and versioned v1.0.0 APK links return HTTP 200 with
   Content-Length 112133413, and the downloaded artifact's SHA-256 matches the

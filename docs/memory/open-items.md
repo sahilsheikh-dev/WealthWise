@@ -197,6 +197,14 @@
 
 ## Recent completed validation
 
+- **Commit-subject enforcement (2026-11-08):** superseded the former
+  unenforced placeholder-subject practice because it obscured the scope of
+  changes and encouraged unrelated edits to be grouped together. The
+  repository hook now requires descriptive Conventional Commit subjects;
+  enable it with `git config core.hooksPath .githooks`. Full ordered gates are
+  recorded as Gate 1-4 exit 0; Gate 1 had 93 suites, 1,205 passed and 1
+  skipped. Both Expo export gates were intentionally skipped because the task
+  forbids builds.
 - **P29-R:** the external schema-v13 backup migrated through the production
   import path to v18 with no differences in the requested before/after
   summaries. The script prints only numbered holdings/goals, types, and
