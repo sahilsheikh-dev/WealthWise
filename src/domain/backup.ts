@@ -79,6 +79,16 @@ const oneTimeLiabilitySchema = z.strictObject({
 const efEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: money.refine((amount) => amount !== 0), note,
 });
+const efAllocationSchema = z.strictObject({
+  cash: z.number().finite().min(0).max(100),
+  bank: z.number().finite().min(0).max(100),
+  'fd-rd': z.number().finite().min(0).max(100),
+  'mutual-funds-bonds': z.number().finite().min(0).max(100),
+  stocks: z.number().finite().min(0).max(100),
+  insurance: z.number().finite().min(0).max(100),
+  other: z.number().finite().min(0).max(100),
+}).refine((allocation) => Math.abs(Object.values(allocation).reduce((sum, value) => sum + value, 0) - 100) < 0.0001)
+  .nullable();
 export const importDataSchema = z.strictObject({
   settings: z.strictObject({
     name,
@@ -91,6 +101,7 @@ export const importDataSchema = z.strictObject({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   efEntries: z.array(efEntrySchema).max(100_000),
+  efAllocation: efAllocationSchema,
 });
 
 const envelopeSchema = z.strictObject({
@@ -205,7 +216,7 @@ export async function parseBackup(
   if (value.formatVersion > BACKUP_FORMAT_VERSION || value.schemaVersion > SCHEMA_VERSION) {
     return { ok: false, reason: 'newer-version', message: 'This backup was made by a newer version of Wealth Wise. Update the app before importing it.' };
   }
-  if (value.formatVersion !== BACKUP_FORMAT_VERSION) {
+  if (value.formatVersion !== BACKUP_FORMAT_VERSION || value.schemaVersion < 1) {
     return { ok: false, reason: 'unsupported-version', message: 'This backup format is no longer supported.' };
   }
   const digest = await options.digest(canonicalJson(value.data));

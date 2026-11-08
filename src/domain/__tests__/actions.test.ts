@@ -33,6 +33,7 @@ describe('immutable app actions', () => {
       holdings: [],
       liabilities: [],
       efEntries: [],
+      efAllocation: null,
     });
   });
 

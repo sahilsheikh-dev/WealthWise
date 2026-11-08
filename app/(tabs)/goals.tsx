@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '../../src/components/AppHeader';
-import { IconButton } from '../../src/components/IconButton';
 import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
@@ -58,11 +57,6 @@ export default function GoalsScreen() {
                   <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
                 ) : null}
               </Pressable>
-              <IconButton
-                icon="edit-2"
-                label={`Edit ${goal.name}`}
-                onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-              />
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
             <ProgressBar percent={goalPercent} />

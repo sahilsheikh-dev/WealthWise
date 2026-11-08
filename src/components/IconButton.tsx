@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../theme/useTheme';
 
@@ -35,13 +35,15 @@ export function IconButton({
   variant = 'default',
   disabled = false,
   hint,
+  labelPosition = 'none',
 }: {
   icon: keyof typeof Feather.glyphMap;
-  label: string;
+  label?: string;
   onPress: () => void;
   variant?: 'default' | 'primary' | 'destructive';
   disabled?: boolean;
   hint?: string;
+  labelPosition?: 'none' | 'below';
 }) {
   const { colors } = useTheme();
   const backgroundColor = variant === 'primary'
@@ -54,10 +56,11 @@ export function IconButton({
     : variant === 'destructive'
       ? colors.err
       : colors.text2;
-  return (
+  const showLabel = labelPosition === 'below' && Boolean(label);
+  const button = (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={label ?? icon}
       accessibilityHint={hint}
       accessibilityState={{ disabled }}
       disabled={disabled}
@@ -71,6 +74,22 @@ export function IconButton({
       <Feather name={icon} size={18} color={iconColor} />
     </Pressable>
   );
+  // Default: preserve the original icon-only button layout.
+  if (!showLabel) {
+    return button;
+  }
+  // Opt-in: show the label outside and below the circle.
+  return (
+    <View style={styles.labeledContainer}>
+      {button}
+      <Text
+        style={[styles.label, { color: colors.text2 }]}
+        numberOfLines={2}
+      >
+        {label}
+      </Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -80,6 +99,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 22,
+  },
+  labeledContainer: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 6,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 14,
   },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.76 },

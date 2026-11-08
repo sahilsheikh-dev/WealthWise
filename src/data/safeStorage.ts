@@ -20,7 +20,7 @@ export function createSafeStorage(
   hooks: SafeStorageHooks,
   options: { blockWrites: () => boolean },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 } | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 } | null = null;
   return {
     async getItem(name) {
       const raw = await base.getItem(name);
@@ -36,7 +36,7 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state

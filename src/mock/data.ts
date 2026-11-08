@@ -114,4 +114,5 @@ export const mockAppData: AppData = {
   holdings,
   liabilities,
   efEntries: emergencyFundEntries,
+  efAllocation: null,
 };
