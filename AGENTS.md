@@ -17,12 +17,13 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 
 ## Project rules
 
-- **R1 — Dirty-file preflight:** list every dirty file before other work. If
-  files are dirty, inspect their diff and commit exactly those named files
-  before proceeding, using a Conventional Commit subject derived from the
-  actual changes. If dirty files cover unrelated areas, make one commit per
-  area and name only the files in that area. Never use a generic checkpoint
-  subject. Preserve owner edits; never use checkout, restore, stash, reset, or
+- **R1 — Dirty-file preflight and commit subjects:** before other work, list
+  every dirty file and run `git diff --stat` plus the complete diff. Before
+  committing, show the proposed subject and staged diff-stat. Commit exactly
+  the named files with a descriptive Conventional Commit subject that states
+  what actually changed; use one commit per unrelated area. Do not use
+  placeholder or update-only subjects, and never bypass the commit hook.
+  Preserve owner edits; never use checkout, restore, stash, reset, or
   old-code reapplication to undo them.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
@@ -37,6 +38,8 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
   including drafts. Other documentation files may be changed only when the
   owner explicitly names them. Reports and generated output belong in chat or
   `/tmp`; release content must never be placed there.
+- Enable commit-message enforcement in each clone with
+  `git config core.hooksPath .githooks`.
 - If an owner edit causes a test failure, update the test to match the source
   and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and

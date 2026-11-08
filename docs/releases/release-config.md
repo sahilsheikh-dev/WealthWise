@@ -123,8 +123,10 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
 [`memory/rules.md`](../memory/rules.md), and
 [`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules). In particular:
 
-- Never checkpoint dirty files with a generic message; inspect and commit only
-  the named dirty files with descriptive Conventional Commit messages.
+- Before other work, list every dirty file, run `git diff --stat`, and inspect
+  the complete diff. Commit exactly those files with a descriptive
+  Conventional Commit subject; split unrelated areas into separate commits.
+  Do not bypass commit-message enforcement.
 - Keep fixes to completed work in their original phase as `<ID>-R<n>`.
 - Never push, amend, or rewrite history without explicit owner approval.
 - Release publication and tag creation require explicit owner approval.

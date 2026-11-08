@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+  echo "commit-msg: expected a commit message file" >&2
+  exit 2
+fi
+
+subject=$(sed -n '1p' "$1")
+
+if printf '%s\n' "$subject" | grep -Eiq '(checkpoint|user manual changes|^wip$|^update$)'; then
+  echo "commit-msg: subject is a forbidden placeholder" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|chore|refactor|perf|style|build|ci|revert)(\([^)]*\))?: .+'; then
+  echo "commit-msg: subject must use a supported Conventional Commit type" >&2
+  exit 1
+fi

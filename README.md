@@ -131,6 +131,14 @@ npx expo export --platform android
 npx expo export --platform ios
 ```
 
+### Development
+
+Enable the repository's commit-message hook once in each clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Release process
 
 The current version is **v1.0.0**; the previous version is the initial
