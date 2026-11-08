@@ -568,6 +568,48 @@ jest.mock('../../lib/confirm', () => ({
   choiceAsync: async () => null,
   confirmAsync: (...args: Parameters<typeof mockConfirmAsync>) => mockConfirmAsync(...args),
 }));
+jest.mock('../../components/PaidAmountDialog', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    PaidAmountDialog: ({ visible, title, dueAmount, dueDate, onPaid, onNotPaid }: {
+      visible: boolean;
+      title: string;
+      dueAmount: number;
+      dueDate?: string;
+      onPaid: (amount: number) => void;
+      onNotPaid: () => void;
+    }) => visible ? ReactModule.createElement('paid-dialog', {
+      testID: 'paid-amount-dialog',
+      title,
+      dueAmount,
+      dueDate,
+      onPaid,
+      onNotPaid,
+    }, ReactModule.createElement('button', {
+      accessibilityLabel: 'Paid',
+      onPress: () => onPaid(dueAmount),
+    }, 'Paid'),
+    ReactModule.createElement('button', {
+      accessibilityLabel: 'Not paid',
+      onPress: onNotPaid,
+    }, 'Not paid')) : null,
+  };
+});
+jest.mock('../../components/ApplyScopeDialog', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    ApplyScopeDialog: ({ visible, onApply, onCancel }: {
+      visible: boolean;
+      onApply: (scope: 'month' | 'following') => void;
+      onCancel: () => void;
+    }) => visible ? ReactModule.createElement('apply-scope-dialog', {
+      testID: 'apply-scope-dialog',
+    },
+    ReactModule.createElement('button', { onPress: () => onApply('month') }, 'This month only'),
+    ReactModule.createElement('button', { onPress: () => onApply('following') }, 'This and following months'),
+    ReactModule.createElement('button', { onPress: onCancel }, 'Cancel')) : null,
+  };
+});
 
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => {
@@ -685,18 +727,6 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
-function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  const scope = renderer.root.findAll((node) => {
-    const options = node.props.options;
-    return String(node.type) === 'segmentedcontrol'
-      && Array.isArray(options)
-      && options.some((option: unknown) => typeof option === 'object'
-        && option !== null && 'label' in option && option.label === 'This month only');
-  })[0];
-  if (!scope) throw new Error('Budget scope control was not rendered.');
-  return scope;
-}
 
 function selectDropdownOption(
   renderer: TestRenderer.ReactTestRenderer | undefined,
@@ -1123,7 +1153,7 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
           .toContain(form.title);
         if (form.name.startsWith('item')) {
-          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
+          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
             .not.toContain('Custom');
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
@@ -1134,8 +1164,6 @@ describe('route render smoke audit', () => {
             accessibilityLabel: form.name.startsWith('item') ? 'Delete item' : 'Delete income',
           })).toBeDefined();
         }
-        expect(budgetScopeControl(renderer).props.value)
-          .toBe(form.params.scope === 'month' ? 'month' : 'following');
         act(() => renderer.unmount());
       }
     } finally {
@@ -1188,7 +1216,7 @@ describe('route render smoke audit', () => {
     try {
       routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
+      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Budget item frequency' }).props.options)
         .toEqual([
           { value: 'monthly', title: 'Monthly' },
@@ -1199,11 +1227,17 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
-        budgetScopeControl(renderer).props.onChange('month');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
         sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 500, frequency: 'monthly',
+        firstDueMonth: month,
       }, 'month', todayISO());
       const itemSaveToast = useUIStore.getState().actionToast;
       expect(itemSaveToast?.actionLabel).toBe('Undo');
@@ -1226,14 +1260,14 @@ describe('route render smoke audit', () => {
       expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
       const firstDueMonth = shiftMonth(month, 3);
       const firstDueDropdown = renderer.root.findAllByType(Dropdown)
-        .find((node) => node.props.label === 'First due month');
-      if (!firstDueDropdown) throw new Error('First due month control missing.');
-      expect(firstDueDropdown.props.options).toHaveLength(12);
+        .find((node) => node.props.label === 'Start month');
+      if (!firstDueDropdown) throw new Error('Start month control missing.');
+      expect(firstDueDropdown.props.options).toHaveLength(25);
       expect(firstDueDropdown.props.options[0]).toMatchObject({ value: month });
       const firstDueControl = renderer.root.findAllByProps({
-        accessibilityLabel: 'Budget item first due month',
+        accessibilityLabel: 'Budget item start month',
       }).find((node) => typeof node.props.onPress === 'function');
-      if (!firstDueControl) throw new Error('First due month button missing.');
+      if (!firstDueControl) throw new Error('Start month button missing.');
       act(() => firstDueControl.props.onPress());
       act(() => renderer?.root.findByProps({ accessibilityLabel: formatMonth(firstDueMonth) }).props.onPress());
       const valueTypeControl = renderer.root.findAll((node) =>
@@ -1245,13 +1279,19 @@ describe('route render smoke audit', () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('700');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.addBudgetItem).toHaveBeenLastCalledWith(month, {
         sectionId: 'pets',
         name: 'Quarterly pet care',
         mode: 'amount',
         value: 700,
         frequency: 'quarterly',
-        firstDueMonth,
+        firstDueMonth: shiftMonth(month, 3),
       }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1259,15 +1299,20 @@ describe('route render smoke audit', () => {
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
       expect(renderer.root.findByProps({ accessibilityLabel: 'Delete item' })).toBeDefined();
-      expect(budgetScopeControl(renderer).props.value).toBe('month');
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet boarding');
         renderer?.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', {
         name: 'Pet boarding', mode: 'amount', value: 300, dueDay: 12,
-        frequency: 'monthly', firstDueMonth: null,
+        frequency: 'monthly', firstDueMonth: month, holdingId: null,
       }, 'month', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1281,10 +1326,12 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Delete item?',
-        message: expect.stringContaining('Pet care'),
-      }));
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item delete scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', 'month', todayISO());
       const itemDeleteToast = useUIStore.getState().actionToast;
       expect(itemDeleteToast?.actionLabel).toBe('Undo');
@@ -1302,6 +1349,12 @@ describe('route render smoke audit', () => {
         type?.props.onChange('invest');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget section scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.addSection).toHaveBeenCalledWith(month, { name: 'Trips', type: 'invest' }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1311,6 +1364,12 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Animal care');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget section edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
       act(() => renderer?.unmount());
@@ -1325,6 +1384,12 @@ describe('route render smoke audit', () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income day' }).props.onChangeText('15');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
         name: 'Consulting', amount: 1500, category: 'Freelance', day: 15,
       }, 'following', todayISO());
@@ -1338,6 +1403,12 @@ describe('route render smoke audit', () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12500');
         selectDropdownOption(renderer, 'Income category', 'Freelance');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, 'salary-row', {
         name: 'Contract income', amount: 12500, category: 'Freelance',
@@ -1355,6 +1426,12 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Delete income' }).props.onPress();
         await Promise.resolve();
+        await Promise.resolve();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income delete scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
         await Promise.resolve();
       });
       expect(actions.removeBudgetItem).toHaveBeenCalledWith(month, {
@@ -1587,12 +1664,18 @@ describe('route render smoke audit', () => {
         paidButton.props.onPress();
         await Promise.resolve();
       });
+      const policyPaidDialog = insuranceRoot.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        policyPaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
       const undo = useUIStore.getState().actionToast?.onAction;
       if (!undo) throw new Error('Paid action did not expose Undo.');
       act(() => undo());
       expect(screenActions.clearDue).toHaveBeenCalledWith(
         { kind: 'policy', id: activePolicy.id },
         expect.any(String),
+        expect.any(Number),
       );
       expect(screenActions.undoClearDue).toHaveBeenCalledWith(
         { kind: 'policy', id: activePolicy.id },
@@ -1894,12 +1977,10 @@ describe('route render smoke audit', () => {
         markPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(today)}`,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
-      });
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      const paidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(paidDialog.props.title).toBe('Test plan');
+      expect(paidDialog.props.dueAmount).toBe(1_000);
       expect(textOf(dueHome)).toContain('Test plan');
       expect(dueHome.root.findAll((node) =>
         node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
@@ -1907,10 +1988,9 @@ describe('route render smoke audit', () => {
       expect(dueHome.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
       expect(dueRow.props.onPress).toBeUndefined();
       await act(async () => {
-        markPaid.props.onPress();
+        paidDialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledTimes(2);
       const actions = (jest.requireMock('../../data/useAppData') as {
         useAppActions: () => { clearDue: jest.Mock };
       }).useAppActions();
@@ -1996,7 +2076,8 @@ describe('route render smoke audit', () => {
     try {
       Object.assign(routeData, { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] });
       store.data = routeData;
-      actions.clearDue.mockImplementation((_target, _slotId) => {
+      actions.clearDue.mockReset();
+      actions.clearDue.mockImplementation((_target, _slotId, _amount) => {
         addLinkedTransactions(['paid-entry'], singlePlan);
         return 'paid-entry';
       });
@@ -2012,7 +2093,16 @@ describe('route render smoke audit', () => {
         markPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(actions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, expect.any(String));
+      const singlePaidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        singlePaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.clearDue).toHaveBeenCalledWith(
+        { kind: 'plan', id: 'investment-plan-test' },
+        expect.any(String),
+        1_000,
+      );
       expect(useUIStore.getState().actionToast?.message).toBe(`${formatAmount(1_000, 'exact', 1)} marked as paid`);
       const singleUndo = useUIStore.getState().actionToast?.onAction;
       if (!singleUndo) throw new Error('Single-due Undo action was not set.');
@@ -2044,13 +2134,18 @@ describe('route render smoke audit', () => {
         laterMarkPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: expectedMessage,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      const laterPaidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(laterPaidDialog.props.title).toBe('Test plan');
+      await act(async () => {
+        laterPaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
       });
-      expect(actions.clearDuesThrough).toHaveBeenCalledWith({ kind: 'plan', id: laterPlan.id }, currentMonth + '-01');
+      expect(actions.clearDuesThrough).toHaveBeenCalledWith(
+        { kind: 'plan', id: laterPlan.id },
+        currentMonth + '-01',
+        1_000,
+      );
       const throughUndo = useUIStore.getState().actionToast?.onAction;
       if (!throughUndo) throw new Error('Clear-through Undo action was not set.');
       act(() => throughUndo());

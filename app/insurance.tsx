@@ -15,10 +15,10 @@ import { policySummary } from '../src/domain/policySummary';
 import type { CoverPolicyType, Policy, PolicyKind, PolicyStatus } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+import { PaidAmountDialog } from '../src/components/PaidAmountDialog';
 
 const coverTypes: readonly CoverPolicyType[] = ['term-life', 'health', 'motor', 'home', 'other'];
 const coverTitles: Record<CoverPolicyType, string> = {
@@ -53,6 +53,7 @@ export default function InsuranceScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'All' | PolicyStatus>('All');
   const [kindFilter, setKindFilter] = useState<'All' | PolicyKind>('All');
+  const [policyPayment, setPolicyPayment] = useState<{ policy: Policy; dueAmount: number; dueDate: string } | null>(null);
   const [query, setQuery] = useState('');
   const coverSummaries = coverGoalSummaries(data, today);
   const policyTotals = policySummary(data, today);
@@ -72,32 +73,43 @@ export default function InsuranceScreen() {
       Alert.alert('No scheduled premium', 'This policy has no unpaid scheduled premiums.');
       return;
     }
-    const confirmed = await confirmAsync({
-      title: 'Was this premium paid?',
-      message: `${policy.name}, ${formatAmount(nextDue.amount, 'exact', 1)}, due ${formatDate(nextDue.dueDate)}`,
-      confirmLabel: 'Paid',
-      cancelLabel: 'Not paid',
-    });
-    if (!confirmed) return;
-    const entryId = actions.clearDue({ kind: 'policy', id: policy.id }, nextDue.id);
+    setPolicyPayment({ policy, dueAmount: nextDue.amount, dueDate: nextDue.dueDate });
+  };
+
+  const savePolicyPayment = (actualAmount: number) => {
+    if (!policyPayment) return;
+    const entryId = actions.clearDue(
+      { kind: 'policy', id: policyPayment.policy.id },
+      policySchedule(policyPayment.policy, today).rows.find((row) => row.status !== 'paid')?.id,
+      actualAmount,
+    );
     const state = useAppStore.getState();
     if (!entryId || state.lastError) {
       Alert.alert('Unable to mark premium paid', state.lastError ?? 'The payment could not be recorded.');
       return;
     }
     useUIStore.getState().setActionToast({
-      message: `${formatAmount(nextDue.amount, 'exact', 1)} marked as paid`,
+      message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`,
       actionLabel: 'Undo',
       onAction: () => {
-        actions.undoClearDue({ kind: 'policy', id: policy.id }, entryId);
+        actions.undoClearDue({ kind: 'policy', id: policyPayment.policy.id }, entryId);
         const error = useAppStore.getState().lastError;
         if (error) Alert.alert('Unable to undo', error);
       },
     });
+    setPolicyPayment(null);
   };
 
   return (
     <Screen>
+      <PaidAmountDialog
+        visible={policyPayment !== null}
+        title={policyPayment?.policy.name ?? ''}
+        dueAmount={policyPayment?.dueAmount ?? 0}
+        dueDate={policyPayment?.dueDate}
+        onPaid={savePolicyPayment}
+        onNotPaid={() => setPolicyPayment(null)}
+      />
       <AppHeader
         title="Insurance cover"
         showBack

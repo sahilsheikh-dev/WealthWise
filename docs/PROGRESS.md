@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (77/80)
+Overall progress █████████░ 91% (77/85)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (1/1)
+Phase 29         ██░░░░░░░░ 17% (1/6)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -167,6 +167,11 @@ Phase 29         ██████████ 100% (1/1)
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
+| P29-B | — | In progress | Small UI/schema-independent corrections exist in repository and targeted tests pass, but the P29-F stabilization branch gate is not fully green. | 2026-11-02 |
+| P29-C | — | In progress | Paid amount dialog and due-payment domain behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
+| P29-D | — | In progress | Budget scope and start-month behavior are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
+| P29-E | — | In progress | Schema-v14 budget investment links and migration are implemented; final configured gates remain red for unrelated branch coverage thresholds. | 2026-11-02 |
+| P29-F | — | In progress | Stabilization baseline, stale assertions, mocks, coverage evidence and gates are recorded; branch coverage has not met both configured thresholds. | 2026-11-02 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2776,6 +2781,11 @@ evidence present in exports/checkpoints.
 | P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
+| P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and owner-authorized Home layout support. | In progress; implementation and targeted tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: owner Home layout remains user-owned after this task. | current request |
+| P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog and actual-payment clearing behavior. | In progress; implementation and due/store tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
+| P29-D | Phase 29 | — | — | 2026-11-02 | Budget save/delete scope dialogs and start month firstDueMonth behavior. | In progress; implementation and route tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: past months stay frozen and later start months plan zero before their first month. | current request |
+| P29-E | Phase 29 | — | — | 2026-11-02 | Schema-v14 optional Budget holding links, migration and manual/plan integration. | In progress; implementation, migration, integrity and route tests exist, but final P29-F branch gates are not green. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: v14 links are optional and schema 15 remains refused. | current request |
+| P29-F | Phase 29 | — | — | 2026-11-02 | Stabilize interrupted Phase 29 without new features. | In progress; baseline suite has real assertion fixes, 1020/1022 tests pass, and gates 2–6 are green, but configured branch thresholds remain red. | stabilization commits 9620204, ec6c3cd, 3a0535e | Assumed: coverage gaps are real mock/test gaps and not source defects. | current request |
 
 ## 7. Change-request register
 
@@ -5484,6 +5494,44 @@ native share sheet, file picker behavior, and large-font rendering at scales
 implemented without a persisted schema change. No edit is authorized for
 `app/(tabs)/index.tsx`.
 
+### DEC-P29B-E Phase 29 integration snapshot
+
+DEC-P29B-E: preserve the frozen Cash flow labels, use centered shared dialogs,
+accept goal years 1990–2100, add schema-v14 holding links, keep legacy v1–v13
+imports, and refuse schema 15 or newer.
+
+Assumed: Phase 29 is recorded as implementation work, not owner-confirmed
+physical-device verification.
+
+Replaced assertions:
+- old: Budget forms use a segmented Apply changes scope control / new: Save and
+  delete use `ApplyScopeDialog` with no preselected option; reason: owner
+  frozen P29-D request.
+- old: Dropdown lists use a top-anchored sheet / new: shared Dropdown lists are
+  centered modal cards with 60% max height; reason: owner frozen P29-B request.
+- old: Insurance is a lower Home heading/card / new: Insurance is a first-card
+  total-cover box with `/insurance` or `/policy-form`; reason: owner P29-B item
+  4 authorization.
+- old: goals reject past target years / new: accept integer years 1990–2100;
+  reason: owner frozen P29-B tracking requirement.
+
+Gate verdicts:
+
+| Gate | Exit |
+|---|---:|
+| `npm test -- --coverage` | 1 |
+| `npx tsc --noEmit` | 0 |
+| `npx expo lint` | 0 |
+| `npx expo-doctor` | 0 (21/21) |
+| `npx expo export --platform android` | 0 |
+| `npx expo export --platform ios` | 0 |
+
+Coverage method: Jest/Istanbul `percent lines` and `percent branches` reported
+for each directory in one run. `src/data/` 93.62% lines / 86.93% branches,
+`src/domain/` 97.73% lines / 92.02% branches, `src/lib/` and remaining source
+directories are reported by the same Jest/Istanbul method in this run. Coverage
+exit 1 is due to unresolved stale assertions in this implementation snapshot.
+
 ### DEC-29A Step 1 reproduction ledger
 
 Old formula: manual/plan gain percentage was `(current value - invested) / invested * 100`,
@@ -5564,3 +5612,112 @@ counters for every file under each directory, then divide covered by total.
 | Manual pattern, current value 81000 | +800% | +800% absolute |
 | EF bucket targets at target 38536 / 10/20/70 | 3854 / 7707 / 26975 based on wrong current balance | 3853.60 / 7707.20 / 26975.20 based on effective target |
 | EF bucket available, demo Cash/Bank/FD-RD | split or stale balances | full linked holding values |
+
+## P29-F stabilization record (2026-11-02)
+
+**Task:** stabilization of interrupted Phase 29 work; no new features.
+
+DEC-P29F: P29-B through P29-E remain In progress because the configured Jest
+coverage gate exits 1. A passing test suite alone does not satisfy the repository
+ledger rule for Done. Owner-owned `app/(tabs)/index.tsx` was not edited.
+`git hash-object` recorded its current hash as
+`d3d1e465fe9f5d238d338afeb033e2a54889ddc6`; `app/(tabs)/budget.tsx` is
+`7beea9dd1ee7a3f46d95b8dbc13009b90b184dec`.
+
+Assumed: the two uncovered branch thresholds are test-coverage gaps rather than
+source behavior defects. Assumed: no archived raw-data bytes were lost by
+coverage recovery.
+
+Replaced assertions:
+- old: native Paid / Not paid alert / new: `PaidAmountDialog` at every due entry
+  point; reason: frozen P29-C shared centered-dialog requirement.
+- old: persisted backup schema stayed below v14 / new: schema 14; reason:
+  frozen P29-E holding-link schema requirement.
+- old: Home lower Insurance heading/card / new: owner Home first-card row layout;
+  reason: owner changed the file while Home editing was not authorized.
+- old: Budget forms exposed a scope segmented control / new: forms have no scope
+  control and use `ApplyScopeDialog` on Save/Delete; reason: frozen P29-D.
+- old: month switchers had no Today control / new: Today control hidden in the
+  current month and shown otherwise; reason: frozen P29-B.
+
+The interrupted checkpoint commit `6d181561a13e30d09768cd662cca0a22e6047862`
+was audited separately from owner commits and stabilization commits. No source
+feature work was performed after the three stabilization commits. No generated
+coverage, dist, `.expo`, log, temp or cache artifact was retained as a repository
+change in the final worktree.
+
+### P29-F acceptance evidence
+
+| Frozen requirement area | Exact proof |
+|---|---|
+| Today hidden/visible/return/filter state | `RouteRenderSmoke.test.tsx` Today and month-route cases; `RouteRenderSmoke.test.tsx` route rendering cases |
+| Goal year 1990–2100 and past years | `schemas.test.ts`, `actions.test.ts`, `TransactionForm.test.tsx` goal form cases |
+| Dropdown centered modal and font scale | Shared modal tests in `RouteRenderSmoke.test.tsx`; modal implementation is `Dropdown.tsx` |
+| Paid dialog all entry points/default/lower/higher/invalid/Not paid | `PaidAmountDialog.test.tsx`, `RouteRenderSmoke.test.tsx`, `PendingItemActions.test.tsx`, `dues.test.ts` |
+| Paid one write, liability, Undo actual | `dues.test.ts`; `createAppStore.test.ts`; `investmentActions.test.ts` |
+| Budget scope save/delete/cancel | `RouteRenderSmoke.test.tsx` ApplyScope cases and Budget route cases |
+| Start month defaults/later-month validation | `RouteRenderSmoke.test.tsx`; `budget.test.ts` |
+| Manual holding link clear one write and entry/transaction | `investmentActions.test.ts`; `PendingItemActions.test.tsx` |
+| Plan holding link no second due/no double count | `budget.test.ts`; `createAppStore.test.ts` |
+| Holding delete unlink with Undo | `createAppStore.test.ts`; `investmentActions.test.ts` |
+| Schema v14 migration/archives/round trips | `migrate.test.ts`; `createAppStore.test.ts`; `backup.test.ts` |
+
+### P29-F gates and fresh coverage
+
+Fresh coverage measurement method: delete `coverage/` before Jest, then sum
+Jest/Istanbul `coverage-final.json` `s` statement counters and `b` branch-counter
+hits per file under each directory, divide covered counters by total counters.
+`coverage-summary.json` is generated by the Jest/istanbul coverage pipeline,
+but the ledger does not use it because stale-summary risk is eliminated by
+deleting coverage and measuring the fresh JSON directly.
+
+| Gate | Exit |
+|---|---:|
+| `npm test -- --coverage` | 1 |
+| `npx tsc --noEmit` | 0 |
+| `npx expo lint` | 0 |
+| `npx expo-doctor` | 0 (21/21) |
+| `npx expo export --platform android` | 0 |
+| `npx expo export --platform ios` | 0 |
+
+Fresh directory totals: `src/data/` lines 762/832 91.59%, branches 641/734
+87.33%; `src/domain/` lines 3821/3945 96.86%, branches 3109/3350 92.81%;
+`src/lib/` lines 133/133 100%, branches 126/126 100%.
+
+Configured threshold failures: `src/domain/budget.ts` branch 89.77% vs 90%;
+`src/data/createAppStore.ts` branch 83.83% vs 85%. No thresholds or exclusions
+were weakened.
+
+### Manual holding with no valuation update
+
+For a manual Cash or Bank holding, current value is `holding.value` plus
+deposit/withdrawal entry amounts whose entry date is after `holding.valueAsOf`,
+clamped to zero. In `holdingValue()` this is no-source-value logic:
+`src/domain/portfolio.ts` calls `holdingValue`. The return is then calculated by
+`absoluteGainAndReturn()` in `src/domain/investmentReturns.ts` as
+`gain = current value + withdrawals - contributions`, with
+`gain/contributions` as absolute return percent. Thus the app shows whichever
+valued baseline plus later entries exists; deposits after the valuation date
+increase it, while the return percent is still based on the deposits in the
+entry ledger. There is no fixed demo number because "no value update" means no
+valuation field was supplied. The actual fixture value is `holding.value`, and
+the displayed return is the fixture's gain divided by its contribution sum.
+
+### P29-F part verdicts
+
+| Part | Verdict | Reason |
+|---|---|---|
+| P29-B | In progress | Repository tests pass and UI implementation exists, but gate coverage is not green and native layout is unverified. |
+| P29-C | In progress | Actual payment dialogs/actions are implemented, but final gates are not fully green. |
+| P29-D | In progress | Budget scope/start-month behavior is implemented; branch threshold remains red. |
+| P29-E | In progress | v14 migration and links are implemented; branch threshold remains red. |
+| P29-F | In progress | Stabilization is complete in source/test/audit evidence except the two coverage thresholds. |
+
+Pure-function source for stabilization: none. The stabilization task changed no
+new or changed pure domain function source. It replaced stale test assertions,
+completed mocks, fixed data-store/archive behavior, and added coverage edges.
+
+Physical-device checks not verified: today/month route interaction, centered
+Dropdown and paid/scope dialog keyboard safe behavior at font scales 1.3 and
+2.0, native file/share behavior, Home owned-card layout, Start month and
+holding-link routes, and device-specific export timing on iOS and Android.

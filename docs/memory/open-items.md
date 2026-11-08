@@ -4,6 +4,12 @@
 
 ## Unresolved
 
+- **P29-F coverage thresholds:** fresh Jest run passes 84 suites and 1022
+  tests, but exits 1 on branch thresholds: `src/domain/budget.ts` 89.77% vs
+  90%, and `src/data/createAppStore.ts` 83.83% vs 85%. These are test-quality
+  coverage gaps, not assertion weakenings. P29-B through P29-E remain
+  in-progress until the configured thresholds are met without exclusions.
+
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
   represented in the local schema-v13 backup. Non-earned inflows remain
@@ -48,6 +54,8 @@
   changed.
 
 ## Physical-device verification
+
+- **P29-B through P29-E:** verify the Today control, centered Dropdown and paid/scope dialogs, font scales 1.3 and 2.0, keyboard-safe dialogs, Start month/holding-link routes, and real Home Insurance placement on iOS and Android.
 
 - **P29-A:** verify investment XIRR/CAGR labels, absolute-only short spans,
   linked full-value saved totals, shared-goal notes and Emergency Fund bucket

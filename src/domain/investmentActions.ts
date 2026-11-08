@@ -173,6 +173,22 @@ export function deleteHoldingWithTransactions(
     ...data,
     holdings: data.holdings.filter((item) => item.id !== holdingId),
     transactions,
+    ...(data.budgetPlan ? {
+      budgetPlan: {
+        ...data.budgetPlan,
+        items: data.budgetPlan.items.map((item) => item.holdingId === holdingId
+          ? { ...item, holdingId: undefined }
+          : item),
+      },
+    } : {}),
+    ...(data.monthBudgets ? {
+      monthBudgets: data.monthBudgets.map((budget) => ({
+        ...budget,
+        items: budget.items.map((item) => item.holdingId === holdingId
+          ? { ...item, holdingId: undefined }
+          : item),
+      })),
+    } : {}),
   };
 }
 

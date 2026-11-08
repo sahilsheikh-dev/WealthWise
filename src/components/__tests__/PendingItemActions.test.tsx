@@ -73,16 +73,49 @@ jest.mock('../ui', () => {
       ReactModule.createElement('button', props, label),
   };
 });
+jest.mock('../PaidAmountDialog', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    PaidAmountDialog: ({ visible, dueAmount, onPaid, onNotPaid }: {
+      visible: boolean;
+      dueAmount: number;
+      onPaid: (amount: number) => void;
+      onNotPaid: () => void;
+    }) => {
+      ReactModule.useEffect(() => {
+        if (!visible) return;
+        // Exercise the shared paid-dialog callback while keeping this suite focused on action writes.
+        onPaid(dueAmount);
+      }, [visible, dueAmount, onPaid]);
+      if (!visible) return null;
+      return ReactModule.createElement('view', null,
+        ReactModule.createElement('button', { onPress: () => onPaid(dueAmount) }, 'Paid'),
+        ReactModule.createElement('button', { onPress: onNotPaid }, 'Not paid'),
+      );
+    },
+  };
+});
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   const node = (type: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
     ReactModule.createElement(type, props, children);
   return {
     Alert: { alert: jest.fn() },
-    StyleSheet: { create: (styles: object) => styles },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
     View: node('view'),
+    TextInput: node('text-input'),
+    ScrollView: node('scroll-view'),
+    Modal: node('modal'),
+    Pressable: node('pressable'),
+    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
+    Platform: { OS: 'ios' },
+    useWindowDimensions: () => ({ height: 800, fontScale: 1 }),
   };
 });
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 
 function item(source: PendingItem['source'], category = 'Food'): PendingItem {
   return {
@@ -207,7 +240,7 @@ describe('later due and planned item actions', () => {
     expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
       .toEqual(['Paid']);
     act(() => renderer?.root.findByType('button').props.onPress());
-    expect(mockActions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'slot-1');
+    expect(mockActions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'slot-1', 125);
     expect(mockConfirmAsync).not.toHaveBeenCalled();
     expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
       message: 'Marked ₹125 as paid',
@@ -306,14 +339,11 @@ describe('later due and planned item actions', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(mockConfirmAsync).toHaveBeenCalledWith({
-      title: 'Clear dues?',
-      message: 'Clear 3 dues through 10 Dec 2026? This includes 2 earlier dues, ₹250 total.',
-      confirmLabel: 'Clear due',
-    });
+    expect(mockConfirmAsync).not.toHaveBeenCalled();
     expect(mockActions.clearDuesThrough).toHaveBeenCalledWith(
       { kind: 'plan', id: 'sip-1' },
       '2026-12-10',
+      125,
     );
   });
 
@@ -337,14 +367,11 @@ describe('later due and planned item actions', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(mockConfirmAsync).toHaveBeenCalledWith({
-      title: 'Clear dues?',
-      message: 'Clear 3 dues through 10 Dec 2026? This includes 2 earlier dues, ₹250 total.',
-      confirmLabel: 'Clear due',
-    });
+    expect(mockConfirmAsync).not.toHaveBeenCalled();
     expect(mockActions.clearDuesThrough).toHaveBeenCalledWith(
       { kind: 'plan', id: 'sip-1' },
       '2026-12-10',
+      125,
     );
     expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
       message: 'Marked ₹250 as paid',

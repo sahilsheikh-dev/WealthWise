@@ -786,4 +786,35 @@ describe('bulk due handling', () => {
       .toThrow(NotFoundError);
     expect(data.transactions).toEqual([]);
   });
+
+  it('records actual paid amounts for lower, higher, and invalid plan and policy dues', () => {
+    const planData = withPlan();
+    const lower = clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'lower-entry', actualAmount: 75,
+    });
+    expect(lower.data.holdings[0]).toMatchObject({ kind: 'plan' });
+    if (lower.data.holdings[0]?.kind !== 'plan') throw new Error('Plan missing.');
+    expect(lower.data.holdings[0].logs[0]?.amount).toBe(75);
+
+    const policyData = withPolicy();
+    const higher = clearDue(policyData, { kind: 'policy', id: 'policy' }, {
+      date: '2026-01-31', newId: () => 'higher-policy-entry', actualAmount: 75,
+    });
+    expect(higher.data.policies[0]?.payments[0]?.amount).toBe(75);
+    expect(higher.data.transactions[0]?.amount).toBe(75);
+
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 0,
+    })).toThrow('Paid amount must be greater than zero');
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 100_000_000_001,
+    })).toThrow('Paid amount must be greater than zero');
+  });
+
+  it('rejects one-time liability payments above the outstanding balance', () => {
+    const data = { ...base(), liabilities: [oneTimeLiability({ principal: 100 })] };
+    expect(() => clearDue(data, { kind: 'liability', id: 'one-time' }, {
+      date: '2026-01-01', newId: () => 'overpayment', actualAmount: 101,
+    })).toThrow('Paid amount exceeds the outstanding liability balance.');
+  });
 });

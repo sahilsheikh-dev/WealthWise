@@ -102,6 +102,7 @@ export function StatPill({
   onPress,
   accessibilityHint,
   accessibilityLabel,
+  testID,
 }: {
   label: string;
   value: ReactNode;
@@ -109,6 +110,7 @@ export function StatPill({
   onPress?: () => void;
   accessibilityHint?: string;
   accessibilityLabel?: string;
+  testID?: string;
 }) {
   const { colors } = useTheme();
   const spokenLabel = accessibilityLabel ?? `${label}${typeof value === 'string' ? `, ${value}` : ''}`;
@@ -126,6 +128,7 @@ export function StatPill({
   if (onPress) {
     return (
       <Pressable
+        testID={testID}
         accessibilityRole="button"
         accessibilityLabel={spokenLabel}
         accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
@@ -137,6 +140,7 @@ export function StatPill({
   }
   return (
     <View
+      testID={testID}
       accessible
       accessibilityLabel={spokenLabel}
       style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>

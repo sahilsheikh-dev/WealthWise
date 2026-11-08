@@ -128,8 +128,8 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: DueTarget, rowId?: string) => string | undefined;
-  clearDuesThrough: (target: DueTarget, dueDate: ISODate) => string[] | undefined;
+  clearDue: (target: DueTarget, rowId?: string, actualAmount?: number) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
@@ -333,25 +333,27 @@ export function createAppStore(
         deleteInvestmentEntry(holdingId, entryId) {
           applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
         },
-        clearDue(target, rowId) {
+        clearDue(target, rowId, actualAmount) {
           let entryId: string | undefined;
           applyDataAction((data) => {
             const result = clearDue(data, target, {
               date: deps.today(),
               newId: deps.newId,
               ...(rowId ? { rowId } : {}),
+              ...(actualAmount !== undefined ? { actualAmount } : {}),
             });
             entryId = result.entryId;
             return result.data;
           });
           return entryId;
         },
-        clearDuesThrough(target, dueDate) {
+        clearDuesThrough(target, dueDate, actualAmount) {
           let entryIds: string[] | undefined;
           applyDataAction((data) => {
             const result = clearDuesThrough(data, target, dueDate, {
               date: deps.today(),
               newId: deps.newId,
+              ...(actualAmount !== undefined ? { actualAmount } : {}),
             });
             entryIds = result.entryIds;
             return result.data;
@@ -700,6 +702,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v12`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v13`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
@@ -817,7 +820,6 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
-        if (budgetWasEnsured || allocationNeedsRepair) storeApi.setState({ data });
       },
     },
   ));

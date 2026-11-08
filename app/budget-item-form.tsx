@@ -2,8 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import { useState } from 'react';
 
 import { Dropdown } from '../src/components/Dropdown';
+import { ApplyScopeDialog } from '../src/components/ApplyScopeDialog';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
@@ -17,7 +19,7 @@ import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -30,6 +32,7 @@ const budgetItemFormSchema = z.object({
   firstDueMonth: z.string(),
   day: z.string(),
   scope: z.enum(['month', 'following']),
+  holdingId: z.string(),
 }).superRefine((values, context) => {
   const amount = Number(values.value);
   const maximum = values.mode === 'percent' ? 100 : 1_000_000_000;
@@ -45,7 +48,7 @@ const budgetItemFormSchema = z.object({
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
     context.addIssue({ code: 'custom', path: ['day'], message: 'Enter a day from 1 to 31.' });
   }
-  if (values.frequency !== 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(values.firstDueMonth)) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(values.firstDueMonth)) {
     context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
   }
   if (values.mode === 'percent' && values.frequency !== 'monthly') {
@@ -91,6 +94,7 @@ export default function BudgetItemFormScreen() {
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors, isDirty, isSubmitting, submitCount },
   } = useForm<BudgetItemFormInput>({
     resolver: zodResolver(budgetItemFormSchema),
@@ -104,12 +108,17 @@ export default function BudgetItemFormScreen() {
       firstDueMonth: item?.firstDueMonth ?? month,
       day: item?.dueDay === undefined ? '' : String(item.dueDay),
       scope: requestedScope === 'month' ? 'month' : 'following',
+      holdingId: item?.holdingId ?? '',
     },
   });
   const mode = useWatch({ control, name: 'mode' }) ?? 'amount';
   const frequency = useWatch({ control, name: 'frequency' }) ?? 'monthly';
-  const scope = useWatch({ control, name: 'scope' }) ?? (requestedScope === 'month' ? 'month' : 'following');
-  const firstDueMonths = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index));
+  const holdingId = useWatch({ control, name: 'holdingId' }) ?? '';
+  const linkedHolding = data.holdings.find((holding) => holding.id === holdingId);
+  const firstDueMonths = Array.from({ length: 25 }, (_, index) => shiftMonth(month, index));
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
+  const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.output<typeof budgetItemFormSchema> | null>(null);
   if (!firstDueMonths.includes(item?.firstDueMonth ?? '')) {
     if (item?.firstDueMonth) firstDueMonths.unshift(item.firstDueMonth);
   }
@@ -124,16 +133,15 @@ export default function BudgetItemFormScreen() {
 
   const remove = async () => {
     if (!item) return;
-    const confirmed = await confirmAsync({
-      title: 'Delete item?',
-      message: `Delete ${item.name} from the selected month range? Transactions will remain unchanged.`,
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
-    if (!confirmed) return;
+    setDeleteScopeDialogOpen(true);
+  };
+
+  const applyDelete = (selectedScope: 'month' | 'following') => {
+    if (!item) return;
+    setDeleteScopeDialogOpen(false);
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((row) => row.month === month) ?? null;
-    actions.deleteBudgetStructureItem(month, item.id, scope, today);
+    actions.deleteBudgetStructureItem(month, item.id, selectedScope, today);
     if (useAppStore.getState().lastError) return;
     setActionToast({
       message: `${item.name} deleted`,
@@ -144,28 +152,51 @@ export default function BudgetItemFormScreen() {
   };
 
   const save = handleSubmit((values) => {
+    setPendingValues(values);
+    setScopeDialogOpen(true);
+  });
+
+  const applySave = (selectedScope: 'month' | 'following') => {
+    setScopeDialogOpen(false);
+    const values = pendingValues;
+    if (!values) return;
+    if (selectedScope === 'month' && values.firstDueMonth > month) {
+      setError('firstDueMonth', { type: 'manual', message: 'This month only conflicts with a start month later than the viewed month.' });
+      return;
+    }
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((row) => row.month === month) ?? null;
-    const scope = values.scope;
+    const resolvedLinkedHolding = data.holdings.find((holding) => holding.id === values.holdingId);
+    const linkedPlan = resolvedLinkedHolding?.kind === 'plan' ? resolvedLinkedHolding : undefined;
+    const resolvedName = values.name;
+    const resolvedMode = linkedPlan ? 'amount' : values.mode;
+    const resolvedValue = linkedPlan ? linkedPlan.amount : Number(values.value);
+    const resolvedFrequency = linkedPlan ? 'monthly' : values.frequency;
+    const resolvedFirstDueMonth = linkedPlan ? linkedPlan.trackFrom.slice(0, 7) : values.firstDueMonth;
+    const resolvedDueDay = linkedPlan
+      ? Number(linkedPlan.trackFrom.slice(8, 10))
+      : values.day === '' ? null : Number(values.day);
     if (item) {
       actions.editBudgetStructureItem(month, item.id, {
-        name: values.name,
-        mode: values.mode,
-        value: Number(values.value),
-        dueDay: values.day === '' ? null : Number(values.day),
-        frequency: values.frequency,
-        firstDueMonth: values.frequency === 'monthly' ? null : values.firstDueMonth,
-      }, scope, today);
+        name: resolvedName,
+        mode: resolvedMode,
+        value: resolvedValue,
+        dueDay: resolvedDueDay,
+        frequency: resolvedFrequency,
+        firstDueMonth: resolvedFirstDueMonth,
+        holdingId: values.holdingId || null,
+      }, selectedScope, today);
     } else {
       actions.addBudgetItem(month, {
         sectionId,
-        name: values.name,
-        mode: values.mode,
-        value: Number(values.value),
-        frequency: values.frequency,
-        ...(values.frequency === 'monthly' ? {} : { firstDueMonth: values.firstDueMonth }),
-        ...(values.day === '' ? {} : { dueDay: Number(values.day) }),
-      }, scope, today);
+        name: resolvedName,
+        mode: resolvedMode,
+        value: resolvedValue,
+        frequency: resolvedFrequency,
+        firstDueMonth: resolvedFirstDueMonth,
+        ...(values.holdingId ? { holdingId: values.holdingId } : {}),
+        ...(resolvedDueDay === null ? {} : { dueDay: resolvedDueDay }),
+      }, selectedScope, today);
     }
     if (useAppStore.getState().lastError) return;
     setActionToast({
@@ -174,11 +205,12 @@ export default function BudgetItemFormScreen() {
       onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
     });
     router.back();
-  });
+  };
   const errorCount = Object.keys(errors).length;
 
   return (
-    <FormScreen
+    <>
+      <FormScreen
       title={item ? 'Edit item' : 'Add item'}
       onClose={() => router.back()}
       isDirty={isDirty}
@@ -209,6 +241,42 @@ export default function BudgetItemFormScreen() {
           />
         )}
       />
+      {section.type === 'invest' && !section.system ? (
+        <Controller
+          control={control}
+          name="holdingId"
+          render={({ field }) => {
+            const otherLink = data.budgetPlan?.items.find((candidate) =>
+              candidate.id !== itemId && candidate.holdingId === field.value);
+            const options = [
+              { value: '', title: 'None' },
+              ...data.holdings.map((holding) => ({ value: holding.id, title: holding.name })),
+            ];
+            return (
+              <Dropdown
+                label="Linked asset"
+                accessibilityLabel="Linked asset"
+                value={field.value}
+                options={options}
+                onChange={field.onChange}
+                error={otherLink ? 'This holding is already linked to another budget item.' : errors.holdingId?.message}
+              />
+            );
+          }}
+        />
+      ) : null}
+      {linkedHolding?.kind === 'plan' ? (
+        <>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            The plan schedule is the source. Amount, frequency, due day and start month are read-only.
+          </AppText>
+          <AppText weight="semibold" style={typography.name}>
+            Amount {formatAmount(linkedHolding.amount, 'exact', 1)} · {linkedHolding.frequency} · Starts {formatMonth(linkedHolding.trackFrom.slice(0, 7))}
+          </AppText>
+        </>
+      ) : null}
+      {linkedHolding?.kind !== 'plan' ? (
+        <>
       <Controller
         control={control}
         name="mode"
@@ -268,27 +336,25 @@ export default function BudgetItemFormScreen() {
           />
         )}
       />
-      {frequency === 'monthly' ? null : (
-        <>
-          <Controller
-            control={control}
-            name="firstDueMonth"
-            render={({ field }) => (
-              <Dropdown
-                label="First due month"
-                accessibilityLabel="Budget item first due month"
-                value={field.value}
-                options={firstDueMonths.map((value) => ({ value, title: formatMonth(value) }))}
-                onChange={field.onChange}
-                error={errors.firstDueMonth?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="firstDueMonth"
+        render={({ field }) => (
+          <Dropdown
+            label="Start month"
+            accessibilityLabel="Budget item start month"
+            value={field.value}
+            options={firstDueMonths.map((value) => ({ value, title: formatMonth(value) }))}
+            onChange={field.onChange}
+            error={errors.firstDueMonth?.message}
           />
-          <AppText style={[typography.meta, { color: colors.text3 }]}>
-            Percent items are only available monthly.
-          </AppText>
+        )}
+      />
+      <AppText style={[typography.meta, { color: colors.text3 }]}>
+        Earlier months are not offered because past months are frozen.
+      </AppText>
         </>
-      )}
+      ) : null}
       <Controller
         control={control}
         name="day"
@@ -307,26 +373,14 @@ export default function BudgetItemFormScreen() {
       <AppText testID="budget-item-due-day-helper" style={[typography.meta, { color: colors.text3 }]}>
         Day of the month it is due, 1 to 31. Leave empty if there is no fixed day.
       </AppText>
-      <Controller
-        control={control}
-        name="scope"
-        render={({ field }) => (
-          <SegmentedControl
-            value={field.value}
-            options={[
-              { label: 'This month only', value: 'month' },
-              { label: 'This and following months', value: 'following' },
-            ]}
-            onChange={field.onChange}
-            error={errors.scope?.message}
-          />
-        )}
-      />
       {submitCount > 0 && errorCount > 0 ? (
         <AppText style={[typography.meta, { color: colors.err }]}>
           Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}
         </AppText>
       ) : null}
-    </FormScreen>
+      </FormScreen>
+      <ApplyScopeDialog visible={scopeDialogOpen} onCancel={() => setScopeDialogOpen(false)} onApply={applySave} />
+      <ApplyScopeDialog visible={deleteScopeDialogOpen} title="Apply to" onCancel={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
+    </>
   );
 }
