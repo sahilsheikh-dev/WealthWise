@@ -66,6 +66,14 @@
   `release/v1.1.0`, release to main, then main back to develop. Remote trees
   for main, develop, release and Phase 28 are identical; the tag was not
   changed.
+- P29-O-R1 closes the only uncompleted Phase 29 implementation row. The
+  proposed ledger-only migration was explicitly cancelled as unnecessary;
+  P29-O1's accepted unified holding workflow remains. Phase 29 is 41/41 after
+  the close-out. P29-O1's physical-device checks remain unverified.
+- The owner directed deletion of local `codex-changes` (`d033d6a`). Its
+  October schema-v2 loan/liability alternative was stale against schema v22,
+  included generated coverage, and contained a migration defect. Nothing was
+  ported or pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
@@ -227,9 +235,10 @@
   legacy schedule outputs. P29-M2 supersedes the blocked P29-M.
   Findings and evidence are recorded in [PROGRESS.md](../PROGRESS.md).
 - P29-O Step 1 report-only inventory is committed. P29-O1 supersedes its
-  schema-v19 model for this step and changes only the presentation/derived
-  invested display on the existing schema-v18 ledger. The original inventory
-  remains historical; see [PROGRESS.md](../PROGRESS.md).
+  proposed schema-v19 model and delivers the accepted presentation/derived
+  invested display on the existing holding model. P29-O-R1 closes the proposed
+  migration under the P29-S owner decision; the original inventory remains
+  historical. See [PROGRESS.md](../PROGRESS.md).
 - P29-N remains complete. Transactions no longer shows the Review-month link;
   Budget's independent month routing and Home remain unchanged. The one-time
   reminders prompt is mounted inside `LockGate` and stores its handled flag in
@@ -241,8 +250,8 @@
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
 - Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U,
   P29-V and P29-W are Done. P29-M is
-  Superseded by P29-M2; P29-O inventory is committed and P29-O1 remains Done
-  on schema v18. P29-S makes no behavior or schema change.
+  Superseded by P29-M2; P29-O is superseded by P29-O1/P29-S and closed by
+  P29-O-R1. P29-O1 remains Done. P29-S makes no behavior or schema change.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
