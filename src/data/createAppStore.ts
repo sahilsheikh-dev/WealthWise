@@ -24,6 +24,7 @@ import {
   updatePolicy,
   type PolicyPatch,
 } from '../domain/policyActions';
+import { setCoverGoalTarget as setCoverGoalTargetData } from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -94,7 +95,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
@@ -143,6 +144,7 @@ export type AppActions = {
   addPolicy: (input: AddPolicyInput) => void;
   setPolicyStatus: (id: string, status: PolicyStatus) => void;
   deletePolicy: (id: string) => void;
+  setCoverGoalTarget: (input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number }) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -425,6 +427,17 @@ export function createAppStore(
             });
           }
         },
+        setCoverGoalTarget(input) {
+          const previous = get().data;
+          applyDataAction((data) => setCoverGoalTargetData(data, input));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Cover goal updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
         },
@@ -676,6 +689,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

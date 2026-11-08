@@ -31,9 +31,50 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version eleven', () => {
+  it('accepts the typed mock app data and exports schema version twelve', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(11);
+    expect(SCHEMA_VERSION).toBe(12);
+    expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
+  });
+
+  it('validates cover goal uniqueness and target-mode bounds', () => {
+    const goals = mockAppData.coverGoals;
+    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: goals.slice(1) }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: [...goals, { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 }],
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'term-life'
+        ? { ...goal, targetValue: 51 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'term-life'
+        ? { ...goal, targetValue: 0 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'health'
+        ? { ...goal, targetMode: 'amount', targetValue: -1 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'health'
+        ? { ...goal, targetMode: 'income-multiple' }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      coverGoals: goals.map((goal) => goal.type === 'motor'
+        ? { ...goal, targetValue: 1 }
+        : goal),
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: undefined }).success).toBe(false);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {
@@ -281,6 +322,13 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
+    expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining([
+      'Insurance premium',
+      'Term life premium',
+      'Health premium',
+      'Motor premium',
+      'Home premium',
+    ]));
     expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
   });
 
@@ -319,6 +367,19 @@ describe('makeTransactionFormSchema', () => {
   it('normalizes and rounds valid amount and trimmed note strings', () => {
     expect(schema.parse(validInput)).toMatchObject({ amount: 1500.5, note: 'October' });
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
+  });
+
+  it('accepts legacy and typed insurance expense categories in the transaction form', () => {
+    for (const category of [
+      'Insurance',
+      'Insurance premium',
+      'Term life premium',
+      'Health premium',
+      'Motor premium',
+      'Home premium',
+    ]) {
+      expect(schema.safeParse({ ...validInput, category }).success).toBe(true);
+    }
   });
 
   it('accepts a custom category only in the selected month budget', () => {

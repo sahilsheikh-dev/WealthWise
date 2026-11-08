@@ -9,11 +9,13 @@ import {
   migrateV8ToV9,
   migrateV9ToV10,
   migrateV10ToV11,
+  migrateV11ToV12,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV9Fixture } from '../testFixtures/v9';
 import { makeV10Fixture } from '../testFixtures/v10';
+import { makeV11Fixture } from '../testFixtures/v11';
 import { validateImportData } from '../../domain/backup';
 import { netWorth } from '../../domain/summary';
 import { goalSavedFor } from '../../domain/goalLinks';
@@ -107,7 +109,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 12)).toThrow(
+    expect(() => migratePersisted({}, 13)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -165,8 +167,76 @@ describe('schema migration', () => {
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version11: true } };
-    expect(migratePersisted(persisted, 11)).toBe(persisted);
+    const persisted = { data: { version12: true } };
+    expect(migratePersisted(persisted, 12)).toBe(persisted);
+  });
+
+  it('seeds every v12 cover goal while preserving v11 data', () => {
+    const legacy = makeV11Fixture();
+    expect(migrateV11ToV12(legacy)).toEqual({
+      ...legacy,
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+        { type: 'motor', targetMode: 'active-only' },
+        { type: 'home', targetMode: 'active-only' },
+        { type: 'other', targetMode: 'active-only' },
+      ],
+    });
+    expect(() => migrateV11ToV12(null)).toThrow(PersistedVersionError);
+    const migrated = migratePersisted({ data: legacy }, 11) as { data: Record<string, unknown> };
+    expect(migrated.data.coverGoals).toHaveLength(5);
+  });
+
+  it('moves legacy manual Insurance items into the current Insurance system section', () => {
+    const legacy = makeV11Fixture();
+    const insuranceItem = {
+      id: 'legacy-insurance',
+      sectionId: 'survival',
+      name: 'Insurance',
+      mode: 'amount',
+      value: 200,
+    };
+    const migrated = migrateV11ToV12({
+      ...legacy,
+      budgetPlan: {
+        sections: [
+          { id: 'survival', name: 'Needs', type: 'spend' },
+          { id: 'insurance', name: 'Legacy section', type: 'invest' },
+        ],
+        items: [insuranceItem],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        sections: [{ id: 'survival', name: 'Needs', type: 'spend' }],
+        items: [insuranceItem],
+      }],
+    });
+    expect(migrated).toMatchObject({
+      budgetPlan: {
+        sections: [
+          { id: 'survival', name: 'Needs', type: 'spend' },
+          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
+        ],
+        items: [{ ...insuranceItem, sectionId: 'insurance' }],
+      },
+      monthBudgets: [{
+        sections: expect.arrayContaining([
+          { id: 'insurance', name: 'Insurance', type: 'spend', system: 'insurance' },
+        ]),
+        items: [{ ...insuranceItem, sectionId: 'insurance' }],
+      }],
+    });
+
+    const malformedBudget = { sections: [], items: null, preserved: true };
+    expect(migrateV11ToV12({
+      ...legacy,
+      budgetPlan: malformedBudget,
+      monthBudgets: 'not-an-array',
+    })).toMatchObject({
+      budgetPlan: malformedBudget,
+      monthBudgets: 'not-an-array',
+    });
   });
 
   it('migrates v10 policy kinds, status, metadata, date fallbacks and legacy frequency', () => {

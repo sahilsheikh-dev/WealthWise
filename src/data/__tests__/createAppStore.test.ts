@@ -17,6 +17,7 @@ import { createAppStore } from '../createAppStore';
 import { useUIStore } from '../uiStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV10Fixture } from '../testFixtures/v10';
+import { makeV11Fixture } from '../testFixtures/v11';
 import { emptyAppData } from '../../domain/actions';
 import type { ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -75,6 +76,32 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('persists a cover-goal target change once and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    let writes = storage.setItemCalls;
+
+    store.getState().actions.setCoverGoalTarget({
+      type: 'health',
+      targetMode: 'amount',
+      targetValue: 1_000_000,
+    });
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.coverGoals.find((goal) => goal.type === 'health'))
+      .toEqual({ type: 'health', targetMode: 'amount', targetValue: 1_000_000 });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Cover-goal Undo was not set.');
+    writes = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data).toEqual(before);
+    useUIStore.getState().setActionToast(null);
+  });
+
   it('persists policy add, status, and delete atomically and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage, { newId: () => 'created-policy' });
@@ -139,6 +166,7 @@ describe('createAppStore persistence', () => {
       sumAssured: 500_000,
       endDate: '2042-01-15',
     });
+
     const archiveKey = 'wealthwise.app.v1.premigration.v10';
     expect(storage.values.get(archiveKey)).toBe(originalBytes);
     const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
@@ -148,6 +176,27 @@ describe('createAppStore persistence', () => {
     await waitForHydration(second);
     expect(storage.values.get(archiveKey)).toBe(originalBytes);
     expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has(archiveKey)).toBe(false);
+  });
+
+  it('hydrates v11 data, seeds cover goals, and archives its raw bytes once', async () => {
+    const storage = new MemoryStorage();
+    const originalData = makeV11Fixture();
+    const originalBytes = JSON.stringify({ state: { data: originalData }, version: 11 });
+    storage.values.set('wealthwise.app.v1', originalBytes);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.coverGoals).toHaveLength(5);
+    const archiveKey = 'wealthwise.app.v1.premigration.v11';
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    const writes = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+    expect(writes).toBe(1);
+
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(storage.values.get(archiveKey)).toBe(originalBytes);
+    expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(writes);
     await second.getState().actions.eraseAllData();
     expect(storage.values.has(archiveKey)).toBe(false);
   });
@@ -412,7 +461,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 11 });
+    const raw = JSON.stringify({ state: { data }, version: 12 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -449,7 +498,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 11 });
+    const raw = JSON.stringify({ state: { data }, version: 12 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });

@@ -7,13 +7,14 @@ import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
 import {
   EARNED_INCOME_CATEGORIES,
+  COVER_POLICY_TYPES,
   THEME_IDS,
   type AppData,
   type ISODate,
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -189,10 +190,34 @@ const policySchema = z.object({
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
   }
 });
+const coverGoalSchema = z.object({
+  type: z.enum(COVER_POLICY_TYPES),
+  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
+  targetValue: moneySchema.min(0).optional(),
+}).superRefine((goal, context) => {
+  if (goal.targetMode === 'income-multiple'
+    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
+  }
+  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
+    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
+  }
+});
+const coverGoalsSchema = z.array(coverGoalSchema).length(COVER_POLICY_TYPES.length)
+  .superRefine((goals, context) => {
+    const seen = new Set<string>();
+    goals.forEach((goal, index) => {
+      if (seen.has(goal.type)) {
+        context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
+      }
+      seen.add(goal.type);
+    });
+  });
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
-  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+  'EMI', 'Insurance', 'Insurance premium', 'Term life premium', 'Health premium',
+  'Motor premium', 'Home premium', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
   'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
   'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
@@ -264,13 +289,12 @@ const budgetPlanSchema = z.object({
   plan.items.forEach((item, index) => {
     const section = plan.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (itemIds.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (itemNames.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (systemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     itemIds.add(item.id);
@@ -310,13 +334,12 @@ const monthBudgetSchema = z.object({
   budget.items.forEach((item, index) => {
     const section = budget.sections.find((row) => row.id === item.sectionId);
     const isInsuranceSection = section?.system === 'insurance';
-    const isInsuranceCategory = isInsuranceSection && item.name === 'Insurance';
     if (!sectionIds.has(item.sectionId)) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'Choose an existing section' });
     if (ids.has(item.id)) context.addIssue({ code: 'custom', path: ['items', index, 'id'], message: 'Item IDs must be unique' });
     if (names.has(item.name.toLowerCase())) context.addIssue({ code: 'custom', path: ['items', index, 'name'], message: 'Budget item names must be unique' });
     if (sectionSystemIds.has(item.sectionId) && !isInsuranceSection) context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: 'System sections cannot contain editable budget items' });
     const builtInSection = budgetGroupFor(item.name);
-    if (builtInSection && builtInSection.id !== item.sectionId && !isInsuranceCategory) {
+    if (builtInSection && builtInSection.id !== item.sectionId) {
       context.addIssue({ code: 'custom', path: ['items', index, 'sectionId'], message: `${item.name} belongs to ${builtInSection.name}` });
     }
     ids.add(item.id);
@@ -397,6 +420,7 @@ export const appDataSchema = z.object({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
+  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
@@ -417,6 +441,7 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
+    'Insurance premium', 'Term life premium', 'Health premium', 'Motor premium', 'Home premium',
     'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
     'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities',
     'Subscriptions', 'Personal spending', 'Travel',

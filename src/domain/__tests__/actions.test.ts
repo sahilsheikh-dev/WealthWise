@@ -34,6 +34,13 @@ describe('immutable app actions', () => {
       holdings: [],
       liabilities: [],
       policies: [],
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+        { type: 'motor', targetMode: 'active-only' },
+        { type: 'home', targetMode: 'active-only' },
+        { type: 'other', targetMode: 'active-only' },
+      ],
       budget: null,
       budgetPlan: null,
       monthBudgets: [],
