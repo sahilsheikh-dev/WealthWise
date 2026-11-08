@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
@@ -13,6 +13,14 @@ function readDownloadBlock(contents: string, filePath: string): string {
   const end = lines.indexOf('', start + 1);
   if (end < 0) throw new Error(`Unterminated Download block in ${filePath}.`);
   return lines.slice(start, end).join('\n');
+}
+
+function readSection(contents: string, heading: string, filePath: string): string {
+  const lines = contents.split(/\r?\n/);
+  const start = lines.indexOf(heading);
+  if (start < 0) throw new Error(`Missing ${heading} section in ${filePath}.`);
+  const end = lines.findIndex((line, index) => index > start && /^## /.test(line));
+  return lines.slice(start, end < 0 ? lines.length : end).join('\n').trim();
 }
 
 describe('published release download documentation', () => {
@@ -60,5 +68,29 @@ describe('published release download documentation', () => {
         expect(contents).not.toMatch(/\b(?:sha-?256|commit)\b/i);
       }
     }
+  });
+
+  it('uses verified contributor links and release-specific attribution guidance', () => {
+    const publishedPath = join(publishedDirectory, 'v1.0.0.md');
+    const draftPath = join(root, 'docs', 'releases', 'drafts', 'v1.1.0.md');
+    const publishedV11Path = join(publishedDirectory, 'v1.1.0.md');
+    const releasePath = existsSync(publishedV11Path) ? publishedV11Path : draftPath;
+    const templatePath = join(root, 'docs', 'releases', 'TEMPLATE.md');
+    const publishedContributors = readSection(
+      readFileSync(publishedPath, 'utf8'),
+      '## Contributors',
+      publishedPath,
+    );
+    const releaseContributors = readSection(
+      readFileSync(releasePath, 'utf8'),
+      '## Contributors',
+      releasePath,
+    );
+    const template = readFileSync(templatePath, 'utf8').replace(/\s+/g, ' ');
+
+    expect(releaseContributors).toBe(publishedContributors);
+    expect(template).toContain('verified from commits included in this release');
+    expect(template).toContain('Do not use a generic placeholder');
+    expect(template).toContain('unless they also contributed to this release');
   });
 });
