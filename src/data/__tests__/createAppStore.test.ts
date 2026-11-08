@@ -68,6 +68,45 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('sets goal asset links with exactly one write and keeps failed actions reference-identical', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-01'),
+      holdings: [{
+        id: 'asset',
+        kind: 'manual' as const,
+        name: 'Savings',
+        type: 'Savings account' as const,
+        invested: 500,
+        value: 1_000,
+        valueAsOf: '2026-10-01',
+        logs: [],
+      }],
+      goals: [
+        ...emptyAppData('2026-10-01').goals,
+        { id: 'goal', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
+      ],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    actions.setGoalLinks('goal', [{ instrumentId: 'asset', share: 75 }]);
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.id === 'goal')?.links)
+      .toEqual([{ instrumentId: 'asset', share: 75 }]);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    const dataBeforeFailure = store.getState().data;
+    const writesBeforeFailure = storage.setItemCalls;
+    actions.setGoalLinks('missing-goal', [{ instrumentId: 'asset', share: 25 }]);
+    expect(store.getState().data).toBe(dataBeforeFailure);
+    expect(storage.setItemCalls).toBe(writesBeforeFailure);
+  });
+
   it('saves emergency fund allocation with one persisted write and restores the suggestion', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);

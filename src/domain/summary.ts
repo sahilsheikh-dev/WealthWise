@@ -35,7 +35,7 @@ export function homeSummary(data: AppData, asOf: ISODate, expenseBaselineInput?:
   const emergencyBalance = efBalance(data.efEntries);
   const expenseBaseline = expenseBaselineInput ?? monthlyBaseline(data.transactions, 'expense', asOf);
   const goals = ensureEfGoal(data.goals, { expenseBaseline, asOf }).map((goal) => {
-    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline }) };
+    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline, data, asOf }) };
   });
   return {
     ...worth,

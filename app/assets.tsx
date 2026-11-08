@@ -108,6 +108,8 @@ export default function AssetsScreen() {
             <InstrumentCard
               key={row.id}
               model={model}
+              goalCount={data.goals.filter((goal) =>
+                goal.links.some((link) => link.instrumentId === row.id)).length}
               dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {

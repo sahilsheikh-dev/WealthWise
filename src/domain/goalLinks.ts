@@ -1,0 +1,232 @@
+import { addDays, addMonths, parseISO } from './dates';
+import { holdingInvested, holdingValue } from './portfolio';
+import { planValue, PERIODS_PER_YEAR } from './sip';
+import type { AppData, Goal, GoalLink, ISODate, PlanHolding, Policy } from './types';
+
+export type LinkableInstrument = {
+  id: string;
+  name: string;
+  kind: 'manual' | 'plan' | 'policy';
+  value: number;
+  invested: number;
+  freeShare: number;
+};
+
+export class AssetOverAllocatedError extends Error {
+  constructor(alreadyAllocated: number, available: number) {
+    super(`This asset is already ${formatShare(alreadyAllocated)}% allocated to other goals; at most ${formatShare(available)}% is left`);
+    this.name = 'AssetOverAllocatedError';
+  }
+}
+
+export class InvalidGoalLinksError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidGoalLinksError';
+  }
+}
+
+function isSavingsPolicy(policy: Policy): boolean {
+  return policy.kind === 'life-savings' || policy.kind === 'ulip';
+}
+
+function policyInvested(policy: Policy): number {
+  return policy.payments.reduce((total, payment) => total + payment.amount, 0);
+}
+
+function policyValue(policy: Policy): number {
+  return isSavingsPolicy(policy) ? policy.currentValue ?? 0 : 0;
+}
+
+function linkedValue(data: AppData, instrumentId: string, asOf: ISODate): number | undefined {
+  const holding = data.holdings.find((item) => item.id === instrumentId);
+  if (holding) return holdingValue(holding, asOf);
+  const policy = data.policies.find((item) => item.id === instrumentId && isSavingsPolicy(item));
+  return policy ? policyValue(policy) : undefined;
+}
+
+function linkedInvested(data: AppData, instrumentId: string): number | undefined {
+  const holding = data.holdings.find((item) => item.id === instrumentId);
+  if (holding) return holdingInvested(holding);
+  const policy = data.policies.find((item) => item.id === instrumentId && isSavingsPolicy(item));
+  return policy ? policyInvested(policy) : undefined;
+}
+
+function hasLinkableInstrument(data: AppData, instrumentId: string): boolean {
+  return data.holdings.some((holding) => holding.id === instrumentId)
+    || data.policies.some((policy) => policy.id === instrumentId && isSavingsPolicy(policy));
+}
+
+function formatShare(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstrument[] {
+  const allocations = new Map<string, number>();
+  for (const goal of data.goals) {
+    for (const link of goal.links) {
+      allocations.set(link.instrumentId, (allocations.get(link.instrumentId) ?? 0) + link.share);
+    }
+  }
+  const holdings = data.holdings.map((holding): LinkableInstrument => ({
+    id: holding.id,
+    name: holding.name,
+    kind: holding.kind,
+    value: holdingValue(holding, asOf),
+    invested: holdingInvested(holding),
+    freeShare: Math.max(0, 100 - (allocations.get(holding.id) ?? 0)),
+  }));
+  const policies = data.policies.filter(isSavingsPolicy).map((policy): LinkableInstrument => ({
+    id: policy.id,
+    name: policy.name,
+    kind: 'policy',
+    value: policyValue(policy),
+    invested: policyInvested(policy),
+    freeShare: Math.max(0, 100 - (allocations.get(policy.id) ?? 0)),
+  }));
+  return [...holdings, ...policies];
+}
+
+export function goalSavedFor(
+  goal: Goal,
+  data: AppData,
+  asOf: ISODate,
+  efBalance: number,
+): number {
+  if (goal.auto === 'ef') return efBalance;
+  if (goal.links.length === 0) return goal.saved;
+  return goal.links.reduce((total, link) =>
+    total + (linkedValue(data, link.instrumentId, asOf) ?? 0) * link.share / 100, 0);
+}
+
+export function validateGoalLinks(data: AppData, goalId: string, links: GoalLink[]): void {
+  const goal = data.goals.find((item) => item.id === goalId);
+  if (!goal) throw new InvalidGoalLinksError('The selected goal could not be found.');
+  if (goal.auto === 'ef' && links.length > 0) {
+    throw new InvalidGoalLinksError('The Emergency fund goal cannot be linked to assets.');
+  }
+  const seen = new Set<string>();
+  for (const link of links) {
+    if (!Number.isFinite(link.share) || link.share < 0.1 || link.share > 100
+      || Math.round(link.share * 10) !== link.share * 10) {
+      throw new InvalidGoalLinksError('Asset shares must be from 0.1% to 100% in increments of 0.1%.');
+    }
+    if (seen.has(link.instrumentId)) {
+      throw new InvalidGoalLinksError('A goal cannot link the same asset more than once.');
+    }
+    seen.add(link.instrumentId);
+    if (!hasLinkableInstrument(data, link.instrumentId)) {
+      throw new InvalidGoalLinksError('Choose an existing holding or savings policy.');
+    }
+    const allocatedElsewhere = data.goals
+      .filter((item) => item.id !== goalId)
+      .flatMap((item) => item.links)
+      .filter((item) => item.instrumentId === link.instrumentId)
+      .reduce((total, item) => total + item.share, 0);
+    const total = allocatedElsewhere + link.share;
+    if (total > 100) throw new AssetOverAllocatedError(allocatedElsewhere, 100 - allocatedElsewhere);
+  }
+}
+
+export function setGoalLinks(data: AppData, goalId: string, links: GoalLink[]): AppData {
+  validateGoalLinks(data, goalId, links);
+  return {
+    ...data,
+    goals: data.goals.map((goal) => goal.id === goalId
+      ? { ...goal, links: links.map((link) => ({ ...link })) }
+      : goal),
+  };
+}
+
+export type GoalProjection = {
+  current: number;
+  invested: number;
+  remaining: number;
+  percent: number;
+  projectedDate: ISODate | 'Already reached' | null;
+  deadline: ISODate;
+  deltaMonths: number | null;
+  status: 'ahead' | 'on-track' | 'behind' | 'none';
+};
+
+function monthEndAfter(date: ISODate, months: number): ISODate {
+  const firstOfMonth = `${date.slice(0, 7)}-01`;
+  return addDays(addMonths(firstOfMonth, months + 1), -1);
+}
+
+function monthIndex(date: ISODate): number {
+  const parsed = parseISO(date);
+  return parsed.y * 12 + parsed.m - 1;
+}
+
+export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalProjection {
+  const emergencyBalance = data.efEntries.reduce((total, entry) => total + entry.amount, 0);
+  const current = goalSavedFor(goal, data, asOf, emergencyBalance);
+  const invested = goal.links.reduce((total, link) =>
+    total + (linkedInvested(data, link.instrumentId) ?? 0) * link.share / 100, 0);
+  const remaining = Math.max(0, goal.target - current);
+  const percent = goal.target <= 0 ? 0 : Math.min(100, Math.max(0, current / goal.target * 100));
+  const deadline = `${goal.year}-12-31`;
+  if (current >= goal.target) {
+    return { current, invested, remaining, percent, projectedDate: 'Already reached', deadline, deltaMonths: null, status: 'ahead' };
+  }
+
+  const linkedPlans = goal.links.flatMap((link) => {
+    const plan = data.holdings.find((holding): holding is PlanHolding =>
+      holding.id === link.instrumentId && holding.kind === 'plan');
+    return plan ? [{ plan, share: link.share }] : [];
+  });
+  if (linkedPlans.length === 0) {
+    return { current, invested, remaining, percent, projectedDate: null, deadline, deltaMonths: null, status: 'none' };
+  }
+
+  const fixedValue = goal.links.reduce((total, link) => {
+    const planExists = linkedPlans.some(({ plan }) => plan.id === link.instrumentId);
+    return total + (planExists ? 0 : (linkedValue(data, link.instrumentId, asOf) ?? 0) * link.share / 100);
+  }, 0);
+  const states = linkedPlans.map(({ plan, share }) => ({
+    plan,
+    share,
+    value: planValue(plan, asOf),
+  }));
+  const hasContribution = states.some(({ plan }) => plan.amount * PERIODS_PER_YEAR[plan.frequency] > 0);
+  if (!hasContribution && states.every(({ plan }) => plan.ratePct <= 0)) {
+    return { current, invested, remaining, percent, projectedDate: null, deadline, deltaMonths: null, status: 'none' };
+  }
+
+  let simulated = fixedValue + states.reduce((total, state) => total + state.value * state.share / 100, 0);
+  let projectedDate: ISODate | null = null;
+  for (let month = 1; month <= 600; month += 1) {
+    const simulationDate = monthEndAfter(asOf, month);
+    for (const state of states) {
+      const monthlyRate = (1 + state.plan.ratePct / 100) ** (1 / 12) - 1;
+      const elapsedMonths = Math.max(0, monthIndex(simulationDate) - monthIndex(state.plan.startDate));
+      const active = simulationDate >= state.plan.startDate && elapsedMonths < state.plan.tenureYears * 12;
+      const annualStep = Math.floor(Math.max(0, elapsedMonths - 1) / 12);
+      const annualAmount = state.plan.amount * (1 + state.plan.stepUpPct / 100) ** annualStep;
+      const monthlyContribution = active
+        ? annualAmount * PERIODS_PER_YEAR[state.plan.frequency] / 12
+        : 0;
+      state.value = state.value * (simulationDate >= state.plan.startDate ? 1 + monthlyRate : 1) + monthlyContribution;
+    }
+    simulated = fixedValue + states.reduce((total, state) => total + state.value * state.share / 100, 0);
+    if (simulated >= goal.target) {
+      projectedDate = monthEndAfter(asOf, month);
+      break;
+    }
+  }
+  if (!projectedDate) {
+    return { current, invested, remaining, percent, projectedDate: null, deadline, deltaMonths: null, status: 'none' };
+  }
+  const deltaMonths = monthIndex(projectedDate) - monthIndex(deadline);
+  return {
+    current,
+    invested,
+    remaining,
+    percent,
+    projectedDate,
+    deadline,
+    deltaMonths,
+    status: deltaMonths < 0 ? 'ahead' : deltaMonths === 0 ? 'on-track' : 'behind',
+  };
+}

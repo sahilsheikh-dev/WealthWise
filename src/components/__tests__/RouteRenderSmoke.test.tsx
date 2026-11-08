@@ -324,6 +324,7 @@ jest.mock('react-native', () => {
     BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
     FlatList: node('flatlist'),
     KeyboardAvoidingView: node('keyboard-avoiding-view'),
+    Modal: node('modal'),
     Platform: { OS: 'ios' },
     PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),

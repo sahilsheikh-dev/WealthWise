@@ -1,5 +1,6 @@
 import { NotFoundError } from './actions';
 import { emergencyMinimumTarget } from './goals';
+import { validateGoalLinks } from './goalLinks';
 import { formatINR } from '../lib/format';
 import type { AppData, Goal } from './types';
 
@@ -18,11 +19,13 @@ export class GoalTargetBelowMinimumError extends Error {
 }
 
 export type AddGoalInput = Omit<Goal, 'id' | 'auto' | 'links'> & { links?: Goal['links'] };
-export type GoalPatch = Partial<Pick<Goal, 'name' | 'target' | 'saved' | 'year' | 'auto'>>;
+export type GoalPatch = Partial<Pick<Goal, 'name' | 'target' | 'saved' | 'year' | 'auto' | 'links'>>;
 
 export function addGoal(data: AppData, input: AddGoalInput, newId: () => string): AppData {
   const goal: Goal = { ...input, links: input.links ?? [], id: newId() };
-  return { ...data, goals: [...data.goals, goal] };
+  const result = { ...data, goals: [...data.goals, goal] };
+  validateGoalLinks(result, goal.id, goal.links);
+  return result;
 }
 
 export function updateGoal(
@@ -37,11 +40,14 @@ export function updateGoal(
     throw new GoalLockedError();
   }
   if (current.auto !== 'ef' && patch.auto !== undefined) throw new GoalLockedError();
+  if (current.auto === 'ef' && patch.links !== undefined) throw new GoalLockedError();
   const minimum = emergencyMinimumTarget(options.expenseBaseline);
   if (current.auto === 'ef' && patch.target !== undefined && minimum > 0 && patch.target < minimum) {
     throw new GoalTargetBelowMinimumError(minimum);
   }
-  return { ...data, goals: data.goals.map((goal) => goal.id === id ? { ...goal, ...patch } : goal) };
+  const result = { ...data, goals: data.goals.map((goal) => goal.id === id ? { ...goal, ...patch } : goal) };
+  if (patch.links !== undefined) validateGoalLinks(result, id, patch.links);
+  return result;
 }
 
 export function deleteGoal(data: AppData, id: string): AppData {
