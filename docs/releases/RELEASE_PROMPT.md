@@ -331,12 +331,17 @@ v1.4.0 → v1.4.1
 
 - Use the previous published stable release as the baseline.
 - Analyze the overall impact of the changes.
+- Bug-fix-only releases bump PATCH; a release with visible new features bumps
+  MINOR; breaking changes bump MAJOR.
+- Release 2 is planned as v1.1.0 if it includes the Budget Pace graph,
+  otherwise v1.0.1. Confirm with the owner when preparing Release 2.
 - Never reuse a version.
 - Never downgrade a version.
 - Never invent version numbers.
 - Respect release-config.md.
 - Inspect package manifests and application version files.
-- Do not modify application version files unless explicitly configured or approved.
+- Change `app.json`, `package.json` and `package-lock.json` versions only in
+  the release-preparation task for that version.
 - Explain the version recommendation before publication.
 
 If versioning is uncertain, request clarification.

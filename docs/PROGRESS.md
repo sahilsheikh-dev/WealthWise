@@ -9228,3 +9228,8 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   matches the new target and `git merge-base --is-ancestor` exited 0.
   `gh release view` still confirms the APK asset; its stored `targetCommitish`
   remains the old target. No GitHub release edit or branch push was made.
+- Step 6: release policy now maps bug-fix-only to PATCH, visible new features
+  to MINOR, and breaking changes to MAJOR. Release 2 is conditionally v1.1.0
+  with Budget Pace or v1.0.1 without it; owner confirmation is required when
+  preparing that release. App/package/lockfile versions change only in that
+  version's release-preparation task.

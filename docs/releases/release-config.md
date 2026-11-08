@@ -48,6 +48,13 @@ gh repo view
 | Prerelease | Disabled unless explicitly requested |
 | Version Approval | Required |
 
+Bug-fix-only releases bump PATCH. Releases with visible new features bump
+MINOR; breaking changes bump MAJOR. Release 2 is planned as v1.1.0 if it
+includes the Budget Pace graph, otherwise v1.0.1; confirm the scope and version
+with the owner when preparing that release. Change `app.json`, `package.json`
+and `package-lock.json` versions only in the release-preparation task for that
+version.
+
 ## 4. Release Scope
 
 Include:

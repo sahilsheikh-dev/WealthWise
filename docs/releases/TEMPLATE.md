@@ -5,6 +5,13 @@
 **Git tag:** `vX.Y.Z`
 **Previous version:** [version or Initial release]
 
+<!--
+Versioning: bug fixes bump PATCH; visible new features bump MINOR; breaking
+changes bump MAJOR. Release 2 is v1.1.0 if it includes the Budget Pace graph,
+otherwise v1.0.1; confirm with the owner. Change app.json, package.json and
+package-lock.json versions only in that version's release-preparation task.
+-->
+
 ## Download
 Latest version: vX.Y.Z
 Release date: YYYY-MM-DD
