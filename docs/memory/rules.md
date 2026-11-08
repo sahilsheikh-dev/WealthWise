@@ -4,12 +4,13 @@
 
 ## Invariants
 
-- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
-  before other work. If files are dirty, run `git diff --stat` and inspect
-  their complete diff, then commit exactly those named files with a
-  Conventional Commit subject that states what changed. Use one commit per
-  unrelated area. The subject must not use a legacy placeholder; never bypass
-  the commit hook. Preserve owner edits and never revert them.
+- **R1 — Dirty-file preflight and commit subjects:** before other work, list
+  every dirty file and run `git diff --stat` plus the complete diff. Before
+  committing, show the proposed subject and staged diff-stat. Commit exactly
+  the named files with a descriptive Conventional Commit subject that states
+  what actually changed; use one commit per unrelated area. Do not use
+  placeholder or update-only subjects, and never bypass the commit hook.
+  Preserve owner edits and never revert them.
 - Enable commit-message enforcement in each clone with
   `git config core.hooksPath .githooks`.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
@@ -78,7 +79,7 @@ match the recorded values.
 | File | Git blob ID | Rule |
 |---|---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
-| `app/(tabs)/budget.tsx` | `7beea9dd1ee7a3f46d95b8dbc13009b90b184dec` | Preserve user-authored cash-flow labels and removed controls. |
+| `app/(tabs)/budget.tsx` | `4a83b6e484bff0d211de188d0f13c6897829d184` | P20-N-R1 authorized a per-section Pace graph; preserve user-authored Cash flow labels, removed controls and all other owner UI edits. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |
