@@ -20,7 +20,7 @@ import {
   type MoneyMovementFormOutput,
 } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
-import { formatAmount } from '../src/lib/amountDisplay';
+import { formatINR } from '../src/lib/format';
 import type { Liability } from '../src/domain/types';
 
 type MovementKind = 'borrowed-in' | 'repay' | 'withdraw' | 'own-funds';
@@ -30,7 +30,7 @@ function isMovementKind(value: string | undefined): value is MovementKind {
 }
 
 function liabilityLabel(liability: Liability, today: string): string {
-  return `${liability.name} · ${formatAmount(loanState(liability, today).balance, 'exact', 1)}`;
+  return `${liability.name} · ${formatINR(loanState(liability, today).balance)}`;
 }
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -40,7 +40,7 @@ export default function MoneyMovementFormScreen() {
   const value = Array.isArray(params.kind) ? params.kind[0] : params.kind;
   return isMovementKind(value)
     ? <MoneyMovementForm kind={value} />
-    : <FormScreen title="Money movement" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    : <FormScreen title="Money movement" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Choose a money movement" />
     </FormScreen>;
 }
@@ -165,7 +165,7 @@ function MoneyMovementForm({ kind }: { kind: MovementKind }) {
           <ChoiceField
             label="Withdraw from"
             choices={instruments.map((item) => item.id)}
-            choiceLabels={Object.fromEntries(instruments.map((item) => [item.id, `${item.name} · ${formatAmount(item.valueNow, 'exact', 1)}`]))}
+            choiceLabels={Object.fromEntries(instruments.map((item) => [item.id, `${item.name} · ${formatINR(item.valueNow)}`]))}
             value={field.value}
             onChange={field.onChange}
             error={errors.instrumentId?.message}

@@ -2,11 +2,11 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Card,
@@ -23,10 +23,9 @@ import { useSort } from '../src/data/useSort';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
 import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
-import { formatDate } from '../src/lib/format';
+import { formatDate, formatINR } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -165,11 +164,8 @@ export default function InvestmentEntriesScreen() {
           <Card>
             <AppText style={[typography.label, { color: colors.text3 }]}>Schedule summary</AppText>
             {schedule.summary.nextDue ? (
-              <AppText
-                weight="semibold"
-                style={styles.summaryLine}
-                accessibilityLabel={`Next due ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}>
-                Next due {formatDate(schedule.summary.nextDue.dueDate)} · <AmountText value={schedule.summary.nextDue.amount} tier="row" />
+              <AppText weight="semibold" style={styles.summaryLine}>
+                Next due {formatDate(schedule.summary.nextDue.dueDate)} · {formatINR(schedule.summary.nextDue.amount)}
               </AppText>
             ) : (
               <AppText weight="semibold" style={styles.summaryLine}>Completed</AppText>
@@ -178,8 +174,11 @@ export default function InvestmentEntriesScreen() {
               Paid {schedule.summary.paid} of {schedule.rows.length} · {schedule.summary.overdue} overdue
             </AppText>
           </Card>
+          <SectionHeaderRow
+            title="Schedule"
+            right={<SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />}
+          />
           <ChipRow>
-            <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
             {filters.map((item) => {
               const count = item === 'All'
                 ? schedule.rows.length
@@ -192,26 +191,15 @@ export default function InvestmentEntriesScreen() {
         <>
           <Card>
             <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
-            <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(holdingInvested(holding), 'exact', 1)}`}>
-              Invested <AmountText value={holdingInvested(holding)} tier="row" />
-            </AppText>
-            <AppText style={styles.summaryLine} accessibilityLabel={`Current value ${formatAmount(holdingValue(holding, today), 'exact', 1)}`}>
-              Current value <AmountText value={holdingValue(holding, today)} tier="row" />
-            </AppText>
-            <AppText
-              style={styles.summaryLine}
-              accessibilityLabel={`Total deposits ${formatAmount(holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0), 'exact', 1)}`}>
-              Total deposits <AmountText value={holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
-            </AppText>
-            <AppText
-              style={styles.summaryLine}
-              accessibilityLabel={`Total withdrawals ${formatAmount(holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0), 'exact', 1)}`}>
-              Total withdrawals <AmountText value={holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0)} tier="row" />
-            </AppText>
+            <AppText style={styles.summaryLine}>Invested {formatINR(holdingInvested(holding))}</AppText>
+            <AppText style={styles.summaryLine}>Current value {formatINR(holdingValue(holding, today))}</AppText>
+            <AppText style={styles.summaryLine}>Total deposits {formatINR(holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
+            <AppText style={styles.summaryLine}>Total withdrawals {formatINR(holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
           </Card>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
-          </ChipRow>
+          <SectionHeaderRow
+            title="Entries"
+            right={<SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />}
+          />
         </>
       )}
     </View>
@@ -234,7 +222,6 @@ export default function InvestmentEntriesScreen() {
             return (
               <Pressable
                 accessibilityRole={item.status === 'upcoming' ? undefined : 'button'}
-                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
                 disabled={item.status === 'upcoming'}
                 onPress={() => routeEntryForm(item)}
                 style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -245,7 +232,7 @@ export default function InvestmentEntriesScreen() {
                       <AppText style={[typography.meta, { color: colors.text3 }]}>Paid on {formatDate(item.paidOn)}</AppText>
                     ) : null}
                   </View>
-                  <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+                  <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
                 </View>
                 <StatusBadge label={item.status} tone={badgeTone[item.status]} />
               </Pressable>
@@ -256,11 +243,10 @@ export default function InvestmentEntriesScreen() {
               style={[styles.row, { borderColor: colors.border }]}
               editLabel="Edit investment entry"
               onEdit={() => routeEntryForm(item)}
-              accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatAmount(item.amount, 'exact', 1)}`}
             >
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
-              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+              <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
             </SharedListRow>
           );
         }}

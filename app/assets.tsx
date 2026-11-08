@@ -2,10 +2,11 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
+import { AmountText } from '../src/components/AmountText';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import {
   AppText,
   Button,
@@ -30,7 +31,6 @@ import {
 } from '../src/domain/portfolio';
 import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
@@ -110,39 +110,28 @@ export default function AssetsScreen() {
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
         <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
-        <AppText
-          style={[typography.meta, { color: gainTone }]}
-          accessibilityLabel={`Gain ${formatAmount(totals.gain, 'exact', 1)}${totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}`}>
+        <AppText style={[typography.meta, { color: gainTone }]}>
           {totals.gain > 0 ? '+' : ''}<AmountText value={totals.gain} tier="row" />
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill
-            label="Invested"
-            value={<AmountText value={totals.invested} tier="tile" />}
-            accessibilityLabel={`Invested, ${formatAmount(totals.invested, 'exact', 1)}`}
-          />
-          <StatPill
-            label="Gain"
-            value={<AmountText value={totals.gain} tier="tile" />}
-            accessibilityLabel={`Gain, ${formatAmount(totals.gain, 'exact', 1)}`}
-            tone={totals.gain >= 0 ? 'ok' : 'err'}
-          />
-          <StatPill
-            label="Monthly SIP/RD"
-            value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
-            accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
-            tone="primary"
-          />
+          <StatPill label="Invested" value={<AmountText value={totals.invested} tier="tile" />} />
+          <StatPill label="Gain" value={<AmountText value={totals.gain} tier="tile" tone={totals.gain >= 0 ? 'ok' : 'err'} />} tone={totals.gain >= 0 ? 'ok' : 'err'} />
+          <StatPill label="Monthly SIP/RD" value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />} tone="primary" />
         </StatPillRow>
       </Card>
 
-      <ChipRow>
-        <SortChip
+      <SectionHeaderRow
+        title={filter === 'Recurring' ? 'SIPs and plans' : 'Assets'}
+        right={(
+          <SortChip
             options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
             spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
             onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
           />
+        )}
+      />
+      <ChipRow>
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}

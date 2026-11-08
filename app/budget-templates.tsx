@@ -7,8 +7,7 @@ import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { confirmAsync } from '../src/lib/confirm';
 import { todayISO } from '../src/lib/clock';
-import { formatAmount } from '../src/lib/amountDisplay';
-import { AmountText } from '../src/components/AmountText';
+import { formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -49,19 +48,13 @@ export default function BudgetTemplatesScreen() {
         <Card key={template.id} style={styles.card}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${template.name} template${template.plannedIncome === null ? '' : `, monthly income ${formatAmount(template.plannedIncome, 'exact', 1)}`}`}
+            accessibilityLabel={`Edit ${template.name} template`}
             onPress={() => router.push({ pathname: '/budget-template-form', params: { id: template.id } })}>
             <View style={styles.row}>
               <View style={{ flex: 1, gap: 4 }}>
                 <AppText weight="semibold" style={typography.name}>{template.name}</AppText>
-                <AppText
-                  style={{ color: colors.text3 }}
-                  accessibilityLabel={template.plannedIncome === null
-                    ? 'Income not set'
-                    : `${formatAmount(template.plannedIncome, 'exact', 1)} monthly income`}>
-                  {template.plannedIncome === null
-                    ? 'Income not set'
-                    : <><AmountText value={template.plannedIncome} tier="row" /> monthly income</>}
+                <AppText style={{ color: colors.text3 }}>
+                  {template.plannedIncome === null ? 'Income not set' : `${formatINR(template.plannedIncome)} monthly income`}
                 </AppText>
               </View>
               {data.defaultBudgetTemplateId === template.id ? <AppText weight="semibold" style={{ color: colors.primary }}>Default</AppText> : null}

@@ -30,7 +30,7 @@ import {
 import type { Transaction } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
+import { formatINR } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -162,13 +162,24 @@ export default function TransactionFormScreen() {
   const withdrawalChoices = instruments.filter((item) => (withdrawable[item.id] ?? 0) > 0).map((item) => item.id);
   const withdrawalLabels = Object.fromEntries(instruments.map((item) => [
     item.id,
-    `${item.name} · ${formatAmount(withdrawable[item.id] ?? item.valueNow, 'exact', 1)}`,
+    `${item.name} · ${formatINR(withdrawable[item.id] ?? item.valueNow)}`,
   ]));
   const derivedCategory = selectedInstrument
     ? selectedInstrument.id === 'ef'
       ? 'Emergency fund'
       : investCategoryFor(selectedInstrument.type as Exclude<typeof selectedInstrument.type, 'Emergency fund'>)
     : transaction?.category ?? '';
+
+  const requestClose = () => {
+    if (!isDirty) {
+      router.back();
+      return;
+    }
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
+  };
 
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, ...transactionValues } = values;
@@ -235,7 +246,7 @@ export default function TransactionFormScreen() {
 
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Transaction" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );
@@ -250,8 +261,7 @@ export default function TransactionFormScreen() {
   return (
     <FormScreen
       title="Transaction"
-      onClose={() => router.back()}
-      isDirty={isDirty}
+      onClose={requestClose}
       headerAction={transactionId && (!transaction?.source || linkedEditable)
         ? { label: 'Delete transaction', onPress: remove }
         : undefined}
@@ -306,7 +316,7 @@ export default function TransactionFormScreen() {
         {transaction?.source && !linkedEditable ? (
           <>
             <ReadOnlyRow label="Type" value={transaction.type} />
-            <ReadOnlyRow label="Amount" value={formatAmount(transaction.amount, 'exact', 1)} />
+            <ReadOnlyRow label="Amount" value={formatINR(transaction.amount)} />
             <ReadOnlyRow label="Category" value={linkedEditable ? derivedCategory : transaction.category} />
             <ReadOnlyRow label="Date" value={transaction.date} />
           </>

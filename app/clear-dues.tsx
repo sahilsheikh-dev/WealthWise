@@ -14,8 +14,7 @@ import { pendingDues, type DueTarget } from '../src/domain/dues';
 import type { PlanHolding, RecurringLiability } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatMonth } from '../src/lib/format';
-import { formatAmount } from '../src/lib/amountDisplay';
+import { formatINR, formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 
 type Mode = 'settle' | 'record';
@@ -69,7 +68,7 @@ export default function ClearDuesScreen() {
       : ' No transactions will be added.';
     const confirmed = await confirmAsync({
       title: mode === 'settle' ? 'Mark past dues as already paid?' : 'Record past payments?',
-      message: `This will handle ${pending.count} dues totalling ${formatAmount(pending.amount, 'exact', 1)}.${recordWarning}`,
+      message: `This will handle ${pending.count} dues totalling ${formatINR(pending.amount)}.${recordWarning}`,
       confirmLabel: 'Confirm',
       cancelLabel: 'Review',
     });
@@ -87,7 +86,7 @@ export default function ClearDuesScreen() {
         return;
       }
       useUIStore.getState().setActionToast({
-        message: `Cleared ${summary.count} past dues · ${formatAmount(summary.amount, 'exact', 1)}`,
+        message: `Cleared ${summary.count} past dues · ${formatINR(summary.amount)}`,
       });
       router.back();
     } finally {
@@ -97,14 +96,14 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
   }
   if (pending.count === 0) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Done" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Done" onPress={() => router.back()} />}>
         <EmptyState title="No past dues" subtitle="There are no unpaid installments up to today." />
       </FormScreen>
     );
@@ -122,12 +121,12 @@ export default function ClearDuesScreen() {
       <Card>
         <AppText weight="semibold">{item.name}</AppText>
         <AppText style={[typography.meta, { marginTop: 6 }]}>
-          {pending.count} installments, {formatAmount(pending.amount, 'exact', 1)} total
+          {pending.count} installments, {formatINR(pending.amount)} total
         </AppText>
         <AppText style={[typography.meta, { marginTop: 8 }]}>Affected months</AppText>
         {pending.months.map((month) => (
           <AppText key={month.month} style={typography.meta}>
-            {formatMonth(month.month)} · {formatAmount(month.amount, 'exact', 1)}
+            {formatMonth(month.month)} · {formatINR(month.amount)}
           </AppText>
         ))}
       </Card>
@@ -159,7 +158,7 @@ export default function ClearDuesScreen() {
             value={balance}
             onChangeText={setBalance}
           />
-          <AppText style={typography.meta}>Suggested balance: {formatAmount(initialBalance ?? 0, 'exact', 1)}</AppText>
+          <AppText style={typography.meta}>Suggested balance: {formatINR(initialBalance ?? 0)}</AppText>
           {recordedPayments > 0 ? (
             <WarningBanner>
               {recordedPayments} recorded payments are treated as already included in this balance.

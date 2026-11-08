@@ -17,7 +17,7 @@ import { BUDGET_CATEGORIES } from '../src/domain/schemas';
 import type { BudgetTemplateLine } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { incomeBaselineFor } from '../src/domain/summary';
-import { formatAmount } from '../src/lib/amountDisplay';
+import { formatINR } from '../src/lib/format';
 
 type TemplateForm = {
   name: string;
@@ -130,7 +130,7 @@ export default function BudgetTemplateFormScreen() {
     }
   };
   if (templateId && !template) {
-    return <FormScreen title="Budget template" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    return <FormScreen title="Budget template" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
       <FormErrorBanner message="Budget template not found." />
     </FormScreen>;
   }
@@ -153,7 +153,7 @@ export default function BudgetTemplateFormScreen() {
       {isWizard && !template ? (
         <>
           <AppText style={{ opacity: 0.8 }}>
-            {incomeBaseline === null ? 'Enter your monthly income to start.' : `Suggested from your income history: ${formatAmount(incomeBaseline, 'exact', 1)}`}
+            {incomeBaseline === null ? 'Enter your monthly income to start.' : `Suggested from your income history: ${formatINR(incomeBaseline)}`}
           </AppText>
           <SegmentedControl
             label="Starting point"

@@ -66,7 +66,6 @@ jest.mock('react-native', () => {
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),
     View: node('view'),
-    useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });
 
@@ -95,21 +94,15 @@ function fixture(storedTarget: number, expenses: number): AppData {
 }
 
 const scenarios = [
-  { label: 'without expense history', stored: 100_000, expenses: 0, rowTarget: '₹1,00,000', heroTarget: '₹1.00 L', raised: false },
-  { label: 'below the minimum', stored: 50_000, expenses: 20_000, rowTarget: '₹60,000', heroTarget: '₹60,000', raised: true },
-  { label: 'above the minimum', stored: 80_000, expenses: 20_000, rowTarget: '₹80,000', heroTarget: '₹80,000', raised: false },
+  { label: 'without expense history', stored: 100_000, expenses: 0, shortTarget: '₹1.00 L', fullTarget: '₹1,00,000', raised: false },
+  { label: 'below the minimum', stored: 50_000, expenses: 20_000, shortTarget: '₹60,000', fullTarget: '₹60,000', raised: true },
+  { label: 'above the minimum', stored: 80_000, expenses: 20_000, shortTarget: '₹80,000', fullTarget: '₹80,000', raised: false },
 ] as const;
-
-function renderedText(root: TestRenderer.ReactTestInstance): string {
-  const collect = (node: TestRenderer.ReactTestInstance): string =>
-    node.children.map((child) => typeof child === 'string' ? child : collect(child)).join(' ');
-  return collect(root);
-}
 
 describe('three-month emergency target screens', () => {
   it.each(THEME_IDS.flatMap((themeId) => scenarios.map((scenario) => ({ ...scenario, themeId }))))(
     'shows effective goal targets across Home, Goals, and Emergency fund $label with $themeId theme',
-    async ({ stored, expenses, rowTarget, heroTarget, raised, themeId }) => {
+    async ({ stored, expenses, shortTarget, fullTarget, raised, themeId }) => {
       mockThemeId.current = themeId;
       mockData.current = fixture(stored, expenses);
       let home: TestRenderer.ReactTestRenderer | undefined;
@@ -119,7 +112,7 @@ describe('three-month emergency target screens', () => {
       });
       if (!home) throw new Error('Home did not render.');
       assertNoVerbText(home.root, { screen: 'home' });
-      const homeText = renderedText(home.root);
+      const homeText = home.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
       const goalsRenderer = (() => {
         let renderer: TestRenderer.ReactTestRenderer | undefined;
         act(() => { renderer = TestRenderer.create(<GoalsScreen />); });
@@ -134,11 +127,11 @@ describe('three-month emergency target screens', () => {
       })();
       assertNoVerbText(goalsRenderer.root);
       assertNoVerbText(emergencyRenderer.root);
-      const goalsText = renderedText(goalsRenderer.root);
-      const emergencyText = renderedText(emergencyRenderer.root);
-      expect(homeText).toContain(rowTarget);
-      expect(goalsText).toContain(rowTarget);
-      expect(emergencyText).toContain(heroTarget);
+      const goalsText = goalsRenderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
+      const emergencyText = emergencyRenderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
+      expect(homeText).toContain(shortTarget);
+      expect(goalsText).toContain(shortTarget);
+      expect(emergencyText).toContain(fullTarget);
       if (raised) {
       expect(homeText).toContain('Raised to the 3-month minimum');
       expect(goalsText).toContain('Raised to the 3-month minimum');

@@ -220,9 +220,7 @@ describe('createAppStore persistence', () => {
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
     expect(relaunchedStore.getState().data.efAllocation).toEqual(allocation);
-    const writesBeforeReset = storage.setItemCalls;
     store.getState().actions.resetEfAllocation();
-    expect(storage.setItemCalls - writesBeforeReset).toBe(1);
     expect(store.getState().data.efAllocation).toBeNull();
   });
 

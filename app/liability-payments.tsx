@@ -2,11 +2,7 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { AmountText } from '../src/components/AmountText';
-import { AppHeader } from '../src/components/AppHeader';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
-import { ListRow as SharedListRow } from '../src/components/ListRow';
-import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Card,
@@ -16,16 +12,19 @@ import {
   Screen,
   StatusBadge,
 } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { ListRow as SharedListRow } from '../src/components/ListRow';
+import { SortChip } from '../src/components/SortChip';
+import { SectionHeaderRow } from '../src/components/SectionHeaderRow';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { liabilitySummary } from '../src/domain/liability';
 import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
-import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
+import { formatDate, formatINR } from '../src/lib/format';
 import { choiceAsync } from '../src/lib/confirm';
-import { formatDate } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -153,31 +152,25 @@ export default function LiabilityPaymentsScreen() {
           onChange={setTab}
         />
       </View>
-      <ChipRow>
-        {tab === 'Schedule'
+      <SectionHeaderRow
+        title={tab}
+        right={tab === 'Schedule'
           ? <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
           : <SortChip options={SORT_OPTIONS.payments} spec={paymentSorting.spec} onChange={paymentSorting.setSpec} />}
+      />
+      <ChipRow>
       </ChipRow>
       {tab === 'Schedule' ? (
         <>
           <Card>
             <AppText style={[typography.label, { color: colors.text3 }]}>Schedule summary</AppText>
-            <AppText
-              weight="semibold"
-              style={styles.summaryLine}
-              accessibilityLabel={summary.cleared
-                ? 'Cleared'
-                : schedule.summary.nextDue
-                  ? `Next due ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`
-                  : 'Schedule complete'}>
+            <AppText weight="semibold" style={styles.summaryLine}>
               {summary.cleared ? 'Cleared' : schedule.summary.nextDue
-                ? <>Next due {formatDate(schedule.summary.nextDue.dueDate)} · <AmountText value={schedule.summary.nextDue.amount} tier="row" /></>
+                ? `Next due ${formatDate(schedule.summary.nextDue.dueDate)} · ${formatINR(schedule.summary.nextDue.amount)}`
                 : 'Schedule complete'}
             </AppText>
-            <AppText
-              style={[typography.meta, { color: colors.text3 }]}
-              accessibilityLabel={`Paid ${schedule.summary.paid} · ${schedule.summary.overdue} overdue · Balance ${formatAmount(summary.balance, 'exact', 1)}`}>
-              Paid {schedule.summary.paid} · {schedule.summary.overdue} overdue · Balance <AmountText value={summary.balance} tier="row" />
+            <AppText style={[typography.meta, { color: colors.text3 }]}>
+              Paid {schedule.summary.paid} · {schedule.summary.overdue} overdue · Balance {formatINR(summary.balance)}
             </AppText>
             {liability.kind === 'recurring' && schedule.neverClears
               ? <AppText style={[typography.meta, { color: colors.err, marginTop: 5 }]}>EMI does not cover monthly interest</AppText>
@@ -191,12 +184,8 @@ export default function LiabilityPaymentsScreen() {
         <>
           <Card>
             <AppText style={[typography.label, { color: colors.text3 }]}>Balance</AppText>
-            <AmountText value={summary.balance} tier="hero" weight="bold" style={[typography.big, styles.balance]} />
-            <AppText
-              style={[typography.meta, { color: colors.text3 }]}
-              accessibilityLabel={`Paid ${formatAmount(summary.paidTotal, 'exact', 1)} · Interest accrued ${formatAmount(summary.interestAccrued, 'exact', 1)}`}>
-              Paid <AmountText value={summary.paidTotal} tier="row" /> · Interest accrued <AmountText value={summary.interestAccrued} tier="row" />
-            </AppText>
+            <AppText weight="bold" style={[typography.big, styles.balance]}>{formatINR(summary.balance)}</AppText>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>Paid {formatINR(summary.paidTotal)} · Interest accrued {formatINR(summary.interestAccrued)}</AppText>
           </Card>
         </>
       )}
@@ -221,7 +210,6 @@ export default function LiabilityPaymentsScreen() {
             return (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
                 onPress={() => openPayment(item)}
                 style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.rowTop}>
@@ -235,21 +223,13 @@ export default function LiabilityPaymentsScreen() {
                       ? <AppText style={[typography.meta, { color: colors.text3 }]}>Paid on {formatDate(item.paidOn)}</AppText>
                       : null}
                   </View>
-                  <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+                  <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
                 </View>
                 <StatusBadge label={item.status} tone={badgeTone[item.status]} />
                 {estimated && item.interest !== undefined ? (
                   <View style={styles.breakdown}>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={`Estimated · Interest ${formatAmount(item.interest, 'exact', 1)}`}>
-                      Estimated · Interest <AmountText value={item.interest} tier="row" />
-                    </AppText>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={`Principal ${formatAmount(item.principal ?? 0, 'exact', 1)} · Balance after ${formatAmount(item.balanceAfter ?? 0, 'exact', 1)}`}>
-                      Principal <AmountText value={item.principal ?? 0} tier="row" /> · Balance after <AmountText value={item.balanceAfter ?? 0} tier="row" />
-                    </AppText>
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>Estimated · Interest {formatINR(item.interest)}</AppText>
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>Principal {formatINR(item.principal ?? 0)} · Balance after {formatINR(item.balanceAfter ?? 0)}</AppText>
                   </View>
                 ) : null}
               </Pressable>
@@ -261,11 +241,11 @@ export default function LiabilityPaymentsScreen() {
               onPress={() => openPayment(item)}
               onEdit={() => openPayment(item)}
               editLabel="Edit liability payment"
-              accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatAmount(item.amount, 'exact', 1)}`}
+              accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatINR(item.amount)}`}
             >
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
-              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+              <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
             </SharedListRow>
           );
         }}

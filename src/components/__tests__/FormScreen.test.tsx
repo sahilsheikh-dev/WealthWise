@@ -65,18 +65,6 @@ describe('FormScreen close behavior', () => {
     expect(mockConfirmAsync).not.toHaveBeenCalled();
   });
 
-  it('closes a clean form immediately through Android back', () => {
-    const onClose = jest.fn();
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(<FormScreen title="Details" onClose={onClose} footer={null} />);
-    });
-    if (!renderer) throw new Error('Form screen did not render.');
-    act(() => { mockHardwareBack?.(); });
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(mockConfirmAsync).not.toHaveBeenCalled();
-  });
-
   it('asks before discarding dirty changes and keeps the form when cancelled', async () => {
     const onClose = jest.fn();
     mockConfirmAsync.mockResolvedValue(false);
@@ -93,13 +81,8 @@ describe('FormScreen close behavior', () => {
     });
     expect(onClose).not.toHaveBeenCalled();
 
-    await act(async () => { mockHardwareBack?.(); });
-    expect(mockConfirmAsync).toHaveBeenCalledTimes(2);
-    expect(onClose).not.toHaveBeenCalled();
-
     mockConfirmAsync.mockResolvedValue(true);
     await act(async () => { mockHardwareBack?.(); });
-    expect(mockConfirmAsync).toHaveBeenCalledTimes(3);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

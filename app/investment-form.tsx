@@ -32,7 +32,7 @@ import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
-import { formatAmount } from '../src/lib/amountDisplay';
+import { formatINRShort } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 import { projection } from '../src/domain/sip';
@@ -61,7 +61,7 @@ export default function InvestmentFormScreen() {
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [kind, setKind] = useState<InvestmentKind>('recurring');
   const [name, setName] = useState('');
-  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment not found" /></FormScreen>;
+  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment not found" /></FormScreen>;
   if (holding?.kind === 'plan') return <PlanEditor plan={holding} onNameChange={setName} />;
   if (holding?.kind === 'manual') return <ManualEditor holding={holding} onNameChange={setName} />;
   return (
@@ -181,6 +181,11 @@ function PlanEditor({
       frequency: frequency as Frequency,
     })
     : null;
+  const close = () => {
+    if (!isDirty) return router.back();
+    void confirmAsync({ title: 'Discard changes?', message: 'Your changes have not been saved.', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
+      .then((discard) => { if (discard) router.back(); });
+  };
   const save = async (values: PlanFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
@@ -189,7 +194,7 @@ function PlanEditor({
       else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
         const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
           title: 'Record past installments?',
-          message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
+          message: `This will record ${previewPastDues.count} installments totalling ${formatINRShort(previewPastDues.amount)} on their due dates.`,
           confirmLabel: `Record ${previewPastDues.count} installments`,
           cancelLabel: 'Review',
         });
@@ -222,7 +227,7 @@ function PlanEditor({
     });
   };
   return (
-    <FormScreen title="Investment plan" onClose={() => router.back()} isDirty={isDirty}
+    <FormScreen title="Investment plan" onClose={close}
       headerAction={plan ? { label: 'Delete investment plan', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
       <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || (submitCount > 0 && Object.keys(errors).length > 0)} onPress={() => void handleSubmit(save)()} />
@@ -245,13 +250,13 @@ function PlanEditor({
           />
           {previewPastDues ? (
             <HelperText>
-              {previewPastDues.count} past installments · {formatAmount(previewPastDues.amount, 'exact', 1)}
+              {previewPastDues.count} past installments · {formatINRShort(previewPastDues.amount)}
             </HelperText>
           ) : null}
         </View>
       ) : null}
       {preview ? <AppText style={[typography.meta, { color: colors.text2 }]}>
-        Projected {formatAmount(preview.futureValue, 'exact', 1)} from {formatAmount(preview.totalContributions, 'exact', 1)} of contributions
+        Projected {formatINRShort(preview.futureValue)} from {formatINRShort(preview.totalContributions)} of contributions
       </AppText> : null}
     </FormScreen>
   );
@@ -288,6 +293,11 @@ function ManualEditor({
   const value = useWatch({ control, name: 'value' });
   const numeric = (raw: string) => Number(raw.replaceAll(',', ''));
   const belowCost = Number.isFinite(numeric(invested)) && Number.isFinite(numeric(value)) && numeric(value) < numeric(invested);
+  const close = () => {
+    if (!isDirty) return router.back();
+    void confirmAsync({ title: 'Discard changes?', message: 'Your changes have not been saved.', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
+      .then((discard) => { if (discard) router.back(); });
+  };
   const save = (values: HoldingFormOutput) => {
     if (holding) actions.updateHolding(holding.id, values);
     else actions.addHolding(values);
@@ -314,7 +324,7 @@ function ManualEditor({
     });
   };
   return (
-    <FormScreen title="Investment holding" onClose={() => router.back()} isDirty={isDirty}
+    <FormScreen title="Investment holding" onClose={close}
       headerAction={holding ? { label: 'Delete investment', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => void handleSubmit(save)()} />

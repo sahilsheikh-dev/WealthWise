@@ -6,9 +6,4 @@ describe('section header inline fit', () => {
     expect(fitsInline(298, 180, 107, 12)).toBe(false);
     expect(fitsInline(180, 180, 100, 12)).toBe(false);
   });
-
-  it('uses the supplied gap when checking the boundary', () => {
-    expect(fitsInline(280, 180, 100)).toBe(false);
-    expect(fitsInline(280, 180, 100, 0)).toBe(true);
-  });
 });

@@ -64,6 +64,13 @@ export default function InvestmentEntryFormScreen() {
         note: '',
       },
   });
+  const close = () => {
+    if (!isDirty) return router.back();
+    void confirmAsync({
+      title: 'Discard changes?', message: 'Your changes have not been saved.',
+      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
+    }).then((discard) => { if (discard) router.back(); });
+  };
   const persist = (values: InvestmentEntryFormOutput, saveAnyway = false) => {
     if (!holding || submitting.current) return;
     const duplicate = !entry && values.kind === 'Deposit' && holding.logs.some((row) => row.kind === 'Deposit' && row.date === values.date && row.amount === values.amount);
@@ -102,9 +109,9 @@ export default function InvestmentEntryFormScreen() {
       if (!useAppStore.getState().lastError) router.back();
     });
   };
-  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment entry not found" /></FormScreen>;
+  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment entry not found" /></FormScreen>;
   return (
-    <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={isDirty}
+    <FormScreen title="Investment entry" onClose={close}
       headerAction={entry ? { label: 'Delete investment entry', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Button label="Save" icon="save" variant="primary" style={{flex: 1}} disabled={isSubmitting || Object.keys(errors).length > 0} onPress={() => {

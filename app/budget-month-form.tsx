@@ -66,7 +66,7 @@ export default function BudgetMonthFormScreen() {
     }
   };
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-    return <FormScreen title="Monthly budget" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    return <FormScreen title="Monthly budget" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
       <FormErrorBanner message="Choose a valid month." />
     </FormScreen>;
   }
