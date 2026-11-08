@@ -22,7 +22,7 @@
   Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
   and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
 - Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
-  Gate 1 has 98 suites, 1,243 passed, 1 skipped; coverage is
+  Gate 1 has 98 suites, 1,244 passed, 1 skipped; coverage is
   95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
@@ -51,6 +51,13 @@
   and a final tree equal to main. The later route-diagnostic and ledger
   revisions are outside the read-only snapshot. Full details are in
   [PROGRESS.md](../PROGRESS.md).
+- P28-F-R3-R2 corrected historical downloads: the v1.0.0 asset is now
+  `WealthWise-android-v1.0.0.apk` at its version-specific URL, and the GitHub
+  release body matches the canonical checksum-free note. The latest v1.1.0
+  asset and tag remain unchanged. Current and affected versioned links return
+  HTTP 200 with expected sizes; the former generic v1.0.0 URL returns 404.
+  The related repository policy, ledger and regression-test changes are on
+  the task branch; they have not been pushed or merged by PR.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and

@@ -57,14 +57,19 @@
   `docs: draft vX.Y.Z release notes`. After publication is verified, move the
   file into `docs/releases/published/` and commit the move. Never leave a
   published file in drafts or a draft in published.
+- For the current/latest release, attach `WealthWise-android.apk`. When it is
+  superseded, rename the asset to `WealthWise-android-vX.Y.Z.apk` before
+  linking it. Each older release must use its own versioned URL and filename;
+  never use `/latest/` for an older release.
 - Verify each APK digest privately against the artifact before release; never
-  publish a digest in the README, published notes, release body or history.
-  Keep the README Download block byte-identical to the latest published
-  block; older notes use versioned links. Each release updates the README
-  Download and What's new sections and the releases-page link. Verify the
-  latest and versioned links with `curl -I -L`; both must return HTTP 200 and
-  the expected artifact size. The Builds table records EAS build ID, profile,
-  Android `versionCode`, date and status, but no source commit or digest.
+  include it in human-authored release material. GitHub may expose a
+  platform-generated asset digest that cannot be removed by editing the
+  release. Keep the README Download block byte-identical to the latest
+  published block. Each release updates the README Download and
+  What's new sections and the releases-page link. Verify the latest and every
+  affected versioned link with `curl -I -L`; require HTTP 200 and expected
+  artifact size. The Builds table records EAS build ID, profile, Android
+  `versionCode`, date and status, but no source commit or digest.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -75,13 +80,17 @@
 - Demo fixtures use deterministic synthetic data, stable IDs/dates and valid
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
-- For each GitHub release, attach `WealthWise-android.apk`. Verify its digest
-  privately before publication; never publish the digest. The README and
-  latest published Download blocks must match exactly, and older notes use
-  versioned links. Update the README Download and What's new sections and the
-  releases-page link for every release. Verify both links with `curl -I -L`,
-  HTTP 200 and expected artifact size. Record EAS build ID, profile, Android
-  `versionCode`, date and status in Builds; omit source commits and digests.
+- For each GitHub release, attach `WealthWise-android.apk` as the current
+  asset. On supersession, rename it `WealthWise-android-vX.Y.Z.apk` and use
+  the matching versioned asset URL in its old note and history entry. Verify
+  APK digests privately; never include them in human-authored release
+  material. GitHub may expose a platform-generated asset digest that cannot
+  be removed by editing the release. Keep the README and latest published
+  Download blocks identical; update README Download/What's new and the
+  releases-page link for every release. Verify the current latest URL and
+  every affected versioned link with `curl -I -L`, HTTP 200 and expected size.
+  Record EAS build ID, profile, Android `versionCode`, date and status in
+  Builds, omitting source commits and digests.
   Production Android AABs go to Google Play and APKs to GitHub; iOS
   distribution is not currently offered. Signing credentials are EAS-managed.
   See [`build-config.md`](../releases/build-config.md).

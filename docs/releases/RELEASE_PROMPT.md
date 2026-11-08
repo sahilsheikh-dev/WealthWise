@@ -478,7 +478,8 @@ After explicit approval:
 
 For every GitHub release:
 
-1. Attach the Android APK under the exact filename `WealthWise-android.apk`:
+1. Attach the current release Android APK under the exact filename
+   `WealthWise-android.apk`:
 
    ```bash
    gh release upload vX.Y.Z /path/to/WealthWise-android.apk
@@ -487,32 +488,39 @@ For every GitHub release:
 2. Add the version, release date, asset link, iOS availability message and
    releases-page link to the Download block in the published Markdown and
    GitHub release body. Verify the APK digest privately against the build
-   artifact, but never publish the digest. The latest published block must
-   match the README and use the latest route; older releases use their own
-   versioned asset link. When adding a block to an existing published note,
-   add or replace only that block; do not otherwise rewrite the file.
+   artifact, but never include it in human-authored release material. GitHub
+   may expose a platform-generated asset digest that cannot be removed by
+   editing the release. The latest published block must match the README and
+   use the latest route.
+   When a newer version is published, rename the previous release asset to
+   `WealthWise-android-vX.Y.Z.apk` and use the matching versioned asset URL
+   and filename in its Download block. Never use `/latest/` for an older
+   release. When adding a block to an existing published note, add or replace
+   only that block; do not otherwise rewrite the file.
 
 3. Keep the README Download section and the latest release Download block
-   byte-identical. When a newer version is published, replace only the
-   previous release's Download block with that version's versioned link; do
-   not change anything else in that old file.
-4. Verify both the latest and versioned direct Android links with
-   `curl -I -L`; record the final HTTP status and `Content-Length`. Both must
-   return HTTP 200 with the expected artifact size. Verify the digest
-   privately against the build artifact and never publish it:
+   byte-identical. When a newer version is published, rename only the previous
+   release asset and replace only that release's Download block with its
+   version-specific URL and filename; do not change anything else in that old
+   note.
+4. Verify the current latest link and every affected versioned direct Android
+   link with `curl -I -L`; record final HTTP status and `Content-Length`. Each
+   must return HTTP 200 with the expected artifact size. Verify digests
+   privately against the build artifact and never include them in
+   human-authored release material:
 
    ```bash
    curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
    curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
-   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
-   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
    ```
 
 5. Update the root README Download and What's new sections and its
    releases-page link for every release. The latest README Download block and
    published release Download block must be identical; older notes use their
-   versioned asset link. State unavailable artifacts plainly; do not publish
-   an invented URL.
+   matching versioned release URL and filename, never the latest route. State
+   unavailable artifacts plainly; do not publish an invented URL.
 6. Record the EAS build ID, Android `versionCode`, profile, date and status in
    the `release-history.md` Builds table. Do not record source commits or
    digests there. Production Android AABs are for Google Play; `android-apk`
@@ -632,13 +640,15 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android.apk`; both download routes return HTTP 200 with
-  the expected artifact size; the APK digest is verified privately and not
-  published.
+- Attached `WealthWise-android.apk` to the current release; the `/latest/`
+  route and each affected version-specific route return HTTP 200 with the
+  expected artifact size. When superseding a release, rename that older asset
+  to `WealthWise-android-vX.Y.Z.apk` and update its Download block. Verify the
+  APK digest privately; do not include it in human-authored release material.
 - Download block in published Markdown and release body; the latest block
   matches the README and older release blocks use versioned links.
-- Both latest and versioned links checked with `curl -I -L`, including final
-  status and `Content-Length`.
+- The current `/latest/` link and each affected version-specific link checked
+  with `curl -I -L`, including final status and `Content-Length`.
 - README Download and What's new sections and releases-page link are current.
 - EAS build ID, Android `versionCode`, profile, date and status in Builds;
   no source commit or digest is published.
