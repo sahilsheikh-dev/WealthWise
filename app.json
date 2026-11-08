@@ -53,13 +53,15 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-sharing",
+      "expo-notifications",
       "expo-secure-store",
       [
         "expo-local-authentication",
         {
           "faceIDPermission": "Unlock Wealth Wise"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

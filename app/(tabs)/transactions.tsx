@@ -23,7 +23,8 @@ import {
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
+import { customBudgetCategories } from '../../src/domain/budget';
+import { availableBalance } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
@@ -76,6 +77,7 @@ export default function TransactionsScreen() {
     },
   }), [month, setTxMonth, touchingChips]);
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const budgetCategories = useMemo(() => customBudgetCategories(data), [data]);
   const monthPendingItems = useMemo(() => pendingItems(data, month, today), [data, month, today]);
   const visiblePendingItems = useMemo(() => monthPendingItems.filter((item) => {
     const type = pendingTransactionType(item);
@@ -88,19 +90,23 @@ export default function TransactionsScreen() {
     () => availableBalance(data.transactions, month, today),
     [data.transactions, month, today],
   );
-  const review = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const creationOrder = useMemo(
     () => new Map(data.transactions.map((transaction, index) => [transaction.id, index])),
     [data.transactions],
   );
   const filteredRows = useMemo(
-    () => filterTransactions(data.transactions, { month, type: filter, query, category: categoryFilter }).map((transaction) => ({
+    () => filterTransactions(data.transactions, {
+      month, type: filter, query, category: categoryFilter, customCategories: budgetCategories,
+    }).map((transaction) => ({
       ...transaction,
       sortCreatedIndex: creationOrder.get(transaction.id) ?? 0,
     })),
-    [categoryFilter, creationOrder, data.transactions, filter, month, query],
+    [budgetCategories, categoryFilter, creationOrder, data.transactions, filter, month, query],
   );
-  const rows = sorting.sort(filteredRows);
+  const rows = useMemo(
+    () => sorting.sort(filteredRows),
+    [filteredRows, sorting],
+  );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
   const filterActive = filter !== 'all' || categoryFilter !== ''
@@ -145,7 +151,7 @@ export default function TransactionsScreen() {
               ))}
               {categoryFilter ? (
                 <Chip
-                  label={`Category: ${transactionCategoryLabel(categoryFilter)} ×`}
+                  label={`Category: ${transactionCategoryLabel(categoryFilter, undefined, budgetCategories)} ×`}
                   selected
                   onPress={() => setCategoryOverride('')}
                 />
@@ -162,24 +168,11 @@ export default function TransactionsScreen() {
               </AppText>
             </View>
             <View style={styles.balanceActions}>
-              {Math.abs(position.broughtForward) > 0 ? (
-                <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
-                  <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
-                </View>
-              ) : null}
+              <View style={[styles.broughtForwardChip, { backgroundColor: colors.bg }]}>
+                <AmountText value={position.amount} tier="tile" weight="bold" tone={position.amount < 0 ? 'err' : undefined} style={styles.balanceValue} />
+              </View>
             </View>
           </View>
-          <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
-              {review ? (
-                <View style={styles.reviewRow}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Review ${formatMonth(review.month)}`}
-                    onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month: review.month } })}>
-                    <AppText weight="semibold" style={{ color: colors.primary }}>Review {formatMonth(review.month)}</AppText>
-                  </Pressable>
-                </View>
-              ) : null}
           </Card>
         </View>
         {unlinkedCount > 0 ? (
@@ -219,6 +212,19 @@ export default function TransactionsScreen() {
             style={[styles.monthButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name="chevron-right" size={18} color={colors.text2} />
           </Pressable>
+          {month !== today.slice(0, 7) ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go to current month"
+              onPress={() => {
+                const currentMonth = today.slice(0, 7);
+                setTxMonth(currentMonth);
+                router.setParams({ month: currentMonth });
+              }}
+              style={[styles.todayButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <AppText weight="semibold">Today</AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.metrics}>
@@ -306,7 +312,7 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
-                const categoryLabel = transactionCategoryLabel(item.category, item.type);
+                const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
                 return (
                   <ListItem
                     key={item.id}
@@ -335,6 +341,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   monthRow: { minHeight: 48, marginHorizontal: 20, marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
+  todayButton: { minWidth: 44, height: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
@@ -358,6 +365,4 @@ const styles = StyleSheet.create({
   balanceActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
   balanceChipText: { fontSize: 10 },
-  balanceDivider: { height: StyleSheet.hairlineWidth },
-  reviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 1 },
 });

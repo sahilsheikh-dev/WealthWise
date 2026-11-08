@@ -1,6 +1,11 @@
 import { NotFoundError } from './actions';
 import { investCategoryFor, LinkedTransactionError } from './links';
-import { snapshotAdjustmentForEntry, updateInvestmentEntry } from './investmentActions';
+import { holdingCapabilities } from './holdingCapabilities';
+import {
+  applySnapshotAdjustment,
+  snapshotAdjustmentForEntry,
+  updateInvestmentEntry,
+} from './investmentActions';
 import { holdingValue } from './portfolio';
 import type {
   AppData,
@@ -103,21 +108,20 @@ function entryForTransaction(
 
 function removeLinkedEntry(data: AppData, source: InstrumentSource): AppData {
   if (source.kind === 'holding-entry') {
+    const holdings = data.holdings.map((holding) => {
+      if (holding.id !== source.parentId) return holding;
+      const entry = holding.logs.find((row) => row.id === source.entryId);
+      const adjustment = entry
+        ? entry.snapshotAdjustment ?? snapshotAdjustmentForEntry(holding, entry)
+        : undefined;
+      return {
+        ...applySnapshotAdjustment(holding, adjustment === undefined ? undefined : -adjustment),
+        logs: holding.logs.filter((row) => row.id !== source.entryId),
+      };
+    });
     return {
       ...data,
-      holdings: data.holdings.map((holding) => holding.id === source.parentId
-        ? {
-          ...holding,
-          ...(holding.kind === 'manual'
-            ? {
-              value: holding.value - (
-                holding.logs.find((entry) => entry.id === source.entryId)?.snapshotAdjustment ?? 0
-              ),
-            }
-            : {}),
-          logs: holding.logs.filter((entry) => entry.id !== source.entryId),
-        }
-        : holding),
+      holdings,
     };
   }
   return data;
@@ -137,6 +141,9 @@ function appendEntry(
   assertDate(date, today);
   const holding = data.holdings.find((item) => item.id === targetId);
   if (!holding) throw new NotFoundError('Investment', targetId);
+  if (kind === 'Deposit' && !holdingCapabilities(holding.type).entries) {
+    throw new Error('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
+  }
   assertHoldingDate(holding, date);
   const entry: InvestmentEntry = { id: entryId, date, amount, kind, note };
   if (kind === 'Withdrawal') assertWithdrawalFits(holding, entry, today);
@@ -146,11 +153,7 @@ function appendEntry(
     data: {
       ...data,
       holdings: data.holdings.map((item) => item.id === holding.id
-        ? {
-          ...item,
-          ...(item.kind === 'manual' && adjustment !== undefined ? { value: item.value + adjustment } : {}),
-          logs: [...item.logs, adjustedEntry],
-        }
+        ? { ...applySnapshotAdjustment(item, adjustment), logs: [...item.logs, adjustedEntry] }
         : item),
     },
     source: { kind: 'holding-entry', parentId: holding.id, entryId },
@@ -316,7 +319,7 @@ export function createMissingTransactions(data: AppData, newId: () => string): A
         category: withdrawal ? 'Withdrawal' : investCategoryFor(holding.type),
         note: withdrawal
           ? `${item.holdingName} withdrawal`
-          : item.holdingKind === 'plan' ? `${item.holdingName} installment` : `${item.holdingName} deposit`,
+          : `${item.holdingName} deposit`,
         date: item.entry.date,
         source: { kind: 'holding-entry', parentId: item.holdingId, entryId: item.entry.id },
       };

@@ -8,6 +8,7 @@ import {
   goalAssetValueFor,
   goalProjection,
   goalSavedFor,
+  goalSharedAssetCount,
   linkableInstruments,
   setGoalLinks,
 } from '../goalLinks';
@@ -51,12 +52,12 @@ const policy: Policy = {
   premium: 500,
   frequency: 'yearly',
   startDate: '2026-01-01',
+  status: 'active',
   premiumYears: 10,
   trackFrom: '2026-01-01',
-  coverAmount: 20_000,
+  sumAssured: 20_000,
   currentValue: 4_000,
   valueAsOf: '2026-10-01',
-  maturityDate: null,
   payments: [{ id: 'premium', date: '2026-01-01', amount: 500, note: '' }],
 };
 
@@ -73,7 +74,7 @@ describe('goal asset links', () => {
       policies: [
         policy,
         { ...policy, id: 'ulip', kind: 'ulip' as const, currentValue: null, valueAsOf: null },
-        { ...policy, id: 'term', kind: 'term' as const },
+        { ...policy, id: 'term', kind: 'term-life' as const },
       ],
     };
     expect(linkableInstruments(data, '2026-10-12').map(({ id, kind, value, invested }) =>
@@ -102,10 +103,10 @@ describe('goal asset links', () => {
     expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(0);
     const linkedEmergency = setGoalLinks(data, emergency.id, [{ instrumentId: 'manual' }]);
     const linkedGoal = linkedEmergency.goals.find((item) => item.auto === 'ef')!;
-    expect(goalSavedFor(linkedGoal, linkedEmergency, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(linkedGoal, linkedEmergency, '2026-10-12')).toBe(1_000);
   });
 
-  it('splits an asset equally across one, two and three goals with deterministic paise remainder', () => {
+  it('supersedes equal splitting: one asset is counted in full by every linked goal', () => {
     let data = baseData();
     data = setGoalLinks(data, 'goal', [{ instrumentId: 'manual', share: 30 }]);
     let goal = data.goals.find(({ id }) => id === 'goal');
@@ -121,15 +122,14 @@ describe('goal asset links', () => {
     goal = data.goals.find(({ id }) => id === 'goal');
     const second = data.goals.find(({ id }) => id === 'second');
     if (!goal || !second) throw new Error('Shared goal fixtures missing');
-    expect(goalSavedFor(goal, data, '2026-10-12')).toBe(500);
-    expect(goalSavedFor(second, data, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(goal, data, '2026-10-12')).toBe(1_000);
+    expect(goalSavedFor(second, data, '2026-10-12')).toBe(1_000);
 
     data = setGoalLinks(data, 'third', [{ instrumentId: 'manual' }]);
-    const shares = data.goals
+    const values = data.goals
       .filter((item) => item.links.some((link) => link.instrumentId === 'manual'))
       .map((item) => goalAssetValueFor(item, data, 'manual', 1_000.01));
-    expect(shares).toEqual([333.34, 333.34, 333.33]);
-    expect(shares.reduce((sum, value) => sum + value, 0)).toBe(1_000.01);
+    expect(values).toEqual([1_000.01, 1_000.01, 1_000.01]);
   });
 
   it('rebalance links after unlinking, accepts legacy shares and rejects duplicates', () => {
@@ -143,8 +143,8 @@ describe('goal asset links', () => {
     const first = data.goals.find(({ id }) => id === 'goal');
     const second = data.goals.find(({ id }) => id === 'second');
     if (!first || !second) throw new Error('Shared goal fixtures missing');
-    expect(goalSavedFor(first, data, '2026-10-12')).toBe(500);
-    expect(goalSavedFor(second, data, '2026-10-12')).toBe(500);
+    expect(goalSavedFor(first, data, '2026-10-12')).toBe(1_000);
+    expect(goalSavedFor(second, data, '2026-10-12')).toBe(1_000);
     data = setGoalLinks(data, 'second', []);
     const unlinkedFirst = data.goals.find(({ id }) => id === 'goal');
     if (!unlinkedFirst) throw new Error('Goal fixture missing');
@@ -264,7 +264,40 @@ describe('goal asset links', () => {
     expect(validateIntegrity(data)).toEqual([]);
   });
 
-  it('records the legacy-share and equal-split saved totals for both shipped fixtures', () => {
+  it('reports zero and multiple other goals for shared assets', () => {
+    const shared = {
+      ...baseData(),
+      goals: [
+        { id: 'one', name: 'One', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+        { id: 'two', name: 'Two', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+        { id: 'three', name: 'Three', target: 100, saved: 0, year: 2027, links: [{ instrumentId: 'manual' }] },
+      ],
+    };
+    expect(goalSharedAssetCount(shared, 'one', 'manual')).toBe(2);
+    expect(goalSharedAssetCount(shared, 'one', 'missing')).toBe(0);
+  });
+
+  it('demo data covers full emergency assets and shared recurring deposits', () => {
+    const data = buildDemoData('2026-10-12');
+    const emergency = data.goals.find((goal) => goal.auto === 'ef');
+    const retirement = data.goals.find((goal) => goal.id === 'demo-goal-retirement');
+    const home = data.goals.find((goal) => goal.id === 'demo-goal-home');
+    if (!emergency || !retirement || !home) throw new Error('Demo goal fixtures missing');
+    const fixedDeposit = data.holdings.find((holding) => holding.id === 'demo-holding-fd');
+    const recurringDeposit = data.holdings.find((holding) => holding.id === 'demo-holding-recurring-deposit');
+    if (!fixedDeposit || !recurringDeposit || recurringDeposit.kind !== 'plan') {
+      throw new Error('Demo deposit capability fixtures missing');
+    }
+    expect(fixedDeposit.type).toBe('Fixed deposit');
+    expect(fixedDeposit.logs).toEqual([]);
+    expect(recurringDeposit.type).toBe('Recurring deposit');
+    expect(recurringDeposit.logs.length).toBeGreaterThan(0);
+    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(187_000);
+    expect(goalSavedFor(retirement, data, '2026-10-12')).toBeGreaterThan(0);
+    expect(goalSavedFor(home, data, '2026-10-12')).toBeGreaterThan(0);
+  });
+
+  it('records legacy shares as ignored and computes full asset values for both shipped fixtures', () => {
     const asOf = '2026-10-12';
     const dataSets = [mockAppData, buildDemoData(asOf)];
     const totals = dataSets.map((data) => {
@@ -276,23 +309,16 @@ describe('goal asset links', () => {
           : goal.links.reduce((total, link) =>
             total + (instruments.get(link.instrumentId) ?? 0) * (link.share ?? 100) / 100, 0),
         after: goalSavedFor(goal, data, asOf),
+        plainFullValue: goal.links.reduce((total, link) =>
+          total + (instruments.get(link.instrumentId) ?? 0), 0),
       }));
     });
 
-    expect(totals).toEqual([
-      [
-        { id: 'goal-portfolio', before: 35_532.141979678534, after: 118_440.47 },
-        { id: 'goal-home', before: 20_625, after: 82_500 },
-        { id: 'goal-farm', before: 0, after: 0 },
-        { id: 'goal-emergency', before: 155_000, after: 290_456 },
-      ],
-      [
-        { id: 'demo-goal-emergency', before: 189_000, after: 189_000 },
-        { id: 'demo-goal-retirement', before: 9_626.447377234414, after: 8_022.04 },
-        { id: 'demo-goal-home', before: 56_363.2236886172, after: 214_222.04 },
-        { id: 'demo-goal-education', before: 7_250, after: 29_000 },
-        { id: 'demo-goal-travel', before: 25_000, after: 25_000 },
-      ],
-    ]);
+    for (const rows of totals) {
+      for (const row of rows) {
+        const goal = dataSets.flatMap((data) => data.goals).find((item) => item.id === row.id);
+        if (goal?.links.length) expect(row.after).toBe(row.plainFullValue);
+      }
+    }
   });
 });

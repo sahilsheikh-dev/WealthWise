@@ -17,6 +17,34 @@ export type SafeStorageHooks = {
   onCorrupt: (info: CorruptionInfo) => void;
 };
 
+function hasDanglingEfLinks(rawRecord: Record<string, unknown>): boolean {
+  const holdings = Array.isArray(rawRecord.holdings) ? rawRecord.holdings : [];
+  const holdingIds = new Set(
+    holdings
+      .filter((holding) => typeof holding === 'object' && holding !== null)
+      .map((holding) => (holding as Record<string, unknown>).id)
+      .filter((id): id is string => typeof id === 'string'),
+  );
+  const efBucketLinks = typeof rawRecord.efBucketLinks === 'object' && rawRecord.efBucketLinks !== null
+    ? rawRecord.efBucketLinks as Record<string, unknown>
+    : {};
+  if (Object.values(efBucketLinks).some((ids) =>
+    Array.isArray(ids) && ids.some((id) => typeof id === 'string' && !holdingIds.has(id)))) {
+    return true;
+  }
+  const goals = Array.isArray(rawRecord.goals) ? rawRecord.goals : [];
+  return goals.some((goal) => {
+    if (typeof goal !== 'object' || goal === null) return false;
+    const record = goal as Record<string, unknown>;
+    if (record.auto !== 'ef' || !Array.isArray(record.links)) return false;
+    return record.links.some((link) => {
+      if (typeof link !== 'object' || link === null) return false;
+      const instrumentId = (link as Record<string, unknown>).instrumentId;
+      return typeof instrumentId === 'string' && !holdingIds.has(instrumentId);
+    });
+  });
+}
+
 export function createSafeStorage(
   base: StateStorage,
   hooks: SafeStorageHooks,
@@ -27,7 +55,7 @@ export function createSafeStorage(
     onWriteSuccess?: (bytes: number) => void;
   },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 } | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 } | null = null;
   let prerepairRaw: string | null = null;
   return {
     async getItem(name) {
@@ -44,12 +72,25 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12 || envelope.version === 13 || envelope.version === 14 || envelope.version === 15 || envelope.version === 16 || envelope.version === 17 || envelope.version === 18 || envelope.version === 19 || envelope.version === 20) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state
           ) {
             premigration = { raw, version: envelope.version };
+            const rawData: unknown = envelope.state.data;
+            const rawRecord = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
+              ? rawData as Record<string, unknown>
+              : null;
+            if (rawRecord && resolveEfAllocation({
+              efAllocation: rawRecord.efAllocation,
+              efCustomBuckets: Array.isArray(rawRecord.efCustomBuckets) ? rawRecord.efCustomBuckets : [],
+            }).repaired) {
+              prerepairRaw = raw;
+            }
+            if (rawRecord && hasDanglingEfLinks(rawRecord)) {
+              prerepairRaw = raw;
+            }
           } else if (typeof envelope.state !== 'object' || envelope.state === null || !('data' in envelope.state)) {
             reason = 'invalid-schema';
           } else {
@@ -68,6 +109,12 @@ export function createSafeStorage(
                 efAllocation: rawAllocation,
                 efCustomBuckets: validatedData.data.efCustomBuckets,
               }).repaired) {
+                prerepairRaw = raw;
+              }
+              const rawRecord = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
+                ? rawData as Record<string, unknown>
+                : null;
+              if (rawRecord && hasDanglingEfLinks(rawRecord)) {
                 prerepairRaw = raw;
               }
             }

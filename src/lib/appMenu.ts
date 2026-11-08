@@ -15,6 +15,7 @@ export function buildAppMenu({
 }): AppMenuItem[] {
   const items: AppMenuItem[] = [
     { label: 'Backup and restore', icon: 'download' },
+    { label: 'Reminders', icon: 'calendar' },
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },
     { label: 'Theme', description: `Current theme: ${themeLabel}`, icon: 'sliders' },
@@ -22,7 +23,7 @@ export function buildAppMenu({
   if (isDev) {
     items.push(
       { label: 'Load demo data (4 months)', icon: 'database' },
-      { label: 'Generate stress-test data', icon: 'database', destructive: true },
+      { label: 'Load stress data (50y/100y/126y/dense)', icon: 'database', destructive: true },
       { label: 'Simulate corrupt storage', icon: 'alert-triangle', destructive: true },
     );
   }
