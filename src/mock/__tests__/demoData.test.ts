@@ -31,7 +31,7 @@ describe('four-month demo data', () => {
   });
 
   it('has four complete months of income, every budget expense category, and each investment category', () => {
-    expect(data.monthBudgets?.map(({ month }) => month)).toEqual(months);
+    expect(data.monthBudgets?.map(({ month }) => month)).toEqual([monthKey(today)]);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);
       expect(rows).toEqual(expect.arrayContaining([
@@ -49,16 +49,20 @@ describe('four-month demo data', () => {
       }
     }
     expect(BUDGET_GROUPS.every((group) => group.categories.length > 0)).toBe(true);
-    expect(data.budgetTemplates?.[0]?.lines.some((line) => line.mode === 'amount')).toBe(true);
-    expect(data.budgetTemplates?.[0]?.lines.some((line) => line.mode === 'percent')).toBe(true);
+    expect(data.budgetPlan?.lines.some((line) => line.mode === 'amount')).toBe(true);
+    expect(data.budgetPlan?.lines.some((line) => line.mode === 'percent')).toBe(true);
+    expect(data.budgetPlan).toMatchObject({
+      repeatMonthly: true,
+      repeatFrom: shiftMonth(monthKey(today), 1),
+    });
+    expect(data.budgetPlan?.lines.some((line) => line.category === 'EMI' || line.category === 'Insurance')).toBe(false);
+    expect(data).not.toHaveProperty('budgetTemplates');
     expect(data.monthBudgets?.find(({ month }) => month === monthKey(today)))
       .toMatchObject({
-        customized: false,
-        templateName: 'Four-month five-group plan',
+        source: 'plan',
         linkedIncluded: true,
         lines: expect.arrayContaining([expect.objectContaining({ category: 'Bills', dueDay: 5 })]),
       });
-    expect(data.monthBudgets?.some((budget) => budget.customized)).toBe(true);
   });
 
   it('reconciles every stored budget view with the transaction totals', () => {

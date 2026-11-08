@@ -6,12 +6,12 @@ import {
   recordMoneyMovement,
   shortfallForMonth,
 } from '../domain/cashFlow';
-import { applyTemplateToMonth, customizeMonthBudget } from '../domain/budget';
+import { applyBudgetPlanToMonth } from '../domain/budget';
 import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
   AppData,
-  BudgetTemplateLine,
+  BudgetPlanLine,
   Goal,
   Holding,
   ISODate,
@@ -77,7 +77,7 @@ function generatedIdFactory(): () => string {
   return () => `demo-generated-${String(++index).padStart(5, '0')}`;
 }
 
-function makeBudgetTemplateLines(): BudgetTemplateLine[] {
+function makeBudgetPlanLines(): BudgetPlanLine[] {
   const percentages: Record<string, number> = {
     Living: 18,
     Food: 8,
@@ -86,10 +86,11 @@ function makeBudgetTemplateLines(): BudgetTemplateLine[] {
     Unexpected: 3,
   };
   return [
-    ...TRANSACTION_CATEGORIES.expense.map((category) => ({
+    ...TRANSACTION_CATEGORIES.expense.filter((category) => category !== 'EMI' && category !== 'Insurance').map((category) => ({
       category,
       mode: percentages[category] === undefined ? 'amount' as const : 'percent' as const,
       value: percentages[category] ?? Math.max(1_500, (EXPENSE_AMOUNTS[category] ?? 1_000) * 1.5),
+      ...(category === 'Bills' ? { dueDay: 5 } : {}),
     })),
     ...INVESTMENT_FORM_CATEGORIES.map((category) => ({
       category,
@@ -295,17 +296,16 @@ export function buildDemoData(today: ISODate): AppData {
   const currentMonth = monthKey(today);
   const months = Array.from({ length: 4 }, (_, index) => shiftMonth(currentMonth, index - 3));
   const id = generatedIdFactory();
-  const budgetTemplateId = 'demo-budget-five-groups';
   const customBucketId = 'demo-ef-custom-bonds';
   const holdings = makeHoldings(today, months);
   const liabilities = makeLiabilities(months);
   const goals = makeGoals();
   const policies = makePolicies(today, months[0]!);
-  const template = {
-    id: budgetTemplateId,
-    name: 'Four-month five-group plan',
+  const budgetPlan = {
     plannedIncome: 75_000,
-    lines: makeBudgetTemplateLines(),
+    lines: makeBudgetPlanLines(),
+    repeatMonthly: true,
+    repeatFrom: shiftMonth(currentMonth, 1),
   };
   let data: AppData = {
     settings: { name: 'Demo User', theme: 'system', monthlySalary: 75_000, onboarded: true },
@@ -315,8 +315,7 @@ export function buildDemoData(today: ISODate): AppData {
     liabilities,
     policies,
     budget: null,
-    budgetTemplates: [template],
-    defaultBudgetTemplateId: budgetTemplateId,
+    budgetPlan,
     monthBudgets: [],
     efAllocation: {
       cash: 10,
@@ -496,33 +495,9 @@ export function buildDemoData(today: ISODate): AppData {
     allocations: [{ kind: 'liability', liabilityId: recurringLiability.id, amount: 5_000 }],
   }, id, today);
 
-  for (const month of months) {
-    data = applyTemplateToMonth(data, { month, templateId: budgetTemplateId });
-  }
-  const customizedMonth = months[2]!;
-  const customizedBudget = data.monthBudgets?.find((budget) => budget.month === customizedMonth);
-  if (!customizedBudget) throw new Error('Demo customized month budget was not created.');
-  data = customizeMonthBudget(data, customizedMonth, {
-    plannedIncome: customizedBudget.plannedIncome,
-    lines: customizedBudget.lines.map((line) => line.category === 'Food'
-      ? { ...line, planned: line.planned + 750 }
-      : line),
-  });
-
+  data = applyBudgetPlanToMonth(data, currentMonth, { newId: id, today });
   const currentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
-  data = {
-    ...data,
-    monthBudgets: data.monthBudgets?.map((budget) => budget.month !== currentMonth
-      ? budget
-      : {
-        ...budget,
-        linkedIncluded: true,
-        lines: budget.lines.map((line) => line.category === 'Bills'
-          ? { ...line, dueDay: 5 }
-          : line),
-      }),
-  };
   const linkedCurrentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!linkedCurrentBudget) throw new Error('Demo current-month linked budget was not created.');
   data.budget = { plannedIncome: linkedCurrentBudget.plannedIncome, lines: linkedCurrentBudget.lines };

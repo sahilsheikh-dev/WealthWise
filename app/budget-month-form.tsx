@@ -14,7 +14,7 @@ import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, resolveTemplate } from '../src/domain/budget';
+import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments } from '../src/domain/budget';
 import { incomeBaselineFor } from '../src/domain/summary';
 import { pendingItems } from '../src/domain/pending';
 import { transactionCategoryLabel } from '../src/domain/transactions';
@@ -36,18 +36,14 @@ export default function BudgetMonthFormScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const setActionToast = useUIStore((state) => state.setActionToast);
   const stored = data.monthBudgets?.find((row) => row.month === month);
-  const defaultTemplate = data.budgetTemplates?.find((row) => row.id === data.defaultBudgetTemplateId);
-  const suggestedIncome = defaultTemplate?.plannedIncome ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
+  const suggestedIncome = stored?.plannedIncome ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
   const lastError = useAppStore((state) => state.lastError);
   const defaultValues = useMemo<MonthForm>(() => ({
     plannedIncome: stored?.plannedIncome !== undefined
       ? stored.plannedIncome === null ? '' : String(stored.plannedIncome)
       : suggestedIncome === null ? '' : String(suggestedIncome),
     lines: (() => {
-      const templateLines = defaultTemplate && (!defaultTemplate.lines.some((line) => line.mode === 'percent') || suggestedIncome !== null)
-        ? resolveTemplate(defaultTemplate, suggestedIncome)
-        : [];
-      const lineValues = new Map((stored?.lines ?? templateLines).map((line) => [line.category, line]));
+    const lineValues = new Map((stored?.lines ?? []).map((line) => [line.category, line]));
       return BUDGET_CATEGORIES.map((category) => {
         const line = lineValues.get(category);
         return {
@@ -58,7 +54,7 @@ export default function BudgetMonthFormScreen() {
         };
       });
     })(),
-  }), [defaultTemplate, stored, suggestedIncome]);
+  }), [stored, suggestedIncome]);
   const { control, handleSubmit, formState: { isDirty, isSubmitting } } = useForm<MonthForm>({ defaultValues });
   const lines = useWatch({ control, name: 'lines' }) ?? [];
   const plannedIncomeValue = useWatch({ control, name: 'plannedIncome' });
@@ -125,9 +121,6 @@ export default function BudgetMonthFormScreen() {
           onChangeText={field.onChange} onBlur={field.onBlur} size="compact" />
       )} />
       <FormErrorBanner message={lastError} />
-      {defaultTemplate?.lines.some((line) => line.mode === 'percent') && suggestedIncome === null
-        ? <AppText>Add planned income to resolve percentage lines from the default template.</AppText>
-        : null}
       <View style={{ gap: 14 }}>
         <RecurringItemsSummary items={commitments} />
         <BudgetCategorySections

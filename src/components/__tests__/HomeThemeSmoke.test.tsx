@@ -141,19 +141,42 @@ describe('Home screen theme smoke', () => {
     act(() => renderer?.unmount());
   });
 
-  it('keeps the removed Budget actions off the Home spending card', async () => {
+  it('offers setup without a plan and routes plan application through Budget', async () => {
     jest.clearAllMocks();
+    const previous = { budgetPlan: mockData.budgetPlan, monthBudgets: mockData.monthBudgets };
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(<HomeScreen />);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    expect(renderer.root.findAllByType('button').filter((node) =>
-      ['Open budget', 'Apply budget'].includes(String(node.props.label)),
-    )).toHaveLength(0);
-    expect(router.push).not.toHaveBeenCalledWith('/(tabs)/budget');
+    const setup = renderer.root.findByProps({ accessibilityLabel: 'Set up budget' });
+    act(() => setup.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-setup');
     await act(async () => renderer?.unmount());
+
+    mockData.budgetPlan = {
+      plannedIncome: 10_000,
+      lines: [{ category: 'Food', mode: 'amount', value: 1_000 }],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+    mockData.monthBudgets = [];
+    jest.mocked(router.push).mockClear();
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    const apply = renderer.root.findByProps({ accessibilityLabel: 'Apply budget' });
+    act(() => apply.props.onPress());
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(tabs)/budget',
+      params: { month: '2026-10', apply: '1' },
+    });
+    await act(async () => renderer?.unmount());
+    mockData.budgetPlan = previous.budgetPlan;
+    mockData.monthBudgets = previous.monthBudgets;
   });
 
   it('shows Festival, Donation and Gifts in the current-month Home spending breakdown', async () => {

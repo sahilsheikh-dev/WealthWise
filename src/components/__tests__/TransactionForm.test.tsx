@@ -256,9 +256,7 @@ describe('transaction add form', () => {
     mockData.transactions = [];
     mockData.monthBudgets = [{
       month: '2026-10',
-      templateId: null,
-      templateName: null,
-      customized: false,
+      source: 'custom' as const,
       plannedIncome: 10_000,
       lines: [{ category, planned: 2_000 }],
     }];

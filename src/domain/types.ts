@@ -181,25 +181,23 @@ export type Budget = {
   lines: BudgetLine[];
 };
 
-export type BudgetTemplateLine = {
+export type BudgetPlanLine = {
   category: string;
   mode: 'amount' | 'percent';
   value: number;
   dueDay?: number;
 };
 
-export type BudgetTemplate = {
-  id: string;
-  name: string;
+export type BudgetPlan = {
   plannedIncome: number | null;
-  lines: BudgetTemplateLine[];
+  lines: BudgetPlanLine[];
+  repeatMonthly: boolean;
+  repeatFrom: string | null;
 };
 
 export type MonthBudget = {
   month: string;
-  templateId: string | null;
-  templateName: string | null;
-  customized: boolean;
+  source: 'plan' | 'custom';
   plannedIncome: number | null;
   lines: BudgetLine[];
   linkedIncluded?: boolean;
@@ -242,8 +240,7 @@ export type AppData = {
   liabilities: Liability[];
   policies: Policy[];
   budget: Budget | null;
-  budgetTemplates?: BudgetTemplate[];
-  defaultBudgetTemplateId?: string | null;
+  budgetPlan: BudgetPlan | null;
   monthBudgets?: MonthBudget[];
   efAllocation?: EfAllocation | null;
   efCustomBuckets: EfCustomBucket[];

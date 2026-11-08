@@ -51,16 +51,15 @@ import {
   type EfPlanDraft,
 } from '../domain/efAllocationActions';
 import {
-  applyTemplateToMonth,
+  applyBudgetPlanToMonth,
   clearMonthBudget,
-  createBudgetTemplate,
-  createBudgetTemplateAndApply,
   customizeMonthBudget,
-  deleteBudgetTemplate,
-  ensureMonthBudget,
-  saveMonthAsTemplate,
-  setDefaultBudgetTemplate,
-  updateBudgetTemplate,
+  ensureCurrentMonthBudget,
+  restoreMonthBudget,
+  restoreBudgetPlanAndMonth,
+  saveAndApplyBudgetPlan,
+  setBudgetPlan,
+  setBudgetRepeat,
 } from '../domain/budget';
 import type { EfAllocation } from '../domain/efAllocation';
 import {
@@ -80,7 +79,7 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
+  AppData, BudgetLine, BudgetPlan, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
 } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
@@ -130,16 +129,15 @@ export type AppActions = {
   fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
   allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
   recordMoneyMovement: (movement: MoneyMovement) => void;
-  createBudgetTemplate: (input: Omit<BudgetTemplate, 'id'>) => void;
-  createBudgetTemplateAndApply: (input: Omit<BudgetTemplate, 'id'>, month: string) => void;
-  updateBudgetTemplate: (id: string, patch: Partial<Omit<BudgetTemplate, 'id'>>) => void;
-  deleteBudgetTemplate: (id: string) => void;
-  setDefaultBudgetTemplate: (id: string | null) => void;
-  applyTemplateToMonth: (input: { month: string; templateId: string; plannedIncome?: number | null }) => void;
+  saveBudgetPlan: (plan: BudgetPlan | null) => void;
+  saveAndApplyBudgetPlan: (plan: BudgetPlan, month: string) => void;
+  applyBudgetPlan: (month: string) => void;
+  setBudgetRepeat: (repeatMonthly: boolean, repeatFrom: string | null) => void;
   customizeMonthBudget: (month: string, input: { plannedIncome: number | null; lines?: BudgetLine[] }) => void;
+  restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
+  restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
   clearMonthBudget: (month: string) => void;
-  saveMonthAsTemplate: (month: string, name: string) => void;
-  ensureMonthBudget: (month: string, today: ISODate) => void;
+  ensureCurrentMonthBudget: (today: ISODate) => void;
   deleteGoal: (id: string) => void;
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf' | 'logs'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
@@ -397,35 +395,38 @@ export function createAppStore(
         recordMoneyMovement(movement) {
           applyDataAction((data) => recordMoneyMovement(data, movement, deps.newId, deps.today()));
         },
-        createBudgetTemplate(input) {
-          applyDataAction((data) => createBudgetTemplate(data, input, deps.newId));
+        saveBudgetPlan(plan) {
+          applyDataAction((data) => setBudgetPlan(data, plan));
         },
-        createBudgetTemplateAndApply(input, month) {
-          applyDataAction((data) => createBudgetTemplateAndApply(data, input, month, deps.newId));
+        saveAndApplyBudgetPlan(plan, month) {
+          applyDataAction((data) => saveAndApplyBudgetPlan(data, plan, month, {
+            newId: deps.newId,
+            today: deps.today(),
+          }));
         },
-        updateBudgetTemplate(id, patch) {
-          applyDataAction((data) => updateBudgetTemplate(data, id, patch));
+        applyBudgetPlan(month) {
+          applyDataAction((data) => applyBudgetPlanToMonth(data, month, {
+            newId: deps.newId,
+            today: deps.today(),
+          }));
         },
-        deleteBudgetTemplate(id) {
-          applyDataAction((data) => deleteBudgetTemplate(data, id));
-        },
-        setDefaultBudgetTemplate(id) {
-          applyDataAction((data) => setDefaultBudgetTemplate(data, id));
-        },
-        applyTemplateToMonth(input) {
-          applyDataAction((data) => applyTemplateToMonth(data, input));
+        setBudgetRepeat(repeatMonthly, repeatFrom) {
+          applyDataAction((data) => setBudgetRepeat(data, repeatMonthly, repeatFrom));
         },
         customizeMonthBudget(month, input) {
           applyDataAction((data) => customizeMonthBudget(data, month, input));
         },
+        restoreMonthBudget(month, budget) {
+          applyDataAction((data) => restoreMonthBudget(data, month, budget));
+        },
+        restoreBudgetPlanAndMonth(plan, month, budget) {
+          applyDataAction((data) => restoreBudgetPlanAndMonth(data, plan, month, budget));
+        },
         clearMonthBudget(month) {
           applyDataAction((data) => clearMonthBudget(data, month));
         },
-        saveMonthAsTemplate(month, name) {
-          applyDataAction((data) => saveMonthAsTemplate(data, month, name, deps.newId));
-        },
-        ensureMonthBudget(month, today) {
-          applyDataAction((data) => ensureMonthBudget(data, month, today));
+        ensureCurrentMonthBudget(today) {
+          applyDataAction((data) => ensureCurrentMonthBudget(data, today, deps.newId));
         },
         deleteGoal(id) {
           applyDataAction((data) => deleteGoal(data, id));
@@ -579,6 +580,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v4`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
@@ -665,9 +667,8 @@ export function createAppStore(
           };
         }
         const today = deps.today();
-        const month = today.slice(0, 7);
         const beforeEnsure = data;
-        data = ensureMonthBudget(data, month, today);
+        data = ensureCurrentMonthBudget(data, today, deps.newId);
         const budgetWasEnsured = data !== beforeEnsure;
         let undoImport: { savedAt: ISODate } | null = null;
         try {
@@ -690,7 +691,7 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
-        if (budgetWasEnsured) storeApi.getState().actions.ensureMonthBudget(month, today);
+        if (budgetWasEnsured) storeApi.getState().actions.ensureCurrentMonthBudget(today);
       },
     },
   ));

@@ -1,21 +1,21 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { CardHeaderRow } from '../../src/components/CardHeaderRow';
 import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, ChipRow, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
-import { useAppMenu } from '../../src/components/useAppMenu';
+import { AppText, Button, Card, ChipRow, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
-import { normalizeMoney, reviewableMonths } from '../../src/domain/cashFlow';
+import { normalizeMoney } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { transactionCategoryLabel } from '../../src/domain/transactions';
@@ -35,32 +35,27 @@ export default function BudgetScreen() {
   const routeMonth = typeof params.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)
     ? params.month : null;
   const routeApply = params.apply === '1';
-  const routeKey = `${routeMonth ?? ''}:${routeApply ? '1' : '0'}`;
+  const routeKey = routeMonth ?? '';
   const [routeState, setRouteState] = useState(() => ({
     routeKey,
     month: routeMonth ?? todayISO().slice(0, 7),
-    applyOpen: routeApply,
   }));
   if (routeState.routeKey !== routeKey) {
     setRouteState((current) => ({
       routeKey,
       month: routeMonth ?? current.month,
-      applyOpen: routeApply || current.applyOpen,
     }));
   }
-  const { month, applyOpen } = routeState;
+  const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
-  const setApplyOpen = (value: boolean) => setRouteState((current) => ({ ...current, applyOpen: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
   const [incomeSourcesOpen, setIncomeSourcesOpen] = useState(false);
   const data = useAppData();
   const actions = useAppActions();
-  const setTxMonth = useUIStore((state) => state.setTxMonth);
   const setActionToast = useUIStore((state) => state.setActionToast);
   const { colors } = useTheme();
   const { fontScale, width } = useWindowDimensions();
   const sorting = useSort('budgetSpending');
-  const appMenu = useAppMenu();
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
   const closingBalance = normalizeMoney(view.position.closing);
@@ -68,9 +63,8 @@ export default function BudgetScreen() {
     () => pendingItems(data, month, today),
     [data, month, today],
   );
-  const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
-  const templates = data.budgetTemplates ?? [];
   const stackMetrics = width < 360 || fontScale >= 1.8;
+  const autoApplyStarted = useRef(false);
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) =>
       !touchingHeader && swipeIntent({ dx: gesture.dx, dy: gesture.dy, vx: gesture.vx }) !== null,
@@ -80,54 +74,48 @@ export default function BudgetScreen() {
       if (intent) setMonth(shiftMonth(month, intent === 'next' ? 1 : -1));
     },
   }), [month, touchingHeader]);
-  const apply = async (templateId: string) => {
-    if (view.budget) {
+  const apply = useCallback(async () => {
+    if (!data.budgetPlan) {
+      router.push('/budget-setup');
+      return;
+    }
+    const previous = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    if (previous) {
       const confirmed = await confirmAsync({
-        title: 'Replace this month’s plan?',
-        message: 'Applying a template replaces the saved plan for this month.',
-        confirmLabel: 'Apply template',
+        title: 'Replace this month’s budget?',
+        message: 'Payments already recorded stay.',
+        confirmLabel: 'Replace',
       });
       if (!confirmed) return;
     }
-    actions.applyTemplateToMonth({ month, templateId });
+    actions.applyBudgetPlan(month);
     const error = useAppStore.getState().lastError;
     if (error) {
-      Alert.alert('Could not apply template', error);
+      Alert.alert('Could not apply budget plan', error);
       return;
     }
     const plannedCount = pendingItems(useAppStore.getState().data, month, today)
       .filter((item) => item.kind === 'budget').length;
     setActionToast({
       message: `Budget applied: ${plannedCount} planned items are in Transactions as due payments`,
-      actionLabel: 'View',
+      actionLabel: 'Undo',
       onAction: () => {
-        setTxMonth(month);
-        router.push('/(tabs)/transactions');
+        actions.restoreMonthBudget(month, previous);
       },
     });
-    setApplyOpen(false);
-  };
+  }, [actions, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
+  useEffect(() => {
+    if (!routeApply || autoApplyStarted.current) return;
+    autoApplyStarted.current = true;
+    void apply();
+  }, [routeApply, apply]);
 
   const lines = sorting.sort(view.lines);
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...panResponder.panHandlers}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader
-            title="Budget"
-            menu={[
-              { icon: 'calendar', label: 'Budget history', onPress: () => router.push('/budget-history') },
-              {
-                icon: 'edit',
-                label: `Month review${reviewableMonth ? ', review pending' : ''}`,
-                onPress: () => router.push(reviewableMonth
-                  ? { pathname: '/month-review', params: { month: reviewableMonth.month } }
-                  : '/month-review'),
-              },
-              { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
-              ...appMenu,
-            ]}
-          />
+          <AppHeader title="Budget" showDefaultMenu={false} />
           <View
             onTouchStart={() => setTouchingHeader(true)}
             onTouchEnd={() => setTouchingHeader(false)}
@@ -196,45 +184,36 @@ export default function BudgetScreen() {
               <Card style={styles.noBudgetCard}>
                 <AppText weight="bold" style={typography.name}>No budget for this month</AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  Apply a saved template or set one up. Planned items appear in Transactions as due payments.
+                  Set up one plan for this month. Recurring items appear automatically.
                 </AppText>
                 <Button
-                  label="Apply template"
-                  icon="check"
+                  label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+                  icon={data.budgetPlan ? 'check' : 'plus'}
                   variant="primary"
-                  onPress={() => setApplyOpen(true)}
+                  onPress={() => {
+                    if (data.budgetPlan) void apply();
+                    else router.push('/budget-setup');
+                  }}
                   style={styles.fullWidthButton}
                 />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Set up budget"
-                  onPress={() => router.push({ pathname: '/budget-template-form', params: { wizard: '1' } })}
-                  style={styles.textButton}>
-                  <AppText weight="semibold" style={{ color: colors.primary }}>Set up budget</AppText>
-                </Pressable>
               </Card>
             </View>
           ) : (
             <Card>
-              <Pressable
-                testID="budget-plan-summary-edit"
-                accessibilityRole="button"
-                accessibilityLabel={`Edit budget plan for ${formatMonth(month)}. Planned income ${view.plannedIncome === null ? 'unavailable' : formatAmount(view.plannedIncome, 'exact', 1)}, planned spending ${formatAmount(view.plannedSpend, 'exact', 1)}, planned savings ${formatAmount(view.plannedSave, 'exact', 1)}, unallocated ${view.unallocated === null ? 'unavailable' : formatAmount(view.unallocated, 'exact', 1)}`}
-                accessibilityHint="Opens the selected month’s budget editor"
-                onPress={() => router.push({ pathname: '/budget-month-form', params: { month } })}
-                style={styles.planSummaryAction}>
-                <View style={styles.planSummaryHeader}>
-                  <AppText weight="semibold">Plan summary</AppText>
-                  {view.budget.customized ? <StatusBadge label="Customized" tone="primary" /> : null}
-                </View>
+              <CardHeaderRow
+                title={<AppText weight="semibold">Plan summary</AppText>}
+                editLabel="Edit budget plan"
+                onEdit={() => router.push('/budget-setup')}
+              />
+              <View>
                 <View style={[styles.planMetrics, stackMetrics && styles.planMetricsStacked]}>
                   <PlanMetric label="Planned income" value={view.plannedIncome} />
                   <PlanMetric label="Planned spending" value={view.plannedSpend} />
                   <PlanMetric label="Planned savings" value={view.plannedSave} />
                   <PlanMetric label="Unallocated" value={view.unallocated} />
                 </View>
-              </Pressable>
-              <Button label="Apply template" onPress={() => setApplyOpen(true)} />
+                <Button label="Adjust this month" onPress={() => router.push({ pathname: '/budget-month-form', params: { month } })} />
+              </View>
             </Card>
           )}
 
@@ -322,15 +301,28 @@ export default function BudgetScreen() {
                       </AppText>
                       <AppText style={typography.meta}>Actual {formatAmount(actualSubtotal, 'exact', 1)}</AppText>
                       {groupLines.map((line) => (
-                        <BudgetLineCard
-                          key={line.category}
-                          category={line.category}
-                          planned={line.planned}
-                          actual={line.actual}
-                          usedPct={line.usedPct}
-                          status={line.status}
-                          month={month}
-                        />
+                        <View key={line.category} style={{ gap: 6 }}>
+                          <BudgetLineCard
+                            category={line.category}
+                            planned={line.planned}
+                            actual={line.actual}
+                            usedPct={line.usedPct}
+                            status={line.status}
+                            month={month}
+                          />
+                          {(view.linkedByCategory ?? []).find((entry) => entry.category === line.category)?.rows.map((row) => (
+                            <View key={row.id} style={styles.linkedBudgetRow}>
+                              <View style={{ flex: 1 }}>
+                                <AppText weight="semibold">{row.name}</AppText>
+                                <AppText style={[typography.meta, { color: colors.text3 }]}>{row.dueDate}</AppText>
+                              </View>
+                              <View style={{ alignItems: 'flex-end' }}>
+                                <AppText>Auto</AppText>
+                                <AmountText value={row.amount} tier="row" />
+                              </View>
+                            </View>
+                          ))}
+                        </View>
                       ))}
                       {unbudgeted > 0 ? <BudgetStat label="Unbudgeted" value={unbudgeted} /> : null}
                     </Card>
@@ -354,23 +346,6 @@ export default function BudgetScreen() {
           ) : null}
         </ScrollView>
       </View>
-      <Modal visible={applyOpen} transparent animationType="fade" onRequestClose={() => setApplyOpen(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <AppText weight="bold" style={typography.h1}>Apply a template</AppText>
-            <Button label="Five-group plan (recommended)" icon="plus" variant="primary" onPress={() => {
-              setApplyOpen(false);
-              router.push({ pathname: '/budget-template-form', params: { wizard: '1' } });
-            }} />
-            {templates.map((template) => (
-              <Button key={template.id} label={template.name} onPress={() => void apply(template.id)} />
-            ))}
-            {templates.length === 0 ? <AppText style={{ color: colors.text3 }}>No templates yet. Set up a budget to get started.</AppText> : null}
-            <Button label="Manage templates" onPress={() => { setApplyOpen(false); router.push('/budget-templates'); }} />
-            <Button label="Close" onPress={() => setApplyOpen(false)} />
-          </View>
-        </View>
-      </Modal>
     </Screen>
   );
 }
@@ -459,8 +434,6 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 10 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
-  quickActions: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  quickActionsWrapped: { flexWrap: 'wrap' },
   incomeSummary: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   incomeSources: { paddingTop: 8, gap: 6 },
   cashFlowTitle: { marginBottom: 10 },
@@ -474,7 +447,6 @@ const styles = StyleSheet.create({
   reviewButtonStacked: { alignSelf: 'stretch' },
   noBudgetCard: { gap: 12 },
   fullWidthButton: { alignSelf: 'stretch' },
-  textButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   billsHeader: { marginHorizontal: 20, marginTop: 18, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   billsTitle: { flex: 1 },
   billsCard: { gap: 0, paddingVertical: 0 },
@@ -482,14 +454,11 @@ const styles = StyleSheet.create({
   closingPositionLabel: { flex: 1, minWidth: 0, gap: 3 },
   closingPositionStacked: { flexDirection: 'column', alignItems: 'flex-start' },
   closingAmount: { fontSize: 18 },
-  planSummaryAction: { gap: 12, marginBottom: 16 },
-  planSummaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   planMetrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   planMetricsStacked: { flexDirection: 'column' },
   planMetric: { flexBasis: '45%', flexGrow: 1, minWidth: 0, gap: 4 },
   statRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   lineCard: { marginHorizontal: 20, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, gap: 10 },
   lineTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#0008' },
-  modal: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, padding: 18, gap: 10 },
+  linkedBudgetRow: { marginHorizontal: 20, paddingHorizontal: 14, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
 });
