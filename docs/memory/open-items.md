@@ -4,14 +4,12 @@
 
 ## Unresolved
 
-- **P29-O2 in progress:** complete the staged v19 unified-holding migration,
-  convert all domain/store/screen/mock consumers, preserve current values and
-  net worth for demo/mock/legacy fixtures, and add migration/archive/backup/
-  encryption/erase-all coverage. Commit `0f1cac4` adds the pure converter and
-  equivalence tests; the next staged change adds a separate strict v19
-  validation schema. The persisted schema is still v18 and the converter is
-  not yet wired into startup. See
-  DEC-P29O2-UNIFIED-LEDGER in [PROGRESS.md](../PROGRESS.md).
+- **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
+  ledger-only schema-v19 storage redesign. Its converter, alternate v19
+  schemas/types and prototype tests had no production callers and have been
+  removed. The persisted schema remains v18; P29-O1's unified holding actions
+  remain supported. Historical preparation commits are retained; see
+  DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
   cards, Entries, opening amount edits and Recurring plan details at font
   scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
@@ -21,6 +19,14 @@
   Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
   Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
   counts are recorded in [PROGRESS.md](../PROGRESS.md).
+- **P29-T physical-device checks:** verify that adding, editing and deleting
+  dated deposits and withdrawals on or before a valuation updates manual and
+  plan values once, in the same write; verify Undo restores the entry and
+  linked transaction. Confirm goal, Emergency Fund, net-worth and Budget-linked
+  flows at font scales 1.3 and 2.0 on iOS and Android. Jest and Expo exports
+  do not verify native persistence, rendering or interaction. Budget's current
+  linked-actual selector is transaction-based, not a current-holding-value
+  display; that display was not redesigned.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its

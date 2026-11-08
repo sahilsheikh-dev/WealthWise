@@ -2,23 +2,19 @@
 
 # Status
 
-- Current task: P29-R is complete; it independently dry-ran the owner's local
-  schema-v13 backup through the real v13-to-v18 import pipeline and found no
-  differences in the requested before/after selectors. The privacy-safe script
-  and evidence are in [PROGRESS.md](../PROGRESS.md). P29-O2 remains in progress,
-  introducing the unified ledger and v19 migration
-  through the compatibility adapter. The v18-to-v19 converter and equivalence
-  tests are committed as `0f1cac4`; strict v19 ledger validation and its
-  migration fixtures are the next staged change. The active schema remains
-  v18 while store, screen, mock/demo conversion, and persistence/archive
-  integration remain open. P29-O1 is committed and verified.
+- Current task: P29-T adjusts stored holding valuations atomically when dated
+  entries on or before the snapshot are added, edited or deleted. Manual and
+  plan values, linked transactions and Undo remain in one store write; schema
+  v18 is unchanged. The P29-S cancellation and cleanup remain in
+  [PROGRESS.md](../PROGRESS.md). P29-R's separate
+  schema-v13 backup dry-run remains complete.
   P29-O1 used the existing v18 holding model;
   manual and recurring holdings share Deposit, Withdraw and Entries actions,
   with a derived Opening row and an in-holding Recurring plan section.
   Displayed Invested is net of withdrawals and floored at zero; fixed-deposit
   restrictions and P29-H return/current-value logic remain unchanged. The
-  final 90-suite/1140-test coverage run and all six ordered gates pass; physical
-  device checks remain open in [open-items.md](open-items.md).
+  P29-T final verification is recorded below; physical device checks remain
+  open in [open-items.md](open-items.md).
   P29-Q is implemented after the owner approved Expo SQLite.
   Native Zustand AppData uses the SDK-57 SQLite key-value adapter with lazy
   migration from AsyncStorage; web and UI metadata remain on AsyncStorage.
@@ -43,31 +39,28 @@
   inspected read-only: it imports `policySummary` for its Insurance box and
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-A through P29-L, P29-N, P29-M2 and P29-Q are Done; P29-M is
-  Superseded by P29-M2; P29-O inventory is committed and P29-O1 is Done on
-  schema v18; no AppData schema change was made for P29-O1 or P29-Q.
+- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S and P29-T are Done. P29-M is
+  Superseded by P29-M2; P29-O inventory is committed and P29-O1 remains Done
+  on schema v18. P29-S makes no behavior or schema change.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.
-- Schema version: v18 pending P29-O2's v19 migration. P29-L removes the retired coverGoals and policy
+- Schema version: v18. The P29-O2 v19 storage redesign was cancelled and no
+  migration is pending. P29-L removes the retired coverGoals and policy
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 90 suites, 1140 tests. P29-M2's 1120-test run, P29-N's
+- Test counts: 90 suites, 1150 tests. P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 90 suites, 1140 tests for P29-O1. All six ordered gates
-  exit 0. Fresh coverage from a deleted-then-regenerated
-  `coverage-final.json`, grouped by immediate `src/` directory with
-  `istanbul-lib-coverage`: `src/data` 702/745 lines (94.23%), 735/838
-  branches (87.71%); `src/domain` 3315/3365 lines (98.51%), 3205/3437
-  branches (93.25%); `src/lib` 107/107 lines and 126/126 branches (100%).
-  Per-file branches: `budget.ts` 788/867 (90.89%) and
-  `createAppStore.ts` 86/101 (85.15%); both configured thresholds pass.
-  Exact gates, assertion audit and device checks are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 90 suites, 1140 tests passed. Final ordered gate
-  results and fresh coverage are recorded in
-  [PROGRESS.md](../PROGRESS.md).
+- Latest validated run: 90 suites, 1150 tests. All six ordered gates exit 0.
+  Final coverage grouped by immediate `src/` directory: `src/data` 715/757
+  lines (94.45%), 739/842 branches (87.77%); `src/domain` 3327/3377
+  (98.52%), 3207/3436 (93.34%); `src/lib` 107/107 and 126/126 (100%).
+  `src/domain/schemas.ts` branches are 307/340 (90.29%), above threshold.
+  Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
+- Latest full Jest run: 90 suites, 1150 tests passed. Final ordered gate
+  results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
