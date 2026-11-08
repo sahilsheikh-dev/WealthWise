@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RecoveryScreen } from '../src/components/RecoveryScreen';
 import { LockGate } from '../src/components/LockGate';
+import { ActionToastHost } from '../src/components/ActionToastHost';
 import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
@@ -41,6 +42,7 @@ function AppContent() {
           <StorageErrorBanner />
           <LockGate>
             {onboarded ? (
+              <>
               <Stack
                 screenOptions={{
                   headerShown: false,
@@ -65,7 +67,10 @@ function AppContent() {
                 <Stack.Screen name="backup" />
                 <Stack.Screen name="security" />
                 <Stack.Screen name="erase-data" />
+                <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
               </Stack>
+              <ActionToastHost />
+              </>
             ) : <OnboardingScreen />}
           </LockGate>
         </>

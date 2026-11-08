@@ -4,6 +4,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
+import { DueActions } from '../src/components/DueActions';
 import {
   ActionRow,
   AppText,
@@ -148,6 +149,13 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       {!summary.cleared && schedule.summary.overdue > 0
         ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
         : null}
+      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
+        <DueActions
+          target={{ kind: 'liability', id: liability.id }}
+          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
+          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
+        />
+      ) : null}
       {!summary.cleared && extra > 0 ? (
         <AppText style={[typography.meta, styles.scenario, { color: colors.primary }]}>
           {scenarioDate === null

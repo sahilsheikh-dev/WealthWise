@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
@@ -93,6 +93,15 @@ export default function LiabilityPaymentsScreen() {
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }]}
         menu={[
+          ...(liability.kind === 'recurring' && schedule.summary.overdue + schedule.summary.ongoing > 0
+            ? [{
+              label: 'Clear past dues',
+              icon: 'edit' as const,
+              onPress: () => router.push(
+                `/clear-dues?kind=liability&id=${encodeURIComponent(liability.id)}` as Href,
+              ),
+            }]
+            : []),
           {
             label: 'Edit',
             icon: 'edit',

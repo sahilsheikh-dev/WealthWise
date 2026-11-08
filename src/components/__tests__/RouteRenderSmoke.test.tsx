@@ -3,6 +3,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
+import ClearDuesScreen from '../../../app/clear-dues';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfEntryFormScreen from '../../../app/ef-entry-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
@@ -100,6 +101,7 @@ jest.mock('../../data/store', () => {
       goals: [],
       holdings: [],
       liabilities: [],
+      policies: [],
       efEntries: [],
     },
     lastError: null,
@@ -145,6 +147,7 @@ jest.mock('../../data/useAppData', () => {
     goals: [],
     holdings: [],
     liabilities: [],
+    policies: [],
     efEntries: [],
   };
   const mockStoreState = {
@@ -350,6 +353,7 @@ describe('route render smoke audit', () => {
     ['Goals', React.createElement(GoalsScreen)],
     ['Transactions', React.createElement(TransactionsScreen)],
     ['Backup', React.createElement(BackupScreen)],
+    ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
     ['Emergency fund', React.createElement(EmergencyFundScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],

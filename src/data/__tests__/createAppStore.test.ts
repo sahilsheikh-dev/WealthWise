@@ -86,6 +86,127 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.efAllocation).toBeNull();
   });
 
+  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-01-01'),
+      holdings: [{
+        id: 'past-plan',
+        kind: 'plan' as const,
+        name: 'Past plan',
+        type: 'Mutual fund / SIP' as const,
+        frequency: 'monthly' as const,
+        amount: 100,
+        ratePct: 0,
+        stepUpPct: 0,
+        tenureYears: 1,
+        startDate: '2026-08-01',
+        trackFrom: '2026-08-01',
+        opening: 0,
+        actualValue: null,
+        actualValueDate: null,
+        logs: [],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: initial }, version: 5 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `due-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+
+    let writesBefore = storage.setItemCalls;
+    const entryId = actions.clearDue({ kind: 'plan', id: 'past-plan' });
+    expect(entryId).toBe('due-1');
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    writesBefore = storage.setItemCalls;
+    const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
+      mode: 'settle',
+      addSkippedToOpening: true,
+    });
+    expect(summary?.count).toBeGreaterThan(0);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it('persists clear undo and each add-with-history action in exactly one write', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `history-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const assertOneWrite = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+      expect(validateIntegrity(store.getState().data)).toEqual([]);
+    };
+
+    assertOneWrite(() => actions.addPlan({
+      name: 'Today plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-10-10',
+      trackFrom: '2026-10-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }));
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan || plan.kind !== 'plan') throw new Error('Test plan was not created.');
+    let entryId: string | undefined;
+    const beforeClear = storage.setItemCalls;
+    entryId = actions.clearDue({ kind: 'plan', id: plan.id });
+    expect(storage.setItemCalls - beforeClear).toBe(1);
+    expect(entryId).toBeDefined();
+    assertOneWrite(() => actions.undoClearDue({ kind: 'plan', id: plan.id }, entryId ?? ''));
+
+    assertOneWrite(() => actions.addPlanWithHistory({
+      name: 'Past plan',
+      type: 'Mutual fund / SIP',
+      frequency: 'monthly',
+      amount: 100,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-08-10',
+      trackFrom: '2026-08-10',
+      opening: 0,
+      actualValue: null,
+      actualValueDate: null,
+    }, 'settle'));
+    assertOneWrite(() => actions.addLiabilityWithHistory({
+      kind: 'recurring',
+      name: 'Past liability',
+      type: 'Personal loan',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: '2026-08-10',
+      tenureMonths: 12,
+      emi: 100,
+    }, 'settle'));
+    assertOneWrite(() => actions.addPolicyWithHistory({
+      name: 'Past policy',
+      insurer: '',
+      kind: 'health',
+      premium: 50,
+      frequency: 'monthly',
+      startDate: '2026-08-10',
+      premiumYears: 1,
+      trackFrom: '2026-08-10',
+      coverAmount: null,
+      currentValue: null,
+      valueAsOf: null,
+      maturityDate: null,
+    }, 'settle'));
+  });
+
   it.each([
     ['same day', '2026-10-10', '2026-10-10', 5_000],
     ['later day', '2026-10-09', '2026-10-10', 5_000],
