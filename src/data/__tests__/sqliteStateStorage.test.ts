@@ -123,6 +123,64 @@ describe('SQLite state storage migration', () => {
     await expect(storage.getItem('wealthwise.app.v1')).resolves.toBe('latest bytes');
   });
 
+  it('hydrates the newest value after a failed SQLite write and process restart', async () => {
+    class FailingSQLiteStorage extends MemoryStorage {
+      override async setItem(): Promise<void> {
+        throw new Error('disk full');
+      }
+    }
+
+    const sqlite = new FailingSQLiteStorage();
+    const legacy = new MemoryStorage();
+    sqlite.values.set('wealthwise.app.v1', 'old SQLite bytes');
+    const firstProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await firstProcess.setItem('wealthwise.app.v1', 'newest bytes');
+
+    const restartedProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await expect(restartedProcess.getItem('wealthwise.app.v1')).resolves.toBe('newest bytes');
+  });
+
+  it('hydrates the newest value after SQLite read-back mismatch and process restart', async () => {
+    class ReadBackMismatchSQLiteStorage extends MemoryStorage {
+      override async setItem(): Promise<void> {}
+    }
+
+    const sqlite = new ReadBackMismatchSQLiteStorage();
+    const legacy = new MemoryStorage();
+    sqlite.values.set('wealthwise.app.v1', 'old SQLite bytes');
+    legacy.values.set('wealthwise.app.v1', 'old SQLite bytes');
+    const firstProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await firstProcess.setItem('wealthwise.app.v1', 'newest bytes');
+
+    const restartedProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await expect(restartedProcess.getItem('wealthwise.app.v1')).resolves.toBe('newest bytes');
+  });
+
+  it('hydrates a legacy-fallback write after SQLite recovers and the process restarts', async () => {
+    class RecoveringSQLiteStorage extends MemoryStorage {
+      failNextRead = true;
+
+      override async getItem(name: string): Promise<string | null> {
+        if (this.failNextRead) {
+          this.failNextRead = false;
+          throw new Error('database could not open');
+        }
+        return super.getItem(name);
+      }
+    }
+
+    const sqlite = new RecoveringSQLiteStorage();
+    const legacy = new MemoryStorage();
+    sqlite.values.set('wealthwise.app.v1', 'old SQLite bytes');
+    legacy.values.set('wealthwise.app.v1', 'old SQLite bytes');
+    const firstProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await expect(firstProcess.getItem('wealthwise.app.v1')).resolves.toBe('old SQLite bytes');
+    await firstProcess.setItem('wealthwise.app.v1', 'newest bytes');
+
+    const restartedProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
+    await expect(restartedProcess.getItem('wealthwise.app.v1')).resolves.toBe('newest bytes');
+  });
+
   it('removes keys from both backends', async () => {
     const sqlite = new MemoryStorage();
     const legacy = new MemoryStorage();
