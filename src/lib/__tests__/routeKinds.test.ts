@@ -60,6 +60,11 @@ describe('route kind registry', () => {
     expect(routeKindForPath('/(tabs)/transactions')).toBe('tab');
     expect(routeKindForPath('/goal-form?id=goal-1')).toBe('form');
     expect(routeKindForPath('/liabilities')).toBe('stack');
+    expect(routeKindForPath('/insurance')).toBe('stack');
+    expect(routeKindForPath('/cover-goal-form?type=health')).toBe('form');
+    expect(routeKindForPath('/budget-section-form?month=2026-10')).toBe('form');
+    expect(routeKindForPath('/budget-item-form?sectionId=pets')).toBe('form');
+    expect(routeKindForPath('/budget-income-form?month=2026-10')).toBe('form');
     expect(routeKindForPath('/onboarding')).toBe('special');
     expect(() => routeKindForPath('/missing')).toThrow('No route kind is registered');
   });

@@ -14,7 +14,7 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
     name: 'Survival (Needs)',
     hint: 'Essentials: living, rent, utilities, food, transport, family, health, bills, education and EMI.',
     weight: 50,
-    categories: ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI'],
+    categories: ['Living', 'Rent', 'Utilities', 'Recharge', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI'],
   },
   {
     id: 'savings-investments',

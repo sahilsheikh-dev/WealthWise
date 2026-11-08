@@ -12,6 +12,7 @@ import {
   AppText,
   Button,
   Card,
+  EmptyState,
   Screen,
   StatPill,
   StatPillRow,
@@ -23,10 +24,12 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
+import { coverGoalSummaries } from '../../src/domain/coverGoals';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
+import { policySummary } from '../../src/domain/policySummary';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
@@ -56,6 +59,9 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
+  const coverGoals = coverGoalSummaries(data, today);
+  const termLifeGoal = coverGoals.find((goal) => goal.type === 'term-life');
+  const insuranceSummary = policySummary(data, today);
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
@@ -99,7 +105,7 @@ export default function HomeScreen() {
     });
   };
   const handleDuePress = async (item: PendingItem) => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
     if (!item.dueDate) {
       Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
       return;
@@ -130,8 +136,11 @@ export default function HomeScreen() {
         Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
         return;
       }
+      const sourceKind = target.kind === 'plan'
+        ? 'holding-entry'
+        : target.kind === 'liability' ? 'liability-payment' : 'policy-payment';
       const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
-        transaction.source?.kind === (target.kind === 'plan' ? 'holding-entry' : 'liability-payment')
+        transaction.source?.kind === sourceKind
         && transaction.source.parentId === target.id
         && transaction.source.entryId === entryId,
       ));
@@ -165,7 +174,9 @@ export default function HomeScreen() {
       return;
     }
     const transaction = useAppStore.getState().data.transactions.find((candidate) =>
-      (candidate.source?.kind === 'holding-entry' || candidate.source?.kind === 'liability-payment')
+      (candidate.source?.kind === 'holding-entry'
+        || candidate.source?.kind === 'liability-payment'
+        || candidate.source?.kind === 'policy-payment')
       && candidate.source.parentId === target.id
       && candidate.source.entryId === entryId,
     );
@@ -217,6 +228,70 @@ export default function HomeScreen() {
           />
         </StatPillRow>
       </Card>
+      <Pressable
+        testID="home-insurance-card"
+        accessibilityRole="button"
+        accessibilityLabel="Open Insurance"
+        accessibilityHint="Opens insurance policies and cover goals"
+        onPress={() => router.push('/insurance')}>
+        <Card style={styles.insuranceCard}>
+          {data.policies.length === 0 ? (
+            <>
+              <AppText weight="semibold">Insurance</AppText>
+              <EmptyState title="No policies yet" />
+              <Button
+                label="Add policy"
+                icon="plus"
+                variant="primary"
+                onPress={(event) => {
+                  event.stopPropagation();
+                  router.push('/policy-form');
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <AppText weight="semibold">Insurance</AppText>
+              <View
+                testID="home-insurance-row-total-cover"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Total cover</AppText>
+                  <AmountText value={insuranceSummary.totalCover} tier="row" weight="semibold" />
+                </View>
+              </View>
+              <View
+                testID="home-insurance-row-yearly-premium"
+                style={[styles.insuranceRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>Yearly premium</AppText>
+                  <AmountText value={insuranceSummary.yearlyPremium} tier="row" weight="semibold" />
+                </View>
+              </View>
+              {insuranceSummary.nextRenewal ? (
+                <View
+                  testID="home-insurance-row-next-renewal"
+                  style={[styles.insuranceRow, styles.insuranceRenewalRow, { borderBottomColor: colors.border }]}>
+                  <View style={[styles.insuranceRowContent, fontScale >= 1.3 && styles.insuranceRowStacked]}>
+                    <View style={styles.insuranceRenewalDetails}>
+                      <AppText style={[typography.meta, { color: colors.text2 }]}>Next renewal</AppText>
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        {insuranceSummary.nextRenewal.name} · {formatDate(insuranceSummary.nextRenewal.date)}
+                      </AppText>
+                    </View>
+                    <AmountText value={insuranceSummary.nextRenewal.amount} tier="row" weight="semibold" />
+                  </View>
+                </View>
+              ) : null}
+              {termLifeGoal?.target !== null && termLifeGoal?.target !== undefined ? (
+                <View testID="home-insurance-term-progress">
+                  <GoalProgressRow percent={(termLifeGoal.currentCover / termLifeGoal.target) * 100} />
+                </View>
+              ) : null}
+            </>
+          )}
+        </Card>
+      </Pressable>
 
       <View style={styles.quickActions}>
         {HOME_QUICK_ACTIONS.map((action) => (
@@ -345,7 +420,7 @@ export default function HomeScreen() {
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
                   <Button
-                    label="Paid"
+                    label={'Paid'}
                     accessibilityHint="Confirms whether this scheduled item was paid."
                     style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
@@ -467,6 +542,12 @@ const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
   categoryBreakdown: { gap: 10 },
+  insuranceCard: { gap: 10 },
+  insuranceRow: { minHeight: 42, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
+  insuranceRowContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  insuranceRowStacked: { alignItems: 'flex-start', flexDirection: 'column' },
+  insuranceRenewalRow: { paddingVertical: 6 },
+  insuranceRenewalDetails: { flex: 1, minWidth: 0, gap: 2 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },

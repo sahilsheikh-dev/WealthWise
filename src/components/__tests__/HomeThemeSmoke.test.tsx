@@ -78,6 +78,7 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
+    EmptyState: node('empty'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
     SearchField: node('searchfield'),

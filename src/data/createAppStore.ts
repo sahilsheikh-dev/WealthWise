@@ -48,12 +48,9 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
-  addEfCustomBucket,
-  renameEfCustomBucket,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
-  setEfCustomBucketAccess,
   type EfPlanDraft,
 } from '../domain/efAllocationActions';
 import {
@@ -69,6 +66,7 @@ import {
   editItem as editBudgetItemStructureData,
   deleteItem as deleteBudgetItemData,
   editBudgetItem as editBudgetItemData,
+  editBudgetIncome as editBudgetIncomeData,
   ensureCurrentMonthBudget,
   removeBudgetItem as removeBudgetItemData,
   restoreMonthBudget,
@@ -82,6 +80,7 @@ import {
   addLiabilityWithHistory,
   addPlanWithHistory,
   addPolicyWithHistory,
+  addPolicyPayment as addPolicyPaymentData,
   clearDue,
   clearDuesThrough,
   clearPastDues,
@@ -95,10 +94,11 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyStatus, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
+  BudgetIncomeUpdateInput,
   BudgetItemPatch,
   BudgetItemScope,
   BudgetItemSource,
@@ -140,6 +140,7 @@ export type AppActions = {
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
+  addPolicyPayment: (policyId: string, payment: Omit<PolicyPayment, 'id'>) => void;
   updatePolicy: (id: string, patch: PolicyPatch) => void;
   addPolicy: (input: AddPolicyInput) => void;
   setPolicyStatus: (id: string, status: PolicyStatus) => void;
@@ -174,6 +175,7 @@ export type AppActions = {
   deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  editBudgetIncome: (month: string, incomeId: string, values: BudgetIncomeUpdateInput, scope: BudgetItemScope, today: ISODate) => void;
   editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
   deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
@@ -184,9 +186,6 @@ export type AppActions = {
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
-  addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
-  renameEfCustomBucket: (bucketId: string, name: string) => void;
-  setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -395,8 +394,21 @@ export function createAppStore(
             newId: deps.newId,
           }).data);
         },
+        addPolicyPayment(policyId, payment) {
+          applyDataAction((data) => addPolicyPaymentData(data, { policyId, payment }, deps.newId).data);
+        },
         updatePolicy(id, patch) {
+          const previous = get().data;
           applyDataAction((data) => updatePolicy(data, { id, patch }));
+          const previousPolicy = previous.policies.find((policy) => policy.id === id);
+          if (get().lastError === null && get().data !== previous
+            && previousPolicy && patch.status !== undefined && patch.status !== previousPolicy.status) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy status updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
         },
         addPolicy(input) {
           applyDataAction((data) => addPolicyData(data, {
@@ -527,6 +539,9 @@ export function createAppStore(
         addBudgetIncome(month, input, scope, today) {
           applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
         },
+        editBudgetIncome(month, incomeId, values, scope, today) {
+          applyDataAction((data) => editBudgetIncomeData(data, month, { incomeId, values }, scope, today));
+        },
         editBudgetStructureItem(month, itemId, patch, scope, today) {
           applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));
         },
@@ -562,15 +577,6 @@ export function createAppStore(
         },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
-        },
-        addEfCustomBucket(input) {
-          applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
-        },
-        renameEfCustomBucket(bucketId, name) {
-          applyDataAction((data) => renameEfCustomBucket(data, bucketId, name));
-        },
-        setEfCustomBucketAccess(bucketId, access) {
-          applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
         },
         setEfBucketLinks(bucketId, holdingIds) {
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
@@ -690,6 +696,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v12`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

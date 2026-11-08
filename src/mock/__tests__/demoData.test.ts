@@ -1,4 +1,10 @@
-import { BUDGET_GROUPS, budgetMonthView, budgetOverview } from '../../domain/budget';
+import {
+  BUDGET_GROUPS,
+  budgetMonthView,
+  budgetOverview,
+  isItemDueInMonth,
+  nextDueMonth,
+} from '../../domain/budget';
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
@@ -38,6 +44,12 @@ describe('four-month demo data', () => {
       bank: 40,
       'fd-rd': 50,
     });
+    expect(data.efCustomBuckets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ access: 'instant' }),
+      expect.objectContaining({ access: 'days', marketLinked: true }),
+      expect.objectContaining({ access: 'slow' }),
+    ]));
+    expect(data.efCustomBuckets).toHaveLength(3);
   });
 
   it('includes the required active and lapsed policy demo records', () => {
@@ -125,6 +137,37 @@ describe('four-month demo data', () => {
         expect.objectContaining({ name: 'Food', value: 2_400, dueDay: 17 }),
       ]),
     });
+  });
+
+  it('demonstrates each Budget cadence with a due transaction and a projected next due', () => {
+    const items = data.budgetPlan?.items ?? [];
+    const expectations = [
+      ['Recharge', 'monthly'],
+      ['Streaming subscription', 'quarterly'],
+      ['Domain renewal', 'yearly'],
+      ['Maintenance', 'half-yearly'],
+    ] as const;
+    for (const [name, frequency] of expectations) {
+      const item = items.find((row) => row.name === name);
+      if (!item) throw new Error(`Missing recurring demo item: ${name}.`);
+      expect(item.frequency).toBe(frequency);
+      if (name === 'Recharge') expect(item.dueDay).toBe(5);
+      const dueMonth = months.find((month) => isItemDueInMonth(item, month));
+      if (!dueMonth) throw new Error(`No due month in the demo window for ${name}.`);
+      expect(data.transactions).toContainEqual(expect.objectContaining({
+        type: 'expense',
+        category: name,
+        amount: item.value,
+        date: expect.stringMatching(new RegExp(`^${dueMonth}-`)),
+      }));
+      const upcomingMonth = nextDueMonth(item, monthKey(today));
+      expect(pendingItems(data, upcomingMonth, today)).toContainEqual(expect.objectContaining({
+        title: name,
+        category: name,
+        status: 'upcoming',
+        dueDate: expect.stringMatching(new RegExp(`^${upcomingMonth}-`)),
+      }));
+    }
   });
 
   it('shows past, current and upcoming months in the budget overview demo', () => {
@@ -269,7 +312,11 @@ describe('four-month demo data', () => {
       bank: 40,
       'fd-rd': 50,
     });
-    expect(data.efCustomBuckets).toEqual([]);
+    expect(data.efCustomBuckets.map(({ access, marketLinked }) => ({ access, marketLinked }))).toEqual([
+      { access: 'instant', marketLinked: false },
+      { access: 'days', marketLinked: true },
+      { access: 'slow', marketLinked: false },
+    ]);
     const emergency = data.goals.find((goal) => goal.auto === 'ef');
     if (!emergency) throw new Error('Emergency goal missing from demo data.');
     expect(emergency.links.map(({ instrumentId }) => instrumentId)).toEqual([

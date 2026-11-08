@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
+import EfBucketFormScreen from '../../../app/ef-bucket-form';
 import { SUGGESTED_EF_ALLOCATION, type EfAllocation } from '../../domain/efAllocation';
 import { mockAppData } from '../../mock/data';
 import type { AppData } from '../../domain/types';
@@ -13,6 +14,8 @@ const mockState: { data: AppData; lastError: string | null; writes: number } = {
   writes: 0,
 };
 const mockBack = jest.fn();
+const mockPush = jest.fn();
+let mockRouteParams: Record<string, string> = {};
 const mockConfirmAsync = jest.fn<Promise<boolean>, [unknown]>();
 const mockSaveEfPlan = jest.fn((plan: {
   customBuckets: AppData['efCustomBuckets'];
@@ -29,7 +32,11 @@ const mockSaveEfPlan = jest.fn((plan: {
 });
 
 jest.mock('expo-router', () => ({
-  router: { back: (...args: unknown[]) => mockBack(...args) },
+  router: {
+    back: (...args: unknown[]) => mockBack(...args),
+    push: (...args: unknown[]) => mockPush(...args),
+  },
+  useLocalSearchParams: () => mockRouteParams,
 }));
 jest.mock('../../data/store', () => {
   const useAppStore = (selector: (state: typeof mockState) => unknown) => selector(mockState);
@@ -61,15 +68,20 @@ jest.mock('../../components/ScreenErrorBoundary', () => ({ ScreenErrorBoundary: 
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    FormScreen: ({ children, footer, stickyHeader, headerAction }: React.PropsWithChildren<{
+    FormScreen: ({ children, footer, stickyHeader, headerAction, ...props }: React.PropsWithChildren<{
       footer: React.ReactNode;
       stickyHeader?: React.ReactNode;
       headerAction?: { label: string; onPress: () => void; icon?: string; variant?: string };
-    }>) =>
-      ReactModule.createElement('form', { stickyHeader }, stickyHeader,
+    }>) => ReactModule.createElement('form', { ...props, stickyHeader }, stickyHeader,
         headerAction ? ReactModule.createElement('headeraction', headerAction) : null, children, footer),
   };
 });
+jest.mock('../../components/Dropdown', () => ({
+  Dropdown: (props: Record<string, unknown>) => {
+    const ReactModule = jest.requireActual('react') as typeof React;
+    return ReactModule.createElement('dropdown', props);
+  },
+}));
 jest.mock('../../components/IconButton', () => ({
   IconButton: (props: Record<string, unknown>) => {
     const ReactModule = jest.requireActual('react') as typeof React;
@@ -106,11 +118,17 @@ jest.mock('../../components/form/SwitchRow', () => ({
     return ReactModule.createElement('switchrow', props);
   },
 }));
+jest.mock('../../components/form/ReadOnlyRow', () => ({
+  ReadOnlyRow: (props: Record<string, unknown>) => {
+    const ReactModule = jest.requireActual('react') as typeof React;
+    return ReactModule.createElement('readonlyrow', props);
+  },
+}));
 jest.mock('../../components/ui', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   const node = (type: string) => ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     ReactModule.createElement(type, props, children);
-  return { AppText: node('text'), Button: node('button'), Card: node('card') };
+  return { AppText: node('text'), Button: node('button'), Card: node('card'), EmptyState: node('empty-state') };
 });
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => ({ colors: { text3: 'gray', border: 'border', surface: 'surface', surface2: 'surface2', primary: 'blue' } }),
@@ -139,13 +157,22 @@ function renderForm() {
   return renderer;
 }
 
+function renderBucketForm() {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => { renderer = TestRenderer.create(<EfBucketFormScreen />); });
+  if (!renderer) throw new Error('Allocation item form renderer was not created.');
+  return renderer;
+}
+
 describe('emergency-fund allocation form', () => {
   beforeEach(() => {
     mockState.data = { ...mockAppData, efAllocation: { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 } };
     mockState.lastError = null;
     mockState.writes = 0;
+    mockRouteParams = {};
     mockSaveEfPlan.mockClear();
     mockBack.mockClear();
+    mockPush.mockClear();
     mockConfirmAsync.mockReset();
   });
 
@@ -162,27 +189,45 @@ describe('emergency-fund allocation form', () => {
     }
   });
 
-  it('adds a custom option, shows live totals, links holdings, and saves the complete plan once', async () => {
+  it('routes directly to the item form and edits fixed and custom items from the list', () => {
     mockState.data = {
       ...mockState.data,
+      efCustomBuckets: [{
+        id: 'custom-safe-box', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
+    };
+    const renderer = renderForm();
+    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
+    expect(mockPush).toHaveBeenCalledWith('/ef-bucket-form');
+    act(() => renderer.root.findByProps({ label: 'Edit Cash' }).props.onPress());
+    expect(mockPush).toHaveBeenLastCalledWith({
+      pathname: '/ef-bucket-form',
+      params: { id: 'cash' },
+    });
+    act(() => renderer.root.findByProps({ label: 'Edit Safe box' }).props.onPress());
+    expect(mockPush).toHaveBeenLastCalledWith({
+      pathname: '/ef-bucket-form',
+      params: { id: 'custom-safe-box' },
+    });
+    expect(renderer.root.findAll((node) => String(node.type) === 'modal'))
+      .toHaveLength(1);
+    expect(renderer.root.findAllByProps({ label: 'Remove Cash' })).toHaveLength(0);
+    const source = readFileSync(require.resolve('../../../app/ef-allocation-form'), 'utf8');
+    expect(source).not.toMatch(/availableFixedBuckets|addFixedBucket|Mutual funds \/ Bonds|Stock market|LIC \/ Insurance/);
+  });
+
+  it('links holdings and saves the complete allocation once', async () => {
+    mockState.data = {
+      ...mockState.data,
+      efCustomBuckets: [{
+        id: 'custom-safe-box', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
       holdings: [{
         id: 'holding-current', kind: 'manual', name: 'Current account', type: 'Savings account',
         invested: 1_000, value: 1_000, logs: [],
       }],
     };
     const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    act(() => renderer.root.findByProps({ label: 'Custom' }).props.onPress());
-    const nameField = renderer.root.findByProps({ accessibilityLabel: 'New custom option name' });
-    await act(async () => {
-      nameField.props.onChangeText('Safe box');
-      await Promise.resolve();
-    });
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Add custom option' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(renderer.root.findAllByType('text').some((node) => node.children.join('') === 'Safe box')).toBe(true);
     const totalText = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
     expect(totalText).toContain('Total: 100.00%');
     expect(totalText).toContain('Remaining: 0.00%');
@@ -223,7 +268,7 @@ describe('emergency-fund allocation form', () => {
     expect(mockSaveEfPlan).toHaveBeenCalledTimes(1);
     expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({
       customBuckets: [expect.objectContaining({ name: 'Safe box', access: 'instant', marketLinked: false })],
-      links: { 'draft-1': ['holding-current'], bank: ['holding-current'] },
+      links: { 'custom-safe-box': ['holding-current'], bank: ['holding-current'] },
     }));
     expect(mockState.writes).toBe(1);
     expect(mockBack).toHaveBeenCalledTimes(1);
@@ -260,56 +305,6 @@ describe('emergency-fund allocation form', () => {
     expect(source).not.toMatch(/\b(?:use|apply)SuggestedMix\b/);
   });
 
-  it('offers missing predefined items including Mutual funds / Bonds from the header', () => {
-    mockState.data = { ...mockAppData, efAllocation: null, efCustomBuckets: [], efBucketLinks: {} };
-    const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    const choicesModal = renderer.root.findAllByProps({ visible: true })
-      .find((modal) => modal.findAllByProps({ label: 'Stock market' }).length > 0);
-    expect(choicesModal).toBeDefined();
-    const choiceLabels = new Set(choicesModal?.findAll(() => true)
-      .map((node) => node.props.label)
-      .filter((label): label is string => typeof label === 'string'));
-    expect([...choiceLabels]).toEqual(['Mutual funds / Bonds', 'Stock market', 'LIC / Insurance', 'Other', 'Custom', 'Cancel']);
-    expect(renderer.root.findAllByProps({ label: 'Cash' })).toHaveLength(0);
-    expect(renderer.root.findByProps({ label: 'Mutual funds / Bonds' })).toBeDefined();
-    act(() => renderer.root.findByProps({ label: 'Mutual funds / Bonds' }).props.onPress());
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Mutual funds / Bonds allocation percentage' }).props.value)
-      .toBe('0');
-  });
-
-  it('confirms deletion without moving its allocation and keeps a live total', async () => {
-    mockConfirmAsync.mockResolvedValue(true);
-    const renderer = renderForm();
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(mockConfirmAsync).toHaveBeenCalledWith({
-      title: 'Remove allocation item?',
-      message: 'Remove Cash? Its linked assets stay linked to the emergency fund but are no longer grouped.',
-      confirmLabel: 'Remove',
-      destructive: true,
-    });
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Cash allocation percentage' })).toHaveLength(0);
-    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
-      .toContain('Remaining: 20.00%');
-  });
-
-  it('rejects saving unless the live allocation total is exactly 100%', async () => {
-    mockConfirmAsync.mockResolvedValue(true);
-    const renderer = renderForm();
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
-      await Promise.resolve();
-    });
-    await act(async () => {
-      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
-      await Promise.resolve();
-    });
-    expect(mockSaveEfPlan).not.toHaveBeenCalled();
-  });
-
   it('shows the invalid live total and disables Save before submission', async () => {
     const renderer = renderForm();
     const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
@@ -333,23 +328,189 @@ describe('emergency-fund allocation form', () => {
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it('keeps an item when removal is dismissed', async () => {
-    mockConfirmAsync.mockResolvedValue(false);
-    const renderer = renderForm();
+});
+
+describe('emergency-fund allocation item form', () => {
+  beforeEach(() => {
+    mockState.data = {
+      ...mockAppData,
+      efAllocation: { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 },
+      efCustomBuckets: [],
+    };
+    mockState.lastError = null;
+    mockState.writes = 0;
+    mockRouteParams = {};
+    mockSaveEfPlan.mockClear();
+    mockBack.mockClear();
+    mockConfirmAsync.mockReset();
+  });
+
+  it.each([1.3, 2])('renders the shared-shell add form fields and footer at simulated font scale %s', (fontScale) => {
+    const renderer = renderBucketForm();
+    expect(renderer.root.findByType('form').props.title).toBe('Allocation item');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Allocation item title' }).props.maxLength).toBe(24);
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Allocation item access speed' }).props.options)
+      .toEqual([
+        { value: 'instant', title: 'Instant' },
+        { value: 'days', title: 'Within days' },
+        { value: 'slow', title: 'Slow' },
+      ]);
+    expect(renderer.root.findByProps({ label: 'Market-linked' }).props.value).toBe(false);
+    expect(renderer.root.findByProps({ label: 'Save' })).toBeDefined();
+    expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      .toContain('Market-linked: its value goes up and down with the market, for example stocks or equity funds');
+    expect(fontScale).toBeGreaterThan(1);
+  });
+
+  it('validates title length and case-insensitive uniqueness', async () => {
+    mockState.data = {
+      ...mockState.data,
+      efCustomBuckets: [{
+        id: 'existing-custom', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
+    };
+    const renderer = renderBucketForm();
+    const title = renderer.root.findByProps({ accessibilityLabel: 'Allocation item title' });
     await act(async () => {
-      renderer.root.findByProps({ label: 'Remove Cash' }).props.onPress();
+      title.props.onChangeText('cAsH');
+      renderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await Promise.resolve();
       await Promise.resolve();
     });
-    expect(renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' })).toBeDefined();
+    expect(renderer.root.findAll((node) => String(node.type) === 'formerror'
+      && String(node.props.message).includes('Allocation item titles must be unique.'))).toHaveLength(1);
+    expect(mockSaveEfPlan).not.toHaveBeenCalled();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'Allocation item title' })
+        .props.onChangeText('this title is definitely too long');
+      renderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(renderer.root.findAll((node) => String(node.type) === 'formerror'
+      && String(node.props.message).includes('Title must be 1 to 24 characters.'))).toHaveLength(1);
+    expect(mockState.writes).toBe(0);
   });
 
-  it('labels and explains the market-linked toggle', () => {
-    const renderer = renderForm();
-    act(() => renderer.root.findByProps({ label: 'Add allocation item' }).props.onPress());
-    act(() => renderer.root.findByProps({ label: 'Custom' }).props.onPress());
-    const text = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-    expect(renderer.root.findAllByProps({ label: 'Market-linked' }).length).toBeGreaterThan(0);
-    expect(text).toContain('Market-linked: its value goes up and down with the market, for example stocks or equity funds');
+  it('adds a zero-percent item with the selected access and market-linked metadata in one write', async () => {
+    const renderer = renderBucketForm();
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'Allocation item title' }).props.onChangeText('Travel cash');
+      renderer.root.findByProps({ accessibilityLabel: 'Allocation item access speed' }).props.onChange('days');
+      renderer.root.findByProps({ label: 'Market-linked' }).props.onValueChange(true);
+      renderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).toHaveBeenCalledTimes(1);
+    expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({
+      customBuckets: [{
+        id: 'draft-1', name: 'Travel cash', access: 'days', marketLinked: true,
+      }],
+      allocation: expect.objectContaining({ 'draft-1': 0 }),
+      links: mockState.data.efBucketLinks,
+    }));
+    expect(mockState.writes).toBe(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
+  it('edits an existing custom item without changing its ID', async () => {
+    mockRouteParams = { id: 'custom-safe-box' };
+    mockState.data = {
+      ...mockState.data,
+      efCustomBuckets: [{
+        id: 'custom-safe-box', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
+    };
+    const renderer = renderBucketForm();
+    expect(renderer.root.findByType('form').props.title).toBe('Allocation item');
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'Allocation item title' }).props.onChangeText('Travel cash');
+      renderer.root.findByProps({ accessibilityLabel: 'Allocation item access speed' }).props.onChange('slow');
+      renderer.root.findByProps({ label: 'Market-linked' }).props.onValueChange(true);
+      renderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({
+      customBuckets: [{
+        id: 'custom-safe-box', name: 'Travel cash', access: 'slow', marketLinked: true,
+      }],
+    }));
+    expect(mockState.writes).toBe(1);
+  });
+
+  it('opens fixed items in the same form with their built-in title and metadata unchanged', async () => {
+    mockRouteParams = { id: 'cash' };
+    const renderer = renderBucketForm();
+    expect(renderer.root.findByType('form').props.title).toBe('Allocation item');
+    expect(renderer.root.findByProps({ label: 'Title', value: 'Cash' })).toBeDefined();
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Allocation item title' })).toHaveLength(0);
+    expect(renderer.root.findByProps({ label: 'Access speed', value: 'Instant' })).toBeDefined();
+    expect(renderer.root.findByProps({ label: 'Market-linked' }).props.disabled).toBe(true);
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Save' }).props.onPress();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).not.toHaveBeenCalled();
+    expect(mockState.writes).toBe(0);
+  });
+
+  it('confirms deleting an item, removes its grouping, and preserves linked goal assets', async () => {
+    mockRouteParams = { id: 'custom-safe-box' };
+    mockState.data = {
+      ...mockState.data,
+      efAllocation: {
+        cash: 18, bank: 27, 'fd-rd': 31.5, 'mutual-funds-bonds': 13.5, 'custom-safe-box': 10,
+      },
+      efCustomBuckets: [{
+        id: 'custom-safe-box', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
+      efBucketLinks: { 'custom-safe-box': ['holding-current'] },
+    };
+    const originalGoalLinks = mockState.data.goals.map((goal) => goal.links);
+    mockConfirmAsync.mockResolvedValue(true);
+    const renderer = renderBucketForm();
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Remove allocation item' }).props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockConfirmAsync).toHaveBeenCalledWith({
+      title: 'Remove allocation item?',
+      message: 'Remove Safe box? Its linked assets stay linked to the emergency fund but are no longer grouped.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    expect(mockSaveEfPlan).toHaveBeenCalledTimes(1);
+    expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({
+      customBuckets: [],
+      links: {},
+    }));
+    expect(mockState.data.efAllocation).not.toHaveProperty('custom-safe-box');
+    expect(Object.values(mockState.data.efAllocation ?? {}).reduce((total, value) => total + value, 0))
+      .toBe(100);
+    expect(mockState.data.goals.map((goal) => goal.links)).toEqual(originalGoalLinks);
+    expect(mockState.writes).toBe(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not change allocation or linked assets when deletion is cancelled', async () => {
+    mockRouteParams = { id: 'custom-safe-box' };
+    mockState.data = {
+      ...mockState.data,
+      efCustomBuckets: [{
+        id: 'custom-safe-box', name: 'Safe box', access: 'instant', marketLinked: false,
+      }],
+    };
+    mockConfirmAsync.mockResolvedValue(false);
+    const renderer = renderBucketForm();
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Remove allocation item' }).props.onPress();
+      await Promise.resolve();
+    });
+    expect(mockSaveEfPlan).not.toHaveBeenCalled();
+    expect(mockState.writes).toBe(0);
+  });
 });
