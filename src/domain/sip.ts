@@ -1,4 +1,5 @@
-import { addDays, addMonths, addYears, daysBetween, parseISO } from './dates';
+import { addDays, addMonths, addYears, parseISO } from './dates';
+import { investmentLedgerSummary } from './investmentReturns';
 import type { Frequency, ISODate, PlanHolding } from './types';
 
 export const PERIODS_PER_YEAR: Record<Frequency, number> = {
@@ -90,33 +91,20 @@ export function behindBy(plan: PlanHolding, asOf: ISODate): number {
   return Math.max(0, installmentsTracked(plan, asOf) - loggedTrackedCount(plan));
 }
 
-export function estimatedValue(plan: PlanHolding, asOf: ISODate): number {
-  const factor = 1 + plan.ratePct / 100;
-  return Math.max(0, plan.opening + plan.logs.reduce((total, entry) => {
-    const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    const amount = entry.amount * factor ** (elapsedDays / 365);
-    return total + (entry.kind === 'Deposit' ? amount : -amount);
-  }, 0));
-}
-
 export function planInvested(plan: PlanHolding): number {
-  const ledgerTotal = plan.logs.reduce((total, entry) =>
-    total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
-  return Math.max(0, plan.opening + ledgerTotal);
+  return investmentLedgerSummary(plan.logs, plan.opening).invested;
 }
 
 export function planValue(plan: PlanHolding, asOf: ISODate): number {
-  if (plan.actualValue === null) return estimatedValue(plan, asOf);
   const snapshotDate = plan.actualValueDate;
-  if (snapshotDate === null) throw new Error('Plan actual value requires a snapshot date');
-  const factor = 1 + plan.ratePct / 100;
-  const snapshotElapsed = Math.max(0, daysBetween(snapshotDate, asOf));
-  return Math.max(0, plan.actualValue * factor ** (snapshotElapsed / 365) + plan.logs.reduce((total, entry) => {
-    if (entry.date <= snapshotDate) return total;
-    const elapsedDays = Math.max(0, daysBetween(entry.date, asOf));
-    const amount = entry.amount * factor ** (elapsedDays / 365);
-    return total + (entry.kind === 'Deposit' ? amount : -amount);
-  }, 0));
+  const baseValue = plan.actualValue === null ? plan.opening : plan.actualValue;
+  if (plan.actualValue !== null && snapshotDate === null) {
+    throw new Error('Plan actual value requires a snapshot date');
+  }
+  const entryTotal = plan.logs
+    .filter((entry) => entry.date <= asOf && (snapshotDate === null || entry.date > snapshotDate))
+    .reduce((total, entry) => total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
+  return Math.max(0, baseValue + entryTotal);
 }
 
 export function planProgressPct(plan: PlanHolding): number {

@@ -14,8 +14,7 @@ import {
   isItemDueInMonth,
   plannedForMonth,
 } from '../domain/budget';
-import { addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
-import { defaultCoverGoals } from '../domain/coverGoals';
+import { addDays, addMonths, isValidISO, monthKey, shiftMonth } from '../domain/dates';
 import { policyPremiumCategory } from '../domain/policyCategories';
 import { INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } from '../domain/schemas';
 import type {
@@ -73,7 +72,7 @@ const INVESTMENT_AMOUNTS: Record<string, number> = {
 const INVESTMENT_HOLDING_IDS: Record<string, string> = {
   'Mutual fund / SIP': 'demo-holding-mutual-fund',
   'Stocks / ETF': 'demo-holding-stocks',
-  'Fixed deposit / RD': 'demo-holding-fd',
+  'Fixed deposit / RD': 'demo-holding-recurring-deposit',
   'Gold / Silver': 'demo-holding-gold',
   'Other investments': 'demo-holding-epf',
 };
@@ -189,6 +188,23 @@ function makeBudgetPlanItems(currentMonth: string): BudgetItem[] {
       dueDay: 25,
     },
   ];
+}
+
+function makeReminderDemoItems(today: ISODate): BudgetItem[] {
+  return [
+    { id: 'demo-reminder-today', name: 'Demo payment due today', date: today },
+    { id: 'demo-reminder-tomorrow', name: 'Demo payment due tomorrow', date: addDays(today, 1) },
+    { id: 'demo-reminder-later', name: 'Demo payment due later', date: addDays(today, 7) },
+  ].map(({ id, name, date }) => ({
+    id,
+    sectionId: defaultBudgetSectionIdFor('Bills'),
+    name,
+    mode: 'amount',
+    value: 250,
+    frequency: 'monthly',
+    dueDay: Number(date.slice(8, 10)),
+    firstDueMonth: monthKey(date),
+  }));
 }
 
 function makeHoldings(today: ISODate, months: string[]): Holding[] {
@@ -475,7 +491,7 @@ export function buildDemoData(today: ISODate): AppData {
       ...defaultBudgetSections(),
       { id: 'demo-section-pets', name: 'Pets', type: 'spend' },
     ],
-    items: makeBudgetPlanItems(currentMonth),
+    items: [...makeBudgetPlanItems(currentMonth), ...makeReminderDemoItems(today)],
     repeatMonthly: true,
     repeatFrom: shiftMonth(currentMonth, 1),
   };
@@ -486,11 +502,6 @@ export function buildDemoData(today: ISODate): AppData {
     holdings,
     liabilities,
     policies,
-    coverGoals: defaultCoverGoals().map((goal) => goal.type === 'term-life'
-      ? { ...goal, targetValue: 12 }
-      : goal.type === 'health'
-        ? { ...goal, targetValue: 2_000_000 }
-        : goal),
     budget: null,
     budgetPlan,
     monthBudgets: [],
@@ -616,7 +627,7 @@ export function buildDemoData(today: ISODate): AppData {
   }
 
   for (const month of months) {
-    for (const category of INVESTMENT_FORM_CATEGORIES) {
+    for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
       const holdingId = INVESTMENT_HOLDING_IDS[category];
       if (!holdingId) throw new Error(`No demo holding for investment category ${category}.`);
       data = addInvestmentEntry(data, holdingId, {
@@ -637,7 +648,7 @@ export function buildDemoData(today: ISODate): AppData {
       date: dueDate,
       amount: plan.amount,
       kind: 'Deposit',
-      note: 'Recurring deposit installment',
+      note: 'Recurring deposit',
     }, id, today);
   }
 

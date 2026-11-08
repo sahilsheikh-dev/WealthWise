@@ -43,14 +43,13 @@ describe('shared AI memory documents', () => {
       expect(readMemoryFile(name)).toContain(`Schema version: v${schemaMatch[1]}`);
     }
 
-    const testCounts = ['project.md', 'status.md'].map((name) =>
-      readMemoryFile(name).match(/Test counts: (\d+) suites, (\d+) tests/),
-    );
-    for (const count of testCounts) {
-      expect(count).not.toBeNull();
-    }
-    expect(testCounts[0]?.[0]).toBe(testCounts[1]?.[0]);
-    expect(testCounts[0]?.[1]).toBe('79');
-    expect(testCounts[0]?.[2]).toBe('958');
+    const projectTests = readMemoryFile('project.md').match(/Test counts: (\d+) suites, (\d+) tests/);
+    const status = readMemoryFile('status.md');
+    const currentTests = status.match(/Test counts: (\d+) suites, (\d+) tests/);
+    const latestRun = status.match(/Latest validated run: (\d+) suites, (\d+) tests/);
+    expect(projectTests?.[1]).toBe('92');
+    expect(projectTests?.[2]).toBe('1195');
+    expect(currentTests?.[1]).toBe(latestRun?.[1]);
+    expect(currentTests?.[2]).toBe(latestRun?.[2]);
   });
 });

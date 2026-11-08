@@ -30,8 +30,8 @@ relying on them after an authorized edit):
 
 | File | Git blob ID | Rule |
 |---|---|---|
-| `app/(tabs)/index.tsx` | `d2af16e94414bcebf3db84d295b47bc3eca553bf` | User-owned; do not edit without explicit authorization. |
-| `app/(tabs)/budget.tsx` | `f2b8fba230d2c6d207ebf6b8627ee2ecc906cde6` | Preserve user-authored cash-flow labels and removed controls. |
+| `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
+| `app/(tabs)/budget.tsx` | `7beea9dd1ee7a3f46d95b8dbc13009b90b184dec` | Preserve user-authored cash-flow labels and removed controls. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |

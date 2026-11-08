@@ -284,6 +284,18 @@ export default function BudgetScreen() {
               style={nextDisabled && styles.disabled}>
               <Feather name="chevron-right" size={22} color={colors.text2} />
             </Pressable>
+            {month !== currentMonth ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go to current month"
+                onPress={() => {
+                  setMonth(currentMonth);
+                  router.replace({ pathname: '/(tabs)/budget', params: { month: currentMonth } });
+                }}
+                style={[styles.todayButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <AppText weight="semibold">Today</AppText>
+              </Pressable>
+            ) : null}
           </View>
 
           <View testID="budget-cash-flow">
@@ -617,6 +629,7 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 16 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
+  todayButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   disabled: { opacity: 0.45 },
   cardTitle: { marginBottom: 8 },
   screenCard: { marginTop: 0 },

@@ -10,14 +10,14 @@ import {
   EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
-import { COVER_POLICY_TYPES, THEME_IDS, type AppData, type ISODate } from './types';
+import { THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
 export const BACKUP_FORMAT_VERSION = 1;
 export const MAX_BACKUP_CHARS = 5_000_000;
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((date) => date >= '1990-01-01' && date <= '2100-12-31');
+  .refine((date) => date >= '1900-01-01' && date <= '2100-12-31');
 const idSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
 const money = z.number().finite().max(100_000_000_000).min(-100_000_000_000);
 const positiveMoney = money.positive();
@@ -27,6 +27,7 @@ const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
   snapshotAdjustment: money.optional(),
+  price: positiveMoney.optional(),
 });
 const liabilityPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
@@ -34,6 +35,7 @@ const liabilityPaymentSchema = z.strictObject({
 });
 const policyPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
+  dueDate: dateSchema.optional(),
 });
 const transactionSchema = z.strictObject({
   id: idSchema,
@@ -43,13 +45,13 @@ const transactionSchema = z.strictObject({
   note,
   date: dateSchema,
   source: z.strictObject({
-    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'liability-closure-charge', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
 });
 const goalSchema = z.strictObject({
-  id: idSchema, name, target: money, saved: money, year: z.number().int(),
+  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1900).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
@@ -60,17 +62,28 @@ const holdingType = z.enum([
   'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit',
   'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
 ]);
+const valuationFields = {
+  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
+  ratePct: z.number().finite().min(0).max(100).optional(),
+  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
+  maturityDate: dateSchema.optional(),
+  latestPrice: positiveMoney.optional(),
+  priceAsOf: dateSchema.optional(),
+};
 const manualHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('manual'), name, type: holdingType,
   invested: money, value: money, valueAsOf: dateSchema.optional(),
+  ...valuationFields,
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const planHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('plan'), name, type: holdingType,
+  ...valuationFields,
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
   tenureYears: z.number().int().min(1).max(100), startDate: dateSchema, trackFrom: dateSchema,
   opening: money, actualValue: money.nullable(), actualValueDate: dateSchema.nullable(),
+  stopDate: dateSchema.optional(),
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const liabilityCommon = {
@@ -79,13 +92,24 @@ const liabilityCommon = {
   principal: money, ratePct: z.number().min(0).max(100), startDate: dateSchema,
   payments: z.array(liabilityPaymentSchema).max(100_000),
 };
+const liabilityClosureSchema = z.strictObject({
+  date: dateSchema,
+  paymentId: idSchema,
+  note: z.string().max(200).optional(),
+  chargeTransactionId: idSchema.optional(),
+});
 const recurringLiabilitySchema = z.strictObject({
   ...liabilityCommon, kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200), emi: positiveMoney,
   settlement: z.strictObject({ asOf: dateSchema, balance: money.min(0) }).nullable(),
+  closure: liabilityClosureSchema.optional(),
 }).superRefine((liability, context) => {
   if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
+  }
+  if (liability.closure
+    && (liability.settlement?.asOf !== liability.closure.date || liability.settlement.balance !== 0)) {
+    context.addIssue({ code: 'custom', path: ['closure'], message: 'Closed liabilities require a zero settlement on the closure date' });
   }
 });
 const oneTimeLiabilitySchema = z.strictObject({
@@ -130,7 +154,8 @@ const policySchema = z.strictObject({
   insurer: z.string().max(40),
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.number().finite().positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: dateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
   policyNumber: z.string().max(30).optional(),
@@ -154,27 +179,9 @@ const policySchema = z.strictObject({
   if ((policy.currentValue === null) !== (policy.valueAsOf === null)) {
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and date must be set together' });
   }
-});
-const coverGoalsSchema = z.array(z.strictObject({
-  type: z.enum(COVER_POLICY_TYPES),
-  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
-  targetValue: z.number().finite().min(0).max(100_000_000_000).optional(),
-}).superRefine((goal, context) => {
-  if (goal.targetMode === 'income-multiple'
-    && (goal.targetValue === undefined || goal.targetValue < 1 || goal.targetValue > 50)) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Income multiple must be between 1 and 50' });
+  if (policy.frequency === 'custom' && policy.customIntervalMonths === undefined) {
+    context.addIssue({ code: 'custom', path: ['customIntervalMonths'], message: 'Custom frequency requires an interval in months.' });
   }
-  if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
-    context.addIssue({ code: 'custom', path: ['targetValue'], message: 'Active-only goals do not have a target value' });
-  }
-})).length(COVER_POLICY_TYPES.length).superRefine((goals, context) => {
-  const seen = new Set<string>();
-  goals.forEach((goal, index) => {
-    if (seen.has(goal.type)) {
-      context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Cover goal types must be unique' });
-    }
-    seen.add(goal.type);
-  });
 });
 const budgetSchema = z.strictObject({
   plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
@@ -223,6 +230,7 @@ const budgetItemSchema = z.strictObject({
   dueDay: z.number().int().min(1).max(31).optional(),
   frequency: budgetItemFrequencySchema,
   firstDueMonth: budgetFirstDueMonthSchema,
+  holdingId: z.string().min(1).optional(),
 }).superRefine((item, context) => {
   if (item.mode === 'percent' && item.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
@@ -295,10 +303,9 @@ export const importDataSchema = z.strictObject({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])).max(100_000),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   policies: z.array(policySchema).max(100_000),
-  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
-  monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
+  monthBudgets: z.array(monthBudgetSchema).max(1512).optional(),
   efAllocation: importEfAllocationSchema,
   efCustomBuckets: importEfCustomBucketsSchema,
   efBucketLinks: importEfBucketLinksSchema,
@@ -353,8 +360,18 @@ export async function createBackup(
   data: AppData,
   options: { exportedAt: string; digest: (text: string) => Promise<string> },
 ): Promise<string> {
+  if (!z.string().datetime().safeParse(options.exportedAt).success) {
+    throw new BackupExportError('The export timestamp is invalid; no file was written.');
+  }
+  const validation = validateImportData(data);
+  if (!validation.ok) {
+    throw new BackupExportError(`This data cannot be imported as a backup (${validation.issues[0] ?? validation.reason}); no file was written.`);
+  }
+  if (canonicalJson(validation.data) !== canonicalJson(data)) {
+    throw new BackupExportError('This data would change when imported; export was cancelled before writing a file.');
+  }
   const checksum = await options.digest(canonicalJson(data));
-  return JSON.stringify({
+  const text = JSON.stringify({
     app: BACKUP_APP,
     formatVersion: BACKUP_FORMAT_VERSION,
     schemaVersion: SCHEMA_VERSION,
@@ -362,6 +379,19 @@ export async function createBackup(
     checksum: { algorithm: 'sha256', value: checksum },
     data,
   }, null, 2);
+  if (text.length > MAX_BACKUP_CHARS) {
+    throw new BackupExportError(
+      `This backup is ${text.length.toLocaleString('en-US')} characters; the import limit is ${MAX_BACKUP_CHARS.toLocaleString('en-US')} characters. No file was written.`,
+    );
+  }
+  return text;
+}
+
+export class BackupExportError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BackupExportError';
+  }
 }
 
 function zodIssues(error: z.ZodError): string[] {
@@ -475,4 +505,8 @@ export function backupFileName(exportedAt: string): string {
   if (!Number.isFinite(date.getTime())) throw new Error('Invalid export date');
   const iso = date.toISOString();
   return `wealthwise-backup-${iso.slice(0, 10).replaceAll('-', '')}-${iso.slice(11, 16).replaceAll(':', '')}Z.json`;
+}
+
+export function encryptedBackupFileName(exportedAt: string): string {
+  return backupFileName(exportedAt).replace('.json', '-encrypted.json');
 }

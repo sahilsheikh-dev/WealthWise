@@ -1,6 +1,6 @@
 import { emptyAppData } from '../actions';
 import { validateIntegrity } from '../links';
-import { addHolding } from '../holdingActions';
+import { addHolding, updateHolding } from '../holdingActions';
 import {
   addInvestmentEntry,
   deleteHoldingWithTransactions,
@@ -10,7 +10,7 @@ import {
 } from '../investmentActions';
 import { holdingInvested, holdingValue } from '../portfolio';
 import { addPlan } from '../planActions';
-import { estimatedValue, planInvested } from '../sip';
+import { planInvested, planValue } from '../sip';
 import type { AppData, PlanHolding } from '../types';
 
 const idSequence = (...ids: string[]) => {
@@ -21,6 +21,43 @@ const idSequence = (...ids: string[]) => {
 const empty = (): AppData => emptyAppData('2026-10-10');
 
 describe('investment ledger actions and valuation', () => {
+  it('blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts', () => {
+    const fixed = addHolding(empty(), {
+      name: 'Maturing FD', type: 'Fixed deposit', invested: 500, value: 500, valueAsOf: '2026-10-10',
+    }, () => 'fixed');
+
+    expect(() => addInvestmentEntry(fixed, 'fixed', {
+      date: '2026-10-10', amount: 100, kind: 'Deposit', note: '',
+    }, idSequence('blocked', 'blocked-tx'), '2026-10-10'))
+      .toThrow('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
+
+    const payout = addInvestmentEntry(fixed, 'fixed', {
+      date: '2026-10-10', amount: 500, kind: 'Withdrawal', note: 'Maturity',
+    }, idSequence('payout', 'payout-tx'), '2026-10-10');
+    expect(payout.holdings[0]?.logs[0]).toMatchObject({ kind: 'Withdrawal', amount: 500 });
+    expect(holdingValue(payout.holdings[0]!, '2026-10-10')).toBe(0);
+
+    const legacyWithEntry: AppData = {
+      ...fixed,
+      holdings: fixed.holdings.map((holding) => holding.kind === 'manual'
+        ? { ...holding, logs: [{ id: 'legacy', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }] }
+        : holding),
+    };
+    const updatedLegacy = updateInvestmentEntry(legacyWithEntry, 'fixed', 'legacy', { amount: 60 }, '2026-10-10');
+    expect(updatedLegacy.holdings[0]?.logs[0]).toMatchObject({ id: 'legacy', amount: 60 });
+    expect(deleteInvestmentEntry(updatedLegacy, 'fixed', 'legacy').holdings[0]?.logs).toEqual([]);
+
+    const cash = addHolding(empty(), {
+      name: 'Cash', type: 'Cash', invested: 0, value: 0, valueAsOf: '2026-10-10',
+    }, () => 'cash');
+    const withEntry = addInvestmentEntry(cash, 'cash', {
+      date: '2026-10-10', amount: 100, kind: 'Deposit', note: '',
+    }, idSequence('cash-entry', 'cash-tx'), '2026-10-10');
+    expect(() => updateHolding(withEntry, 'cash', { type: 'Fixed deposit' }))
+      .toThrow('Remove the existing entries before changing this holding to Fixed deposit.');
+    expect(withEntry.holdings[0]?.type).toBe('Cash');
+  });
+
   it('records manual deposits and withdrawals with linked transactions and updates/deletes both sides', () => {
     let data = addHolding(empty(), {
       name: 'Gold', type: 'Gold', invested: 10_000, value: 10_000, valueAsOf: '2026-10-01',
@@ -127,16 +164,16 @@ describe('investment ledger actions and valuation', () => {
     const rows = syncHoldingTransactions([
       { id: 'a', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Old deposit', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'deposit' } },
       { id: 'b', type: 'income', amount: 1, date: withdrawal.date, category: 'Withdrawal', note: 'Custom note', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'withdrawal' } },
-      { id: 'c', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Old installment', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'missing' } },
+      { id: 'c', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Orphan deposit', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'missing' } },
       { id: 'd', type: 'income', amount: 1, date: entry.date, category: 'Other', note: 'Other source' },
     ], holding, updated);
     expect(rows[0]).toMatchObject({ note: 'New deposit', category: 'Gold / Silver' });
     expect(rows[1]).toMatchObject({ note: 'Custom note', category: 'Withdrawal' });
-    expect(rows[2]).toMatchObject({ note: 'Old installment', category: 'Other' });
+    expect(rows[2]).toMatchObject({ note: 'Orphan deposit', category: 'Other' });
     expect(rows[3]).toMatchObject({ note: 'Other source', category: 'Other' });
   });
 
-  it('applies plan withdrawals using the same daily growth factor and excludes them from deposit progress', () => {
+  it('keeps plan current value to the opening balance and recorded entries', () => {
     const plan: PlanHolding = {
       id: 'plan', kind: 'plan', name: 'Growth', type: 'Mutual fund / SIP', frequency: 'monthly',
       amount: 100, ratePct: 12, stepUpPct: 0, tenureYears: 1, startDate: '2025-10-10',
@@ -146,8 +183,7 @@ describe('investment ledger actions and valuation', () => {
         { id: 'withdrawal', date: '2026-04-10', amount: 500, note: '', kind: 'Withdrawal' },
       ],
     };
-    const oracle = 1_000 + 1_000 * 1.12 - 500 * 1.12 ** (183 / 365);
-    expect(estimatedValue(plan, '2026-10-10')).toBeCloseTo(oracle, 8);
+    expect(planValue(plan, '2026-10-10')).toBe(1_500);
     expect(planInvested(plan)).toBe(1_500);
   });
 
@@ -171,6 +207,44 @@ describe('investment ledger actions and valuation', () => {
         ? { ...holding, valueAsOf: undefined }
         : holding),
     };
-    expect(holdingValue(undatedSnapshot.holdings[0]!, '2026-10-10')).toBe(6_500);
+    expect(holdingValue(undatedSnapshot.holdings[0]!, '2026-10-10')).toBe(5_500);
+  });
+
+  it('clears holding links in plan and snapshot budget items without changing the asset links elsewhere', () => {
+    const manual = addHolding(empty(), {
+      name: 'Cash reserve', type: 'Cash', invested: 0, value: 30_000, valueAsOf: '2026-10-10',
+    }, () => 'manual');
+    const data: AppData = {
+      ...manual,
+      budgetPlan: {
+        ...manual.budgetPlan,
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'linked-plan', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10', source: 'custom', linkedIncluded: false, incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        items: [{
+          id: 'linked-snapshot', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      }],
+    };
+    const kept = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'keep' });
+    expect(kept.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.transactions.every((transaction) => transaction.source === undefined)).toBe(true);
+
+    const deleted = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'delete' });
+    expect(deleted.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(deleted.transactions).toEqual([]);
   });
 });

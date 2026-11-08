@@ -51,6 +51,26 @@ describe('policySummary', () => {
     });
   });
 
+  it('keeps savings policies in the unchanged total-cover summary', () => {
+    const data = {
+      ...emptyAppData('2026-01-01'),
+      policies: [policy({ kind: 'life-savings', sumAssured: 5_000 })],
+    };
+    expect(policySummary(data, '2026-01-01').totalCover).toBe(5_000);
+  });
+
+  it('annualizes custom premium intervals as twelve divided by the interval in months', () => {
+    const data = {
+      ...emptyAppData('2026-01-01'),
+      policies: [policy({
+        frequency: 'custom',
+        customIntervalMonths: 3,
+        premium: 250,
+      })],
+    };
+    expect(policySummary(data, '2026-01-01').yearlyPremium).toBe(1_000);
+  });
+
   it('uses the last three months of earned income when no effective budget exists', () => {
     const data = {
       ...emptyAppData('2026-01-15'),

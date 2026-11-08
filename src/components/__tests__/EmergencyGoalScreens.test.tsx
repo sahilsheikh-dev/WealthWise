@@ -8,7 +8,6 @@ import HomeScreen from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import { emptyAppData } from '../../domain/actions';
-import { defaultCoverGoals } from '../../domain/coverGoals';
 import { homeSummary } from '../../domain/summary';
 import { THEME_IDS, type AppData, type Policy, type ThemeId } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
@@ -72,7 +71,21 @@ jest.mock('../../components/ui', () => {
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
-    StatPill: node('pill'),
+    StatPill: ({ label, value, onPress, accessibilityLabel, accessibilityRole, testID }: {
+      label: string;
+      value: React.ReactNode;
+      onPress?: () => void;
+      accessibilityLabel?: string;
+      accessibilityRole?: string;
+      testID?: string;
+    }) => ReactModule.createElement('pill', {
+      label,
+      value,
+      onPress,
+      accessibilityLabel,
+      accessibilityRole: accessibilityRole ?? 'button',
+      testID,
+    }),
     StatPillRow: node('pillrow'),
     StatusBadge: node('badge'),
   };
@@ -87,9 +100,13 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
     Text: node('text'),
     View: node('view'),
+    TextInput: node('text-input'),
+    ScrollView: node('scroll-view'),
+    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
+    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: mockFontScale.current }),
   };
 });
@@ -167,10 +184,20 @@ describe('three-month emergency target screens', () => {
     });
     if (!home) throw new Error('Home did not render.');
 
+    const summaryCard = home.root.findAll((node) => String(node.type) === 'card')
+      .find((card) => renderedText(card).includes('Net Worth'));
+    if (!summaryCard) throw new Error('Home summary card is missing.');
+    expect(summaryCard.findAll((node) => String(node.type) === 'pillrow').map((row) =>
+      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
+    )).toEqual([
+      ['Assets', 'Liabilities'],
+      ['Emergency fund', 'Insurance'],
+    ]);
+
     const pills = home.root.findAll((node) =>
-      ['Assets', 'Emergency fund', 'Liabilities'].includes(node.props.label));
+      ['Assets', 'Emergency fund', 'Liabilities', 'Insurance'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])
-      .toEqual(['Assets', 'Liabilities', 'Emergency fund']);
+      .toEqual(['Assets', 'Liabilities', 'Emergency fund', 'Insurance']);
     expect(pills.some((pill) => pill.props.accessibilityLabel === 'Assets, ₹2,00,000')).toBe(true);
     expect(pills.some((pill) =>
       pill.props.accessibilityLabel === 'Emergency fund, ₹2,00,000, 2.6 months of cover')).toBe(true);
@@ -391,7 +418,7 @@ describe('three-month emergency target screens', () => {
     }
   });
 
-  it.each([1.3, 2])('renders the Home Insurance section after upcoming dues and before Goal Progress at font scale %s', async (fontScale) => {
+  it.each([1.3, 2])('renders Assets/Liabilities then Emergency fund/Insurance in Home row 2 at font scale %s', async (fontScale) => {
     const empty = emptyAppData('2026-10-11');
     const policy: Policy = {
       id: 'home-term-life',
@@ -412,7 +439,6 @@ describe('three-month emergency target screens', () => {
     const data: AppData = {
       ...empty,
       policies: [policy],
-      coverGoals: defaultCoverGoals(),
       liabilities: [{
         id: 'upcoming-friend-payment',
         kind: 'one-time',
@@ -447,48 +473,28 @@ describe('three-month emergency target screens', () => {
     const netWorthCard = cards.at(0);
     if (!netWorthCard) throw new Error('Home summary card is missing.');
     expect(renderedText(netWorthCard)).toContain('Net Worth');
+    const summaryRows = netWorthCard.findAll((node) => String(node.type) === 'pillrow');
+    expect(summaryRows).toHaveLength(2);
+    expect(summaryRows.map((row) =>
+      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
+    )).toEqual([
+      ['Assets', 'Liabilities'],
+      ['Emergency fund', 'Insurance'],
+    ]);
     expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(insurancePressable.props.accessibilityRole).toBe('button');
-    expect(insurancePressable.props.accessibilityLabel).toBe('Open Insurance');
+    expect(insurancePressable.props.accessibilityLabel).toContain('Insurance');
     expect(insurancePressable.parent).toBeDefined();
-    const orderedMarkers = renderer.root.findAll((node) => {
-      const text = node.type === 'text' ? renderedText(node).trim() : '';
-      return node.props.testID === 'home-insurance-card'
-        || ['Upcoming and due', 'Insurance', 'Goal Progress'].includes(text);
-    }).map((node) => node.props.testID ?? renderedText(node).trim());
-    const upcomingIndex = orderedMarkers.indexOf('Upcoming and due');
-    const insuranceHeadingIndex = orderedMarkers.indexOf('Insurance');
-    const insuranceCardIndex = orderedMarkers.indexOf('home-insurance-card');
-    const goalProgressIndex = orderedMarkers.indexOf('Goal Progress');
-    expect(upcomingIndex).toBeGreaterThanOrEqual(0);
-    expect(insuranceHeadingIndex).toBeGreaterThan(upcomingIndex);
-    expect(insuranceCardIndex).toBeGreaterThan(insuranceHeadingIndex);
-    expect(goalProgressIndex).toBeGreaterThan(insuranceCardIndex);
-    const detailRowIds = [
-      'home-insurance-row-total-cover',
-      'home-insurance-row-yearly-premium',
-      'home-insurance-row-next-renewal',
-    ];
-    expect(Array.from(new Set(insurancePressable.findAll((node) =>
-      typeof node.props.testID === 'string' && detailRowIds.includes(node.props.testID),
-    ).map((node) => node.props.testID)))).toEqual([
-      'home-insurance-row-total-cover',
-      'home-insurance-row-yearly-premium',
-      'home-insurance-row-next-renewal',
-    ]);
-    const insuranceCard = insurancePressable.findAll((node) => String(node.type) === 'card').at(0);
-    if (!insuranceCard) throw new Error('Home Insurance card is missing.');
-    expect(lastChildTestID(insuranceCard)).toBe('home-insurance-term-progress');
-    expect(insurancePressable.findByProps({ testID: 'home-insurance-term-progress' })
-      .findByProps({ testID: 'goal-progress-row' })).toBeDefined();
-    const totalRow = insurancePressable.findByProps({ testID: 'home-insurance-row-total-cover' });
-    const rowStackStyles = totalRow.findAll((node) =>
-      String(JSON.stringify(node.props.style)).includes('"flexDirection":"column"'));
-    expect(rowStackStyles.length > 0).toBe(fontScale >= 1.3);
-    expect(renderedText(insuranceCard)).toContain('₹20,00,000');
-    expect(renderedText(insuranceCard)).toContain('Yearly premium');
-    expect(renderedText(insuranceCard)).toContain('Term cover');
+    expect(netWorthCard.findByProps({ label: 'Assets' })).toBeDefined();
+    expect(netWorthCard.findByProps({ label: 'Liabilities' })).toBeDefined();
+    expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
+    expect(netWorthCard.findByProps({ label: 'Insurance' })).toBeDefined();
+    expect(insurancePressable.props.accessibilityLabel).toBe(
+      'Insurance, total cover ₹20,00,000',
+    );
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'section' && renderedText(node).toLowerCase().includes('insurance'),
+    )).toHaveLength(0);
 
     const beforeSummary = homeSummary({ ...data, policies: [] }, '2026-10-11');
     const afterSummary = homeSummary(data, '2026-10-11');
@@ -522,7 +528,6 @@ describe('three-month emergency target screens', () => {
     mockData.current = {
       ...empty,
       policies: [policy],
-      coverGoals: defaultCoverGoals(),
       budgetPlan: null,
       monthBudgets: [],
       transactions: [],
@@ -534,8 +539,8 @@ describe('three-month emergency target screens', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     const card = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(card.findAllByProps({ testID: 'home-insurance-term-progress' })).toHaveLength(0);
-    expect(card.findByProps({ testID: 'home-insurance-row-next-renewal' })).toBeDefined();
+    expect(card.props.label).toBe('Insurance');
+    expect(card.props.accessibilityLabel).toContain('Insurance');
     await act(async () => renderer?.unmount());
 
     mockData.current = { ...empty, policies: [] };
@@ -545,13 +550,11 @@ describe('three-month emergency target screens', () => {
     });
     if (!renderer) throw new Error('Empty Home did not render.');
     const emptyCard = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(emptyCard.findByProps({ title: 'No policies yet' })).toBeDefined();
+    expect(emptyCard.props.value).toBe('No policies yet');
     expect(emptyCard.findAllByProps({ testID: 'home-insurance-row-total-cover' })).toHaveLength(0);
     expect(emptyCard.findAllByProps({ testID: 'home-insurance-term-progress' })).toHaveLength(0);
-    const addPolicy = emptyCard.findByProps({ label: 'Add policy' });
-    const stopPropagation = jest.fn();
-    act(() => addPolicy.props.onPress({ stopPropagation }));
-    expect(stopPropagation).toHaveBeenCalledTimes(1);
+    act(() => emptyCard.props.onPress());
+    expect(mockPush).toHaveBeenLastCalledWith('/policy-form');
     expect(mockPush).toHaveBeenLastCalledWith('/policy-form');
     await act(async () => renderer?.unmount());
   });
@@ -576,7 +579,6 @@ describe('three-month emergency target screens', () => {
         sumAssured: 2_000_000,
         payments: [],
       }],
-      coverGoals: defaultCoverGoals(),
     };
     let goals: TestRenderer.ReactTestRenderer | undefined;
     let home: TestRenderer.ReactTestRenderer | undefined;

@@ -190,11 +190,11 @@ describe('pending dues', () => {
     expect(dues[0]).toMatchObject({ kind: 'policy', parentId: 'policy', name: 'Health cover' });
   });
 
-  it('generates a one-period yearly policy schedule with one slot', () => {
+  it('generates a yearly policy schedule from the selected next due date', () => {
     const schedule = policySchedule(policy({
       frequency: 'yearly',
-      premiumYears: 1,
-      startDate: '2026-01-31',
+      endDate: '2026-12-31',
+      startDate: '2026-01-01',
       trackFrom: '2026-01-31',
     }), '2026-02-01');
     expect(schedule.rows).toHaveLength(1);
@@ -206,12 +206,14 @@ describe('pending dues', () => {
     ['quarterly', 4, ['2024-01-31', '2024-04-30', '2024-07-31']],
     ['half-yearly', 2, ['2024-01-31', '2024-07-31']],
     ['yearly', 1, ['2024-01-31']],
+    ['custom', 6, ['2024-01-31', '2024-03-31', '2024-05-31', '2024-07-31', '2024-09-30', '2024-11-30']],
   ] as const)('schedules each %s frequency with calendar month-end clamping', (frequency, count, dates) => {
     const schedule = policySchedule(policy({
       frequency,
-      premiumYears: 1,
+      customIntervalMonths: frequency === 'custom' ? 2 : undefined,
+      endDate: '2024-12-31',
       startDate: '2024-01-31',
-      trackFrom: '2024-01-01',
+      trackFrom: '2024-01-31',
     }), '2024-01-31');
     expect(schedule.rows).toHaveLength(count);
     expect(schedule.rows.slice(0, dates.length).map((row) => row.dueDate)).toEqual(dates);
@@ -234,9 +236,9 @@ describe('pending dues', () => {
   it('starts policy tracking at the selected date and FIFO-matches existing payments', () => {
     const schedule = policySchedule(policy({
       frequency: 'quarterly',
-      premiumYears: 2,
       startDate: '2026-01-31',
       trackFrom: '2026-07-31',
+      endDate: '2028-07-30',
       payments: [{ id: 'premium', date: '2026-08-01', amount: 50, note: '' }],
     }), '2026-09-01');
     expect(schedule.rows.map(({ dueDate, status, entryId }) => [dueDate, status, entryId]))
@@ -247,7 +249,92 @@ describe('pending dues', () => {
         ['2027-04-30', 'upcoming', undefined],
         ['2027-07-31', 'upcoming', undefined],
         ['2027-10-31', 'upcoming', undefined],
+        ['2028-01-31', 'upcoming', undefined],
+        ['2028-04-30', 'upcoming', undefined],
       ]);
+  });
+
+  it('matches dated payments to only their exact slot regardless of payment timing', () => {
+    const dated = policy({
+      frequency: 'monthly',
+      trackFrom: '2026-11-07',
+      endDate: '2027-01-31',
+      payments: [
+        { id: 'early', date: '2026-11-04', amount: 40, note: '', dueDate: '2026-11-07' },
+        { id: 'late', date: '2026-12-20', amount: 60, note: '', dueDate: '2026-12-07' },
+        { id: 'edited-slot', date: '2026-11-01', amount: 50, note: '', dueDate: '2026-10-07' },
+      ],
+    });
+
+    expect(policySchedule(dated, '2026-11-04').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'early'],
+      ['2026-12-07', 'upcoming', undefined],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+    expect(policySchedule(dated, '2026-12-20').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'early'],
+      ['2026-12-07', 'paid', 'late'],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+  });
+
+  it('does not let duplicate or future-dated explicit payments settle another slot', () => {
+    const dated = policy({
+      frequency: 'monthly',
+      trackFrom: '2026-11-07',
+      endDate: '2027-01-31',
+      payments: [
+        { id: 'later-duplicate', date: '2026-11-05', amount: 50, note: '', dueDate: '2026-11-07' },
+        { id: 'first-duplicate', date: '2026-11-04', amount: 50, note: '', dueDate: '2026-11-07' },
+        { id: 'future-payment', date: '2026-12-01', amount: 50, note: '', dueDate: '2026-12-07' },
+        { id: 'legacy-payment', date: '2026-11-08', amount: 50, note: '' },
+      ],
+    });
+
+    expect(policySchedule(dated, '2026-11-04').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'first-duplicate'],
+      ['2026-12-07', 'upcoming', undefined],
+      ['2027-01-07', 'upcoming', undefined],
+    ]);
+    expect(policySchedule(dated, '2026-12-01').rows.map(({ dueDate, status, entryId }) =>
+      [dueDate, status, entryId],
+    )).toEqual([
+      ['2026-11-07', 'paid', 'first-duplicate'],
+      ['2026-12-07', 'paid', 'future-payment'],
+      ['2027-01-07', 'paid', 'legacy-payment'],
+    ]);
+  });
+
+  it('starts at the selected next due date and advances after the first premium is paid', () => {
+    const scheduled = policy({
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      trackFrom: '2026-02-08',
+      endDate: '2026-04-30',
+    });
+    expect(policySchedule(scheduled, '2026-02-01').rows.map((row) => row.dueDate))
+      .toEqual(['2026-02-08', '2026-03-08', '2026-04-08']);
+    const payment = clearDue(withPolicy(scheduled), { kind: 'policy', id: scheduled.id }, {
+      date: '2026-02-08',
+      newId: () => 'first-premium',
+    });
+    const paidPolicy = payment.data.policies[0];
+    if (!paidPolicy) throw new Error('Paid policy was removed from the schedule.');
+    expect(policySchedule(paidPolicy, '2026-02-08').summary.nextDue?.dueDate)
+      .toBe('2026-03-08');
+    expect(payment.data.transactions).toEqual([
+      expect.objectContaining({
+        type: 'expense',
+        category: 'Health premium',
+        source: { kind: 'policy-payment', parentId: scheduled.id, entryId: 'first-premium' },
+      }),
+    ]);
   });
 });
 
@@ -280,7 +367,7 @@ describe('one-tap dues and undo', () => {
     expect(data.liabilities[0]).toMatchObject({ kind: 'one-time', dueDate: null, payments: [] });
   });
 
-  it('clears a plan installment with FIFO matching and undo restores the original data', () => {
+  it('clears a plan due with FIFO matching and undo restores the original data', () => {
     const original = withPlan(plan({
       logs: [{ id: 'deposit-existing', date: '2026-01-31', amount: 100, note: '', kind: 'Deposit' }],
     }));
@@ -375,6 +462,34 @@ describe('one-tap dues and undo', () => {
       note: '',
       date: '2026-01-01',
     }]);
+  });
+
+  it('uses the policy kind for typed premiums and the generic category for savings premiums', () => {
+    let id = 0;
+    const typedPayment = clearDue(withPolicy(), { kind: 'policy', id: 'policy' }, {
+      date: '2026-02-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(typedPayment.data.transactions[0]).toMatchObject({
+      category: 'Health premium',
+      source: { kind: 'policy-payment', parentId: 'policy' },
+    });
+    expect(validateIntegrity(typedPayment.data)).toEqual([]);
+    const savings = policy({
+      id: 'savings-policy',
+      kind: 'life-savings',
+      currentValue: 1_000,
+      valueAsOf: '2026-01-01',
+    });
+    const savingsPayment = clearDue({
+      ...base(),
+      policies: [savings],
+    }, { kind: 'policy', id: savings.id }, {
+      date: '2026-02-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(savingsPayment.data.transactions[0]?.category).toBe('Insurance premium');
+    expect(validateIntegrity(savingsPayment.data)).toEqual([]);
   });
 
   it('throws NothingToClearError without changing the input reference', () => {
@@ -488,7 +603,7 @@ describe('bulk due handling', () => {
     expect(validateIntegrity(result.data)).toEqual([]);
   });
 
-  it('marks installments through settlement as assumed paid and stops after a zero balance', () => {
+  it('marks recurring liability dues through settlement and stops after a zero balance', () => {
     const value = liability({
       settlement: { asOf: '2026-03-01', balance: 0 },
       tenureMonths: 3,
@@ -504,8 +619,8 @@ describe('bulk due handling', () => {
     const recorded = clearPastDues(data, { kind: 'policy', id: 'policy' }, { mode: 'record' }, {
       asOf: '2026-02-01', newId: (() => { let id = 0; return () => `policy-${++id}`; })(),
     });
-    expect(recorded.data.policies[0]?.payments.map(({ date, amount }) => [date, amount]))
-      .toEqual([['2026-01-01', 50], ['2026-02-01', 50]]);
+    expect(recorded.data.policies[0]?.payments.map(({ date, amount, dueDate }) => [date, amount, dueDate]))
+      .toEqual([['2026-01-01', 50, '2026-01-01'], ['2026-02-01', 50, '2026-02-01']]);
     expect(validateIntegrity(recorded.data)).toEqual([]);
     const settled = clearPastDues(data, { kind: 'policy', id: 'policy' }, { mode: 'settle' }, {
       asOf: '2026-02-01', newId: () => 'unused',
@@ -594,7 +709,7 @@ describe('bulk due handling', () => {
     expect(data.holdings[0]?.trackFrom).toBe('2026-04-01');
   });
 
-  it('adds liability and policy history atomically with past installments', () => {
+  it('adds liability and policy history atomically with past payments', () => {
     const liabilityResult = addLiabilityWithHistory(base(), {
       kind: 'recurring',
       name: 'Old liability',
@@ -643,7 +758,7 @@ describe('bulk due handling', () => {
     expect(undoClearDuesThrough(result.data, { kind: 'plan', id: 'plan' }, result.entryIds)).toEqual(original);
   });
 
-  it('clears three earlier and selected future installments oldest-first, dated today', () => {
+  it('clears earlier and selected future dues oldest-first, dated today', () => {
     const original = withPlan(plan({ tenureYears: 1 }));
     expect(duesThroughPreview(original, { kind: 'plan', id: 'plan' }, '2026-03-01', '2026-01-01'))
       .toEqual({ count: 3, amount: 300 });
@@ -721,7 +836,7 @@ describe('bulk due handling', () => {
     });
     const original = withLiability(longLiability);
     const lastDate = liabilitySchedule(longLiability, '2026-01-01').rows.at(-1)?.dueDate;
-    if (!lastDate) throw new Error('Expected 401 scheduled installments.');
+    if (!lastDate) throw new Error('Expected 401 scheduled due slots.');
     const newId = jest.fn(() => 'unused');
     expect(() => clearDuesThrough(original, { kind: 'liability', id: 'liability' }, lastDate, {
       date: '2026-01-01',
@@ -765,7 +880,9 @@ describe('bulk due handling', () => {
       date: '2026-01-01',
       newId: (() => { let id = 0; return () => `policy-through-${++id}`; })(),
     });
-    expect(result.data.policies[0]?.payments).toHaveLength(1);
+    expect(result.data.policies[0]?.payments).toEqual([
+      expect.objectContaining({ date: '2026-01-01', dueDate: '2026-01-01', amount: 50 }),
+    ]);
     expect(result.data.transactions[0]).toMatchObject({
       type: 'expense',
       amount: 50,
@@ -785,5 +902,36 @@ describe('bulk due handling', () => {
     expect(() => duesThroughPreview(data, { kind: 'policy', id: 'missing' }, '2026-01-01', '2026-01-01'))
       .toThrow(NotFoundError);
     expect(data.transactions).toEqual([]);
+  });
+
+  it('records actual paid amounts for lower, higher, and invalid plan and policy dues', () => {
+    const planData = withPlan();
+    const lower = clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'lower-entry', actualAmount: 75,
+    });
+    expect(lower.data.holdings[0]).toMatchObject({ kind: 'plan' });
+    if (lower.data.holdings[0]?.kind !== 'plan') throw new Error('Plan missing.');
+    expect(lower.data.holdings[0].logs[0]?.amount).toBe(75);
+
+    const policyData = withPolicy();
+    const higher = clearDue(policyData, { kind: 'policy', id: 'policy' }, {
+      date: '2026-01-31', newId: () => 'higher-policy-entry', actualAmount: 75,
+    });
+    expect(higher.data.policies[0]?.payments[0]?.amount).toBe(75);
+    expect(higher.data.transactions[0]?.amount).toBe(75);
+
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 0,
+    })).toThrow('Paid amount must be greater than zero');
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 100_000_000_001,
+    })).toThrow('Paid amount must be greater than zero');
+  });
+
+  it('rejects one-time liability payments above the outstanding balance', () => {
+    const data = { ...base(), liabilities: [oneTimeLiability({ principal: 100 })] };
+    expect(() => clearDue(data, { kind: 'liability', id: 'one-time' }, {
+      date: '2026-01-01', newId: () => 'overpayment', actualAmount: 101,
+    })).toThrow('Paid amount exceeds the outstanding liability balance.');
   });
 });

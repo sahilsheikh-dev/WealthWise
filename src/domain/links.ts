@@ -1,7 +1,7 @@
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
-import { policyPremiumCategory } from './policyCategories';
-import { COVER_POLICY_TYPES } from './types';
-import type { AppData, CoverGoal, HoldingType, InvestmentEntry, Transaction } from './types';
+import { holdingCapabilities } from './holdingCapabilities';
+import { GENERIC_INSURANCE_CATEGORY, policyPremiumCategory } from './policyCategories';
+import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
 
@@ -40,6 +40,13 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
     return liability?.payments.some((entry) => entry.id === source.entryId)
       ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } }
       : null;
+  }
+  if (source.kind === 'liability-closure-charge') {
+    const liability = data.liabilities.find((entry) =>
+      entry.id === source.parentId
+      && entry.kind === 'recurring'
+      && entry.closure?.chargeTransactionId === source.entryId);
+    return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
   }
   if (source.kind === 'policy-payment') {
     const policy = data.policies.find((entry) => entry.id === source.parentId);
@@ -109,32 +116,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     });
   }
 
-  const coverGoalTypes = new Set<string>();
-  data.coverGoals.forEach((goal: CoverGoal, index) => {
-    if (coverGoalTypes.has(goal.type)) {
-      add('duplicate-cover-goal-type', `Duplicate cover goal for "${goal.type}".`, ['coverGoals', index, 'type']);
-    }
-    coverGoalTypes.add(goal.type);
-    if (goal.targetMode === 'income-multiple'
-      && (goal.targetValue === undefined || !Number.isFinite(goal.targetValue)
-        || goal.targetValue < 1 || goal.targetValue > 50)) {
-      add('invalid-cover-goal-target', 'Income multiple must be between 1 and 50.', ['coverGoals', index, 'targetValue']);
-    }
-    if (goal.targetMode === 'amount'
-      && goal.targetValue !== undefined
-      && (!Number.isFinite(goal.targetValue) || goal.targetValue < 0)) {
-      add('invalid-cover-goal-target', 'Amount target must be zero or greater.', ['coverGoals', index, 'targetValue']);
-    }
-    if (goal.targetMode === 'active-only' && goal.targetValue !== undefined) {
-      add('invalid-cover-goal-target', 'Active-only goals do not have a target value.', ['coverGoals', index, 'targetValue']);
-    }
-  });
-  for (const type of COVER_POLICY_TYPES) {
-    if (!coverGoalTypes.has(type)) {
-      add('missing-cover-goal-type', `Cover goal for "${type}" is missing.`, ['coverGoals']);
-    }
-  }
-
   const linked = new Map<string, Transaction[]>();
   for (const [index, transaction] of data.transactions.entries()) {
     const source = transaction.source;
@@ -149,6 +130,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     let entry: { amount: number; date: string } | undefined;
     let expectedType: Transaction['type'] | undefined;
     let expectedCategory: string | undefined;
+    let historicalPolicyCategory: string | undefined;
     let validLiabilityOrigin = true;
     if (source.kind === 'holding-entry') {
       const holding = data.holdings.find((item) => item.id === source.parentId);
@@ -162,11 +144,20 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       const liability = data.liabilities.find((item) => item.id === source.parentId);
       entry = liability?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
+    } else if (source.kind === 'liability-closure-charge') {
+      const liability = data.liabilities.find((item) => item.id === source.parentId);
+      const closure = liability?.kind === 'recurring' ? liability.closure : undefined;
+      entry = closure?.chargeTransactionId === source.entryId
+        ? { amount: transaction.amount, date: closure.date }
+        : undefined;
+      expectedType = 'expense';
+      expectedCategory = 'Other';
     } else if (source.kind === 'policy-payment') {
       const policy = data.policies.find((item) => item.id === source.parentId);
       entry = policy?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
       expectedCategory = policy ? policyPremiumCategory(policy.kind) : undefined;
+      historicalPolicyCategory = policy ? policyPremiumCategory(policy.kind) : undefined;
     } else if (source.kind === 'liability-origin') {
       const liability = data.liabilities.find((item) =>
         item.id === source.parentId && item.id === source.entryId);
@@ -186,6 +177,9 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       transaction.type !== expectedType ||
       (expectedCategory !== undefined
         && transaction.category !== expectedCategory
+        && !(source.kind === 'policy-payment'
+          && (transaction.category === historicalPolicyCategory
+            || transaction.category === GENERIC_INSURANCE_CATEGORY))
         && !(source.kind === 'policy-payment' && transaction.category === 'Insurance')) ||
       !validLiabilityOrigin
     ) {
@@ -294,12 +288,28 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     const sectionIds = new Set(data.budgetPlan.sections.map((section) => section.id));
     for (const [itemIndex, item] of data.budgetPlan.items.entries()) {
       if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['budgetPlan', 'items', itemIndex, 'sectionId']);
+      const holding = item.holdingId
+        ? data.holdings.find((candidate) => candidate.id === item.holdingId)
+        : undefined;
+      if (holding && !holdingCapabilities(holding.type).recurring) {
+        add('one-time-budget-link', 'Fixed deposits cannot be linked to recurring Budget schedules.', [
+          'budgetPlan', 'items', itemIndex, 'holdingId',
+        ]);
+      }
     }
   }
   for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
     const sectionIds = new Set(budget.sections.map((section) => section.id));
     for (const [itemIndex, item] of budget.items.entries()) {
       if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['monthBudgets', monthIndex, 'items', itemIndex, 'sectionId']);
+      const holding = item.holdingId
+        ? data.holdings.find((candidate) => candidate.id === item.holdingId)
+        : undefined;
+      if (holding && !holdingCapabilities(holding.type).recurring) {
+        add('one-time-budget-link', 'Fixed deposits cannot be linked to recurring Budget schedules.', [
+          'monthBudgets', monthIndex, 'items', itemIndex, 'holdingId',
+        ]);
+      }
     }
   }
   for (const policy of data.policies) {

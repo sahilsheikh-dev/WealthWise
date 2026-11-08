@@ -43,7 +43,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -76,7 +76,8 @@ describe('permanent progress ledger', () => {
       'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95',
+      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V',       'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -101,6 +102,7 @@ describe('permanent progress ledger', () => {
       'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A',
+      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T',       'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
     ];
 
     for (const id of newPartIds) {
@@ -142,16 +144,17 @@ describe('permanent progress ledger', () => {
       const phase = Number(phaseMatch[1]);
       const count = counts.get(phase) ?? { done: 0, total: 0 };
       count.total += 1;
-      if (status.startsWith('Done') || status.startsWith('Superseded')) count.done += 1;
+      if (status.startsWith('Done') || status.startsWith('Superseded') || status.startsWith('Cancelled')) count.done += 1;
       counts.set(phase, count);
     }
     expect(rows.some((row) => row.split('|')[3]?.trim().startsWith('Superseded'))).toBe(true);
+    expect(rows.some((row) => row.split('|')[3]?.trim().startsWith('Cancelled'))).toBe(true);
 
     const total = [...counts.values()].reduce((sum, count) => sum + count.total, 0);
     const done = [...counts.values()].reduce((sum, count) => sum + count.done, 0);
     const expected: [string, number, number][] = [
       ['Overall progress', done, total],
-      ...Array.from({ length: 28 }, (_, index): [string, number, number] => {
+      ...Array.from({ length: 29 }, (_, index): [string, number, number] => {
         const phase = index + 1;
         const count = counts.get(phase) ?? { done: 0, total: 0 };
         return [`Phase ${phase}`, count.done, count.total];
@@ -174,7 +177,7 @@ describe('permanent progress ledger', () => {
     expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-95 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -194,7 +197,7 @@ describe('permanent progress ledger', () => {
       'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
       'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75', 'CR-76', 'CR-77',
       'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
@@ -317,12 +320,37 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
-    expect(dashboard).toContain('Overall progress █████████░ 94% (74/79)');
+    expect(dashboard).toContain('Overall progress ██████████ 96% (107/111)');
+    expect(dashboard).toContain('Phase 29 ██████████ 97% (31/32)');
+    for (const id of [
+      'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
+    ]) {
+      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
+    }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-M |'))).toContain('| Superseded by P29-M2 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-Q |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-R |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O2 |'))).toContain('| Cancelled by owner |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-S |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-T |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-V |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |'))).toContain('| Done |');
+    expect(ledger).toContain('DEC-P29E-HOLDING-DELETE');
+    expect(ledger).toContain('DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT');
+    expect(ledger).toContain('DEC-P29U-LEGACY-VALUATION-COMPAT');
+    expect(ledger).toContain('DEC-P29V-SQLITE-VERIFIED-FALLBACK');
+    expect(ledger).toContain('DEC-P29V-DATE-STRESS-BOUNDS');
+    expect(ledger).toContain('DEC-P29V-BACKUP-ROUNDTRIP');
+    expect(ledger).toContain('DEC-P29W-FORECLOSURE-INVENTORY');
+    expect(ledger).toContain('DEC-P29W-FORECLOSURE-RECORD');
+    expect(ledger).toContain('clears every Budget item link to the holding in the same single write');
+    expect(ledger).toContain('DEC-P29G-COVER-MANAGEMENT');
     expect(dashboard).toContain('Phase 20         ██████████ 100% (22/22)');
     expect(dashboard).toContain('Phase 21         ██████████ 100% (6/6)');
     expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
     expect(dashboard).toContain('Phase 23         ██████████ 100% (4/4)');
-    expect(dashboard).toContain('Phase 25         ████████░░ 83% (5/6)');
+    expect(dashboard).toContain('Phase 25         ██████████ 100% (6/6)');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-E |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P25-E |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-F |'))).toContain('| Done |');
@@ -332,8 +360,10 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-93')).toBe('Done');
     expect(statusFor('CR-94')).toBe('Done');
     expect(statusFor('CR-95')).toBe('Done');
+    expect(statusFor('CR-96')).toBe('Done');
+    expect(statusFor('CR-97')).toBe('Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-D |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');

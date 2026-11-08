@@ -27,7 +27,7 @@ describe('buildInstrumentCardModel', () => {
       .toEqual(mockAppData.holdings.map(({ id }) => id));
   });
 
-  it('includes stale-value confirmation and exact manual actions', () => {
+  it('includes stale-value status and an update action', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
@@ -35,13 +35,13 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-    expect(model.valueCaption).toContain('Value not updated in');
+    expect(model.valueCaption).toBe('Updated 282 days ago');
     expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
     expect(model.headerAction.id).toBe('edit');
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'confirm']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
   });
 
-  it('uses fresh manual value dates without stale actions', () => {
+  it('shows days since a fresh manual value and keeps the update action', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
@@ -49,9 +49,63 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-    expect(model.valueCaption).toBe('Updated 1 Oct 2026');
+    expect(model.valueCaption).toBe('Updated 9 days ago');
     expect(model.statuses).toEqual([]);
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
+  });
+
+  it('uses configured accrual labels and suggested hand-priced methods on cards', () => {
+    const accrualData = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
+        ? { ...holding, valuationMethod: 'accrual' as const, maturityDate: '2030-01-01' }
+        : holding),
+    };
+    const accrualCard = buildInstrumentCardModel(rowFor(accrualData, 'holding-fd'), context);
+    expect(accrualCard.valueCaption).toBe('Estimated');
+
+    const pricedData = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
+        ? {
+          ...holding, type: 'Gold' as const, valuationMethod: undefined,
+          logs: [{ id: 'priced', date: '2026-10-01', amount: 1_000, price: 100, kind: 'Deposit' as const, note: '' }],
+        }
+        : holding),
+    };
+    const pricedCard = buildInstrumentCardModel(rowFor(pricedData, 'holding-cash'), context);
+    expect(pricedCard.valueCaption).toBe('Value date unknown');
+    expect(pricedCard.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
+    expect(pricedCard.actions.find(({ id }) => id === 'update')?.label).toBe('Update price');
+  });
+
+  it('flags stale manual valuations on recurring-plan cards', () => {
+    const data = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
+        ? { ...holding, actualValue: 25_000, actualValueDate: '2026-01-01', valuationMethod: 'manual' as const }
+        : holding),
+    };
+    const model = buildInstrumentCardModel(rowFor(data, 'holding-sip'), context);
+    expect(model.valueCaption).toBe('Updated 282 days ago');
+    expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
+  });
+
+  it('keeps legacy fixed-deposit entries visible without offering new deposits', () => {
+    const data = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
+        ? {
+          ...holding,
+          valueAsOf: '2026-10-10',
+          logs: [{ id: 'legacy', date: '2026-10-01', amount: 100, kind: 'Deposit' as const, note: '' }],
+        }
+        : holding),
+    };
+    const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
+
+    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
+    expect(model.helperLine).toContain('Entries from earlier are kept.');
   });
 
   it('shows unknown value dates and disables withdrawal for a zero-value manual holding', () => {
@@ -66,7 +120,7 @@ describe('buildInstrumentCardModel', () => {
     expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({ disabled: true });
   });
 
-  it('shows next due and schedule actions for a plan, with overdue and completed states', () => {
+  it('shows next due and the common holding actions for a plan, with overdue and completed states', () => {
     const overdueData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
@@ -81,7 +135,17 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.behindLine).toMatch(/\d+ behind/);
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');
-    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'schedule']);
+    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'stop', 'update']);
+    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop recurring');
+
+    const stoppedData = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
+        ? { ...holding, stopDate: '2026-06-15' }
+        : holding),
+    };
+    const stopped = buildInstrumentCardModel(rowFor(stoppedData, 'holding-sip'), { ...context, asOf: '2026-06-15' });
+    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume recurring');
 
     const completedData = {
       ...mockAppData,
@@ -106,17 +170,17 @@ describe('buildInstrumentCardModel', () => {
     expect(completed.nextLine).toBeUndefined();
   });
 
-  it('supports estimated plan values and rejects rows without their holding', () => {
+  it('shows ledger-based plan values and rejects rows without their holding', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
         ? { ...holding, actualValue: null, actualValueDate: null }
         : holding),
     };
-    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Estimated value');
+    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Value not updated');
     expect(() => buildInstrumentCardModel({
       id: 'missing', kind: 'manual', name: 'Missing', type: 'Other',
-      invested: 0, value: 0, gain: 0, gainPct: null,
+      invested: 0, value: 0, gain: 0, costRecovered: false, gainPct: null,
     }, context)).toThrow('missing its holding');
   });
 
@@ -129,14 +193,15 @@ describe('buildInstrumentCardModel', () => {
     };
     const planRow = rowFor(planData, 'holding-sip');
     const plan = buildInstrumentCardModel({ ...planRow, value: 0 }, { ...context, totalAssets: 0 });
-    expect(plan.valueCaption).toBe('Actual value as of 1 Oct 2026');
+    expect(plan.valueCaption).toBe('Updated 9 days ago');
     expect(plan.actions.find(({ id }) => id === 'withdraw'))
       .toMatchObject({ disabled: true, accessibilityHint: 'Nothing to withdraw' });
 
     const lossData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
-        ? { ...holding, invested: 1_000, value: 500, valueAsOf: '2026-10-01' }
+        ? { ...holding, type: 'Fixed deposit' as const, invested: 1_000, value: 500, valueAsOf: '2026-10-01',
+          logs: [{ id: 'loss-deposit', date: '2025-10-01', amount: 1_000, note: '', kind: 'Deposit' as const }] }
         : holding),
     };
     const loss = buildInstrumentCardModel(
