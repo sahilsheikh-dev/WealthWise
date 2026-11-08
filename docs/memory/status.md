@@ -2,18 +2,30 @@
 
 # Status
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
-  P29-AB-R2, P29-O1-R1, P29-W-R1 and the Phase 30 work are integrated into
-  local `develop`. `develop` began at main baseline
+  P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
+  integrated into local `develop`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
   unreleased Release 2 history; the stable-main rule applies prospectively.
-  Authorized plain pushes are complete and remotely verified: main, develop,
-  all 30 phase branches, `history/by-phase`, and all 30 phase completion tags.
+  The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
+  branches, `history/by-phase`, and all 30 phase completion tags at that time.
   The `v1.0.0` tag was not changed; no force push was used.
-- P28-F release `v1.1.0` was merged to and pushed on `main` at `0f4fdc5`,
-  then back-merged and pushed to `develop` at `8ce4e38`. The local and remote
-  branch refs matched after each push; `main` and `develop` have the same tree.
-- Final ordered gates on `develop`: all six exit 0. Gate 1 has 98 suites,
-  1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62% overall,
+- P28-F release `v1.1.0` is on GitHub `main` (`1d56d1a`) and was back-merged
+  into the GitHub `develop` tip at `becbe1f`. Local develop includes the
+  contributor-correction merge `4ed7019`; local `phase/28-qa-and-release`
+  is `67ef4d2`; GitHub
+  `origin/develop` remains `becbe1f` and `origin/phase/28-qa-and-release`
+  remains `98fa079`. The P28-F-R1 device results and P28-F-R2 contributor
+  correction are integrated locally but not pushed. Main and local develop do
+  not have identical trees.
+- GitHub branch audit found 33 remote heads: main, develop, the read-only
+  `history/by-phase` archive, and all 30 phase branches. The local
+  `release/v1.1.0` branch itself is not on GitHub, though its release changes
+  are in main. Local branches not merged into develop are `codex-changes`,
+  `phase/25-release-and-backups`, `task/P28-E-phase-history`, and the
+  read-only `history/by-phase` archive.
+- Final ordered gates on current local `develop`: all six exit 0. Gate 1 has
+  98 suites, 1,243 passed, 1 skipped; coverage is
+  95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
@@ -47,6 +59,21 @@
 - Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
   latest commits on their respective phase branches. Tags were not moved;
   whether to update them remains an owner decision.
+- Branch audit (2026-11-08): GitHub has the release code on `main`, but does
+  not yet have the later N39-N43 checklist update or P28-F-R2 contributor
+  correction. The P28-F-R1 device-results task and P28-F-R2 credit correction
+  are each merged task -> Phase 28 -> develop. R2 commits are task `4f5b5f4`,
+  Phase 28 merge `67ef4d2`, and develop merge `4ed7019`; these local commits
+  are not pushed. Local Phase 28 is ahead of its remote. The local
+  `release/v1.1.0` branch is integrated into main but has no corresponding
+  remote branch; v1.1.0 is intentionally untagged. The only local branches not
+  merged into develop are `codex-changes`, `phase/25-release-and-backups`,
+  `history/by-phase` (read-only archive), and `task/P28-E-phase-history`.
+  No push or publication was performed for this follow-up.
+- P28-F-R2 contributor credits now match the linked contributor entries in
+  v1.0.0. The v1.1.0 template specifies release-specific verification and
+  rejects generic/previous-release attribution. Regression tests and all six
+  gates pass. Changes are locally integrated but not pushed.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,

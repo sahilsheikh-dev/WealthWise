@@ -44,7 +44,13 @@ To install the APK, allow installs from this source in Android settings when pro
 
 ## Contributors
 
-- [Verified contributor.]
+List only contributors verified from commits included in this release. Use
+their GitHub username and profile link, following the format in the latest
+published release. Do not use a generic placeholder such as "WealthWise
+contributors," and do not copy previous-release contributors unless they also
+contributed to this release.
+
+- [GitHub username](https://github.com/GitHub-username)
 
 ## Known Limitations
 
