@@ -14,7 +14,11 @@
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
-  succeed. No EAS/Gradle build or version bump was made.
+  succeed. No EAS/Gradle build, v1.1.0 tag or publication has occurred.
+- Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
+  has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
+  overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, and `src/lib` 100%; Expo Doctor is 21/21.
 - Commit-subject enforcement is active: the POSIX hook requires supported
   Conventional Commit types and rejects placeholders. Its reason is to keep
   scope explicit and unrelated changes separate. Enable it with
@@ -22,10 +26,12 @@
 - Release 2 code changes are complete: recurrence-aware income summaries and
   editable non-due rows, verified persistence-source precedence, shared paid
   sync/Undo, capped Entries schedules, and the restored aggregate Pace graph
-  without the stacked bar. No release preparation was performed. N39 and N40
+  without the stacked bar. N39 and N40
   remain Fail pending device re-test; N41-N43 remain Not run. Device model,
-  Android version, tester and date fields remain blank. v1.1.0 release
-  preparation is pending because the Pace graph is a visible feature.
+  Android version, tester and date fields remain blank. P28-F is preparing
+  v1.1.0 on `release/v1.1.0`; version, changelog, README What's new and draft
+  notes are in progress. The README Download remains v1.0.0 until publication.
+  Build, device re-test, v1.1.0 tag and publication remain pending owner action.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
   and a final tree equal to main. The later route-diagnostic and ledger
@@ -35,6 +41,9 @@
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
+- Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
+  latest commits on their respective phase branches. Tags were not moved;
+  whether to update them remains an owner decision.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,

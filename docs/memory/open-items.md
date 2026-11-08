@@ -41,9 +41,13 @@
   owner's request, and the report commit was replayed unchanged. See the
   old-to-new hash mapping and tree verification in
   [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 release preparation:** pending because the restored aggregate Pace
-  graph is a visible feature. This task made no version change and performed
-  no release preparation or EAS/Gradle build; the required Expo exports passed.
+- **v1.1.0 owner steps:** P28-F is preparing `release/v1.1.0`; its build,
+  N39-N43 device re-test, v1.1.0 tag and publication remain pending owner
+  action. No EAS/Gradle build or GitHub release edit is authorized.
+- **Stale phase tags (owner decision):** `phase-28-complete` and
+  `phase-29-complete` target commits behind their current phase branch tips.
+  No tag was moved. Decide whether to retain or update them in a separately
+  authorized change.
 - **P29-AB-R2 physical-device check:** N39 remains Fail based on the owner's
   pre-fix reproduction; automated recurrence tests pass. Re-test due/non-due
   months, Received dues, projected cash flow and backup restore on-device.
