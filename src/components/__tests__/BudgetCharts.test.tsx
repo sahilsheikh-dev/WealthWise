@@ -1,10 +1,8 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
-import { PaceLine, paceChartPalettes } from '../BudgetCharts';
+import { PaceLine, StackedBar } from '../BudgetCharts';
 import type { BudgetOverview } from '../../domain/budget';
-import { contrastRatio } from '../../theme/contrast';
-import { themes } from '../../theme/themes';
 
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
@@ -17,7 +15,6 @@ jest.mock('react-native', () => {
       hairlineWidth: 1,
     },
     View: node('view'),
-    Pressable: node('pressable'),
     Text: node('text'),
     useWindowDimensions: () => ({ fontScale: 1 }),
   };
@@ -29,121 +26,106 @@ jest.mock('../ui', () => {
       ReactModule.createElement('text', props, children),
   };
 });
+jest.mock('../AmountText', () => {
+  const ReactModule = jest.requireActual<typeof React>('react');
+  return {
+    AmountText: ({ value }: { value: number }) => ReactModule.createElement('text', null, String(value)),
+  };
+});
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => ({
-    isDark: false,
     colors: {
-      primary: '#4f46e5',
-      ok: '#15803d',
-      err: '#b91c1c',
-      purple: '#7e22ce',
-      text1: '#09090b',
-      text2: '#52525b',
-      text3: '#6b6b73',
-      surface: '#ffffff',
-      surface2: '#f4f4f5',
-      surface3: '#e4e4e7',
-      bg: '#ffffff',
-      border: '#e4e4e7',
+      primary: 'blue',
+      ok: 'green',
+      err: 'red',
+      purple: 'purple',
+      text1: 'black',
+      text2: 'gray',
+      text3: 'dimgray',
+      surface: 'white',
+      surface2: 'lightgray',
+      surface3: 'gray',
+      bg: 'white',
+      border: 'gray',
     },
   }),
 }));
 
-const summary = 'Survival: ₹15.00 actual vs ₹20.00 planned to date; ₹5.00 behind plan.';
-const pace: NonNullable<BudgetOverview['pace']> = {
-  days: 3,
-  elapsedDays: 2,
-  sections: [
-    {
-      id: 'survival',
-      name: 'Survival',
+const summary = 'Accessible chart summary.';
+
+describe('Budget overview charts', () => {
+  it('renders one full-width planned stack and exposes its long description only accessibly', () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <StackedBar
+          summary={summary}
+          values={{
+            income: { planned: 1_000, actual: 100 },
+            spend: { planned: 600, actual: 60 },
+            invest: { planned: 200, actual: 40 },
+            left: { planned: 200, actual: 0 },
+          }}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('StackedBar renderer was not created.');
+    expect(renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel).toBe(summary);
+    expect(renderer.root.findByProps({ testID: 'stacked-bar' }).props.style).toBeUndefined();
+    expect(renderer.root.findByProps({ testID: 'stacked-segment-planned-spend' }).props.style.width).toBe('60%');
+    expect(renderer.root.findByProps({ testID: 'stacked-segment-planned-invest' }).props.style.width).toBe('20%');
+    expect(renderer.root.findByProps({ testID: 'stacked-segment-planned-left' }).props.style.width).toBe('20%');
+    act(() => renderer?.update(
+      <StackedBar
+        summary="Actual over by ₹150."
+        values={{
+          income: { planned: 1_000, actual: 0 },
+          spend: { planned: 700, actual: 0 },
+          invest: { planned: 450, actual: 0 },
+          left: { planned: -150, actual: 0 },
+        }}
+      />,
+    ));
+    expect(renderer.root.findByProps({ testID: 'stacked-segment-planned-over' }).props.style).toMatchObject({
+      width: '11.538461538461538%',
+      backgroundColor: 'red',
+    });
+    expect(renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel)
+      .toBe('Actual over by ₹150.');
+  });
+
+  it('waits for measured width before drawing pace lines, with short visible text and accessible detail', () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    const pace: NonNullable<BudgetOverview['pace']> = {
+      days: 3,
       planned: [10, 20, 30],
       actual: [5, 15],
-      plannedToDate: 20,
-      actualToDate: 15,
-    },
-    {
-      id: 'wants',
-      name: 'Wants',
-      planned: [2, 4, 6],
-      actual: [1, 3],
-      plannedToDate: 4,
-      actualToDate: 3,
-    },
-  ],
-};
-
-describe('Budget pace chart', () => {
-  it('draws one planned dashed and actual solid line per visible section with accessible comparisons', () => {
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    };
     act(() => {
-      renderer = TestRenderer.create(
-        <PaceLine pace={pace} summary={summary} shortSummary="Left ₹250" />,
-      );
+      renderer = TestRenderer.create(<PaceLine pace={pace} summary={summary} shortSummary="Left ₹250" />);
     });
     if (!renderer) throw new Error('PaceLine renderer was not created.');
+    expect(renderer.root.findAll((node) => node.props.testID === 'pace-planned-segment-0')).toHaveLength(0);
     const plot = renderer.root.findByProps({ testID: 'pace-line-container' });
-    expect(renderer.root.findAllByProps({ testID: 'pace-series-survival-planned-segment-0-dash-0' }))
-      .toHaveLength(0);
-    expect(renderer.root.findByProps({ testID: 'pace-section-series-survival' }).props)
-      .toMatchObject({
-        accessibilityRole: 'image',
-        accessibilityLabel: expect.stringContaining('actual vs'),
-      });
-    expect(renderer.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.accessibilityState)
-      .toEqual({ selected: true });
-    expect(renderer.root.findByProps({ testID: 'pace-section-toggle-wants' }).props.accessibilityState)
-      .toEqual({ selected: true });
-    expect(renderer.root.findByProps({ testID: 'pace-y-axis' })).toBeDefined();
-    expect(renderer.root.findByProps({ testID: 'pace-x-axis' }).findAllByType('text')
-      .map((node) => node.children.join(''))).toEqual(['Day 1', 'Day 3']);
-    expect(renderer.root.findByProps({ testID: 'pace-series-legend' }).findAllByType('text')
-      .map((node) => node.children.join(''))).toEqual(['Actual', 'Planned']);
-    expect([0, 1, 2].map((index) =>
-      renderer?.root.findByProps({ testID: `pace-gridline-${index}` }),
-    )).toHaveLength(3);
-
-    act(() => plot.props.onLayout({ nativeEvent: { layout: { width: 300, height: 132, x: 0, y: 0 } } }));
-    expect(renderer.root.findByProps({ testID: 'pace-series-survival-planned' })).toBeDefined();
-    expect(renderer.root.findByProps({ testID: 'pace-series-survival-planned-segment-0-dash-0' }))
-      .toBeDefined();
-    expect(renderer.root.findByProps({ testID: 'pace-series-survival-actual-segment-0' })).toBeDefined();
-    expect(renderer.root.findByProps({ testID: 'pace-series-wants-planned-segment-0-dash-0' }))
-      .toBeDefined();
-    expect(renderer.root.findByProps({ testID: 'pace-series-survival-planned-marker-0' }).props.testID)
-      .toBe('pace-series-survival-planned-marker-0');
-    expect(renderer.root.findByProps({ testID: 'pace-series-survival-actual-marker-0' }).props.testID)
-      .toBe('pace-series-survival-actual-marker-0');
-    expect(renderer.root.findByProps({ testID: 'pace-short-summary' }).props.accessibilityLabel).toBe(summary);
-    expect(renderer.root.findAllByType('text').some((node) => node.children.includes(summary))).toBe(false);
+    expect(plot.props.accessibilityLabel).toBe(summary);
+    expect(renderer.root.findAllByType('text')
+      .map((node) => node.children.join(''))
+      .filter((label) => label === 'Actual' || label === 'Planned pace'))
+      .toEqual(['Actual', 'Planned pace']);
     expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Left ₹250'))).toBe(true);
-  });
-
-  it('uses legend chips to hide and restore each section pair', () => {
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      renderer = TestRenderer.create(
-        <PaceLine pace={pace} summary={summary} shortSummary="Left ₹250" />,
-      );
-    });
-    if (!renderer) throw new Error('PaceLine renderer was not created.');
-    const toggle = renderer.root.findByProps({ testID: 'pace-section-toggle-survival' });
-    act(() => toggle.props.onPress());
-    expect(renderer.root.findAllByProps({ testID: 'pace-section-series-survival' })).toHaveLength(0);
-    expect(renderer.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.accessibilityState)
-      .toEqual({ selected: false });
-    expect(renderer.root.findByProps({ testID: 'pace-section-series-wants' })).toBeDefined();
-    act(() => renderer?.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.onPress());
-    expect(renderer.root.findByProps({ testID: 'pace-section-series-survival' })).toBeDefined();
-  });
-
-  it('keeps every section color at or above 3:1 contrast in light and dark themes', () => {
-    for (const theme of Object.values(themes)) {
-      const palette = theme.isDark ? paceChartPalettes.dark : paceChartPalettes.light;
-      expect(new Set(palette).size).toBe(palette.length);
-      for (const color of palette) {
-        expect(contrastRatio(color, theme.colors.surface)).toBeGreaterThanOrEqual(3);
-      }
-    }
+    expect(renderer.root.findAllByType('text').some((node) => node.children.includes(summary))).toBe(false);
+    act(() => plot.props.onLayout({ nativeEvent: { layout: { width: 300, height: 92, x: 0, y: 0 } } }));
+    expect(renderer.root.findByProps({ testID: 'pace-planned-segment-0' }).props.style.transform)
+      .toEqual([expect.objectContaining({ rotate: expect.stringMatching(/rad$/) })]);
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'view' && String(node.props.testID).startsWith('pace-planned-dot-'),
+    )
+      .map((node) => node.props.testID)).toEqual([
+      'pace-planned-dot-0', 'pace-planned-dot-1', 'pace-planned-dot-2',
+    ]);
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'view' && String(node.props.testID).startsWith('pace-actual-segment-'),
+    )).toHaveLength(1);
+    expect(renderer.root.findAllByType('text').some((node) => node.children.includes(summary))).toBe(false);
   });
 });

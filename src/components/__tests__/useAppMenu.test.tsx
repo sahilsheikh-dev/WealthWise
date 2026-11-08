@@ -122,7 +122,7 @@ describe('useAppMenu', () => {
     const loadStressData = jest.fn(async () => ({ ok: true as const, loadMs: 125 }));
     mockState.devActions = { loadDemoData: jest.fn(), loadStressData };
     mockState.actions.undoImport = jest.fn(async () => ({ ok: true as const }));
-    jest.mocked(choiceAsync).mockResolvedValue('dense');
+    jest.mocked(choiceAsync).mockResolvedValue('200-daily');
     const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
     globalThis.requestAnimationFrame = (callback) => {
       callback(0);
@@ -137,7 +137,7 @@ describe('useAppMenu', () => {
     act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
     if (!renderer) throw new Error('Menu hook did not render.');
     try {
-      const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/126y/dense)');
+      const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/200y)');
       if (!loadItem) throw new Error('Stress-data menu action did not render.');
       await act(async () => {
         loadItem.onPress();
@@ -151,11 +151,11 @@ describe('useAppMenu', () => {
         choices: expect.arrayContaining([
           expect.objectContaining({ id: '50' }),
           expect.objectContaining({ id: '100' }),
-          expect.objectContaining({ id: '126' }),
-          expect.objectContaining({ id: 'dense' }),
+          expect.objectContaining({ id: '200' }),
+          expect.objectContaining({ id: '200-daily' }),
         ]),
       }));
-      expect(loadStressData).toHaveBeenCalledWith(126, true);
+      expect(loadStressData).toHaveBeenCalledWith(200, true);
       expect(mockAlert).toHaveBeenCalledWith(
         'Stress data loaded',
         expect.stringMatching(/Build, validate, save and replace: 125 ms\. First render after replace: \d+ ms\./),

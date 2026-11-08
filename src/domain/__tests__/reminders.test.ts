@@ -341,25 +341,6 @@ describe('reminder planner', () => {
     expect(planReminders(data, preferences, now, 0)).toEqual([]);
   });
 
-  it('plans one optional monthly values reminder without payment reminders', () => {
-    const data = emptyAppData('2024-02-01');
-    const reminders = planReminders(data, {
-      ...preferences,
-      dayBefore: false,
-      sameDay: false,
-      updateValues: true,
-    }, new Date(2024, 1, 1, 8), 2);
-    expect(reminders).toHaveLength(2);
-    expect(reminders[0]).toMatchObject({
-      id: 'update-values:2024-02',
-      kind: 'update-values',
-      target: { dueItemId: 'update-values', dueDate: '2024-02-01' },
-      fireAt: '2024-02-01T09:00',
-    });
-    expect(planReminders(data, preferences, new Date(2024, 1, 1, 8), 2))
-      .toEqual([]);
-  });
-
   it('rejects invalid limits, dates, and local times', () => {
     const data = dataWithLiabilities(oneTimeLiability());
     expect(() => planReminders(data, preferences, new Date(2024, 1, 1), -1)).toThrow(RangeError);

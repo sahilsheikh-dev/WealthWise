@@ -6,7 +6,6 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
-import { useAppActions, useAppData } from '../src/data/useAppData';
 import {
   AppText,
   Button,
@@ -14,14 +13,15 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  Screen,
   SearchField,
+  Screen,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import {
   buildPortfolioRows,
   filterRows,
@@ -32,7 +32,6 @@ import { planSchedule } from '../src/domain/schedule';
 import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { choiceAsync } from '../src/lib/confirm';
 import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -163,7 +162,7 @@ export default function AssetsScreen() {
             tone={totals.gain >= 0 ? 'ok' : 'err'}
           />
           <StatPill
-            label="Monthly Invt."
+            label="Monthly SIP/RD"
             value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
             accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
             tone="primary"
@@ -192,25 +191,8 @@ export default function AssetsScreen() {
                   router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
                   router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'update') {
-                  router.push(`/holding-valuation-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'stop') {
-                  const holding = data.holdings.find((item) => item.id === holdingId);
-                  if (!holding || holding.kind !== 'plan') return;
-                  if (holding.stopDate) {
-                    void choiceAsync({
-                      title: 'Resume investment?',
-                      message: 'This restores the plan schedule from the next due after today.',
-                      choices: [
-                        { id: 'cancel', label: 'Cancel' },
-                        { id: 'resume', label: 'Resume' },
-                      ],
-                    }).then((choice) => {
-                      if (choice === 'resume') actions.resumePlan(holdingId);
-                    });
-                  } else {
-                    router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holdingId)}` as Href);
-                  }
+                } else if (action === 'confirm' && row.kind === 'manual') {
+                  actions.confirmHoldingValue(row.id);
                 }
               }}
             />

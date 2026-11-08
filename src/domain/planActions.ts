@@ -42,31 +42,6 @@ export function updatePlan(data: AppData, id: string, patch: PlanPatch): AppData
   };
 }
 
-export function stopPlan(data: AppData, id: string, stopDate: string, today: string): AppData {
-  const current = getPlan(data, id);
-  if (stopDate > today) throw new Error('Stop date cannot be in the future');
-  const lastPaidDate = current.logs
-    .filter((entry) => entry.kind === 'Deposit')
-    .reduce((latest: string | null, entry) => !latest || entry.date > latest ? entry.date : latest, null);
-  if (lastPaidDate && stopDate < lastPaidDate) {
-    throw new Error('Stop date cannot be before the last paid entry');
-  }
-  return updatePlan(data, id, { stopDate });
-}
-
-export function resumePlan(data: AppData, id: string): AppData {
-  const current = getPlan(data, id);
-  const updated = { ...current };
-  delete updated.stopDate;
-  assertPlanInvariants(updated);
-  const transactions = syncHoldingTransactions(data.transactions, current, updated);
-  return {
-    ...data,
-    holdings: data.holdings.map((holding) => holding.id === id ? updated : holding),
-    transactions,
-  };
-}
-
 export function deletePlan(
   data: AppData,
   id: string,
@@ -90,12 +65,6 @@ export function deletePlan(
       ...goal,
       links: goal.links.filter((link) => link.instrumentId !== id),
     })),
-    efBucketLinks: Object.fromEntries(
-      Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
-        bucketId,
-        holdingIds.filter((holdingId) => holdingId !== id),
-      ]),
-    ),
     transactions,
   };
 }

@@ -92,21 +92,21 @@ export function useAppMenu(): HeaderMenuItem[] {
             Alert.alert('Could not load demo data', error instanceof Error ? error.message : 'An unexpected error occurred.');
           });
         });
-      } else if (item.label === 'Load stress data (50y/100y/126y/dense)' && devActions) {
+      } else if (item.label === 'Load stress data (50y/100y/200y)' && devActions) {
         void choiceAsync({
           title: 'Load stress data?',
           message: 'Replace all local app data with a deterministic long-history fixture. The previous data can be restored with Undo.',
           choices: [
             { id: '50', label: '50 years', destructive: true },
             { id: '100', label: '100 years', destructive: true },
-            { id: '126', label: '126 years', destructive: true },
-            { id: 'dense', label: 'Dense (200-year record count + daily SIP)', destructive: true },
+            { id: '200', label: '200 years', destructive: true },
+            { id: '200-daily', label: '200 years + daily SIP', destructive: true },
           ],
         }).then((choice) => {
-          if (choice !== '50' && choice !== '100' && choice !== '126' && choice !== 'dense') return;
-          const years = choice === '50' ? 50 : choice === '100' ? 100 : 126;
-          const dense = choice === 'dense';
-          void devActions.loadStressData(years, dense).then(async (result) => {
+          if (choice !== '50' && choice !== '100' && choice !== '200' && choice !== '200-daily') return;
+          const years = choice === '50' ? 50 : choice === '100' ? 100 : 200;
+          const dailySip = choice === '200-daily';
+          void devActions.loadStressData(years, dailySip).then(async (result) => {
             if (!result.ok) {
               Alert.alert('Could not load stress data', result.message);
               return;
@@ -116,7 +116,7 @@ export function useAppMenu(): HeaderMenuItem[] {
             const renderMs = Date.now() - renderStartedAt;
             Alert.alert(
               'Stress data loaded',
-              `${dense ? 'Dense 200-year record count within 126 years, including daily SIP' : `${years} years`}. Build, validate, save and replace: ${result.loadMs} ms. First render after replace: ${renderMs} ms.`,
+              `${years} years${dailySip ? ' with daily SIP' : ''}. Build, validate, save and replace: ${result.loadMs} ms. First render after replace: ${renderMs} ms.`,
               [
                 {
                   text: 'Undo',

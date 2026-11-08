@@ -1,10 +1,17 @@
 import {
+  manualHoldingSchema,
+  planHoldingSchema,
   policySchema,
   SCHEMA_VERSION,
 } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
 import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
 import { policySchedule } from '../domain/policySchedule';
+import { holdingValue } from '../domain/portfolio';
+import { ledgerSummary, defaultValuationMethod, legacyEntryToLedgerEntry } from '../domain/holdingLedger';
+import { planSchedule } from '../domain/schedule';
+import { scheduledDate, totalPeriods } from '../domain/sip';
+import type { LedgerHolding, HoldingLedgerEntry, ISODate } from '../domain/types';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -813,40 +820,100 @@ export function migrateV17ToV18(persisted: unknown, options: Pick<V6ToV7Options,
   return { ...persisted, policies };
 }
 
-export function migrateV18ToV19(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV19ToV20(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV20ToV21(persisted: unknown): unknown {
-  return persisted;
-}
-
-export function migrateV21ToV22(persisted: unknown): unknown {
-  if (!isRecord(persisted)) return persisted;
-  const migrateBudget = (budget: unknown): unknown => {
-    if (!isRecord(budget) || !Array.isArray(budget.incomes)) return budget;
+function legacyHoldingToV19(
+  value: unknown,
+  options: V6ToV7Options,
+): LedgerHolding {
+  if (!isRecord(value)) throw new PersistedVersionError(18, 'unknown-version');
+  const manual = manualHoldingSchema.safeParse(value);
+  if (manual.success) {
+    const holding = manual.data;
+    const asOf = options.today;
+    const openingDate = holding.valueAsOf ?? asOf;
+    const entries: HoldingLedgerEntry[] = [
+      {
+        id: options.newId(),
+        date: openingDate,
+        kind: 'deposit',
+        amount: holding.invested,
+        note: 'Opening',
+      },
+      ...holding.logs.map((entry) => legacyEntryToLedgerEntry(entry)),
+    ];
+    const valuation = holdingValue(holding, asOf);
+    const base = ledgerSummary({ ...holding, entries, valuationMethod: defaultValuationMethod(holding.type) }, asOf).value;
+    entries.push({
+      id: options.newId(),
+      date: asOf,
+      kind: 'valueUpdate',
+      amount: valuation - base,
+      note: 'Migrated value',
+    });
     return {
-      ...budget,
-      incomes: budget.incomes.map((income) =>
-        isRecord(income)
-          ? { ...income, frequency: 'monthly' }
-          : income,
-      ),
+      id: holding.id,
+      name: holding.name,
+      type: holding.type,
+      entries,
+      valuationMethod: defaultValuationMethod(holding.type),
     };
-  };
+  }
+  const planResult = planHoldingSchema.safeParse(value);
+  if (!planResult.success) throw new PersistedVersionError(18, 'unknown-version');
+  const plan = planResult.data;
+  const slotDates = new Map<string, ISODate>();
+  for (const row of planSchedule(plan, options.today).rows) {
+    if (row.status === 'paid' && row.entryId !== undefined) slotDates.set(row.entryId, row.dueDate);
+  }
+  const entries: HoldingLedgerEntry[] = [
+    {
+      id: options.newId(),
+      date: plan.startDate,
+      kind: 'deposit',
+      amount: plan.opening,
+      note: 'Opening',
+    },
+    ...plan.logs.map((entry) => legacyEntryToLedgerEntry(entry, slotDates.get(entry.id))),
+  ];
+  const valuation = holdingValue(plan, options.today);
+  const valuationMethod = defaultValuationMethod(plan.type);
+  const base = ledgerSummary({ ...plan, entries, valuationMethod }, options.today).value;
+  if (Math.abs(valuation - base) > 1e-9) {
+    entries.push({
+      id: options.newId(),
+      date: options.today,
+      kind: 'valueUpdate',
+      amount: valuation - base,
+      note: 'Migrated value',
+    });
+  }
+  const periods = totalPeriods(plan);
+  const end = periods > 0 ? scheduledDate(plan, periods - 1) : undefined;
   return {
-    ...persisted,
-    ...(persisted.budgetPlan === null || persisted.budgetPlan === undefined
-      ? {}
-      : { budgetPlan: migrateBudget(persisted.budgetPlan) }),
-    ...(Array.isArray(persisted.monthBudgets)
-      ? { monthBudgets: persisted.monthBudgets.map(migrateBudget) }
+    id: plan.id,
+    name: plan.name,
+    type: plan.type,
+    entries,
+    valuationMethod,
+    ...(valuationMethod === 'accrual'
+      ? { rate: plan.ratePct, compounding: 'yearly' as const }
       : {}),
+    recurring: {
+      frequency: plan.frequency,
+      amount: plan.amount,
+      start: plan.startDate,
+      ...(end === undefined ? {} : { end }),
+      trackFrom: plan.trackFrom,
+      stepUpPct: plan.stepUpPct,
+    },
   };
+}
+
+export function migrateV18ToV19(persisted: unknown, options: V6ToV7Options): unknown {
+  if (!isRecord(persisted) || !Array.isArray(persisted.holdings)) {
+    throw new PersistedVersionError(18, 'unknown-version');
+  }
+  const holdings = persisted.holdings.map((holding) => legacyHoldingToV19(holding, options));
+  return { ...persisted, holdings };
 }
 
 export function migratePersisted(
@@ -893,10 +960,6 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(17, 'unknown-version');
       result = migrateV17ToV18(result, options);
     }
-    if (fromVersion <= 18) result = migrateV18ToV19(result);
-    if (fromVersion <= 19) result = migrateV19ToV20(result);
-    if (fromVersion <= 20) result = migrateV20ToV21(result);
-    if (fromVersion <= 21) result = migrateV21ToV22(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

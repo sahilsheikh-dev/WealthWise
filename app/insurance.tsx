@@ -196,6 +196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: 6,
   },
   detailValue: { flex: 1, textAlign: 'right' },
@@ -207,6 +208,7 @@ const styles = StyleSheet.create({
   policyActions: {
     gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 8,
     paddingTop: 8,
   },
   policyActionsStacked: { flexDirection: 'column', alignItems: 'stretch' },

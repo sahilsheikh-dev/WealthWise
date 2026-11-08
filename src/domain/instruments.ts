@@ -1,11 +1,7 @@
 import { NotFoundError } from './actions';
 import { investCategoryFor, LinkedTransactionError } from './links';
 import { holdingCapabilities } from './holdingCapabilities';
-import {
-  applySnapshotAdjustment,
-  snapshotAdjustmentForEntry,
-  updateInvestmentEntry,
-} from './investmentActions';
+import { snapshotAdjustmentForEntry, updateInvestmentEntry } from './investmentActions';
 import { holdingValue } from './portfolio';
 import type {
   AppData,
@@ -108,20 +104,21 @@ function entryForTransaction(
 
 function removeLinkedEntry(data: AppData, source: InstrumentSource): AppData {
   if (source.kind === 'holding-entry') {
-    const holdings = data.holdings.map((holding) => {
-      if (holding.id !== source.parentId) return holding;
-      const entry = holding.logs.find((row) => row.id === source.entryId);
-      const adjustment = entry
-        ? entry.snapshotAdjustment ?? snapshotAdjustmentForEntry(holding, entry)
-        : undefined;
-      return {
-        ...applySnapshotAdjustment(holding, adjustment === undefined ? undefined : -adjustment),
-        logs: holding.logs.filter((row) => row.id !== source.entryId),
-      };
-    });
     return {
       ...data,
-      holdings,
+      holdings: data.holdings.map((holding) => holding.id === source.parentId
+        ? {
+          ...holding,
+          ...(holding.kind === 'manual'
+            ? {
+              value: holding.value - (
+                holding.logs.find((entry) => entry.id === source.entryId)?.snapshotAdjustment ?? 0
+              ),
+            }
+            : {}),
+          logs: holding.logs.filter((entry) => entry.id !== source.entryId),
+        }
+        : holding),
     };
   }
   return data;
@@ -153,7 +150,11 @@ function appendEntry(
     data: {
       ...data,
       holdings: data.holdings.map((item) => item.id === holding.id
-        ? { ...applySnapshotAdjustment(item, adjustment), logs: [...item.logs, adjustedEntry] }
+        ? {
+          ...item,
+          ...(item.kind === 'manual' && adjustment !== undefined ? { value: item.value + adjustment } : {}),
+          logs: [...item.logs, adjustedEntry],
+        }
         : item),
     },
     source: { kind: 'holding-entry', parentId: holding.id, entryId },

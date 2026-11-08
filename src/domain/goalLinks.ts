@@ -208,9 +208,7 @@ export function goalProjection(goal: Goal, data: AppData, asOf: ISODate): GoalPr
     for (const state of states) {
       const monthlyRate = (1 + state.plan.ratePct / 100) ** (1 / 12) - 1;
       const elapsedMonths = Math.max(0, monthIndex(simulationDate) - monthIndex(state.plan.startDate));
-      const active = simulationDate >= state.plan.startDate
-        && elapsedMonths < state.plan.tenureYears * 12
-        && (!state.plan.stopDate || simulationDate <= state.plan.stopDate);
+      const active = simulationDate >= state.plan.startDate && elapsedMonths < state.plan.tenureYears * 12;
       const annualStep = Math.floor(Math.max(0, elapsedMonths - 1) / 12);
       const annualAmount = state.plan.amount * (1 + state.plan.stepUpPct / 100) ** annualStep;
       const monthlyContribution = active

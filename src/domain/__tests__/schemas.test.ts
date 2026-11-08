@@ -1,11 +1,9 @@
 import { mockAppData } from '../../mock/data';
-import { addMonths } from '../dates';
 import { validateImportData } from '../backup';
 import { BUDGET_GROUPS } from '../budget';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import {
   appDataSchema,
-  manualHoldingSchema,
   BUDGET_CATEGORIES,
   INVESTMENT_FORM_CATEGORIES,
   makeGoalFormSchema,
@@ -15,7 +13,6 @@ import {
   makeOnboardingFormSchema,
   makeProfileFormSchema,
   makePlanFormSchema,
-  makeStopRecurringFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
   makeBudgetItemEditSchema,
@@ -34,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-two', () => {
+  it('accepts the typed mock app data and exports schema version eighteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(22);
+    expect(SCHEMA_VERSION).toBe(18);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -64,72 +61,6 @@ describe('appDataSchema', () => {
     expect(imported.data.goals.find((goal) => goal.id === 'legacy-goal')?.links).toEqual([
       { instrumentId: holding.id, share: 100 },
     ]);
-  });
-
-  it('accepts supported historical transaction, entry, and goal dates from 1900', () => {
-    const transaction = mockAppData.transactions[0];
-    const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
-    const goal = mockAppData.goals.find((item) => item.auto !== 'ef');
-    if (!transaction || !holding || holding.kind !== 'manual' || !goal) {
-      throw new Error('Historical date fixture is incomplete.');
-    }
-    const historicalLog = {
-      id: 'historical-date-entry',
-      date: '1900-01-01',
-      amount: 1,
-      note: '',
-      kind: 'Deposit' as const,
-    };
-
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      transactions: [{ ...transaction, date: '1900-01-01' }],
-      holdings: mockAppData.holdings.map((item) => item.id === holding.id
-        ? { ...holding, logs: [historicalLog] }
-        : item),
-      goals: mockAppData.goals.map((item) => item.id === goal.id ? { ...goal, year: 1900 } : item),
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      transactions: [{ ...transaction, date: '1899-12-31' }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((item) => item.id === holding.id
-        ? { ...holding, logs: [{ ...historicalLog, date: '1899-12-31' }] }
-        : item),
-    }).success).toBe(false);
-  });
-
-  it('accepts additive valuation fields and rejects incomplete accrual or price snapshots', () => {
-    const manual = mockAppData.holdings.find((holding) => holding.kind === 'manual');
-    if (!manual || manual.kind !== 'manual') throw new Error('Expected a manual holding.');
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      valuationMethod: 'accrual',
-      ratePct: 7,
-      compounding: 'quarterly',
-      maturityDate: '2030-01-01',
-    }).success).toBe(true);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      valuationMethod: 'accrual',
-    }).success).toBe(false);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      latestPrice: 10,
-    }).success).toBe(false);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      logs: [{
-        id: 'priced-entry',
-        date: '2026-10-10',
-        amount: 100,
-        note: '',
-        kind: 'Deposit',
-        price: 0,
-      }],
-    }).success).toBe(false);
   });
 
   it('accepts an optional valid policy-payment due date and rejects invalid dates', () => {
@@ -267,18 +198,6 @@ describe('appDataSchema', () => {
       expect(schema.safeParse({ name: 'Asha', monthlySalary: '1000000001' }).error?.issues[0]?.message)
         .toBe('Monthly income must be 1,000,000,000 or less');
       expect(schema.safeParse({ name: 'Asha', monthlySalary: 'not money' }).success).toBe(false);
-    });
-  });
-
-  describe('P29-X stop recurring form validation', () => {
-    const schema = makeStopRecurringFormSchema('2026-05-31', [
-      { date: '2026-05-01', kind: 'Deposit' },
-    ]);
-
-    it('accepts the last paid date and rejects earlier or future dates', () => {
-      expect(schema.safeParse({ stopDate: '2026-05-01' }).success).toBe(true);
-      expect(schema.safeParse({ stopDate: '2026-04-30' }).success).toBe(false);
-      expect(schema.safeParse({ stopDate: '2026-06-01' }).success).toBe(false);
     });
   });
 
@@ -428,67 +347,6 @@ describe('appDataSchema', () => {
       'Home premium',
     ]));
     expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
-  });
-
-  it('validates closure dates, zero settlement anchors and the referenced closing payment', () => {
-    const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
-    if (!recurring || recurring.kind !== 'recurring') throw new Error('Expected a recurring liability.');
-    const startDate = '2026-01-10';
-    const firstPaymentDate = addMonths(startDate, 1);
-    const closureDate = addMonths(startDate, 2);
-    const closingPayment = {
-      id: 'schema-closure-payment',
-      date: closureDate,
-      amount: 1,
-      note: '',
-      kind: 'Prepayment' as const,
-    };
-    const closed = {
-      ...recurring,
-      startDate,
-      payments: [closingPayment],
-      settlement: { asOf: closureDate, balance: 0 },
-      closure: {
-        date: closureDate,
-        paymentId: closingPayment.id,
-      },
-    };
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [closed],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, date: firstPaymentDate },
-        settlement: { asOf: firstPaymentDate, balance: 0 },
-        payments: [{ ...closingPayment, date: firstPaymentDate }],
-      }],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, date: startDate },
-        settlement: { asOf: startDate, balance: 0 },
-        payments: [{ ...closingPayment, date: startDate }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        settlement: { asOf: closureDate, balance: 1 },
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, paymentId: 'missing-payment' },
-      }],
-    }).success).toBe(false);
   });
 
   it('validates optional metadata and every signed-money / identifier rule', () => {
@@ -658,22 +516,6 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, actualValueDate: '2026-10-10' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, actualValue: '0', actualValueDate: '2026-10-10' }).success).toBe(true);
       expect(schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-11' }).success).toBe(false);
-      expect(schema.safeParse({
-        ...planValues, valuationMethod: 'accrual', compounding: 'quarterly',
-        maturityDate: '2030-10-10', actualValue: '0', actualValueDate: '2026-10-10',
-      })).toMatchObject({
-        success: true,
-        data: { valuationMethod: 'accrual', compounding: 'quarterly', maturityDate: '2030-10-10' },
-      });
-      const earlyMaturity = schema.safeParse({
-        ...planValues, maturityDate: '2026-10-09', actualValue: '0', actualValueDate: '2026-10-10',
-      });
-      expect(earlyMaturity.success).toBe(false);
-      if (!earlyMaturity.success) {
-        expect(earlyMaturity.error.issues.some((issue) =>
-          issue.message === 'Enter a maturity date on or after the plan start date',
-        )).toBe(true);
-      }
       const earlySnapshot = schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-09' });
       expect(earlySnapshot.success).toBe(false);
       if (!earlySnapshot.success) expect(earlySnapshot.error.issues.some((issue) => issue.message === 'Value date is before the plan started')).toBe(true);
@@ -817,27 +659,25 @@ describe('makeTransactionFormSchema', () => {
       const goalSchema = makeGoalFormSchema('2026-10-10', { otherNames: ['Vacation'], locked: false });
       const goal = { name: 'House', target: '100000', saved: '0', year: '2026' };
       expect(goalSchema.parse(goal)).toMatchObject({ name: 'House', target: 100_000, saved: 0, year: 2026 });
-      expect(goalSchema.safeParse({ ...goal, saved: '100000' }).success).toBe(true);
       const duplicate = goalSchema.safeParse({ ...goal, name: ' vacation ' });
       expect(duplicate.success).toBe(false);
       if (!duplicate.success) expect(duplicate.error.issues.some((issue) => issue.message === 'A goal with this name already exists')).toBe(true);
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '1900' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '1990' }).success).toBe(true);
       expect(goalSchema.safeParse({ ...goal, year: '2100' }).success).toBe(true);
-      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1899' });
+      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1989' });
       expect(beforeMinimumYear.success).toBe(false);
       if (!beforeMinimumYear.success) {
         expect(beforeMinimumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1900 and 2100');
+          .toBe('Enter a year between 1990 and 2100');
       }
       const afterMaximumYear = goalSchema.safeParse({ ...goal, year: '2101' });
       expect(afterMaximumYear.success).toBe(false);
       if (!afterMaximumYear.success) {
         expect(afterMaximumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1900 and 2100');
+          .toBe('Enter a year between 1990 and 2100');
       }
       const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: false, existingYear: 2020,
@@ -856,28 +696,10 @@ describe('makeTransactionFormSchema', () => {
           .toBe('Emergency fund target must be at least 3 months of cover (₹60,000)');
       }
       expect(minimumTargetSchema.safeParse({ ...goal, target: '60000', year: '2026' }).success).toBe(true);
-      const lockedWithoutMinimum = makeGoalFormSchema('2026-10-10', {
-        otherNames: [], locked: true,
-      });
-      expect(lockedWithoutMinimum.parse({
-        ...goal, target: '1', saved: '100000', year: '2026',
-      })).toMatchObject({ target: 1, saved: 0 });
 
       const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
       const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };
-      expect(holdingSchema.parse(holding)).toMatchObject({
-        invested: 1000, value: 900, valuationMethod: 'manual', ratePct: undefined, compounding: 'yearly',
-      });
-      expect(holdingSchema.parse({
-        ...holding, valuationMethod: 'accrual', ratePct: '7',
-        compounding: 'quarterly', maturityDate: '2030-01-01',
-      })).toMatchObject({
-        valuationMethod: 'accrual', ratePct: 7, compounding: 'quarterly', maturityDate: '2030-01-01',
-      });
-      expect(holdingSchema.safeParse({
-        ...holding, valuationMethod: 'accrual', ratePct: '',
-      }).success).toBe(false);
-      expect(holdingSchema.safeParse({ ...holding, maturityDate: '2026-02-30' }).success).toBe(false);
+      expect(holdingSchema.parse(holding)).toMatchObject({ invested: 1000, value: 900 });
       const holdingWithEntriesSchema = makeHoldingFormSchema({ otherNames: [], entriesExist: true });
       const blockedTypeChange = holdingWithEntriesSchema.safeParse({ ...holding, type: 'Fixed deposit' });
       expect(blockedTypeChange.success).toBe(false);

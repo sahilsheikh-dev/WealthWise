@@ -17,7 +17,7 @@ export const BACKUP_FORMAT_VERSION = 1;
 export const MAX_BACKUP_CHARS = 5_000_000;
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((date) => date >= '1900-01-01' && date <= '2100-12-31');
+  .refine((date) => date >= '1990-01-01' && date <= '2100-12-31');
 const idSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
 const money = z.number().finite().max(100_000_000_000).min(-100_000_000_000);
 const positiveMoney = money.positive();
@@ -27,7 +27,6 @@ const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
   snapshotAdjustment: money.optional(),
-  price: positiveMoney.optional(),
 });
 const liabilityPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
@@ -45,13 +44,13 @@ const transactionSchema = z.strictObject({
   note,
   date: dateSchema,
   source: z.strictObject({
-    kind: z.enum(['holding-entry', 'liability-payment', 'liability-closure-charge', 'policy-payment', 'liability-origin']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
 });
 const goalSchema = z.strictObject({
-  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1900).max(2100),
+  id: idSchema, name, target: money, saved: money, year: z.number().int().min(1990).max(2100),
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
@@ -62,28 +61,17 @@ const holdingType = z.enum([
   'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit',
   'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
 ]);
-const valuationFields = {
-  valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
-  ratePct: z.number().finite().min(0).max(100).optional(),
-  compounding: z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']).optional(),
-  maturityDate: dateSchema.optional(),
-  latestPrice: positiveMoney.optional(),
-  priceAsOf: dateSchema.optional(),
-};
 const manualHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('manual'), name, type: holdingType,
   invested: money, value: money, valueAsOf: dateSchema.optional(),
-  ...valuationFields,
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const planHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('plan'), name, type: holdingType,
-  ...valuationFields,
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
   tenureYears: z.number().int().min(1).max(100), startDate: dateSchema, trackFrom: dateSchema,
   opening: money, actualValue: money.nullable(), actualValueDate: dateSchema.nullable(),
-  stopDate: dateSchema.optional(),
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const liabilityCommon = {
@@ -92,24 +80,13 @@ const liabilityCommon = {
   principal: money, ratePct: z.number().min(0).max(100), startDate: dateSchema,
   payments: z.array(liabilityPaymentSchema).max(100_000),
 };
-const liabilityClosureSchema = z.strictObject({
-  date: dateSchema,
-  paymentId: idSchema,
-  note: z.string().max(200).optional(),
-  chargeTransactionId: idSchema.optional(),
-});
 const recurringLiabilitySchema = z.strictObject({
   ...liabilityCommon, kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200), emi: positiveMoney,
   settlement: z.strictObject({ asOf: dateSchema, balance: money.min(0) }).nullable(),
-  closure: liabilityClosureSchema.optional(),
 }).superRefine((liability, context) => {
   if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
-  }
-  if (liability.closure
-    && (liability.settlement?.asOf !== liability.closure.date || liability.settlement.balance !== 0)) {
-    context.addIssue({ code: 'custom', path: ['closure'], message: 'Closed liabilities require a zero settlement on the closure date' });
   }
 });
 const oneTimeLiabilitySchema = z.strictObject({
@@ -205,8 +182,6 @@ const budgetIncomeSchema = z.strictObject({
   category: z.enum(EARNED_INCOME_CATEGORIES),
   amount: z.number().finite().positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional(),
-  firstDueMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 const budgetOtherIncomeSchema = z.strictObject({
   id: idSchema,
@@ -307,7 +282,7 @@ export const importDataSchema = z.strictObject({
   policies: z.array(policySchema).max(100_000),
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
-  monthBudgets: z.array(monthBudgetSchema).max(1512).optional(),
+  monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
   efAllocation: importEfAllocationSchema,
   efCustomBuckets: importEfCustomBucketsSchema,
   efBucketLinks: importEfBucketLinksSchema,
@@ -362,18 +337,8 @@ export async function createBackup(
   data: AppData,
   options: { exportedAt: string; digest: (text: string) => Promise<string> },
 ): Promise<string> {
-  if (!z.string().datetime().safeParse(options.exportedAt).success) {
-    throw new BackupExportError('The export timestamp is invalid; no file was written.');
-  }
-  const validation = validateImportData(data);
-  if (!validation.ok) {
-    throw new BackupExportError(`This data cannot be imported as a backup (${validation.issues[0] ?? validation.reason}); no file was written.`);
-  }
-  if (canonicalJson(validation.data) !== canonicalJson(data)) {
-    throw new BackupExportError('This data would change when imported; export was cancelled before writing a file.');
-  }
   const checksum = await options.digest(canonicalJson(data));
-  const text = JSON.stringify({
+  return JSON.stringify({
     app: BACKUP_APP,
     formatVersion: BACKUP_FORMAT_VERSION,
     schemaVersion: SCHEMA_VERSION,
@@ -381,19 +346,6 @@ export async function createBackup(
     checksum: { algorithm: 'sha256', value: checksum },
     data,
   }, null, 2);
-  if (text.length > MAX_BACKUP_CHARS) {
-    throw new BackupExportError(
-      `This backup is ${text.length.toLocaleString('en-US')} characters; the import limit is ${MAX_BACKUP_CHARS.toLocaleString('en-US')} characters. No file was written.`,
-    );
-  }
-  return text;
-}
-
-export class BackupExportError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'BackupExportError';
-  }
 }
 
 function zodIssues(error: z.ZodError): string[] {

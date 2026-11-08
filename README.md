@@ -8,9 +8,7 @@ no cloud or network requests at runtime.
 
 ## Contents
 
-- [Download](#download)
 - [Features](#features)
-- [What's new in v1.0.0](#whats-new-in-v100)
 - [Screenshots](#screenshots)
 - [Getting started](#getting-started)
 - [Commands](#commands)
@@ -21,15 +19,6 @@ no cloud or network requests at runtime.
 - [License](#license)
 - [Brand assets](#brand-assets)
 
-## Download
-Latest version: v1.0.0
-Release date: 2026-11-07
-- [Download the latest Android app (v1.0.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
-- iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
-- [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
-SHA-256 of the v1.0.0 APK: ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3
-To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
-
 ## Features
 
 - Home overview of net worth, account balances, emergency-fund progress,
@@ -39,29 +28,11 @@ To install the APK, allow installs from this source in Android settings when pro
   balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
-  On the holding details screen, recurring-plan details and financial Summary
-  values are combined in one card; recurring Stop/Resume stays in the holding
-  action row.
-  Active recurring asset plans show Stop investment; stopped plans show Resume
-  investment. Liability cards and details consistently use Foreclosure.
-  The global three-dot options menu appears only on the Home/Index screen;
-  assets, liabilities, reminders, backup, security, profile and theme screens
-  keep screen-specific actions instead of showing duplicate global options.
-  Liability cards keep Pay EMI, Foreclosure and conditional Entries
-  actions in one row; liability detail pages use an entries-only asset-style
-  layout with a columned Summary card.
-  Recurring plans can be stopped at an inclusive date or resumed without
-  changing entries, current value, returns, goal links or Emergency Fund
-  links.
 - Monthly budgets with spend/invest sections, income entries, recurring item
-  schedules, due tracking and cash-flow views. Income can recur monthly,
-  quarterly, half-yearly or yearly. Scope choices apply immediately; Close,
-  backdrop and Android back dismiss without changing the budget.
+  schedules, due tracking and cash-flow views. Scope choices apply immediately;
+  Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
-- Emergency Fund holdings link by holding ID across manual holdings, recurring
-  plans and migrated Fixed deposits. Deletion and hydration remove dangling
-  links without changing net worth or valid goal/link amounts.
 - Simple editable insurance policy tracking with scheduled premium dues for
   term life, life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
@@ -71,18 +42,9 @@ To install the APK, allow installs from this source in Android settings when pro
   setup after unlock; system permission is requested only after choosing
   Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
-- Developer-only stress fixtures for 50, 100 and 126 years, plus a dense
-  200-year record-count and daily-SIP tier compressed into the supported
-  126-year date window. They load through replace-all with Undo for persistence
-  and rendering checks.
-
-## What's new in v1.0.0
-
-Based on the [v1.0.0 changelog](CHANGELOG.md), WealthWise 1.0 adds recurring
-Budget income, investment valuation and stop/resume controls, early liability
-foreclosure, scheduled Insurance premiums, local payment reminders, and
-encrypted backup export. It also includes accessibility, font-scale and
-long-history reliability improvements.
+- Developer-only stress fixtures for 50, 100 and 200 years, plus a 200-year
+  daily-SIP tier, loaded through replace-all with Undo for persistence and
+  rendering checks.
 
 ## Screenshots
 
@@ -120,9 +82,6 @@ These commands correspond to scripts in `package.json`:
 | `npm run check:assets` | Validate generated/committed branding assets. |
 | `npm run reset-project` | Destructive Expo starter-template reset; **do not run on this application**. |
 
-Latest verified test run (2026-11-08): 91 suites; 1193 passed, 1 skipped
-(1194 total).
-
 The additional release checks used for this repository are:
 
 ```bash
@@ -130,23 +89,6 @@ npx expo-doctor
 npx expo export --platform android
 npx expo export --platform ios
 ```
-
-### Development
-
-Enable the repository's commit-message hook once in each clone:
-
-```bash
-git config core.hooksPath .githooks
-```
-
-## Release process
-
-The current version is **v1.0.0**; the previous version is the initial
-release. The GitHub release and tag are published, but the production EAS
-builds are **not built** yet. Follow
-[`docs/releases/build-config.md`](docs/releases/build-config.md) for the
-pre-build gates, backup/device checks, EAS commands and build record. Release
-publication and tagging require explicit owner approval.
 
 `eas.json` defines development, preview and production EAS profiles. There is
 no app-build command in `package.json`.
@@ -173,9 +115,7 @@ no app-build command in `package.json`.
 The app uses Expo SDK 57, Expo Router routes in `app/`, and a pure domain layer
 in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
-validate persisted and imported data. The current persisted data schema is v22 (`SCHEMA_VERSION` in
-`src/domain/schemas.ts`); the migration chain upgrades supported data from
-schema v1 through v22, and backup-import compatibility is retained.
+validate persisted and imported data.
 
 ### Investment return calculations
 
@@ -192,12 +132,11 @@ Entries on the same date remain separate ledger entries; return cash flows for
 that date are combined for calculation. Current value uses a recorded
 valuation when one exists: add deposits and subtract withdrawals dated after
 that valuation, through the requested as-of date. Entries dated on or before
-the valuation are reflected in the stored value in the same write as the
-entry change, and are not added a second time. Without a recorded valuation,
+the valuation are treated as already included. Without a recorded valuation,
 current value is opening plus posted deposits minus posted withdrawals through
 the as-of date. Values never fall below zero. The app does not estimate
-interest for unconfigured holdings; configured accrual holdings use their
-saved rate, compounding convention and date-based valuation described below.
+interest; current value changes only when entries are recorded or a valuation
+is entered.
 
 Return calculations use gross contributions (opening amount plus deposits),
 not displayed net Invested:
@@ -216,22 +155,16 @@ lump sum uses CAGR: `(current value / contributions)^(365 / span days) - 1`.
 Annualised XIRR/CAGR appears only when the first cash flow to valuation date
 span is at least 365 days. Under 365 days the card shows only the labelled
 absolute return. Cash and Savings accounts show balance and net Invested, but
-never a return percentage, XIRR or CAGR. Entries after the valuation date
-continue to change the value through the normal as-of calculation. Undo
-restores the entry, linked transaction and snapshot together.
+never a return percentage, XIRR or CAGR. If entries predate a recorded
+valuation, the card explains that they are assumed included in the valuation.
 
 Every holding uses the same Deposit, Withdraw and Entries actions when its
 capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
 rule. The opening amount is shown as the first, derived "Opening" row in
 Entries and is edited in the holding form. Recurring holdings show their
 frequency, amount and next due date inside the holding's Recurring plan
-section. These presentation and invested-display changes were delivered on
-schema v18; P29-U later adds optional valuation metadata in schema v19.
-
-The owner cancelled the separate P29-O2 ledger-only storage redesign. P29-U
-uses schema v19 only for additive, optional valuation metadata; it does not
-reintroduce the cancelled ledger converter or prototype. P29-O1's unified
-Deposit, Withdraw and Entries presentation remains the supported behavior.
+section. These presentation and invested-display changes use the existing
+schema version 18.
 
 ### Recurring liability balances
 
@@ -244,34 +177,14 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Recurring liabilities can be closed early from their detail card. The closure
-date must be between the first payment date and today. The shared `loanState`
-calculation supplies the outstanding amount; the amount paid can be adjusted.
-The confirmation shows outstanding, amount paid and the difference. A payment
-up to the outstanding is recorded as one linked expense. Any excess is a
-separate "Loan closure charges" expense; a short payment requires a second
-confirmation before the remainder is written off. Closure, payment, charge
-and zero-balance settlement are one persisted action and one Undo. The shared
-schedule/pending derivation suppresses dues after closure for Transactions,
-Home, Budget and reminders. Closed loans have their own filter; only the
-closure note remains editable, and deletion is confirmed.
-
 On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
 `SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
-and copied into SQLite on the next write. The copied bytes are read back and
-compared before the legacy copy is removed; SQLite failures and mismatches keep
-the legacy backend active. Web continues to use AsyncStorage. UI metadata and
-preferences remain in AsyncStorage. Persisted AppData schema
-version 22 is current; P29-Q changes only the storage backend. P29-U adds
-optional holding valuation fields without restructuring existing holding data,
-P29-W adds an optional recurring-liability closure record, P29-X adds recurring
-investment stop/resume metadata, and v22 defaults existing Budget income to
-monthly recurrence. The migration chain upgrades supported data from schema
-versions 1 through 22.
-Backup import accepts dates from 1900 through 2100, verifies file integrity
-and validates imported data, applying supported migrations where required.
-Backup export refuses data that would change on import and refuses plain files
-over the 5,000,000-character import limit before creating a temporary file.
+and copied into SQLite on the next write. Web continues to use AsyncStorage.
+UI metadata and preferences remain in AsyncStorage. Persisted AppData schema
+version 18 is current; P29-Q changes only the storage backend, not the schema.
+The migration chain upgrades supported data from schema versions 1 through 17.
+Backup import verifies file integrity and validates imported data, applying
+supported migrations where required.
 
 The development menu's stress loader replaces all AppData with a deterministic
 long-history fixture and uses the existing Undo snapshot. It reports build,
@@ -292,36 +205,6 @@ bucket targets use the user-set goal target with the three-month minimum
 retained only as a floor; each bucket's available amount is the sum of the full
 values of assets linked to that bucket.
 
-### Holding valuation methods
-
-Existing holdings keep their legacy current-value calculation until a method
-is explicitly saved or a value/price is confirmed. The type-based suggestion
-is not activated automatically: this preserves existing balances, net worth,
-goal amounts and Emergency Fund figures during the additive v18-to-v19
-migration. Suggestions are balance for Cash, balance plus interest entries
-for Savings accounts, accrual for Fixed/Recurring deposits and EPFO/PF when a
-rate is present, units x price for priced Stocks/ETF, Mutual fund/SIP, Gold
-and Silver entries, and manual otherwise.
-
-Accrual compounds each deposit from its date, uses actual elapsed days divided
-by 365, stops at maturity, and restarts from the last confirmed value. For
-quarterly compounding the factor is `(1 + r / 4)^(4t)`, where `r` is the annual
-rate as a decimal and `t` is actual days / 365. Estimated values are labelled
-"estimated". A manual opening amount has no start date in the current model;
-without a dated value snapshot it is treated as current rather than assigning
-an invented accrual period. Units are `entry amount / entry price`; withdrawals reduce units
-at their entry price, and current value is total units times the latest
-hand-entered price. No market data is fetched. The existing opening amount has
-no historical unit-price field, so it is valued at the latest price until the
-owner records priced entries.
-
-Manual and units-price cards show the age of the last value/price and flag
-updates older than 90 days. The optional monthly "Update values" reminder is
-off by default. Cash and Savings accounts continue to suppress holding return
-percentages. Rate is already required by the existing recurring-plan model;
-P29-U preserves that requirement while keeping valuation fields optional for
-manual holdings.
-
 ### Holding entry capabilities
 
 Fixed deposits are one-time holdings: they do not accept new deposits or
@@ -336,8 +219,8 @@ entries to Fixed deposit.
 
 Insurance is a simple editable policy list. When there is no saved Term
 insurance or Life insurance policy, the screen shows an unstored placeholder
-with an Add details action; saving creates an ordinary policy. The Life
-placeholder uses the existing `life-savings` policy type. Other insurance
+with an Add details action; saving creates an ordinary policy. **Assumed:** the
+Life placeholder uses the existing `life-savings` policy type. Other insurance
 types can be added from the plus action. Policy forms capture type, name,
 insurer, optional cover amount, premium, frequency, next due date, and optional
 policy number and note.
@@ -362,12 +245,11 @@ product decision.
 The migration to schema v17 removes only retired cover-goal records and policy
 goal assignments. Schema v18 adds an optional due date to each policy payment
 and migrates only existing payments already matched to a schedule slot by the
-v17 FIFO rule. Later schema migrations through v22 preserve those records and
-backup-import compatibility. Historical policy fields not shown in the
-simplified form remain in stored data. In particular, savings-policy current
-values and goal-linked assets remain available to their existing investment
-and goal features. Policies with a legacy inactive status remain visible as
-Ended and produce no dues.
+v17 FIFO rule. Historical policy fields not shown in the simplified form
+remain in stored data. In particular, savings-policy current values and
+goal-linked assets remain available to their existing investment and goal
+features. Policies with a legacy inactive status remain visible as Ended and
+produce no dues.
 
 ## Data and privacy
 
@@ -400,11 +282,10 @@ platform settings.
 - The owner reports that the app works on a physical device. Device model and
   operating system were not recorded; this is owner verification, not
   automated device evidence.
-- The current `npm audit --omit=dev` run reports 7 production advisories:
-  4 moderate and 3 high. These are accepted release risks because patch-level
-  fixes that remain within Expo SDK 57 are not available. Major Expo/Router
-  upgrades or `npm audit fix --force` require separate owner approval and are
-  not included in this release.
+- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
+  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
+  production-dependency-tree and development/build-tool findings; see the
+  progress ledger for package lists.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
@@ -412,7 +293,8 @@ platform settings.
 ## License
 
 This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
-Sheikh.
+Sheikh. The license holder is based on the locally configured account name and
+should be confirmed by the owner.
 
 ## Brand assets
 

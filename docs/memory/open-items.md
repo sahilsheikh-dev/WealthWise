@@ -1,120 +1,16 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Open items
 
-## Recently resolved
-
-- **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
-  the new hook requires supported Conventional Commit types and rejects
-  placeholders. The reason is to keep scope explicit and unrelated changes
-  separate; proposed subjects and staged diff-stats are shown before commit.
-  The hook and docs tests pass.
-
 ## Unresolved
 
-- **Branching baseline exception:** the initial `develop` baseline
-  `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
-  which contains legacy unreleased Release 2 work. Branch protection and
-  release-only main merges apply prospectively; no history rewrite was made.
-- **v1.0.0 GitHub release body (owner action):** the canonical body is
-  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
-  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
-  No release edit was made in P28-C-R3.
-- **Release 2 device re-test:** the owner confirms the income recurrence and
-  edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
-  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
-  tester and date remain blank. Physical-device re-test is pending.
-- **Local checklist commit is not pushed:** its subject was corrected at the
-  owner's request, and the report commit was replayed unchanged. See the
-  old-to-new hash mapping and tree verification in
-  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 release preparation:** pending because the per-section Pace graph is
-  a visible feature. This task made no version change and performed no release
-  preparation, build, export or push.
-- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
-  quarterly/yearly income appears every month; device re-test of due/non-due
-  months, Received dues, projected cash flow and backup restore remains open.
-- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
-  not refresh immediately. Verify the repaired persistence path and immediate
-  screen updates across relevant flows on device.
-- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
-  Pace graph, per-section controls, contrast and scalable layout on device.
-- **Pre-build synthetic v13 equality:** automated coverage now imports a
-  deterministic, checksummed v13 backup through `parseBackup` and compares
-  source-derived net worth, every goal's saved amount and Emergency Fund
-  available amount. Physical-device backup/restore checks remain part of the
-  pre-build checklist in [`build-config.md`](../releases/build-config.md).
-- **P26-A physical-device checks:** verify touch targets, scalable labels and
-  text at 1.3x/2.0x, focus order, announced form errors, color-only status,
-  screen-reader navigation, cold hydration, first render and action writes on
-  iOS and Android. Jest/TestRenderer and Node benchmarks are not device
-  evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
-  user-owned/report-only surfaces under the P26-A scope.
-- **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
-  reproduction and store coverage confirmed valid links for Cash, Savings,
-  Fixed deposits and recurring plans. Plan deletion now clears EF bucket and
-  goal links in the same write; hydration repairs dangling links once and
-  preserves valid links, net worth and goal values. No schema change.
-- **Emergency Fund form font-scale and device check:** verify the resolved
-  link picker and EF allocation form at 1.3x and 2.0x on physical devices.
-- **P29-Z documentation verification (historical, superseded 2026-11-08):**
-  source wins over docs; current schema v22 and the migration/archive chain
-  through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
-  Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
-  change.
-- **Home-only global menu physical-device check (2026-11-05):** verify the
-  three-dot options menu remains present on Index/Home and absent on Assets,
-  Liabilities and detail screens, including backup, reminders, security,
-  profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop/resume label physical-device check:** verify active
-  recurring cards show Stop investment and stopped plans show Resume
-  investment while the action remains within the shared instrument-card row.
-- **Holding and liability layout physical-device check (2026-11-05):** verify
-  the two-column investment Summary, same-row liability actions, conditional
-  Entries button and liability Summary/details layout at font scales 1.3 and
-  2.0 on iOS and Android. Automated route, ownership and focused font-scale
-  tests pass, and all six gates exit 0.
-- **Holding layout validation (2026-11-05):** the owner-edited holding screen
-  passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
-  are green: 92 suites passed, with 1192 tests passed and 1 skipped.
-- **Merged holding summary card physical-device check:** verify the Recurring
-  plan and Summary information remain readable in one card and Stop/Resume stays
-  in the action row at font scales 1.3 and 2.0 on iOS and Android.
-- **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
-  plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
-  passed tests with `1` skipped at that repair step. The final real run is
-  `1192` passed tests with `1` skipped (1193 total). The project inventory, status memory and
-  ledger now match the repaired run; all six gates pass.
-- **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
-  stop-date filtering, stopped card text, past unpaid dues, Deposit
-  availability and one-write Undo at font scales 1.3 and 2.0 on iOS and Android.
-  Confirm the v20-to-v21 archive and restart behavior on native SQLite.
-- **P29-X assumption:** `stopDate` is the last inclusive scheduled date. Resume
-  removes the field; it restores schedule rows without rewriting entries or
-  linked transactions.
-- **P29-W physical-device checks:** verify closure-date selection and
-  outstanding recalculation, overpayment/shortfall confirmations, one-write
-  Undo, future-due removal, Closed filtering, read-only payment/schedule rows,
-  note-only editing/deletion and font scales 1.3 and 2.0 on iOS and Android.
-  Also verify the v19-to-v20 archive and restart behavior on native SQLite.
-  Jest and Expo exports do not verify native interaction, persistence or
-  layout.
-
-- **P29-V physical-device checks:** confirm AsyncStorage migration compares
-  exact bytes before removal, failure fallback survives restart, and all four
-  stress tiers load/Undo on iOS and Android. Time native SQLite capacity,
-  hydration, actions, selectors, memory and first render. Confirm the 50-year
-  backup exports/imports plain and encrypted, and larger tiers refuse before
-  creating a temporary file. Node measurements and Expo exports do not prove
-  device behavior.
-
-- **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
-  ledger-only schema-v19 storage redesign. Its converter, alternate v19
-  schemas/types and prototype tests had no production callers and have been
-  removed. The cancelled storage design does not affect the current schema
-  v20; P29-O1's unified holding actions remain supported. Historical
-  preparation commits are retained; see
-  DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
+- **P29-O2 in progress:** complete the staged v19 unified-holding migration,
+  convert all domain/store/screen/mock consumers, preserve current values and
+  net worth for demo/mock/legacy fixtures, and add migration/archive/backup/
+  encryption/erase-all coverage. Commit `0f1cac4` adds the unconnected pure
+  converter and migration-equivalence tests; the persisted schema is still
+  v18 and the converter is not yet wired into startup. See
+  DEC-P29O2-UNIFIED-LEDGER in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
   cards, Entries, opening amount edits and Recurring plan details at font
   scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
@@ -124,26 +20,6 @@
   Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
   Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
   counts are recorded in [PROGRESS.md](../PROGRESS.md).
-- **P29-T physical-device checks:** verify that adding, editing and deleting
-  dated deposits and withdrawals on or before a valuation updates manual and
-  plan values once, in the same write; verify Undo restores the entry and
-  linked transaction. Confirm goal, Emergency Fund, net-worth and Budget-linked
-  flows at font scales 1.3 and 2.0 on iOS and Android. Jest and Expo exports
-  do not verify native persistence, rendering or interaction. Budget's current
-  linked-actual selector is transaction-based, not a current-holding-value
-  display; that display was not redesigned.
-- **P29-U physical-device checks:** verify configured accrual and units-price
-  values, manual confirmation, staleness notices, and the optional monthly
-  reminder at font scales 1.3 and 2.0 on iOS and Android. Confirm v18-to-v19
-  migration, a confirmed-value reset, and entry-price/withdrawal interactions
-  on device. Node tests and Expo exports do not prove native layout,
-  persistence or notification scheduling. Automated validation passes:
-  91 suites/1170 tests and all six ordered gates exit 0; directory coverage
-  and the exact calculation method are recorded in [PROGRESS.md](../PROGRESS.md).
-- **P29-U model constraint:** recurring plans already require `ratePct` in
-  the v18 model and use it for the plan projection. That existing required
-  field is preserved; valuation metadata remains optional. Manual holdings
-  may omit `ratePct` unless accrual is explicitly selected.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. Its
@@ -205,28 +81,6 @@
 - The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
   and screenshots complete. The slug was confirmed by the owner and was not
   changed.
-
-## Recent completed validation
-
-- **Commit-subject enforcement (2026-11-08):** superseded the former
-  unenforced placeholder-subject practice because it obscured the scope of
-  changes and encouraged unrelated edits to be grouped together. The
-  repository hook now requires descriptive Conventional Commit subjects;
-  enable it with `git config core.hooksPath .githooks`. Full ordered gates are
-  recorded as Gate 1-4 exit 0; Gate 1 had 93 suites, 1,205 passed and 1
-  skipped. Both Expo export gates were intentionally skipped because the task
-  forbids builds.
-- **P29-R:** the external schema-v13 backup migrated through the production
-  import path to v18 with no differences in the requested before/after
-  summaries. The script prints only numbered holdings/goals, types, and
-  calculated values; the backup and personal text remain outside Git. Reminder
-  preferences are not in the backup, so the recorded preview uses enabled
-  day-before and same-day reminders at 09:00 with amounts hidden. Details are
-  in [PROGRESS.md](../PROGRESS.md). All six ordered gates were run: TypeScript,
-  lint, Doctor and both platform exports pass; 92 suites/1148 tests pass, but
-  coverage exits 1 because the unchanged `src/domain/schemas.ts` branch
-  coverage is 89.41%, below its configured 90% threshold. No assertion was
-  weakened.
 
 ## Physical-device verification
 
@@ -356,15 +210,3 @@
   require a different platform-specific file destination design.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.
-
-## Resolved
-
-- **Historical checkpoint commit message audit (2026-11-07):** reviewed all
-  five matching commits on `origin/main` and recorded proposed descriptive
-  subjects in [PROGRESS.md](../PROGRESS.md). Their remote messages remain
-  unchanged because repository policy prohibits rewriting/pushing shared
-  history.
-- **v1.0.0 release commit messages (2026-11-07):** replaced generic checkpoint
-  messages with descriptions of release-draft preparation and publication
-  documentation. The changes are local and unpushed; see the verified
-  old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).

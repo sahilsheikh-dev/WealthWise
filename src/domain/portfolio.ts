@@ -6,7 +6,6 @@ import {
   type InvestmentReturnSummary,
 } from './investmentReturns';
 import { holdingCapabilities } from './holdingCapabilities';
-import { configuredHoldingValue } from './valuation';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -41,11 +40,7 @@ export function holdingContributions(holding: Holding): number {
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
-  const legacyValue = holding.kind === 'plan' ? planValue(holding, asOf) : manualHoldingValue(holding, asOf);
-  return configuredHoldingValue(holding, asOf, legacyValue);
-}
-
-function manualHoldingValue(holding: Extract<Holding, { kind: 'manual' }>, asOf: ISODate): number {
+  if (holding.kind === 'plan') return planValue(holding, asOf);
   const valuationDate = holding.valueAsOf;
   const baseValue = valuationDate ? holding.value : holding.invested;
   const applicableEntries = holding.logs

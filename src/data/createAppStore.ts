@@ -5,7 +5,7 @@ import {
   addTransaction, completeOnboarding, deleteTransaction, emptyAppData, updateSettings, updateTransaction,
 } from '../domain/actions';
 import {
-  addPlan, deletePlan, updatePlan, stopPlan, resumePlan,
+  addPlan, deletePlan, updatePlan,
   type AddPlanInput, type PlanPatch,
 } from '../domain/planActions';
 import {
@@ -13,8 +13,8 @@ import {
   type InvestmentEntryInput, type InvestmentEntryPatch,
 } from '../domain/investmentActions';
 import {
-  addLiability, addLiabilityPayment, closeRecurringLiability, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
-  type AddLiabilityInput, type CloseLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
+  addLiability, addLiabilityPayment, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
+  type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import {
@@ -32,15 +32,7 @@ import {
   type ShortfallAllocation,
   type SurplusAllocation,
 } from '../domain/cashFlow';
-import {
-  addHolding,
-  confirmHoldingValue,
-  deleteHolding,
-  updateHolding,
-  updateHoldingPrice,
-  updateHoldingValue,
-  type HoldingPatch,
-} from '../domain/holdingActions';
+import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import {
   addInstrumentTransaction,
   createMissingTransactions,
@@ -54,7 +46,6 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
-  repairEfLinkedHoldings,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
@@ -131,8 +122,6 @@ export type AppActions = {
   createMissingTransactions: () => void;
   addPlan: (input: AddPlanInput) => void;
   updatePlan: (id: string, patch: PlanPatch) => void;
-  stopPlan: (id: string, stopDate: ISODate) => void;
-  resumePlan: (id: string) => void;
   deletePlan: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
@@ -154,7 +143,6 @@ export type AppActions = {
   addPolicy: (input: AddPolicyInput) => void;
   deletePolicy: (id: string) => void;
   addLiability: (input: AddLiabilityInput) => void;
-  closeLiabilityEarly: (id: string, input: CloseLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
   addLiabilityPayment: (liabilityId: string, input: Pick<LiabilityPayment, 'date' | 'amount' | 'kind' | 'note'>) => void;
@@ -193,8 +181,6 @@ export type AppActions = {
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
-  updateHoldingValue: (id: string, value: number, date: ISODate, method?: Holding['valuationMethod']) => void;
-  updateHoldingPrice: (id: string, price: number, date: ISODate) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
@@ -213,7 +199,7 @@ export type DevActions = {
   loadDemoData: () => Promise<{ ok: true } | { ok: false; message: string }>;
   loadStressData: (
     years: StressYears,
-    dense?: boolean,
+    dailySip?: boolean,
   ) => Promise<{ ok: true; loadMs: number } | { ok: false; message: string }>;
   simulateCorruption: () => Promise<void>;
 };
@@ -305,17 +291,6 @@ export function createAppStore(
           setError(error);
         }
       };
-      const applyDataActionWithUndo = (action: (data: AppData) => AppData, message: string) => {
-        const previous = get().data;
-        applyDataAction(action);
-        if (get().lastError === null && get().data !== previous) {
-          useUIStore.getState().setActionToast({
-            message,
-            actionLabel: 'Undo',
-            onAction: () => set({ data: previous, lastError: null }),
-          });
-        }
-      };
       const replaceDataWithUndo = async (importedData: AppData) => {
         if (get().status !== 'ready') {
           return { ok: false as const, message: 'Data can only be replaced after the app has loaded.' };
@@ -347,28 +322,19 @@ export function createAppStore(
           applyDataAction((data) => deleteTransaction(data, id));
         },
         addInstrumentTransaction(input) {
-          applyDataActionWithUndo(
-            (data) => addInstrumentTransaction(data, input, deps.newId, deps.today()),
-            'Investment transaction added.',
-          );
+          applyDataAction((data) => addInstrumentTransaction(data, input, deps.newId, deps.today()));
         },
         updateLinkedTransaction(id, patch) {
-          applyDataActionWithUndo((data) => updateLinkedTransaction(data, id, patch, {
+          applyDataAction((data) => updateLinkedTransaction(data, id, patch, {
             newId: deps.newId,
             today: deps.today(),
-          }), 'Investment transaction updated.');
+          }));
         },
         deleteLinkedTransaction(id) {
-          applyDataActionWithUndo(
-            (data) => deleteLinkedTransaction(data, id),
-            'Investment transaction deleted.',
-          );
+          applyDataAction((data) => deleteLinkedTransaction(data, id));
         },
         linkExistingTransaction(transactionId, instrumentId, note) {
-          applyDataActionWithUndo(
-            (data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note),
-            'Investment transaction linked.',
-          );
+          applyDataAction((data) => linkExistingTransaction(data, transactionId, instrumentId, deps.newId, deps.today(), note));
         },
         createMissingTransactions() {
           applyDataAction((data) => createMissingTransactions(data, deps.newId));
@@ -385,32 +351,17 @@ export function createAppStore(
         updatePlan(id, patch) {
           applyDataAction((data) => updatePlan(data, id, patch));
         },
-        stopPlan(id, stopDate) {
-          applyDataActionWithUndo((data) => stopPlan(data, id, stopDate, deps.today()), 'Recurring plan stopped.');
-        },
-        resumePlan(id) {
-          applyDataActionWithUndo((data) => resumePlan(data, id), 'Recurring plan resumed.');
-        },
         deletePlan(id, options) {
           applyDataAction((data) => deletePlan(data, id, options));
         },
         addInvestmentEntry(holdingId, input) {
-          applyDataActionWithUndo(
-            (data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()),
-            'Investment entry added.',
-          );
+          applyDataAction((data) => addInvestmentEntry(data, holdingId, input, deps.newId, deps.today()));
         },
         updateInvestmentEntry(holdingId, entryId, patch) {
-          applyDataActionWithUndo(
-            (data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()),
-            'Investment entry updated.',
-          );
+          applyDataAction((data) => updateInvestmentEntry(data, holdingId, entryId, patch, deps.today()));
         },
         deleteInvestmentEntry(holdingId, entryId) {
-          applyDataActionWithUndo(
-            (data) => deleteInvestmentEntry(data, holdingId, entryId),
-            'Investment entry deleted.',
-          );
+          applyDataAction((data) => deleteInvestmentEntry(data, holdingId, entryId));
         },
         clearDue(target, rowId, actualAmount) {
           let entryId: string | undefined;
@@ -503,15 +454,6 @@ export function createAppStore(
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
-        },
-        closeLiabilityEarly(id, input) {
-          applyDataActionWithUndo(
-            (data) => closeRecurringLiability(data, id, input, {
-              today: deps.today(),
-              newId: deps.newId,
-            }),
-            'Loan closed early.',
-          );
         },
         updateLiability(id, patch) {
           applyDataAction((data) => updateLiability(data, id, patch));
@@ -635,12 +577,6 @@ export function createAppStore(
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
         },
-        updateHoldingValue(id, value, date, method) {
-          applyDataAction((data) => updateHoldingValue(data, id, value, date, method));
-        },
-        updateHoldingPrice(id, price, date) {
-          applyDataAction((data) => updateHoldingPrice(data, id, price, date));
-        },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
         },
@@ -755,11 +691,6 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v15`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v16`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v17`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v19`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v20`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v21`);
-            await storage.removeItem(`${PERSIST_NAME}.premigration.v22`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
@@ -795,14 +726,14 @@ export function createAppStore(
             loadDemoData() {
               return actions.replaceAllData(buildDemoData(deps.today()));
             },
-            async loadStressData(years, dense = false) {
+            async loadStressData(years, dailySip = false) {
               const startedAt = deps.now?.() ?? Date.now();
               const data = createStressData({
                 today: deps.today(),
                 years,
                 seed: 0x29_51_0,
                 newId: deps.newId,
-                dense,
+                dailySip,
               });
               const validated = appDataSchema.safeParse(data);
               if (!validated.success) {
@@ -881,10 +812,6 @@ export function createAppStore(
         if (allocationNeedsRepair) {
           data = { ...data, efAllocation: allocationResolution.allocation };
         }
-        const efLinkResolution = repairEfLinkedHoldings(data);
-        if (efLinkResolution.repaired) {
-          data = efLinkResolution.data;
-        }
         const today = deps.today();
         data = ensureCurrentMonthBudget(data, today, deps.newId);
         let undoImport: { savedAt: ISODate } | null = null;
@@ -902,7 +829,7 @@ export function createAppStore(
         } catch {
           undoImport = null;
         }
-        suppressNextWrite = !efLinkResolution.repaired;
+        suppressNextWrite = true;
         try {
           storeApi.setState({ data, undoImport, hydrated: true, status: 'ready' });
         } finally {

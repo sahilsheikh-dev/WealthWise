@@ -1,5 +1,5 @@
 import { addMonths, compareISO, daysBetween } from './dates';
-import type { ISODate, Liability, LiabilityPayment, RecurringLiability, OneTimeLiability } from './types';
+import type { ISODate, LiabilityPayment, RecurringLiability, OneTimeLiability } from './types';
 
 export function emiAuto(principal: number, ratePct: number, tenureMonths: number): number {
   const monthlyRate = ratePct / 1200;
@@ -226,10 +226,6 @@ export function amortizedBalanceAfter(
 
 export function isCleared(balance: number): boolean {
   return balance < 1;
-}
-
-export function isLiabilityClosed(liability: Liability): boolean {
-  return liability.kind === 'recurring' && liability.closure !== undefined;
 }
 
 export function monthsLeft(balance: number, emi: number, ratePct: number, extra = 0): number | null {

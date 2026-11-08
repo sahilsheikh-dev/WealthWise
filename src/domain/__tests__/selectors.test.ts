@@ -560,10 +560,10 @@ describe('summary selectors', () => {
           expect(current).toEqual({
             budgetLinks: { count: 1, amount: 2_000 },
             pending: { count: 34, amount: 38_900 },
-            reminders: { count: 869 },
-            goals: { count: 5, saved: 487_300 },
+            reminders: { count: 897 },
+            goals: { count: 5, saved: 479_200 },
             efAvailable: { buckets: { cash: 25_000, bank: 92_000, 'fd-rd': 70_000 }, total: 187_000 },
-            netWorth: { assets: 524_000, liabilities: 389_107.9299748545, netWorth: 134_892.07002514548 },
+            netWorth: { assets: 504_500, liabilities: 389_107.9299748545, netWorth: 115_392.07002514548 },
           });
         }
       }

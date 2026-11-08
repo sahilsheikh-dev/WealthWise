@@ -235,12 +235,6 @@ export default function RemindersScreen() {
               disabled={busy}
               onValueChange={(value) => void save({ ...preferences, showAmounts: value })}
             />
-            <SwitchRow
-              label="Monthly update-values reminder"
-              value={preferences.updateValues ?? false}
-              disabled={busy}
-              onValueChange={(value) => void save({ ...preferences, updateValues: value })}
-            />
             <AppText style={[typography.meta, { color: colors.text3, lineHeight: 19 }]}>
               Hide app previews overrides this setting and keeps notification text generic.
             </AppText>
@@ -259,9 +253,7 @@ export default function RemindersScreen() {
                   </AppText>
                   <AppText style={[typography.meta, { color: colors.text2 }]}>{item.body}</AppText>
                 </View>
-                <AppText style={[typography.meta, { color: colors.text3 }]}>
-                  {item.kind === 'update-values' ? 'Monthly' : item.kind === 'day-before' ? 'Day before' : 'Due day'}
-                </AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>{item.kind === 'day-before' ? 'Day before' : 'Due day'}</AppText>
               </View>
             ))}
           </Card>
