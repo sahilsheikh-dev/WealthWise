@@ -6,6 +6,7 @@ import { Modal, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { ChoiceField } from '../src/components/form/ChoiceField';
+import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -367,7 +368,7 @@ function PlanFields({
     <>
       <FormSection title="Basics">
         <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-        <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Holding type" choices={holdingTypes} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={holdingTypes.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
         <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">

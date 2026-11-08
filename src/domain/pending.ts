@@ -141,16 +141,19 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
       });
     }
     for (const item of budget.items) {
-      if (item.name === 'EMI' || item.name === 'Insurance') continue;
       const section = budget.sections.find((row) => row.id === item.sectionId);
-      if (section?.system) continue;
+      const manualInsurance = section?.system === 'insurance';
+      if (item.name === 'EMI' || (item.name === 'Insurance' && !manualInsurance)) continue;
+      if (section?.system && !manualInsurance) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;
       if (instrumentCategories.has(category) || representedCategories.has(category)) continue;
       const planned = item.mode === 'amount'
         ? item.value
         : Math.round(item.value * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
-      const remaining = Math.max(0, planned - budgetLineActual(data, month, category));
+      const remaining = Math.max(0, planned - budgetLineActual(data, month, category, {
+        excludePolicyPayments: true,
+      }));
       if (remaining === 0) continue;
       const dueDate = dueDateForLine(month, item.dueDay);
       items.push({

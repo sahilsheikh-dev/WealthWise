@@ -108,6 +108,10 @@ describe('Budget overview charts', () => {
     expect(renderer.root.findAll((node) => node.props.testID === 'pace-planned-segment-0')).toHaveLength(0);
     const plot = renderer.root.findByProps({ testID: 'pace-line-container' });
     expect(plot.props.accessibilityLabel).toBe(summary);
+    expect(renderer.root.findAllByType('text')
+      .map((node) => node.children.join(''))
+      .filter((label) => label === 'Actual' || label === 'Planned pace'))
+      .toEqual(['Actual', 'Planned pace']);
     expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Left ₹250'))).toBe(true);
     expect(renderer.root.findAllByType('text').some((node) => node.children.includes(summary))).toBe(false);
     act(() => plot.props.onLayout({ nativeEvent: { layout: { width: 300, height: 92, x: 0, y: 0 } } }));

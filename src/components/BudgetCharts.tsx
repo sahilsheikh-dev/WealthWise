@@ -113,8 +113,8 @@ export function PaceLine({
         ) : null}
       </View>
       <View style={styles.legend}>
-        <LegendItem label="Planned pace" color={colors.primary} />
         <LegendItem label="Actual" color={colors.ok} />
+        <LegendItem label="Planned pace" color={colors.primary} />
       </View>
       <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{shortSummary}</AppText>
     </View>
