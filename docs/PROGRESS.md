@@ -51,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (123/124)
+Overall progress ██████████ 99% (124/125)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (23/23)
+Phase 20         ██████████ 100% (24/24)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
@@ -122,7 +122,8 @@ Phase 30         ██████████ 100% (3/3)
 | P19-A | — | Done | Five-group model and category mapping; five-group suggestions; grouped setup/month editors with compact controls, subtotals and recurring-items summary; v6 schema compatibility and demo data. Commits `acc94df`, `af885c1`; see the Phase 19 gate record. | 2026-10-15 |
 | P19-B | — | Done | Invest category and earned-income sync, reconciliation, Month review sources, and History/Month review/Templates actions with no Budget header menu; commit `221d2ed` and the Phase 19 gate record. | 2026-10-15 |
 | P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the Phase 19-C gate record. | 2026-10-15 |
-| P20-A | — | Done | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
+| P20-A | — | Done; Revised by P20-A-R1 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
+| P20-A-R1 | — | Done | Linked recurring-plan Budget rows now clear through the shared due action; recurring liability EMI confirmation records its payment/transaction and Undo restores it. Store tests retain one-write assertions. | 2026-11-08 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
@@ -2678,7 +2679,14 @@ frequency were replaced with due/non-due monthly totals and explicit monthly
 frequency, because recurrence is now part of the stored plan. The demo uses
 the new built-in `Recharge` category as the mobile-recharge example. Plan
 resolution takes a required month, ensuring every planned amount is evaluated
-through `plannedForMonth`. Phase 20 is 22/22.
+through `plannedForMonth`. P20-A-R1 restores the shared clearDue path for
+linked planned investments and verifies recurring liability EMI
+confirmation/Undo. Old: linked planned investment rows could create plain
+transactions. New: linked entries/payments are recorded through clearDue and
+reversed through Undo. Reason: keep the instrument/payment ledger and
+transaction in sync atomically. Existing store tests assert one persisted
+write per action; focused component, route and store tests pass. Phase 20 is
+24/24.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
@@ -2975,7 +2983,8 @@ evidence present in exports/checkpoints.
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
 | P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | `d3477f2` | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
-| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
+| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; Revised by P20-A-R1. Original focused/full gates are historical. | `8545909` | Linked-plan plain-transaction behavior is superseded by P20-A-R1. | current request |
+| P20-A-R1 | Phase 20 | P20-A | current | 2026-11-08 | Route Paid actions for linked plan rows and recurring liability EMIs through the shared clearDue path. | Reproduced before implementation: a linked planned investment row called addTransaction instead of clearDue. The fixed component and route regressions pass; real-store tests cover exactly one write for clear and Undo. | Implementation and regression tests in this task commit; exact hash recorded after commit. | Old: linked plan row created a plain transaction. New: linked plan entry, liability payment and linked transaction use clearDue/undoClearDue. Reason: preserve instrument/payment ledgers and atomic Undo. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
