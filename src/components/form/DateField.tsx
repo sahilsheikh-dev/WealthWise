@@ -24,6 +24,7 @@ export function DateField({
   maximumDate,
   error,
   accessibilityLabel = 'Transaction date',
+  accessibilityHint,
 }: {
   label?: string;
   value: string;
@@ -31,6 +32,7 @@ export function DateField({
   maximumDate: string;
   error?: string;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
@@ -54,7 +56,7 @@ export function DateField({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint={error ? `Error: ${error}` : undefined}
+        accessibilityHint={error ? `Error: ${error}` : accessibilityHint}
         onPress={() => {
           setSelected(dateFromISO(value));
           setVisible(true);

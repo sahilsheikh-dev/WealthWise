@@ -269,7 +269,11 @@ jest.mock('../../components/form/MoneyField', () => {
 jest.mock('../../components/form/DateField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    DateField: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    DateField: ({ label, accessibilityLabel, accessibilityHint }: {
+      label: string;
+      accessibilityLabel?: string;
+      accessibilityHint?: string;
+    }) => ReactModule.createElement('datefield', { accessibilityLabel, accessibilityHint }, label),
   };
 });
 
@@ -406,5 +410,21 @@ describe('route render smoke audit', () => {
     act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
     expect(monthLabel()).not.toBe(previousMonthLabel);
     expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
+  });
+
+  it('explains the first SIP installment and installment tracking dates', () => {
+    const renderer = renderScreen(React.createElement(InvestmentFormScreen));
+    const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
+    expect(dates[0]?.props).toMatchObject({
+      accessibilityLabel: 'First scheduled contribution date',
+      accessibilityHint: 'The first date on your recurring investment schedule.',
+    });
+    expect(dates[1]?.props).toMatchObject({
+      accessibilityLabel: 'Installment tracking start date',
+      accessibilityHint: 'Only installments due on or after this date count toward missed contributions.',
+    });
+    const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
+    expect(helperText).toContain('The plan schedule starts on this date.');
+    expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
   });
 });

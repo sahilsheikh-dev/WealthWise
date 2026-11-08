@@ -107,6 +107,21 @@ describe('Home screen theme smoke', () => {
     mockData.goals = [];
   });
 
+  it('opens the Emergency fund route from its Home summary pill with one tap', async () => {
+    jest.clearAllMocks();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    const emergencyFundPill = renderer.root.findByProps({ label: 'Emergency Fund' });
+    act(() => emergencyFundPill.props.onPress());
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/emergency-fund');
+    act(() => renderer?.unmount());
+  });
+
   it('keeps the critical storage warning visible without a dismissal action', async () => {
     act(() => useUIStore.setState({ persistedBytes: 1_600_000 }));
     let renderer: TestRenderer.ReactTestRenderer | undefined;
