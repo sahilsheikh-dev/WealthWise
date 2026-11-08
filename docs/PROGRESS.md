@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (144/145)
+Overall progress ██████████ 100% (146/146)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -81,7 +81,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
 Phase 28         ██████████ 100% (21/21)
-Phase 29         ██████████ 98% (39/40)
+Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
 ```
 
@@ -212,7 +212,8 @@ Phase 30         ██████████ 100% (3/3)
 | P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
-| P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
+| P29-O | — | Superseded by P29-O1 and P29-S; Revised by P29-O-R1 | Report-only inventory is retained as historical evidence. The owner later confirmed the ledger-only migration was neither authorized nor needed: P29-O1 provides the accepted unified holding workflow, and P29-S removed the cancelled prototype. | 2026-11-08 |
+| P29-O-R1 | — | Done | Closed P29-O against the explicit P29-S owner decision; no code/schema migration remains in scope. P29-O1 device checks remain open separately. Progress-ledger assertions pass (10 tests). | 2026-11-08 |
 | P29-O1 | P29-O | Done; Revised by P29-O1-R1 and P29-O1-R2 | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
 | P29-O1-R1 | — | Done | Recurring entries show completed/pending month counts, visible pending installments and collapsed paid investments; schedules stop at maturity. Domain and route tests pass at font scales 1.0, 1.3 and 2.0. No schema change. | 2026-11-08 |
 | P29-O1-R2 | — | Done | Completed and pending month counts use adjacent two-column summary cells. Visible plan installments and entries follow the selected date order, with newest first by default. Route regressions pass at font scales 1.0, 1.3 and 2.0; schema unchanged. | 2026-11-08 |
@@ -3096,7 +3097,8 @@ evidence present in exports/checkpoints.
 | P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Superseded by P29-M2 after the owner authorized schema v18 and froze the dueDate migration rule. The original store reproduction and blocker remain recorded below. | Initial reproduction from P29-M; supersession and implementation evidence recorded in P29-M2. | Assumed: P29-M's no-schema-change constraint was superseded only by the explicit P29-M2 authorization. | current request |
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
-| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
+| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and connected UI/domain/test surfaces before the proposed unified ledger. | Superseded by P29-O1 and closed by P29-O-R1 under the P29-S owner decision: no schema-v19 migration or ledger-only redesign is authorized or needed. The report-only inventory remains historical evidence. | Inventory commit verified with `git cat-file -t`; close-out recorded by P29-O-R1. | DEC-P29O-LEDGER-INVENTORY is historical; DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE is the controlling decision. No code, schema, migration, or device work was added. | current request |
+| P29-O-R1 | Phase 29 | P29-O | current | 2026-11-08 | Resolve the remaining P29-O dashboard item after the owner-directed cancellation of the ledger-only migration. | Done; P29-O1 already supplies the accepted unified Deposit/Withdraw/Entries experience. P29-S explicitly says no schema change, runtime behavior change or migration is authorized or needed. P29-O1 device checks remain open separately. Updated status and progress guards; focused progress-ledger tests pass (10/10). | Documentation-only close-out on `task/P29-O-R1-closeout`; no application code changed. | Old: P29-O appeared pending because the proposed v19 migration was not implemented. New: P29-O is superseded by P29-O1 and P29-S; reason: the owner cancelled the separate storage redesign and confirmed no migration is needed. | current request |
 | P29-O1-R1 | Phase 29 | P29-O1 | current | 2026-11-08 | Show recurring-plan schedule progress and group paid investments in Entries; cap schedule at maturity. | Focused domain and route tests pass (2 suites, 174 tests); route checks counts, pending rows, collapsed/expanded paid entries, and maturity/final-date caps at font scales 1.0, 1.3 and 2.0. TypeScript exits 0. | Implementation and regression tests in its task commit. | Old: Entries showed only stored logs, had no month counts or collapsed paid group, and generated plan slots through tenure regardless of maturity. New: pending rows stay visible, matched paid entries are collapsed, and only scheduled slots on/before maturity are generated. Reason: make schedule status inspectable without showing installments after maturity. Old plan-list test asserted a fixed seven rows; new assertion derives pending rows from the schedule because those rows are now part of the list. | current request |
 | P29-O1-R2 | Phase 29 | P29-O1 | current | 2026-11-08 | Align recurring asset completed/pending month counts in two columns and show entries chronologically. | Red route test failed at font scales 1.0, 1.3 and 2.0 because the two count cells were absent; after adding the grid, a mixed pending/withdrawal fixture exposed non-chronological output (pending dates preceded the later-dated withdrawal). Both assertions pass after the screen change; route test also preserves count, paid-group and maturity assertions. | Asset Entries screen, route regression and derived ledger guard are in this task commit. | Old: counts were inline text rather than two summary cells, and pending plan slots were prepended separately from dated entries. New: Completed/Pending are paired summary cells; visible dated entries are sorted with the selected sort, date descending by default. Reason: align metrics with other summary pairs and keep dated rows chronologically ordered. | current request |
 | P29-W-R2 | Phase 29 | P29-W | current | 2026-11-08 | Put completed/pending liability month counts in two columns and chronologically sort dated entries. | The focused Assets/Liabilities route regression passes (1 suite; 3 font-scale cases at 1.0, 1.3 and 2.0). It checks the count-cell layout, accessible count labels, pending schedule cap, collapsed Paid EMIs state and descending chronology across pending rows and a payment after the final EMI date. | Liability Entries screen, route regression and derived ledger guard are in this task commit. | Old: Completed/Pending counts were inline text in one row, and pending EMI rows were prepended separately from dated payments. New: counts use two summary cells and pending/dated rows share newest-first date sorting; Paid EMIs remain in the existing collapsed group. Reason: make status metrics match other paired summaries and keep dated entries in chronological order. | current request |
@@ -3558,10 +3560,11 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     GitHub release-body edit is pending. See
     [`docs/releases/build-config.md`](releases/build-config.md), the
     release-build record and the device checklist.
-11. **Phase 29 — Product delivery** (Done through P29-AB-R2): P29-O1-R1 and
-    P29-W-R1 add schedule counts, collapsed paid entries and maturity/final-EMI
-    caps; P29-AB-R2 removes non-due recurring income from planned/due rows and
-    totals while preserving editability.
+11. **Phase 29 — Product delivery** (41/41 closed): P29-O-R1 closes the
+    cancelled ledger-migration scope; P29-O1-R1 and P29-W-R1 add schedule
+    counts, collapsed paid entries and maturity/final-EMI caps; P29-AB-R2
+    removes non-due recurring income from planned/due rows and totals while
+    preserving editability.
 12. **Phase 30 — Release 2 stabilization** (Done; physical-device re-test
     pending):
     - P30-A — Failing persistence/restart tests and mounted-screen refresh
@@ -9702,14 +9705,6 @@ Gradle build, version bump, or release preparation was performed.
   remotely verified. The v1.0.0 tag was not changed. The status-ledger
   follow-up was integrated into Phase 28 and develop, pushed, and re-verified;
   no force push was used.
-- On 2026-11-08, the owner directed deletion of local `codex-changes`
-  (`d033d6a`). Its October schema-v2 loan/liability alternative is superseded
-  by current schema-v22 behavior; the branch also contained generated
-  coverage and an unsafe migration, so no changes were ported or pushed.
-  Phase 29 remains 39/40 because parent task P29-O is still unclosed: its
-  planned unified-ledger migration was not part of P29-O1, while the separate
-  P29-O2 storage redesign was cancelled. Owner decision on closing or
-  rescoping P29-O remains open.
 
 ## 12. Phase branch index
 
@@ -9749,7 +9744,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
 | 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 21 |
-| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 40 |
+| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 41 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 
 ### P29-O1-R2 / P29-W-R2 month-count layout (2026-11-08)
@@ -9782,3 +9777,20 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 - Local no-fast-forward integration: task commit `601a731` was merged into
   Phase 29 by `22a0ec4`, then the phase was merged into local `develop`.
   This continuation was not pushed.
+
+### P29-O-R1 scope close-out (2026-11-08)
+
+- The P29-O inventory and P29-O1 implementation are retained. The P29-S owner
+  decision explicitly cancels the separate ledger-only schema-v19 redesign
+  and says no schema change, runtime behavior change or data migration is
+  authorized or needed.
+- Closed P29-O as superseded by P29-O1 and P29-S; no application, schema,
+  migration or physical-device work was inferred or added. The pre-existing
+  P29-O1 physical-device checks remain listed separately in
+  [open-items.md](memory/open-items.md).
+- The focused progress-ledger test passes: 10 tests. Phase 29 now derives to
+  41/41; the dashboard, branch index, task register and regression assertions
+  agree. Task and phase merges are local; no push was made.
+- The separately requested local `codex-changes` branch (`d033d6a`) was
+  deleted at the owner's direction; its stale schema-v2 changes were not
+  ported and no remote branch was touched.
