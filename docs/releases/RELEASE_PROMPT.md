@@ -402,6 +402,12 @@ Store unpublished release notes in:
 
 `docs/releases/drafts/vX.Y.Z.md`
 
+Anyone starting or continuing release work must create or reuse this file and
+commit it with subject `docs: draft vX.Y.Z release notes`. Release content
+belongs in Git, never in `/tmp`. After publication is verified, move the file
+to `docs/releases/published/` and commit the move. Never leave a published
+file in drafts or a draft in published.
+
 The file must contain the complete release notes in publication-ready Markdown.
 
 Prepare release metadata containing:
@@ -472,17 +478,19 @@ For every GitHub release:
    gh release upload vX.Y.Z /path/to/WealthWise-android.apk
    ```
 
-2. Add a Download block containing the version, release date, versioned
-   version-specific asset link, verified SHA-256, iOS availability message,
-   and releases-page link to both the published Markdown and GitHub release
-   body. Never use the `latest` route in a published version's block. For an
-   old published record, add only that version's Download block; do not
-   otherwise rewrite the record.
+2. Add the Download block containing the version, release date, versioned
+   asset link, verified SHA-256, iOS availability message and releases-page
+   link to both the published Markdown and GitHub release body. Never use the
+   `latest` route in a published version's block. For an old published
+   record, add only its Download block; do not otherwise rewrite the file.
 
-3. Verify both the latest and versioned direct Android links with both
-   `curl -I` and `curl -I -L`; record each observed status and `Location`
-   target. A successful public route should redirect (HTTP 302) and, when
-   followed, reach HTTP 200:
+3. Keep the README Download section and the latest release Download block
+   byte-identical. When a newer version is published, replace only the
+   previous release's Download block with that version's versioned link; do
+   not change anything else in that old file.
+4. Verify both the latest and versioned direct Android links with
+   `curl -I -L`; record the final HTTP status and `Content-Length`. Both must
+   return HTTP 200, and the downloaded APK's SHA-256 must match:
 
    ```bash
    curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
@@ -491,16 +499,17 @@ For every GitHub release:
    curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
    ```
 
-4. Update the root README `Download` section with latest version and release
+5. Update the root README `Download` section with latest version and release
    date, a version-labelled latest link, verified SHA-256, the iOS
    availability message and the older-versions link. State unavailable
    artifacts or owner-provided links plainly; do not publish an invented URL.
-5. Record the EAS build ID, Android `versionCode`, source commit, profile,
+6. Record the EAS build ID, Android `versionCode`, source commit, profile,
    exact artifact name, build date and status in the `release-history.md`
    Builds table. Production Android AABs are for Google Play; `android-apk`
    builds are for GitHub downloads; iOS builds are for TestFlight/App Store.
-6. Confirm the README, published Markdown, `release-history.md` and GitHub
-   release assets agree. The release remains incomplete until all four match.
+7. Confirm both links return HTTP 200, the SHA-256 matches, and the README,
+   published Markdown, `release-history.md` and GitHub release assets agree.
+   The release remains incomplete until every check passes.
 
 After verification and approval, publish the draft:
 
@@ -549,14 +558,25 @@ After verifying successful publication:
 4. Confirm the draft was moved, with no duplicate left in `drafts/` or at the
    `docs/releases/` root.
 
-5. Verify the release URL, tag, and target commit.
+5. Commit the move with a descriptive message. Never leave a published file
+   in drafts or a draft in published.
 
-6. Preserve all historical release records.
+6. Verify the release URL, tag, and target commit.
+
+7. Preserve all historical release records.
+
+The published Markdown file is the canonical release-body source. Update a
+GitHub release body from that file with:
+
+```bash
+gh release edit vX.Y.Z --notes-file docs/releases/published/vX.Y.Z.md
+```
 
 Never overwrite an existing release record.
 Keep all published release Markdown files under `docs/releases/published/`;
 never store a published record at the `docs/releases/` root or in `drafts/`.
-Do not automatically commit or push documentation changes.
+Do not push a branch. Commit the draft and the post-publication move as
+described above.
 
 ---
 
@@ -602,9 +622,11 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android.apk` and verified 302-to-200 download route.
+- Attached `WealthWise-android.apk`; both download routes return HTTP 200 and
+  the APK SHA-256 matches.
 - Versioned Download block with SHA-256 in published Markdown and release body.
-- Both latest and versioned links checked with `curl -I` and `curl -I -L`.
+- Both latest and versioned links checked with `curl -I -L`, including final
+  status and `Content-Length`.
 - README Download version/date, version-labelled latest link, SHA-256, iOS
   message and older-versions link.
 - EAS build ID, Android `versionCode`, source commit and artifact in Builds.

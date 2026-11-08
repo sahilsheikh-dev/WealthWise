@@ -173,7 +173,7 @@ Phase 29         ██████████ 97% (32/33)
 | P28-B | — | Done | Aligned first stable release metadata to v1.0.0 and updated release notes/changelog; no source behavior change. | 2026-11-07 |
 | P28-C | — | Done | Release template, EAS build configuration guidance, build history, draft ignore policy and release process documentation; no source behavior change. Revised by P28-C-R1; Revised by P28-C-R2. | 2026-11-08 |
 | P28-C-R1 | — | Done | Added pending-safe app downloads and What's new, an Android APK profile, post-build asset/link/README/history checklist, and corrected README schema, recurrence, Insurance and test claims. Fixed the existing lint warning in its own commit. Its pending-APK status was updated by P28-C-R2. All six ordered gates passed at that revision; no build, publication, tag or protected-route changes. | 2026-11-08 |
-| P28-C-R2 | — | Done | Published the v1.0.0 APK Download details, tightened release requirements across shared policy files, and recorded the uploaded asset's name, size and digest. `curl -I` and `curl -I -L` returned HTTP 404 for both routes because the GitHub repository is private. No release-body edit, build, tag or push. | 2026-11-08 |
+| P28-C-R2 | — | Done | Published the v1.0.0 APK Download details, tightened release requirements across shared policy files, and recorded the uploaded asset's name, size and digest. Its `/tmp` release-block staging approach was superseded by P28-C-R3. No release-body edit, build, tag or push. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -386,9 +386,9 @@ default-item, validation and save/rehydration coverage.
   movement require explicit owner approval.
 - **R4 — Documentation scope:** routine documentation committed to Git is
   limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-  excluding contents of `docs/releases/drafts/` other than its `.gitkeep`.
-  Other documentation files may be changed only when explicitly named in the
-  owner's task. Reports and generated output belong in chat or `/tmp`.
+  including drafts. Other documentation files may be changed only when
+  explicitly named in the owner's task. Reports and generated output belong
+  in chat or `/tmp`; release content must never be placed there.
 - No cloud or network at runtime. Domain logic is pure: no React/Expo imports,
   clock reads, or randomness; inject dates, identifiers and other varying
   values.
@@ -2944,7 +2944,7 @@ evidence present in exports/checkpoints.
 | P28-B | Phase 28 | — | — | 2026-11-07 | Align and prepare v1.0.0 release metadata. | Done; app/package versions and release notes are aligned; no source behavior change. | Release metadata evidence recorded in this ledger. | Production build remains unbuilt; see build configuration and open items. | current request |
 | P28-C | Phase 28 | — | — | 2026-11-08 | EAS build management, release templates and history, draft handling and release-process documentation. | Done; documentation/configuration only. Revised by P28-C-R1; Revised by P28-C-R2. | Release docs and verification recorded in this ledger. | Publication and tagging require explicit owner approval. | current request |
 | P28-C-R1 | Phase 28 | — | — | 2026-11-08 | Add pending-safe README app downloads and What's new, an Android APK profile, release-asset publication checks, and source-accurate README details. | Done; all six ordered gates passed at that revision. No build, publication, tag or protected-route changes. Revised by P28-C-R2. | Step commits `13fce0e`, `19a99c5`, `44545ee`, `95f63a3`; verification is in the session/release log. | Its pending-APK status was later updated; v1.0.0 tag decision remains pending. | current request |
-| P28-C-R2 | Phase 28 | — | — | 2026-11-08 | Publish the v1.0.0 APK Download details and define complete release records and link checks. | Done; README and published note updated; release rules include the versioned block, README fields, both-link checks, and Builds metadata. Asset size/digest are verified. No GitHub release-body edit, build, tag or push. | `144a847`, `1742174`, `181aa44`, `356ec56` | GitHub asset metadata says uploaded, but both unauthenticated routes return HTTP 404 because the repository is private. EAS build ID, `versionCode`, source commit and profile remain owner to supply. | current request |
+| P28-C-R2 | Phase 28 | — | — | 2026-11-08 | Publish the v1.0.0 APK Download details and define complete release records and link checks. | Done; README and published note updated; release rules include the versioned block, README fields, both-link checks, and Builds metadata. Asset size/digest are verified. No GitHub release-body edit, build, tag or push. | `144a847`, `1742174`, `181aa44`, `356ec56` | Historical public links returned HTTP 404 while the repository was private; this observation was superseded by P28-C-R3 after visibility changed. EAS build ID, `versionCode`, source commit and profile remained owner to supply at this revision. | current request |
 | P29-A | Phase 29 | — | — | 2026-11-02 | Correct investment return calculations, emergency-fund bucket targets, and linked-goal amounts without a schema change. | Done; implementation, reproduction validation and final verification are recorded in this ledger. | Pending the final P29-A commit and verified gate run | Assumed: Phase 29 as requested; no edit to `app/(tabs)/index.tsx`; Budget cash-flow labels preserved. | current request |
 | P29-B | Phase 29 | — | — | 2026-11-02 | Today controls, centered dropdowns, goal-year validation and user-owned Home layout assertions. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: owner Home implementation remains user-owned and unchanged. | current request |
 | P29-C | Phase 29 | — | — | 2026-11-02 | Shared paid-amount due dialog, actual-payment clearing, and Not paid behavior. | Done; acceptance tests pass and all six final gates exit 0. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: actual lower/higher amounts do not carry differences across dues. | current request |
@@ -9175,10 +9175,9 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   Content-Length 9; the versioned response omitted that header). The README
   and published note contain their requested latest/versioned link forms, but
   the public routes cannot be used while the repository is private.
-- `/tmp/v1.0.0-download-block.md` contains a block identical to the one added
-  to `docs/releases/published/v1.0.0.md`. The GitHub release body was not
-  edited. Build ID, Android `versionCode`, source commit and profile remain
-  Owner to supply; the tag decision and release-body edit remain pending.
+- Superseded by P28-C-R3: staging release-note content under `/tmp` is no
+  longer permitted. The published v1.0.0 Markdown is the canonical release
+  body source. The GitHub body was not edited in P28-C-R2.
 - The new deterministic v13 backup fixture has a valid SHA-256 checksum and
   is imported through `parseBackup`. Expected net worth, every goal's saved
   amount and Emergency Fund available amount are independently computed from
