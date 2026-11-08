@@ -21,6 +21,7 @@ import {
   type ShortfallAllocation,
   type SurplusAllocation,
 } from '../src/domain/cashFlow';
+import { budgetMonthView } from '../src/domain/budget';
 import { listInstruments } from '../src/domain/instruments';
 import { loanState } from '../src/domain/liability';
 import {
@@ -64,6 +65,7 @@ function MonthReview({ month }: { month: string }) {
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
   const position = useMemo(() => monthPositionAt(data.transactions, month), [data.transactions, month]);
+  const budgetView = useMemo(() => budgetMonthView(data, month), [data, month]);
   const mode = position.closing < 0 ? 'shortfall' : 'surplus';
   const available = mode === 'shortfall' ? shortfallForMonth(data, month) : surplusForMonth(data, month);
   const [shortfallAllocations, setShortfallAllocations] = useState<ShortfallAllocation[]>([]);
@@ -195,6 +197,14 @@ function MonthReview({ month }: { month: string }) {
       <Card style={{ gap: 8, marginHorizontal: 0 }}>
         <AppText>Opening balance · {formatAmount(position.opening, 'exact', 1)}</AppText>
         <AppText>Earned income · {formatAmount(position.earnedIncome, 'exact', 1)}</AppText>
+        <AppText weight="semibold">Income by source</AppText>
+        {budgetView.income.bySource.map(({ category, amount }) => (
+          <AppText key={category}>{category} · {formatAmount(amount, 'exact', 1)}</AppText>
+        ))}
+        {budgetView.income.bySource.length === 0 ? <AppText>No earned income by source.</AppText> : null}
+        {budgetView.otherMoneyIn > 0
+          ? <AppText>Other money in (not income) · {formatAmount(budgetView.otherMoneyIn, 'exact', 1)}</AppText>
+          : null}
         <AppText>Withdrawals · {formatAmount(position.withdrawals, 'exact', 1)}</AppText>
         <AppText>Borrowed · {formatAmount(position.borrowed, 'exact', 1)}</AppText>
         <AppText>Loan proceeds · {formatAmount(position.loanProceeds, 'exact', 1)}</AppText>

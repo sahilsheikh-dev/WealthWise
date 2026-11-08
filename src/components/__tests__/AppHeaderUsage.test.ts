@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const appRoot = join(process.cwd(), 'app');
-const noDefaultMenuScreens = new Set(['app/erase-data.tsx']);
+const noDefaultMenuScreens = new Set(['app/erase-data.tsx', 'app/(tabs)/budget.tsx']);
 
 function routeFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -12,8 +12,8 @@ function routeFiles(directory: string): string[] {
   });
 }
 
-describe('AppHeader default menu usage', () => {
-  it('keeps the global menu enabled outside the explicit opt-out screen list', () => {
+describe('AppHeader menu usage', () => {
+  it('keeps the global menu enabled except on screens that explicitly opt out', () => {
     const usages = routeFiles(appRoot).flatMap((file) => {
       const source = readFileSync(file, 'utf8');
       return [...source.matchAll(/<AppHeader\b([\s\S]*?)\/>/g)].map((match) => ({

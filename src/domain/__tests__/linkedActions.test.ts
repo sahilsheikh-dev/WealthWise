@@ -53,9 +53,13 @@ describe('linked log and payment actions', () => {
     expect(investCategoryFor('Mutual fund / SIP')).toBe('Mutual fund / SIP');
     expect(investCategoryFor('Stocks / ETF')).toBe('Stocks / ETF');
     expect(investCategoryFor('Recurring deposit')).toBe('Fixed deposit / RD');
+    expect(investCategoryFor('Fixed deposit')).toBe('Fixed deposit / RD');
     expect(investCategoryFor('Gold')).toBe('Gold / Silver');
     expect(investCategoryFor('Silver')).toBe('Gold / Silver');
-    expect(investCategoryFor('EPFO / PF')).toBe('Other');
+    expect(investCategoryFor('EPFO / PF')).toBe('Other investments');
+    expect(investCategoryFor('Savings account')).toBe('Other investments');
+    expect(investCategoryFor('Cash')).toBe('Other investments');
+    expect(investCategoryFor('Other')).toBe('Other investments');
     expect(validateIntegrity(withLog)).toEqual([]);
     const broken: AppData = {
       ...withLog,

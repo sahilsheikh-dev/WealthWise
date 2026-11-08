@@ -291,7 +291,7 @@ describe('transaction selectors', () => {
     expect(filterTransactions(txs, { month: '2026-10', type: 'income', query: '' }).map((item) => item.id)).toEqual(['a']);
     expect(filterTransactions(txs, {
       month: '2026-10', type: 'invest', query: '', category: 'Other investments',
-    }).map((item) => item.id)).toEqual(['other-investment']);
+    }).map((item) => item.id)).toEqual(['other-investment', 'c']);
     const filtered = filterTransactions(txs, { month: '2026-10', type: 'all', query: '' });
     expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'c', 'b', 'a']);
     expect(groupByDate(filtered).map((group) => [group.date, group.items.map((item) => item.id)])).toEqual([
