@@ -5,12 +5,14 @@ import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
 import BudgetScreen from '../../../app/(tabs)/budget';
 import ClearDuesScreen from '../../../app/clear-dues';
+import CoverGoalFormScreen from '../../../app/cover-goal-form';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import HomeScreen from '../../../app/(tabs)';
+import InsuranceScreen from '../../../app/insurance';
 import InvestmentEntryFormScreen from '../../../app/investment-entry-form';
 import InvestmentEntriesScreen from '../../../app/investment-entries';
 import InvestmentFormScreen from '../../../app/investment-form';
@@ -127,6 +129,15 @@ jest.mock('../../data/store', () => {
       holdings: [],
       liabilities: [],
       policies: [],
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+        { type: 'motor', targetMode: 'active-only' },
+        { type: 'home', targetMode: 'active-only' },
+        { type: 'other', targetMode: 'active-only' },
+      ],
+      budgetPlan: null,
+      monthBudgets: [],
       efAllocation: null,
       efCustomBuckets: [],
       efBucketLinks: {},
@@ -152,7 +163,11 @@ jest.mock('../../data/store', () => {
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
+      addPolicy: jest.fn(),
       updatePolicy: jest.fn(),
+      deletePolicy: jest.fn(),
+      addPolicyPayment: jest.fn(),
+      setCoverGoalTarget: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -206,6 +221,15 @@ jest.mock('../../data/useAppData', () => {
     holdings: [],
     liabilities: [],
     policies: [],
+    coverGoals: [
+      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+      { type: 'health', targetMode: 'amount' },
+      { type: 'motor', targetMode: 'active-only' },
+      { type: 'home', targetMode: 'active-only' },
+      { type: 'other', targetMode: 'active-only' },
+    ],
+    budgetPlan: null,
+    monthBudgets: [],
     efAllocation: null,
     efCustomBuckets: [],
     efBucketLinks: {},
@@ -233,7 +257,11 @@ jest.mock('../../data/useAppData', () => {
       addLiability: jest.fn(),
       updateLiability: jest.fn(),
       deleteLiability: jest.fn(),
+      addPolicy: jest.fn(),
       updatePolicy: jest.fn(),
+      deletePolicy: jest.fn(),
+      addPolicyPayment: jest.fn(),
+      setCoverGoalTarget: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -629,6 +657,8 @@ describe('route render smoke audit', () => {
     ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
     ['Emergency fund', React.createElement(EmergencyFundScreen)],
+    ['Insurance', React.createElement(InsuranceScreen)],
+    ['Cover goal form', React.createElement(CoverGoalFormScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
@@ -646,6 +676,7 @@ describe('route render smoke audit', () => {
     ['Liabilities', React.createElement(LiabilitiesScreen)],
     ['Liability payments', React.createElement(LiabilityPaymentsScreen)],
     ['Policy form edit', React.createElement(PolicyFormScreen)],
+    ['Policy form create', React.createElement(PolicyFormScreen)],
     ['Investment entries', React.createElement(InvestmentEntriesScreen)],
     ['Investment form create', React.createElement(InvestmentFormScreen)],
     ['Investment form edit', React.createElement(InvestmentFormScreen)],
@@ -726,6 +757,13 @@ describe('route render smoke audit', () => {
         liabilityId: liability.id, paymentId: liability.payments[0].id,
       }, React.createElement(LiabilityPaymentFormScreen)],
       ['Policy edit', { id: policy.id }, React.createElement(PolicyFormScreen)],
+      ['Policy create', {}, React.createElement(PolicyFormScreen)],
+      ...demoData.coverGoals.map((goal) => [
+        `Cover target ${goal.type}`,
+        { type: goal.type },
+        React.createElement(CoverGoalFormScreen),
+      ] as [string, Record<string, string>, React.ReactElement]),
+      ['Insurance from Goals/Budget/Home', {}, React.createElement(InsuranceScreen)],
       ['Investment entry add', { holdingId: entryHolding.id, kind: 'Deposit', date: todayISO() },
         React.createElement(InvestmentEntryFormScreen)],
       ['Investment entry edit', {
@@ -755,6 +793,282 @@ describe('route render smoke audit', () => {
       Object.assign(routeData, previousRouteData);
       storeState.data = previousStoreData;
       routeParams.mockReturnValue(previousParams);
+    }
+  });
+
+  it('wires Insurance entry points and keeps the insurance screen usable at large font scales', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousFontScale = mockFontScale;
+    const router = jest.requireMock('expo-router').router as {
+      push: jest.Mock;
+    };
+    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      clearDue: jest.Mock;
+      undoClearDue: jest.Mock;
+    };
+    const demoData = buildDemoData(todayISO());
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    const assertInsuranceLink = (screen: React.ReactElement, label: string, testID?: string) => {
+      renderer = renderScreen(screen);
+      const link = testID
+        ? renderer.root.findByProps({ testID })
+        : renderer.root.findByProps({ accessibilityLabel: label });
+      act(() => link.props.onPress({ stopPropagation: jest.fn() }));
+      expect(router.push).toHaveBeenLastCalledWith('/insurance');
+      act(() => renderer?.unmount());
+      renderer = undefined;
+    };
+
+    try {
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
+      router.push.mockClear();
+      assertInsuranceLink(React.createElement(GoalsScreen), 'Insurance cover');
+      assertInsuranceLink(React.createElement(BudgetScreen), 'Manage policies');
+      assertInsuranceLink(React.createElement(HomeScreen), '', 'home-insurance-cover-link');
+      const duePolicy = demoData.policies.find((policy) => policy.status === 'active');
+      if (!duePolicy) throw new Error('Demo data has no policy due fixture.');
+      const dueData = {
+        ...demoData,
+        policies: demoData.policies.map((policy) => policy.id === duePolicy.id
+          ? { ...policy, startDate: todayISO(), endDate: undefined, payments: [] }
+          : policy),
+      };
+      Object.assign(routeData, dueData);
+      storeState.data = dueData;
+      renderer = renderScreen(React.createElement(HomeScreen));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Marked as paid' }).length)
+        .toBeGreaterThan(0);
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
+
+      mockFontScale = 1.3;
+      const insuranceRenderer = renderScreen(React.createElement(InsuranceScreen));
+      renderer = insuranceRenderer;
+      const insuranceRoot = insuranceRenderer.root;
+      const header = insuranceRoot.findByType('header');
+      const headerActions = header.findAllByType('button').map((button) => button.props.accessibilityLabel);
+      expect(headerActions).toEqual(['Filter', 'Add policy']);
+
+      const coverCards = insuranceRoot.findByProps({ testID: 'insurance-cover-goals' })
+        .findAll((node) => typeof node.props.testID === 'string'
+          && node.props.testID.startsWith('cover-goal-card-'));
+      expect([...new Set(coverCards.map((card) => card.props.testID))]).toEqual([
+        'cover-goal-card-term-life',
+        'cover-goal-card-health',
+        'cover-goal-card-motor',
+        'cover-goal-card-home',
+        'cover-goal-card-other',
+      ]);
+      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-term-life' });
+      const goalPressable = termLifeCard.findAll((node) => String(node.type) === 'pressable')[0];
+      const lastGoalChild = goalPressable?.children.at(-1);
+      expect(typeof lastGoalChild === 'object' && lastGoalChild !== null && 'props' in lastGoalChild
+        ? lastGoalChild.props.testID
+        : undefined).toBe('cover-goal-progress-term-life');
+      expect(insuranceRoot.findByProps({ testID: 'term-life-income-line' })).toBeDefined();
+
+      const activePolicy = demoData.policies.find((policy) => policy.status === 'active');
+      if (!activePolicy) throw new Error('Demo data has no active policy fixture.');
+      const policyPressable = insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` });
+      const policyCard = policyPressable.parent ?? policyPressable;
+      const actions = policyCard.findAll((node) => {
+        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
+        return styles.some((style) => typeof style === 'object' && style !== null
+          && 'flexDirection' in style && style.flexDirection === 'column')
+          && styles.some((style) => typeof style === 'object' && style !== null
+            && 'borderTopWidth' in style);
+      });
+      expect(actions).toBeDefined();
+      const paidButton = policyCard.findAllByType('button')
+        .find((button) => button.props.accessibilityLabel === 'Paid');
+      if (!paidButton) throw new Error('Active policy has no Paid action.');
+      screenActions.clearDue.mockReturnValueOnce('paid-policy-entry');
+      await act(async () => {
+        paidButton.props.onPress();
+        await Promise.resolve();
+      });
+      const undo = useUIStore.getState().actionToast?.onAction;
+      if (!undo) throw new Error('Paid action did not expose Undo.');
+      act(() => undo());
+      expect(screenActions.clearDue).toHaveBeenCalledWith(
+        { kind: 'policy', id: activePolicy.id },
+        expect.any(String),
+      );
+      expect(screenActions.undoClearDue).toHaveBeenCalledWith(
+        { kind: 'policy', id: activePolicy.id },
+        'paid-policy-entry',
+      );
+
+      const filterButton = header.findByProps({ accessibilityLabel: 'Filter' });
+      act(() => filterButton.props.onPress());
+      expect(insuranceRoot.findByProps({ testID: 'insurance-filter-panel' })).toBeDefined();
+      for (const status of ['All', 'Active', 'Lapsed', 'Matured', 'Cancelled']) {
+        expect(insuranceRoot.findAllByProps({ accessibilityLabel: status }).length).toBeGreaterThan(0);
+      }
+      const lapsedPolicy = demoData.policies.find((policy) => policy.status === 'lapsed');
+      if (!lapsedPolicy) throw new Error('Demo data has no lapsed policy fixture.');
+      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'Lapsed' })[0]?.props.onPress());
+      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${lapsedPolicy.id}` }).length)
+        .toBeGreaterThan(0);
+      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${activePolicy.id}` })).toHaveLength(0);
+      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'All' })[0]?.props.onPress());
+      const searchField = insuranceRoot.findByProps({ accessibilityLabel: 'Search policies' });
+      act(() => searchField.props.onChangeText('no matching policy'));
+      expect(insuranceRoot.findByProps({ title: 'No matches' })).toBeDefined();
+      act(() => searchField.props.onClear());
+      act(() => insuranceRoot.findByProps({ accessibilityLabel: 'Add policy' }).props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/policy-form');
+      act(() => insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` }).props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/policy-form',
+        params: { id: activePolicy.id },
+      });
+      act(() => insuranceRenderer.unmount());
+      renderer = undefined;
+      useUIStore.getState().setActionToast(null);
+
+      const noIncomeData = {
+        ...demoData,
+        budgetPlan: null,
+        monthBudgets: [],
+        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
+      };
+      Object.assign(routeData, noIncomeData);
+      storeState.data = noIncomeData;
+      mockFontScale = 2;
+      const largeTextRenderer = renderScreen(React.createElement(InsuranceScreen));
+      renderer = largeTextRenderer;
+      expect(largeTextRenderer.root.findAllByProps({ testID: 'term-life-income-line' })).toHaveLength(0);
+      const largeTextRow = largeTextRenderer.root.findAll((node) => {
+        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
+        return styles.some((style) => typeof style === 'object' && style !== null
+          && 'flexDirection' in style && style.flexDirection === 'column')
+          && styles.some((style) => typeof style === 'object' && style !== null && 'minHeight' in style);
+      });
+      expect(largeTextRow).toBeDefined();
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      mockFontScale = previousFontScale;
+      useUIStore.getState().setActionToast(null);
+      screenActions.clearDue.mockClear();
+      screenActions.undoClearDue.mockClear();
+    }
+  });
+
+  it('renders policy create/edit fields and every cover-target mode', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      deletePolicy: jest.Mock;
+    };
+    const router = jest.requireMock('expo-router').router as { back: jest.Mock };
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const demoData = buildDemoData(todayISO());
+    const policy = demoData.policies[0];
+    if (!policy) throw new Error('Demo data has no policy form fixture.');
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
+      routeParams.mockReturnValue({});
+      renderer = renderScreen(React.createElement(PolicyFormScreen));
+      const createLabels = [
+        'Policy name',
+        'Insurer',
+        'Policy kind',
+        'Premium',
+        'Premium frequency',
+        'Policy start date',
+        'Sum assured',
+        'Policy number',
+        'Nominee',
+        'Policy note',
+      ];
+      for (const label of createLabels) {
+        expect(renderer.root.findAllByProps({ accessibilityLabel: label }).length)
+          .toBeGreaterThan(0);
+      }
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' })).toHaveLength(0);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Policy start date' }).props.maximumDate)
+        .toBe(todayISO());
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy end date' })).toHaveLength(0);
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ id: policy.id });
+      renderer = renderScreen(React.createElement(PolicyFormScreen));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' }).length)
+        .toBeGreaterThan(0);
+      screenActions.deletePolicy.mockClear();
+      mockConfirmAsync.mockClear();
+      router.back.mockClear();
+      const deleteButton = renderer.root.findByProps({ accessibilityLabel: 'Delete policy' });
+      await act(async () => {
+        deleteButton.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: `Delete ${policy.name}?`,
+        message: 'Recorded premium payments stay in Transactions.',
+      }));
+      expect(screenActions.deletePolicy).toHaveBeenCalledWith(policy.id);
+      expect(router.back).toHaveBeenCalled();
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      const noIncomeData = {
+        ...demoData,
+        budgetPlan: null,
+        monthBudgets: [],
+        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
+      };
+      Object.assign(routeData, noIncomeData);
+      storeState.data = noIncomeData;
+      for (const [type, expectedMode] of [
+        ['term-life', 'income-multiple'],
+        ['health', 'amount'],
+        ['motor', 'active-only'],
+        ['home', 'active-only'],
+        ['other', 'active-only'],
+      ] as const) {
+        routeParams.mockReturnValue({ type });
+        renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+        const mode = renderer.root.findByType(Dropdown);
+        expect(mode.props.value).toBe(expectedMode);
+        if (type === 'term-life') {
+          expect(renderer.root.findAll((node) => String(node.type) === 'text')
+            .some((node) => node.children.join('').includes(
+              'Add income or a planned budget to calculate the target amount.',
+            ))).toBe(true);
+        }
+        if (expectedMode === 'active-only') {
+          expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
+        }
+        act(() => mode.props.onChange('amount'));
+        expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(1);
+        act(() => renderer?.unmount());
+        renderer = undefined;
+      }
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      screenActions.deletePolicy.mockClear();
+      mockConfirmAsync.mockClear();
     }
   });
 
@@ -2961,7 +3275,15 @@ describe('route render smoke audit', () => {
       openDropdown(renderer, 'Item category');
       const insuranceCategories = root.findByType(Dropdown).props.options
         .map((option: { title: string }) => option.title);
-      expect(insuranceCategories).toEqual(['Insurance', 'Custom']);
+      expect(insuranceCategories).toEqual([
+        'Insurance',
+        'Insurance premium',
+        'Term life premium',
+        'Health premium',
+        'Motor premium',
+        'Home premium',
+        'Custom',
+      ]);
       selectDropdownOption(renderer, 'Item category', 'Insurance');
       await act(async () => {
         root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('1200');
@@ -3179,7 +3501,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('opens the source edit routes for linked plans, liabilities and policies', () => {
+  it('opens linked plan, liability, and policy rows in their edit routes', () => {
     const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previous = {
       monthBudgets: data.monthBudgets,
@@ -3229,12 +3551,11 @@ describe('route render smoke audit', () => {
       premium: 60,
       frequency: 'monthly',
       startDate: `${month}-05`,
+      status: 'active',
       premiumYears: 1,
       trackFrom: `${month}-05`,
-      coverAmount: null,
       currentValue: null,
       valueAsOf: null,
-      maturityDate: null,
       payments: [],
     }];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
@@ -3249,7 +3570,8 @@ describe('route render smoke audit', () => {
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/investment-form', params: { id: 'overview-plan' } });
       act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Friend loan' }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/liability-form', params: { id: 'overview-liability' } });
-      act(() => activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Health policy' }).props.onPress());
+      const policyRow = activeRenderer.root.findByProps({ accessibilityLabel: 'Edit Health premium' });
+      act(() => policyRow.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({ pathname: '/policy-form', params: { id: 'overview-policy' } });
     } finally {
       if (renderer) act(() => renderer?.unmount());

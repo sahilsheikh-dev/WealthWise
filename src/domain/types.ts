@@ -145,15 +145,16 @@ export type OneTimeLiability = LiabilityBase & {
 export type Liability = RecurringLiability | OneTimeLiability;
 
 export type PolicyKind =
-  | 'term'
+  | 'term-life'
   | 'health'
   | 'life-savings'
   | 'ulip'
-  | 'vehicle'
+  | 'motor'
   | 'home'
   | 'other';
 
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'single';
+export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
+export type PolicyStatus = 'active' | 'lapsed' | 'matured' | 'cancelled';
 
 export type PolicyPayment = {
   id: string;
@@ -170,13 +171,27 @@ export type Policy = {
   premium: number;
   frequency: PolicyFrequency;
   startDate: ISODate;
-  premiumYears: number | null;
+  status: PolicyStatus;
+  policyNumber?: string;
+  sumAssured?: number;
+  endDate?: ISODate;
+  nominee?: string;
+  note?: string;
+  premiumYears: number;
   trackFrom: ISODate;
-  coverAmount: number | null;
   currentValue: number | null;
   valueAsOf: ISODate | null;
-  maturityDate: ISODate | null;
   payments: PolicyPayment[];
+};
+
+export const COVER_POLICY_TYPES = ['term-life', 'health', 'motor', 'home', 'other'] as const;
+export type CoverPolicyType = (typeof COVER_POLICY_TYPES)[number];
+export type CoverGoalTargetMode = 'income-multiple' | 'amount' | 'active-only';
+
+export type CoverGoal = {
+  type: CoverPolicyType;
+  targetMode: CoverGoalTargetMode;
+  targetValue?: number;
 };
 
 export type BudgetLine = {
@@ -267,6 +282,7 @@ export type AppData = {
   holdings: Holding[];
   liabilities: Liability[];
   policies: Policy[];
+  coverGoals: CoverGoal[];
   budget: Budget | null;
   budgetPlan: BudgetPlan | null;
   monthBudgets?: MonthBudget[];

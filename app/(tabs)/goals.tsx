@@ -184,6 +184,19 @@ export default function GoalsScreen() {
               </>
             ) : null}
             <GoalProgressRow percent={goalPercent} />
+            {goal.auto === 'ef' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Insurance cover"
+                accessibilityHint="Opens insurance cover goals and policies"
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  router.push('/insurance');
+                }}
+                style={styles.insuranceLink}>
+                <AppText style={[typography.meta, { color: colors.primary }]}>Insurance cover</AppText>
+              </Pressable>
+            ) : null}
           </Pressable>
         );
       })}
@@ -204,4 +217,5 @@ const styles = StyleSheet.create({
   minimum: { marginTop: 7 },
   sortRow: { marginHorizontal: 20, marginVertical: 8 },
   emergencyActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  insuranceLink: { alignSelf: 'flex-start', paddingTop: 8, minHeight: 40, justifyContent: 'center' },
 });

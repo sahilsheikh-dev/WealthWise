@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 91% (62/68)
+Overall progress █████████░ 93% (65/70)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -71,7 +71,7 @@ Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (20/20)
 Phase 21         ██████████ 100% (5/5)
 Phase 22         ██████████ 100% (1/1)
-Phase 23         ░░░░░░░░░░ 0% (0/1)
+Phase 23         ██████████ 100% (3/3)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
@@ -143,7 +143,9 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
-| P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
+| P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
+| P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
+| P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. | 2026-10-21 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
@@ -952,6 +954,213 @@ introduced v7, P20-G v8, P20-M v9 and P20-P v10.
   | Security settings | `AppHeader` and setting controls | unchanged; settings surface, not a data-entry route form |
   | `app/link-missing.tsx` | `AppHeader`, selection list and fixed action | unchanged; bulk-selection flow, not a data-entry form |
   | Liability payments / investment entries lists | list headers and filters | unchanged; list/filter surfaces, not forms |
+  - DEC-P20U (CR-86/CR-87): replace the BudgetManagementSheet editor with
+    full-screen `FormScreen` routes for budget sections, items and income;
+    keep the existing domain/store actions and scoped Undo behavior. Item
+    names become user-entered names with no category chooser or Custom option;
+    section identity is implicit in the route and visible as read-only context.
+    Keep the section Spend/Invest choice because `addSection` requires a type
+    and the prior flow exposed both choices. Add/edit route forms retain the
+    existing month/following scope semantics, validators and default scope.
+    Section delete remains an immediate counted confirmation from Budget.
+    `TopAnchoredSheet` remains because the Goal asset picker and `Dropdown`
+    still use it. Supersede the BudgetManagementSheet design from CR-64,
+    CR-66, CR-67 and CR-73: its modes, in-sheet validation/form implementation,
+    header action arrangement and sheet-layout contracts are replaced by route
+    forms with the shared FormScreen header/body/footer.
+    Superseded functions: `makeFormSchema`, `titleFor`, and
+    `BudgetManagementSheet`; its exported mode/value types move to the route
+    form module as route state/value types. Superseded sheet-only tests and
+    assertions: inline sheet header/backdrop/top-anchor/font styling and the
+    embedded sheet editing flows in `RouteRenderSmoke.test.tsx`; replacements
+    exercise add/edit routes, scoped values, Budget entry points, validation,
+    one-write Undo, and font-scale layout contracts. No standalone
+    BudgetManagementSheet test file exists. Assumed: added sections default
+    to Spend unless the form's preserved Spend/Invest selector is changed;
+    route forms receive an explicit scope default from the selected Budget
+    month and existing later-custom-month context. Schema remains v12.
+    CR-86 implementation adds `/budget-section-form`, `/budget-item-form`,
+    and `/budget-income-form`, registered in the root stack and form-route
+    map; Budget entry points now route to these forms, and the old sheet path
+    is deleted. The only new pure domain operation is `editBudgetIncome`,
+    required so the income edit form can update all visible fields under the
+    existing month/following scope rules; it is wired through one store action.
+    No schema or protected input/sorting files change.
+  DEC-USER-CHANGES (P23-A preflight audit): on 2026-10-21, using base
+  `0774e51`, the worktree was clean;
+  no manual checkpoint was needed. Re-audit of `5bd3c41..HEAD` found the same
+  seven non-Copilot commits and two prior manual checkpoints; all paths are
+  listed one per entry:
+  - `4cb6367` — `.claude/settings.json`: removed local settings.
+  - `4cb6367` — `.gitignore`: ignored `.claude` content.
+  - `c49cafd` — `app.json`: formatting adjustment.
+  - `b217a2a` — `app/(tabs)/transactions.tsx`: available-balance card margin.
+  - `268e4c7` — `app/(tabs)/index.tsx`: Home action label and UI.
+  - `268e4c7` — `src/components/IconButton.tsx`: exact action label support.
+  - `268e4c7` — `src/components/__tests__/HomeThemeSmoke.test.tsx`: label test.
+  - `268e4c7` — `src/components/testUtils/assertNoVerbText.ts`: action text allowance.
+  - `9a01941` — `app/goal-form.tsx`: blank initial Saved field.
+  - `64ffb5d` — `app/(tabs)/budget.tsx`: user-owned cash flow labels/layout and removed controls.
+  - `64ffb5d` — `app/ef-allocation-form.tsx`: exact Edit allocation title.
+  - `6cb4fa0` — `app/(tabs)/budget.tsx`: removed review-dot wiring.
+  - `6cb4fa0` — `app/(tabs)/transactions.tsx`: Shortfall wording and balance placement/removal.
+  - `6cb4fa0` — `app/month-review.tsx`: removed Back to Transactions control.
+  - `75e9097` — `src/components/BudgetManagementSheet.tsx`: user checkpoint; removed Value type / Apply changes to labels and renamed due-day label.
+  - `ecc5c35` — `src/components/BudgetManagementSheet.tsx`: user checkpoint preserving the sheet edits above.
+  - `7af5abe` — `app/(tabs)/index.tsx`: user-owned Home due-button label changed to `Paid`.
+  The Budget screen's Cash flow labels and user-removed controls remain
+  unchanged. The attached `file_Untitled-2.txt` is read-only. P23-A changes
+  schema v10 to v11 only after inventory is committed.
+- DEC-P23-INVENTORY: pre-change inventory and gaps against CR-78/CR-79:
+
+  | Area | Exists in schema v10/source | Missing against spec; planned gap |
+  |---|---|---|
+  | Policy fields | `id`, `name`, `insurer`, `kind`, `premium`, `frequency`, `startDate`, `premiumYears`, `trackFrom`, `coverAmount`, `currentValue`, `valueAsOf`, `maturityDate`, `payments` | Lifecycle `status`, `policyNumber`, `sumAssured`, `endDate`, `nominee`, `note`; policy summary and annualized cover/income metrics |
+  | Kinds/frequency | Kinds `term`, `health`, `life-savings`, `ulip`, `vehicle`, `home`, `other`; frequencies monthly/quarterly/half-yearly/yearly plus `single` | Frozen target names: `term-life`, `health`, `life-savings`, `ulip`, `motor`, `home`, `other`; explicit v10 mappings and four recurring frequencies |
+  | Schedule | `policySchedule` derives finite slots using startDate, frequency, premiumYears and trackFrom; FIFO-matches payment history; `addMonths` gives month-end clamping | Policy endDate cap and active-only dues; recurring frequency schedule tests across all four frequencies |
+  | Payment history | Policy payments have id/date/positive amount/note and create linked Insurance expenses | Existing records and links need retained history; policy deletion must unlink source but retain transaction |
+  | Goal links | `goalLinks.ts` permits only `life-savings` and `ulip` policy assets; current savings value/payment history contribute | Kind changes must preserve valid links or throw typed error naming linked goals; policy deletion removes its links |
+  | Integrity | `links.ts` validates policy-payment source parent/entry and linked expense fields; Goal validation checks linkable instruments | Deleted policy links must be removed atomically while transaction integrity remains valid |
+  | Pending/Home | `upcomingDue` in `schedule.ts` includes policy next due; `clear-dues.tsx` clears dues; Home renders common due rows | Exclude inactive policy dues while retaining payment history |
+  | Budget | `budget.ts` adds all policy schedules to monthly commitments and linked recurring rows; manual Insurance actual reconciliation excludes linked policy payments where requested | Inactive policies must contribute no planned rows/amounts; active policy rows must not double count manual Insurance items |
+  | Actions/store | `policyActions.ts` only updates name/insurer/premium; `createAppStore.ts` only exposes `updatePolicy` and historical add | Add/update/status/delete, single persisted write per action, delete/status Undo and deep-equal restoration |
+  | Summary | None | Add active count/cover/yearly premium, next renewal, 60-day upcoming rows, term cover, annual income estimate and cover multiple |
+  | Screens | `app/policy-form.tsx` edits name/insurer/premium; no policy list route. Budget/Home dues route to policy edit; clear dues uses `app/clear-dues.tsx`. | This part explicitly adds no screens; existing screen behavior should remain compatible with extended data. |
+  | Fixtures/demo | Mock data has one life-savings policy; demo data has one health policy; tests cover schedule/payment/link/budget/backup paths | Update fixtures to v11; add term-life, yearly health, motor and lapsed demo policies; test migration, backup, actions, summary and reconciliation |
+
+  Migration maps existing `term` to `term-life` and `vehicle` to `motor`;
+  `health`, `life-savings`, `ulip`, `home`, and `other` keep their names.
+  Legacy `single` maps to yearly with one premium period, preserving its
+  single scheduled due. Existing `premiumYears`, `trackFrom`, `currentValue`,
+  `valueAsOf` and `payments` remain to preserve schedule and savings history.
+  `coverAmount` migrates to the new `sumAssured`; `maturityDate` migrates to
+  `endDate` where no explicit endDate exists.
+  DEC-P23-A: Schema v11 extends policy lifecycle and metadata without adding
+  policy screens. Existing names map explicitly (`term` → `term-life`,
+  `vehicle` → `motor`); already-valid names remain unchanged. Legacy `single`
+  frequency becomes `yearly` with one premium period, and missing `startDate`
+  falls back to the earliest payment date, then injected `today`. A missing or
+  unknown recurring frequency defaults to yearly; invalid policy kinds fail
+  migration rather than being silently coerced. Existing schedule/payment and
+  savings-history fields are retained.
+  Assumed: the v10 single-premium representation is equivalent to one yearly
+  period for the existing schedule engine; there is no explicit once-only
+  frequency in schema v11.
+  Assumed: when no schedule or payment date exists, the migration's injected
+  `today` is the correct deterministic start date.
+  Replaced assertion: the v10 `single` frequency expectation was changed from
+  a `single` schedule to `yearly` with one period; reason: `single` is not a
+  v11 frequency, while preserving the one scheduled due is required.
+  Policy deletion removes policy-payment source links and policy goal/EF
+  bucket references while retaining the linked transaction as an ordinary
+  Insurance expense. Status changes and deletion are undoable; all policy
+  lifecycle actions use one persisted write, and Undo restores deep-equal data.
+  Active policies alone contribute premium dues, Budget commitments, cover,
+  and premium summary values; inactive payment history is retained.
+  Annual income uses the effective planned budget when available, otherwise
+  the last three months of earned income annualized, otherwise `null`.
+  No UI/screen files were changed. Physical-device behavior for existing policy
+  routes and native accessibility remains unverified.
+  DEC-P23-COVER (P23-B, CR-80/CR-81): cover goals are separate from savings
+  goals and are excluded from net worth, saved totals, savings-goal progress,
+  and Emergency Fund calculations. One non-deletable cover goal exists for
+  each of term-life, health, motor, home, and other. Defaults are term-life
+  income-multiple 10, health amount with no target value, and active-only for
+  motor/home/other. Income-multiple targets allow 1–50; amount targets allow
+  values >= 0. Cover summaries distinguish covered, gap, no-target, and
+  missing; active-only is satisfied by at least one active policy.
+  Only active policies contribute cover, yearly premium and renewal. Savings
+  policies (life-savings and ULIP) are excluded from cover goals. The five
+  insurance expense categories coexist with historical Insurance records and
+  map to the protected Insurance Budget section. Manual Insurance budget
+  entries remain manageable; linked policy rows remain read-only; actual
+  category totals must reconcile without duplicate counting. Recording a
+  scheduled policy premium uses its type category; manual typed premiums may
+  suggest a policy only when exactly one active policy has that type.
+  P23-B scope is schema v12/migration/archive and pure domain, store, budget,
+  category, demo and test changes only; no new screens. The earlier planned
+  screen-only P23-B is cancelled and superseded by this scope.
+  Preflight at base `501956a` found a clean worktree; no manual checkpoint
+  was needed. The user-owned Budget cash-flow labels and removed actions remain
+  protected.
+  Assumed: the generic `Insurance premium` category applies to `other`,
+  `life-savings`, and `ulip`, because those kinds have no dedicated typed
+  category. Assumed: the demo uses a term-life income multiple of 12 and a
+  health target of 2,000,000 solely to demonstrate the required term gap and
+  an editable health target; schema and empty-data defaults remain unchanged.
+  Assumed: an active home demo policy is added to satisfy P23-B's required
+  home-covered example, even though the P23-A demo fixture did not contain one.
+  Linked policy schedule rows in Budget aggregate by premium category (one row
+  per cover type); manual planned items remain separate/editable.
+  DEC-DEMO (P23-B): preserves the P23-A term, health, motor and lapsed records;
+  adds active home cover, demo-only term/health targets, and typed-premium
+  transactions so the term gap, health target, motor/home covered and other
+  missing states are represented.
+  The direct source/test audit of the legacy `'Insurance'` category is recorded
+  below; no legacy category or transaction history was removed.
+  DEC-P23-C-SCREENS (P23-C, CR-82–CR-85): add the Insurance cover stack route
+  without changing the four tabs or schema v12. Goals links from its Emergency
+  Fund card, Budget's Insurance section, and a compact Home gap/missing row all
+  open that route. Insurance cover cards are detail-first with the progress bar
+  last; target editing and policy editing use the shared FormScreen. Policy
+  card bodies open edit, while Paid and Schedule remain separate actions below
+  the card details. The Insurance list uses local All/Active/Lapsed/Matured/
+  Cancelled and kind filters plus case-insensitive name, insurer, policy-number
+  and kind search. The premium category switch defaults on only when the domain
+  suggestion identifies exactly one active matching policy; saving uses the
+  existing policy-payment domain path. No savings-goal, Emergency Fund, or net
+  worth calculations change.
+  P23-C preflight on 2026-10-21 found a clean worktree at `b2a3d7c`; no manual
+  checkpoint was required. `git log` re-confirmed the same seven non-Copilot
+  commits since `5bd3c41` and the two user checkpoints already itemized one
+  changed file per line under DEC-USER-CHANGES above; no newer user-owned commit
+  or path was present. The Cash flow labels and removed Budget controls remain
+  protected.
+  Assumed: the existing `policy-form` route is retained for create and edit,
+  expanded to the full P23-C policy fields; a separate `cover-goal-form` route
+  edits the non-deletable target record. Policy dues use the existing clearDue
+  flow and Undo toast rather than a second payment implementation.
+  Assumed: a policy with no `sumAssured` contributes zero cover, and the policy
+  number search is exact to the policy record's stored value (case-insensitive
+  substring across searchable fields).
+  Assumed: the existing premium schedule horizon accepts an 80-year term for
+  newly-created policies; no separate policy-term field was requested.
+  Assumed: when an explicitly linked manual premium includes a note, that note
+  is retained in both payment history and the linked transaction; an empty
+  note keeps the existing `{policy name} premium` transaction label.
+  Assumed: TestRenderer font-scale checks at 1.3 and 2.0 verify responsive style
+  props only; native wrapping, clipping, keyboard, safe-area and touch behavior
+  still require physical-device validation.
+
+#### P23-B legacy Insurance literal audit
+
+Case-sensitive `rg -n "'Insurance'" app src` returned 67 matches in 20 files.
+The existing `Insurance` spelling remains valid for legacy history; each
+source/test hit and its disposition is listed here:
+
+| File | Matching lines | Disposition |
+|---|---|---|
+| `src/domain/policyCategories.ts` | 19 | Preserved as the legacy transaction category alongside the new premium categories. |
+| `src/domain/budget.ts` | 56, 1035, 1089 | Preserved Insurance section identity and compatibility handling for legacy budget/history categories. |
+| `src/mock/demoData.ts` | 107, 140 | Excludes the legacy category from generated generic transaction rows; retains the manual Insurance demo budget item. |
+| `src/domain/__tests__/backup.test.ts` | 265 | Keeps a legacy linked premium backup fixture to verify import compatibility. |
+| `src/domain/schemas.ts` | 219, 249, 443 | Keeps Insurance valid in budget and transaction schemas and retains the Insurance section definition. |
+| `src/mock/__tests__/demoData.test.ts` | 98, 165 | Verifies the manual legacy Insurance budget item remains and reconciles. |
+| `src/domain/budgetGroups.ts` | 51 | Names the existing protected Budget group Insurance. |
+| `src/domain/__tests__/budgetCategories.test.ts` | 15 | Verifies the transaction dropdown group title remains Insurance. |
+| `src/domain/__tests__/pending.test.ts` | 206, 219 | Exercises a manually planned legacy Insurance item and its due row. |
+| `src/data/migrate.ts` | 468, 632, 642, 652 | Preserves old items and moves legacy Insurance budget items into the current Insurance system section when needed. |
+| `src/domain/__tests__/v5Integrity.test.ts` | 17, 83, 84 | Retains old-format linked policy transactions in migration/integrity fixtures. |
+| `src/data/__tests__/createAppStore.test.ts` | 664 | Retains a legacy manual Insurance budget item in the store test. |
+| `src/data/__tests__/migrate.test.ts` | 196, 219, 225, 352 | Verifies migration relocates legacy Insurance items and retains legacy Insurance in the earlier migration fixture. |
+| `src/domain/__tests__/policyActions.test.ts` | 42, 51, 142, 150, 173, 180 | Preserves legacy linked Insurance transactions in policy delete/update tests. |
+| `src/components/__tests__/RecurringItemsSummary.test.tsx` | 47 | Preserves a legacy Insurance category in the recurring summary fixture. |
+| `src/domain/__tests__/budget.test.ts` | 714, 1040, 1102, 1118, 1449, 1520, 1548, 1556, 1567, 1573, 1580, 1582, 1584, 1596, 1607, 1635, 1644, 1711, 1721 | Retains coverage for legacy category grouping, history, manual items, linked transactions and no-double-counting. |
+| `src/domain/__tests__/schemas.test.ts` | 324, 374 | Asserts legacy Insurance remains schema-valid alongside typed premium categories. |
+| `src/domain/links.ts` | 189 | Allows previously linked policy payments whose stored category is Insurance. |
+| `src/components/__tests__/PendingItemActions.test.tsx` | 164, 177, 184 | Keeps legacy manual Insurance due-action fixtures. |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 2965, 2973, 2981, 3090, 3123, 3129, 3138 | Keeps Budget management route assertions for existing Insurance items and category selection. |
+
   P20-T preflight at base `e99c705` found a clean worktree; no new manual
   checkpoint was needed. The seven no-Copilot commits since `5bd3c41` and
   prior user checkpoints were audited; each changed path is listed:
@@ -1643,9 +1852,11 @@ P22-A (CR-12) implementation and acceptance tests are complete, and its final
 required gates are green. Spreadsheet import is out of scope and is not
 tracked as a Phase 22 part.
 
-### Phase 23 — Insurance
+### Phase 23 — Insurance and cover goals
 
-Planned P23-A [P15-F].
+P23-A [P15-F] and P23-B [CR-80/CR-81] are complete. P23-C [CR-82–CR-85]
+implements the insurance cover and policy screens, and replaces the earlier
+screen-only P23-B plan.
 
 ### Phase 24 — Reminders and notifications
 
@@ -1800,7 +2011,9 @@ evidence present in exports/checkpoints.
 | P15-C | Phase 15 | — | 2 | 2026-10-12 | SIP date clarity and goal-card behavior. | Done. | `e155bcd` | Exact review unavailable. | reconstructed |
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
-| P23-A | Phase 23 | P15-F | 2 | unknown | Insurance management. | Planned; no delivery claimed. | none identified | Prompt details unknown. | unknown |
+| P23-A | Phase 23 | P15-F | 2 | 2026-10-21 | Policy data model, schema-v11 migration and pure domain summary/actions; no screens (CR-78–CR-79). | Done; all six gates exit 0; 77 suites/894 tests pass. | Preflight `0774e51`; inventory `67ddfc4`; implementation `0c805d4`. | Assumed: v10 `single` is represented as yearly with one period; absent start date falls back to earliest payment then injected today; unknown frequency defaults yearly. | current request |
+| P23-B | Phase 23 | — | 2 | 2026-10-21 | Insurance cover goals, schema-v12 migration, budget/category and policy-suggestion integration; no new screens (CR-80–CR-81). | Done; 78 suites/914 tests pass; all six gates exit 0. | Preflight/decision `04bf7f0`; schema/migration `1f9917e`; domain/tests `8893bf9`; coverage correction `b9cb4f6`; lint cleanup `c443191`. | Assumed: see DEC-P23-COVER demo/category details; preserve all policy screens and all existing Insurance transaction history. | current request |
+| P23-C | Phase 23 | — | 2 | 2026-10-21 | Insurance cover and policy screens, with cover goal forms and transaction/Budget/Home integration (CR-82–CR-85). | Done; final gates and tests recorded below. | Preflight `1858997`; implementation `69a16ec`. | Assumed: see DEC-P23-C-SCREENS; preserve schema v12 and all P23-B domain behavior. | current request |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -1930,6 +2143,14 @@ evidence present in exports/checkpoints.
 | CR-75 | Make transaction-derived unbudgeted rows manageable and permit manual Insurance items without linked-policy duplication. | Done | Budget/domain/schema/import/pending/store and route tests cover edit affordances, protected Insurance section, plan/snapshot mutations, due clearing, policy non-duplication, one write and deep-equal Undo. |
 | CR-76 | Unify full-screen and sheet forms on one shared header/body/footer implementation while preserving FormScreen behavior. | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, frozen hash test; dirty discard, validation summary, action slots, scrollable body and fixed footer remain covered. |
 | CR-77 | Convert every data-entry form to the common shell and enforce consistent Back/Close/delete/Save placement. | Done | Route parameter smoke test covers create/edit entry points; every route form plus onboarding, erase-data, Budget sheet, Goal picker and EF custom-option dialogs use the shared shell. Selection/information/list/settings surfaces remain deliberately unchanged. |
+| CR-78 | Migrate policy data to schema v11 with lifecycle/metadata, schedule compatibility and backup support. | Done | v10→v11 migration, exact one-time `.premigration.v10` archive, schema/backup chain and migration branch tests pass; v12 is rejected. |
+| CR-79 | Add pure policy actions and summary; enforce active-only dues/Budget rows and deletion cleanup with Undo. | Done | Typed policy actions, active-only/end-date schedule, policy summary, store one-write/Undo, linked transaction retention, integrity and Insurance reconciliation tests pass. |
+| CR-80 | Add cover-goal schema v12, one goal per cover type, migration/archive and backup support. | Done | `migrateV11ToV12`, exact-byte once-only `.premigration.v11`, erase behavior, v11 backup migration, checksum-before-migration, and v13 refusal pass focused and full coverage tests. |
+| CR-81 | Add cover goal summaries/target action, typed policy suggestion, insurance categories and reconciliation. | Done | Cover-state/income/policy/category/pending/Budget/demo/backup/one-write/Undo acceptance tests pass; no new screens. All six required gates exit 0. |
+| CR-82 | Add an Insurance cover stack screen with Goals, Budget, and Home entry points, ordered header actions, filters, and search. | Done | RouteRenderSmoke asserts all entry routes, action order, status filtering, search, Add policy, and policy edit navigation. |
+| CR-83 | Show ordered cover-goal cards and edit non-deletable targets in the shared FormScreen. | Done | RouteRenderSmoke asserts five-type order, progress-last layout, term income line/null helper, and all target modes; targets remain non-deletable. |
+| CR-84 | Add complete policy list/card actions and create/edit form with confirmation and Undo. | Done | RouteRenderSmoke asserts create/edit fields, edit-only status, date bound, delete confirmation, Paid/Undo and large-font style props; store tests assert deep-equal delete/status Undo. |
+| CR-85 | Integrate typed premium linking, policy dues, and Budget/Home navigation without changing savings or net worth. | Done | TransactionForm asserts typed titles and default-on unique-policy link; createAppStore asserts linked payment/expense and exactly one write; linked Budget row navigation and Home paid label remain covered. |
 
 ## 8. Known issues and risks
 
@@ -2194,6 +2415,212 @@ evidence for the fixes.
 | P20-T STEP 1 — Shared three-region form core (CR-76) | Done | `src/components/FormShell.tsx`, `src/components/form/FormScreen.tsx` | `FormScreen` delegates header/body/footer to `FormShell`; SafeAreaView, KeyboardAvoidingView, dirty discard and existing props remain. Structural tests confirm the adapter has no duplicate header/body/footer layout. |
 | P20-T STEP 2 — Convert every data-entry form (CR-77) | Done | app form routes, BudgetManagementSheet, Goal asset picker, EF allocation custom-option dialogs | Route parameter smoke test covers create/edit route params; shared Back-left/right-action/Save-footer rule applies. Onboarding retains no-back exit behavior. Settings, list filters, selection pickers and informational modals remain outside the data-entry shell. |
 | P20-T STEP 3 — Acceptance, freeze and final gates | Done | `FormScreen.test.tsx`, `FormShell.test.tsx`, `RouteRenderSmoke.test.tsx`, `OnboardingForms.test.tsx`, `TransactionForm.test.tsx`, `EfAllocationForm.test.tsx`, `formComponentsFrozen.test.ts`, `docs/PROGRESS.md` | Dirty discard and validation summary remain; font-scale tests assert non-clipping structure; authorized FormScreen hash is frozen and all other input hashes unchanged. Replaced assertion: full-screen left “Close” becomes left “Back”; reason: CR-77 navigation rule. Redundant footer Back buttons on invalid/missing-route states are replaced by the header action; reason: one navigation affordance per the shared layout. |
+| P23-A STEP 0 — Preflight and STEP 1 — Policy inventory | Done | `docs/PROGRESS.md` DEC-USER-CHANGES and DEC-P23-INVENTORY | Clean tree at base `0774e51`; seven no-Copilot commits and both earlier manual checkpoints re-audited with one line per changed file. Inventory records current fields, kind/frequency mapping, schedule/payment logic, goal links, integrity, dues/Budget behavior, mock/demo state, and existing policy screens; identifies CR-78/79 gaps. No source code or screens changed in the inventory step. |
+| P23-A STEP 2 — Schema v11, migration and backup (CR-78) | Done | `src/domain/types.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts` | v10 migration branches, v1–v10 backup chain, checksum-before-migration, schema v12 refusal, raw-byte archive/no-recopy/erase and schema bounds are covered by `migrate.test.ts`, `safeStorage.test.ts`, `backup.test.ts`, and `schemas.test.ts`. |
+| P23-A STEP 3 — Policy domain, schedule, store and demo (CR-79) | Done | `src/domain/policyActions.ts`, `src/domain/policySchedule.ts`, `src/domain/policySummary.ts`, `src/data/createAppStore.ts`, mock data | Four-frequency schedule/month-end/end-date/status cases; typed goal-link errors; linked transaction retention and integrity; status/delete one-write/Undo deep equality; summary fallbacks; active-only dues and Budget reconciliation; and demo records are covered. No policy screen changes. |
+| P23-A STEP 4 — Tests, ledger and final gates | Done | 77 suites/894 tests; `docs/PROGRESS.md` | `npm test -- --coverage` passed (lines 95.99%, branches 92.57%, functions 97.58%, statements 97.87%). Source-directory coverage: domain 97.12% lines/93.45% branches; data excluding hooks 90.24%/87.37%; pure lib 100%/100%. All six required gates exit 0; Expo Doctor reports 21/21. |
+| P23-B STEP 0 — Preflight and cover-goal decision | Done | `docs/PROGRESS.md` DEC-P23-COVER; clean base `501956a` | No manual checkpoint was needed. Cancelled the former screen-only P23-B plan and recorded v12 cover-goal semantics, category behavior, Budget reconciliation, defaults, and no-screen scope. |
+| P23-B STEP 1 — Schema v12 and migration (CR-80) | Done | Types, schemas, backup import, `migrateV11ToV12`, safe-storage archive | Targeted gates: migration, safe-storage archive, store hydration, schema and backup tests; 5 suites/151 tests pass. v11 archive is exact-byte, once-only and erased with app data; schema v13 is refused; backups preserve checksum-before-migration. |
+| P23-B STEP 2 — Cover-goal domain, categories, Budget and demo (CR-81) | Done | `src/domain/coverGoals.ts`, `src/domain/policyCategories.ts`, `src/domain/budget.ts`, `src/domain/pending.ts`, `src/domain/links.ts`, `src/data/createAppStore.ts`, `app/(tabs)/budget.tsx`, demo data | Focused acceptance: 13 suites/403 tests pass, including all cover states, no-income target, multiple and inactive policies, policy suggestions, schema/dropdown category validity, v11 backup chain, typed-category backup round trip, single-write/Undo, Home spending breakdown, typed pending dues and Budget aggregation. Existing policy rows aggregate by type and are read-only; manual legacy items remain manageable. |
+| P23-B STEP 3 — Demo, ledger and final gates | Done | `src/mock/demoData.ts`, `src/mock/__tests__/demoData.test.ts`, `docs/PROGRESS.md` | Full coverage: 78 suites/914 tests pass. All six sequential gates exit 0; directory coverage meets all required floors. Assumptions and legacy category inventory are documented. Native keyboard/footer behavior, small-device layout and OS font scaling remain device-only checks. |
+| P23-C STEP 1 — Insurance route and entry links (CR-82) | Done | `app/insurance.tsx`, `app/_layout.tsx`, `src/lib/routeKinds.ts`, Goals, Budget and Home routes | Route smoke asserts all three entry points, Filter-then-Add header order, typed route navigation, and the separate Insurance stack screen. |
+| P23-C STEP 2 — Cover-goal cards and target form (CR-83) | Done | `app/insurance.tsx`, `app/cover-goal-form.tsx` | UI tests assert fixed type order, detail-first card content with progress last, target form modes, term-life income line and its null-income helper. |
+| P23-C STEP 3 — Policy list and CRUD form (CR-84) | Done | `app/insurance.tsx`, `app/policy-form.tsx` | Tests cover fields, edit-only status, start-date maximum, optional end date, delete confirmation and route return; existing store tests cover deletion/status Undo and deep-equal restore. |
+| P23-C STEP 4 — Transaction, Budget and Home integration (CR-85) | Done | `app/transaction-form.tsx`, `app/(tabs)/budget.tsx`, `app/(tabs)/index.tsx`, `src/domain/dues.ts`, `src/data/createAppStore.ts` | Typed Insurance categories display; unique-policy suggestion defaults on; linked manual premium preserves note and creates payment plus expense in one persisted write. Budget policy rows open edit; Home policy dues use Marked as paid and existing Undo. Savings goals, EF and net worth logic are unchanged. |
+| P23-C STEP 5 — Acceptance, ledger and final gates | Done | `RouteRenderSmoke.test.tsx`, `TransactionForm.test.tsx`, `createAppStore.test.ts`, `routeKinds.test.ts`, `docs/PROGRESS.md` | Full coverage: 78 suites/923 tests passed; all six required gates exit 0. Directory coverage: domain 98.46% lines/93.21% branches; data excluding hooks 93.70%/87.59%; pure lib 100%/100%. Insurance routes are registered, including `/insurance` as stack and `/cover-goal-form` as form. Layout/font-scale assertions are simulated; device limitations are listed below. |
+
+P23-C replaced assertions and reasons:
+
+| Previous assertion | Updated assertion | Reason |
+|---|---|---|
+| Budget policy rows had no Edit action and were read-only/non-tappable. | Tapping a policy row navigates to `/policy-form` with that policy ID; the row remains read-only apart from navigation. | CR-85 explicitly makes policy rows tappable for editing while keeping policy amounts and manual-item management semantics unchanged. |
+
+P23-C final gates, run sequentially after the final edits:
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 923 tests passed; 95.90% statements, 92.40% branches, 97.67% functions and 97.65% lines. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed without warnings. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported to `dist`. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported to `dist`. | 0 |
+
+Per-directory source coverage, independently aggregated from Istanbul
+statement/branch counters (data hooks excluded): `src/domain` 2869/2914 lines
+(98.46%) and 2746/2946 branches (93.21%); `src/data` 610/651 lines (93.70%)
+and 607/693 branches (87.59%); pure `src/lib` 107/107 lines (100%) and
+126/126 branches (100%). A first full-coverage attempt exposed the two new Expo
+Router routes missing from `ROUTE_KINDS` and a missed false branch for a
+same-status policy update; both were corrected and the rerun passed. No
+assertions were weakened.
+
+P23-C device checks not verified: native navigation/back behavior, VoiceOver
+and TalkBack, real keyboard/focus/search behavior, native switch interaction,
+safe-area/footer placement, actual system font scaling and clipping at 1.3/2.0,
+small-device wrapping, touch targets, and the visual presentation of policy and
+cover cards on physical iOS and Android devices. Automated checks inspect
+TestRenderer output and style props only.
+
+P23-B replaced assertions and reasons:
+
+| Previous assertion | Updated assertion | Reason |
+|---|---|---|
+| `emptyAppData` exact shape omitted `coverGoals`. | Exact shape includes five pinned defaults. | Schema v12 requires the independently seeded cover-goal set. |
+| Legacy Insurance category dropdown expected only `Insurance` and `Custom`. | It expects legacy Insurance, the five typed premium categories, and Custom. | CR-81 adds typed categories to the Budget Insurance choices without removing history. |
+| Pending Budget lines expected only Food for a fixture with a manual Insurance item. | It expects Food and the planned manual Insurance item. | The legacy category now maps into the Insurance system section where manual rows remain manageable. |
+| Scheduled health premiums expected category `Insurance`. | They expect `Health premium`; historic linked `Insurance` transactions remain accepted. | New scheduled payments use the policy-type category; migration/history compatibility is retained. |
+| Budget linked policy rows were named after individual policies and exposed edit-route buttons. | Active schedule rows aggregate under one type category and policy rows have no edit button. | CR-81 requires one row per cover type and read-only policy rows; manual Budget items remain editable. |
+| Migration coverage exercised only default v11 fixtures, leaving the new branch under the per-file coverage threshold. | Tests cover legacy item relocation into existing and missing Insurance sections and malformed budget inputs. | Exercise every new migration branch while keeping the existing coverage threshold unchanged. |
+
+Gate iteration: the first full coverage run found the empty-data exact-shape
+assertion missing the new schema-v12 goals and `src/data/migrate.ts` at 84.27%
+branch coverage. Commit `b9cb4f6` adds the exact defaults and migration branch
+tests; the rerun passes. The first `npx expo lint` exited 0 with one unused
+`addDays` import warning in `coverGoals.ts`; commit `c443191` removed it before
+the final sequential gates.
+
+P23-B final gates, run sequentially at commit `c443191`:
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 914 tests passed; 95.93% statements, 92.39% branches, 97.59% functions, 97.70% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed without warnings. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Final verification was rerun sequentially after `17a3efd` and the progress-ledger
+test update. The first coverage attempt exposed only a stale progress assertion:
+`Overall progress █████████░ 91% (63/69)` was replaced with
+`Overall progress █████████░ 93% (64/69)`, and the Phase 23 `2/2` assertion was
+added, matching the current dashboard. The rerun passed 78 suites / 914 tests;
+typecheck, lint, Doctor, Android export and iOS export all exited 0. Coverage
+remained at the values above. The test assertion change does not alter product
+behavior.
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 78 suites / 914 tests; 95.93% statements, 92.39% branches, 97.59% functions, 97.70% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed without warnings. | 0 |
+| `npx expo-doctor` | 21/21 checks passed; no issues detected. | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Per-directory coverage is aggregated independently from Istanbul's per-file
+summary using the `coverage/coverage-final.json` counters:
+
+```python
+import json
+from pathlib import Path
+
+coverage = json.loads(Path("coverage/coverage-final.json").read_text())
+areas = {"src/domain": [], "src/data excluding hooks": [], "pure src/lib": []}
+for filename, file_coverage in coverage.items():
+    path = filename.replace("\\", "/")
+    if "/src/domain/" in path:
+        area = "src/domain"
+    elif "/src/data/" in path and "/hooks/" not in path:
+        area = "src/data excluding hooks"
+    elif "/src/lib/" in path:
+        area = "pure src/lib"
+    else:
+        continue
+    line_counts = {}
+    for key, location in file_coverage["statementMap"].items():
+        line = location["start"]["line"]
+        line_counts[line] = max(line_counts.get(line, 0), file_coverage["s"][key])
+    lines = list(line_counts.values())
+    branches = [count for counts in file_coverage["b"].values() for count in counts]
+    areas[area].append((sum(count > 0 for count in lines), len(lines),
+                        sum(count > 0 for count in branches), len(branches),
+                        path.split("/src/", 1)[1]))
+for area, files in areas.items():
+    covered_lines = sum(item[0] for item in files)
+    total_lines = sum(item[1] for item in files)
+    covered_branches = sum(item[2] for item in files)
+    total_branches = sum(item[3] for item in files)
+    print(area, f"{covered_lines}/{total_lines}",
+          f"{covered_lines / total_lines * 100:.2f}%",
+          f"{covered_branches}/{total_branches}",
+          f"{covered_branches / total_branches * 100:.2f}%")
+    for cl, tl, cb, tb, name in sorted(files, key=lambda item: item[4]):
+        print(f"  {name}: lines {cl}/{tl} ({cl / tl * 100 if tl else 100:.2f}%), "
+              f"branches {cb}/{tb} ({cb / tb * 100 if tb else 100:.2f}%)")
+```
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2864/2907 (98.52%) | 2735/2934 (93.22%) |
+| `src/data` excluding hooks | 604/645 (93.64%) | 600/686 (87.46%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Per-file Istanbul results (lines and branches):
+
+| File | Lines | Branches |
+|---|---:|---:|
+| `src/domain/actions.ts` | 100.00% | 100.00% |
+| `src/domain/backup.ts` | 96.89% | 92.97% |
+| `src/domain/backupNudge.ts` | 100.00% | 100.00% |
+| `src/domain/budget.ts` | 97.70% | 90.88% |
+| `src/domain/budgetCategories.ts` | 100.00% | 100.00% |
+| `src/domain/budgetGroups.ts` | 100.00% | 100.00% |
+| `src/domain/cashFlow.ts` | 100.00% | 97.58% |
+| `src/domain/coverGoals.ts` | 100.00% | 94.12% |
+| `src/domain/dates.ts` | 100.00% | 94.12% |
+| `src/domain/dues.ts` | 100.00% | 91.61% |
+| `src/domain/ef.ts` | 100.00% | 100.00% |
+| `src/domain/efAllocation.ts` | 100.00% | 95.45% |
+| `src/domain/efAllocationActions.ts` | 100.00% | 92.96% |
+| `src/domain/goalActions.ts` | 100.00% | 100.00% |
+| `src/domain/goalLinks.ts` | 100.00% | 91.03% |
+| `src/domain/goals.ts` | 100.00% | 93.75% |
+| `src/domain/holdingActions.ts` | 92.31% | 96.15% |
+| `src/domain/index.ts` | n/a | n/a |
+| `src/domain/instrumentCard.ts` | 100.00% | 95.45% |
+| `src/domain/instruments.ts` | 98.96% | 90.83% |
+| `src/domain/investmentActions.ts` | 100.00% | 93.88% |
+| `src/domain/liability.ts` | 99.07% | 94.03% |
+| `src/domain/liabilityActions.ts` | 100.00% | 96.33% |
+| `src/domain/links.ts` | 95.38% | 91.23% |
+| `src/domain/pending.ts` | 98.68% | 95.51% |
+| `src/domain/planActions.ts` | 100.00% | 94.74% |
+| `src/domain/policyActions.ts` | 100.00% | 97.06% |
+| `src/domain/policyCategories.ts` | 100.00% | 100.00% |
+| `src/domain/policySchedule.ts` | 100.00% | 92.31% |
+| `src/domain/policySummary.ts` | 100.00% | 100.00% |
+| `src/domain/portfolio.ts` | 100.00% | 95.45% |
+| `src/domain/schedule.ts` | 100.00% | 93.65% |
+| `src/domain/schemas.ts` | 96.46% | 90.58% |
+| `src/domain/sip.ts` | 100.00% | 96.67% |
+| `src/domain/slots.ts` | 100.00% | 100.00% |
+| `src/domain/stressData.ts` | 100.00% | 100.00% |
+| `src/domain/summary.ts` | 100.00% | 100.00% |
+| `src/domain/transactions.ts` | 100.00% | 100.00% |
+| `src/data/createAppStore.ts` | 92.71% | 85.56% |
+| `src/data/metaStore.ts` | 100.00% | 90.91% |
+| `src/data/migrate.ts` | 93.46% | 86.80% |
+| `src/data/safeStorage.ts` | 96.36% | 94.29% |
+| `src/lib/appMenu.ts` | 100.00% | 100.00% |
+| `src/lib/authenticate.ts` | 100.00% | 100.00% |
+| `src/lib/format.ts` | 100.00% | 100.00% |
+| `src/lib/friendlyError.ts` | 100.00% | 100.00% |
+| `src/lib/greeting.ts` | 100.00% | 100.00% |
+| `src/lib/lockPolicy.ts` | 100.00% | 100.00% |
+| `src/lib/savingsLine.ts` | 100.00% | 100.00% |
+| `src/lib/securitySettings.ts` | 100.00% | 100.00% |
+| `src/lib/storageGuard.ts` | 100.00% | 100.00% |
+| `src/lib/swipe.ts` | 100.00% | 100.00% |
+
+**P23-B acceptance criteria not verified on a real device:** OS font scaling
+and rendered clipping; Budget row interaction/layout at small phone sizes;
+native keyboard behavior with policy/edit forms and fixed footer; native screen
+reader announcements for cover summaries and category choices; and persistent
+device storage/archive behavior across actual app process termination. Jest
+asserts data, rendered trees and style/API contracts only; no physical device
+was used.
 
 #### P20-O final verification
 

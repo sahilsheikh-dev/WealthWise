@@ -1,8 +1,21 @@
 import { emptyAppData } from '../actions';
 import { budgetCategoryChoiceSections } from '../budgetCategories';
+import { INSURANCE_BUDGET_CATEGORIES } from '../policyCategories';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 describe('budget-aware transaction categories', () => {
+  it('groups the titles-only insurance transaction categories in the Insurance section', () => {
+    const sections = budgetCategoryChoiceSections(
+      emptyAppData('2026-03-01'),
+      '2026-03',
+      '2026-03-15',
+      'expense',
+    );
+    const insurance = sections.find((section) => section.id === 'insurance');
+    expect(insurance?.name).toBe('Insurance');
+    expect(insurance?.categories.map((item) => item.category)).toEqual(INSURANCE_BUDGET_CATEGORIES);
+  });
+
   it('groups categories, orders budgeted items first and calculates actuals by selected month', () => {
     const data = {
       ...emptyAppData('2026-03-01'),

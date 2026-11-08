@@ -7,6 +7,8 @@ import {
   TRANSACTION_CATEGORIES,
 } from '../schemas';
 import { mockAppData } from '../../mock/data';
+import { validateIntegrity } from '../links';
+import { INSURANCE_BUDGET_CATEGORIES } from '../policyCategories';
 import { buildDemoData } from '../../mock/demoData';
 import {
   BUDGET_GROUPS,
@@ -74,9 +76,8 @@ const liability: Liability = {
 };
 const policy: Policy = {
   id: 'policy', name: 'Health cover', insurer: '', kind: 'health', premium: 60,
-  frequency: 'monthly', startDate: '2026-03-05', premiumYears: 1,
-  trackFrom: '2026-03-05', coverAmount: null, currentValue: null, valueAsOf: null,
-  maturityDate: null, payments: [],
+  frequency: 'monthly', startDate: '2026-03-05', status: 'active', premiumYears: 1,
+  trackFrom: '2026-03-05', currentValue: null, valueAsOf: null, payments: [],
 };
 const recurringLiability: Liability = {
   id: 'recurring', kind: 'recurring', name: 'Monthly loan', type: 'Personal loan',
@@ -158,18 +159,26 @@ describe('budget plans and monthly views', () => {
   });
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
-      ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
+      ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI']],
       ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
       ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],
     ]);
-    const groupedCategories = BUDGET_GROUPS.flatMap(({ categories }) => categories);
+    const groupedCategories = [
+      ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
+      ...INSURANCE_BUDGET_CATEGORIES,
+    ];
     expect([...groupedCategories].sort()).toEqual([...BUDGET_CATEGORIES].sort());
     expect(new Set(groupedCategories).size).toBe(BUDGET_CATEGORIES.length);
     for (const category of BUDGET_CATEGORIES) {
-      expect(BUDGET_GROUPS.filter((group) => group.categories.includes(category))).toHaveLength(1);
+      expect(BUDGET_GROUPS.filter((group) => group.categories.includes(category))).toHaveLength(
+        INSURANCE_BUDGET_CATEGORIES.includes(category as typeof INSURANCE_BUDGET_CATEGORIES[number]) ? 0 : 1,
+      );
       expect(budgetGroupFor(category)?.categories).toContain(category);
+      if (INSURANCE_BUDGET_CATEGORIES.includes(category as typeof INSURANCE_BUDGET_CATEGORIES[number])) {
+        expect(budgetGroupFor(category)?.id).toBe('insurance');
+      }
     }
     expect(BUDGET_GROUPS.reduce((total, group) => total + group.weight, 0)).toBe(100);
     expect(appDataSchema.safeParse(mockAppData).success).toBe(true);
@@ -571,8 +580,8 @@ describe('budget plans and monthly views', () => {
     expect(commitments.map(({ kind, category }) => `${kind}:${category}`)).toEqual([
       'plan:Mutual fund / SIP',
       'liability:EMI',
-      'policy:Insurance',
-      'policy:Insurance',
+      'policy:Health premium',
+      'policy:Health premium',
       'liability:EMI',
     ]);
     expect(commitments[1]?.status).toBe('paid');
@@ -606,10 +615,10 @@ describe('budget plans and monthly views', () => {
     const rows = linkedRecurringForMonth(data, '2026-03', '2026-03-31');
 
     expect(rows.map(({ kind, category, dueDate, status }) => [kind, category, dueDate, status])).toEqual([
-      ['policy', 'Insurance', '2026-03-05', 'paid'],
+      ['policy', 'Health premium', '2026-03-05', 'paid'],
       ['plan', 'Mutual fund / SIP', '2026-03-05', 'paid'],
       ['liability', 'EMI', '2026-03-05', 'paid'],
-      ['policy', 'Insurance', '2026-03-05', 'ongoing'],
+      ['policy', 'Health premium', '2026-03-05', 'ongoing'],
       ['liability', 'EMI', '2026-03-20', 'overdue'],
     ]);
     expect(rows.map((row) => row.id)).toEqual(expect.arrayContaining([
@@ -642,7 +651,7 @@ describe('budget plans and monthly views', () => {
     expect(demoRows.length).toBeGreaterThan(0);
     expect(demoRows.every((row) => row.dueDate.startsWith('2026-10-'))).toBe(true);
     expect(demoRows.map((row) => row.category)).toEqual(expect.arrayContaining([
-      'EMI', 'Insurance', 'Fixed deposit / RD',
+      'EMI', 'Health premium', 'Fixed deposit / RD',
     ]));
     expect(linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-03', '2026-03-01')).toEqual([]);
     expect(() => linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-13', '2026-03-01'))
@@ -1105,7 +1114,8 @@ describe('budget plans and monthly views', () => {
     );
     expect(overview.sections.find(({ id }) => id === 'insurance')?.items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: 'Health cover', planned: 0, actual: 20, kind: 'linked' }),
+        expect.objectContaining({ title: 'Health premium', planned: 60, actual: 0, kind: 'linked' }),
+        expect.objectContaining({ title: 'Insurance', planned: 0, actual: 20, kind: 'linked' }),
       ]),
     );
     expect(overview.stacked.left.actual).toBe(-40);
@@ -1555,13 +1565,13 @@ describe('budget plans and monthly views', () => {
 
       const line = budgetMonthView(withMonth, '2026-03', today).lines
         .find(({ category }) => category === 'Insurance');
-      expect(line).toMatchObject({ planned: 460, actual: 95 });
+      expect(line).toMatchObject({ planned: 400, actual: 95 });
 
       const overviewItems = budgetOverview(withMonth, '2026-03', today)
         .sections.find(({ id }) => id === 'insurance')?.items ?? [];
       expect(overviewItems).toEqual(expect.arrayContaining([
         expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
-        expect.objectContaining({ title: 'Health cover', kind: 'linked', planned: 60, actual: 60 }),
+        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
       ]));
       expect(overviewItems.reduce((total, item) => total + item.planned, 0)).toBe(460);
       expect(overviewItems.reduce((total, item) => total + item.actual, 0)).toBe(95);
@@ -1573,6 +1583,145 @@ describe('budget plans and monthly views', () => {
         amount: 365,
         source: { kind: 'budget', category: 'Insurance', type: 'expense' },
       })]);
+    });
+
+    it('reconciles legacy and typed insurance categories without duplicating linked premiums', () => {
+      const data = {
+        ...emptyAppData(today),
+        policies: [{
+          ...policy,
+          payments: [{ id: 'typed-premium', date: '2026-03-05', amount: 60, note: '' }],
+        }],
+        monthBudgets: [monthBudgetFromLines('2026-03', [
+          { category: 'Insurance', planned: 400 },
+          { category: 'Health premium', planned: 25 },
+        ], {
+          incomes: incomes(1_000),
+          linkedIncluded: true,
+        })],
+        transactions: [
+          {
+            id: 'legacy-premium',
+            type: 'expense' as const,
+            amount: 35,
+            category: 'Insurance',
+            note: '',
+            date: '2026-03-10',
+          },
+          {
+            id: 'typed-manual-premium',
+            type: 'expense' as const,
+            amount: 20,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-12',
+          },
+          {
+            id: 'typed-linked-premium',
+            type: 'expense' as const,
+            amount: 60,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'typed-premium' },
+          },
+        ],
+      };
+      expect(appDataSchema.safeParse(data).success).toBe(true);
+      expect(validateIntegrity(data)).toEqual([]);
+
+      const view = budgetMonthView(data, '2026-03', today);
+      expect(view.lines).toEqual(expect.arrayContaining([
+        expect.objectContaining({ category: 'Insurance', planned: 400, actual: 35 }),
+        expect.objectContaining({ category: 'Health premium', planned: 85, actual: 80 }),
+      ]));
+      expect(view.actualSpend).toBe(115);
+      expect(view.plannedSpend).toBe(485);
+
+      const overviewItems = budgetOverview(data, '2026-03', today)
+        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
+      expect(overviewItems).toEqual(expect.arrayContaining([
+        expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
+        expect.objectContaining({ title: 'Health premium', kind: 'line', planned: 25, actual: 20 }),
+        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
+      ]));
+      expect(overviewItems.reduce((sum, item) => sum + item.planned, 0)).toBe(485);
+      expect(overviewItems.reduce((sum, item) => sum + item.actual, 0)).toBe(115);
+    });
+
+    it('shows one read-only Insurance row per cover type when multiple policies are active', () => {
+      const secondPolicy: Policy = {
+        ...policy,
+        id: 'health-policy-two',
+        name: 'Second health cover',
+        premium: 90,
+        payments: [{ id: 'health-payment-two', date: '2026-03-05', amount: 90, note: '' }],
+      };
+      const data = {
+        ...emptyAppData(today),
+        policies: [
+          { ...policy, payments: [{ id: 'health-payment-one', date: '2026-03-05', amount: 60, note: '' }] },
+          secondPolicy,
+        ],
+        transactions: [
+          {
+            id: 'health-transaction-one',
+            type: 'expense' as const,
+            amount: 60,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'health-payment-one' },
+          },
+          {
+            id: 'health-transaction-two',
+            type: 'expense' as const,
+            amount: 90,
+            category: 'Health premium',
+            note: '',
+            date: '2026-03-05',
+            source: { kind: 'policy-payment' as const, parentId: secondPolicy.id, entryId: 'health-payment-two' },
+          },
+        ],
+        monthBudgets: [monthBudgetFromLines('2026-03', [], {
+          incomes: incomes(1_000),
+          linkedIncluded: true,
+        })],
+      };
+      const items = budgetOverview(data, '2026-03', today)
+        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
+      const policyRows = items.filter((item) => item.source.kind === 'policy');
+      expect(policyRows).toEqual([expect.objectContaining({
+        title: 'Health premium',
+        planned: 150,
+        actual: 150,
+        editable: false,
+      })]);
+    });
+
+    it('keeps inactive policy history but excludes it from linked dues and budget commitments', () => {
+      const data = {
+        ...emptyAppData(today),
+        policies: [{
+          ...policy,
+          status: 'lapsed' as const,
+          payments: [{ id: 'historic-premium', date: '2026-02-05', amount: 60, note: '' }],
+        }],
+        monthBudgets: [monthBudgetFromLines('2026-03', [{
+          category: 'Insurance', planned: 400,
+        }], {
+          incomes: incomes(1_000),
+          linkedIncluded: true,
+        })],
+      };
+      expect(data.policies[0]?.payments).toHaveLength(1);
+      expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')).toEqual([]);
+      expect(monthlyCommitments(data, '2026-03')).toEqual([]);
+      expect(budgetMonthView(data, '2026-03', today).lines)
+        .toEqual([expect.objectContaining({ category: 'Insurance', planned: 400, actual: 0 })]);
+      expect(budgetOverview(data, '2026-03', today).sections
+        .find((section) => section.id === 'insurance')?.items)
+        .not.toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'linked' })]));
     });
   });
 });

@@ -17,7 +17,14 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
-import { updatePolicy, type PolicyPatch } from '../domain/policyActions';
+import {
+  addPolicy as addPolicyData,
+  deletePolicy as deletePolicyData,
+  setPolicyStatus as setPolicyStatusData,
+  updatePolicy,
+  type PolicyPatch,
+} from '../domain/policyActions';
+import { setCoverGoalTarget as setCoverGoalTargetData } from '../domain/coverGoals';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -62,6 +69,7 @@ import {
   editItem as editBudgetItemStructureData,
   deleteItem as deleteBudgetItemData,
   editBudgetItem as editBudgetItemData,
+  editBudgetIncome as editBudgetIncomeData,
   ensureCurrentMonthBudget,
   removeBudgetItem as removeBudgetItemData,
   restoreMonthBudget,
@@ -75,6 +83,7 @@ import {
   addLiabilityWithHistory,
   addPlanWithHistory,
   addPolicyWithHistory,
+  addPolicyPayment as addPolicyPaymentData,
   clearDue,
   clearDuesThrough,
   clearPastDues,
@@ -88,10 +97,11 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, CoverGoalTargetMode, CoverPolicyType, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, PolicyStatus, Settings, Transaction,
 } from '../domain/types';
 import type {
   BudgetIncomeInput,
+  BudgetIncomeUpdateInput,
   BudgetItemPatch,
   BudgetItemScope,
   BudgetItemSource,
@@ -133,7 +143,12 @@ export type AppActions = {
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
+  addPolicyPayment: (policyId: string, payment: Omit<PolicyPayment, 'id'>) => void;
   updatePolicy: (id: string, patch: PolicyPatch) => void;
+  addPolicy: (input: AddPolicyInput) => void;
+  setPolicyStatus: (id: string, status: PolicyStatus) => void;
+  deletePolicy: (id: string) => void;
+  setCoverGoalTarget: (input: { type: CoverPolicyType; targetMode: CoverGoalTargetMode; targetValue?: number }) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -163,6 +178,7 @@ export type AppActions = {
   deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
   addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  editBudgetIncome: (month: string, incomeId: string, values: BudgetIncomeUpdateInput, scope: BudgetItemScope, today: ISODate) => void;
   editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
   deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
@@ -384,8 +400,61 @@ export function createAppStore(
             newId: deps.newId,
           }).data);
         },
+        addPolicyPayment(policyId, payment) {
+          applyDataAction((data) => addPolicyPaymentData(data, { policyId, payment }, deps.newId).data);
+        },
         updatePolicy(id, patch) {
-          applyDataAction((data) => updatePolicy(data, id, patch));
+          const previous = get().data;
+          applyDataAction((data) => updatePolicy(data, { id, patch }));
+          const previousPolicy = previous.policies.find((policy) => policy.id === id);
+          if (get().lastError === null && get().data !== previous
+            && previousPolicy && patch.status !== undefined && patch.status !== previousPolicy.status) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy status updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        addPolicy(input) {
+          applyDataAction((data) => addPolicyData(data, {
+            ...input,
+            id: deps.newId(),
+            payments: [],
+          }));
+        },
+        setPolicyStatus(id, status) {
+          const previous = get().data;
+          applyDataAction((data) => setPolicyStatusData(data, { id, status }));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy status updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        deletePolicy(id) {
+          const previous = get().data;
+          applyDataAction((data) => deletePolicyData(data, { id }));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Policy deleted.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
+        },
+        setCoverGoalTarget(input) {
+          const previous = get().data;
+          applyDataAction((data) => setCoverGoalTargetData(data, input));
+          if (get().lastError === null && get().data !== previous) {
+            useUIStore.getState().setActionToast({
+              message: 'Cover goal updated.',
+              actionLabel: 'Undo',
+              onAction: () => set({ data: previous, lastError: null }),
+            });
+          }
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));
@@ -475,6 +544,9 @@ export function createAppStore(
         },
         addBudgetIncome(month, input, scope, today) {
           applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        editBudgetIncome(month, incomeId, values, scope, today) {
+          applyDataAction((data) => editBudgetIncomeData(data, month, { incomeId, values }, scope, today));
         },
         editBudgetStructureItem(month, itemId, patch, scope, today) {
           applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));
@@ -637,6 +709,8 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v10`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v11`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
