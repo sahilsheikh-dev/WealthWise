@@ -184,12 +184,14 @@ describe('permanent progress ledger', () => {
       expect(count?.done).toBe(count?.total);
     }
     const phase28 = counts.get(28);
+    const phase28Total = phase28?.total ?? 0;
+    const phase28Done = phase28?.done ?? 0;
     const releaseRow = rows.find((row) => row.split('|')[1]?.trim() === 'P28-F');
-    expect(phase28?.total).toBeGreaterThan(0);
+    expect(phase28Total).toBeGreaterThan(0);
     expect(releaseRow).toBeDefined();
     const releaseStatus = releaseRow?.split('|')[3]?.trim() ?? '';
     expect(['In progress', 'Done'].some((status) => releaseStatus.startsWith(status))).toBe(true);
-    expect(phase28?.done).toBe(phase28?.total - (releaseStatus.startsWith('Done') ? 0 : 1));
+    expect(phase28Done).toBe(phase28Total - (releaseStatus.startsWith('Done') ? 0 : 1));
   });
 
   it('keeps the phase branch index aligned with dashboard subtask counts', () => {
