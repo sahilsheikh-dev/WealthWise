@@ -1,39 +1,38 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-07 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
-- **Published v1.0.0 tag after main history rewrite:** the tag remains
-  unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
-  into the original commit history. It was intentionally not moved; retain it
-  unless the owner explicitly requests a tag change.
-- **P28-B production build and dependency audit:** the v1.0.0 GitHub Release
-  and remote tag were published and verified on 2026-11-07 at
-  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
-  `docs/releases/published/`. The EAS production build remains unrun. The
-  accepted audit risk is 7 production advisories: 4 moderate and 3 high, with
-  no Expo SDK 57-compatible patch fix.
+- **v1.0.0 GitHub release body (owner action):** the canonical body is
+  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
+  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
+  No release edit was made in P28-C-R3.
+- **v1.0.0 device report details:** the owner-entered
+  [`device-test-checklist.md`](../releases/device-test-checklist.md) marks all
+  43 checks Pass, including N39. Device model, Android version, tester and
+  date are not recorded. The owner separately reports previously identified
+  Release 2 bugs remain, but no failing checklist IDs, reproduction steps,
+  expected/actual behavior, or screenshots were supplied. Request those
+  details before drafting a scoped fix prompt; do not infer checklist failures.
+- **Local checklist commit is not pushed:** its subject was corrected at the
+  owner's request, and the report commit was replayed unchanged. See the
+  old-to-new hash mapping and tree verification in
+  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
+- **Release 2 known bug follow-ups:** retain P29-AB-R1, the Phase 30
+  stale-values work, and P20-N-R1 as tracked follow-ups. The current device
+  report does not establish which of these reproduce or their exact symptoms.
 
-- **P29-AB income recurrence physical-device check:** verify frequency and
-  first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
-  months, Received dues, projected cash flow, virtual future months and
-  v21-to-v22 native migration/restart. Automated evidence is complete and all
-  six gates pass; native device behavior remains unverified.
-- **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
-  net-worth, goal and Emergency Fund equality assertions is not yet present.
-  The P28 report commit records the gap; owner/device validation is still
-  required.
-- **P28-A Expo audit owner decision:** `npm audit --omit=dev` currently reports
-  7 production vulnerability nodes (4 moderate, 3 high). Fixes suggested by
-  npm require Expo/Router major upgrades rather than SDK-57 patch fixes. No
-  major upgrade or force audit fix was approved.
-
-- **P27-A Expo SDK audit owner decision:** current `npm audit` reports 7
-  production vulnerability nodes; npm offers Expo SDK/Router major fixes rather
-  than patch-level SDK-57 fixes. No major upgrade or `audit fix --force` is
-  approved. Native-device bundle, hydration and dependency behavior remain
-  subject to normal physical-device verification.
+- **P29-AB income recurrence physical-device check:** owner marked checklist
+  item N39 Pass, covering quarterly/yearly first-due months, planned income,
+  Received dues, due/non-due projected cash flow and backup restore. Font
+  scales 1.3/2.0, virtual future months, and native v21-to-v22
+  migration/restart are not documented by N39 and remain unverified.
+- **Pre-build synthetic v13 equality:** automated coverage now imports a
+  deterministic, checksummed v13 backup through `parseBackup` and compares
+  source-derived net worth, every goal's saved amount and Emergency Fund
+  available amount. Physical-device backup/restore checks remain part of the
+  pre-build checklist in [`build-config.md`](../releases/build-config.md).
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on
@@ -47,10 +46,11 @@
   preserves valid links, net worth and goal values. No schema change.
 - **Emergency Fund form font-scale and device check:** verify the resolved
   link picker and EF allocation form at 1.3x and 2.0x on physical devices.
-- **P29-Z documentation verification:** source wins over docs; schema v21,
-  migration/archive range through `.premigration.v20`, Foreclosure labels,
-  Home-only menu rule and real Gate 1 counts are recorded. No behavior, schema
-  or UI source change is part of P29-Z.
+- **P29-Z documentation verification (historical, superseded 2026-11-08):**
+  source wins over docs; current schema v22 and the migration/archive chain
+  through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
+  Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
+  change.
 - **Home-only global menu physical-device check (2026-11-05):** verify the
   three-dot options menu remains present on Index/Home and absent on Assets,
   Liabilities and detail screens, including backup, reminders, security,
@@ -197,6 +197,14 @@
 
 ## Recent completed validation
 
+- **Commit-subject enforcement (2026-11-08):** superseded the former
+  unenforced placeholder-subject practice because it obscured the scope of
+  changes and encouraged unrelated edits to be grouped together. The
+  repository hook now requires descriptive Conventional Commit subjects;
+  enable it with `git config core.hooksPath .githooks`. Full ordered gates are
+  recorded as Gate 1-4 exit 0; Gate 1 had 93 suites, 1,205 passed and 1
+  skipped. Both Expo export gates were intentionally skipped because the task
+  forbids builds.
 - **P29-R:** the external schema-v13 backup migrated through the production
   import path to v18 with no differences in the requested before/after
   summaries. The script prints only numbered holdings/goals, types, and

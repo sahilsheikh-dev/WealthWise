@@ -1,14 +1,30 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Rules
 
 ## Invariants
 
-- At task preflight, list dirty files and checkpoint exactly those named files
-  as `chore: user manual changes (checkpoint)` before other work. Preserve
-  manual edits. Never use checkout, restore, stash, reset, or old-code
-  reapplication to revert them. If source-owner edits break a test, update the
-  test and record old/new/reason in `docs/PROGRESS.md`.
+- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
+  before other work. If files are dirty, run `git diff --stat` and inspect
+  their complete diff, then commit exactly those named files with a
+  Conventional Commit subject that states what changed. Use one commit per
+  unrelated area. The subject must not use a legacy placeholder; never bypass
+  the commit hook. Preserve owner edits and never revert them.
+- Enable commit-message enforcement in each clone with
+  `git config core.hooksPath .githooks`.
+- **R2 — Phase and revision IDs:** align each task with existing work. A fix
+  or change to a completed subtask stays in its original phase and is logged
+  as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
+  `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
+  new areas.
+- **R3 — History and release approval:** never push, amend or rewrite history
+  unless the owner explicitly asks. Release publication and tag creation,
+  movement or deletion require explicit owner approval.
+- **R4 — Documentation scope:** routine documentation committed to Git is
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
+  including release drafts. Other documentation files may be changed only
+  when explicitly named in the owner's task. Reports and generated output
+  belong in chat or `/tmp`; release content must never be placed there.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -17,13 +33,14 @@
   one persisted write.
 - Preserve unrequested behavior; remove replaced implementations rather than
   keeping parallel paths. Never weaken tests to get green.
-- Reports, audits, checklists, and generated output belong in chat replies or
-  `/tmp`, never in the repository. Commit documentation only under
-  `docs/memory/` and `docs/PROGRESS.md`.
-- Keep release drafts under `docs/releases/drafts/`. After GitHub publication
-  is verified, move each released Markdown file into
-  `docs/releases/published/`; never leave published records at the release
-  root or duplicated in the drafts folder.
+- Reports, audits and generated output belong in chat replies or `/tmp`.
+  Release content, including checklists, belongs in `docs/releases/` and never
+  in `/tmp`.
+- Anyone starting or continuing release work creates or reuses
+  `docs/releases/drafts/vX.Y.Z.md` and commits it as
+  `docs: draft vX.Y.Z release notes`. After publication is verified, move the
+  file into `docs/releases/published/` and commit the move. Never leave a
+  published file in drafts or a draft in published.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -34,11 +51,29 @@
 - Demo fixtures use deterministic synthetic data, stable IDs/dates and valid
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
+- For every GitHub release, attach the Android APK named exactly
+  `WealthWise-android.apk`. Include the Download block and SHA-256 in the
+  published Markdown and GitHub release body. The README Download section and
+  latest release Download block must be identical and use the latest route;
+  older releases use their own versioned link. Add or replace only the
+  Download block in an existing published note; do not otherwise rewrite the
+  file. When a newer version is published, change only the previous release's
+  Download block to use that release's versioned link. Verify both links with `curl -I -L`;
+  both must return HTTP 200 and the APK hash must match. Record EAS build ID,
+  Android `versionCode`, source commit and artifact in the Builds table. A
+  release is incomplete until both links return 200, the hash matches, and
+  the README, published notes, release history and GitHub assets agree.
+  Production Android AABs go to Google Play and APKs to GitHub; iOS
+  distribution is not currently offered. Signing credentials are EAS-managed.
+  See [`build-config.md`](../releases/build-config.md).
 
 ## Protected file hashes
 
 Git blob IDs at the P25-C preflight (verify with `git hash-object` before
 relying on them after an authorized edit):
+
+Reverified with `git hash-object` on 2026-11-08; all six current blob IDs below
+match the recorded values.
 
 | File | Git blob ID | Rule |
 |---|---|---|
@@ -52,9 +87,11 @@ relying on them after an authorized edit):
 ## Commits and ledger
 
 Read and update `docs/PROGRESS.md` with each task commit. Preserve uncommitted
-user changes; if dirty at preflight, checkpoint them with
-`chore: user manual changes (checkpoint)`. Commit each task step separately.
-Never push, amend, or rewrite history. Every reported/recorded commit hash must
+user changes; if dirty at preflight, commit named files with descriptive
+Conventional Commit messages derived from their diffs. Commit each task step
+separately. Never push, amend, or rewrite history unless the owner explicitly
+asks; release publication and tag changes require explicit owner approval.
+Every reported/recorded commit hash must
 be copied from `git log` and verified with `git cat-file -t`. Record assumptions
 as `Assumed: ...`; state superseded assertions and the replacement/reason.
 

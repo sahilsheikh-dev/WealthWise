@@ -16,10 +16,27 @@ Only successfully published GitHub Releases should be recorded here.
 
 - Release notes: [v1.0.0.md](./published/v1.0.0.md)
 - GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
-- Tag: `v1.0.0` (verified at `1c1426d03fadccc51278ed9af5426cacd4c9d7af`)
-- Target commit: `1c1426d03fadccc51278ed9af5426cacd4c9d7af`
+- Tag: `v1.0.0` points to
+  `cac6fedc6242b495558f11cc6d7fe8551fd354ea`.
+- Target commit: `cac6fedc6242b495558f11cc6d7fe8551fd354ea` (the EAS source
+  commit and an ancestor of `origin/main`).
+- 2026-11-08 approved alignment: moved the tag from
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af` to the verified build source.
+  The runtime-path diff between source and target is empty because both
+  commits are identical. `git ls-remote --tags origin` resolves the annotated
+  tag to `cac6fedc6242b495558f11cc6d7fe8551fd354ea`;
+  `git merge-base --is-ancestor v1.0.0 origin/main` exited 0.
+- `gh release view v1.0.0` still confirms the APK asset name, size and digest.
+  Its stored `targetCommitish` field still reports the old target; no GitHub
+  release edit was made.
 
-## 3. Draft Releases
+## 3. Builds
+
+| Version | Platform | Build number / versionCode | EAS build ID | Source commit | Artifact name / size | SHA-256 | Download link status | Profile | Date | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v1.0.0 | Android APK (app version 1.0.0) | 1 | `7addde9a-34df-4f00-a54a-b695c1578859` | `cac6fedc6242b495558f11cc6d7fe8551fd354ea` | `WealthWise-android.apk` / 112,133,413 bytes (~106.9 MiB) | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` | `curl -I -L`: latest HTTP 200, Content-Length 112133413; versioned HTTP 200, Content-Length 112133413; downloaded APK SHA-256 matches | preview | 2026-11-07 (completed 14:52 UTC) | EAS build finished; its artifact SHA-256 and size match the GitHub APK exactly. Owner release-body edit remains pending |
+
+## 4. Draft Releases
 
 Unpublished releases are stored in:
 
@@ -27,7 +44,7 @@ Unpublished releases are stored in:
 
 Drafts must not be included in the published release history.
 
-## 4. Versioning Policy
+## 5. Versioning Policy
 
 WealthWise follows Semantic Versioning:
 
@@ -35,7 +52,7 @@ WealthWise follows Semantic Versioning:
 - MINOR: New backward-compatible features.
 - PATCH: Backward-compatible bug fixes and maintenance.
 
-## 5. Historical Record Rules
+## 6. Historical Record Rules
 
 1. Maintain reverse chronological order.
 2. Record only verified published releases.
@@ -49,7 +66,7 @@ WealthWise follows Semantic Versioning:
 10. Keep every published version's Markdown record in `published/`; never
     leave published notes at the `docs/releases/` root or in `drafts/`.
 
-## 6. Update Procedure
+## 7. Update Procedure
 
 After every successful GitHub Release:
 

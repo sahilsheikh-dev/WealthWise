@@ -12,5 +12,5 @@
   assumption and device behavior that was not tested.
 - Record replaced assertions with old behavior, new assertion and reason.
 - Do not use emojis in reports or memory.
-- Preserve all user work; use a checkpoint commit when required and never
+- Preserve all user work; describe each committed change accurately and never
   rewrite history.

@@ -375,13 +375,12 @@ export class MissingPlannedIncomeError extends Error {
 export function plannedIncomeOf(
   value: { incomes: readonly BudgetIncomeItem[] },
   month?: string,
-  frozenSnapshot = false,
 ): number {
   return value.incomes.reduce(
     (total, income) => total + (
       month === undefined
         ? income.amount
-        : frozenSnapshot || isIncomeDueInMonth(income, month)
+        : isIncomeDueInMonth(income, month)
           ? income.amount
           : 0
     ),
@@ -396,7 +395,7 @@ export function resolveBudgetPlan(
   frozenSnapshot = false,
 ): BudgetLine[] {
   const resolvedPlannedIncome = plannedIncome === undefined
-    ? (plan.incomes.length > 0 ? plannedIncomeOf(plan, month, frozenSnapshot) : null)
+    ? (plan.incomes.length > 0 ? plannedIncomeOf(plan, month) : null)
     : plannedIncome;
   return plan.items.map((item) => {
     const itemValue = plannedForMonth(
@@ -951,14 +950,18 @@ export function editBudgetIncome(
       : [...plan.incomes, updatedIncome],
   };
   if (!stored) return { ...data, budgetPlan: updatedPlan };
+  const scheduleChanged = (currentIncome.frequency ?? 'monthly') !== (updatedIncome.frequency ?? 'monthly')
+    || currentIncome.firstDueMonth !== updatedIncome.firstDueMonth;
   return {
     ...data,
     budgetPlan: updatedPlan,
     monthBudgets: monthRows(data).map((row) => row.month === month
-      ? {
-        ...row,
-        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
-      }
+      ? scheduleChanged
+        ? row
+        : {
+          ...row,
+          incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+        }
       : row),
   };
 }
@@ -1476,7 +1479,7 @@ export function budgetMonthView(
     .reduce((sum, row) => sum + row.amount, 0);
   const actualEarned = position.earnedIncome;
   const plannedIncome = budget && budget.incomes.length > 0
-    ? plannedIncomeOf(budget, key, !virtual)
+    ? plannedIncomeOf(budget, key)
     : null;
   return {
     budget, position, plannedIncome,
@@ -1520,20 +1523,20 @@ export function projectedCashFlow(
   }
   const prior = projectedCashFlow(data, shiftMonth(month, -1), today, scheduleCache);
   const opening = prior.closing;
-  const { budget, virtual } = effectiveMonthBudget(data, month, today);
+  const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) return { opening, closing: opening, projected: true };
   const view = budgetMonthView(data, month, today, scheduleCache);
   const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
     + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
   if (monthDistance > 1) {
-    const plannedIncome = plannedIncomeOf(budget, month, !virtual);
+    const plannedIncome = plannedIncomeOf(budget, month);
     return {
       opening,
       closing: normalizeMoney(opening + plannedIncome - view.plannedSpend - view.plannedSave),
       projected: true,
     };
   }
-  const plannedIncome = plannedIncomeOf(budget, month, !virtual);
+  const plannedIncome = plannedIncomeOf(budget, month);
   const income = Math.max(0, plannedIncome - view.actualEarned);
   const spend = Math.max(0, view.plannedSpend - view.actualSpend);
   const save = Math.max(0, view.plannedSave - view.actualSave);
@@ -1690,6 +1693,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
 
   const remainingEarned = new Map(actualEarnedByCategory);
   for (const income of budget.incomes) {
+    const incomeDue = isIncomeDueInMonth(income, month);
     const actual = Math.min(income.amount, remainingEarned.get(income.category) ?? 0);
     remainingEarned.set(income.category, normalizeMoney(
       (remainingEarned.get(income.category) ?? 0) - actual,
@@ -1697,8 +1701,9 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     itemsForSection(incomeSectionId).push({
       id: `income:${income.id}`,
       title: income.name,
-      planned: normalizeMoney(income.amount),
+      planned: incomeDue ? normalizeMoney(income.amount) : 0,
       actual: normalizeMoney(actual),
+      ...(income.frequency && income.frequency !== 'monthly' ? { frequency: income.frequency } : {}),
       kind: 'income',
       editable: true,
       source: { kind: 'income', incomeId: income.id, category: income.category },

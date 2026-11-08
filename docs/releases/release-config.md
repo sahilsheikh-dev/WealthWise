@@ -2,6 +2,9 @@
 
 This file contains the configuration and policies governing WealthWise GitHub Releases.
 
+See [`build-config.md`](./build-config.md) for EAS build profiles, version
+identifiers, store tracks, commands, and pre-/post-build requirements.
+
 ## 1. Application Information
 
 | Property | Value |
@@ -45,6 +48,13 @@ gh repo view
 | Prerelease | Disabled unless explicitly requested |
 | Version Approval | Required |
 
+Bug-fix-only releases bump PATCH. Releases with visible new features bump
+MINOR; breaking changes bump MAJOR. Release 2 is planned as v1.1.0 if it
+includes the Budget Pace graph, otherwise v1.0.1; confirm the scope and version
+with the owner when preparing that release. Change `app.json`, `package.json`
+and `package-lock.json` versions only in the release-preparation task for that
+version.
+
 ## 4. Release Scope
 
 Include:
@@ -79,8 +89,14 @@ Exclude:
 | Automatic Publication | No |
 | Automatic Tagging | Only after approval |
 | Automatic Documentation Archival | After successful publication |
-| Automatic Git Commit | No |
+| Automatic Git Commit | No (draft and archive commits are required) |
 | Automatic Git Push | No |
+
+Build targets and EAS profiles are documented in
+[`build-config.md`](./build-config.md): production Android AAB for Google Play,
+`android-apk` for the GitHub download. iOS distribution is not currently
+offered. Signing credentials are EAS-managed; never place them in this
+repository.
 
 ## 6. Release Documentation
 
@@ -94,22 +110,58 @@ Naming conventions:
 - Published release: `published/vX.Y.Z.md`
 - History: `release-history.md`
 
-Move each draft into `published/` only after verifying successful GitHub
-publication. Keep all published Markdown release records in that directory;
-do not retain duplicates at the release root or in `drafts/`.
+Anyone starting or continuing release work creates or reuses
+`docs/releases/drafts/vX.Y.Z.md` and commits it with subject
+`docs: draft vX.Y.Z release notes`. Release content belongs in Git, never in
+`/tmp`. After verifying successful GitHub publication, move the draft into
+`published/` and commit the move. Never leave a published file in drafts or a
+draft in published.
 
 ## 7. Safety Policies
 
-1. Never overwrite existing release records.
-2. Never delete published releases or tags.
-3. Never force-push.
-4. Never rewrite Git history.
-5. Never publish without approval.
-6. Never expose secrets.
-7. Never modify unrelated application code.
-8. Never automatically commit or push documentation.
-9. Keep unpublished notes in `drafts/` and all published release notes in
-   `published/`; move notes there after publication is verified.
+Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
+[`memory/rules.md`](../memory/rules.md), and
+[`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules). In particular:
+
+- Before other work, list every dirty file, run `git diff --stat`, and inspect
+  the complete diff. Commit exactly those files with a descriptive
+  Conventional Commit subject; split unrelated areas into separate commits.
+  Do not bypass commit-message enforcement.
+- Keep fixes to completed work in their original phase as `<ID>-R<n>`.
+- Never push, amend, or rewrite history without explicit owner approval.
+- Release publication and tag creation require explicit owner approval.
+- Never overwrite or delete published release records or tags.
+- Never expose secrets or commit EAS credentials.
+- Anyone starting or continuing release work creates or reuses
+  `docs/releases/drafts/vX.Y.Z.md` and commits it as
+  `docs: draft vX.Y.Z release notes`. After publication is verified, move the
+  file to `docs/releases/published/` and commit the move; never leave a
+  published file in drafts or a draft in published. Release content is never
+  stored in `/tmp`.
+- For every GitHub release:
+  - Attach the Android APK under the exact name `WealthWise-android.apk`.
+  - Include the Download block and SHA-256 in both the published Markdown and
+    GitHub release body. The latest published block matches the README and
+    uses the latest route; older releases use their versioned asset link.
+  - Add or replace only the Download block in an existing published note; do
+    not otherwise rewrite the file.
+  - When a newer version is published, replace only the previous release's
+    Download block with its versioned link.
+  - Verify both latest and versioned links with `curl -I -L`; both must return
+    HTTP 200, and the downloaded APK's SHA-256 must match.
+  - Record EAS build ID, Android `versionCode`, source commit, exact artifact
+    name, profile, date and status in the release-history Builds table.
+  - Confirm both links return HTTP 200, the SHA-256 matches, and the README,
+    published Markdown, release history and GitHub assets agree. The release
+    remains incomplete until every check passes.
+  - For old published records, change only that version's Download block; do
+    not otherwise rewrite the file.
+
+Use the published Markdown as the release-body source. For v1.0.0, the owner
+command is `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
+
+The worktree and release rules are shared policy, not release-specific
+exceptions.
 
 ## 8. Configuration Maintenance
 
