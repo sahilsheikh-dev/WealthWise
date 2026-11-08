@@ -15,16 +15,16 @@ package-lock.json versions only in that version's release-preparation task.
 ## Download
 Latest version: vX.Y.Z
 Release date: YYYY-MM-DD
-- [Download the latest Android app (vX.Y.Z)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
+- [Download the latest Android app (vX.Y.Z)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk)
 - iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
-The current release asset is named `WealthWise-android.apk`. When this
-version is superseded, rename its asset to
-`WealthWise-android-vX.Y.Z.apk` and update only this version's Download block
-to the matching versioned release URL. Never point an older release to the
-`/latest/` route. Do not include an APK checksum in release material.
+The current release asset is named `WealthWise-android-latest-vX.Y.Z.apk`.
+When this version is superseded, remove `latest` from its asset name, rename it
+to `WealthWise-android-vX.Y.Z.apk`, and update only this version's Download
+block to the matching versioned release URL. Never point an older release to
+the `/latest/` route. Do not include an APK checksum in release material.
 
 ## What's new in vX.Y.Z
 

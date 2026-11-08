@@ -139,12 +139,13 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   published file in drafts or a draft in published. Release content is never
   stored in `/tmp`.
 - For every GitHub release:
-  - Attach the current/latest Android APK under the exact name
-    `WealthWise-android.apk`.
-  - When publishing a newer version, rename the previous release asset to
-    `WealthWise-android-vX.Y.Z.apk` before linking it. The previous release
-    link must use the matching versioned filename. Never use `/latest/` for an
-    older release.
+  - Attach the current/latest Android APK as
+    `WealthWise-android-latest-vX.Y.Z.apk`; use that filename on the
+    `/latest/` download URL.
+  - When publishing a newer version, remove `latest` from the previous
+    release asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and
+    update the previous release link to the matching versioned filename.
+    Never use `/latest/` for an older release.
   - Verify the APK digest privately before publication, but never include it
     in human-authored release material. GitHub may expose a platform-generated
     asset digest that cannot be removed by editing the release.

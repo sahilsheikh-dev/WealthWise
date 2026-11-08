@@ -58,6 +58,11 @@
   HTTP 200 with expected sizes; the former generic v1.0.0 URL returns 404.
   The related repository policy, ledger and regression-test changes are on
   the task branch; they have not been pushed or merged by PR.
+- P28-F-R3-R3 names the current v1.1.0 APK
+  `WealthWise-android-latest-v1.1.0.apk`; its README/note/release-body links
+  and release-history entry match. Both latest-route and versioned v1.1.0
+  links return HTTP 200 at 112,147,677 bytes; v1.0.0's versioned link returns
+  HTTP 200 at 112,133,413 bytes. The local task branch has not been pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and

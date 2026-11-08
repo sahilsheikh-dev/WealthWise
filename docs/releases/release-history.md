@@ -8,7 +8,7 @@ or checksums.
 
 | Version | Date | Type | Android download | Release notes | Status |
 |---|---|---|---|---|---|
-| v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
+| v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-latest-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
 | v1.0.0 | 2026-11-07 | Initial stable | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android-v1.0.0.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
 
 More versions are listed on the [WealthWise releases page](https://github.com/sahilsheikh-dev/WealthWise/releases).
@@ -20,8 +20,9 @@ More versions are listed on the [WealthWise releases page](https://github.com/sa
 | `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
 | `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
 
-The v1.1.0 Android APK matched the EAS artifact and published asset. Its
-versioned release URL and the current latest URL returned HTTP 200 with a
+The v1.1.0 Android APK matched the EAS artifact and published asset
+`WealthWise-android-latest-v1.1.0.apk`. Its latest-route and versioned
+release URLs returned HTTP 200 with a
 content length of 112,147,677 bytes. The owner explicitly approved using the
 `preview` profile and reusing Android `versionCode` 1 for this release. The
 artifact digest was checked privately and is not included in human-authored
@@ -49,9 +50,11 @@ WealthWise follows Semantic Versioning:
   type.
 - Link each Android APK through its versioned release asset and each note in
   `published/`.
-- The current/latest APK asset uses `WealthWise-android.apk`; when it becomes
-  an older release, rename it `WealthWise-android-vX.Y.Z.apk` and update its
-  Download block and table link to the matching asset URL.
+- Name the current/latest APK asset
+  `WealthWise-android-latest-vX.Y.Z.apk`; its `/latest/` URL uses this exact
+  filename. On supersession, remove `latest` and rename the asset to
+  `WealthWise-android-vX.Y.Z.apk`. Update that old release's Download block
+  and table link to its matching version-specific asset URL.
 - Never fabricate release or build data or overwrite a published record.
 - Keep unpublished notes in `drafts/`; move notes to `published/` only after
   verifying successful publication.
