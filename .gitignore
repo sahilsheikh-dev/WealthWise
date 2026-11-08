@@ -69,8 +69,6 @@ pnpm-debug.log*
 docs/*-report.md
 docs/RELEASE-CHECKLIST.md
 docs/*.local.md
-docs/releases/drafts/*
-!docs/releases/drafts/.gitkeep
 
 
 example

@@ -4,33 +4,26 @@
 
 ## Unresolved
 
-- **Published v1.0.0 tag after main history rewrite:** the tag remains
-  unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
-  into the original commit history. The 2026-11-08 `git ls-remote --tags
-  origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
-  origin/main` exited 1. Owner decision is pending; do not move or delete the
-  tag without explicit owner approval.
-- **P28-C v1.0.0 production builds:** the GitHub Release and remote tag were
-  published and verified on 2026-11-07 at
-  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
-  `docs/releases/published/`. Neither the production AAB nor the
-  `android-apk` profile build exists. Before building, rerun the six gates,
-  export and restore a backup, pass physical-device checks on iOS and Android,
-  and confirm owner approval. The dependency audit has 7 production advisories
-  (4 moderate, 3 high); no Expo SDK 57-compatible patch fix is available, and
-  no major upgrade or force fix is approved.
-- **iOS download URL:** the owner will supply a TestFlight or App Store link.
-  Keep the README text as “Not available yet” until then; do not invent a URL.
+- **v1.0.0 GitHub release body (owner action):** the canonical body is
+  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
+  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
+  No release edit was made in P28-C-R3.
+- **v1.0.0 physical-device checklist (owner action):** run every item in
+  [`device-test-checklist.md`](../releases/device-test-checklist.md) on an
+  Android device and report any failure. All results remain Not run.
+- **Release 2 known bug follow-ups:** track P29-AB-R1, the Phase 30 stale-values
+  work, and P20-N-R1. Record failures; do not fix these as part of P28-C-R3.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
   months, Received dues, projected cash flow, virtual future months and
   v21-to-v22 native migration/restart. Automated evidence is complete and all
   six gates pass; native device behavior remains unverified.
-- **Pre-build synthetic v13 equality:** the synthetic v13 backup with explicit
-  net-worth, goal and Emergency Fund equality assertions is not yet present.
-  Owner/device validation remains required; the pre-build checklist is in
-  [`build-config.md`](../releases/build-config.md).
+- **Pre-build synthetic v13 equality:** automated coverage now imports a
+  deterministic, checksummed v13 backup through `parseBackup` and compares
+  source-derived net worth, every goal's saved amount and Emergency Fund
+  available amount. Physical-device backup/restore checks remain part of the
+  pre-build checklist in [`build-config.md`](../releases/build-config.md).
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on
