@@ -38,13 +38,14 @@
   91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
   `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
   because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
-- Current continuation: P29-W-R1 is complete locally on
-  `task/P29-W-R1-liability-entries`. A route regression now inspects actual
-  pending EMI list rows, not just summary text, and confirms they stop at the
-  last scheduled EMI date at font scales 1.0, 1.3 and 2.0. Focused route tests
-  pass (2 suites, 5 tests); TypeScript passes. Phase integration is pending.
-  The broader authorized task still includes P28-E history organization and
-  final task-branch integration.
+- Current request: P29-O1-R2 and P29-W-R2 align recurring-asset and liability
+  completed/pending month counts into two-column summary cells and sort pending
+  schedule rows together with dated entries (newest first). Route regressions
+  pass at font scales 1.0, 1.3 and 2.0; all six ordered gates exit 0. Gate 1:
+  98 suites, 1,238 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62%
+  overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, `src/lib` 100% in all measures. No schema
+  change. Device verification and phase integration remain pending.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and

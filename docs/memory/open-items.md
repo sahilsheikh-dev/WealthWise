@@ -4,6 +4,10 @@
 
 ## Recently resolved
 
+- **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
+  use paired summary cells on Assets and Liabilities; pending schedule rows
+  are sorted together with dated entries. Focused route tests pass at font
+  scales 1.0, 1.3 and 2.0. No schema change.
 - **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
   the new hook requires supported Conventional Commit types and rejects
   placeholders. The reason is to keep scope explicit and unrelated changes
@@ -42,6 +46,10 @@
 - **P29-W-R1 physical-device check:** automated route tests inspect pending
   liability EMI rows and verify the schedule stops at the last EMI date, but
   native rendering and font scaling still need device confirmation.
+- **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
+  layout and date ordering on Assets and Liabilities at font scales 1.3 and
+  2.0 on devices. TestRenderer checks are simulated. The six ordered
+  repository gates pass locally; Phase 29 integration remains pending.
 - **Requested task integration and P28-E history archive:** P29-W-R1 is complete
   locally on its task branch; phase merges, the read-only history archive,
   authorized plain pushes and remote verification have not yet been completed.
