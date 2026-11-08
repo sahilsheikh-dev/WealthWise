@@ -9233,3 +9233,6 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   with Budget Pace or v1.0.1 without it; owner confirmation is required when
   preparing that release. App/package/lockfile versions change only in that
   version's release-preparation task.
+- Step 7: added the Android owner checklist with all X1–X4 and A1–N39 checks,
+  device metadata fields, and every result set to Not run. Linked it from the
+  release index and build guidance. Physical-device execution remains pending.

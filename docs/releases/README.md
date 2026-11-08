@@ -16,6 +16,7 @@ unpublished drafts, and the reusable AI-powered GitHub release workflow.
 | `release-config.md` | Repository configuration and release policies |
 | `release-history.md` | Historical register of published releases |
 | `build-config.md` | EAS profiles, versioning, store tracks and build checklist |
+| `device-test-checklist.md` | Owner-run Android release candidate checklist |
 | `drafts/` | Committed unpublished release notes |
 | `published/` | Permanent Markdown records for published releases |
 
@@ -156,6 +157,8 @@ releases/
 - The shared worktree, phase, history and release-approval rules are in
   [`AGENTS.md`](../../AGENTS.md), [`memory/rules.md`](../memory/rules.md) and
   [`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules).
+- Run the [Android device-test checklist](./device-test-checklist.md) on the
+  release candidate before marking physical-device checks complete.
 - The owner-run device checklist is
   [`device-test-checklist.md`](./device-test-checklist.md); build guidance is
   in [`build-config.md`](./build-config.md).
