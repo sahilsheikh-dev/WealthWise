@@ -20,8 +20,7 @@ export const SUGGESTED_EF_ALLOCATION: EfAllocation = {
 export const DEFAULT_EF_ALLOCATION: EfAllocation = {
   cash: 10,
   bank: 40,
-  'fd-rd': 35,
-  'mutual-funds-bonds': 15,
+  'fd-rd': 50,
 };
 
 export const EF_BUCKET_META: Record<EfBucketId, {

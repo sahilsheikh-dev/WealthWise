@@ -170,6 +170,33 @@ describe('AppHeader', () => {
     expect(title?.props.numberOfLines).toBe(1);
   });
 
+  it('orders a leading menu before Filter and leaves plus at the far right', () => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <AppHeader
+          title="Transactions"
+          menuPlacement="leading"
+          menu={[]}
+          rightActions={[
+            { icon: 'filter', label: 'Filter', onPress: jest.fn(), expanded: false, showIndicator: true },
+            { icon: 'plus', label: 'Add transaction', onPress: jest.fn() },
+          ]}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Transactions header did not render.');
+    const actions = renderer.root.findAll((node) =>
+      String(node.type) === 'pressable' && node.props.accessibilityRole === 'button',
+    );
+    expect(actions.map((action) => action.props.accessibilityLabel))
+      .toEqual(['More options', 'Filter', 'Add transaction']);
+    expect(actions[1]?.props.accessibilityState).toMatchObject({ expanded: false });
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
+    )).toHaveLength(1);
+  });
+
   it('keeps the Budget header free of a menu when explicitly disabled', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {

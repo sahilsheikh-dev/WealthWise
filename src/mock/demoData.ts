@@ -321,8 +321,7 @@ export function buildDemoData(today: ISODate): AppData {
     efAllocation: {
       cash: 10,
       bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
+      'fd-rd': 50,
     },
     efCustomBuckets: [],
     efBucketLinks: {

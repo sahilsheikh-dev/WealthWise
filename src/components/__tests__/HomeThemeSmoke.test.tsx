@@ -1,7 +1,7 @@
-import React from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
-import { Pressable } from 'react-native';
 import { router } from 'expo-router';
+import React from 'react';
+import { Pressable } from 'react-native';
+import TestRenderer, { act } from 'react-test-renderer';
 
 import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
@@ -68,6 +68,7 @@ jest.mock('../../components/ui', () => {
     Card: node('card'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
+    SearchField: node('searchfield'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
@@ -199,7 +200,8 @@ describe('Home screen theme smoke', () => {
         .toEqual({ expanded: false });
       act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(visibleText).toContain('Hide spending by category');
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
+        .toBe('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);
       expect(visibleText).not.toContain('Salary');
@@ -249,14 +251,14 @@ describe('Home screen theme smoke', () => {
     if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
     const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
       node.props.accessibilityRole === 'button'
-      && ['Add Transaction', 'New Investment', 'New Liability'].includes(
+      && ['New Transaction', 'New Investment', 'New Liability'].includes(
         node.props.accessibilityLabel,
       ),
     );
     expect(quickActionButtons).toHaveLength(3);
     expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(3);
     expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
-      'Add Transaction',
+      'New Transaction',
       'New Investment',
       'New Liability',
     ]);

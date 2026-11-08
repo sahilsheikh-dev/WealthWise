@@ -16,11 +16,13 @@ export function PendingItemActions({
   today,
   onClose,
   compact = false,
+  actionLabel,
 }: {
   item: PendingItem;
   today: string;
   onClose?: () => void;
   compact?: boolean;
+  actionLabel?: string;
 }) {
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -184,8 +186,8 @@ export function PendingItemActions({
     return (
       <View style={styles.actions}>
         <Button
-          label={pendingActionLabel(pendingTransactionType(item))}
-          icon="check"
+          label={actionLabel ?? pendingActionLabel(pendingTransactionType(item))}
+          icon={actionLabel ? undefined : 'check'}
           onPress={() => {
             if (item.actionable) clear();
             else void clearThrough();

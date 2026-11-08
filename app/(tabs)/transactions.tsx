@@ -33,7 +33,7 @@ import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { SORT_OPTIONS } from '../../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -60,6 +60,7 @@ export default function TransactionsScreen() {
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const categoryFilter = categoryOverride ?? routeCategory;
   const [query, setQuery] = useState('');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
   useEffect(() => {
@@ -82,7 +83,6 @@ export default function TransactionsScreen() {
       && (!categoryFilter || item.category === categoryFilter)
       && (!query || `${item.title} ${item.category}`.toLowerCase().includes(query.trim().toLowerCase()));
   }), [categoryFilter, filter, monthPendingItems, query]);
-  const [pendingExpanded, setPendingExpanded] = useState(false);
   const unlinkedCount = useMemo(() => findUnlinkedEntries(data).length, [data]);
   const position = useMemo(
     () => availableBalance(data.transactions, month, today),
@@ -103,17 +103,56 @@ export default function TransactionsScreen() {
   const rows = sorting.sort(filteredRows);
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
+  const filterActive = filter !== 'all' || categoryFilter !== ''
+    || sorting.spec.key !== DEFAULT_SORTS.transactions.key
+    || sorting.spec.dir !== DEFAULT_SORTS.transactions.dir;
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
       <ScrollView testID="transactions-content-scroll" style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
-          rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
+          menuPlacement="leading"
+          rightActions={[
+            {
+              icon: 'filter',
+              label: 'Filter',
+              onPress: () => setFilterPanelOpen((open) => !open),
+              expanded: filterPanelOpen,
+              showIndicator: filterActive,
+            },
+            { icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') },
+          ]}
           menu={[
             { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
           ]}
         />
+        {filterPanelOpen ? (
+          <View
+            testID="transaction-filter-panel"
+            onTouchStart={() => setTouchingChips(true)}
+            onTouchEnd={() => setTouchingChips(false)}
+            onTouchCancel={() => setTouchingChips(false)}>
+            <ChipRow>
+              <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
+              {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
+                <Chip
+                  key={item}
+                  label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
+                  selected={filter === item}
+                  onPress={() => setFilter(item)}
+                />
+              ))}
+              {categoryFilter ? (
+                <Chip
+                  label={`Category: ${transactionCategoryLabel(categoryFilter)} ×`}
+                  selected
+                  onPress={() => setCategoryOverride('')}
+                />
+              ) : null}
+            </ChipRow>
+          </View>
+        ) : null}
         <View testID="available-balance-card">
           <Card style={styles.cashCard}>
           <View style={styles.balanceSummary}>
@@ -214,30 +253,6 @@ export default function TransactionsScreen() {
           </WarningBanner>
         ) : null}
 
-        <View
-          testID="transaction-filter-row"
-          onTouchStart={() => setTouchingChips(true)}
-          onTouchEnd={() => setTouchingChips(false)}
-          onTouchCancel={() => setTouchingChips(false)}>
-          <ChipRow>
-              <SortChip options={SORT_OPTIONS.transactions} spec={sorting.spec} onChange={sorting.setSpec} />
-              {(['all', 'income', 'expense', 'invest'] as const).map((item) => (
-                <Chip
-                  key={item}
-                  label={item === 'all' ? 'All' : item === 'invest' ? 'Invested' : `${item[0]?.toUpperCase()}${item.slice(1)}`}
-                  selected={filter === item}
-                  onPress={() => setFilter(item)}
-                />
-              ))}
-              {categoryFilter ? (
-                <Chip
-                  label={`Category: ${transactionCategoryLabel(categoryFilter)} ×`}
-                  selected
-                  onPress={() => setCategoryOverride('')}
-                />
-              ) : null}  
-          </ChipRow>
-        </View>
         <SearchField
           accessibilityLabel="Search transactions"
           placeholder="Search note or category"
@@ -245,36 +260,38 @@ export default function TransactionsScreen() {
           onChangeText={setQuery}
         />
 
-        <View testID="pending-items-section" style={styles.pendingSection}>
-          <Pressable
-            testID="pending-items-toggle"
-            accessibilityRole="button"
-            accessibilityLabel={`Due payments, ${visiblePendingItems.length} items, ${formatAmount(visiblePendingItems.reduce((total, item) => total + item.amount, 0), 'exact', 1)}`}
-            accessibilityState={{ expanded: pendingExpanded }}
-            onPress={() => setPendingExpanded((expanded) => !expanded)}
-            style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
-            <AppText weight="semibold">
-              {visiblePendingItems.length === 1 
-                ? '1 payment due of total ' 
-                : `${visiblePendingItems.length} payments due of total `}
-              <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
-            </AppText>
-            <Feather name={pendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text2} />
-          </Pressable>
-          {pendingExpanded ? visiblePendingItems.length > 0 ? (
-            <View testID="pending-items-list" style={styles.pendingList}>
-              {visiblePendingItems.map((item) => (
-                <PendingItemRow
-                  key={item.id}
-                  item={item}
-                  actions={<PendingItemActions item={item} today={today} />}
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyState title="No due payments this month" />
-          ) : null}
-        </View>
+        {visiblePendingItems.length > 0 ? (
+          <View testID="pending-items-section" style={styles.pendingSection}>
+            <Card style={styles.pendingCard}>
+              <View testID="pending-items-header" style={[styles.pendingHeader, { borderBottomColor: colors.border }]}>
+                <AppText weight="semibold">
+                  {visiblePendingItems.length === 1
+                    ? '1 payment due of total '
+                    : `${visiblePendingItems.length} payments due of total `}
+                  <AmountText value={visiblePendingItems.reduce((total, item) => total + item.amount, 0)} tier="row" weight="semibold" />
+                </AppText>
+              </View>
+              <View testID="pending-items-list" style={styles.pendingList}>
+                {visiblePendingItems.map((item, index) => (
+                  <PendingItemRow
+                    key={item.id}
+                    item={item}
+                    transactionDue
+                    last={index === visiblePendingItems.length - 1}
+                    actions={(
+                      <PendingItemActions
+                        item={item}
+                        today={today}
+                        compact
+                        actionLabel={pendingTransactionType(item) === 'income' ? 'Received' : 'Paid'}
+                      />
+                    )}
+                  />
+                ))}
+              </View>
+            </Card>
+          </View>
+        ) : null}
 
         <View testID="transactions-list" style={styles.list}>
           {!hasMonthTransactions ? (
@@ -328,6 +345,7 @@ const styles = StyleSheet.create({
   savingsLine: { marginHorizontal: 20, marginTop: 9 },
   list: { marginHorizontal: 20, marginTop: 4 },
   pendingSection: { marginHorizontal: 20, marginTop: 8 },
+  pendingCard: { marginHorizontal: 0, marginTop: 0, paddingVertical: 10, paddingHorizontal: 14 },
   pendingHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   pendingList: { paddingTop: 4, gap: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },

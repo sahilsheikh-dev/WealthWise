@@ -144,6 +144,52 @@ describe('pending item Pay navigation', () => {
 });
 
 describe('later due and planned item actions', () => {
+  it('uses the Transactions Paid label for a direct oldest-due clear and offers Undo', () => {
+    mockActions.clearDue.mockImplementation(() => {
+      mockStoreState.data.transactions = [{
+        id: 'cleared-entry',
+        amount: 125,
+        date: '2026-10-12',
+        source: { kind: 'holding-entry', parentId: 'sip-1', entryId: 'cleared-entry' },
+      }];
+      return 'cleared-entry';
+    });
+    const due = item({ kind: 'plan', parentId: 'sip-1', slotId: 'slot-1' });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Paid" />,
+      );
+    });
+    if (!renderer) throw new Error('Compact due action did not render.');
+    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
+      .toEqual(['Paid']);
+    act(() => renderer?.root.findByType('button').props.onPress());
+    expect(mockActions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'slot-1');
+    expect(mockConfirmAsync).not.toHaveBeenCalled();
+    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Marked ₹125 as paid',
+      actionLabel: 'Undo',
+      onAction: expect.any(Function),
+    }));
+    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
+    toast.onAction();
+    expect(mockActions.undoClearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'sip-1' }, 'cleared-entry');
+  });
+
+  it('supports the Received label for income dues', () => {
+    const due = item({ kind: 'budget', category: 'Food' });
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Received" />,
+      );
+    });
+    if (!renderer) throw new Error('Compact income action did not render.');
+    expect(renderer.root.findAllByType('button').map((button) => button.children.join('')))
+      .toEqual(['Received']);
+  });
+
   it('clears a compact budget row directly as Marked as paid and offers undo', () => {
     const planned = item({ kind: 'budget', category: 'Food' });
     let renderer: TestRenderer.ReactTestRenderer | undefined;

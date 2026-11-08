@@ -31,12 +31,11 @@ describe('four-month demo data', () => {
     });
   });
 
-  it('uses only the four default emergency-fund allocation items', () => {
+  it('uses the three requested emergency-fund default allocations', () => {
     expect(data.efAllocation).toEqual({
       cash: 10,
       bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
+      'fd-rd': 50,
     });
   });
 
@@ -219,8 +218,7 @@ describe('four-month demo data', () => {
     expect(data.efAllocation).toEqual({
       cash: 10,
       bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
+      'fd-rd': 50,
     });
     expect(data.efCustomBuckets).toEqual([]);
     const emergency = data.goals.find((goal) => goal.auto === 'ef');
