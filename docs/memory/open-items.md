@@ -9,6 +9,11 @@
   backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
   Undo, and Entries counts/schedule caps. Device model, Android version and
   tester remain blank as requested.
+- **P28-F-R1 GitHub sync:** the device results were committed and merged
+  locally through the intended task -> Phase 28 -> develop path, but are not
+  pushed. Local `develop`/Phase 28 are `d589fda`; GitHub `origin/develop` is
+  `becbe1f` and `origin/phase/28-qa-and-release` is `98fa079`. No push was
+  authorized in the latest request.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -41,13 +46,24 @@
   complete; `release/v1.1.0` was merged/pushed to main and back-merged/pushed
   to develop. The Android APK build, v1.1.0 tag and publication remain pending
   owner action. No EAS/Gradle build or GitHub release edit was performed.
+- **v1.1.0 draft correction:** contributor credits and template guidance are
+  being corrected in P28-F-R2. No publication or tag action has been taken;
+  wait until the corrections are integrated and the owner authorizes release
+  publication.
+- **Branch publication audit:** GitHub currently exposes main, develop,
+  `history/by-phase`, and all 30 phase branches. The `release/v1.1.0` branch
+  was not pushed, although its release changes are merged into main. Unmerged
+  local branches include `codex-changes`, `phase/25-release-and-backups`,
+  `task/P28-E-phase-history`, the device-test task, and the integrated
+  `task/P29-O1-R2-month-count-layout`. Historical/archive and unrelated refs
+  were not changed. The v1.1.0 tag is absent pending owner build/approval.
 - **Stale phase tags (owner decision):** `phase-28-complete` and
   `phase-29-complete` target commits behind their current phase branch tips.
   No tag was moved. Decide whether to retain or update them in a separately
   authorized change.
-- **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are complete on
-  local `develop`; this continuation was not pushed. The earlier authorized
-  P28-E branch/archive publication remains recorded above.
+- **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are included in
+  the v1.1.0 release on GitHub main and the pushed develop baseline. The
+  separate follow-up device-checklist changes remain local until authorized.
 - **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
   layout and date ordering on Assets and Liabilities at font scales 1.3 and
   2.0 on devices. TestRenderer checks are simulated. The six ordered
