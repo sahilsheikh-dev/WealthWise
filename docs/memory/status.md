@@ -15,6 +15,10 @@
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
   succeed. No EAS/Gradle build, v1.1.0 tag or publication has occurred.
+- Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
+  has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
+  overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, and `src/lib` 100%; Expo Doctor is 21/21.
 - Commit-subject enforcement is active: the POSIX hook requires supported
   Conventional Commit types and rejects placeholders. Its reason is to keep
   scope explicit and unrelated changes separate. Enable it with
