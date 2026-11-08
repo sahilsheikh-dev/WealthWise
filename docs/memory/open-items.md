@@ -9,11 +9,15 @@
   placeholders. The reason is to keep scope explicit and unrelated changes
   separate; proposed subjects and staged diff-stats are shown before commit.
   The hook and docs tests pass.
-- **P28-C-R4 release documentation:** completed locally; the README and latest
+- **P28-C-R4 release documentation:** completed; the README and latest
   published Download blocks match, public digest/commit identifiers are
-  absent, and all six gates pass. Release body remains intentionally
-  unchanged. Work is on `task/P28-C-R4-readme`; it has not yet been merged or
-  pushed.
+  absent, and all six gates pass. It is integrated into develop and the
+  authorized refs were pushed and verified. Release body remains intentionally
+  unchanged.
+- **P28-E remote history:** all 30 phase branches, `history/by-phase`, and 30
+  annotated phase completion tags were pushed and verified. `main`, `develop`,
+  and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
+  was used.
 
 ## Unresolved
 
@@ -34,8 +38,9 @@
   old-to-new hash mapping and tree verification in
   [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
 - **v1.1.0 release preparation:** pending because the per-section Pace graph is
-  a visible feature. This task made no version change and performed no release
-  preparation, build, export or push.
+  a visible feature. This task made no version change or release preparation;
+  it used only the required Expo exports and explicitly authorized Git pushes,
+  with no EAS or Gradle build.
 - **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
   quarterly/yearly income appears every month; device re-test of due/non-due
   months, Received dues, projected cash flow and backup restore remains open.

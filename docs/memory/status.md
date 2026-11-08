@@ -14,12 +14,13 @@
   v1.0.0 block. Public README/published notes contain no 40/64-character
   identifiers or checksum text; release instructions require private
   verification, expected-size link checks, and README Download/What's new
-  updates. All six gates exit 0: 98 suites, 1,231 passed, 1 skipped;
+  updates. It is integrated into develop. All six gates exit 0: 98 suites,
+  1,231 passed, 1 skipped;
   coverage 95.96/92.01/98.01/97.62% overall, `src/data`
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%,
   `src/lib` 100%; TypeScript and lint pass, Expo Doctor 21/21, Android export
-  5.5 MB and iOS export 5.2 MB. No release body edit, version bump, EAS/
-  Gradle build, or push.
+  5.5 MB and iOS export 5.2 MB. No release body edit, version bump, or EAS/
+  Gradle build.
 - Commit-subject enforcement is active in the repository: the old behavior
   allowed non-descriptive placeholder subjects; the new POSIX hook requires a
   supported Conventional Commit subject and rejects placeholders. The reason
@@ -38,17 +39,22 @@
   P29-AB-R1 fixes recurring-income consumers; P30-A/B/C reproduce and repair
   stale persisted values and add source guards; P20-N-R1 replaces the stacked
   bar with accessible per-section actual/planned Pace lines (`f904769`). No
-  schema or version bump, release preparation, build, export or push occurred.
+  schema or version bump, release preparation, or EAS/Gradle build occurred.
+  Required Android and iOS exports passed.
   P30 confirms SQLite winning over newer verified fallback data after restart;
   mounted-screen refresh, selector/memoization, module-cache, prior-state
   mutation, and route-param hypotheses were not reproduced by the harness.
   The device checklist now marks N39 and N40 Fail and N41 Not run; device
-  re-test and v1.1.0 release preparation remain pending. The full Gate 1 run
-  has 97 suites, 1,227 passed, 1 skipped; coverage is 95.96% statements,
+  re-test and v1.1.0 release preparation remain pending. The final integrated
+  Gate 1 run has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96% statements,
   92.01% branches, 98.01% functions and 97.62% lines overall. `src/data`:
   91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
-  `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
-  because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
+  `src/lib`: 100% in all four measures. All six gates passed, including Android
+  and iOS exports. Full evidence is in [PROGRESS.md](../PROGRESS.md).
+- Authorized plain pushes are complete and remotely verified: main, develop,
+  all 30 phase branches, `history/by-phase`, and all 30 phase completion tags.
+  The `v1.0.0` tag was not changed. The final ledger follow-up was also pushed
+  through Phase 28 and develop, and those refs were re-verified.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
