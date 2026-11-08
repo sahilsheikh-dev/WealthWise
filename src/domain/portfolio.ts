@@ -1,5 +1,6 @@
 import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
 import { investmentEntryTotals, investmentReturnSummary, type InvestmentReturnSummary } from './investmentReturns';
+import { holdingCapabilities } from './holdingCapabilities';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -16,7 +17,7 @@ export type PortfolioRow = {
 };
 
 export function isCashOrBankHoldingType(type: HoldingType): boolean {
-  return type === 'Cash' || type === 'Savings account';
+  return !holdingCapabilities(type).returns;
 }
 
 export function holdingInvested(holding: Holding): number {
@@ -108,6 +109,7 @@ export function portfolioTotals(rows: PortfolioRow[]): {
 
 export function monthlyCommitment(holdings: Holding[]): number {
   return holdings.reduce((sum, holding) => holding.kind === 'plan'
+    && holdingCapabilities(holding.type).recurring
     ? sum + holding.amount * PERIODS_PER_YEAR[holding.frequency] / 12
     : sum, 0);
 }

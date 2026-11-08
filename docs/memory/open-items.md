@@ -16,7 +16,7 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-H and P29-J are Done.
+  write; the acceptance test passes. P29-B through P29-K are Done.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -63,6 +63,16 @@
 
 ## Physical-device verification
 
+- **P29-K:** verify immediate-once scope application and native Close,
+  backdrop, and Android-back dismissal, including the 44 pt Close target,
+  category-delete count and Undo, and option wrapping at font scales 1.3 and
+  2.0 on iOS and Android. Jest simulates these interactions and layout; native
+  hit testing, screen-reader announcements and rendering remain unverified.
+- **P29-I:** verify that Fixed deposits expose no new deposit, entry, recurring
+  schedule, or Budget-link controls; legacy entries remain viewable/editable/
+  deletable; maturity withdrawal works; and recurring deposits remain fully
+  available at font scales 1.3 and 2.0 on iOS and Android. The tests and Expo
+  exports are simulated/build evidence, not physical-device verification.
 - **P29-H:** verify asset list/card/portfolio totals and Investment Entries on
   iOS and Android, including Cash/Bank labels, the back-dated-entry helper,
   large amounts, and font scales 1.3 and 2.0. Automated TestRenderer cases and
@@ -106,7 +116,12 @@
   is not treated as a recorded valuation; current value is based on opening
   capital and posted entries, with no estimated interest. Manual holdings have
   no start-date field, so their opening cash flow uses the injected as-of date.
-- P29-H does not change schema v15 or the user-owned Home screen.
+- P29-H itself did not change schema v15 or the user-owned Home screen; P29-I
+  subsequently advanced the persisted schema to v16.
+- **Assumed for P29-I:** the current manual holding model and form do not
+  contain rate or maturity fields. No new fields were introduced; Fixed
+  deposits use their opening amount, recorded valuation and withdrawal for
+  maturity payout.
 - AI guidance is maintained only in the root `AGENTS.md`; no tool-specific
   instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but

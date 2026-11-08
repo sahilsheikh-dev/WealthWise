@@ -15,6 +15,7 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingValue } from '../src/domain/portfolio';
 import { makeInvestmentEntryFormSchema, type InvestmentEntryFormInput, type InvestmentEntryFormOutput } from '../src/domain/schemas';
 import { currentInstallmentAmount } from '../src/domain/sip';
@@ -35,6 +36,7 @@ export default function InvestmentEntryFormScreen() {
   const setTxMonth = useUIStore((state) => state.setTxMonth);
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
+  const capabilities = holding ? holdingCapabilities(holding.type) : null;
   const entry = holding?.logs.find((item) => item.id === entryId);
   const linked = entry ? data.transactions.some((transaction) => transaction.source?.kind === 'holding-entry' && transaction.source.entryId === entry.id) : false;
   const currentValue = holding
@@ -55,7 +57,7 @@ export default function InvestmentEntryFormScreen() {
     defaultValues: entry
       ? { kind: entry.kind, date: entry.date, amount: String(entry.amount), note: entry.note }
       : {
-        kind: requestedKind ?? 'Deposit',
+        kind: requestedKind ?? (capabilities && !capabilities.entries ? 'Withdrawal' : 'Deposit'),
         date: requestedDate ?? today,
         amount: requestedAmount
           ?? (holding?.kind === 'plan' && requestedKind !== 'Withdrawal'
@@ -103,6 +105,9 @@ export default function InvestmentEntryFormScreen() {
     });
   };
   if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment entry not found" /></FormScreen>;
+  if (!entry && requestedKind === 'Deposit' && capabilities && !capabilities.entries) {
+    return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Fixed deposits do not accept new deposits. Record a maturity withdrawal instead." /></FormScreen>;
+  }
   return (
     <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={isDirty}
       headerAction={entry ? { label: 'Delete investment entry', onPress: remove } : undefined}
@@ -116,11 +121,14 @@ export default function InvestmentEntryFormScreen() {
         <Controller control={control} name="kind" render={({ field }) => (
           <SegmentedControl
             value={field.value}
-            options={[{ label: 'Deposit', value: 'Deposit' }, { label: 'Withdrawal', value: 'Withdrawal' }]}
+            options={capabilities?.entries
+              ? [{ label: 'Deposit', value: 'Deposit' }, { label: 'Withdrawal', value: 'Withdrawal' }]
+              : [{ label: 'Maturity withdrawal', value: 'Withdrawal' }]}
             onChange={field.onChange}
           />
         )} />
       )}
+      {!capabilities?.entries ? <ReadOnlyRow label="Purpose" value="Maturity payout" /> : null}
       <Controller control={control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Installment date" />} />
       <Controller control={control} name="amount" render={({ field }) => <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
       <Controller control={control} name="note" render={({ field }) => <TextField label="Note" accessibilityLabel="Installment note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />} />

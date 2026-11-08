@@ -40,6 +40,7 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
 import { Dropdown } from '../Dropdown';
+import { ChoiceField } from '../form/ChoiceField';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
@@ -602,16 +603,18 @@ jest.mock('../../components/PaidAmountDialog', () => {
 jest.mock('../../components/ApplyScopeDialog', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    ApplyScopeDialog: ({ visible, onApply, onCancel }: {
+    ApplyScopeDialog: ({ visible, onApply, onClose, description }: {
       visible: boolean;
       onApply: (scope: 'month' | 'following') => void;
-      onCancel: () => void;
+      onClose: () => void;
+      description?: string;
     }) => visible ? ReactModule.createElement('apply-scope-dialog', {
       testID: 'apply-scope-dialog',
     },
+    description ? ReactModule.createElement('text', null, description) : null,
     ReactModule.createElement('button', { onPress: () => onApply('month') }, 'This month only'),
     ReactModule.createElement('button', { onPress: () => onApply('following') }, 'This and following months'),
-    ReactModule.createElement('button', { onPress: onCancel }, 'Cancel')) : null,
+    ReactModule.createElement('button', { accessibilityLabel: 'Close', onPress: onClose }, 'Close')) : null,
   };
 });
 
@@ -1201,6 +1204,7 @@ describe('route render smoke audit', () => {
     const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
       addSection: jest.Mock;
       renameSection: jest.Mock;
+      deleteSection: jest.Mock;
       addBudgetItem: jest.Mock;
       editBudgetStructureItem: jest.Mock;
       deleteBudgetStructureItem: jest.Mock;
@@ -1252,7 +1256,7 @@ describe('route render smoke audit', () => {
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       const cancelScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
-      act(() => cancelScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      act(() => cancelScopeDialog.findByProps({ accessibilityLabel: 'Close' }).props.onPress());
       expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
       expect(actions.addBudgetItem).not.toHaveBeenCalled();
       await act(async () => {
@@ -1372,7 +1376,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       const cancelDeleteScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
-      act(() => cancelDeleteScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      act(() => cancelDeleteScopeDialog.findByProps({ accessibilityLabel: 'Close' }).props.onPress());
       expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
       expect(actions.deleteBudgetStructureItem).not.toHaveBeenCalled();
       await act(async () => {
@@ -1428,6 +1432,30 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      actions.deleteSection.mockClear();
+      actions.restoreBudgetPlanAndMonth.mockClear();
+      mockConfirmAsync.mockClear();
+      routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
+      renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete category' }).props.onPress();
+      });
+      const deleteSectionDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      expect(deleteSectionDialog.findAllByProps({ children: 'This category contains 1 budget item.' }))
+        .toHaveLength(1);
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      await act(async () => {
+        deleteSectionDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.deleteSection).toHaveBeenCalledWith(month, 'pets', 'following', todayISO());
+      const sectionDeleteToast = useUIStore.getState().actionToast;
+      expect(sectionDeleteToast?.actionLabel).toBe('Undo');
+      act(() => sectionDeleteToast?.onAction?.());
+      expect(actions.restoreBudgetPlanAndMonth).toHaveBeenCalledWith(plan, month, snapshot);
       act(() => renderer?.unmount());
       renderer = undefined;
 
@@ -3643,10 +3671,15 @@ describe('route render smoke audit', () => {
       })).toBeDefined();
 
       const fixedCard = renderer.root.findByProps({ testID: 'asset-card-manual-Fixed deposit' });
+      expect(fixedCard.findAllByProps({ label: 'Deposit' })).toHaveLength(0);
+      expect(fixedCard.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
+      expect(fixedCard.findAllByProps({ label: 'Entries (1)' })).toHaveLength(1);
       expect(fixedCard.findAllByType('text')
         .some((node) => node.children.join('').includes(
           'Entries dated before the last valuation are assumed included in it.',
         ))).toBe(true);
+      expect(fixedCard.findAllByType('text')
+        .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
 
       for (const [testID, expectedLabel] of [
         ['asset-card-manual-Cash reserve', 'Deposited'],
@@ -3665,6 +3698,15 @@ describe('route render smoke audit', () => {
       expect(cashCard.findByProps({
         accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}. Withdrawn ${formatAmount(0, 'exact', 1)}`,
       })).toBeDefined();
+
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ id: 'return-fd' });
+      renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Record maturity payout' })).toBeDefined();
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Add investment entry' })).toHaveLength(0);
+      expect(renderer.root.findAllByType('text')
+        .some((node) => node.children.join('').includes('Schedule summary'))).toBe(false);
 
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -3891,6 +3933,113 @@ describe('route render smoke audit', () => {
       if (editRenderer) act(() => editRenderer?.unmount());
       storeState.data.holdings = previousHoldings;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it.each([1.3, 2])('uses capability-filtered investment and Budget form choices at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const fixed: ManualHolding = {
+      id: 'capability-fixed',
+      kind: 'manual',
+      name: 'Fixed deposit',
+      type: 'Fixed deposit',
+      invested: 100,
+      value: 100,
+      valueAsOf: today,
+      logs: [{ id: 'legacy-entry', date: today, amount: 10, kind: 'Deposit', note: '' }],
+    };
+    const budgetPlan = budgetPlanFromLines([], {
+      incomes: [],
+      repeatMonthly: true,
+      repeatFrom: monthKey(today),
+    });
+    const investSection = { id: 'invest', name: 'Investments', type: 'invest' as const };
+    budgetPlan.sections.push(investSection);
+    const monthBudget = monthBudgetFromLines(monthKey(today), [], {
+      incomes: budgetPlan.incomes,
+      sections: budgetPlan.sections,
+    });
+    const data: AppData = {
+      ...emptyAppData(today),
+      holdings: [fixed, {
+        id: 'capability-bank',
+        kind: 'manual',
+        name: 'Savings account',
+        type: 'Savings account',
+        invested: 100,
+        value: 100,
+        valueAsOf: today,
+        logs: [],
+      }],
+      budgetPlan,
+      monthBudgets: [monthBudget],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      routeParams.mockReturnValue({});
+      const planRenderer = renderScreen(React.createElement(InvestmentFormScreen));
+      renderer = planRenderer;
+      const planType = planRenderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'Holding type');
+      if (!planType) throw new Error('Recurring holding type field did not render.');
+      expect(planType.props.options.some((option: { value: string }) => option.value === 'Fixed deposit')).toBe(false);
+
+      act(() => planRenderer.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ id: fixed.id });
+      const manualRenderer = renderScreen(React.createElement(InvestmentFormScreen));
+      renderer = manualRenderer;
+      const manualType = manualRenderer.root.findAllByType(ChoiceField)
+        .find((field) => field.props.label === 'Type');
+      if (!manualType) throw new Error('Manual holding type field did not render.');
+      expect(manualType.props.choices).toContain('Fixed deposit');
+      expect(manualRenderer.root.findAllByType('text')
+        .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
+
+      act(() => manualRenderer.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ holdingId: fixed.id });
+      const entryRenderer = renderScreen(React.createElement(InvestmentEntryFormScreen));
+      renderer = entryRenderer;
+      const entryKind = entryRenderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
+      expect(entryKind?.props.options).toEqual([{ label: 'Maturity withdrawal', value: 'Withdrawal' }]);
+
+      act(() => entryRenderer.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ id: fixed.id });
+      const entriesRenderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      renderer = entriesRenderer;
+      expect(entriesRenderer.root.findByProps({ accessibilityLabel: 'Record maturity payout' })).toBeDefined();
+
+      act(() => entriesRenderer.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ sectionId: 'invest', month: monthKey(today) });
+      const budgetRenderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      renderer = budgetRenderer;
+      const linkedAsset = budgetRenderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'Linked asset');
+      if (!linkedAsset) throw new Error('Budget linked asset field did not render.');
+      expect(linkedAsset.props.options.map((option: { value: string }) => option.value))
+        .not.toContain(fixed.id);
+      expect(linkedAsset.props.options.map((option: { value: string }) => option.value))
+        .toContain('capability-bank');
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 

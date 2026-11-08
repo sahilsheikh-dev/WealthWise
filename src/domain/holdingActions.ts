@@ -1,5 +1,6 @@
 import { NotFoundError } from './actions';
 import { daysBetween } from './dates';
+import { holdingCapabilities } from './holdingCapabilities';
 import { deleteHoldingWithTransactions, syncHoldingTransactions } from './investmentActions';
 import type { AppData, ISODate, ManualHolding } from './types';
 
@@ -14,6 +15,14 @@ export function addHolding(data: AppData, input: AddHoldingInput, newId: () => s
 export function updateHolding(data: AppData, id: string, patch: HoldingPatch): AppData {
   const current = data.holdings.find((holding) => holding.id === id);
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
+  if (
+    patch.type !== undefined &&
+    patch.type !== current.type &&
+    !holdingCapabilities(patch.type).entries &&
+    current.logs.length > 0
+  ) {
+    throw new Error('Remove the existing entries before changing this holding to Fixed deposit.');
+  }
   const snapshotChanged =
     patch.value !== undefined && patch.value !== current.value ||
     patch.valueAsOf !== undefined && patch.valueAsOf !== current.valueAsOf;

@@ -28,7 +28,8 @@ no cloud or network requests at runtime.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
 - Monthly budgets with spend/invest sections, income entries, recurring item
-  schedules, due tracking and cash-flow views.
+  schedules, due tracking and cash-flow views. Scope choices apply immediately;
+  Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
 - Insurance policies, policy-payment tracking and editable cover goals for
@@ -151,9 +152,9 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 15 is
+Zustand persists app data through AsyncStorage. Persisted schema version 16 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 14. Backup import verifies the file integrity and validates
+versions 1 through 15. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -167,6 +168,16 @@ to that goal, so an asset may be counted in multiple goals. Emergency-fund
 bucket targets use the user-set goal target with the three-month minimum
 retained only as a floor; each bucket's available amount is the sum of the full
 values of assets linked to that bucket.
+
+### Holding entry capabilities
+
+Fixed deposits are one-time holdings: they do not accept new deposits or
+recurring schedules and cannot be linked to recurring Budget schedules.
+Maturity proceeds are recorded as withdrawals. Recurring deposits, SIPs and
+other recurring-capable holdings retain their supported entry and schedule
+flows. Existing entries on a Fixed deposit are preserved and remain available
+for review, editing and deletion; the app blocks changing a holding with
+entries to Fixed deposit.
 
 ### Insurance cover goals
 
