@@ -63,7 +63,7 @@ const goalSchema = z.object({
   auto: z.literal('ef').optional(),
   links: z.array(z.object({
     instrumentId: idSchema,
-    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10), 'Share must use at most one decimal place'),
+    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10), 'Share must use at most one decimal place').optional(),
   })).default([]),
 });
 
@@ -277,10 +277,10 @@ const settingsSchema = z.object({
 
 export const efAllocationSchema = z.record(
   idSchema,
-  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 100)),
 ).refine((allocation) => {
   const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
-  return Math.abs(total - 100) < 0.0001;
+  return Math.abs(Number(total.toFixed(2)) - 100) < 0.005;
 }, { message: 'Percentages must add up to 100%', path: ['total'] }).nullable().optional();
 
 export const efCustomBucketSchema = z.strictObject({
@@ -705,10 +705,6 @@ export function makeGoalFormSchema(
       : moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, maximumMessage: "Saved can't exceed the target" }),
     links: z.array(z.object({
       instrumentId: idSchema,
-      share: z.string().trim().regex(/^(?:\d+\.?\d*|\.\d+)$/, 'Enter a valid asset share')
-        .transform(Number)
-        .refine((share) => share >= 0.1 && share <= 100, 'Share must be between 0.1% and 100%')
-        .refine((share) => Math.round(share * 10) === share * 10, 'Share must use at most one decimal place'),
     })).default([]),
     year: z.string().trim().refine((value) => /^\d+$/.test(value), yearMessage)
       .transform(Number).refine(isAllowedYear, yearMessage),

@@ -60,9 +60,9 @@ export default function GoalFormScreen() {
           target: String(effectiveTarget ?? goal.target),
           saved: String(goal.saved),
           year: String(goal.year),
-          links: goal.links.map((link) => ({ instrumentId: link.instrumentId, share: String(link.share) })),
+          links: goal.links.map(({ instrumentId }) => ({ instrumentId })),
         }
-        : { name: '', target: '', saved: '0', year: '', links: [] },
+        : { name: '', target: '', saved: '', year: '', links: [] },
     });
   const links = useWatch({ control, name: 'links' }) ?? [];
   const instruments = useMemo(() => linkableInstruments(data, today), [data, today]);
@@ -157,16 +157,6 @@ export default function GoalFormScreen() {
                     Current value {formatAmount(instrument?.value ?? 0, 'exact', 1)}
                   </AppText>
                 </View>
-                <Controller control={control} name={`links.${index}.share`} render={({ field }) => (
-                  <TextField
-                    label="Share %"
-                    accessibilityLabel={`Share of ${instrument?.name ?? 'asset'} for this goal`}
-                    value={field.value ?? ''}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.links?.[index]?.share?.message}
-                  />
-                )} />
                 <IconButton
                   icon="x"
                   label={`Remove ${instrument?.name ?? 'asset'} from goal`}
@@ -206,19 +196,14 @@ export default function GoalFormScreen() {
             <AppText weight="bold" style={typography.h1}>Link an asset</AppText>
             <ScrollView>
               {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
-                .map((instrument) => {
-                  const selectedShare = goal?.links.find((link) => link.instrumentId === instrument.id)?.share ?? 0;
-                  const freeShare = Math.min(100, instrument.freeShare + selectedShare);
-                  return (
+                .map((instrument) => (
                     <Pressable
                       key={instrument.id}
                       accessibilityRole="button"
-                      accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}, ${freeShare}% available`}
+                      accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
                       onPress={() => {
-                        if (freeShare < 0.1) return;
                         setValue('links', [...links, {
                           instrumentId: instrument.id,
-                          share: String(freeShare),
                         }], { shouldDirty: true, shouldValidate: true });
                         setPickerVisible(false);
                       }}
@@ -227,12 +212,11 @@ export default function GoalFormScreen() {
                       <View style={{ flex: 1 }}>
                         <AppText weight="semibold">{instrument.name}</AppText>
                         <AppText style={{ color: colors.text3 }}>
-                          {formatAmount(instrument.value, 'exact', 1)} · {freeShare}% free
+                          {formatAmount(instrument.value, 'exact', 1)}
                         </AppText>
                       </View>
                     </Pressable>
-                  );
-                })}
+                ))}
             </ScrollView>
             <Button label="Done" onPress={() => setPickerVisible(false)} />
           </View>

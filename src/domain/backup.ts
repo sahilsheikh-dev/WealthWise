@@ -52,7 +52,7 @@ const goalSchema = z.strictObject({
   auto: z.literal('ef').optional(),
   links: z.array(z.strictObject({
     instrumentId: idSchema,
-    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10)),
+    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10)).optional(),
   })).max(1000),
 });
 const holdingType = z.enum([
@@ -96,8 +96,11 @@ const oneTimeLiabilitySchema = z.strictObject({
 });
 const importEfAllocationSchema = z.record(
   idSchema,
-  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 10)),
-).refine((allocation) => Math.abs(Object.values(allocation).reduce((sum, value) => sum + value, 0) - 100) < 0.0001)
+  z.number().finite().min(0).max(100).refine((value) => Number.isInteger(value * 100)),
+).refine((allocation) => {
+  const total = Object.values(allocation).reduce((sum, value) => sum + value, 0);
+  return Math.abs(Number(total.toFixed(2)) - 100) < 0.005;
+})
   .nullable().optional();
 const importEfCustomBucketsSchema = z.array(z.strictObject({
   id: idSchema,

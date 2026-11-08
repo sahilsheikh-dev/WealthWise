@@ -34,6 +34,32 @@ describe('appDataSchema', () => {
     expect(SCHEMA_VERSION).toBe(8);
   });
 
+  it('continues loading legacy goal links with explicit shares', () => {
+    const holding = mockAppData.holdings[0];
+    if (!holding) throw new Error('Mock holding fixture missing');
+    const legacy = {
+      ...mockAppData,
+      goals: [{
+        id: 'legacy-goal',
+        name: 'Legacy goal',
+        target: 1_000,
+        saved: 0,
+        year: 2030,
+        links: [{ instrumentId: holding.id, share: 100 }],
+      }],
+    };
+
+    expect(appDataSchema.parse(legacy).goals[0]?.links).toEqual([
+      { instrumentId: holding.id, share: 100 },
+    ]);
+    const imported = validateImportData(legacy);
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) throw new Error(`Legacy backup was rejected: ${imported.reason}`);
+    expect(imported.data.goals.find((goal) => goal.id === 'legacy-goal')?.links).toEqual([
+      { instrumentId: holding.id, share: 100 },
+    ]);
+  });
+
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
     const buckets = [
       { id: 'first', name: 'Safe reserve', access: 'instant' as const, marketLinked: false },

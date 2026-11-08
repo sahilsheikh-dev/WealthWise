@@ -298,7 +298,6 @@ export function buildDemoData(today: ISODate): AppData {
   const currentMonth = monthKey(today);
   const months = Array.from({ length: 4 }, (_, index) => shiftMonth(currentMonth, index - 3));
   const id = generatedIdFactory();
-  const customBucketId = 'demo-ef-custom-bonds';
   const holdings = makeHoldings(today, months);
   const liabilities = makeLiabilities(months);
   const goals = makeGoals();
@@ -321,20 +320,11 @@ export function buildDemoData(today: ISODate): AppData {
     monthBudgets: [],
     efAllocation: {
       cash: 10,
-      bank: 35,
-      'fd-rd': 25,
-      'mutual-funds-bonds': 10,
-      stocks: 5,
-      insurance: 0,
-      other: 0,
-      [customBucketId]: 15,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
     },
-    efCustomBuckets: [{
-      id: customBucketId,
-      name: 'Government bonds',
-      access: 'days',
-      marketLinked: false,
-    }],
+    efCustomBuckets: [],
     efBucketLinks: {
       cash: ['demo-holding-emergency-cash'],
       bank: ['demo-holding-emergency-bank'],

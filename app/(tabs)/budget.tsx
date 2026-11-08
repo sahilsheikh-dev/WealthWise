@@ -11,7 +11,7 @@ import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { budgetMonthView, BUDGET_GROUPS } from '../../src/domain/budget';
+import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
 import { normalizeMoney } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { budgetGroupRows, type BudgetGroupRow, type PendingItem } from '../../src/domain/pending';
@@ -142,7 +142,7 @@ export default function BudgetScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <AppHeader
             title="Budget"
-            rightActions={[{ icon: 'edit', label: 'Edit budget', onPress: () => router.push('/budget-setup') }]}
+            rightActions={[{ icon: 'edit-2', label: 'Edit budget', onPress: () => router.push('/budget-setup') }]}
             showDefaultMenu={false}
           />
           <View

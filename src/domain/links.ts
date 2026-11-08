@@ -242,7 +242,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   const savingsPolicies = new Set(data.policies
     .filter((policy) => policy.kind === 'life-savings' || policy.kind === 'ulip')
     .map((policy) => policy.id));
-  const allocatedShares = new Map<string, number>();
   for (const [goalIndex, goal] of data.goals.entries()) {
     const seen = new Set<string>();
     for (const [linkIndex, link] of goal.links.entries()) {
@@ -253,9 +252,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
         add('duplicate-goal-link', 'A goal cannot link the same asset more than once.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
       }
       seen.add(link.instrumentId);
-      const total = (allocatedShares.get(link.instrumentId) ?? 0) + link.share;
-      allocatedShares.set(link.instrumentId, total);
-      if (total > 100) add('goal-link-overallocated', 'Shares across goals cannot exceed 100% of an asset.', ['goals', goalIndex, 'links', linkIndex, 'share']);
     }
   }
   if (data.budget) {

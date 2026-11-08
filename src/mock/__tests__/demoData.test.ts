@@ -31,6 +31,15 @@ describe('four-month demo data', () => {
     });
   });
 
+  it('uses only the four default emergency-fund allocation items', () => {
+    expect(data.efAllocation).toEqual({
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    });
+  });
+
   it('has four complete months of income, every budget expense category, and each investment category', () => {
     expect(data.monthBudgets?.map(({ month }) => month)).toEqual([monthKey(today)]);
     for (const month of months) {
@@ -207,6 +216,13 @@ describe('four-month demo data', () => {
   });
 
   it('shows the linked-asset emergency fund and reachable and unreachable goal projections', () => {
+    expect(data.efAllocation).toEqual({
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+    });
+    expect(data.efCustomBuckets).toEqual([]);
     const emergency = data.goals.find((goal) => goal.auto === 'ef');
     if (!emergency) throw new Error('Emergency goal missing from demo data.');
     expect(emergency.links.map(({ instrumentId }) => instrumentId)).toEqual([

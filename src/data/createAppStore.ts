@@ -41,9 +41,7 @@ import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
   addEfCustomBucket,
-  deleteEfCustomBucket,
   renameEfCustomBucket,
-  resetEfAllocation,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
@@ -61,7 +59,7 @@ import {
   setBudgetPlan,
   setBudgetRepeat,
 } from '../domain/budget';
-import type { EfAllocation } from '../domain/efAllocation';
+import { resolveEfAllocation, type EfAllocation } from '../domain/efAllocation';
 import {
   addLiabilityWithHistory,
   addPlanWithHistory,
@@ -144,11 +142,9 @@ export type AppActions = {
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
-  resetEfAllocation: () => void;
   addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
   renameEfCustomBucket: (bucketId: string, name: string) => void;
   setEfCustomBucketAccess: (bucketId: string, access: EfCustomBucket['access']) => void;
-  deleteEfCustomBucket: (bucketId: string, options?: { moveTo?: string }) => void;
   setEfBucketLinks: (bucketId: string, holdingIds: string[]) => void;
   saveEfPlan: (plan: EfPlanDraft) => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -452,9 +448,6 @@ export function createAppStore(
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
         },
-        resetEfAllocation() {
-          applyDataAction(resetEfAllocation);
-        },
         addEfCustomBucket(input) {
           applyDataAction((data) => addEfCustomBucket(data, input, deps.newId));
         },
@@ -463,9 +456,6 @@ export function createAppStore(
         },
         setEfCustomBucketAccess(bucketId, access) {
           applyDataAction((data) => setEfCustomBucketAccess(data, bucketId, access));
-        },
-        deleteEfCustomBucket(bucketId, options) {
-          applyDataAction((data) => deleteEfCustomBucket(data, bucketId, options));
         },
         setEfBucketLinks(bucketId, holdingIds) {
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
@@ -581,6 +571,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
+            await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
@@ -666,6 +657,11 @@ export function createAppStore(
             goals: ensureEfGoal(data.goals, { expenseBaseline, asOf: deps.today() }),
           };
         }
+        const allocationResolution = resolveEfAllocation(data);
+        const allocationNeedsRepair = allocationResolution.repaired;
+        if (allocationNeedsRepair) {
+          data = { ...data, efAllocation: allocationResolution.allocation };
+        }
         const today = deps.today();
         const beforeEnsure = data;
         data = ensureCurrentMonthBudget(data, today, deps.newId);
@@ -691,7 +687,7 @@ export function createAppStore(
         } finally {
           suppressNextWrite = false;
         }
-        if (budgetWasEnsured) storeApi.getState().actions.ensureCurrentMonthBudget(today);
+        if (budgetWasEnsured || allocationNeedsRepair) storeApi.setState({ data });
       },
     },
   ));

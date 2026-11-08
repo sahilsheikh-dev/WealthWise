@@ -28,6 +28,8 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Send test notification',
   'Clear due',
   'Clear past dues',
+  // This short Home action is text-first but keeps the existing due confirmation.
+  'Marked as paid',
   'Undo',
   // These visible labels are intentional exceptions on the Home screen only.
   'Add Transaction',

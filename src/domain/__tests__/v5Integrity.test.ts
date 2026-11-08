@@ -169,7 +169,6 @@ describe('schema v5 cross-record integrity', () => {
     expect(codes).toEqual(expect.arrayContaining([
       'missing-goal-link-target',
       'duplicate-goal-link',
-      'goal-link-overallocated',
       'settlement-before-start',
       'duplicate-budget-category',
       'invalid-budget-category',

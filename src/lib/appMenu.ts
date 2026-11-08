@@ -1,7 +1,7 @@
 export type AppMenuItem = {
   label: string;
   description?: string;
-  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit' | 'calendar';
+  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit-2' | 'calendar' | 'check-circle';
   destructive?: boolean;
   disabled?: boolean;
 };
