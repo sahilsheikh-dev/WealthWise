@@ -58,16 +58,17 @@ below is initially **Not run**.
 | K36 | Restore a backup and compare net worth; verify Erase all clears data. | Pass | |
 | L37 | Load 50-year data from the dev menu and verify smooth use and Undo; confirm larger export is refused with a message. | Pass | |
 | M38 | Verify dark theme, font scales 1.3 and 2.0, Android back, and lock screen. | Pass | |
-| N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. This is a known Release 2 bug area: record failures; do not fix them in this release check. | Pass | |
+| N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. | Fail | Release 2 bug: quarterly/yearly income appears every month (P29-AB-R1) |
+| N40 | Edit a value and verify it refreshes immediately without restarting the app. | Fail | Release 2 bug: edited values do not refresh immediately (P30-A/B/C) |
+| N41 | Verify Budget overview shows the per-section Pace graph and no stacked bar. | Not run | P20-N-R1 |
 
 ## Owner follow-up
 
-The owner-entered results mark all 43 checks Pass, including N39. The owner
-also reports that previously identified Release 2 bugs remain, but no failed
-check ID, reproduction steps, expected/actual behavior, or screenshots were
-provided with this report. Do not infer a failed checklist item from that
-separate report. The device model, Android version, tester, and test date
-fields remain blank because those details were not supplied.
+The prior owner-entered report marked 43 checks Pass; this task supersedes
+that report for N39-N41. The owner confirms the Release 2 income and edited-
+value bugs reproduce. N41 remains Not run because the Pace graph has not been
+retested on device. The device model, Android version, tester, and test date
+fields remain blank.
 
 ## How to run
 

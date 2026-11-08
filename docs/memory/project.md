@@ -32,14 +32,19 @@ runtime synchronization.
 - P29-X adds an optional recurring-plan stop date; schedule slots after the
   inclusive cutoff are removed from shared projections while entries, value,
   returns, goal links and Emergency Fund links remain unchanged.
+- Budget's current and past month overview compares cumulative actual and
+  planned values by section with a toggleable legend, distinct line styles,
+  colors/markers and accessible text summaries; future months retain the
+  existing empty state.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 92 suites, 1197 tests (1196 passed; one opt-in stress
-  benchmark skipped) in the P28-C-R3 Gate 1 run on 2026-11-08. All six ordered
-  gates exited 0. See [status.md](status.md) and the
+- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
+  skipped) in the P28-D Gate 1 run on 2026-11-08. All six ordered gates exited
+  0. See
+  [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
