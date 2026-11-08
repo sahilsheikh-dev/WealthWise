@@ -9,7 +9,7 @@ import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, Card, DetailTabBar, EmptyState } from '../src/components/ui';
+import { AppText, Button, Card, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import {
@@ -49,8 +49,7 @@ export default function MonthReviewScreen() {
         title="Month review"
         onClose={() => router.back()}
         isDirty={false}
-        footer={<Button label="Back" onPress={() => router.back()} />}
-        bottomNavigation={<DetailTabBar active="Budget" placement="flow" />}>
+        footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="No month needs review" subtitle="Closed months with a logged cash balance will appear here." />
       </FormScreen>
     );
@@ -181,7 +180,6 @@ function MonthReview({ month }: { month: string }) {
       title="Month review"
       onClose={() => router.back()}
       isDirty={isDirty}
-      bottomNavigation={<DetailTabBar active="Budget" placement="flow" />}
       footer={<View style={{ gap: 8 }}>
         <Button
           label={mode === 'shortfall' ? 'Record funding' : 'Save allocations'}
