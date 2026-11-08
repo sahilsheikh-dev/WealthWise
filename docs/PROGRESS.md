@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (94/98)
+Overall progress ██████████ 96% (96/100)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 95% (18/19)
+Phase 29         ██████████ 95% (20/21)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -186,7 +186,9 @@ Phase 29         █████████░ 95% (18/19)
 | P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
-| P29-O | — | Inventory committed; implementation pending | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; owner approved schema v19 and the unified asset ledger/valuation design. | 2026-11-04 |
+| P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
+| P29-O1 | P29-O | Done | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
+| P29-Q | — | Done | Owner-approved Expo SQLite native persistence, lazy legacy AsyncStorage migration, seeded stress loader with Undo, measured selector optimizations and five-sample Node benchmarks; no AppData schema change. Device checks remain open. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2817,6 +2819,7 @@ evidence present in exports/checkpoints.
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
 | P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
+| P29-Q | Phase 29 | — | — | 2026-11-04 | Measure persistence and performance for seeded 50-, 100- and 200-year app datasets; load them from the dev menu with Undo and report build/save/render timing. | Done after the owner approved Expo SQLite. Native AppData now uses Expo SQLite's key-value adapter with lazy legacy AsyncStorage migration; the stress loader uses replace/Undo. Normal 200-year hydration and single-write targets pass in Node; the measured 50-year size still exceeds 1.5 MB. No AppData schema change. | Installed AsyncStorage and Expo SQLite package inspection; five-sample benchmark tables, focused behavior tests and six final gates recorded below. Native-device checks remain unverified. | DEC-P29Q-STORAGE-STOP (historical stop point), DEC-P29Q-SQLITE-APPROVAL. Assumed: each tier spans `years × 12` calendar months including injected today; 25 transactions and 12 monthly holding entries per month; five samples use the same seeded payload. Assumed: `SQLiteStorage` has no app-level per-value cap based on the installed source; actual native SQLite/device capacity needs device validation. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7346,9 +7349,9 @@ insurance payments.
 
 | Surface | Current route/files | Current behavior/dependency |
 |---|---|---|
-| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual actions Deposit/Withdraw/Entries/Edit/Confirm; plan actions Log installment/Withdraw/Schedule. Cards display invested/value/gain/return and, for plans, projection, logged count, schedule and due status. |
+| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual and plan cards share Deposit/Withdraw/Entries/Edit actions, subject to Fixed-deposit restrictions. Cards display net Invested/value/gain/return and, for plans, projection, logged count, next due and due status. |
 | Holding form | `/investment-form` (`app/investment-form.tsx`) | Segments into recurring PlanEditor and one-time ManualEditor. Plan stores schedule/rate/step-up/opening/optional actual value; manual stores invested/value/valueAsOf. Type controls use `holdingCapabilities`. |
-| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | Plan-capable holdings can switch between Schedule and Entries. Entry totals include Invested, Current value, Total deposits, and Withdrawn; plan Schedule uses `planSchedule`. |
+| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | P29-O1 uses one Entries list for both holding kinds, with a derived Opening row first, an in-holding Recurring plan section and a shared financial summary. Recurring due rows continue to use `planSchedule`; Fixed deposits retain maturity withdrawal access. |
 | Entry form | `/investment-entry-form` (`app/investment-entry-form.tsx`) | Adds/edits/deletes Deposit or Withdrawal; a selected due row supplies date/amount, but not a persisted slot date. Linked transaction is edited/deleted with its entry. |
 | Due/payment routes | `/clear-dues`, `/payment-confirm`, `app/(tabs)/transactions.tsx`, Home (user-owned read-only), `app/reminders.tsx` | Plan rows flow through `planSchedule` to pending dues, pending items, reminder planning and payment actions. Clearing uses plan slot ID but currently creates an entry without due-slot identity. Home and Transactions consume shared due selectors. |
 | Transaction entry/form | `app/transaction-form.tsx`, `src/domain/links.ts` | Investment transactions can be linked to an instrument/holding; linked transactions navigate to `/investment-entries`. Entry transaction source fields link each transaction to the owning holding entry. |
@@ -7395,3 +7398,465 @@ Schema v19 is authorized. The six required gates, P29-A return rules, current
 `holdingCapabilities` matrix, transaction links, Budget/goal/EF links and
 offline-only pricing remain constraints. No source behavior or existing
 assertion has been changed in this report-only step.
+
+### DEC-P29O1-CURRENT-MODEL — unify holding actions without schema change (2026-11-04)
+
+**Assumed:** P29-O1 is a new Phase 29 follow-up on the schema-v18 ledger, and
+the owner's no-schema-change instruction supersedes P29-O's earlier v19
+migration proposal for this step. Do not redesign valuations or returns:
+preserve P29-H current-value and return behavior and existing FIFO plan-slot
+matching. Fixed-deposit capability restrictions remain in force.
+
+All holdings use the same Deposit, Withdraw and Entries presentation where
+allowed by `holdingCapabilities`. A plan's Deposit continues to use the
+existing entry action and FIFO schedule matching. Entries shows the derived
+opening amount as its first "Opening" row, editable through the holding form;
+the recurring schedule is a section in that screen with frequency, amount,
+next due date and an edit action. Fixed deposits still expose only the
+maturity-withdrawal action and do not gain additional deposits.
+
+Displayed Invested is computed by the shared ledger helper:
+
+`raw invested = opening + deposits - withdrawals`
+
+`Invested = max(0, raw invested)`
+
+When raw invested is negative, show "Cost recovered". Current value and P29-H
+return math continue to use the existing value selector and gross contribution
+cash flows. Goal-linked invested metadata intentionally remains gross
+contributions so Goals, Emergency Fund, Budget links, pending dues, reminders
+and net worth retain their previous values. No persisted field or schema
+version changes.
+
+**Replaced assertions (old / new / reason):**
+
+- `holdingInvested` ignored withdrawals: the 1,000 opening + 2,000 deposit -
+  300 withdrawal fixture expected 3,000; it now expects 2,700, matching the
+  owner's net Invested definition. Gain/return remain 0 because P29-H uses
+  gross contributions in its denominator.
+- An over-withdrawn 1,000 opening + 50 deposit - 200 withdrawal fixture
+  expected Invested 1,050; it now expects 850. The added profit-recovery case
+  separately proves a negative raw invested value displays as 0 with a
+  4,000 gain and "Cost recovered".
+- Manual Cash cards previously exposed separate deposited/withdrawn totals;
+  they now show net Invested only, because the owner removed those totals.
+- Plan cards previously offered a separate Schedule action; the exact shared
+  actions are now Deposit, Withdraw and Entries. The recurring plan remains
+  visible as an editable section inside Entries.
+- Fixed-deposit entries remain visible but have no Deposit action; their
+  dedicated maturity-withdrawal action remains unchanged.
+- The holding-entry list now has one derived Opening row followed by the
+  existing editable/deletable entries. The opening amount is not persisted as
+  a new entry and does not change schema.
+
+**Demo/mock before-and-after selector evidence:** the old gross invested value
+for goal-link metadata equals the new `holdingContributions` value for every
+holding in both fixtures. Current value, goal saved values, Emergency Fund
+available bucket amounts, pending dues, reminder plans, Budget-linked rows and
+net worth are preserved. The linked Budget item used in this comparison is a
+test-only recurring-plan link; no fixture or persisted data is changed.
+
+| Output | Mock before | Mock after | Demo before | Demo after |
+|---|---:|---:|---:|---:|
+| Budget linked rows / planned amount | 1 / 21,200 | 1 / 21,200 | 1 / 2,000 | 1 / 2,000 |
+| Pending dues / amount | 2 / 30,101.32 | 2 / 30,101.32 | 34 / 38,900 | 34 / 38,900 |
+| Reminder plan count | 910 | 910 | 897 | 897 |
+| Goal saved total | 490,956 | 490,956 | 479,200 | 479,200 |
+| Emergency Fund bucket available total | 0 | 0 | 187,000 | 187,000 |
+| Net worth (assets / liabilities / net) | 505,441 / 327,903.94 / 177,537.06 | 505,441 / 327,903.94 / 177,537.06 | 504,500 / 389,107.93 / 115,392.07 | 504,500 / 389,107.93 / 115,392.07 |
+
+Acceptance tests include `uses the same seven-row net-invested ledger for
+manual and plan holdings`, `floors invested at zero after a profit withdrawal
+while preserving the gain`, `preserves linked outputs and legacy linked-
+invested values for mock and demo data`, `keeps manual and recurring holdings
+on the same card, entries and form flow at font scale %s`, and `uses
+scheduled-deposit wording in the recurring holding due cleanup`. The fixture
+tests run at simulated font scales 1.3 and 2.0; physical device checks remain
+unverified.
+
+**Additional assertion replacements (old / new / reason):**
+
+- The Cash card's combined `Deposited 100.00. Withdrawn 0.00` accessibility
+  label and the separate Deposited/Withdrawn labels, alongside an assertion
+  that Invested was absent, are replaced by the shared `Invested 600.00`
+  accessibility label. The old gross-flow labels are removed; the new value
+  is opening 500 + deposits 100 - withdrawals 0.
+- The manual ledger's `holdingInvested` expectation changes from 15,000 to
+  13,000 for the five-deposit, 2,000-withdrawal example. The plan expectation
+  separately changes from 2,000 to 1,500 and from 225 to zero where
+  withdrawals exceed contributions, following the net-invested rule.
+- `Entries (1)` on the Fixed-deposit action becomes `Entries`; the common
+  action label no longer includes a log count.
+- A prior assertion excluding "Invested" on cash/bank cards is replaced by
+  assertions that the removed Deposited and Withdrawn totals are absent. The
+  card now shows net Invested.
+- Plan action assertions replace the old `Schedule` action with `Entries`;
+  the recurring plan remains in its editable section inside the Entries
+  screen, and Fixed-deposit deposit restrictions remain tested.
+- SIP helper copy, tracking labels and recurring transaction notes replace
+  installment terminology with scheduled-deposit wording. The generated plan
+  transaction stays linked; the wording now matches the unified Deposit
+  action.
+- The legacy orphan note `Old installment` becomes `Orphan deposit`; only
+  note copy changes, while orphan category behavior remains unchanged.
+- The schema-validation assertion's old "logged installment" error text
+  becomes "logged deposit", matching the renamed action without changing
+  validation behavior.
+- The progress-ledger test's dashboard counts change from 95/99 overall and
+  19/20 in Phase 29 to 96/100 and 20/21, reflecting the new closed P29-O1
+  part. `memoryDocs.test.ts` changes its expected latest test count from 1134
+  to 1140 to match the final run. Neither count update weakens a behavioral
+  assertion.
+
+#### P29-O1 acceptance tests
+
+| Frozen requirement | Exact test name |
+|---|---|
+| Manual and recurring holdings have Deposit, Withdraw and Entries at font scales 1.3 and 2.0; plan schedule stays in Entries and opening is the first derived row | `keeps manual and recurring holdings on the same card, entries and form flow at font scale %s` |
+| Seven displayed rows and Invested 13,000 for manual and plan ledgers | `uses the same seven-row net-invested ledger for manual and plan holdings` |
+| Net Invested floors at zero after a profit withdrawal; Cost recovered and gain remain correct | `floors invested at zero after a profit withdrawal while preserving the gain` |
+| Plan Deposit/store action and linked transaction behavior | `runs the scheduled-deposit integration scenario with one write per action and rehydrates links`; `clears multiple plan dues and fully undoes them with one persisted write per action` |
+| Fixed-deposit deposit/maturity restrictions remain | `blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts`; `keeps legacy fixed-deposit entries visible without offering new deposits` |
+| Current value and P29-H return outputs remain intact | `corrects P29-H opening, back-dated, pattern and withdrawal outputs`; `has XIRR, CAGR, same-day, short-span and known-vector behavior` |
+| Budget, pending dues, reminders, goals, EF availability, and net worth remain identical in mock and demo data | `preserves linked outputs and legacy linked-invested values for mock and demo data` |
+| Cash and Savings show Invested without return labels or separate totals | `renders ledger-based asset totals and Cash/Bank details at font scale %s` |
+| Obsolete holding wording removed from rendered UI and holding-specific test copy | `explains the first scheduled deposit and deposit tracking dates`; `uses scheduled-deposit wording in the recurring holding due cleanup`. The holding UI/test search found no `Log installment`, `Total deposits` or `Total withdrawals`; liability terminology and legacy domain API names are not holding UI copy. |
+
+#### P29-O1 final ordered verification
+
+The gates were run sequentially after the final source and test updates; each
+process returned exit code 0.
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 (90 suites, 1140 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Coverage was collected after deleting and regenerating
+`coverage/coverage-final.json`. Using `istanbul-lib-coverage`, each
+instrumented source file's Istanbul summary was aggregated by its immediate
+`src/` directory; line totals are executable line counters and branch totals
+are branch-arm counters.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 702/745 (94.23%) | 735/838 (87.71%) |
+| `src/domain` | 3315/3365 (98.51%) | 3205/3437 (93.25%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Per-file branch coverage: `src/domain/budget.ts` is 788/867 (90.89%),
+above its 90% threshold; `src/data/createAppStore.ts` is 86/101 (85.15%),
+above its 85% threshold.
+
+Per-file `expect(` occurrence audit compares the previous commit (HEAD before
+P29-O1) with the final committed task contents. Added/removed counts are
+literal `expect(` lines in zero-context Git diff hunks, and net is added minus
+removed; unchanged rows are included for every modified test file.
+
+| Test file | Previous commit | Task HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/components/__tests__/IconButton.test.tsx` | 9 | 9 | 0 | 0 | 0 |
+| `src/components/__tests__/PendingItemActions.test.tsx` | 43 | 43 | 0 | 0 | 0 |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 440 | 457 | 22 | 5 | +17 |
+| `src/data/__tests__/createAppStore.test.ts` | 463 | 463 | 0 | 0 | 0 |
+| `src/domain/__tests__/dues.test.ts` | 149 | 149 | 0 | 0 | 0 |
+| `src/domain/__tests__/instrumentCard.test.ts` | 27 | 27 | 3 | 3 | 0 |
+| `src/domain/__tests__/instruments.test.ts` | 53 | 53 | 0 | 0 | 0 |
+| `src/domain/__tests__/investmentActions.test.ts` | 50 | 50 | 3 | 3 | 0 |
+| `src/domain/__tests__/investmentReturns.test.ts` | 52 | 62 | 11 | 1 | +10 |
+| `src/domain/__tests__/linkedActions.test.ts` | 93 | 93 | 1 | 1 | 0 |
+| `src/domain/__tests__/pending.test.ts` | 43 | 43 | 0 | 0 | 0 |
+| `src/domain/__tests__/phase5.test.ts` | 40 | 40 | 1 | 1 | 0 |
+| `src/domain/__tests__/schemas.test.ts` | 237 | 237 | 1 | 1 | 0 |
+| `src/domain/__tests__/selectors.test.ts` | 82 | 86 | 4 | 0 | +4 |
+| `src/domain/__tests__/sip.test.ts` | 43 | 43 | 1 | 1 | 0 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 1 | 1 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 162 | 162 | 2 | 2 | 0 |
+| `src/mock/__tests__/demoData.test.ts` | 92 | 92 | 0 | 0 | 0 |
+| **Total** | **2089** | **2120** | **50** | **19** | **+31** |
+
+P29-O1 physical-device checks not verified: manual and recurring cards,
+Entries, editing the opening amount, and Recurring plan details at font scales
+1.3 and 2.0 on iOS and Android; visual confirmation of the 13,000 Invested /
+seven-row example; Fixed-deposit maturity withdrawal. Jest renderer tests and
+Expo exports do not establish native device layout or interaction.
+
+### DEC-P29Q-STORAGE-STOP — initial measured persistence limit (2026-11-04)
+
+**Historical stop point:** stop P29-Q after measuring serialized sizes. The normal
+200-year dataset is 10,184,994 bytes, exceeding the installed Android
+AsyncStorage database cap of 6 MiB (6,291,456 bytes) by 3,893,538 bytes. The
+explicit P29-Q stop condition was met at that time. The owner later approved
+Expo SQLite; the measured-size table and this initial stop remain historical
+evidence. The approval and completed follow-through are recorded in
+DEC-P29Q-SQLITE-APPROVAL below.
+
+**Installed backend evidence:** `@react-native-async-storage/async-storage`
+2.2.0 is installed. Its Android `android/config.gradle` sets
+`AsyncStorage_db_size_in_MB` to 6 by default, and
+`ReactDatabaseSupplier.java` applies this as the SQLite database maximum.
+No project override was found. This is a whole-database limit, not a per-key
+limit, so other keys and database overhead consume some of the same capacity.
+On iOS, values over 1 KiB are stored in separate files; the package's 2 MiB
+`NSCache.totalCostLimit` is an in-memory cache setting, not a persistent
+storage cap. No fixed iOS persistent per-value limit was found in the
+installed package source.
+
+The deterministic seeded fixtures span exactly `years × 12` calendar months,
+including the injected current month. Each month generates 25 transactions,
+monthly entries for 12 holdings, one budget snapshot, and six liabilities
+(three settled and three active/renewed). Three policies, two seeded goals and
+the default emergency-fund goal are included. The 200-year heavy tier adds a
+daily SIP. The five serialized-size
+samples use the persisted Zustand envelope
+`JSON.stringify({ state: { data }, version: SCHEMA_VERSION })`; each sample is
+the same deterministic payload. Sizes below use decimal MB (1 MB =
+1,000,000 bytes), while the backend limit is binary MiB.
+
+| Tier | Median serialized bytes (5 samples) | Decimal MB | Transactions | Holding entries | Month snapshots | Backup validation |
+|---|---:|---:|---:|---:|---:|---|
+| 50y | 2,604,654 | 2.60 | 15,000 | 7,200 | 600 | Rejected: earliest transaction date is outside the import date range |
+| 100y | 5,130,944 | 5.13 | 30,000 | 14,400 | 1,200 | Rejected: earliest transaction date is outside the import date range |
+| 200y | 10,184,994 | 10.18 | 60,000 | 28,800 | 2,400 | Rejected: earliest transaction date is outside the import date range |
+| 200y + daily SIP | 16,895,576 | 16.90 | 60,000 | 101,850 | 2,400 | Rejected: earliest transaction date is outside the import date range |
+
+The 50-year size misses the requested 1.5 MB budget by 1,104,654 bytes.
+Import validation separately has a 1990 lower date bound; the 100-year state
+also exceeds 5,000,000 bytes while the import validator has a 5,000,000-
+character guard; because every fixture is already rejected at
+`transactions.0.date`, we did not isolate the character-limit result. The
+200-year tiers also exceed the validator's 1,200 month-snapshot limit, and
+the daily-SIP tier's 201-year tenure exceeds its 100-year plan limit.
+`appDataSchema` accepts each generated fixture, but `validateImportData`
+rejects the old first transaction date (`transactions.0.date`). These
+validator limits were inspected, not changed.
+
+At this initial stop, no backup export/import, encryption,
+validation/migration timing, hydration, store-write, selector timing or heap
+medians were collected. Those measurements were performed after owner approval
+and are recorded below.
+
+**Storage proposal for owner approval:**
+
+1. **expo-sqlite (recommended):** normalized/partitionable records, indexed
+   month/date/parent lookups and selective reads suit 60,000+ transactions and
+   long holding histories. Requires a migration plan from the current
+   AsyncStorage blob and transactional replace/Undo semantics.
+2. **Year-partitioned files via Expo FileSystem:** avoids the AsyncStorage
+   database cap and allows year-at-a-time reads, but requires a manifest,
+   atomic replacement/recovery, backup encryption and schema migration design.
+3. **Multiple AsyncStorage keys:** not sufficient alone because the Android
+   6 MiB cap applies to the whole database. Raising that cap also needs owner
+   approval and device validation; it does not solve the observed 10.18 MB
+   200-year payload.
+
+This proposal was superseded by the owner's Expo SQLite approval recorded
+below. **Assumed:** P29-Q is new Phase 29 work; the initial benchmark samples
+measure the JSON state envelope and exclude native SQLite overhead and
+unrelated stored keys.
+
+#### P29-Q verification
+
+Acceptance evidence is in `src/domain/__tests__/stressData.test.ts`:
+
+| Requirement | Exact test |
+|---|---|
+| Deterministic 50-, 100- and 200-year data ending on injected today; 25 monthly transactions; 12 holdings with monthly entries; six liabilities; policies, goals, monthly budgets; schema acceptance | `generates a deterministic %i-year AppData fixture ending today` (each `STRESS_YEARS` case) |
+| Daily SIP is restricted to the 200-year tier and injected seed must be a safe integer | `requires an explicitly seeded 200-year tier for daily SIP data` |
+| Five-sample serialized-size medians and import validation outcome for all tiers | `measures serialized bytes and records backup validation for each stress tier` |
+| Existing transaction stress fixture remains deterministic and includes 20,000 rows | `covers a year of daily entries, demo data, and 20,000 stress transactions`; `generates deterministic valid transaction types and injected identifiers` |
+
+Before the final ordered run, Gate 1 exited 1 twice because
+`memoryDocs.test.ts` could not parse the updated test-count record when it was
+slash-separated and then when the line wrapped. A later Gate 1 attempt exited
+1 because the new fixture assertion initially expected two total goals rather
+than the default emergency-fund goal plus two stress goals; this was corrected
+without weakening coverage. An intervening Gate 2 attempt exited 2 because
+the test accessed recurring-only fields without narrowing the liability
+union; a discriminant type guard fixed it. The ordered gates at the initial stop point (historical, before SQLite
+follow-through) were:
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 (89 suites, 1125 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+The measured 50-year payload exceeds its 1.5 MB target. Hydration, backup
+export/import timing, encryption, validation/migration timing, store-write
+timing, selector timing, heap use and the 3-second/300-ms performance budgets
+were not measured because the 200-year size triggered the explicit storage
+stop. The dev-menu loader was not implemented. Physical-device checks remain
+unverified: storage fit and safe replace/Undo on iOS/Android, and loader
+hydrate/render timing (there is no loader yet).
+
+Assertion replacements and rationale:
+
+| Test | Old | New | Reason |
+|---|---|---|---|
+| `shared AI memory documents` in `src/lib/__tests__/memoryDocs.test.ts` | Project inventory `86` suites / `1086` tests; no matching latest-run count | `89` suites / `1125` tests, matching both project inventory and latest run | Historical P29-Q count correction; the current follow-through replacement is listed below. |
+| `records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work` in `src/lib/__tests__/progressLedger.test.ts` | Overall `94/98`; Phase 29 `18/19` | Overall `94/99`; Phase 29 `18/20`; P29-Q explicitly expected as stopped pending approval | Historical dashboard update at the initial stop point; current completion counts are listed below. |
+
+No assertion was removed or weakened. The current directory and schema state
+was verified at v18; P29-Q makes no AppData schema change.
+
+### DEC-P29Q-SQLITE-APPROVAL — approved storage and benchmark follow-through (2026-11-04)
+
+**Decision:** the owner approved Expo SQLite after the initial AsyncStorage
+limit finding. Native Zustand AppData persistence now uses the installed Expo
+SQLite `SQLiteStorage` key-value adapter; Web and metadata continue using
+AsyncStorage. Existing native AsyncStorage data remains readable as a
+fallback, then is copied into SQLite on the next persisted write. The
+SQLite-backed value keeps the existing Zustand envelope and replace/Undo
+behavior. This is a key-value blob, not a normalized or year-partitioned
+database. AppData schema remains v18; no new persisted data schema was added.
+
+Inspection of the installed Expo SQLite adapter found no app-level
+per-value-size guard. This is not a claim that physical devices have unlimited
+storage or that native bridge/disk performance equals Node SQLite memory.
+Assumed: the adapter's absence of an app-level guard is sufficient to continue
+the requested measurement after the owner's explicit storage approval; native
+capacity and performance still require device verification.
+
+The dev menu offers 50-year, 100-year, 200-year and 200-year-plus-daily-SIP
+deterministic fixtures. It uses the existing replace-all/Undo path and reports
+build, validate, save/replace and first-render intervals. The persistence
+timing waits for the actual write. All fixtures end on injected today and use
+seeded data. **Assumed:** benchmark payloads use the same seed and each tier
+spans exactly `years × 12` calendar months including the current month; the
+normal monthly fixtures generate about 25 transactions, 12 holding-entry
+streams and one budget snapshot per month, plus six liabilities and policy/
+goal fixtures.
+
+#### Five-sample Node benchmark
+
+Each cell is the median of five runs. Sizes are bytes; times are milliseconds.
+Backup import results are outcomes, not successful timing values where
+validation rejected the stress fixture. Selector order is net worth / month
+view / budget overview / pending items / reminders planner. Heap used is a
+post-GC measurement after dropping temporary backup strings. Node SQLite used
+in-memory storage; these figures do not represent Expo native bridge or disk.
+
+| Tier | State bytes | Plain backup bytes | Plain export / import ms | Encrypted bytes | Encrypted export / import ms | Validate / migrate ms | Hydrate / one-write action ms | Selectors ms (NW / month / budget / pending / reminders) | Heap bytes | Import outcome (plain / encrypted) |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---|
+| 50y | 2,673,975 | 4,734,319 | 176 / 316 | 9,468,921 | 401 / 763 | 138 / 19 | 139 / 14 | 1 / 0 / 47 / 24 / 39 | 85,687,224 | invalid-data / invalid-data (oldest dates) |
+| 100y | 5,266,865 | 9,303,009 | 341 / 0 | 18,606,301 | 489 / 615 | 312 / 20 | 278 / 27 | 1 / 1 / 56 / 26 / 62 | 88,724,984 | too-large / too-large |
+| 200y | 10,454,115 | 18,441,859 | 690 / 0 | 36,884,001 | 723 / 0 | 545 / 19 | 551 / 51 | 1 / 1 / 91 / 27 / 78 | 103,646,120 | too-large / InvalidEnvelope |
+| 200y + daily SIP | 17,383,850 | 32,092,367 | 1,129 / 0 | 64,185,017 | 992 / 0 | 988 / 20 | 938 / 94 | 4 / 1 / 589 / 455 / 472 | 127,068,712 | too-large / InvalidEnvelope |
+
+The normal 200-year fixture meets the requested Node budgets: hydration is
+551 ms (under 3 s) and the tested one-write action is 51 ms (under 300 ms).
+The measured 50-year AppData state is 2,673,975 bytes (2.67 MB decimal), so it
+does **not** meet the requested 1.5 MB size target. The owner-approved SQLite
+adapter has no app-level per-value guard in its installed source, so this is
+reported rather than silently treated as a measured backend-limit failure.
+The 200-year normal state is 10,454,115 bytes; the heavy tier is 17,383,850
+bytes. Backup import is separately bounded by current import validation:
+the 50-year fixture is rejected for dates before the import minimum, the
+100-year fixture exceeds the character-size limit, and the 200-year fixtures
+exceed it as well; encrypted imports for the latter tiers exceed the envelope
+limit. No import validation limits were changed.
+
+The first benchmark proved three selector hot spots: `monthPositions`
+repeatedly filtered all transactions for each month; Budget rebuilt custom
+category membership within loops; reminders regenerated recurring schedules
+while scanning months. Grouping transactions once, reusing category sets and
+caching schedules per selector call reduced normal 200-year Budget overview
+from about 8.3 seconds to 91 ms and reminder planning from about 1.4 seconds
+to 78 ms. The heavy daily-SIP tier remains slower; no selector latency
+threshold was specified.
+
+#### Acceptance tests
+
+| Requirement | Exact test |
+|---|---|
+| Deterministic 50/100/200-year data; injected today; seeded monthly data; schema-valid state | `generates a deterministic %i-year AppData fixture ending today` |
+| 200-year daily-SIP tier and explicit safe seed | `requires an explicitly seeded 200-year tier for daily SIP data` |
+| Measured payload sizes and import validation outcomes | `measures serialized bytes and records backup validation for each stress tier` |
+| SQLite preference, AsyncStorage fallback/migration and preservation after write failure | `prefers the SQLite value and falls back to legacy AsyncStorage`; `preserves the old value in SQLite before replacing it and removes the legacy copy`; `keeps an existing SQLite value when replacing a stale legacy copy`; `retains the previous data if the new SQLite write fails after legacy migration` |
+| Full dev-menu fixture load, timing report and Undo | `loads a selected stress tier, reports hydration/render timing, and offers Undo` |
+| Existing full replacement Undo behavior | `shows the demo-loaded Undo / OK popup without navigating, then restores data and shows a toast` |
+| Store-level 50-year stress replacement, one Undo, and persisted-write timing | `loads a complete 50-year stress fixture through replace-all and restores the previous data with Undo`; `includes the persisted AppData write in stress-load timing` |
+
+#### Current ordered verification
+
+The six commands below are run after the SQLite follow-through, in the
+repository-required order. Coverage is measured from a newly generated
+`coverage/coverage-final.json` after deleting the prior file. Directory
+coverage groups instrumented source files by their immediate `src/` directory;
+line coverage aggregates Istanbul's executable line counters, and branch
+coverage aggregates branch-arm counters. Per-file coverage uses the same
+Istanbul summaries.
+
+| Gate | Command | Exit |
+|---|---|---:|
+| 1 | `npm test -- --coverage` | 0 (90 suites, 1134 tests) |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` | 0 |
+| 4 | `npx expo-doctor` | 0 (21/21 checks) |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Fresh coverage after deleting and regenerating `coverage/coverage-final.json`,
+measured with `istanbul-lib-coverage` by aggregating each instrumented file's
+Istanbul summary into its immediate `src/` directory:
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 702/745 (94.23%) | 735/838 (87.71%) |
+| `src/domain` | 3309/3359 (98.51%) | 3207/3440 (93.23%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Required per-file branch coverage: `src/domain/budget.ts` 788/867 (90.88%),
+above 90%; `src/data/createAppStore.ts` 86/101 (85.14%), above 85%. Overall
+coverage is 97.79% lines and 92.37% branches. No coverage thresholds or
+exclusions were changed.
+
+The per-file assertion audit compares previous commit `9df1559` with the final
+P29-Q task tree. Counts are literal `expect(` occurrences; added/removed count
+changed diff lines containing that token (the new SQLite test has no previous
+file).
+
+| Test file | Previous | Final | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/components/__tests__/useAppMenu.test.tsx` | 14 | 17 | 3 | 0 | +3 |
+| `src/data/__tests__/createAppStore.test.ts` | 448 | 463 | 18 | 3 | +15 |
+| `src/data/__tests__/sqliteStateStorage.test.ts` | 0 | 12 | 12 | 0 | +12 |
+| `src/lib/__tests__/appMenu.test.ts` | 5 | 5 | 0 | 0 | 0 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 2 | 2 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 162 | 162 | 3 | 3 | 0 |
+| **Total** | **640** | **670** | **38** | **8** | **+30** |
+
+**Assumptions:** P29-Q is Phase 29 work; the approved storage path is Expo
+SQLite's installed `SQLiteStorage` key-value adapter, not a normalized schema;
+benchmark times are median Node measurements and cannot prove physical-device
+performance.
+
+#### Assertion replacements
+
+| Test | Old | New | Reason |
+|---|---|---|---|
+| `shared AI memory documents` in `src/lib/__tests__/memoryDocs.test.ts` | Project inventory `89` suites / `1125` tests; `status.md` had no `Latest validated run:` value | Project inventory `90` suites / `1134` tests; current status requires a matching `Latest validated run:` count | SQLite tests and storage behavior tests increased the full suite count; preserve the consistency assertion with the fresh run. |
+| `keeps progress bars, percentages and counts consistent with dashboard statuses` in `src/lib/__tests__/progressLedger.test.ts` | Overall `94/99`; Phase 29 `18/20`; P29-Q marked stopped | Overall `95/99`; Phase 29 `19/20`; P29-Q marked Done | Owner-approved implementation and verification complete the existing Phase 29 part; denominator is unchanged. |
+| `records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work` in `src/lib/__tests__/progressLedger.test.ts` | P29-Q expected as `Stopped pending storage approval` | P29-Q expected as `Done` | Matches the completed SQLite follow-through and does not remove any ledger assertion. |
+
+No assertion was weakened or deleted. The historical initial-stop metrics and
+gate results above remain as an audit trail; the final gate codes, fresh
+coverage values and assertion counts above record the approved follow-through.
+
+#### Physical-device checks not verified
+
+Verify on iOS and Android: migration from an existing AsyncStorage install,
+legacy-copy retention/removal across interrupted writes, SQLite capacity for
+the normal 200-year and daily-SIP fixtures, stress-load replace/Undo, cold
+hydration, one-write latency, selector responsiveness, first-render timing and
+actual device storage. Node in-memory SQLite tests/benchmarks and Expo exports
+do not verify native bridge/disk behavior, physical capacity, device memory or
+rendering.

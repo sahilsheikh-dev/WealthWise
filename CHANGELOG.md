@@ -6,6 +6,14 @@
 
 ### Phase 29
 
+- P29-Q adds deterministic 50-, 100- and 200-year stress datasets and a
+  200-year daily-SIP variant. After the owner approved Expo SQLite, native
+  AppData persistence moved to `SQLiteStorage` with legacy AsyncStorage
+  fallback/migration; web and UI metadata remain on AsyncStorage. The
+  development menu loads a full fixture with Undo and reports save/replace
+  and first-render timing. Long-history benchmarks, selector optimizations,
+  the 50-year fixture's 1.5 MB target miss, import limits and unverified
+  device checks are recorded in the P29-Q ledger.
 - Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
   for 1990–2100, the Home Insurance box and actual due-payment amounts.
 - Added Budget start-month handling, schema-v14 holding links, plan/manual
@@ -71,6 +79,16 @@
   calculation and schedule behavior, and connected UI/domain/test surfaces.
   The report-only inventory is committed before the approved schema-v19
   unified-ledger implementation.
+- P29-O1 supersedes the P29-O schema-v19 design for this step: on the existing
+  v18 model, manual and recurring holdings now share Deposit, Withdraw and
+  Entries actions, with a derived Opening row and an in-holding Recurring plan
+  section. Displayed Invested is deposits less withdrawals, floored at zero;
+  return and current-value calculations, fixed-deposit restrictions, and
+  linked Budget, pending, reminder, goal, EF and net-worth outputs are
+  preserved. No schema change.
+- P29-O1 validation passes: 90 suites/1140 tests and all six ordered TypeScript,
+  lint, Expo Doctor, Android export and iOS export gates. Device checks remain
+  open.
 
 ### Investments and goals
 

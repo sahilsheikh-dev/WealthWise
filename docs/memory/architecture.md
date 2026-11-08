@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -8,7 +8,19 @@
 migrations and backup integrity logic. Do not import React or Expo there, read
 the clock, or generate random identifiers/digests; inject changing values at
 the boundary. Zustand owns app state and persists the application data blob
-through AsyncStorage. UI-only preferences are in the meta store.
+through Expo SQLite's `SQLiteStorage` on iOS/Android and AsyncStorage on web.
+Native storage falls back to the prior AsyncStorage value and migrates it on
+the first write. UI-only preferences remain in the AsyncStorage-backed meta
+store.
+
+The SQLite adapter remains a key-value blob, not a normalized AppData schema.
+It preserves the existing Zustand envelope, safe-storage archives, schema
+version and replace/Undo semantics. The installed Expo SQLite adapter has no
+app-level per-value limit; device disk capacity and native performance still
+require physical-device verification. See the P29-Q record in the
+[progress ledger](../PROGRESS.md). The measured 50-year state is 2.67 MB,
+above the requested 1.5 MB target; this remains a documented size miss, not a
+device-capacity result.
 
 An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior

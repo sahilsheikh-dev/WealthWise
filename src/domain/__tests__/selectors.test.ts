@@ -26,7 +26,14 @@ import {
   portfolioTotals,
 } from '../index';
 import type { AppData, Goal, Holding, HoldingType, ManualHolding, PlanHolding, RecurringLiability, Transaction } from '../types';
-import { goalSavedFor } from '../goalLinks';
+import { goalSavedFor, linkableInstruments } from '../goalLinks';
+import { holdingContributions } from '../portfolio';
+import { pendingItems } from '../pending';
+import { planReminders } from '../reminders';
+import { holdingCapabilities } from '../holdingCapabilities';
+import { mockAppData } from '../../mock/data';
+import { buildDemoData } from '../../mock/demoData';
+import { budgetItemsFromLines, budgetPlanFromLines } from '../../testFixtures/budget';
 
 const tx = (
   id: string,
@@ -373,6 +380,7 @@ describe('portfolio selectors', () => {
       invested: 100,
       value: 120,
       gain: 20,
+      costRecovered: false,
       gainPct: 20,
     }])).toEqual({ invested: 100, value: 120, gain: 20, gainPct: 20 });
   });
@@ -452,6 +460,113 @@ describe('summary selectors', () => {
       target: 300_000,
       saved: 155_000,
       raised: false,
+    });
+  });
+
+  describe('holding downstream selector preservation', () => {
+    const asOf = '2026-11-04';
+
+    function snapshot(data: AppData) {
+      const linkedBudgetItems = (data.budgetPlan?.items ?? []).filter((item) => item.holdingId);
+      const dues = pendingItems(data, asOf.slice(0, 7), asOf);
+      const reminders = planReminders(
+        data,
+        { enabled: true, localTime: '09:00', dayBefore: true, sameDay: true, showAmounts: false, hidePreviews: false },
+        new Date(2026, 10, 4, 8),
+        10_000,
+      );
+      const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+      const emergencyLinkedIds = new Set(emergencyGoal?.links.map((link) => link.instrumentId) ?? []);
+      const efAvailable = Object.fromEntries(Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds
+          .filter((id) => emergencyLinkedIds.has(id))
+          .reduce((sum, id) => {
+            const holding = data.holdings.find((item) => item.id === id);
+            return sum + (holding ? holdingValue(holding, asOf) : 0);
+          }, 0),
+      ]));
+      const worth = netWorth(data, asOf);
+      return {
+        budgetLinks: {
+          count: linkedBudgetItems.length,
+          amount: linkedBudgetItems.reduce((sum, item) => sum + item.value, 0),
+        },
+        pending: { count: dues.length, amount: dues.reduce((sum, item) => sum + item.amount, 0) },
+        reminders: { count: reminders.length },
+        goals: { count: data.goals.length, saved: data.goals.reduce((sum, goal) => sum + goalSavedFor(goal, data, asOf), 0) },
+        efAvailable: {
+          buckets: efAvailable,
+          total: Object.values(efAvailable).reduce((sum, amount) => sum + amount, 0),
+        },
+        netWorth: worth,
+      };
+    }
+
+    it('preserves linked outputs and legacy linked-invested values for mock and demo data', () => {
+      const datasets = [
+        { name: 'mock', data: mockAppData },
+        { name: 'demo', data: buildDemoData(asOf) },
+      ];
+      for (const { name, data } of datasets) {
+        const plan = data.holdings.find((holding): holding is PlanHolding =>
+          holding.kind === 'plan' && holdingCapabilities(holding.type).recurring,
+        );
+        if (!plan) throw new Error(`${name} fixture is missing a recurring holding.`);
+        const baseBudgetPlan = data.budgetPlan ?? budgetPlanFromLines([], {
+          incomes: [],
+          repeatMonthly: true,
+          repeatFrom: asOf.slice(0, 7),
+        });
+        const linkedItem = budgetItemsFromLines([
+          { category: plan.type, planned: plan.amount, dueDay: 15 },
+        ], baseBudgetPlan.sections)[0];
+        if (!linkedItem) throw new Error(`${name} fixture budget row is missing.`);
+        const linkedData = {
+          ...data,
+          budgetPlan: {
+            ...baseBudgetPlan,
+            items: [
+              ...baseBudgetPlan.items.filter((item) => item.holdingId !== plan.id),
+              { ...linkedItem, holdingId: plan.id },
+            ],
+          },
+        };
+        const current = snapshot(linkedData);
+        const previousLinkedInvested = data.holdings.map((holding) => {
+          const opening = holding.kind === 'plan' ? holding.opening : holding.invested;
+          const deposits = holding.logs
+            .filter((entry) => entry.kind === 'Deposit')
+            .reduce((sum, entry) => sum + entry.amount, 0);
+          const legacyValue = opening + deposits;
+          expect(holdingContributions(holding)).toBe(legacyValue);
+          return { id: holding.id, invested: legacyValue };
+        });
+        const holdingIds = new Set(data.holdings.map((holding) => holding.id));
+        expect(linkableInstruments(data, asOf)
+          .filter(({ id }) => holdingIds.has(id))
+          .map(({ id, invested }) => ({ id, invested })))
+          .toEqual(previousLinkedInvested);
+        if (name === 'mock') {
+          expect(current).toEqual({
+            budgetLinks: { count: 1, amount: 21_200 },
+            pending: { count: 2, amount: 30_101.32 },
+            reminders: { count: 910 },
+            goals: { count: 4, saved: 490_956 },
+            efAvailable: { buckets: {}, total: 0 },
+            netWorth: { assets: 505_441, liabilities: 327_903.9418739316, netWorth: 177_537.05812606838 },
+          });
+        } else {
+          expect(current).toEqual({
+            budgetLinks: { count: 1, amount: 2_000 },
+            pending: { count: 34, amount: 38_900 },
+            reminders: { count: 897 },
+            goals: { count: 5, saved: 479_200 },
+            efAvailable: { buckets: { cash: 25_000, bank: 92_000, 'fd-rd': 70_000 }, total: 187_000 },
+            netWorth: { assets: 504_500, liabilities: 389_107.9299748545, netWorth: 115_392.07002514548 },
+          });
+        }
+      }
     });
   });
 

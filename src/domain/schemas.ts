@@ -718,7 +718,7 @@ export function makePlanFormSchema(
       }
     }
     if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
-      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged installment is dated before this start date' });
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged deposit is dated before this start date' });
     }
   });
 }

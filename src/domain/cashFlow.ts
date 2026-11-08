@@ -49,15 +49,23 @@ function sum(rows: Transaction[], predicate: (row: Transaction) => boolean): num
 
 export function monthPositions(transactions: Transaction[]): MonthPosition[] {
   if (transactions.length === 0) return [];
-  const months = transactions.map((row) => monthKey(row.date)).sort();
-  const first = months[0];
-  const last = months[months.length - 1];
-  if (!first || !last) return [];
+  const rowsByMonth = new Map<string, Transaction[]>();
+  let first = '';
+  let last = '';
+  for (const transaction of transactions) {
+    const month = monthKey(transaction.date);
+    const rows = rowsByMonth.get(month);
+    if (rows) rows.push(transaction);
+    else rowsByMonth.set(month, [transaction]);
+    if (first === '' || month < first) first = month;
+    if (month > last) last = month;
+  }
+  if (first === '' || last === '') return [];
   const positions: MonthPosition[] = [];
   let month = first;
   let opening = 0;
   while (month <= last) {
-    const rows = transactions.filter((row) => monthKey(row.date) === month);
+    const rows = rowsByMonth.get(month) ?? [];
     const income = sum(rows, (row) => row.type === 'income');
     const earnedIncome = sum(rows, (row) =>
       row.type === 'income' && !(NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category),

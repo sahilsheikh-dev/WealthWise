@@ -1,6 +1,6 @@
 import { addDays, addMonths, monthKey, shiftMonth } from './dates';
 import { holdingCapabilities } from './holdingCapabilities';
-import { pendingItems } from './pending';
+import { createPendingItemsReader } from './pending';
 import type { AppData, ISODate } from './types';
 import { formatAmount } from '../lib/amountDisplay';
 
@@ -91,8 +91,9 @@ export function planReminders(
   const reminders: PlannedReminder[] = [];
   const firstMonth = monthKey(today);
   const lastMonth = searchHorizon(data, today);
+  const getPendingItems = createPendingItemsReader(data, today);
   for (let month = firstMonth; month <= lastMonth; month = shiftMonth(month, 1)) {
-    for (const item of pendingItems(data, month, today)) {
+    for (const item of getPendingItems(month)) {
       if (!item.dueDate) continue;
       const candidates: { kind: ReminderKind; date: ISODate }[] = [];
       if (settings.dayBefore) candidates.push({ kind: 'day-before', date: addDays(item.dueDate, -1) });

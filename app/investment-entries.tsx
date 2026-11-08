@@ -1,28 +1,25 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
-import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
 import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
+  Button,
   Card,
-  Chip,
   ChipRow,
   EmptyState,
   Screen,
-  StatusBadge,
 } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { useSort } from '../src/data/useSort';
-import { holdingInvested, holdingValue, isCashOrBankHoldingType } from '../src/domain/portfolio';
-import { investmentEntryTotals } from '../src/domain/investmentReturns';
-import { planSchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
+import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
+import { planSchedule } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -32,17 +29,8 @@ import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-type Tab = 'Schedule' | 'Entries';
-type Filter = 'All' | 'Upcoming' | 'Ongoing' | 'Overdue' | 'Paid';
-type ListRow = ScheduleRow | InvestmentEntry;
-
-const filters: Filter[] = ['All', 'Upcoming', 'Ongoing', 'Overdue', 'Paid'];
-const badgeTone: Record<ScheduleStatus, 'ok' | 'primary' | 'err' | 'neutral'> = {
-  paid: 'ok',
-  ongoing: 'primary',
-  overdue: 'err',
-  upcoming: 'neutral',
-};
+type OpeningRow = { rowKind: 'opening'; id: string; amount: number };
+type ListRow = OpeningRow | InvestmentEntry;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -52,55 +40,39 @@ export default function InvestmentEntriesScreen() {
   const holdingId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
-  const scheduleSorting = useSort('schedules');
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const capabilities = holding ? holdingCapabilities(holding.type) : null;
   const entrySortList = holding?.kind === 'plan' ? 'logs' : 'entries';
   const entrySorting = useSort(entrySortList);
-  const [tab, setTab] = useState<Tab>('Schedule');
-  const [filter, setFilter] = useState<Filter>('All');
-  const schedule = useMemo(
-    () => holding?.kind === 'plan' && capabilities?.recurring ? planSchedule(holding, today) : null,
-    [capabilities?.recurring, holding, today],
-  );
   const entries = useMemo(
     () => holding
       ? holding.logs
         .map((entry, sortCreatedIndex) => ({ ...entry, sortCreatedIndex }))
-        .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+        .sort((left, right) => right.date.localeCompare(left.date) || right.id.localeCompare(left.id))
       : [],
     [holding],
   );
-  const effectiveTab: Tab = holding?.kind === 'manual' || !capabilities?.recurring ? 'Entries' : tab;
-  const filteredSchedule = useMemo(() => {
-    if (!schedule) return [];
-    return filter === 'All'
-      ? schedule.rows
-      : schedule.rows.filter((row) => row.status === filter.toLowerCase());
-  }, [filter, schedule]);
-  const listRows: ListRow[] = effectiveTab === 'Schedule'
-    ? scheduleSorting.sort(filteredSchedule)
-    : entrySorting.sort(entries);
+  const recurringPlan = useMemo(
+    () => holding?.kind === 'plan' && capabilities?.recurring ? planSchedule(holding, today) : null,
+    [capabilities?.recurring, holding, today],
+  );
 
   if (!holding) {
     return <Screen><AppHeader title="Investment entries" showBack fallbackHref="/assets" /><EmptyState title="Holding not found" /></Screen>;
   }
 
+  const financial = holdingFinancialSummary(holding, today);
   const cashOrBank = isCashOrBankHoldingType(holding.type);
-  const currentValue = holdingValue(holding, today);
-  const invested = holdingInvested(holding);
-  const entryTotals = investmentEntryTotals(holding.logs);
+  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
+  const listRows: ListRow[] = [
+    { rowKind: 'opening', id: `opening-${holding.id}`, amount: openingAmount },
+    ...entrySorting.sort(entries),
+  ];
 
   const routeEntryForm = (row: ListRow) => {
-    if ('status' in row) {
-      if (row.status === 'paid' && row.entryId) {
-        router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&entryId=${encodeURIComponent(row.entryId)}` as Href);
-      } else if (row.status === 'ongoing' || row.status === 'overdue') {
-        router.push(
-          `/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Deposit&date=${encodeURIComponent(today)}&amount=${encodeURIComponent(String(row.amount))}` as Href,
-        );
-      }
+    if ('rowKind' in row) {
+      router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href);
       return;
     }
     router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&entryId=${encodeURIComponent(row.id)}` as Href);
@@ -109,24 +81,22 @@ export default function InvestmentEntriesScreen() {
   const renderHeader = () => (
     <View>
       <AppHeader
-        title={`${holding.name} ${effectiveTab === 'Schedule' ? 'schedule' : 'entries'}`}
+        title={`${holding.name} entries`}
         showBack
         fallbackHref="/assets"
-        rightActions={[{
+        rightActions={!capabilities?.entries ? [{
           icon: 'plus',
-          label: capabilities?.entries ? 'Add investment entry' : 'Record maturity payout',
+          label: 'Record maturity payout',
           onPress: () => router.push(
-            `/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}${capabilities?.entries ? '' : '&kind=Withdrawal'}` as Href,
+            `/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href,
           ),
-        }]}
+        }] : undefined}
         menu={[
-          ...(holding.kind === 'plan' && capabilities?.recurring && (schedule?.summary.overdue ?? 0) + (schedule?.summary.ongoing ?? 0) > 0
+          ...(holding.kind === 'plan' && capabilities?.recurring && (recurringPlan?.summary.overdue ?? 0) + (recurringPlan?.summary.ongoing ?? 0) > 0
             ? [{
               label: 'Clear past dues',
               icon: 'check-circle' as const,
-              onPress: () => router.push(
-                `/clear-dues?kind=plan&id=${encodeURIComponent(holding.id)}` as Href,
-              ),
+              onPress: () => router.push(`/clear-dues?kind=plan&id=${encodeURIComponent(holding.id)}` as Href),
             }]
             : []),
           {
@@ -159,81 +129,65 @@ export default function InvestmentEntriesScreen() {
           },
         ]}
       />
-      {holding.kind === 'plan' && capabilities?.recurring ? (
-        <View style={styles.segment}>
-          <SegmentedControl
-            value={effectiveTab}
-            options={[{ label: 'Schedule', value: 'Schedule' }, { label: 'Entries', value: 'Entries' }]}
-            onChange={setTab}
+      <View style={styles.actions}>
+        {capabilities?.entries ? (
+          <Button
+            label="Deposit"
+            icon="plus"
+            variant="primary"
+            style={styles.action}
+            onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Deposit` as Href)}
           />
-        </View>
+        ) : null}
+        <Button
+          label="Withdraw"
+          icon="arrow-down-left"
+          style={styles.action}
+          disabled={financial.value < 1}
+          onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
+        />
+        <Button label="Entries" icon="list" style={styles.action} disabled />
+      </View>
+      {holding.kind === 'plan' && capabilities?.recurring ? (
+        <Card>
+          <AppText style={[typography.label, { color: colors.text3 }]}>Recurring plan</AppText>
+          <AppText
+            style={styles.summaryLine}
+            accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
+            {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} · <AmountText value={holding.amount} tier="row" /> · Next due{' '}
+            {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
+          </AppText>
+          <Button
+            label="Edit recurring plan"
+            icon="edit-2"
+            onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
+          />
+        </Card>
       ) : null}
-      {effectiveTab === 'Schedule' && schedule ? (
-        <>
-          <Card>
-            <AppText style={[typography.label, { color: colors.text3 }]}>Schedule summary</AppText>
-            {schedule.summary.nextDue ? (
-              <AppText
-                weight="semibold"
-                style={styles.summaryLine}
-                accessibilityLabel={`Next due ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}>
-                Next due {formatDate(schedule.summary.nextDue.dueDate)} · <AmountText value={schedule.summary.nextDue.amount} tier="row" />
-              </AppText>
-            ) : (
-              <AppText weight="semibold" style={styles.summaryLine}>Completed</AppText>
-            )}
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Paid {schedule.summary.paid} of {schedule.rows.length} · {schedule.summary.overdue} overdue
-            </AppText>
-          </Card>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
-            {filters.map((item) => {
-              const count = item === 'All'
-                ? schedule.rows.length
-                : schedule.rows.filter((row) => row.status === item.toLowerCase()).length;
-              return <Chip key={item} label={`${item} (${count})`} selected={filter === item} onPress={() => setFilter(item)} />;
-            })}
-          </ChipRow>
-        </>
-      ) : (
-        <>
-          <Card>
-            <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
-            {cashOrBank ? (
-              <>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Balance ${formatAmount(currentValue, 'exact', 1)}`}>
-                  Balance <AmountText value={currentValue} tier="row" />
-                </AppText>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Deposited ${formatAmount(entryTotals.deposits, 'exact', 1)}`}>
-                  Deposited <AmountText value={entryTotals.deposits} tier="row" />
-                </AppText>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Withdrawn ${formatAmount(entryTotals.withdrawals, 'exact', 1)}`}>
-                  Withdrawn <AmountText value={entryTotals.withdrawals} tier="row" />
-                </AppText>
-              </>
-            ) : (
-              <>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(invested, 'exact', 1)}`}>
-                  Invested <AmountText value={invested} tier="row" />
-                </AppText>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Current value ${formatAmount(currentValue, 'exact', 1)}`}>
-                  Current value <AmountText value={currentValue} tier="row" />
-                </AppText>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Total deposits ${formatAmount(entryTotals.deposits, 'exact', 1)}`}>
-                  Total deposits <AmountText value={entryTotals.deposits} tier="row" />
-                </AppText>
-                <AppText style={styles.summaryLine} accessibilityLabel={`Total withdrawals ${formatAmount(entryTotals.withdrawals, 'exact', 1)}`}>
-                  Total withdrawals <AmountText value={entryTotals.withdrawals} tier="row" />
-                </AppText>
-              </>
-            )}
-          </Card>
-          <ChipRow>
-            <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
-          </ChipRow>
-        </>
-      )}
+      <Card>
+        <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
+        <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(financial.invested, 'exact', 1)}`}>
+          Invested <AmountText value={financial.invested} tier="row" />
+        </AppText>
+        <AppText
+          style={styles.summaryLine}
+          accessibilityLabel={`${cashOrBank ? 'Balance' : 'Current value'} ${formatAmount(financial.value, 'exact', 1)}`}>
+          {cashOrBank ? 'Balance' : 'Current value'} <AmountText value={financial.value} tier="row" />
+        </AppText>
+        {holdingCapabilities(holding.type).returns ? (
+          <AppText style={styles.summaryLine} accessibilityLabel={`Gain ${formatAmount(financial.gain, 'exact', 1)}`}>
+            {financial.gain >= 0 ? 'Gain ' : 'Loss '}
+            <AmountText value={Math.abs(financial.gain)} tier="row" />
+            {formatReturn(financial.returnSummary)}
+          </AppText>
+        ) : null}
+        {financial.ledger.costRecovered ? (
+          <AppText style={[styles.summaryLine, { color: colors.text3 }]}>Cost recovered</AppText>
+        ) : null}
+      </Card>
+      <ChipRow>
+        <SortChip options={SORT_OPTIONS[entrySortList]} spec={entrySorting.spec} onChange={entrySorting.setSpec} />
+      </ChipRow>
     </View>
   );
 
@@ -243,31 +197,26 @@ export default function InvestmentEntriesScreen() {
         data={listRows}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={<EmptyState title={effectiveTab === 'Schedule' ? 'No scheduled installments' : 'No investment entries'} />}
+        ListEmptyComponent={<EmptyState title="No investment entries" />}
         contentContainerStyle={styles.listContent}
         initialNumToRender={16}
         maxToRenderPerBatch={16}
         windowSize={9}
         renderItem={({ item }) => {
-          if ('status' in item) {
+          if ('rowKind' in item) {
             return (
-              <Pressable
-                accessibilityRole={item.status === 'upcoming' ? undefined : 'button'}
-                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
-                disabled={item.status === 'upcoming'}
-                onPress={() => routeEntryForm(item)}
-                style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={styles.rowTop}>
-                  <View style={styles.rowTitle}>
-                    <AppText weight="semibold">{formatDate(item.dueDate)}</AppText>
-                    {item.status === 'paid' && item.paidOn ? (
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>Paid on {formatDate(item.paidOn)}</AppText>
-                    ) : null}
-                  </View>
-                  <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
-                </View>
-                <StatusBadge label={item.status} tone={badgeTone[item.status]} />
-              </Pressable>
+              <SharedListRow
+                style={[styles.row, { borderColor: colors.border }]}
+                editLabel="Edit opening amount"
+                onEdit={() => routeEntryForm(item)}
+              >
+                <AppText
+                  accessibilityLabel={`Opening ${formatAmount(item.amount, 'exact', 1)}`}
+                  weight="semibold">
+                  Opening
+                </AppText>
+                <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+              </SharedListRow>
             );
           }
           return (
@@ -288,11 +237,20 @@ export default function InvestmentEntriesScreen() {
   );
 }
 
+function formatReturn(summary: ReturnType<typeof holdingFinancialSummary>['returnSummary']): string {
+  const annualized = summary.annualizedLabel === 'XIRR' ? summary.xirr : summary.cagr;
+  if (summary.annualizedLabel && annualized !== null) {
+    return ` · ${summary.annualizedLabel} ${(annualized * 100).toFixed(1)}%`;
+  }
+  return summary.absoluteReturnPct === null
+    ? ' · No return yet'
+    : ` · ${summary.absoluteReturnPct.toFixed(1)}% absolute`;
+}
+
 const styles = StyleSheet.create({
-  segment: { paddingHorizontal: 20, marginTop: 6 },
   summaryLine: { marginTop: 7, fontSize: 12 },
+  actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  action: { flexGrow: 1, minWidth: 100 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
-  rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  rowTitle: { flex: 1, gap: 3 },
 });

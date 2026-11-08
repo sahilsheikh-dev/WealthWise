@@ -1,4 +1,5 @@
 import { addDays, addMonths, addYears, parseISO } from './dates';
+import { investmentLedgerSummary } from './investmentReturns';
 import type { Frequency, ISODate, PlanHolding } from './types';
 
 export const PERIODS_PER_YEAR: Record<Frequency, number> = {
@@ -91,9 +92,7 @@ export function behindBy(plan: PlanHolding, asOf: ISODate): number {
 }
 
 export function planInvested(plan: PlanHolding): number {
-  const deposits = plan.logs.reduce((total, entry) =>
-    total + (entry.kind === 'Deposit' ? entry.amount : 0), 0);
-  return plan.opening + deposits;
+  return investmentLedgerSummary(plan.logs, plan.opening).invested;
 }
 
 export function planValue(plan: PlanHolding, asOf: ISODate): number {
