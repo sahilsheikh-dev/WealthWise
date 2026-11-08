@@ -5,7 +5,7 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { PaceLine, StackedBar } from '../../src/components/BudgetCharts';
+import { PaceLine } from '../../src/components/BudgetCharts';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
@@ -346,7 +346,6 @@ export default function BudgetScreen() {
               <View testID="budget-overview-card">
                 <Card style={styles.overviewCard}>
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
-                  <StackedBar values={overview.stacked} summary={overviewAccessibility} />
                   <View style={styles.metricTable}>
                     <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
                       <View style={styles.metricTableLabel} />

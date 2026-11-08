@@ -4684,28 +4684,29 @@ describe('route render smoke audit', () => {
         .map((node) => JSON.stringify(node.props.style))
         .join(' ');
       expect(overviewStyleText).toContain('"padding":16');
-      expect(renderer.root.findByProps({ testID: 'stacked-track' }).props.style)
-        .toEqual(expect.arrayContaining([expect.objectContaining({ height: 12, width: '100%' })]));
+      expect(renderer.root.findAllByProps({ testID: 'stacked-bar' })).toHaveLength(0);
+      expect(renderer.root.findByProps({ testID: 'pace-section-series-survival' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'pace-y-axis' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'pace-section-toggle-survival' }).props.accessibilityRole)
+        .toBe('button');
       const header = renderer.root.findByProps({ testID: 'budget-overview-table-header' });
       expect(header.findAllByType('text').map((node) => node.children.join('')))
         .toEqual(['Actual', 'Planned']);
-      const overviewAccessibility = renderer.root.findByProps({ testID: 'stacked-bar' }).props.accessibilityLabel;
-      for (const label of ['Income', 'Spending', 'Investing', 'Left']) {
-        const labelIndex = overviewAccessibility.indexOf(label);
-        const actualIndex = overviewAccessibility.indexOf(' actual and ', labelIndex);
-        const plannedIndex = overviewAccessibility.indexOf(' planned', actualIndex);
-        expect(labelIndex).toBeGreaterThanOrEqual(0);
-        expect(actualIndex).toBeGreaterThan(labelIndex);
-        expect(plannedIndex).toBeGreaterThan(actualIndex);
-      }
+      const overviewAccessibility = renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel;
+      expect(overviewAccessibility).toContain('Income');
+      expect(overviewAccessibility).toContain('Spending');
+      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-section-series-survival' }).props.accessibilityLabel;
+      expect(paceAccessibility).toContain('Survival');
+      expect(paceAccessibility).toContain('actual');
+      expect(paceAccessibility).toContain('planned to date');
+      expect(renderer.root.findByProps({ testID: 'pace-short-summary' }).props.accessibilityLabel)
+        .toContain('actual vs');
       expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
         .toBe(overviewAccessibility);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
         .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([1_100, 1_100]);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
         .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
-      const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
-      expect(paceAccessibility.indexOf(' actual;')).toBeLessThan(paceAccessibility.indexOf(' planned'));
       expect(['income', 'spending', 'investing', 'left'].map((name) =>
         renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
       )).toHaveLength(4);

@@ -17,13 +17,14 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 
 ## Project rules
 
-- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
-  before other work. If files are dirty, run `git diff --stat` and inspect
-  their complete diff, then commit exactly those named files with a
-  Conventional Commit subject that states what changed. Use one commit per
-  unrelated area. The subject must not use a legacy placeholder; never bypass
-  the commit hook. Preserve owner edits; never use checkout, restore, stash,
-  reset, or old-code reapplication to undo them.
+- **R1 — Dirty-file preflight and commit subjects:** before other work, list
+  every dirty file and run `git diff --stat` plus the complete diff. Before
+  committing, show the proposed subject and staged diff-stat. Commit exactly
+  the named files with a descriptive Conventional Commit subject that states
+  what actually changed; use one commit per unrelated area. Do not use
+  placeholder or update-only subjects, and never bypass the commit hook.
+  Preserve owner edits; never use checkout, restore, stash, reset, or
+  old-code reapplication to undo them.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
   as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
