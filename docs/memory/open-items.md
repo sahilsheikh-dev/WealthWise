@@ -55,9 +55,9 @@
 - **v1.1.0 draft correction:** contributor credits and template guidance are
   corrected and integrated. No publication or tag action has been taken;
   wait for owner APK build and approval before tagging or publishing.
-- **Branch publication audit:** GitHub currently exposes 35 heads: main,
-  develop, `history/by-phase`, all 30 phase branches, `release/v1.1.0`, and
-  the current audit task branch. PRs #1-#7 form the chronological Release 2
+- **Branch publication audit:** GitHub currently exposes 34 heads: main,
+  develop, `history/by-phase`, all 30 phase branches and `release/v1.1.0`.
+  Merged task branches are deleted. PRs #1-#7 form the chronological Release 2
   follow-up and audit path. `codex-changes`,
   `phase/25-release-and-backups` and `task/P28-E-phase-history` remain outside
   this PR chain; `history/by-phase` remains a read-only archive. The v1.1.0
