@@ -9205,3 +9205,12 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 
 - No native build, `gh release edit`, tag operation or push occurred.
   Physical-device checks remain unverified.
+
+### P28-C-R3 release finalization (in progress)
+
+- Step 2 Download blocks now follow the template; the README and latest
+  published v1.0.0 blocks are byte-identical. Added a Jest regression that
+  derives the latest version from the README and checks older notes use their
+  own versioned asset link.
+- Focused documentation tests: 3 suites and 12 tests passed. No assertions
+  were weakened or replaced in this step.
