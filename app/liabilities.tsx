@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
@@ -8,6 +8,7 @@ import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { DueActions } from '../src/components/DueActions';
 import { SortChip } from '../src/components/SortChip';
 import {
+  ActionRow,
   AppText,
   Button,
   Card,
@@ -15,8 +16,8 @@ import {
   ChipRow,
   EmptyState,
   ProgressBar,
-  Screen,
   SearchField,
+  Screen,
   StatPill,
   StatPillRow,
   StatusBadge,
@@ -53,13 +54,9 @@ export default function LiabilitiesScreen() {
   const isValidExtra = /^\d+$/.test(extraText) && Number.isSafeInteger(Number(extraText))
     && Number(extraText) >= 0 && Number(extraText) <= 1_000_000;
   const extra = isValidExtra ? Number(extraText) : 0;
-  const overview = useMemo(
-    () => liabilitiesOverview(data, asOf, extra),
-    [asOf, data, extra],
-  );
-  const sortedLiabilities = useMemo(() => {
-    const liabilityCreationOrder = new Map(data.liabilities.map((item, index) => [item.id, index]));
-    return sorting.sort(data.liabilities.map((liability) => {
+  const overview = liabilitiesOverview(data, asOf, extra);
+  const liabilityCreationOrder = new Map(data.liabilities.map((liability, index) => [liability.id, index]));
+  const sortedLiabilities = sorting.sort(data.liabilities.map((liability) => {
     const summary = liabilitySummary(liability, asOf);
     const schedule = liabilitySchedule(liability, asOf);
     return {
@@ -72,8 +69,7 @@ export default function LiabilitiesScreen() {
       status: summary.cleared ? 'cleared' : schedule.summary.overdue > 0 ? 'overdue' : 'active',
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
-    }));
-  }, [asOf, data.liabilities, sorting]);
+  }));
   const filterActive = kindFilter !== 'All'
     || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
@@ -265,48 +261,33 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       ) : null}
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       <View testID={`liability-card-actions-${liability.id}`}>
-        {!isLiabilityClosed(liability) && schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
-          <DueActions
-            target={{ kind: 'liability', id: liability.id }}
-            pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
-            nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
-            stopParentPress
-          />
-        ) : null}
-        <View style={[styles.liabilityActions, { borderTopColor: colors.border }]}>
-          {!summary.cleared && !isLiabilityClosed(liability) ? (
-            <>
-              <Button
-                label="Pay EMI"
-                icon="credit-card"
-                variant="primary"
-                style={styles.liabilityAction}
-                onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }); }}
-              />
-              <Button
-                label="Foreclosure"
-                icon="check-circle"
-                style={styles.liabilityAction}
-                onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } }); }}
-              />
-            </>
-          ) : isLiabilityClosed(liability) ? (
-            <Button
-              label="Edit closure note"
-              icon="edit-2"
-              style={styles.liabilityAction}
-              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }); }}
-            />
-          ) : null}
-          {liability.payments.length > 0 ? (
-            <Button
-              label="Entries"
-              icon="list"
-              style={styles.liabilityAction}
-              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payments', params: { id: liability.id } }); }}
-            />
-          ) : null}
-        </View>
+      {!isLiabilityClosed(liability) && schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
+        <DueActions
+          target={{ kind: 'liability', id: liability.id }}
+          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
+          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
+          stopParentPress
+        />
+      ) : null}
+      <ActionRow actions={[
+        ...(!summary.cleared && !isLiabilityClosed(liability) ? [{
+          label: 'Pay EMI',
+          variant: 'primary' as const,
+          icon: 'credit-card' as const,
+          onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }),
+        }] : []),
+        ...(!summary.cleared && !isLiabilityClosed(liability) ? [{
+          label: 'Close loan early',
+          icon: 'check-circle' as const,
+          onPress: () => router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } }),
+        }] : []),
+        ...(isLiabilityClosed(liability) ? [{
+          label: 'Edit closure note',
+          icon: 'edit-2' as const,
+          onPress: () => router.push({ pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }),
+        }] : []),
+        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
+      ]} stopParentPress />
       </View>
       </View>
     </Pressable>
@@ -353,25 +334,15 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       {overdue ? <AppText style={[typography.meta, { color: colors.err }]}>This liability is overdue.</AppText> : null}
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       <View testID={`liability-card-actions-${liability.id}`}>
-        <View style={[styles.liabilityActions, { borderTopColor: colors.border }]}>
-          {!summary.cleared ? (
-            <Button
-              label="Pay EMI"
-              icon="credit-card"
-              variant="primary"
-              style={styles.liabilityAction}
-              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }); }}
-            />
-          ) : null}
-          {liability.payments.length > 0 ? (
-            <Button
-              label="Entries"
-              icon="list"
-              style={styles.liabilityAction}
-              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payments', params: { id: liability.id } }); }}
-            />
-          ) : null}
-        </View>
+      <ActionRow actions={[
+        ...(!summary.cleared ? [{
+          label: 'Pay',
+          variant: 'primary' as const,
+          icon: 'credit-card' as const,
+          onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
+        }] : []),
+        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
+      ]} stopParentPress />
       </View>
       </View>
     </Pressable>
@@ -391,6 +362,4 @@ const styles = StyleSheet.create({
   scenario: { marginTop: 7 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },
   sortRow: { marginHorizontal: 20, marginTop: 8 },
-  liabilityActions: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'nowrap', gap: 6 },
-  liabilityAction: { flex: 1, minWidth: 0 },
 });

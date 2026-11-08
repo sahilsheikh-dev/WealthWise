@@ -11,7 +11,7 @@ import { formatDate } from '../lib/format';
 export type InstrumentCardTextSegment = { text: string } | { amount: number };
 
 export type InstrumentCardAction = {
-  id: 'deposit' | 'withdraw' | 'entries' | 'edit' | 'update' | 'stop';
+  id: 'deposit' | 'withdraw' | 'entries' | 'edit' | 'update';
   label: string;
   disabled?: boolean;
   accessibilityHint?: string;
@@ -125,11 +125,6 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
         { id: 'entries', label: 'Entries' },
-        {
-          id: 'stop' as const,
-          label: holding.stopDate ? 'Resume investment' : 'Stop investment',
-          accessibilityHint: holding.stopDate ? 'Resume this investment plan' : 'Stop future recurring dues',
-        },
         { id: 'update', label: method === 'unitsPrice' ? 'Update price' : 'Update value' },
       ],
     };

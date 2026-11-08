@@ -90,12 +90,6 @@ export function deletePlan(
       ...goal,
       links: goal.links.filter((link) => link.instrumentId !== id),
     })),
-    efBucketLinks: Object.fromEntries(
-      Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
-        bucketId,
-        holdingIds.filter((holdingId) => holdingId !== id),
-      ]),
-    ),
     transactions,
   };
 }

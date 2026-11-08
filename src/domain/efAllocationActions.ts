@@ -71,34 +71,6 @@ function assertValidLinks(data: AppData, holdingIds: readonly string[]): void {
   }
 }
 
-export function repairEfLinkedHoldings(data: AppData): { data: AppData; repaired: boolean } {
-  const holdingIds = new Set(data.holdings.map((holding) => holding.id));
-  const efBucketLinks = Object.fromEntries(
-    Object.entries(data.efBucketLinks).map(([bucketId, holdingIdsForBucket]) => [
-      bucketId,
-      holdingIdsForBucket.filter((holdingId) => holdingIds.has(holdingId)),
-    ]),
-  );
-  const bucketIds = Object.values(efBucketLinks).flat();
-  const efGoalId = data.goals.find((goal) => goal.auto === 'ef')?.id;
-  const goals = data.goals.map((goal) => {
-    if (goal.id !== efGoalId && goal.auto !== 'ef') return goal;
-    const links = goal.links.filter((link) => holdingIds.has(link.instrumentId));
-    const withBuckets = bucketIds.reduce((current, holdingId) => {
-      if (current.some((link) => link.instrumentId === holdingId)) return current;
-      return [...current, { instrumentId: holdingId }];
-    }, links);
-    return { ...goal, links: withBuckets };
-  });
-  const repaired =
-    JSON.stringify(data.efBucketLinks) !== JSON.stringify(efBucketLinks) ||
-    JSON.stringify(data.goals) !== JSON.stringify(goals);
-  return {
-    data: repaired ? { ...data, efBucketLinks, goals } : data,
-    repaired,
-  };
-}
-
 export function setEfAllocation(data: AppData, allocation: EfAllocation): AppData {
   const check = validateAllocation(allocation, true, data.efCustomBuckets);
 

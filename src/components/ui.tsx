@@ -472,6 +472,9 @@ export function BottomTabBar({
           <AppText
             testID={`bottom-tab-label-${tab.key}`}
             allowFontScaling
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
             style={[typography.navLabel, styles.bottomTabLabel, { color }]}>
             {tab.label}
           </AppText>
@@ -514,7 +517,7 @@ const styles = StyleSheet.create({
   actionButton: { flexGrow: 1 },
   searchField: { minHeight: 48, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.button },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 8, fontSize: 12, fontFamily: 'Montserrat_500Medium' },
-  searchClear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  searchClear: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   bottomTabBar: { paddingTop: 10, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-around' },
   bottomTabBarOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bottomTab: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 3 },

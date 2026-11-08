@@ -16,7 +16,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 21;
 
 export function makeStopRecurringFormSchema(
   today: ISODate,
@@ -269,20 +269,12 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
-const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
-const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetIncomeSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
   category: z.enum(earnedIncomeCategories),
   amount: moneySchema.positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
-  frequency: budgetItemFrequencySchema,
-  firstDueMonth: budgetFirstDueMonthSchema,
-}).superRefine((item, context) => {
-  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
-    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
-  }
 });
 const budgetOtherIncomeSchema = z.strictObject({
   id: idSchema,
@@ -292,6 +284,8 @@ const budgetOtherIncomeSchema = z.strictObject({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetItemSchedulingFields = {
   frequency: budgetItemFrequencySchema,
   firstDueMonth: budgetFirstDueMonthSchema,

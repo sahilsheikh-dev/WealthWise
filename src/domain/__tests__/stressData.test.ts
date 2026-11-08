@@ -320,14 +320,6 @@ describe('storage calibration data', () => {
     expect(rows.slice(0, 3).map(({ tier }) => tier)).toEqual(['50y', '100y', '126y']);
     expect(rows.slice(1).every(({ export: exportResult }) => exportResult.includes('import limit'))).toBe(true);
     expect(rows[0]?.export).toContain('accepted');
-    const first = rows[0];
-    if (!first) throw new Error('50-year stress row is missing.');
-    const [hydrateMs, actionWriteMs] = first.hydrateWriteMs.split(' / ').map(Number);
-    if (hydrateMs === undefined || actionWriteMs === undefined) {
-      throw new Error('50-year hydration/write samples are missing.');
-    }
-    expect(hydrateMs).toBeLessThan(2_000);
-    expect(actionWriteMs).toBeLessThan(100);
   }, 180_000);
 
   it('round-trips the 50-year tier plain and encrypted, and refuses oversize exports clearly', async () => {

@@ -1,95 +1,12 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
 
 # Open items
 
-## Recently resolved
-
-- **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
-  the new hook requires supported Conventional Commit types and rejects
-  placeholders. The reason is to keep scope explicit and unrelated changes
-  separate; proposed subjects and staged diff-stats are shown before commit.
-  The hook and docs tests pass.
-
 ## Unresolved
 
-- **Branching baseline exception:** the initial `develop` baseline
-  `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
-  which contains legacy unreleased Release 2 work. Branch protection and
-  release-only main merges apply prospectively; no history rewrite was made.
-- **v1.0.0 GitHub release body (owner action):** the canonical body is
-  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
-  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
-  No release edit was made in P28-C-R3.
-- **Release 2 device re-test:** the owner confirms the income recurrence and
-  edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
-  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
-  tester and date remain blank. Physical-device re-test is pending.
-- **Local checklist commit is not pushed:** its subject was corrected at the
-  owner's request, and the report commit was replayed unchanged. See the
-  old-to-new hash mapping and tree verification in
-  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 release preparation:** pending because the per-section Pace graph is
-  a visible feature. This task made no version change and performed no release
-  preparation, build, export or push.
-- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
-  quarterly/yearly income appears every month; device re-test of due/non-due
-  months, Received dues, projected cash flow and backup restore remains open.
-- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
-  not refresh immediately. Verify the repaired persistence path and immediate
-  screen updates across relevant flows on device.
-- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
-  Pace graph, per-section controls, contrast and scalable layout on device.
-- **P29-W-R1 physical-device check:** automated route tests inspect pending
-  liability EMI rows and verify the schedule stops at the last EMI date, but
-  native rendering and font scaling still need device confirmation.
-- **Requested task integration and P28-E history archive:** P29-W-R1 is complete
-  locally on its task branch; phase merges, the read-only history archive,
-  authorized plain pushes and remote verification have not yet been completed.
-- **Pre-build synthetic v13 equality:** automated coverage now imports a
-  deterministic, checksummed v13 backup through `parseBackup` and compares
-  source-derived net worth, every goal's saved amount and Emergency Fund
-  available amount. Physical-device backup/restore checks remain part of the
-  pre-build checklist in [`build-config.md`](../releases/build-config.md).
-- **P26-A physical-device checks:** verify touch targets, scalable labels and
-  text at 1.3x/2.0x, focus order, announced form errors, color-only status,
-  screen-reader navigation, cold hydration, first render and action writes on
-  iOS and Android. Jest/TestRenderer and Node benchmarks are not device
-  evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
-  user-owned/report-only surfaces under the P26-A scope.
-- **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
-  reproduction and store coverage confirmed valid links for Cash, Savings,
-  Fixed deposits and recurring plans. Plan deletion now clears EF bucket and
-  goal links in the same write; hydration repairs dangling links once and
-  preserves valid links, net worth and goal values. No schema change.
-- **Emergency Fund form font-scale and device check:** verify the resolved
-  link picker and EF allocation form at 1.3x and 2.0x on physical devices.
-- **P29-Z documentation verification (historical, superseded 2026-11-08):**
-  source wins over docs; current schema v22 and the migration/archive chain
-  through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
-  Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
-  change.
-- **Home-only global menu physical-device check (2026-11-05):** verify the
-  three-dot options menu remains present on Index/Home and absent on Assets,
-  Liabilities and detail screens, including backup, reminders, security,
-  profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop/resume label physical-device check:** verify active
-  recurring cards show Stop investment and stopped plans show Resume
-  investment while the action remains within the shared instrument-card row.
-- **Holding and liability layout physical-device check (2026-11-05):** verify
-  the two-column investment Summary, same-row liability actions, conditional
-  Entries button and liability Summary/details layout at font scales 1.3 and
-  2.0 on iOS and Android. Automated route, ownership and focused font-scale
-  tests pass, and all six gates exit 0.
-- **Holding layout validation (2026-11-05):** the owner-edited holding screen
-  passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
-  are green: 92 suites passed, with 1192 tests passed and 1 skipped.
-- **Merged holding summary card physical-device check:** verify the Recurring
-  plan and Summary information remain readable in one card and Stop/Resume stays
-  in the action row at font scales 1.3 and 2.0 on iOS and Android.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
-  passed tests with `1` skipped at that repair step. The final real run is
-  `1192` passed tests with `1` skipped (1193 total). The project inventory, status memory and
+  passed tests with `1` skipped. The project inventory, status memory and
   ledger now match the repaired run; all six gates pass.
 - **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
   stop-date filtering, stopped card text, past unpaid dues, Deposit
@@ -214,14 +131,6 @@
 
 ## Recent completed validation
 
-- **Commit-subject enforcement (2026-11-08):** superseded the former
-  unenforced placeholder-subject practice because it obscured the scope of
-  changes and encouraged unrelated edits to be grouped together. The
-  repository hook now requires descriptive Conventional Commit subjects;
-  enable it with `git config core.hooksPath .githooks`. Full ordered gates are
-  recorded as Gate 1-4 exit 0; Gate 1 had 93 suites, 1,205 passed and 1
-  skipped. Both Expo export gates were intentionally skipped because the task
-  forbids builds.
 - **P29-R:** the external schema-v13 backup migrated through the production
   import path to v18 with no differences in the requested before/after
   summaries. The script prints only numbered holdings/goals, types, and
@@ -362,15 +271,3 @@
   require a different platform-specific file destination design.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.
-
-## Resolved
-
-- **Historical checkpoint commit message audit (2026-11-07):** reviewed all
-  five matching commits on `origin/main` and recorded proposed descriptive
-  subjects in [PROGRESS.md](../PROGRESS.md). Their remote messages remain
-  unchanged because repository policy prohibits rewriting/pushing shared
-  history.
-- **v1.0.0 release commit messages (2026-11-07):** replaced generic checkpoint
-  messages with descriptions of release-draft preparation and publication
-  documentation. The changes are local and unpushed; see the verified
-  old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).

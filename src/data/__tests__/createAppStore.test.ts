@@ -6,14 +6,7 @@ import { describeSource, validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
 import { deleteLiability as deleteLiabilityData } from '../../domain/liabilityActions';
 import { monthPositionAt } from '../../domain/cashFlow';
-import {
-  budgetLineActual,
-  budgetMonthView,
-  budgetOverview,
-  defaultBudgetSections,
-  linkedRecurringForMonth,
-  plannedIncomeOf,
-} from '../../domain/budget';
+import { budgetLineActual, budgetMonthView, defaultBudgetSections, linkedRecurringForMonth } from '../../domain/budget';
 import { liabilitiesOverview, netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
@@ -33,7 +26,7 @@ import { makeV10Fixture } from '../testFixtures/v10';
 import { makeV11Fixture } from '../testFixtures/v11';
 import { makeV12Fixture } from '../testFixtures/v12';
 import { emptyAppData } from '../../domain/actions';
-import type { AppData, ISODate } from '../../domain/types';
+import type { ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 class MemoryStorage implements StateStorage {
@@ -1048,10 +1041,10 @@ describe('createAppStore persistence', () => {
     });
     await waitForHydration(first);
     expect(first.getState().data.budgetPlan?.incomes).toEqual([
-      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1, frequency: 'monthly' },
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1 },
     ]);
     expect(first.getState().data.monthBudgets?.[0]?.incomes).toEqual([
-      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000, frequency: 'monthly' },
+      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000 },
     ]);
     expect(storage.values.get(`${key}.premigration.v8`)).toBe(raw);
     const archiveWrites = storage.calls.filter((call) => call === `set:${key}.premigration.v8`).length;
@@ -1175,7 +1168,7 @@ describe('createAppStore persistence', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
         lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
         repeatMonthly: true,
         repeatFrom: '2026-03',
@@ -1194,7 +1187,7 @@ describe('createAppStore persistence', () => {
     expect(firstStore.getState().data.monthBudgets).toEqual([{
       month: '2026-03',
       source: 'plan',
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
       sections: defaultBudgetSections(),
       items: [{
         id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000, frequency: 'monthly',
@@ -1314,110 +1307,6 @@ describe('createAppStore persistence', () => {
       beforeSectionDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeSectionDelete);
-  });
-
-  it('reproduces recurrence through exact income-form store payloads and hydration', async () => {
-    const storage = new MemoryStorage();
-    const today = '2026-02-15';
-    const month = '2026-02';
-    let incomeId = 0;
-    const store = makeStore(storage, {
-      newId: () => `income-${++incomeId}`,
-      today: () => today,
-      isDev: false,
-    });
-    await waitForHydration(store);
-    const actions = store.getState().actions;
-    const assertPersisted = () => {
-      const persisted = JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}') as {
-        state?: { data?: AppData };
-      };
-      expect(persisted.state?.data).toEqual(store.getState().data);
-    };
-    const plan = budgetPlanFromLines([], {
-      incomes: [],
-      repeatMonthly: true,
-      repeatFrom: month,
-    });
-    actions.saveBudgetPlan(plan);
-    assertPersisted();
-    actions.applyBudgetPlan(month);
-    assertPersisted();
-
-    const quarterlyPayload = {
-      name: 'Quarterly contract',
-      amount: 12_000,
-      category: 'Freelance' as const,
-      day: 5,
-      frequency: 'quarterly' as const,
-      firstDueMonth: '2026-03',
-    };
-    actions.addBudgetIncome(month, quarterlyPayload, 'following', today);
-    assertPersisted();
-
-    const halfYearlyEditPayload = {
-      ...quarterlyPayload,
-      amount: 13_000,
-      frequency: 'half-yearly' as const,
-      firstDueMonth: '2026-04',
-    };
-    const frozenMonthSnapshot = store.getState().data.monthBudgets?.[0];
-    actions.editBudgetIncome(month, 'income-1', halfYearlyEditPayload, 'following', today);
-    assertPersisted();
-    expect(store.getState().data.monthBudgets?.[0]).toEqual(frozenMonthSnapshot);
-    expect(store.getState().data.budgetPlan?.incomes).toContainEqual(expect.objectContaining({
-      id: 'income-1',
-      amount: 13_000,
-      frequency: 'half-yearly',
-      firstDueMonth: '2026-04',
-    }));
-
-    const yearlyPayload = {
-      name: 'Annual contract',
-      amount: 24_000,
-      category: 'Other' as const,
-      day: 5,
-      frequency: 'yearly' as const,
-      firstDueMonth: '2026-05',
-    };
-    actions.addBudgetIncome(month, yearlyPayload, 'month', today);
-    assertPersisted();
-    const monthOnlyEditPayload = {
-      ...yearlyPayload,
-      amount: 25_000,
-      frequency: 'quarterly' as const,
-      firstDueMonth: '2026-06',
-    };
-    actions.editBudgetIncome(month, 'income-2', monthOnlyEditPayload, 'month', today);
-    assertPersisted();
-    expect(store.getState().data.budgetPlan?.incomes).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'income-2' })]),
-    );
-    expect(store.getState().data.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining({
-      id: 'income-2',
-      amount: 25_000,
-      frequency: 'quarterly',
-      firstDueMonth: '2026-06',
-    }));
-
-    const afterEdits = store.getState().data;
-    assertPersisted();
-    const freshStore = makeStore(storage, { today: () => today, isDev: false });
-    await waitForHydration(freshStore);
-    expect(freshStore.getState().data).toEqual(afterEdits);
-    const months = [
-      '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08',
-      '2026-09', '2026-10', '2026-11', '2026-12', '2027-01', '2027-02',
-    ];
-    const table = months.map((monthName) => ({
-      month: monthName,
-      planIncome: plannedIncomeOf({ incomes: afterEdits.budgetPlan?.incomes ?? [] }, monthName),
-      budgetOverviewIncome: budgetOverview(afterEdits, monthName, today).stacked.income.planned,
-    }));
-    console.log('P29-AB-R1 store-form-payload after-fix table', JSON.stringify(table, null, 2));
-    expect(table.map((row) => row.budgetOverviewIncome)).toEqual(
-      table.map((row) => row.planIncome),
-    );
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {
@@ -1576,50 +1465,6 @@ describe('createAppStore persistence', () => {
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
     expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
-  });
-
-  it('P29-AA store reproduction: EF links use existing holdings and plan deletion leaves no dangling bucket link', async () => {
-    const storage = new MemoryStorage();
-    const store = makeStore(storage, { newId: (() => {
-      let sequence = 0;
-      return () => `p29-aa-${++sequence}`;
-    })(), today: () => '2026-11-06' });
-    await waitForHydration(store);
-    const actions = store.getState().actions;
-
-    actions.addHolding({ name: 'Manual Cash', type: 'Cash', invested: 1_000, value: 1_000 });
-    actions.addHolding({ name: 'Manual Savings', type: 'Savings account', invested: 2_000, value: 2_000 });
-    actions.addHolding({ name: 'Manual Fixed', type: 'Fixed deposit', invested: 3_000, value: 3_000 });
-    actions.addPlan({
-      name: 'Recurring plan',
-      type: 'Recurring deposit',
-      frequency: 'monthly',
-      amount: 500,
-      ratePct: 0,
-      stepUpPct: 0,
-      tenureYears: 1,
-      startDate: '2026-01-01',
-      trackFrom: '2026-01-01',
-      opening: 500,
-      actualValue: null,
-      actualValueDate: null,
-    });
-
-    const report: string[] = [];
-    for (const holding of store.getState().data.holdings) {
-      actions.setEfBucketLinks('cash', [holding.id]);
-      report.push(`${holding.kind}:${holding.type}:${holding.name}:${store.getState().lastError ?? 'linked'}`);
-      actions.setEfBucketLinks('cash', []);
-    }
-
-    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
-    if (!plan) throw new Error('Expected the recurring plan reproduction holding.');
-    actions.setEfBucketLinks('bank', [plan.id]);
-    expect(store.getState().lastError).toBeNull();
-    actions.deletePlan(plan.id, { linkedTransactions: 'delete' });
-
-    // Replaced assertion target: dangling plan links must be removed in the same delete write.
-    expect(store.getState().data.efBucketLinks.bank ?? []).toEqual([]);
   });
 
   it('saves custom buckets, percentages, and investment links in one persisted write', async () => {

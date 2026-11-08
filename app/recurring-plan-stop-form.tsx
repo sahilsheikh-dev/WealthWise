@@ -34,7 +34,7 @@ export default function RecurringPlanStopFormScreen() {
   });
 
   if (!holding || holding.kind !== 'plan') {
-    return <FormScreen title="Stop investment" onClose={() => router.back()} isDirty={false} footer={null}>
+    return <FormScreen title="Stop recurring" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Plan not found" />
     </FormScreen>;
   }
@@ -43,11 +43,11 @@ export default function RecurringPlanStopFormScreen() {
     if (submitting.current) return;
     submitting.current = true;
     void choiceAsync({
-      title: 'Stop investment?',
+      title: 'Stop recurring plan?',
       message: `Scheduled dues after ${values.stopDate} will be removed. Past unpaid dues on or before that date remain actionable.`,
       choices: [
         { id: 'cancel', label: 'Cancel' },
-        { id: 'stop', label: 'Stop investment' },
+        { id: 'stop', label: 'Stop recurring' },
       ],
     }).then((choice) => {
       if (choice === 'stop') {
@@ -60,12 +60,12 @@ export default function RecurringPlanStopFormScreen() {
 
   return (
     <FormScreen
-      title="Stop investment"
+      title="Stop recurring"
       onClose={() => router.back()}
       isDirty={form.formState.isDirty}
       footer={<View style={{ flexDirection: 'row' }}>
         <Button
-          label="Stop investment"
+          label="Stop recurring"
           icon="pause"
           variant="primary"
           style={{ flex: 1 }}
@@ -77,7 +77,7 @@ export default function RecurringPlanStopFormScreen() {
       <Controller control={form.control} name="stopDate" render={({ field }) => (
         <DateField
           label="Stop date"
-          accessibilityLabel="Stop investment date"
+          accessibilityLabel="Stop recurring date"
           value={field.value}
           onChange={field.onChange}
           maximumDate={today}

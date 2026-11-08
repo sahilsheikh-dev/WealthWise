@@ -96,7 +96,7 @@ export default function LiabilityClosureFormScreen() {
 
   if (!liability || liability.kind !== 'recurring' || liability.closure) {
     return (
-      <FormScreen title="Foreclosure" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Close loan early" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Open recurring liability not found" />
       </FormScreen>
     );
@@ -104,7 +104,7 @@ export default function LiabilityClosureFormScreen() {
 
   return (
     <FormScreen
-      title="Foreclosure"
+      title="Close loan early"
       onClose={() => router.back()}
       isDirty={isDirty}
       footer={(

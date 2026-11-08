@@ -205,8 +205,6 @@ const budgetIncomeSchema = z.strictObject({
   category: z.enum(EARNED_INCOME_CATEGORIES),
   amount: z.number().finite().positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional(),
-  firstDueMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 const budgetOtherIncomeSchema = z.strictObject({
   id: idSchema,

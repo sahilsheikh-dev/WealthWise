@@ -33,12 +33,12 @@ describe('edit action ownership', () => {
     const approvedHeaders = new Map([
       [join(root, 'app/(tabs)/budget.tsx'), ["icon: 'plus'", "label: 'Add category'"]],
       [join(root, 'app/emergency-fund.tsx'), ["icon: 'edit-2'", "label: 'Edit allocation'"]],
+      [join(root, 'app/liabilities.tsx'), ["label: 'Edit closure note'"]],
     ]);
     const approvedIcons = new Map([
       [join(root, 'app/ef-allocation-form.tsx'), ['icon="edit-2"']],
       [join(root, 'app/investment-entries.tsx'), ["icon: 'edit-2'"]],
       [join(root, 'app/liability-payments.tsx'), ["icon: 'edit-2'"]],
-      [join(root, 'app/liabilities.tsx'), ['icon="edit-2"']],
     ]);
     const violations = ['app', 'src/components']
       .flatMap((directory) => sourceFiles(join(root, directory)))

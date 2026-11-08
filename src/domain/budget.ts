@@ -203,23 +203,6 @@ function monthFromOrdinal(ordinal: number): string {
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
 }
 
-export function isIncomeDueInMonth(
-  item: Pick<BudgetIncomeItem, 'frequency' | 'firstDueMonth'>,
-  month: string,
-): boolean {
-  const monthIndex = monthOrdinal(month);
-  const frequency = item.frequency ?? 'monthly';
-  if (frequency === 'monthly') {
-    return !item.firstDueMonth || monthIndex >= monthOrdinal(item.firstDueMonth);
-  }
-  if (!item.firstDueMonth) {
-    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring income.');
-  }
-  const firstDueIndex = monthOrdinal(item.firstDueMonth);
-  const difference = monthIndex - firstDueIndex;
-  return difference >= 0 && difference % frequencyStep(frequency) === 0;
-}
-
 export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
   const monthIndex = monthOrdinal(month);
   const frequency = item.frequency ?? 'monthly';
@@ -234,35 +217,28 @@ export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
   return difference >= 0 && difference % frequencyStep(frequency) === 0;
 }
 
-function nextMonthForFrequency(
-  frequency: BudgetItemFrequency,
-  firstDueMonth: string | undefined,
-  month: string,
-): string {
-  const currentIndex = monthOrdinal(month);
-  if (frequency === 'monthly') {
-    if (firstDueMonth) {
-      const firstIndex = monthOrdinal(firstDueMonth);
-      if (currentIndex < firstIndex) return firstDueMonth;
-    }
-    return monthFromOrdinal(currentIndex + 1);
-  }
-  if (!firstDueMonth) {
-    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
-  }
-  const firstDueIndex = monthOrdinal(firstDueMonth);
-  if (currentIndex < firstDueIndex) return firstDueMonth;
-  const step = frequencyStep(frequency);
-  const elapsed = currentIndex - firstDueIndex;
-  return monthFromOrdinal(firstDueIndex + (Math.floor(elapsed / step) + 1) * step);
-}
-
 export function plannedForMonth(item: BudgetItem, month: string): number {
   return isItemDueInMonth(item, month) ? item.value : 0;
 }
 
 export function nextDueMonth(item: BudgetItem, month: string): string {
-  return nextMonthForFrequency(item.frequency ?? 'monthly', item.firstDueMonth, month);
+  const currentIndex = monthOrdinal(month);
+  const frequency = item.frequency ?? 'monthly';
+  if (frequency === 'monthly') {
+    if (item.firstDueMonth) {
+      const firstIndex = monthOrdinal(item.firstDueMonth);
+      if (currentIndex < firstIndex) return item.firstDueMonth;
+    }
+    return monthFromOrdinal(currentIndex + 1);
+  }
+  if (!item.firstDueMonth) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
+  }
+  const firstDueIndex = monthOrdinal(item.firstDueMonth);
+  if (currentIndex < firstDueIndex) return item.firstDueMonth;
+  const step = frequencyStep(frequency);
+  const elapsed = currentIndex - firstDueIndex;
+  return monthFromOrdinal(firstDueIndex + (Math.floor(elapsed / step) + 1) * step);
 }
 
 function orderedRows<T extends { dueDate: ISODate }>(rows: T[]): T[] {
@@ -379,31 +355,16 @@ export class MissingPlannedIncomeError extends Error {
   }
 }
 
-export function plannedIncomeOf(
-  value: { incomes: readonly BudgetIncomeItem[] },
-  month?: string,
-): number {
-  return value.incomes.reduce(
-    (total, income) => total + (
-      month === undefined
-        ? income.amount
-        : isIncomeDueInMonth(income, month)
-          ? income.amount
-          : 0
-    ),
-    0,
-  );
+export function plannedIncomeOf(value: { incomes: readonly BudgetIncomeItem[] }): number {
+  return value.incomes.reduce((total, income) => total + income.amount, 0);
 }
 
 export function resolveBudgetPlan(
   plan: Pick<BudgetPlan, 'incomes' | 'sections' | 'items'>,
   month: string,
-  plannedIncome: number | null | undefined = undefined,
+  plannedIncome: number | null = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null,
   frozenSnapshot = false,
 ): BudgetLine[] {
-  const resolvedPlannedIncome = plannedIncome === undefined
-    ? (plan.incomes.length > 0 ? plannedIncomeOf(plan, month) : null)
-    : plannedIncome;
   return plan.items.map((item) => {
     const itemValue = plannedForMonth(
       frozenSnapshot ? { ...item, frequency: 'monthly' } : item,
@@ -422,10 +383,10 @@ export function resolveBudgetPlan(
         ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
       };
     }
-    if (resolvedPlannedIncome === null) throw new MissingPlannedIncomeError();
+    if (plannedIncome === null) throw new MissingPlannedIncomeError();
     return {
       category: line.category,
-      planned: Math.round(line.value * resolvedPlannedIncome / 100),
+      planned: Math.round(line.value * plannedIncome / 100),
       ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
@@ -457,7 +418,7 @@ export function applyBudgetPlanToMonth(
   void options.today;
   const plan = data.budgetPlan;
   if (!plan) return data;
-  const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan, month) : null;
+  const plannedIncome = plan.incomes.length > 0 ? plannedIncomeOf(plan) : null;
   const lines = new Map(resolveBudgetPlan(plan, month, plannedIncome).map((line) => [line.category, line]));
   return replaceMonth(data, {
     month,
@@ -872,13 +833,12 @@ export function addIncomeItem(
     || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
   }
-  const schedule = validateItemFrequency('amount', input.frequency, input.firstDueMonth);
   const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
   if (budget.incomes.some((income) => income.id === input.id)) {
     throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
   }
-  const income = { ...input, ...schedule, name, amount: normalizedAmount };
+  const income = { ...input, name, amount: normalizedAmount };
   if (scope === 'month') {
     return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
   }
@@ -921,11 +881,6 @@ export function editBudgetIncome(
   if (normalizedAmount <= 0) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
   }
-  const schedule = validateItemFrequency(
-    'amount',
-    input.values.frequency ?? 'monthly',
-    input.values.firstDueMonth,
-  );
 
   const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) throw new BudgetMutationError('invalid-item', `There is no budget to edit for ${month}.`);
@@ -933,7 +888,6 @@ export function editBudgetIncome(
   if (!currentIncome) throw new BudgetMutationError('item-not-found', 'The budget income no longer exists.');
   const updatedIncome: BudgetIncomeItem = {
     ...input.values,
-    ...schedule,
     id: input.incomeId,
     name,
     amount: normalizedAmount,
@@ -957,18 +911,14 @@ export function editBudgetIncome(
       : [...plan.incomes, updatedIncome],
   };
   if (!stored) return { ...data, budgetPlan: updatedPlan };
-  const scheduleChanged = (currentIncome.frequency ?? 'monthly') !== (updatedIncome.frequency ?? 'monthly')
-    || currentIncome.firstDueMonth !== updatedIncome.firstDueMonth;
   return {
     ...data,
     budgetPlan: updatedPlan,
     monthBudgets: monthRows(data).map((row) => row.month === month
-      ? scheduleChanged
-        ? row
-        : {
-          ...row,
-          incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
-        }
+      ? {
+        ...row,
+        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+      }
       : row),
   };
 }
@@ -1485,9 +1435,7 @@ export function budgetMonthView(
     .filter((row) => (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category))
     .reduce((sum, row) => sum + row.amount, 0);
   const actualEarned = position.earnedIncome;
-  const plannedIncome = budget && budget.incomes.length > 0
-    ? plannedIncomeOf(budget, key)
-    : null;
+  const plannedIncome = budget && budget.incomes.length > 0 ? plannedIncomeOf(budget) : null;
   return {
     budget, position, plannedIncome,
     actualEarned,
@@ -1536,14 +1484,14 @@ export function projectedCashFlow(
   const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
     + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
   if (monthDistance > 1) {
-    const plannedIncome = plannedIncomeOf(budget, month);
+    const plannedIncome = plannedIncomeOf(budget);
     return {
       opening,
       closing: normalizeMoney(opening + plannedIncome - view.plannedSpend - view.plannedSave),
       projected: true,
     };
   }
-  const plannedIncome = plannedIncomeOf(budget, month);
+  const plannedIncome = plannedIncomeOf(budget);
   const income = Math.max(0, plannedIncome - view.actualEarned);
   const spend = Math.max(0, view.plannedSpend - view.actualSpend);
   const save = Math.max(0, view.plannedSave - view.actualSave);
@@ -1577,15 +1525,6 @@ export type BudgetOverviewSection = {
   items: BudgetOverviewItem[];
 };
 
-export type BudgetPaceSection = {
-  id: string;
-  name: string;
-  planned: number[];
-  actual: number[];
-  plannedToDate: number;
-  actualToDate: number;
-};
-
 export type BudgetOverview = {
   mode: 'past' | 'current' | 'future';
   cashFlow: ReturnType<typeof projectedCashFlow>;
@@ -1596,7 +1535,7 @@ export type BudgetOverview = {
     left: { planned: number; actual: number };
   };
   sections: BudgetOverviewSection[];
-  pace: { days: number; elapsedDays: number; sections: BudgetPaceSection[] } | null;
+  pace: { days: number; planned: number[]; actual: number[] } | null;
   summary: { stacked: string; sections: string; pace: string | null };
 };
 
@@ -1709,24 +1648,15 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
 
   const remainingEarned = new Map(actualEarnedByCategory);
   for (const income of budget.incomes) {
-    const incomeDue = isIncomeDueInMonth(income, month);
-    const actual = incomeDue
-      ? Math.min(income.amount, remainingEarned.get(income.category) ?? 0)
-      : 0;
-    if (incomeDue) {
-      remainingEarned.set(income.category, normalizeMoney(
-        (remainingEarned.get(income.category) ?? 0) - actual,
-      ));
-    }
+    const actual = Math.min(income.amount, remainingEarned.get(income.category) ?? 0);
+    remainingEarned.set(income.category, normalizeMoney(
+      (remainingEarned.get(income.category) ?? 0) - actual,
+    ));
     itemsForSection(incomeSectionId).push({
       id: `income:${income.id}`,
       title: income.name,
-      planned: incomeDue ? normalizeMoney(income.amount) : 0,
+      planned: normalizeMoney(income.amount),
       actual: normalizeMoney(actual),
-      ...(income.frequency && income.frequency !== 'monthly' ? { frequency: income.frequency } : {}),
-      ...(incomeDue ? {} : {
-        nextDueMonth: nextMonthForFrequency(income.frequency ?? 'monthly', income.firstDueMonth, month),
-      }),
       kind: 'income',
       editable: true,
       source: { kind: 'income', incomeId: income.id, category: income.category },
@@ -1970,51 +1900,25 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
 
   const endDay = Number(monthEndDate(month).slice(8, 10));
   const elapsedDays = mode === 'past' ? endDay : mode === 'current' ? Number(today.slice(8, 10)) : 0;
-  const dailyActualBySection = new Map<string, Map<number, number>>();
+  const dailyExpenses = new Map<number, number>();
   for (const transaction of actualTransactions) {
-    if (transaction.type !== 'income' && transaction.type !== 'expense' && transaction.type !== 'invest') continue;
-    const sectionId = transaction.type === 'income'
-      ? incomeSectionId
-      : overviewSectionFor(
-        budgetCategoryForTransaction(transaction, customCategories),
-        budget,
-        data.budgetPlan,
-      );
+    if (transaction.type !== 'expense') continue;
     const day = Number(transaction.date.slice(8, 10));
-    const dailyActual = dailyActualBySection.get(sectionId) ?? new Map<number, number>();
-    dailyActual.set(day, normalizeMoney((dailyActual.get(day) ?? 0) + transaction.amount));
-    dailyActualBySection.set(sectionId, dailyActual);
+    dailyExpenses.set(day, normalizeMoney((dailyExpenses.get(day) ?? 0) + transaction.amount));
   }
+  const actualPace: number[] = [];
+  let cumulativeActual = 0;
+  for (let day = 1; day <= elapsedDays; day += 1) {
+    cumulativeActual = normalizeMoney(cumulativeActual + (dailyExpenses.get(day) ?? 0));
+    actualPace.push(cumulativeActual);
+  }
+  const plannedSpend = stacked.spend.planned;
   const pace = mode === 'future' ? null : {
     days: endDay,
-    elapsedDays,
-    sections: sections.map((section) => {
-      const dailyActual = dailyActualBySection.get(section.id) ?? new Map<number, number>();
-      const planned = Array.from({ length: endDay }, (_, index) =>
-        normalizeMoney(section.planned * (index + 1) / endDay));
-      const actual: number[] = [];
-      let cumulativeActual = 0;
-      for (let day = 1; day <= elapsedDays; day += 1) {
-        cumulativeActual = normalizeMoney(cumulativeActual + (dailyActual.get(day) ?? 0));
-        actual.push(cumulativeActual);
-      }
-      return {
-        id: section.id,
-        name: section.name,
-        planned,
-        actual,
-        plannedToDate: planned[elapsedDays - 1] ?? 0,
-        actualToDate: actual.at(-1) ?? 0,
-      };
-    }),
+    planned: Array.from({ length: endDay }, (_, index) =>
+      normalizeMoney(plannedSpend * (index + 1) / endDay)),
+    actual: actualPace,
   };
-  const paceSummary = pace?.sections.map((section) => {
-    const difference = normalizeMoney(section.actualToDate - section.plannedToDate);
-    const comparison = difference === 0
-      ? 'on pace'
-      : `${formatINR(Math.abs(difference))} ${difference > 0 ? 'ahead of' : 'behind'} plan`;
-    return `${section.name}: ${formatINR(section.actualToDate)} actual vs ${formatINR(section.plannedToDate)} planned to date; ${comparison}.`;
-  }).join(' ') ?? null;
   const leftSummary = [
     stacked.left.planned < 0 ? `Planned over by ${formatINR(Math.abs(stacked.left.planned))}.` : '',
     stacked.left.actual < 0 ? `Actual over by ${formatINR(Math.abs(stacked.left.actual))}.` : '',
@@ -2030,7 +1934,9 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       sections: sections.map((section) =>
         `${section.name}: ${formatINR(section.actual)} actual of ${formatINR(section.planned)} planned.`,
       ).join(' '),
-      pace: paceSummary,
+      pace: pace
+        ? `Spending pace through day ${elapsedDays}: ${formatINR(pace.actual.at(-1) ?? 0)} actual; ${formatINR(plannedSpend)} planned by month end.`
+        : null,
     },
   };
 }
