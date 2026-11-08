@@ -245,6 +245,26 @@ export default function BudgetScreen() {
   };
 
   const activeBudget = effectiveMonthBudget(data, month, today).budget;
+  const nonSpendingSectionIds = activeBudget?.sections
+    .filter((section) => section.type === 'invest' || section.system === 'income')
+    .map((section) => section.id) ?? [];
+  const spendingSectionIds = overview.pace?.sections
+    .filter((section) => !nonSpendingSectionIds.includes(section.id))
+    .map((section) => section.id) ?? [];
+  const spendingPaceSections = overview.pace?.sections.filter((section) =>
+    spendingSectionIds.includes(section.id),
+  ) ?? [];
+  const spendingPaceActual = spendingPaceSections.reduce(
+    (total, section) => total + (section.actual.at(-1) ?? 0),
+    0,
+  );
+  const spendingPacePlanned = spendingPaceSections.reduce(
+    (total, section) => total + (section.planned.at(-1) ?? 0),
+    0,
+  );
+  const paceSummary = overview.pace
+    ? `Spending pace through day ${overview.pace.elapsedDays}: ${formatAmount(spendingPaceActual, 'exact', 1)} actual; ${formatAmount(spendingPacePlanned, 'exact', 1)} planned by month end.`
+    : '';
 
   return (
     <Screen scroll={false}>
@@ -347,7 +367,20 @@ export default function BudgetScreen() {
               <View testID="budget-overview-card">
                 <Card style={styles.overviewCard}>
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
-                  <View style={styles.metricTable}>
+                  {overview.pace ? (
+                    <View testID="budget-pace">
+                      <AppText weight="semibold" style={[typography.meta, styles.paceTitle]}>Pace</AppText>
+                      <PaceLine
+                        pace={overview.pace}
+                        spendingSectionIds={spendingSectionIds}
+                        summary={paceSummary}
+                        shortSummary={overview.stacked.left.actual < 0
+                          ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
+                          : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
+                      />
+                    </View>
+                  ) : null}
+                  <View testID="budget-overview-table" style={styles.metricTable}>
                     <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
                       <View style={styles.metricTableLabel} />
                       <AppText style={[typography.label, styles.metricColumn]}>Actual</AppText>
@@ -369,21 +402,6 @@ export default function BudgetScreen() {
                   </AppText>
                 </Card>
               </View>
-
-              {overview.pace ? (
-                <View testID="budget-pace">
-                  <Card style={styles.overviewCard}>
-                    <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Pace</AppText>
-                    <PaceLine
-                      pace={overview.pace}
-                      summary={overview.summary.pace ?? ''}
-                      shortSummary={overview.stacked.left.actual < 0
-                        ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
-                        : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
-                    />
-                  </Card>
-                </View>
-              ) : null}
 
               <View testID="budget-section-list" style={styles.sectionList}>
                 {overview.sections.map((section) => {
@@ -692,6 +710,7 @@ const styles = StyleSheet.create({
   screenCard: { marginTop: 0 },
   overviewCard: { marginTop: 0, padding: 16, gap: 16 },
   overviewTitle: { marginBottom: 0 },
+  paceTitle: { marginBottom: 2 },
   metricRows: { gap: 8 },
   metricRowsStacked: { gap: 12 },
   metricRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
