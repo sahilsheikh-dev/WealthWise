@@ -9286,7 +9286,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 ### Owner device-validation report (2026-11-08)
 
 - The owner manually updated the checklist (preserved in checkpoint commit
-  `3ed74ba2ae338c9722ce49ed77f38222d15ebb7b`): all 43 rows are marked Pass,
+  `cc7eded7b5f5ba8dee957f96a1ab5725cd08e796`): all 43 rows are marked Pass,
   including X1-X3 (download/hash/install) and N39 (quarterly/yearly income and
   backup restore). No failure notes or screenshots are attached.
 - The checklist header's device model, Android version, tester and date fields
@@ -9298,3 +9298,17 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   work and P20-N-R1 remain tracked pending clarification.
 - No application fix was made. A complete Release 2 implementation prompt
   requires the owner to identify the reported failures and their reproductions.
+
+### Owner-requested local commit subject correction (2026-11-08)
+
+- Reviewed commit `3ed74ba2ae338c9722ce49ed77f38222d15ebb7b`: its only change
+  was replacing the 43 device checklist results from `Not run` with `Pass`.
+  Reworded it from `chore: user manual changes (checkpoint)` to
+  `docs: record owner Android device test results`
+  (`cc7eded7b5f5ba8dee957f96a1ab5725cd08e796`).
+- Verified old and new commit trees are identical. Replayed the following
+  owner-report commit without changing its tree:
+  `79afe4f0c43a70e85f05fe881d729657663dc82b` ->
+  `79bad92c8161d136c1477f6e817c7ecb55b6caa7`.
+- The rewritten commits remain local and unpushed; `main` is two commits ahead
+  of `origin/main`. No file content was changed by the history rewrite.

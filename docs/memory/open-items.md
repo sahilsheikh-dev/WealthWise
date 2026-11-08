@@ -15,6 +15,10 @@
   Release 2 bugs remain, but no failing checklist IDs, reproduction steps,
   expected/actual behavior, or screenshots were supplied. Request those
   details before drafting a scoped fix prompt; do not infer checklist failures.
+- **Local checklist commit is not pushed:** its subject was corrected at the
+  owner's request, and the report commit was replayed unchanged. See the
+  old-to-new hash mapping and tree verification in
+  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
 - **Release 2 known bug follow-ups:** retain P29-AB-R1, the Phase 30
   stale-values work, and P20-N-R1 as tracked follow-ups. The current device
   report does not establish which of these reproduce or their exact symptoms.
