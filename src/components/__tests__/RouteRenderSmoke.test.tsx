@@ -48,6 +48,7 @@ import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
+import { planSchedule } from '../../domain/schedule';
 import { emptyAppData } from '../../domain/actions';
 import { createBackup } from '../../domain/backup';
 import { encryptBackup, isEncryptedBackup } from '../../domain/backupCrypto';
@@ -3923,6 +3924,154 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it.each([1, 1.3, 2])('shows recurring installment counts and collapsible paid entries at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const previousFontScale = mockFontScale;
+    const today = todayISO();
+    const startMonth = shiftMonth(monthKey(today), -5);
+    const lastPlanMonth = shiftMonth(startMonth, 3);
+    const plan: PlanHolding = {
+      ...makeInvestmentTestPlan(),
+      startDate: `${startMonth}-01`,
+      trackFrom: `${startMonth}-01`,
+      tenureYears: 2,
+      maturityDate: `${lastPlanMonth}-01`,
+      logs: [0, 1].map((index) => ({
+        id: `paid-investment-${index}`,
+        date: `${shiftMonth(startMonth, index)}-01`,
+        amount: 1_000,
+        note: `Paid investment ${index + 1}`,
+        kind: 'Deposit' as const,
+      })),
+    };
+    const liabilityStartMonth = shiftMonth(monthKey(today), -5);
+    const liability: RecurringLiability = {
+      id: 'entries-recurring-liability',
+      kind: 'recurring',
+      name: 'Entries EMI',
+      type: 'Home loan',
+      principal: 20_000,
+      ratePct: 0,
+      startDate: `${liabilityStartMonth}-01`,
+      tenureMonths: 3,
+      emi: 1_000,
+      payments: [1, 2].map((index) => ({
+        id: `paid-emi-${index}`,
+        date: `${shiftMonth(liabilityStartMonth, index)}-01`,
+        amount: 1_000,
+        note: `Paid EMI ${index}`,
+        kind: 'EMI' as const,
+      })),
+      settlement: null,
+    };
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      Object.assign(routeData, { ...emptyAppData(today), holdings: [plan] });
+      store.data = routeData;
+      routeParams.mockReturnValue({ id: plan.id });
+      renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      const investmentText = renderer.root.findAllByType('text')
+        .map((node) => node.children.join('')).join(' ');
+      expect(investmentText).toContain('Completed 2 months');
+      expect(investmentText).toContain('Pending 2 months');
+      expect(investmentText).not.toContain('Paid investment 1');
+      expect(investmentText).not.toContain('Paid investment 2');
+      expect(investmentText).not.toContain(formatDate(`${shiftMonth(lastPlanMonth, 1)}-01`));
+      let investmentList = renderer.root.find((node) => String(node.type) === 'flatlist');
+      const investmentRows = investmentList.props.data as {
+        rowKind?: string;
+        id: string;
+        note?: string;
+      }[];
+      const pendingInvestmentRows = investmentRows.filter((row) => row.rowKind === 'pending-plan');
+      expect(pendingInvestmentRows).toHaveLength(
+        planSchedule(plan, today).rows.filter((row) => row.status !== 'paid').length,
+      );
+      expect(pendingInvestmentRows).toHaveLength(2);
+      const pendingInvestmentRow = pendingInvestmentRows[0];
+      if (!pendingInvestmentRow) throw new Error('Pending investment row is missing.');
+      const pendingInvestmentView = renderScreen(investmentList.props.renderItem({
+        item: pendingInvestmentRow,
+        index: 0,
+      }));
+      expect(pendingInvestmentView.root.findAllByType('text')
+        .map((node) => node.children.join(' ')).join(' ')).toContain('Pending investment');
+      act(() => pendingInvestmentView.unmount());
+      const paidInvestmentHeader = investmentRows.find((row) => row.rowKind === 'paid-investments-header');
+      if (!paidInvestmentHeader) throw new Error('Paid investments section is missing.');
+      const paidInvestmentToggle = renderScreen(investmentList.props.renderItem({
+        item: paidInvestmentHeader,
+        index: investmentRows.indexOf(paidInvestmentHeader),
+      }));
+      expect(paidInvestmentToggle.root.findByProps({ testID: 'paid-investments-toggle' })
+        .props.accessibilityState).toEqual({ expanded: false });
+      act(() => paidInvestmentToggle.root.findByProps({ testID: 'paid-investments-toggle' }).props.onPress());
+      investmentList = renderer.root.find((node) => String(node.type) === 'flatlist');
+      expect(investmentList.props.data).toEqual(expect.arrayContaining([
+        expect.objectContaining({ note: 'Paid investment 1' }),
+      ]));
+      act(() => paidInvestmentToggle.unmount());
+
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      Object.assign(routeData, { ...emptyAppData(today), liabilities: [liability] });
+      store.data = routeData;
+      routeParams.mockReturnValue({ id: liability.id });
+      renderer = renderScreen(React.createElement(LiabilityPaymentsScreen));
+      const liabilityText = renderer.root.findAllByType('text')
+        .map((node) => node.children.join('')).join(' ');
+      expect(liabilityText).toContain('Completed 2 months');
+      expect(liabilityText).toContain('Pending 1 months');
+      expect(liabilityText).not.toContain('Paid EMI 1');
+      expect(liabilityText).not.toContain('Paid EMI 2');
+      expect(liabilityText).not.toContain(formatDate(`${shiftMonth(liabilityStartMonth, 4)}-01`));
+      let liabilityList = renderer.root.find((node) => String(node.type) === 'flatlist');
+      const liabilityRows = liabilityList.props.data as {
+        rowKind?: string;
+        id: string;
+        note?: string;
+      }[];
+      const pendingEmiRows = liabilityRows.filter((row) => row.rowKind === 'pending-emi');
+      expect(pendingEmiRows).toHaveLength(1);
+      const pendingEmiRow = pendingEmiRows[0];
+      if (!pendingEmiRow) throw new Error('Pending EMI row is missing.');
+      const pendingEmiView = renderScreen(liabilityList.props.renderItem({
+        item: pendingEmiRow,
+        index: 0,
+      }));
+      expect(pendingEmiView.root.findAllByType('text')
+        .map((node) => node.children.join(' ')).join(' ')).toContain('Pending EMI');
+      act(() => pendingEmiView.unmount());
+      const paidEmisHeader = liabilityRows.find((row) => row.rowKind === 'paid-emis-header');
+      if (!paidEmisHeader) throw new Error('Paid EMIs section is missing.');
+      const paidEmisToggle = renderScreen(liabilityList.props.renderItem({
+        item: paidEmisHeader,
+        index: liabilityRows.indexOf(paidEmisHeader),
+      }));
+      expect(paidEmisToggle.root.findByProps({ testID: 'paid-emis-toggle' })
+        .props.accessibilityState).toEqual({ expanded: false });
+      act(() => paidEmisToggle.root.findByProps({ testID: 'paid-emis-toggle' }).props.onPress());
+      liabilityList = renderer.root.find((node) => String(node.type) === 'flatlist');
+      expect(liabilityList.props.data).toEqual(expect.arrayContaining([
+        expect.objectContaining({ note: 'Paid EMI 1' }),
+      ]));
+      act(() => paidEmisToggle.unmount());
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
+    }
+  });
+
   it('searches liabilities by trimmed case-insensitive name or type alongside the kind filter', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const previousRouteData = { ...routeData };
@@ -4202,7 +4351,15 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
         expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(0);
         const list = renderer.root.find((node) => String(node.type) === 'flatlist');
-        expect(list.props.data).toHaveLength(7);
+        if (holding.kind === 'plan') {
+          expect(list.props.data.filter((row: { rowKind?: string }) => row.rowKind === 'pending-plan'))
+            .toHaveLength(planSchedule(holding, today).rows.filter((row) => row.status !== 'paid').length);
+          expect(list.props.data.some((row: { rowKind?: string }) =>
+            row.rowKind === 'paid-investments-header',
+          )).toBe(true);
+        } else {
+          expect(list.props.data).toHaveLength(7);
+        }
         const openingRow = list.props.data[0];
         expect(openingRow).toMatchObject({ rowKind: 'opening' });
         const openingRenderer = renderScreen(list.props.renderItem({ item: openingRow, index: 0 }));
