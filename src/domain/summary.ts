@@ -1,9 +1,12 @@
 import { efBalance, monthlyBaseline, monthsCovered } from './ef';
 import { ensureEfGoal, goalProgressPct, goalSaved } from './goals';
-import { loanSummary } from './loan';
+import {
+  liabilitySummary,
+  type LiabilitySummary,
+  type RecurringLiabilitySummary,
+} from './liability';
 import { holdingValue } from './portfolio';
-import type { AppData, ISODate, Loan } from './types';
-import type { LoanSummary } from './loan';
+import type { AppData, ISODate, RecurringLiability } from './types';
 
 export function netWorth(data: AppData, asOf: ISODate): {
   assets: number;
@@ -12,7 +15,8 @@ export function netWorth(data: AppData, asOf: ISODate): {
 } {
   const assets = data.holdings.reduce((sum, holding) => sum + holdingValue(holding, asOf), 0)
     + efBalance(data.efEntries);
-  const liabilities = data.loans.reduce((sum, loan) => sum + loanSummary(loan, asOf, 0).balance, 0);
+  const liabilities = data.liabilities.reduce((sum, liability) =>
+    sum + liabilitySummary(liability, asOf, 0).balance, 0);
   return { assets, liabilities, netWorth: assets - liabilities };
 }
 
@@ -37,35 +41,40 @@ export function homeSummary(data: AppData, asOf: ISODate): {
   };
 }
 
-export type LoansOverview = {
+export type LiabilitiesOverview = {
   totalOutstanding: number;
   monthlyEmi: number;
   emiPctOfIncome: number | null;
-  loanFreeBy: ISODate | 'never' | null;
-  items: LoanSummary[];
+  debtFreeBy: ISODate | 'never' | null;
+  items: LiabilitySummary[];
 };
 
-export function loansOverview(data: AppData, asOf: ISODate, extra: number): LoansOverview {
-  const items = data.loans.map((loan) => loanSummary(loan, asOf, extra));
-  const activeLoans: { loan: Loan; summary: LoanSummary }[] = data.loans
-    .map((loan, index) => ({ loan, summary: items[index]! }))
-    .filter(({ summary }) => !summary.cleared);
-  const incomeBaseline = monthlyBaseline(data.transactions, 'income', asOf);
-  const loanFreeBy: LoansOverview['loanFreeBy'] = activeLoans.length === 0
+export function liabilitiesOverview(data: AppData, asOf: ISODate, extra: number): LiabilitiesOverview {
+  const items = data.liabilities.map((liability) => liabilitySummary(liability, asOf, extra));
+  const activeRecurring: { liability: RecurringLiability; summary: RecurringLiabilitySummary }[] =
+    data.liabilities.filter((liability): liability is RecurringLiability => liability.kind === 'recurring')
+      .map((liability) => ({ liability, summary: liabilitySummary(liability, asOf, extra) }))
+      .filter(({ summary }) => !summary.cleared);
+  const incomeBaseline = monthlyBaseline(
+    data.transactions,
+    'income',
+    asOf,
+    { excludeCategories: ['Withdrawal'] },
+  );
+  const debtFreeBy: LiabilitiesOverview['debtFreeBy'] = activeRecurring.length === 0
     ? null
-    : activeLoans.some(({ summary }) => summary.monthsLeft === null)
+    : activeRecurring.some(({ summary }) => summary.monthsLeft === null)
       ? 'never'
-      : activeLoans.reduce<ISODate>((latest, { summary }) => {
+      : activeRecurring.reduce<ISODate>((latest, { summary }) => {
         const date = summary.payoffDate!;
         return date > latest ? date : latest;
       }, '0000-01-01');
+  const monthlyEmi = activeRecurring.reduce((total, { liability }) => total + liability.emi, 0);
   return {
     totalOutstanding: items.reduce((total, item) => total + item.balance, 0),
-    monthlyEmi: activeLoans.reduce((total, { loan }) => total + loan.emi, 0),
-    emiPctOfIncome: incomeBaseline > 0
-      ? activeLoans.reduce((total, { loan }) => total + loan.emi, 0) / incomeBaseline * 100
-      : null,
-    loanFreeBy,
+    monthlyEmi,
+    emiPctOfIncome: incomeBaseline > 0 ? monthlyEmi / incomeBaseline * 100 : null,
+    debtFreeBy,
     items,
   };
 }

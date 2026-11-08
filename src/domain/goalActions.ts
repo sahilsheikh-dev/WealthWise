@@ -3,7 +3,7 @@ import type { AppData, Goal } from './types';
 
 export class GoalLockedError extends Error {
   constructor() {
-    super('The Emergency fund goal can only have its target and year changed.');
+    super('The Emergency fund Goal can only have its target and year changed.');
     this.name = 'GoalLockedError';
   }
 }

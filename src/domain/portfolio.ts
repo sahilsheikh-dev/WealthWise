@@ -1,5 +1,5 @@
 import { efBalance } from './ef';
-import { planInvested, planValue, PERIODS_PER_YEAR } from './sip';
+import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -15,11 +15,18 @@ export type PortfolioRow = {
 };
 
 export function holdingInvested(holding: Holding): number {
-  return holding.kind === 'plan' ? planInvested(holding) : holding.invested;
+  if (holding.kind === 'plan') return planInvested(holding);
+  return Math.max(0, holding.invested + holding.logs.reduce((total, entry) =>
+    total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0));
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
-  return holding.kind === 'plan' ? planValue(holding, asOf) : holding.value;
+  if (holding.kind === 'plan') return planValue(holding, asOf);
+  const valueAsOf = holding.valueAsOf;
+  const entriesAfterValue = holding.logs
+    .filter((entry) => !valueAsOf || entry.date > valueAsOf)
+    .reduce((total, entry) => total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
+  return Math.max(0, holding.value + entriesAfterValue);
 }
 
 function row(

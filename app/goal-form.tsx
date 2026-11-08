@@ -1,16 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import { View } from 'react-native';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { efBalance } from '../src/domain/ef';
@@ -85,10 +85,10 @@ export default function GoalFormScreen() {
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={goal ? 'Edit goal' : 'New goal'} onClose={close} footer={(
+    <FormScreen title={goal ? 'Edit Goal' : 'New Goal'} onClose={close} footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {goal && !locked ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>

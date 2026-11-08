@@ -16,12 +16,13 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
-import { groupByDate, monthSummary, filterTransactions } from '../../src/domain/transactions';
-import type { Transaction } from '../../src/domain/types';
-import { useAppData } from '../../src/data/useAppData';
 import { useUIStore } from '../../src/data/uiStore';
-import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
+import { describeSource } from '../../src/domain/links';
+import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
+import type { Transaction } from '../../src/domain/types';
+import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -74,10 +75,15 @@ export default function TransactionsScreen() {
           <StatPill label="Expense" value={formatINR(summary.expense)} tone="err" />
           <StatPill label="Invested" value={formatINR(summary.invest)} tone="primary" />
         </View>
+        {summary.withdrawals > 0 ? (
+          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
+            Includes {formatINR(summary.withdrawals)} withdrawn from investments
+          </AppText>
+        ) : null}
         {summary.income > 0 ? (
           <View style={styles.rates}>
             <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Saved {summary.savedPct!.toFixed(1)}% of income (income minus expenses)
+              Saved {summary.savedPct!.toFixed(1)}% of {summary.withdrawals > 0 ? 'earned income' : 'income'} ({summary.withdrawals > 0 ? 'earned income' : 'income'} minus expenses)
             </AppText>
             <AppText style={[typography.meta, { color: colors.primary }]}>
               Invested {summary.investedPct!.toFixed(1)}%
@@ -121,11 +127,14 @@ export default function TransactionsScreen() {
               <AppText weight="bold" style={[styles.dateGroup, { color: colors.text3 }]}>{formatDate(group.date)}</AppText>
               {group.items.map((item) => {
                 const tone = transactionTone[item.type];
+                const linked = item.source?.kind === 'holding-entry' || item.source?.kind === 'ef-entry'
+                  ? describeSource(data, item.source)
+                  : null;
                 return (
                   <ListItem
                     key={item.id}
                     title={item.note || item.category}
-                    subtitle={item.category}
+                    subtitle={linked ? `${item.category}\n→ ${linked.label}` : item.category}
                     amount={`${tone.symbol}${formatINR(item.amount)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
@@ -137,7 +146,7 @@ export default function TransactionsScreen() {
           ))}
         </View>
       </ScrollView>
-      <Fab label="Add transaction" onPress={() => router.push('/transaction-form')} />
+      <Fab label="Add Transaction" onPress={() => router.push('/transaction-form')} />
     </Screen>
   );
 }

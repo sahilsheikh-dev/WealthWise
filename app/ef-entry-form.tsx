@@ -1,18 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
-import { Controller, useForm, useWatch } from 'react-hook-form';
 
-import { Button, EmptyState } from '../src/components/ui';
 import { DateField } from '../src/components/form/DateField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
-import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
+import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { efEndOfDayBalances } from '../src/domain/efActions';
@@ -42,7 +41,7 @@ export default function EfEntryFormScreen() {
     },
   }), [data.efEntries, entryId, today]);
   const submitting = useRef(false);
-  const { control, handleSubmit, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
+  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<EfEntryFormInput, undefined, EfEntryFormOutput>({
       resolver: zodResolver(schema),
       mode: 'onTouched',
@@ -53,11 +52,9 @@ export default function EfEntryFormScreen() {
           amount: String(Math.abs(entry.amount)),
           date: entry.date,
           note: entry.note,
-          recordTransaction: linked,
         }
-        : { kind: 'Deposit', amount: '', date: today, note: '', recordTransaction: true },
+        : { kind: 'Deposit', amount: '', date: today, note: '' },
     });
-  const kind = useWatch({ control, name: 'kind' });
   const close = () => {
     if (!isDirty) return router.back();
     void confirmAsync({
@@ -71,10 +68,7 @@ export default function EfEntryFormScreen() {
     try {
       const amount = values.kind === 'Deposit' ? values.amount : -values.amount;
       if (entry) actions.updateEfEntry(entry.id, { amount, date: values.date, note: values.note });
-      else actions.addEfEntry(
-        { amount, date: values.date, note: values.note },
-        { recordTransaction: values.kind === 'Deposit' && values.recordTransaction },
-      );
+      else actions.addEfEntry({ amount, date: values.date, note: values.note });
       if (!useAppStore.getState().lastError) router.back();
     } finally {
       submitting.current = false;
@@ -95,16 +89,16 @@ export default function EfEntryFormScreen() {
   };
 
   if (entryId && !entry) return (
-    <FormScreen title="Emergency fund entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Emergency fund Entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Entry not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={entry ? 'Edit fund entry' : 'Log emergency fund entry'} onClose={close} footer={(
+    <FormScreen title={entry ? 'Edit fund entry' : 'Log Emergency fund Entry'} onClose={close} footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {entry ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>
@@ -119,28 +113,20 @@ export default function EfEntryFormScreen() {
             label="Entry type"
             value={field.value}
             options={kindOptions}
-            onChange={(next) => {
-              field.onChange(next);
-              if (next === 'Withdrawal') setValue('recordTransaction', false, { shouldDirty: true, shouldValidate: true });
-            }}
+            onChange={field.onChange}
             error={errors.kind?.message}
           />
         )} />
       )}
       <Controller control={control} name="amount" render={({ field }) => (
-        <MoneyField label="Amount" accessibilityLabel="Emergency fund amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+        <MoneyField label="Amount" accessibilityLabel="Emergency fund Amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
       )} />
       <Controller control={control} name="date" render={({ field }) => (
-        <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Emergency fund entry date" />
+        <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Emergency fund Entry Date" />
       )} />
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField label="Note" accessibilityLabel="Emergency fund entry note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
+        <TextField label="Note" accessibilityLabel="Emergency fund Entry Note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
       )} />
-      {!entry && kind === 'Deposit' ? (
-        <Controller control={control} name="recordTransaction" render={({ field }) => (
-          <SwitchRow label="Also record as a transaction" value={field.value} onValueChange={field.onChange} />
-        )} />
-      ) : null}
     </FormScreen>
   );
 }

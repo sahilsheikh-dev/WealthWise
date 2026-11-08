@@ -7,7 +7,10 @@ export type Transaction = {
   category: string;
   note: string;
   date: ISODate;
-  source?: { kind: 'plan-log' | 'loan-payment' | 'ef-entry'; parentId: string; entryId: string };
+  source?:
+    | { kind: 'holding-entry'; parentId: string; entryId: string }
+    | { kind: 'liability-payment'; parentId: string; entryId: string }
+    | { kind: 'ef-entry'; parentId: string; entryId: string };
 };
 
 export type Goal = {
@@ -19,15 +22,36 @@ export type Goal = {
   auto?: 'ef';
 };
 
-export type LogEntry = {
+export type InvestmentEntry = {
   id: string;
   date: ISODate;
   amount: number;
   note: string;
-  kind?: 'EMI' | 'Prepayment';
+  kind: 'Deposit' | 'Withdrawal';
+  snapshotAdjustment?: number;
+};
+
+export type LiabilityPayment = {
+  id: string;
+  date: ISODate;
+  amount: number;
+  note: string;
+  kind: 'EMI' | 'Prepayment' | 'Payment';
 };
 
 export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export const LIABILITY_TYPES = [
+  'Home loan',
+  'Car loan',
+  'Personal loan',
+  'Education loan',
+  'Credit card',
+  'Borrowed money',
+  'Other',
+] as const;
+
+export type LiabilityType = (typeof LIABILITY_TYPES)[number];
 
 export type HoldingType =
   | 'Mutual fund / SIP'
@@ -49,6 +73,7 @@ export type ManualHolding = {
   invested: number;
   value: number;
   valueAsOf?: ISODate;
+  logs: InvestmentEntry[];
 };
 
 export type PlanHolding = {
@@ -66,21 +91,33 @@ export type PlanHolding = {
   opening: number;
   actualValue: number | null;
   actualValueDate: ISODate | null;
-  logs: LogEntry[];
+  logs: InvestmentEntry[];
 };
 
 export type Holding = ManualHolding | PlanHolding;
 
-export type Loan = {
+type LiabilityBase = {
   id: string;
   name: string;
+  type: LiabilityType;
   principal: number;
   ratePct: number;
+  startDate: ISODate;
+  payments: LiabilityPayment[];
+};
+
+export type RecurringLiability = LiabilityBase & {
+  kind: 'recurring';
   tenureMonths: number;
   emi: number;
-  startDate: ISODate;
-  payments: LogEntry[];
 };
+
+export type OneTimeLiability = LiabilityBase & {
+  kind: 'one-time';
+  dueDate: ISODate | null;
+};
+
+export type Liability = RecurringLiability | OneTimeLiability;
 
 export type EfEntry = {
   id: string;
@@ -99,6 +136,6 @@ export type AppData = {
   transactions: Transaction[];
   goals: Goal[];
   holdings: Holding[];
-  loans: Loan[];
+  liabilities: Liability[];
   efEntries: EfEntry[];
 };

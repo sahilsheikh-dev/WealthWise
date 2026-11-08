@@ -9,12 +9,14 @@ export function ChoiceField({
   label,
   value,
   choices,
+  choiceLabels,
   onChange,
   error,
 }: {
   label: string;
   value: string;
   choices: readonly string[];
+  choiceLabels?: Record<string, string>;
   onChange: (value: string) => void;
   error?: string;
 }) {
@@ -26,7 +28,7 @@ export function ChoiceField({
         {choices.map((choice) => (
           <Chip
             key={choice}
-            label={choice}
+            label={choiceLabels?.[choice] ?? choice}
             selected={value === choice}
             accessibilityLabel={`${label}: ${choice}`}
             accessibilityHint={error ? `Error: ${error}` : undefined}

@@ -1,34 +1,36 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Alert, View, StyleSheet, Pressable } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import {
   AppText,
-  Card,
   Button,
+  Card,
   ProgressBar,
   Screen,
   SectionTitle,
   StatPill,
   StatPillRow,
+  StatusBadge,
 } from '../../src/components/ui';
-import { homeSummary } from '../../src/domain/summary';
-import { formatINR, formatINRShort } from '../../src/lib/format';
-import { useAppData } from '../../src/data/useAppData';
-import { currentHour, todayISO } from '../../src/lib/clock';
-import { greetingFor } from '../../src/lib/greeting';
-import { addDays } from '../../src/domain/dates';
-import { shouldNudge } from '../../src/domain/backupNudge';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useAppData } from '../../src/data/useAppData';
+import { shouldNudge } from '../../src/domain/backupNudge';
+import { addDays } from '../../src/domain/dates';
+import { homeSummary } from '../../src/domain/summary';
+import { upcomingDue } from '../../src/domain/schedule';
+import { currentHour, todayISO } from '../../src/lib/clock';
+import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
+import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 const actions = [
-  { label: 'Add txn', icon: 'plus-circle' as const },
-  { label: 'New SIP', icon: 'repeat' as const },
-  { label: 'New loan', icon: 'credit-card' as const },
+  { label: 'Add Txn', icon: 'plus-circle' as const },
+  { label: 'New investment', icon: 'repeat' as const },
+  { label: 'New liability', icon: 'credit-card' as const },
   { label: 'Log EF', icon: 'shield' as const },
 ];
 const metaStore = createMetaStore(AsyncStorage);
@@ -38,13 +40,14 @@ export default function HomeScreen() {
   const data = useAppData();
   const today = todayISO();
   const summary = homeSummary(data, today);
+  const dueItems = upcomingDue(data, today, 5);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
   const recordCount = data.transactions.length
     + data.goals.filter((goal) => !goal.auto).length
-    + data.holdings.length + data.loans.length + data.efEntries.length;
+    + data.holdings.length + data.liabilities.length + data.efEntries.length;
   const nudge = shouldNudge({
     recordCount,
     lastExportAt: backupMeta.lastExportAt,
@@ -58,15 +61,16 @@ export default function HomeScreen() {
         <AppText weight="bold" style={typography.h1}>{data.settings.name || 'Welcome'}</AppText>
       </View>
       <Card>
-        <AppText style={[typography.label, { color: colors.text3 }]}>Net worth</AppText>
+        <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
         <StatPillRow>
           <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
-          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" />
+          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" onPress={() => router.push('/liabilities')} />
           <StatPill
-            label="Emergency fund"
+            label="Emergency Fund"
             value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
             tone="primary"
+            onPress={() => router.push('/emergency-fund')}
           />
         </StatPillRow>
       </Card>
@@ -99,16 +103,16 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={action.label}
             onPress={() => {
-              if (action.label === 'Add txn') {
+              if (action.label === 'Add Txn') {
                 router.push('/transaction-form');
                 return;
               }
-              if (action.label === 'New SIP') {
-                router.push('/plan-form');
+              if (action.label === 'New investment') {
+                router.push('/investment-form' as Href);
                 return;
               }
-              if (action.label === 'New loan') {
-                router.push('/loan-form');
+              if (action.label === 'New liability') {
+                router.push('/liability-form');
                 return;
               }
               router.push('/ef-entry-form');
@@ -120,7 +124,41 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <SectionTitle>Goal progress</SectionTitle>
+      {dueItems.length > 0 ? (
+        <Card style={styles.upcomingCard}>
+          <AppText weight="semibold" style={typography.name}>Upcoming and due</AppText>
+          {dueItems.map((item) => {
+            const noDueDate = item.kind === 'liability'
+              && data.liabilities.some((liability) => liability.id === item.parentId && liability.kind === 'one-time' && liability.dueDate === null);
+            return (
+              <Pressable
+                key={`${item.kind}:${item.parentId}:${item.row.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${item.row.status}, ${formatINR(item.row.amount)}`}
+                onPress={() => router.push(item.kind === 'plan'
+                  ? `/investment-entries?id=${encodeURIComponent(item.parentId)}` as Href
+                  : `/liability-payments?id=${encodeURIComponent(item.parentId)}`)}
+                style={[styles.dueRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.dueTitle}>
+                  <AppText weight="semibold" style={typography.name} numberOfLines={1}>{item.name}</AppText>
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    {noDueDate ? 'No due date' : formatDate(item.row.dueDate)}
+                  </AppText>
+                </View>
+                <View style={styles.dueRight}>
+                  <AppText weight="semibold" style={typography.meta}>{formatINR(item.row.amount)}</AppText>
+                  <StatusBadge
+                    label={item.row.status}
+                    tone={item.row.status === 'overdue' ? 'err' : item.row.status === 'ongoing' ? 'primary' : 'neutral'}
+                  />
+                </View>
+              </Pressable>
+            );
+          })}
+        </Card>
+      ) : null}
+
+      <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => {
         const targetYearPassed = goal.year < Number(today.slice(0, 4)) && pct < 100;
         return (
@@ -158,6 +196,10 @@ const styles = StyleSheet.create({
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
+  upcomingCard: { gap: 7 },
+  dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  dueTitle: { flex: 1, minWidth: 0, gap: 3 },
+  dueRight: { alignItems: 'flex-end', gap: 4 },
   quickAction: { minHeight: 76, flex: 1, minWidth: 0, paddingHorizontal: 4, paddingVertical: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 8 },
   actionLabel: { fontSize: 10, textAlign: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },

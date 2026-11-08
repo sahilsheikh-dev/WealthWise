@@ -1,10 +1,10 @@
 import type { StateStorage } from 'zustand/middleware';
 
-import { createAppStore } from '../createAppStore';
-import { validateIntegrity } from '../../domain/links';
-import { goalSaved } from '../../domain/goals';
 import { efBalance } from '../../domain/ef';
+import { goalSaved } from '../../domain/goals';
 import { valueStaleness } from '../../domain/holdingActions';
+import { validateIntegrity } from '../../domain/links';
+import { createAppStore } from '../createAppStore';
 
 class MemoryStorage implements StateStorage {
   values = new Map<string, string>();
@@ -44,17 +44,17 @@ describe('Phase 5 store integration', () => {
     };
 
     perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-01', amount: 50_000, note: 'Deposit' }, { recordTransaction: true },
+      { date: '2026-10-01', amount: 50_000, note: 'Deposit' },
     ));
     perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' }, { recordTransaction: false },
+      { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' },
     ));
     expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(30_000);
 
     const original = store.getState().data;
     const beforeRejectedWrites = storage.setItemCalls;
     store.getState().actions.addEfEntry(
-      { date: '2026-10-03', amount: -40_000, note: 'Too much' }, { recordTransaction: false },
+      { date: '2026-10-03', amount: -40_000, note: 'Too much' },
     );
     expect(store.getState().data).toBe(original);
     expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-03');
@@ -107,7 +107,7 @@ describe('Phase 5 store integration', () => {
     const originalGoals = store.getState().data.goals;
     store.getState().actions.updateGoal(efGoalId, { name: 'Not allowed' });
     expect(store.getState().data.goals).toBe(originalGoals);
-    expect(store.getState().lastError).toContain('Emergency fund goal');
+    expect(store.getState().lastError).toContain('Emergency fund Goal');
     expect(storage.setItemCalls).toBe(beforeGuard);
     store.getState().actions.deleteGoal(efGoalId);
     expect(store.getState().data.goals).toBe(originalGoals);

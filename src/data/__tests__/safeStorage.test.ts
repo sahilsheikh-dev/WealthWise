@@ -23,7 +23,7 @@ class MemoryStorage implements StateStorage {
   }
 }
 
-const blob = (data: unknown = mockAppData, version = 1) => JSON.stringify({ state: { data }, version });
+const blob = (data: unknown = mockAppData, version = 2) => JSON.stringify({ state: { data }, version });
 
 describe('createSafeStorage', () => {
   it('returns valid serialized data without creating a backup', async () => {
@@ -41,7 +41,7 @@ describe('createSafeStorage', () => {
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
     ['invalid-schema', blob({ transactions: [] }), 'corrupt'],
-    ['newer-version', blob(mockAppData, 2), 'newer-version'],
+    ['newer-version', blob(mockAppData, 3), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
