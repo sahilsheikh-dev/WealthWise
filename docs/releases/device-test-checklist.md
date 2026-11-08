@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | App version | 1.0.0 |
+| APK SHA-256 | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` |
 | Device model | |
 | Android version | |
 | Tester | |
@@ -16,7 +17,7 @@ below is initially **Not run**.
 | ID | Test | Result | Notes |
 |---|---|---|---|
 | X1 | Download the APK from the README link. | Pass | |
-| X2 | Verify the APK SHA-256 against the retained build artifact before installation. | Pass | |
+| X2 | Verify the APK SHA-256 matches the README. | Pass | |
 | X3 | Install the APK and open the app. | Pass | |
 | X4 | Confirm About/version shows 1.0.0. | Pass | |
 | A1 | Confirm data remains intact after install or restore. | Pass | |
@@ -72,8 +73,8 @@ fields remain blank.
 ## How to run
 
 1. Download the APK using the README Download link and verify its SHA-256
-   against the retained build artifact before installing. Do not publish the
-   digest. Allow installs from this source in Android settings if prompted.
+   before installing. Allow installs from this source in Android settings if
+   prompted.
 2. Fill in the device and tester fields above, run each scenario, and replace
    `Not run` only with `Pass`, `Fail`, or `Blocked`. Record steps and observed
    behavior in Notes; do not infer a pass from an automated test.

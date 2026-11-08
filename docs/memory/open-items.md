@@ -9,11 +9,6 @@
   placeholders. The reason is to keep scope explicit and unrelated changes
   separate; proposed subjects and staged diff-stats are shown before commit.
   The hook and docs tests pass.
-- **P28-C-R4 release documentation:** completed locally; the README and latest
-  published Download blocks match, public digest/commit identifiers are
-  absent, and all six gates pass. Release body remains intentionally
-  unchanged. Work is on `task/P28-C-R4-readme`; it has not yet been merged or
-  pushed.
 
 ## Unresolved
 
