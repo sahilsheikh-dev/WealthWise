@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (130/131)
+Overall progress ██████████ 99% (131/132)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -81,7 +81,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
 Phase 28         ██████████ 100% (10/10)
-Phase 29         ██████████ 97% (36/37)
+Phase 29         ██████████ 97% (37/38)
 Phase 30         ██████████ 100% (3/3)
 ```
 
@@ -219,7 +219,8 @@ Phase 30         ██████████ 100% (3/3)
 | P29-AA | — | Done | Emergency Fund now links manual holdings, recurring plans and Fixed deposits through their live holding IDs. Deleted plans clear EF bucket and goal links in one write; hydration removes dangling links once, archives raw bytes and writes the repaired state; valid links, net worth and goal values remain unchanged. No schema change. Real Gate 1: 92 suites, 1194 passed, 1 skipped. All six gates exit 0. | 2026-11-06 |
 | P29-AB | — | Done; Revised by P29-AB-R1 | Budget income recurrence supports monthly, quarterly, half-yearly and yearly frequencies with strict backup/import support; v22 migration defaults existing income monthly. | 2026-11-07 |
 | P29-AB-R1 | — | Done; Revised by P29-AB-R2 | Recurrence-aware Budget overview, totals, annual income estimate and frozen-snapshot-safe schedule edits; failing domain/store/route reproductions now pass. No schema change. | 2026-11-08 |
-| P29-AB-R2 | — | Done | Budget hides non-due recurring income from planned/due rows and totals, retaining it only in the collapsed editable Recurring income group. Route coverage spans 12 months and font scales 1.0, 1.3 and 2.0. | 2026-11-08 |
+| P29-AB-R2 | — | Done; Revised by P29-AB-R2-R1 | Budget hides non-due recurring income from planned/due rows and totals, retaining it only in the collapsed editable Recurring income group. Route coverage spans 12 months and font scales 1.0, 1.3 and 2.0. | 2026-11-08 |
+| P29-AB-R2-R1 | — | Done | Make the recurrence-route diagnostic safe when monthBudgets is absent; Gate 2 type-checks the route test. | 2026-11-08 |
 | P30-A | — | Done | Real-store action persistence/hydration and eight screen refresh checks pass; three SQLite fallback/restart tests reproduce stale-value restoration. Source scan finds no module-level Map caches; the prior-state mutation harness passes. | 2026-11-08 |
 | P30-B | — | Done | Durable legacy authority markers win over stale SQLite after failed writes, read-back mismatch and fallback; deletion tombstones prevent removed values returning. Restart regressions now pass, and a mounted banner test verifies persistence failures are visible. | 2026-11-08 |
 | P30-C | — | Done | TypeScript source scan guards hook closure inputs, explicit memo dependencies and module-level Map caches; a dev-only diagnostic reports hydration source and last-write verification. | 2026-11-08 |
@@ -3084,8 +3085,9 @@ evidence present in exports/checkpoints.
 | P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
 | P29-AA | Phase 29 | — | — | 2026-11-06 | Repair Emergency Fund holding links on deletion and hydration. | Done; valid links, net worth and goal values preserved; all six gates passed at completion. | Implementation and gate evidence recorded in this ledger. | Original Gate 1 count is historical, not the current suite count. No schema change. | current request |
 | P29-AB | Phase 29 | — | — | 2026-11-07 | Add Budget income recurrence and strict backup/import support. | Done; Revised by P29-AB-R1. | Implementation and original gate evidence recorded in this ledger. | Physical-device checks remain open. | current request |
-| P29-AB-R1 | Phase 29 | P29-AB | — | 2026-11-08 | Fix quarterly, half-yearly and yearly income appearing every month in Budget consumers. | Done; failing 12-month domain, store/hydration, edit-snapshot and route reproductions now pass; no schema change. | `cbddbe04920540bfc1dd8147a57eb998bec651ca` (`fix: honor recurring income schedules in summaries`). | Old overview rows/totals and policy estimate ignored recurrence; old following-scope frequency edits rewrote the frozen month snapshot. Replaced with due-month outputs and snapshot-preserving edits because scheduled amounts and frozen history must agree. | current request |
-| P29-AB-R2 | Phase 29 | P29-AB | current | 2026-11-08 | Hide non-due recurring incomes from Budget planned/due rows and totals while keeping them editable. | Route tests dump recurrence labels across 12 months and pass at font scales 1.0, 1.3 and 2.0. Non-due incomes appear only in the collapsed Recurring income group with their next due month. | `9c327c8f6ed43b0009e9536a4208a531899ae18f` (`fix(P29-AB-R2): hide non-due recurring income rows`) | Old: non-due incomes appeared as planned/due and affected summaries. New: only due months contribute; non-due items remain available in the collapsed editor group. Reason: no false cash-flow totals while preserving editability. | current request |
+| P29-AB-R1 | Phase 29 | P29-AB | — | 2026-11-08 | Fix quarterly, half-yearly and yearly income appearing every month in Budget consumers. | Done; Revised by P29-AB-R2. Failing 12-month domain, store/hydration, edit-snapshot and route reproductions pass; no schema change. | `cbddbe04920540bfc1dd8147a57eb998bec651ca` (`fix: honor recurring income schedules in summaries`). | Old overview rows/totals and policy estimate ignored recurrence; old following-scope frequency edits rewrote the frozen month snapshot. Replaced with due-month outputs and snapshot-preserving edits because scheduled amounts and frozen history must agree. | current request |
+| P29-AB-R2 | Phase 29 | P29-AB | — | 2026-11-08 | Hide non-due recurring incomes from Budget planned/due rows and totals while keeping them editable. | Done; Revised by P29-AB-R2-R1. Route tests dump recurrence labels across 12 months at font scales 1.0, 1.3 and 2.0. | `9c327c8f6ed43b0009e9536a4208a531899ae18f` (`fix(P29-AB-R2): hide non-due recurring income rows`) | Old: non-due incomes appeared as planned/due and affected summaries. New: only due months contribute; non-due items remain available in the collapsed editable Recurring income group. Reason: preserve editability without implying cash is due. | current request |
+| P29-AB-R2-R1 | Phase 29 | P29-AB-R2 | current | 2026-11-08 | Make the recurrence-route failure diagnostic type-safe when optional month snapshots are absent. | Gate 2 initially failed with TS18048 at `RouteRenderSmoke.test.tsx:1937`; `npx tsc --noEmit` passed after the diagnostic switched to optional chaining; 173 focused tests passed. | `9637d222c4feb4a001384a4d9094e472eff23728` (`fix(P29-AB-R2-R1): make route diagnostic optional-safe`). | Old: the error diagnostic indexed optional `monthBudgets` directly. New: optional access tolerates absent snapshots. Reason: diagnostics must not make valid optional state fail type-checking. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -9653,5 +9655,5 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
 | 28 | `phase/28-qa-and-release` | `phase-28-complete` | `fd0360ab4affd805fda6fa778e5f06d20b6acc8d` | 10 |
-| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9c327c8f6ed43b0009e9536a4208a531899ae18f` | 37 |
+| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 38 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |

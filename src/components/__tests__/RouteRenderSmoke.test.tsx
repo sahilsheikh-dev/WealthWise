@@ -1934,7 +1934,7 @@ describe('route render smoke audit', () => {
                 dueNames,
                 firstDueMonth,
                 planIncomes: data.budgetPlan?.incomes,
-                monthIncomes: data.monthBudgets[0]?.incomes,
+                monthIncomes: data.monthBudgets?.[0]?.incomes,
                 budgetNames: [...textNodes, ...accessibilityLabels],
                 recurringExpandedRows,
               }));
