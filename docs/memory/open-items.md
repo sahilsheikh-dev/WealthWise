@@ -2,23 +2,48 @@
 
 # Open items
 
+## Recently resolved
+
+- **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
+  the new hook requires supported Conventional Commit types and rejects
+  placeholders. The reason is to keep scope explicit and unrelated changes
+  separate; proposed subjects and staged diff-stats are shown before commit.
+  The hook and docs tests pass.
+- **P28-C-R4 release documentation:** completed locally; the README and latest
+  published Download blocks match, public digest/commit identifiers are
+  absent, and all six gates pass. Release body remains intentionally
+  unchanged. Work is on `task/P28-C-R4-readme`; it has not yet been merged or
+  pushed.
+
 ## Unresolved
 
+- **Branching baseline exception:** the initial `develop` baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
+  which contains legacy unreleased Release 2 work. Branch protection and
+  release-only main merges apply prospectively; no history rewrite was made.
 - **v1.0.0 GitHub release body (owner action):** the canonical body is
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
   No release edit was made in P28-C-R3.
-- **v1.0.0 physical-device checklist (owner action):** run every item in
-  [`device-test-checklist.md`](../releases/device-test-checklist.md) on an
-  Android device and report any failure. All results remain Not run.
-- **Release 2 known bug follow-ups:** track P29-AB-R1, the Phase 30 stale-values
-  work, and P20-N-R1. Record failures; do not fix these as part of P28-C-R3.
-
-- **P29-AB income recurrence physical-device check:** verify frequency and
-  first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
-  months, Received dues, projected cash flow, virtual future months and
-  v21-to-v22 native migration/restart. Automated evidence is complete and all
-  six gates pass; native device behavior remains unverified.
+- **Release 2 device re-test:** the owner confirms the income recurrence and
+  edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
+  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
+  tester and date remain blank. Physical-device re-test is pending.
+- **Local checklist commit is not pushed:** its subject was corrected at the
+  owner's request, and the report commit was replayed unchanged. See the
+  old-to-new hash mapping and tree verification in
+  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
+- **v1.1.0 release preparation:** pending because the per-section Pace graph is
+  a visible feature. This task made no version change and performed no release
+  preparation, build, export or push.
+- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
+  quarterly/yearly income appears every month; device re-test of due/non-due
+  months, Received dues, projected cash flow and backup restore remains open.
+- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
+  not refresh immediately. Verify the repaired persistence path and immediate
+  screen updates across relevant flows on device.
+- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
+  Pace graph, per-section controls, contrast and scalable layout on device.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund
@@ -188,6 +213,14 @@
 
 ## Recent completed validation
 
+- **Commit-subject enforcement (2026-11-08):** superseded the former
+  unenforced placeholder-subject practice because it obscured the scope of
+  changes and encouraged unrelated edits to be grouped together. The
+  repository hook now requires descriptive Conventional Commit subjects;
+  enable it with `git config core.hooksPath .githooks`. Full ordered gates are
+  recorded as Gate 1-4 exit 0; Gate 1 had 93 suites, 1,205 passed and 1
+  skipped. Both Expo export gates were intentionally skipped because the task
+  forbids builds.
 - **P29-R:** the external schema-v13 backup migrated through the production
   import path to v18 with no differences in the requested before/after
   summaries. The script prints only numbered holdings/goals, types, and

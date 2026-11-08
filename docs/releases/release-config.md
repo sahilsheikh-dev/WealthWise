@@ -123,8 +123,10 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
 [`memory/rules.md`](../memory/rules.md), and
 [`PROGRESS.md` section 3](../PROGRESS.md#3-standing-rules). In particular:
 
-- Never checkpoint dirty files with a generic message; inspect and commit only
-  the named dirty files with descriptive Conventional Commit messages.
+- Before other work, list every dirty file, run `git diff --stat`, and inspect
+  the complete diff. Commit exactly those files with a descriptive
+  Conventional Commit subject; split unrelated areas into separate commits.
+  Do not bypass commit-message enforcement.
 - Keep fixes to completed work in their original phase as `<ID>-R<n>`.
 - Never push, amend, or rewrite history without explicit owner approval.
 - Release publication and tag creation require explicit owner approval.
@@ -138,20 +140,22 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   stored in `/tmp`.
 - For every GitHub release:
   - Attach the Android APK under the exact name `WealthWise-android.apk`.
-  - Include the Download block and SHA-256 in both the published Markdown and
-    GitHub release body. The latest published block matches the README and
-    uses the latest route; older releases use their versioned asset link.
+  - Verify the APK digest privately before publication, but never publish the
+    digest in README, release notes, the release body or release history.
+  - Keep the latest published Download block identical to README; older
+    releases use their versioned asset link.
+  - Update the README Download and What's new sections and its releases-page
+    link for every release.
   - Add or replace only the Download block in an existing published note; do
     not otherwise rewrite the file.
   - When a newer version is published, replace only the previous release's
     Download block with its versioned link.
-  - Verify both latest and versioned links with `curl -I -L`; both must return
-    HTTP 200, and the downloaded APK's SHA-256 must match.
-  - Record EAS build ID, Android `versionCode`, source commit, exact artifact
-    name, profile, date and status in the release-history Builds table.
-  - Confirm both links return HTTP 200, the SHA-256 matches, and the README,
-    published Markdown, release history and GitHub assets agree. The release
-    remains incomplete until every check passes.
+  - Verify latest and versioned links with `curl -I -L`; both must return
+    HTTP 200 with the expected artifact size.
+  - Record EAS build ID, Android `versionCode`, profile, date and status in
+    the release-history Builds table; omit source commits and digests.
+  - Confirm the README, published Markdown, release history and GitHub assets
+    agree. The release remains incomplete until every check passes.
   - For old published records, change only that version's Download block; do
     not otherwise rewrite the file.
 

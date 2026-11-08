@@ -1,14 +1,54 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
-- Current task: P28-C-R3 is complete; no application behavior changed. The
-  public latest and versioned v1.0.0 APK links return HTTP 200 with
-  Content-Length 112133413, and the downloaded artifact's SHA-256 matches the
-  release record. EAS build metadata is verified and the approved `v1.0.0`
-  tag points to the build commit on `origin/main`. The owner release-body edit
-  and physical-device checklist remain pending. All six ordered gates passed:
-  92 suites, 1,196 tests passed and 1 skipped. Exact exits and coverage are in
-  [PROGRESS.md](../PROGRESS.md). See [open-items.md](open-items.md).
+- Branching adoption: local `develop` was bootstrapped from main baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d`. The baseline contains legacy
+  unreleased Release 2 history; the new stable-main rule applies
+  prospectively. P28-D adds COMMON RULES, the branch/gate workflow, and
+  contributor/security templates. All six gates pass; Gate 1: 98 suites,
+  1,230 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall,
+  `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, `src/lib` 100% in all measures.
+- P28-C-R4: README and release documentation now follow the requested
+  user-first structure; its Download block matches the latest published
+  v1.0.0 block. Public README/published notes contain no 40/64-character
+  identifiers or checksum text; release instructions require private
+  verification, expected-size link checks, and README Download/What's new
+  updates. All six gates exit 0: 98 suites, 1,231 passed, 1 skipped;
+  coverage 95.96/92.01/98.01/97.62% overall, `src/data`
+  91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%,
+  `src/lib` 100%; TypeScript and lint pass, Expo Doctor 21/21, Android export
+  5.5 MB and iOS export 5.2 MB. No release body edit, version bump, EAS/
+  Gradle build, or push.
+- Commit-subject enforcement is active in the repository: the old behavior
+  allowed non-descriptive placeholder subjects; the new POSIX hook requires a
+  supported Conventional Commit subject and rejects placeholders. The reason
+  is to make scope clear and keep unrelated work separate; proposed subjects
+  and staged diff-stats are shown before commits. Enable it with
+  `git config core.hooksPath .githooks`. Focused tests cover accepted and
+  rejected subjects. Its implementation Gate 1 had 93 suites, 1,205 passed,
+  1 skipped; 95.90%
+  statements, 91.89% branches, 97.75% functions, 97.57% lines overall.
+  `src/data`: 90.63/86.95/93.07/93.92%; `src/domain`:
+  96.96/92.82/98.79/98.31%; pure `src/lib`: 100% in all four measures.
+  Gate 1 `npm test -- --coverage` exit 0; Gate 2 `npx tsc --noEmit` exit 0;
+  Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 0. Gates 5-6
+  (Expo exports) were skipped to honor the explicit no-build boundary.
+- Current task: Release 2 stabilization is implemented and committed locally.
+  P29-AB-R1 fixes recurring-income consumers; P30-A/B/C reproduce and repair
+  stale persisted values and add source guards; P20-N-R1 replaces the stacked
+  bar with accessible per-section actual/planned Pace lines (`f904769`). No
+  schema or version bump, release preparation, build, export or push occurred.
+  P30 confirms SQLite winning over newer verified fallback data after restart;
+  mounted-screen refresh, selector/memoization, module-cache, prior-state
+  mutation, and route-param hypotheses were not reproduced by the harness.
+  The device checklist now marks N39 and N40 Fail and N41 Not run; device
+  re-test and v1.1.0 release preparation remain pending. The full Gate 1 run
+  has 97 suites, 1,227 passed, 1 skipped; coverage is 95.96% statements,
+  92.01% branches, 98.01% functions and 97.62% lines overall. `src/data`:
+  91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
+  `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
+  because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -61,7 +101,8 @@
   release approval rules and committed draft workflow are documented under
   `docs/releases/`. P28-C-R2 records the v1.0.0 APK asset and download details;
   P28-C-R3 verifies the public links, EAS artifact and approved tag alignment.
-  No build, submission, GitHub release-body edit or branch push was made.
+  The owner entered Pass for all 43 device checklist rows. No build,
+  submission, GitHub release-body edit or branch push was made.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
@@ -165,11 +206,11 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 92 suites, 1197 tests (1196 passed; one opt-in stress benchmark
-  skipped) in the latest P28-C-R3 run.
-- Latest validated run: 92 suites, 1197 tests (1196 passed, 1 skipped) on
-  2026-11-08; all six final gates exit 0. Coverage and exact commands are
-  recorded in [PROGRESS.md](../PROGRESS.md).
+- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
+  skipped) in the P28-D run.
+- Latest validated run: 98 suites, 1231 tests (1230 passed, 1 skipped) on
+  2026-11-08; all six gates exit 0. Coverage and exact commands are recorded
+  in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
