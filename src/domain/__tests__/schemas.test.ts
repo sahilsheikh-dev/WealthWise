@@ -127,14 +127,11 @@ describe('appDataSchema', () => {
       budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 20, dueDay: 31 }], {
         incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 50_000, day: 1 }],
       }),
-      monthBudgets: [{
-        ...monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 10_000, dueDay: 31 }], {
-          source: 'plan',
-          incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
-          linkedIncluded: true,
-        }),
-        otherIncomes: [{ id: 'loan-income', name: 'Loan proceeds', category: 'Loan proceeds', amount: 8_000 }],
-      }],
+      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 10_000, dueDay: 31 }], {
+        source: 'plan',
+        incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
+        linkedIncluded: true,
+      })],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
     expect(appDataSchema.safeParse({
@@ -197,13 +194,6 @@ describe('appDataSchema', () => {
     expect(appDataSchema.safeParse({
       ...budgeted,
       monthBudgets: [{ ...budgeted.monthBudgets[0], linkedIncluded: 'yes' }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{
-        ...budgeted.monthBudgets[0],
-        otherIncomes: [{ id: 'invalid-income', name: 'Loan proceeds', category: 'Loan proceeds', amount: 0 }],
-      }],
     }).success).toBe(false);
   });
 

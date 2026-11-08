@@ -223,8 +223,6 @@ export type StoreDependencies = {
   reload?: () => void;
   isDev?: boolean;
   removeLockSettings?: () => Promise<void>;
-  clearUiMeta?: () => Promise<void>;
-  cancelReminders?: () => Promise<void>;
 };
 
 export function createAppStore(
@@ -686,7 +684,6 @@ export function createAppStore(
         },
         async eraseAllData() {
           try {
-            await deps.cancelReminders?.();
             await storage.removeItem(PERSIST_NAME);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v1`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v2`);
@@ -704,8 +701,7 @@ export function createAppStore(
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
-            if (deps.clearUiMeta) await deps.clearUiMeta();
-            else await storage.removeItem(META_KEY);
+            await storage.removeItem(META_KEY);
             await deps.removeLockSettings?.();
           } catch {
             return { ok: false, message: 'Some saved data could not be erased. Please try again.' };

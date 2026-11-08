@@ -5,7 +5,7 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { monthSummary } from '../../domain/transactions';
 import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
 import { shiftMonth } from '../../domain/dates';
-import { formatINR, formatMonth } from '../../lib/format';
+import { formatMonth } from '../../lib/format';
 import { todayISO } from '../../lib/clock';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
@@ -238,7 +238,7 @@ describe('Transactions available-balance card', () => {
       rates: null,
     });
     expect(text).toContain('No earned income logged this month');
-    expect(text).toContain('Closing balance');
+    expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
     const balanceCard = renderer.root.findByProps({ testID: 'available-balance-card' });
     expect(balanceCard.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
@@ -320,17 +320,13 @@ describe('Transactions available-balance card', () => {
 
   it('keeps the Review action and routes its selected month to Budget', () => {
     const previousTransactions = mockData.transactions;
-    const previousTxMonth = mockTxMonth;
-    const month = shiftMonth(todayISO().slice(0, 7), -1);
-    const priorMonth = shiftMonth(month, -1);
-    mockTxMonth = month;
     mockData.transactions = [
-      { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: `${priorMonth}-02` },
-      { id: 'prior-expense', type: 'expense', amount: 400, category: 'Food', note: 'Prior food', date: `${priorMonth}-03` },
-      { id: 'income', type: 'income', amount: 300, category: 'Salary', note: 'Pay', date: `${month}-01` },
-      { id: 'borrowed', type: 'income', amount: 20, category: 'Borrowed', note: 'Friend', date: `${month}-02` },
-      { id: 'expense', type: 'expense', amount: 50, category: 'Food', note: 'Meal', date: `${month}-03` },
-      { id: 'invest', type: 'invest', amount: 40, category: 'Stocks / ETF', note: 'ETF', date: `${month}-04` },
+      { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: '2026-09-02' },
+      { id: 'prior-expense', type: 'expense', amount: 400, category: 'Food', note: 'Prior food', date: '2026-09-03' },
+      { id: 'income', type: 'income', amount: 300, category: 'Salary', note: 'Pay', date: '2026-10-01' },
+      { id: 'borrowed', type: 'income', amount: 20, category: 'Borrowed', note: 'Friend', date: '2026-10-02' },
+      { id: 'expense', type: 'expense', amount: 50, category: 'Food', note: 'Meal', date: '2026-10-03' },
+      { id: 'invest', type: 'invest', amount: 40, category: 'Stocks / ETF', note: 'ETF', date: '2026-10-04' },
     ];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
@@ -356,7 +352,7 @@ describe('Transactions available-balance card', () => {
       ).map((node) => node.props.accessibilityLabel);
       expect([...new Set(collapsedFigures)]).toEqual(['₹830']);
       const collapsedLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
-      expect(collapsedLabels).toContain('Closing balance');
+      expect(collapsedLabels).toContain('Available balance');
       expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(false);
       expect(collapsedLabels).not.toContain('Brought forward');
       expect(cashCard.findAll((node) =>
@@ -371,7 +367,7 @@ describe('Transactions available-balance card', () => {
         String(node.type) === 'view' && node.props.testID === 'available-balance-divider',
       )).toHaveLength(1);
 
-      const reviewLabel = `Review ${formatMonth(month)}`;
+      const reviewLabel = `Review ${formatMonth('2026-09')}`;
       expect(currentRenderer.root.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
       expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       const reviewButton = currentRenderer.root.findAll((node) => String(node.type) === 'pressable')
@@ -380,13 +376,12 @@ describe('Transactions available-balance card', () => {
         ));
       if (!reviewButton) throw new Error('Review action was not rendered.');
       act(() => reviewButton.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month } });
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month: '2026-09' } });
       expect(cashCard.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
         .not.toContain('NaN');
     } finally {
       mockData.transactions = previousTransactions;
-      mockTxMonth = previousTxMonth;
       routeParams.mockReturnValue({});
     }
   });
@@ -458,31 +453,6 @@ describe('Transactions available-balance card', () => {
       expect(text).toContain('Closing balance');
       expect(text).not.toContain('Available balance');
     } finally {
-      mockTxMonth = previousMonth;
-    }
-  });
-
-  it.each([
-    { income: 100, expense: 100, closing: 0 },
-    { income: 100, expense: 102, closing: -2 },
-  ])('shows a zero or negative closing balance ($closing)', ({ income, expense, closing }) => {
-    const previousMonth = mockTxMonth;
-    const previousTransactions = mockData.transactions;
-    const month = shiftMonth(todayISO().slice(0, 7), -1);
-    mockTxMonth = month;
-    mockData.transactions = [
-      { id: 'balance-income', type: 'income', amount: income, category: 'Salary', note: '', date: `${month}-01` },
-      { id: 'balance-expense', type: 'expense', amount: expense, category: 'Food', note: '', date: `${month}-02` },
-    ];
-    try {
-      let renderer: TestRenderer.ReactTestRenderer | undefined;
-      act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
-      if (!renderer) throw new Error('Transactions renderer was not created.');
-      const balanceCard = renderer.root.findByProps({ testID: 'available-balance-card' });
-      expect(balanceCard.findByProps({ accessibilityLabel: formatINR(closing) })).toBeDefined();
-      expect(renderedText(balanceCard)).toContain('Closing balance');
-    } finally {
-      mockData.transactions = previousTransactions;
       mockTxMonth = previousMonth;
     }
   });

@@ -16,14 +16,12 @@ export function PendingItemActions({
   today,
   onClose,
   compact = false,
-  comfortable = false,
   actionLabel,
 }: {
   item: PendingItem;
   today: string;
   onClose?: () => void;
   compact?: boolean;
-  comfortable?: boolean;
   actionLabel?: string;
 }) {
   const actions = useAppActions();
@@ -196,7 +194,7 @@ export function PendingItemActions({
             if (item.actionable) clear();
             else void clearThrough();
           }}
-          style={comfortable ? styles.comfortableCompactButton : styles.compactButton}
+          style={styles.compactButton}
         />
       </View>
     );
@@ -222,5 +220,4 @@ export function PendingItemActions({
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   compactButton: { minHeight: 36, paddingHorizontal: 10, paddingVertical: 6 },
-  comfortableCompactButton: { minHeight: 44, paddingHorizontal: 12, paddingVertical: 8 },
 });

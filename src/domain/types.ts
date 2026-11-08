@@ -8,8 +8,6 @@ export const EARNED_INCOME_CATEGORIES = [
   'Other',
 ] as const;
 export type EarnedIncomeCategory = (typeof EARNED_INCOME_CATEGORIES)[number];
-export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
-export type NonEarnedIncomeCategory = (typeof NON_EARNED_INCOME_CATEGORIES)[number];
 
 export const THEME_IDS = ['system', 'light', 'dark', 'sky', 'mint', 'blush', 'midnight'] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
@@ -210,14 +208,6 @@ export type BudgetIncomeItem = {
   day?: number;
 };
 
-export type BudgetOtherIncomeItem = {
-  id: string;
-  name: string;
-  category: string;
-  amount: number;
-  day?: number;
-};
-
 export type Budget = {
   plannedIncome: number | null;
   lines: BudgetLine[];
@@ -255,7 +245,6 @@ export type MonthBudget = {
   month: string;
   source: 'plan' | 'custom';
   incomes: BudgetIncomeItem[];
-  otherIncomes?: BudgetOtherIncomeItem[];
   sections: BudgetSection[];
   items: BudgetItem[];
   linkedIncluded?: boolean;

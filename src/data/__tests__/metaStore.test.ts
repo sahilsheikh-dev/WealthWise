@@ -88,44 +88,4 @@ describe('backup metadata storage', () => {
     )).rejects.toThrow('Sort preference is invalid.');
   });
 
-  it('stores reminder preferences in UI metadata and publishes updates and erase', async () => {
-    const storage = new MetaStorage();
-    const meta = createMetaStore(storage);
-    const updates: unknown[] = [];
-    const unsubscribe = meta.subscribe((value) => updates.push(value));
-
-    await meta.updateMeta({
-      reminders: {
-        enabled: true,
-        localTime: '09:30',
-        dayBefore: true,
-        sameDay: false,
-        showAmounts: true,
-      },
-    });
-    expect(await meta.getMeta()).toMatchObject({
-      reminders: {
-        enabled: true,
-        localTime: '09:30',
-        dayBefore: true,
-        sameDay: false,
-        showAmounts: true,
-      },
-    });
-    await expect(meta.updateMeta({
-      reminders: {
-        enabled: true,
-        localTime: '09:15',
-        dayBefore: true,
-        sameDay: true,
-        showAmounts: false,
-      },
-    })).rejects.toThrow('Backup metadata is invalid.');
-    await meta.clearMeta();
-    expect(updates).toHaveLength(2);
-    expect(updates.at(-1)).toEqual({});
-    expect(await meta.getMeta()).toEqual({});
-    unsubscribe();
-  });
-
 });

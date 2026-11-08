@@ -1,7 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 
-import { canonicalJson, createBackup, parseBackup } from '../../domain/backup';
-import { decryptBackup, encryptBackup } from '../../domain/backupCrypto';
+import { createBackup, parseBackup } from '../../domain/backup';
 import { validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
 import { monthPositionAt } from '../../domain/cashFlow';
@@ -52,16 +51,12 @@ const makeStore = (storage: StateStorage, overrides: {
   reload?: () => void;
   isDev?: boolean;
   removeLockSettings?: () => Promise<void>;
-  clearUiMeta?: () => Promise<void>;
-  cancelReminders?: () => Promise<void>;
   today?: () => ISODate;
 } = {}) => createAppStore(storage, {
   newId: overrides.newId ?? (() => 'fixed-id'),
   today: overrides.today ?? (() => '2026-10-10'),
   reload: overrides.reload,
   removeLockSettings: overrides.removeLockSettings,
-  clearUiMeta: overrides.clearUiMeta,
-  cancelReminders: overrides.cancelReminders,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
 });
 
@@ -1661,48 +1656,6 @@ describe('createAppStore persistence', () => {
       expect(storage.values.has('wealthwise.app.v1.preimport')).toBe(false);
     });
 
-    it('imports an encrypted v1 backup through v13 migration and preserves Undo', async () => {
-      const oldData = makeV1Fixture();
-      const passphrase = 'a sufficiently long passphrase';
-      const plainText = JSON.stringify({
-        app: 'wealthwise',
-        formatVersion: 1,
-        schemaVersion: 1,
-        exportedAt: '2026-10-10T10:00:00.000Z',
-        checksum: { algorithm: 'sha256', value: await sha256(canonicalJson(oldData)) },
-        data: oldData,
-      });
-      const encrypted = await encryptBackup(plainText, passphrase, {
-        salt: Uint8Array.from({ length: 16 }, (_, index) => index),
-        nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
-        kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
-      });
-      const decrypted = await decryptBackup(encrypted, passphrase);
-      let generatedId = 0;
-      const parsed = await parseBackup(decrypted, {
-        digest: sha256,
-        today: '2026-10-10',
-        newId: () => `encrypted-migration-${++generatedId}`,
-      });
-      if (!parsed.ok) throw new Error(`${parsed.reason}: ${parsed.message}`);
-      expect(parsed.data.liabilities[0]).toMatchObject({ kind: 'recurring', type: 'Other' });
-
-      const storage = new MemoryStorage();
-      const store = makeStore(storage);
-      await waitForHydration(store);
-      store.getState().actions.addTransaction({
-        type: 'income', amount: 900, category: 'Other', note: 'Original data', date: '2026-10-10',
-      });
-      const original = store.getState().data;
-      await expect(store.getState().actions.replaceAllData(parsed.data)).resolves.toEqual({ ok: true });
-      expect(store.getState().data).toEqual(parsed.data);
-      expect(storage.values.get('wealthwise.app.v1.preimport')).toContain('"Original data"');
-      expect([...storage.values.values()].join('\n')).not.toContain(passphrase);
-      await expect(store.getState().actions.undoImport()).resolves.toEqual({ ok: true });
-      expect(store.getState().data).toEqual(original);
-      expect(storage.values.has('wealthwise.app.v1.preimport')).toBe(false);
-    });
-
     it('does not change data or main storage when saving the preimport snapshot fails', async () => {
       const storage = new MemoryStorage();
       const store = makeStore(storage);
@@ -2121,10 +2074,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
-  const reminderCalls: string[] = [];
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
-    cancelReminders: async () => { reminderCalls.push('cancel'); },
   });
   await waitForHydration(store);
   store.getState().actions.addTransaction({
@@ -2135,7 +2086,6 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.meta.v1', '{"lastExportAt":"2026-10-10T00:00:00.000Z"}');
   storage.values.set('wealthwise.app.v1.preimport', '{}');
   await expect(store.getState().actions.eraseAllData()).resolves.toEqual({ ok: true });
-  expect(reminderCalls).toEqual(['cancel']);
   expect(store.getState().data.transactions).toEqual([]);
   expect(storage.values.has('wealthwise.app.v1')).toBe(true);
   expect(JSON.parse(storage.values.get('wealthwise.app.v1')!).state.data.transactions).toEqual([]);
