@@ -113,10 +113,12 @@ Before publishing a GitHub release, download the `android-apk` EAS artifact,
 rename it exactly `WealthWise-android.apk`, and attach it to the release draft
 with `gh release upload`. Verify both latest and versioned download links
 using `curl -I -L`; both final responses must be HTTP 200. Record each final
-status and `Content-Length`, download the APK, and verify its SHA-256 against
-the release record. Keep the root README Download section byte-identical to
-the latest published release Download block. Record the APK EAS build ID,
-`versionCode`, source commit, profile, date and artifact name in the Builds
-table. A release is incomplete until both links return HTTP 200, the checksum
-matches, and the README, published notes, `release-history.md` and GitHub
-assets agree.
+status and `Content-Length`; require the expected artifact size. Verify the
+APK digest privately against the EAS artifact before publication, and never
+publish the digest. Keep the root README Download block byte-identical to the
+latest published release Download block. Update the README Download and
+What's new sections and the releases-page link for every release. Record the
+APK EAS build ID, `versionCode`, profile, date and status in the Builds table;
+do not include source commits or digests. A release is incomplete until both
+links return HTTP 200 with the expected size and the README, published notes,
+`release-history.md` and GitHub assets agree.

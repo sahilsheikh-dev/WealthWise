@@ -117,19 +117,17 @@ are not authorized unless explicitly requested.
   creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
   subject `docs: draft vX.Y.Z release notes`. After publication is verified,
   move it to `docs/releases/published/` and commit the move; never leave a
-  published file in drafts or a draft in published. Include the Download
-  block and SHA-256 in published Markdown and the GitHub release body. The
-  README Download section and latest release Download block must be identical
-  and use the latest route; older releases use their own versioned link. When
-  adding a Download block to an existing published note, add or replace only
-  that block; do not otherwise rewrite the file. When a newer version is
-  published, change only the previous release's Download block to its
-  versioned link. Verify both download links
-  with `curl -I -L`; both must return HTTP 200 and the APK hash must match.
-  Record EAS build ID, Android `versionCode`, source commit and artifact in
-  the `release-history.md` Builds table. A release is incomplete until both
-  links return 200, the hash matches, and the README, published Markdown,
-  release history and GitHub assets agree. Follow
+  published file in drafts or a draft in published. Before each release,
+  verify the APK digest against the artifact privately; never publish the
+  digest in the README, release notes, GitHub release body or release history.
+  The README Download block and latest published release Download block must
+  be identical and use the latest route; older notes use their versioned link.
+  Every release updates the README Download and What's new sections and its
+  releases-page link. When updating an existing published note, change only
+  its Download block. Verify latest and versioned links with `curl -I -L`;
+  both must return HTTP 200 and the expected artifact size. Record EAS build
+  ID, profile, Android `versionCode`, date and status in the release-history
+  Builds table; do not include source commits or digests. Follow
   `docs/releases/build-config.md`; production Android AABs go to Google Play
   and APKs to GitHub. iOS distribution is not currently offered.
 

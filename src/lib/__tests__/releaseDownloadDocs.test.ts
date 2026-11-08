@@ -46,4 +46,19 @@ describe('published release download documentation', () => {
       );
     }
   });
+
+  it('does not publish commit identifiers or APK digests in the README or release notes', () => {
+    const readmePath = join(root, 'README.md');
+    const publishedFiles = readdirSync(publishedDirectory)
+      .filter((file) => /^v\d+\.\d+\.\d+\.md$/.test(file))
+      .map((file) => join(publishedDirectory, file));
+
+    for (const filePath of [readmePath, ...publishedFiles]) {
+      const contents = readFileSync(filePath, 'utf8');
+      expect(contents).not.toMatch(/\b[0-9a-f]{40}\b|\b[0-9a-f]{64}\b/i);
+      if (filePath !== readmePath) {
+        expect(contents).not.toMatch(/\b(?:sha-?256|commit)\b/i);
+      }
+    }
+  });
 });
