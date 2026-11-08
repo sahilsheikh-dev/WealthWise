@@ -9,7 +9,7 @@ import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, Card, EmptyState } from '../src/components/ui';
+import { AppText, Button, Card, DetailTabBar, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import {
@@ -44,7 +44,12 @@ export default function MonthReviewScreen() {
   const selected = reviews.find((item) => item.month === paramMonth) ?? reviews[0];
   if (!selected) {
     return (
-      <FormScreen title="Month review" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen
+        title="Month review"
+        onClose={() => router.back()}
+        isDirty={false}
+        footer={<Button label="Back" onPress={() => router.back()} />}
+        bottomNavigation={<DetailTabBar active="Budget" placement="flow" />}>
         <EmptyState title="No month needs review" subtitle="Closed months with a logged cash balance will appear here." />
       </FormScreen>
     );
@@ -174,6 +179,7 @@ function MonthReview({ month }: { month: string }) {
       title="Month review"
       onClose={() => router.back()}
       isDirty={isDirty}
+      bottomNavigation={<DetailTabBar active="Budget" placement="flow" />}
       footer={<View style={{ gap: 8 }}>
         <Button
           label={mode === 'shortfall' ? 'Record funding' : 'Save allocations'}
@@ -186,7 +192,7 @@ function MonthReview({ month }: { month: string }) {
       </View>}>
       <FormErrorBanner message={lastError} />
       <AppText weight="bold">{formatMonth(month)}</AppText>
-      <Card style={{ gap: 8 }}>
+      <Card style={{ gap: 8, marginHorizontal: 0 }}>
         <AppText>Opening balance · {formatAmount(position.opening, 'exact', 1)}</AppText>
         <AppText>Earned income · {formatAmount(position.earnedIncome, 'exact', 1)}</AppText>
         <AppText>Withdrawals · {formatAmount(position.withdrawals, 'exact', 1)}</AppText>

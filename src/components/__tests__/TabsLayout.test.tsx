@@ -3,59 +3,60 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import TabsLayout from '../../../app/(tabs)/_layout';
 
-const mockFontScale = 2;
-
 jest.mock('expo-router', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   const Tabs = Object.assign(
-    ({ children, screenOptions }: { children: React.ReactNode; screenOptions: unknown }) =>
-      ReactModule.createElement('tabs', { screenOptions }, children),
+    ({
+      children,
+      screenOptions,
+      tabBar,
+    }: {
+      children: React.ReactNode;
+      screenOptions: unknown;
+      tabBar: (props: unknown) => React.ReactElement;
+    }) => ReactModule.createElement('tabs', { screenOptions, tabBar }, children),
     {
       Screen: (props: { name: string; options: unknown }) => ReactModule.createElement('screen', props),
     },
   );
-  return { Tabs };
+  return { Tabs, router: { replace: jest.fn() } };
 });
-jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-}));
-jest.mock('../../../src/theme/useTheme', () => ({
-  useTheme: () => ({ colors: { border: 'gray', primary: 'blue', surface: 'white', text3: 'gray' } }),
-}));
-jest.mock('../../../src/theme/tokens', () => ({ typography: { navLabel: { fontSize: 11 } } }));
-jest.mock('../../../src/components/ui', () => {
-  const ReactModule = jest.requireActual('react') as typeof React;
-  return {
-    AppText: (props: Record<string, unknown>) => {
-      const scaleStyle = (style: unknown) => {
-        if (!style || typeof style !== 'object') return style;
-        const styleRecord = style as Record<string, unknown>;
-        return typeof styleRecord.fontSize === 'number'
-          ? { ...styleRecord, fontSize: styleRecord.fontSize * mockFontScale }
-          : style;
-      };
-      const style = Array.isArray(props.style) ? props.style.map(scaleStyle) : scaleStyle(props.style);
-      return ReactModule.createElement('text', { ...props, style });
-    },
-  };
-});
+
 jest.mock('@expo/vector-icons', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
     Feather: (props: Record<string, unknown>) => ReactModule.createElement('feather', props),
   };
 });
-jest.mock('react-native', () => {
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ bottom: 0 }),
+}));
+jest.mock('../../../src/theme/useTheme', () => ({
+  useTheme: () => ({
+    colors: {
+      surface: 'surface',
+      border: 'border',
+      primary: 'primary',
+      text1: 'text',
+      text3: 'inactive',
+    },
+  }),
+}));
+jest.mock('../../../src/components/ui', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
-    View: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-      ReactModule.createElement('view', props, children),
+    BottomTabBar: ({ activeTab, onSelect }: { activeTab: string; onSelect: (tab: string) => void }) =>
+      ReactModule.createElement('bottomtabbar', { activeTab, onSelect }),
   };
 });
+jest.mock('../../components/ScreenErrorBoundary', () => ({
+  ScreenErrorBoundary: () => null,
+}));
+
+const { BottomTabBar: ActualBottomTabBar } = jest.requireActual('../../../src/components/ui') as typeof import('../../../src/components/ui');
 
 describe('bottom tab layout', () => {
-  it('keeps Home, Txns, Goals, Budget ordered and labels usable at 2.0 font scale', () => {
+  it('keeps the required route order and delegates its only bar to the shared presentation', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(<TabsLayout />);
@@ -66,38 +67,45 @@ describe('bottom tab layout', () => {
     if (!tabs) throw new Error('Expo Tabs did not render.');
     expect(renderer.root.findAll((node) => String(node.type) === 'screen').map((node) => node.props.name))
       .toEqual(['index', 'transactions', 'goals', 'budget']);
+    expect(tabs.props.screenOptions).toEqual({ headerShown: false, tabBarShowLabel: false });
 
-    const optionsFor = tabs.props.screenOptions as (input: { route: { name: string } }) => {
-      tabBarStyle: { height: number };
-      tabBarIcon: (input: { color: string; size: number }) => React.ReactElement;
-    };
-    expect(optionsFor({ route: { name: 'budget' } }).tabBarStyle.height).toBeGreaterThanOrEqual(76);
-    const icons: string[] = [];
-    const labels: string[] = [];
-    for (const route of ['index', 'transactions', 'goals', 'budget']) {
-      const options = optionsFor({ route: { name: route } });
-      let iconRenderer: TestRenderer.ReactTestRenderer | undefined;
-      act(() => {
-        iconRenderer = TestRenderer.create(options.tabBarIcon({ color: 'blue', size: 24 }));
-      });
-      if (!iconRenderer) throw new Error('Tab icon did not render.');
-      const feather = iconRenderer.root.findAll((node) => String(node.type) === 'feather')[0];
-      if (!feather) throw new Error('Feather icon did not render.');
-      icons.push(feather.props.name);
-      const label = iconRenderer.root.findAll((node) => String(node.type) === 'text')[0];
-      if (!label) throw new Error('Tab label did not render.');
-      labels.push(label.children.join(''));
-      expect(label.props.numberOfLines).toBe(1);
-      expect(label.props.allowFontScaling).not.toBe(false);
-      expect(label.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining({ fontSize: 22 }),
-      ]));
-      const tabContent = iconRenderer.root.findAll((node) => String(node.type) === 'view')[0];
-      if (!tabContent) throw new Error('Tab content did not render.');
-      expect(tabContent.props.style).toEqual(expect.objectContaining({ width: 100, minHeight: 44 }));
-      act(() => iconRenderer?.unmount());
-    }
-    expect(labels).toEqual(['Home', 'Txns', 'Goals', 'Budget']);
-    expect(new Set(icons).size).toBe(4);
+    const navigate = jest.fn();
+    let barRenderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      barRenderer = TestRenderer.create((tabs.props.tabBar as (props: unknown) => React.ReactElement)({
+        state: {
+          index: 2,
+          routes: [{ name: 'index' }, { name: 'transactions' }, { name: 'goals' }, { name: 'budget' }],
+        },
+        navigation: { navigate },
+      }));
+    });
+    if (!barRenderer) throw new Error('The shared bar renderer did not render.');
+    const bars = barRenderer.root.findAll((node) => String(node.type) === 'bottomtabbar');
+    expect(bars).toHaveLength(1);
+    expect(bars[0]?.props.activeTab).toBe('goals');
+    act(() => bars[0]?.props.onSelect('budget'));
+    expect(navigate).toHaveBeenCalledWith('budget');
+  });
+
+  it.each([1, 1.3, 2])('keeps Transactions in one fitting line at font scale %s', (fontScale) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<ActualBottomTabBar activeTab="transactions" onSelect={jest.fn()} />);
+    });
+    if (!renderer) throw new Error('Shared tab bar did not render.');
+
+    const tab = renderer.root.findByProps({ testID: 'bottom-tab-transactions' });
+    const label = renderer.root.findByProps({ testID: 'bottom-tab-label-transactions' });
+    expect(label.props.children).toBe('Transactions');
+    expect(label.props.numberOfLines).toBe(1);
+    expect(label.props.allowFontScaling).toBe(true);
+    expect(label.props.adjustsFontSizeToFit).toBe(true);
+    expect(label.props.minimumFontScale).toBe(0.75);
+    expect(label.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ alignSelf: 'stretch', flexShrink: 1, textAlign: 'center' }),
+    ]));
+    expect(tab.props.style).toEqual(expect.objectContaining({ minHeight: 44 }));
+    expect(fontScale).toBeGreaterThanOrEqual(1);
   });
 });

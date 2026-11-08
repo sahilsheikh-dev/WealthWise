@@ -3,9 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { SectionHeaderRow } from '../../src/components/SectionHeaderRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ProgressBar, Screen } from '../../src/components/ui';
+import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
@@ -57,10 +56,9 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <SectionHeaderRow
-        title="Goals"
-        right={<SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />}
-      />
+      <ChipRow>
+        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+      </ChipRow>
       {sortedGoals.map((goal) => {
         const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
