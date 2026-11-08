@@ -18,7 +18,7 @@ no cloud or network requests at runtime.
 - **Old versions:** [GitHub Releases](https://github.com/sahilsheikh-dev/WealthWise/releases)
 
 To install the APK, allow installs from this source in Android settings when
-prompted. This is a direct APK, not a Google Play Store-signed app.
+prompted. This APK is not signed or distributed by the Google Play Store.
 
 ## Contents
 

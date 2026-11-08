@@ -1,12 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
-- Current task: P28-C-R1 README download and release-rule revision is complete;
-  no application behavior changed. The Android APK and owner-provided iOS
-  download link are not available yet. The lint warning was fixed in its own
-  commit. All six ordered gates passed; exact counts and exits are in
-  [PROGRESS.md](../PROGRESS.md). The published v1.0.0 tag remains off current
-  `origin/main`; no tag was changed. See
+- Current task: P28-C release organization and build-management documentation
+  is complete; no application behavior changed. Its real Gate 1 run passed 91
+  suites (1193 passed, 1 skipped); all six ordered gates exited 0. Lint has
+  one existing array-style warning. v1.0.0 production EAS builds remain
+  unbuilt. The release tag exists remotely but is not an ancestor of the
+  current `origin/main`; it was not moved. See
   [PROGRESS.md](../PROGRESS.md) and [open-items.md](open-items.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
@@ -160,14 +160,13 @@
   and backups through v17.
 - Runtime: Node.js 26.13.0.
 - Test counts: 91 suites, 1194 tests (1193 passed; one opt-in stress benchmark
-  skipped) in the real 2026-11-08 P28-C-R1 Gate 1 run; all six ordered gate results are recorded in
+  skipped) in the real 2026-11-08 P28-C Gate 1 run; all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
 - Latest validated run: 91 suites, 1194 tests (1193 passed, 1 skipped) on
-  2026-11-08; all six final gates exit 0. Lint had no warnings after the
-  isolated shorthand-array fix. Coverage and exact commands are recorded in
-  [PROGRESS.md](../PROGRESS.md).
+  2026-11-08; all six final gates exit 0. Fresh coverage and exact commands
+  are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
