@@ -215,7 +215,7 @@ export default function LiabilityFormScreen() {
     });
   };
   if (liabilityId && !liability) return (
-    <FormScreen title="Liability" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Liability" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Liability not found" />
     </FormScreen>
   );

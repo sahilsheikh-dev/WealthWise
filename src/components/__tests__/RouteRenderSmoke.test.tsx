@@ -374,23 +374,30 @@ jest.mock('../../components/ui', () => {
 jest.mock('../../components/form/FormScreen', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    FormScreen: ({ title, children, footer, bottomNavigation, onClose, isDirty }: {
+    FormScreen: ({ title, children, footer, bottomNavigation, onClose, isDirty, leftAction, headerAction }: {
       title: string;
       children?: React.ReactNode;
       footer?: React.ReactNode;
       bottomNavigation?: React.ReactNode;
       onClose: () => void;
       isDirty?: boolean;
+      leftAction?: { label: string; onPress: () => void } | null;
+      headerAction?: { label: string; onPress: () => void };
     }) =>
       ReactModule.createElement(
         'screen',
         null,
-        ReactModule.createElement('button', {
+        leftAction === null ? null : ReactModule.createElement('button', {
           accessibilityRole: 'button',
-          accessibilityLabel: 'Close',
-          onPress: onClose,
+          accessibilityLabel: leftAction?.label ?? 'Back',
+          onPress: leftAction?.onPress ?? onClose,
           isDirty,
         }),
+        headerAction ? ReactModule.createElement('button', {
+          accessibilityRole: 'button',
+          accessibilityLabel: headerAction.label,
+          onPress: headerAction.onPress,
+        }) : null,
         ReactModule.createElement('text', null, title),
         children,
         footer,
@@ -678,6 +685,76 @@ describe('route render smoke audit', () => {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       storeState.data = previousStoreData;
+    }
+  });
+
+  it('renders each route form with representative create and edit entry params', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const demoData = buildDemoData(todayISO());
+    const goal = demoData.goals[0];
+    const transaction = demoData.transactions[0];
+    const plan = demoData.holdings.find((holding) => holding.kind === 'plan');
+    const liability = demoData.liabilities.find((item) => item.payments.length > 0);
+    const policy = demoData.policies[0];
+    const entryHolding = demoData.holdings.find((holding) => holding.logs.length > 0);
+
+    if (!goal || !transaction || !plan || !liability?.payments[0] || !policy
+      || !entryHolding?.logs[0]) {
+      throw new Error('Demo data is missing a route-form edit fixture.');
+    }
+    const forms: [string, Record<string, string>, React.ReactElement][] = [
+      ['Profile', {}, React.createElement(ProfileFormScreen)],
+      ['Goal create', {}, React.createElement(GoalFormScreen)],
+      ['Goal edit', { id: goal.id }, React.createElement(GoalFormScreen)],
+      ['Transaction create from Budget', {
+        type: 'expense', category: 'Food', amount: '100', date: todayISO(),
+      }, React.createElement(TransactionFormScreen)],
+      ['Transaction edit from list/detail', { id: transaction.id }, React.createElement(TransactionFormScreen)],
+      ['Investment plan create from Transaction', { fromTransaction: '1' }, React.createElement(InvestmentFormScreen)],
+      ['Investment plan edit', { id: plan.id }, React.createElement(InvestmentFormScreen)],
+      ['Liability create from Home/list', {}, React.createElement(LiabilityFormScreen)],
+      ['Liability edit', { id: liability.id }, React.createElement(LiabilityFormScreen)],
+      ['Liability payment add from due/list', {
+        liabilityId: liability.id, kind: 'Payment', amount: '1', date: todayISO(),
+      }, React.createElement(LiabilityPaymentFormScreen)],
+      ['Liability payment edit', {
+        liabilityId: liability.id, paymentId: liability.payments[0].id,
+      }, React.createElement(LiabilityPaymentFormScreen)],
+      ['Policy edit', { id: policy.id }, React.createElement(PolicyFormScreen)],
+      ['Investment entry add', { holdingId: entryHolding.id, kind: 'Deposit', date: todayISO() },
+        React.createElement(InvestmentEntryFormScreen)],
+      ['Investment entry edit', {
+        holdingId: entryHolding.id, entryId: entryHolding.logs[0].id,
+      }, React.createElement(InvestmentEntryFormScreen)],
+      ['Clear dues from Home/Transactions', { kind: 'plan', id: plan.id },
+        React.createElement(ClearDuesScreen)],
+      ['Emergency fund allocation', {}, React.createElement(EfAllocationFormScreen)],
+    ];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
+      for (const [name, params, screen] of forms) {
+        routeParams.mockReturnValue(params);
+        renderer = renderScreen(screen);
+        if (renderer.root.findAll((node) => String(node.type) === 'screen').length === 0
+          || renderer.root.findAll((node) => String(node.type) === 'text').length === 0) {
+          throw new Error(`${name} did not render a form screen and title.`);
+        }
+        act(() => renderer?.unmount());
+        renderer = undefined;
+      }
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
     }
   });
 
@@ -1526,23 +1603,33 @@ describe('route render smoke audit', () => {
   });
 
   const formScreens = screens.filter(([name]) =>
-    /form|money movement invalid|clear past dues/i.test(name),
+    /form|money movement invalid|clear past dues|erase data/i.test(name),
   );
 
-  it.each(formScreens)('%s exposes Close and receives its dirty state', async (_name, screen) => {
+  it.each(formScreens)('%s exposes the shared Back action and receives its dirty state', async (_name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(screen);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Form route did not render.');
-    const close = renderer.root.findAllByProps({ accessibilityLabel: 'Close' })
+    const close = renderer.root.findAllByProps({ accessibilityLabel: 'Back' })
       .find((node) => typeof node.props.isDirty === 'boolean');
     if (!close) throw new Error('The full-screen form Close action was not rendered.');
     expect(close.props.accessibilityRole).toBe('button');
     expect(close.props.onPress).toEqual(expect.any(Function));
     expect(typeof close.props.isDirty).toBe('boolean');
     act(() => renderer?.unmount());
+  });
+
+  it('keeps onboarding as a no-back entry form with its Continue footer', async () => {
+    const renderer = renderScreen(React.createElement(OnboardingScreen));
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Back' })).toHaveLength(0);
+    expect(renderer.root.findAll((node) => String(node.type) === 'text')
+      .some((node) => node.children.join('') === 'Welcome to Wealth Wise')).toBe(true);
+    expect(renderer.root.findAll((node) => String(node.type) === 'button')
+      .some((node) => node.props.accessibilityLabel === 'Continue')).toBe(true);
+    act(() => renderer.unmount());
   });
 
   it.each([

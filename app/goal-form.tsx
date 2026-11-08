@@ -103,7 +103,7 @@ export default function GoalFormScreen() {
   };
 
   if (goalId && !goal) return (
-    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Goal not found" />
     </FormScreen>
   );
@@ -195,12 +195,12 @@ export default function GoalFormScreen() {
         <FormShell
           title="Link an asset"
           titleAlignment="center"
-          leftAction={{
+          rightActions={[{
             icon: 'x',
             label: 'Close',
             hint: 'Close the asset picker',
             onPress: () => setPickerVisible(false),
-          }}
+          }]}
           bodyTestID="goal-asset-picker-list"
           footer={<Button label="Done" onPress={() => setPickerVisible(false)} />}>
           {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))

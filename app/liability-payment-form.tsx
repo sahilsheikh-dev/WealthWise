@@ -116,7 +116,7 @@ export default function LiabilityPaymentFormScreen() {
     });
   };
   if (!liability || (paymentId && !payment)) return (
-    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Liability payment not found" />
     </FormScreen>
   );

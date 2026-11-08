@@ -66,7 +66,7 @@ export default function InvestmentFormScreen() {
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [kind, setKind] = useState<InvestmentKind>('recurring');
   const [name, setName] = useState('');
-  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}><EmptyState title="Investment not found" /></FormScreen>;
+  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment not found" /></FormScreen>;
   if (holding?.kind === 'plan') return <PlanEditor plan={holding} onNameChange={setName} />;
   if (holding?.kind === 'manual') return <ManualEditor holding={holding} onNameChange={setName} />;
   return (

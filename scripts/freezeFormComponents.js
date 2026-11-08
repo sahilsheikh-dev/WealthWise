@@ -6,6 +6,7 @@ const root = process.cwd();
 const files = [
   'ChoiceField.tsx',
   'DateField.tsx',
+  'FormScreen.tsx',
   'IntegerField.tsx',
   'MoneyField.tsx',
   'PercentField.tsx',
