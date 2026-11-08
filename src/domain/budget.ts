@@ -234,28 +234,35 @@ export function isItemDueInMonth(item: BudgetItem, month: string): boolean {
   return difference >= 0 && difference % frequencyStep(frequency) === 0;
 }
 
+function nextMonthForFrequency(
+  frequency: BudgetItemFrequency,
+  firstDueMonth: string | undefined,
+  month: string,
+): string {
+  const currentIndex = monthOrdinal(month);
+  if (frequency === 'monthly') {
+    if (firstDueMonth) {
+      const firstIndex = monthOrdinal(firstDueMonth);
+      if (currentIndex < firstIndex) return firstDueMonth;
+    }
+    return monthFromOrdinal(currentIndex + 1);
+  }
+  if (!firstDueMonth) {
+    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
+  }
+  const firstDueIndex = monthOrdinal(firstDueMonth);
+  if (currentIndex < firstDueIndex) return firstDueMonth;
+  const step = frequencyStep(frequency);
+  const elapsed = currentIndex - firstDueIndex;
+  return monthFromOrdinal(firstDueIndex + (Math.floor(elapsed / step) + 1) * step);
+}
+
 export function plannedForMonth(item: BudgetItem, month: string): number {
   return isItemDueInMonth(item, month) ? item.value : 0;
 }
 
 export function nextDueMonth(item: BudgetItem, month: string): string {
-  const currentIndex = monthOrdinal(month);
-  const frequency = item.frequency ?? 'monthly';
-  if (frequency === 'monthly') {
-    if (item.firstDueMonth) {
-      const firstIndex = monthOrdinal(item.firstDueMonth);
-      if (currentIndex < firstIndex) return item.firstDueMonth;
-    }
-    return monthFromOrdinal(currentIndex + 1);
-  }
-  if (!item.firstDueMonth) {
-    throw new BudgetMutationError('invalid-frequency', 'Choose the first due month for a recurring item.');
-  }
-  const firstDueIndex = monthOrdinal(item.firstDueMonth);
-  if (currentIndex < firstDueIndex) return item.firstDueMonth;
-  const step = frequencyStep(frequency);
-  const elapsed = currentIndex - firstDueIndex;
-  return monthFromOrdinal(firstDueIndex + (Math.floor(elapsed / step) + 1) * step);
+  return nextMonthForFrequency(item.frequency ?? 'monthly', item.firstDueMonth, month);
 }
 
 function orderedRows<T extends { dueDate: ISODate }>(rows: T[]): T[] {
@@ -1703,16 +1710,23 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   const remainingEarned = new Map(actualEarnedByCategory);
   for (const income of budget.incomes) {
     const incomeDue = isIncomeDueInMonth(income, month);
-    const actual = Math.min(income.amount, remainingEarned.get(income.category) ?? 0);
-    remainingEarned.set(income.category, normalizeMoney(
-      (remainingEarned.get(income.category) ?? 0) - actual,
-    ));
+    const actual = incomeDue
+      ? Math.min(income.amount, remainingEarned.get(income.category) ?? 0)
+      : 0;
+    if (incomeDue) {
+      remainingEarned.set(income.category, normalizeMoney(
+        (remainingEarned.get(income.category) ?? 0) - actual,
+      ));
+    }
     itemsForSection(incomeSectionId).push({
       id: `income:${income.id}`,
       title: income.name,
       planned: incomeDue ? normalizeMoney(income.amount) : 0,
       actual: normalizeMoney(actual),
       ...(income.frequency && income.frequency !== 'monthly' ? { frequency: income.frequency } : {}),
+      ...(incomeDue ? {} : {
+        nextDueMonth: nextMonthForFrequency(income.frequency ?? 'monthly', income.firstDueMonth, month),
+      }),
       kind: 'income',
       editable: true,
       source: { kind: 'income', incomeId: income.id, category: income.category },

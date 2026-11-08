@@ -76,9 +76,12 @@ function planRows(plan: PlanHolding, asOf: ISODate): ScheduleRow[] {
   const first = firstPlanIndex(plan);
   const slots = planSlots(plan, first, totalPeriods(plan));
   const stopDate = plan.stopDate;
-  const visibleSlots = stopDate ? slots.filter((slot) => slot.dueDate <= stopDate) : slots;
+  const visibleSlots = slots.filter((slot) =>
+    (!stopDate || slot.dueDate <= stopDate)
+    && (!plan.maturityDate || slot.dueDate <= plan.maturityDate),
+  );
   const deposits = plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom);
-  const matches = matchEntriesFIFO(slots, deposits.filter((entry) => entry.date <= asOf));
+  const matches = matchEntriesFIFO(visibleSlots, deposits.filter((entry) => entry.date <= asOf));
   return visibleSlots.map((slot) => {
     const payment = matches.get(slot.index);
     return payment
@@ -121,7 +124,10 @@ export function planNextRows(plan: PlanHolding, asOf: ISODate, count: number): S
   const firstUnpaid = Math.min(total, first + depositCount);
   const end = Math.min(total, firstUnpaid + take);
   const visibleSlots = planSlots(plan, firstUnpaid, end)
-    .filter((slot) => !plan.stopDate || slot.dueDate <= plan.stopDate);
+    .filter((slot) =>
+      (!plan.stopDate || slot.dueDate <= plan.stopDate)
+      && (!plan.maturityDate || slot.dueDate <= plan.maturityDate),
+    );
   return visibleSlots.map((slot) => ({
     id: slot.id,
     index: slot.index,
