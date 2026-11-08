@@ -264,6 +264,31 @@ describe('one-tap dues and undo', () => {
     expect(original).not.toEqual(withPending);
   });
 
+  it('clears only the oldest selected future slot and rejects later slots', () => {
+    const withFirstPaid = withPlan(plan({
+      trackFrom: '2026-02-01',
+      logs: [{ id: 'feb-deposit', date: '2026-02-01', amount: 100, note: '', kind: 'Deposit' }],
+    }));
+    expect(() => clearDue(withFirstPaid, { kind: 'plan', id: 'plan' }, {
+      date: '2026-02-01',
+      rowId: 'plan:3',
+      newId: () => 'unused',
+    })).toThrow(NothingToClearError);
+
+    const cleared = clearDue(withFirstPaid, { kind: 'plan', id: 'plan' }, {
+      date: '2026-02-01',
+      rowId: 'plan:2',
+      newId: (() => { let id = 0; return () => `future-${++id}`; })(),
+    });
+    expect(cleared.data.holdings[0]?.logs).toHaveLength(2);
+    expect(cleared.data.transactions[0]).toMatchObject({
+      date: '2026-02-01',
+      amount: 100,
+      source: { kind: 'holding-entry', parentId: 'plan', entryId: cleared.entryId },
+    });
+    expect(validateIntegrity(cleared.data)).toEqual([]);
+  });
+
   it('clears recurring liability and policy dues with their source transaction', () => {
     const liabilityResult = clearDue(withLiability(), { kind: 'liability', id: 'liability' }, {
       date: '2026-02-01', newId: (() => { let id = 0; return () => `liability-${++id}`; })(),

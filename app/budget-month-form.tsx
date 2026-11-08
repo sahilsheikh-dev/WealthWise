@@ -12,11 +12,14 @@ import { RecurringItemsSummary } from '../src/components/form/RecurringItemsSumm
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
+import { useUIStore } from '../src/data/uiStore';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, resolveTemplate } from '../src/domain/budget';
 import { incomeBaselineFor } from '../src/domain/summary';
+import { pendingItems } from '../src/domain/pending';
 import { transactionCategoryLabel } from '../src/domain/transactions';
 import { formatMonth } from '../src/lib/format';
+import { todayISO } from '../src/lib/clock';
 
 type MonthForm = {
   plannedIncome: string;
@@ -30,6 +33,8 @@ export default function BudgetMonthFormScreen() {
   const month = typeof params.month === 'string' ? params.month : '';
   const data = useAppData();
   const actions = useAppActions();
+  const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   const stored = data.monthBudgets?.find((row) => row.month === month);
   const defaultTemplate = data.budgetTemplates?.find((row) => row.id === data.defaultBudgetTemplateId);
   const suggestedIncome = defaultTemplate?.plannedIncome ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
@@ -81,7 +86,19 @@ export default function BudgetMonthFormScreen() {
       actions.customizeMonthBudget(month, { plannedIncome, lines: budgetLines });
       const error = useAppStore.getState().lastError;
       if (error) Alert.alert('Could not save budget', error);
-      else router.back();
+      else {
+        const plannedCount = pendingItems(useAppStore.getState().data, month, todayISO())
+          .filter((item) => item.kind === 'budget').length;
+        setActionToast({
+          message: `Budget applied: ${plannedCount} planned items are in Transactions as pending`,
+          actionLabel: 'View',
+          onAction: () => {
+            setTxMonth(month);
+            router.push({ pathname: '/(tabs)/transactions', params: { month } });
+          },
+        });
+        router.back();
+      }
     } finally {
       submitting.current = false;
     }

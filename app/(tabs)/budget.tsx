@@ -5,21 +5,23 @@ import { Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View, us
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { DueActions } from '../../src/components/DueActions';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, ChipRow, EmptyState, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
+import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { BUDGET_GROUPS, budgetMonthView, type BudgetCommitment } from '../../src/domain/budget';
+import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
 import { reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
+import { pendingItems } from '../../src/domain/pending';
 import { efBalance } from '../../src/domain/ef';
 import { transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
-import { formatDate, formatMonth } from '../../src/lib/format';
+import { formatMonth } from '../../src/lib/format';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
@@ -28,20 +30,41 @@ import { useTheme } from '../../src/theme/useTheme';
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function BudgetScreen() {
-  const params = useLocalSearchParams<{ month?: string }>();
-  const initialMonth = typeof params.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)
-    ? params.month : todayISO().slice(0, 7);
-  const [month, setMonth] = useState(initialMonth);
-  const [applyOpen, setApplyOpen] = useState(false);
+  const params = useLocalSearchParams<{ month?: string; apply?: string }>();
+  const routeMonth = typeof params.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)
+    ? params.month : null;
+  const routeApply = params.apply === '1';
+  const routeKey = `${routeMonth ?? ''}:${routeApply ? '1' : '0'}`;
+  const [routeState, setRouteState] = useState(() => ({
+    routeKey,
+    month: routeMonth ?? todayISO().slice(0, 7),
+    applyOpen: routeApply,
+  }));
+  if (routeState.routeKey !== routeKey) {
+    setRouteState((current) => ({
+      routeKey,
+      month: routeMonth ?? current.month,
+      applyOpen: routeApply || current.applyOpen,
+    }));
+  }
+  const { month, applyOpen } = routeState;
+  const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
+  const setApplyOpen = (value: boolean) => setRouteState((current) => ({ ...current, applyOpen: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
   const [incomeSourcesOpen, setIncomeSourcesOpen] = useState(false);
   const data = useAppData();
   const actions = useAppActions();
+  const setTxMonth = useUIStore((state) => state.setTxMonth);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   const { colors } = useTheme();
   const { fontScale, width } = useWindowDimensions();
   const sorting = useSort('budgetSpending');
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
+  const monthPendingItems = useMemo(
+    () => pendingItems(data, month, today).filter((item) => item.kind === 'due'),
+    [data, month, today],
+  );
   const reviewableMonth = useMemo(() => reviewableMonths(data, today)[0], [data, today]);
   const templates = data.budgetTemplates ?? [];
   const stackMetrics = width < 360 || fontScale >= 1.8;
@@ -54,7 +77,6 @@ export default function BudgetScreen() {
       if (intent) setMonth(shiftMonth(month, intent === 'next' ? 1 : -1));
     },
   }), [month, touchingHeader]);
-
   const apply = async (templateId: string) => {
     if (view.budget) {
       const confirmed = await confirmAsync({
@@ -70,6 +92,16 @@ export default function BudgetScreen() {
       Alert.alert('Could not apply template', error);
       return;
     }
+    const plannedCount = pendingItems(useAppStore.getState().data, month, today)
+      .filter((item) => item.kind === 'budget').length;
+    setActionToast({
+      message: `Budget applied: ${plannedCount} planned items are in Transactions as pending`,
+      actionLabel: 'View',
+      onAction: () => {
+        setTxMonth(month);
+        router.push('/(tabs)/transactions');
+      },
+    });
     setApplyOpen(false);
   };
 
@@ -220,12 +252,14 @@ export default function BudgetScreen() {
           </Card>
 
           <SectionTitle>Bills and dues</SectionTitle>
-          {view.commitments.length ? view.commitments.map((item, index) => (
-            <CommitmentCard
-              key={`${item.kind}:${item.id}:${item.dueDate}:${index}`}
+          {monthPendingItems.length ? monthPendingItems.map((item) => (
+            <PendingItemRow
+              key={item.id}
               item={item}
-              rows={view.commitments}
-              today={today}
+              onPress={() => router.push({
+                pathname: '/(tabs)/transactions',
+                params: { month, category: item.category },
+              })}
             />
           )) : <Card><AppText style={{ color: colors.text3 }}>No scheduled bills or dues this month.</AppText></Card>}
           <Card>
@@ -363,34 +397,6 @@ function BudgetStat({ label, value, bold = false }: { label: string; value: numb
   );
 }
 
-function CommitmentCard({ item, rows, today }: { item: BudgetCommitment; rows: BudgetCommitment[]; today: string }) {
-  const { colors } = useTheme();
-  const pending = rows.filter((row) => row.kind === item.kind && row.id === item.id
-    && row.dueDate <= today && row.status !== 'paid');
-  return (
-    <Card>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${item.name}, ${item.category}, due ${formatDate(item.dueDate)}, ${formatAmount(item.plannedAmount, 'exact', 1)}, ${item.status}`}
-        onPress={() => router.push({ pathname: '/(tabs)/transactions', params: { month: item.dueDate.slice(0, 7), category: item.category } })}>
-        <View style={styles.commitmentTop}>
-          <View style={{ flex: 1 }}>
-            <AppText weight="semibold">{item.name}</AppText>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>{item.category} · {formatDate(item.dueDate)}</AppText>
-          </View>
-          <View style={styles.commitmentStatus}>
-            <AmountText value={item.plannedAmount} tier="row" weight="semibold" />
-            <StatusBadge label={item.status} tone={item.status === 'overdue' ? 'err' : item.status === 'paid' ? 'ok' : 'neutral'} />
-          </View>
-        </View>
-      </Pressable>
-      {pending.length ? (
-        <DueActions target={{ kind: item.kind, id: item.id }} pendingCount={pending.length} nextAmount={pending[0]?.plannedAmount ?? item.plannedAmount} />
-      ) : null}
-    </Card>
-  );
-}
-
 function BudgetLineCard({
   category, planned, actual, usedPct, status, month,
 }: {
@@ -450,8 +456,6 @@ const styles = StyleSheet.create({
   planMetricsStacked: { flexDirection: 'column' },
   planMetric: { flexBasis: '45%', flexGrow: 1, minWidth: 0, gap: 4 },
   statRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  commitmentTop: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  commitmentStatus: { alignItems: 'flex-end', gap: 4 },
   lineCard: { marginHorizontal: 20, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, gap: 10 },
   lineTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#0008' },
