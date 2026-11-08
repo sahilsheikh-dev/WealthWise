@@ -18,6 +18,7 @@ import { useUIStore } from '../uiStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
 import { makeV10Fixture } from '../testFixtures/v10';
 import { makeV11Fixture } from '../testFixtures/v11';
+import { makeV12Fixture } from '../testFixtures/v12';
 import { emptyAppData } from '../../domain/actions';
 import type { ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -57,6 +58,31 @@ const makeStore = (storage: StateStorage, overrides: {
   reload: overrides.reload,
   removeLockSettings: overrides.removeLockSettings,
   ...(overrides.isDev === undefined ? {} : { isDev: overrides.isDev }),
+});
+
+it('hydrates v12 item recurrence defaults and archives the original bytes once', async () => {
+  const storage = new MemoryStorage();
+  const data = makeV12Fixture();
+  const originalBytes = JSON.stringify({ state: { data }, version: 12 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { today: () => '2026-10-21', isDev: false });
+  await waitForHydration(first);
+  expect(first.getState().data.budgetPlan?.items.every((item) => item.frequency === 'monthly')).toBe(true);
+  expect(first.getState().data.monthBudgets?.every((budget) =>
+    budget.items.every((item) => item.frequency === 'monthly'),
+  )).toBe(true);
+  const archiveKey = 'wealthwise.app.v1.premigration.v12';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { today: () => '2026-10-21', isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+  await second.getState().actions.eraseAllData();
+  expect(storage.values.has(archiveKey)).toBe(false);
 });
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -523,7 +549,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: { ...SUGGESTED_EF_ALLOCATION, 'deleted-custom-option': 0 },
     };
-    const raw = JSON.stringify({ state: { data }, version: 12 });
+    const raw = JSON.stringify({ state: { data }, version: 13 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -560,7 +586,7 @@ describe('createAppStore persistence', () => {
       }],
       efAllocation: {},
     };
-    const raw = JSON.stringify({ state: { data }, version: 12 });
+    const raw = JSON.stringify({ state: { data }, version: 13 });
     storage.values.set(key, raw);
 
     const store = makeStore(storage, { today: () => '2026-03-15', isDev: false });
@@ -647,7 +673,7 @@ describe('createAppStore persistence', () => {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
       sections: defaultBudgetSections(),
       items: [{
-        id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000,
+        id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000, frequency: 'monthly',
       }],
       linkedIncluded: true,
     }]);
@@ -708,11 +734,30 @@ describe('createAppStore persistence', () => {
       beforeIncome.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeIncome);
+    const beforeIncomeEdit = store.getState().data;
+    runOnce(() => actions.editBudgetIncome(month, 'salary', {
+      name: 'Contract work',
+      category: 'Freelance',
+      amount: 1_250,
+      day: 18,
+    }, 'following', today));
+    expect(store.getState().data.budgetPlan?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    expect(store.getState().data.monthBudgets?.[0]?.incomes)
+      .toContainEqual(expect.objectContaining({ name: 'Contract work', category: 'Freelance', amount: 1_250 }));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeIncomeEdit.budgetPlan,
+      month,
+      beforeIncomeEdit.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeIncomeEdit);
     runOnce(() => actions.addBudgetItem(month, {
       sectionId: addedSection.id, name: 'Pet care', mode: 'amount', value: 100,
+      frequency: 'quarterly', firstDueMonth: month,
     }, 'month', today));
     const addedItem = store.getState().data.monthBudgets?.[0]?.items.find((item) => item.name === 'Pet care');
     if (!addedItem) throw new Error('Added budget item missing.');
+    expect(addedItem).toMatchObject({ frequency: 'quarterly', firstDueMonth: month });
     runOnce(() => actions.editBudgetStructureItem(month, addedItem.id, { value: 200 }, 'month', today));
     const beforeDeleteItem = store.getState().data;
     runOnce(() => actions.deleteBudgetStructureItem(month, addedItem.id, 'month', today));
@@ -737,7 +782,14 @@ describe('createAppStore persistence', () => {
       beforeInsuranceDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeInsuranceDelete);
+    const beforeSectionDelete = store.getState().data;
     runOnce(() => actions.deleteSection(month, addedSection.id, 'month', today));
+    runOnce(() => actions.restoreBudgetPlanAndMonth(
+      beforeSectionDelete.budgetPlan,
+      month,
+      beforeSectionDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
+    ));
+    expect(store.getState().data).toEqual(beforeSectionDelete);
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {

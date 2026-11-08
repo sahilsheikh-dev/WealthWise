@@ -74,6 +74,38 @@ const policy = (changes: Partial<Policy> = {}): Policy => ({
 });
 
 describe('pending item projection', () => {
+  it('creates recurring budget dues only in due months and clamps the due day', () => {
+    const data = {
+      ...base(),
+      budgetPlan: budgetPlanFromLines([{
+        category: 'Quarterly bill',
+        mode: 'amount',
+        value: 1_200,
+        dueDay: 31,
+        frequency: 'quarterly',
+        firstDueMonth: '2026-04',
+      }], {
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-04',
+      }),
+    };
+
+    expect(pendingItems(data, '2026-04', '2026-03-15')).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        title: 'Quarterly bill',
+        amount: 1_200,
+        dueDate: '2026-04-30',
+        source: { kind: 'budget', category: 'Quarterly bill', type: 'expense' },
+      }),
+    ]));
+    expect(pendingItems(data, '2026-05', '2026-03-15'))
+      .not.toEqual(expect.arrayContaining([expect.objectContaining({ title: 'Quarterly bill' })]));
+    expect(pendingItems(data, '2026-07', '2026-03-15')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'Quarterly bill', dueDate: '2026-07-31' }),
+    ]));
+  });
+
   it('creates clamped income dues, allocates recorded earnings across same-category items, and supports future months', () => {
     const data = {
       ...base(),

@@ -1,6 +1,7 @@
 import {
   budgetLineActual,
   effectiveMonthBudget,
+  plannedForMonth,
 } from './budget';
 import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
@@ -133,7 +134,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     }
   }
 
-  const budget = effectiveMonthBudget(data, month, today).budget;
+  const { budget, virtual } = effectiveMonthBudget(data, month, today);
   if (budget) {
     const earnedByCategory = new Map<string, number>();
     for (const transaction of data.transactions) {
@@ -172,9 +173,13 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;
       if (instrumentCategories.has(category) || representedCategories.has(category)) continue;
+      const plannedValue = plannedForMonth(
+        virtual ? item : { ...item, frequency: 'monthly' },
+        month,
+      );
       const planned = item.mode === 'amount'
-        ? item.value
-        : Math.round(item.value * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
+        ? plannedValue
+        : Math.round(plannedValue * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
       const remaining = Math.max(0, planned - budgetLineActual(data, month, category, {
         excludePolicyPayments: true,
       }));

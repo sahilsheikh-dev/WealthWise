@@ -31,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twelve', () => {
+  it('accepts the typed mock app data and exports schema version thirteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(12);
+    expect(SCHEMA_VERSION).toBe(13);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -160,6 +160,37 @@ describe('appDataSchema', () => {
         items: [{ ...budgeted.monthBudgets[0].items[0], dueDay: 32 }],
       }],
     }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetPlan: {
+        ...budgeted.budgetPlan,
+        items: [{ ...budgeted.budgetPlan.items[0], frequency: 'quarterly' }],
+      },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetPlan: {
+        ...budgeted.budgetPlan,
+        items: [{
+          ...budgeted.budgetPlan.items[0],
+          frequency: 'quarterly',
+          firstDueMonth: '2026-10',
+        }],
+      },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...budgeted,
+      budgetPlan: {
+        ...budgeted.budgetPlan,
+        items: [{
+          ...budgeted.budgetPlan.items[0],
+          frequency: 'quarterly',
+          firstDueMonth: '2026-10',
+          mode: 'amount',
+          value: 500,
+        }],
+      },
+    }).success).toBe(true);
     expect(appDataSchema.safeParse({
       ...budgeted,
       monthBudgets: [{ ...budgeted.monthBudgets[0], linkedIncluded: 'yes' }],
@@ -321,6 +352,8 @@ describe('appDataSchema', () => {
       policies: [{ ...policy, currentValue: 1, valueAsOf: null }],
     }).success).toBe(false);
     expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
+    expect(BUDGET_CATEGORIES).toContain('Recharge');
+    expect(TRANSACTION_CATEGORIES.expense).toContain('Recharge');
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
     expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining([
       'Insurance premium',
@@ -372,6 +405,7 @@ describe('makeTransactionFormSchema', () => {
   it('accepts legacy and typed insurance expense categories in the transaction form', () => {
     for (const category of [
       'Insurance',
+      'Recharge',
       'Insurance premium',
       'Term life premium',
       'Health premium',

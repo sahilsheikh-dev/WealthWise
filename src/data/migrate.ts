@@ -665,6 +665,30 @@ export function migrateV11ToV12(data: unknown): unknown {
   };
 }
 
+export function migrateV12ToV13(data: unknown): unknown {
+  if (!isRecord(data)) throw new PersistedVersionError(12, 'unknown-version');
+  const migrateBudget = (budget: unknown): unknown => {
+    if (!isRecord(budget) || !Array.isArray(budget.items)) return budget;
+    return {
+      ...budget,
+      items: budget.items.map((item) => {
+        if (!isRecord(item)) return item;
+        const { firstDueMonth: _firstDueMonth, ...monthlyItem } = item;
+        return { ...monthlyItem, frequency: 'monthly' };
+      }),
+    };
+  };
+  return {
+    ...data,
+    ...(data.budgetPlan === null || data.budgetPlan === undefined
+      ? {}
+      : { budgetPlan: migrateBudget(data.budgetPlan) }),
+    ...(Array.isArray(data.monthBudgets)
+      ? { monthBudgets: data.monthBudgets.map(migrateBudget) }
+      : {}),
+  };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -700,6 +724,7 @@ export function migratePersisted(
       result = migrateV10ToV11(result, options);
     }
     if (fromVersion <= 11) result = migrateV11ToV12(result);
+    if (fromVersion <= 12) result = migrateV12ToV13(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

@@ -9,11 +9,14 @@ import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
+import { Dropdown } from '../src/components/Dropdown';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
+import { shiftMonth } from '../src/domain/dates';
+import { formatMonth } from '../src/lib/format';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
@@ -23,6 +26,8 @@ const budgetItemFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter an item name.').max(30, 'Keep the name under 30 characters.'),
   mode: z.enum(['amount', 'percent']),
   value: z.string().trim(),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  firstDueMonth: z.string(),
   day: z.string(),
   scope: z.enum(['month', 'following']),
 }).superRefine((values, context) => {
@@ -39,6 +44,12 @@ const budgetItemFormSchema = z.object({
   }
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
     context.addIssue({ code: 'custom', path: ['day'], message: 'Enter a day from 1 to 31.' });
+  }
+  if (values.frequency !== 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(values.firstDueMonth)) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
+  }
+  if (values.mode === 'percent' && values.frequency !== 'monthly') {
+    context.addIssue({ code: 'custom', path: ['frequency'], message: 'Percent items can only be monthly.' });
   }
 });
 
@@ -89,12 +100,19 @@ export default function BudgetItemFormScreen() {
       name: item?.name ?? firstParam(params.name),
       mode: item?.mode ?? 'amount',
       value: item ? String(item.value) : '',
+      frequency: item?.frequency ?? 'monthly',
+      firstDueMonth: item?.firstDueMonth ?? month,
       day: item?.dueDay === undefined ? '' : String(item.dueDay),
       scope: requestedScope === 'month' ? 'month' : 'following',
     },
   });
   const mode = useWatch({ control, name: 'mode' }) ?? 'amount';
+  const frequency = useWatch({ control, name: 'frequency' }) ?? 'monthly';
   const scope = useWatch({ control, name: 'scope' }) ?? (requestedScope === 'month' ? 'month' : 'following');
+  const firstDueMonths = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index));
+  if (!firstDueMonths.includes(item?.firstDueMonth ?? '')) {
+    if (item?.firstDueMonth) firstDueMonths.unshift(item.firstDueMonth);
+  }
 
   if (!section || (editing && !item)) {
     return (
@@ -135,6 +153,8 @@ export default function BudgetItemFormScreen() {
         mode: values.mode,
         value: Number(values.value),
         dueDay: values.day === '' ? null : Number(values.day),
+        frequency: values.frequency,
+        firstDueMonth: values.frequency === 'monthly' ? null : values.firstDueMonth,
       }, scope, today);
     } else {
       actions.addBudgetItem(month, {
@@ -142,6 +162,8 @@ export default function BudgetItemFormScreen() {
         name: values.name,
         mode: values.mode,
         value: Number(values.value),
+        frequency: values.frequency,
+        ...(values.frequency === 'monthly' ? {} : { firstDueMonth: values.firstDueMonth }),
         ...(values.day === '' ? {} : { dueDay: Number(values.day) }),
       }, scope, today);
     }
@@ -194,10 +216,10 @@ export default function BudgetItemFormScreen() {
           <SegmentedControl
             label="Value type"
             value={field.value}
-            options={[
+            options={frequency === 'monthly' ? [
               { label: 'Amount', value: 'amount' },
               { label: 'Percent', value: 'percent' },
-            ]}
+            ] : [{ label: 'Amount', value: 'amount' }]}
             onChange={field.onChange}
             error={errors.mode?.message}
           />
@@ -226,6 +248,48 @@ export default function BudgetItemFormScreen() {
           />
         )}
       />
+      <Controller
+        control={control}
+        name="frequency"
+        render={({ field }) => (
+          <Dropdown
+            label="Frequency"
+            accessibilityLabel="Budget item frequency"
+            value={field.value}
+            options={[
+              { value: 'monthly', title: 'Monthly' },
+              ...(mode === 'percent' ? [] : [
+                { value: 'quarterly', title: 'Quarterly' },
+                { value: 'half-yearly', title: 'Half-yearly' },
+                { value: 'yearly', title: 'Yearly' },
+              ]),
+            ]}
+            onChange={field.onChange}
+            error={errors.frequency?.message}
+          />
+        )}
+      />
+      {frequency === 'monthly' ? null : (
+        <>
+          <Controller
+            control={control}
+            name="firstDueMonth"
+            render={({ field }) => (
+              <Dropdown
+                label="First due month"
+                accessibilityLabel="Budget item first due month"
+                value={field.value}
+                options={firstDueMonths.map((value) => ({ value, title: formatMonth(value) }))}
+                onChange={field.onChange}
+                error={errors.firstDueMonth?.message}
+              />
+            )}
+          />
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            Percent items are only available monthly.
+          </AppText>
+        </>
+      )}
       <Controller
         control={control}
         name="day"
