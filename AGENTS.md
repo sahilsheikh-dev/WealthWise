@@ -1,10 +1,21 @@
+> AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
+> finishing, update `status.md` and `open-items.md` there.
+
+This `AGENTS.md` is the repository's single instruction entry point for every
+AI tool. Keep tool-specific instruction files out of the repository; update
+these shared instructions instead.
+
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
-(`package-lock.json` is present); routes are in `app/`, not `src/app/`.
+(`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
+`engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
 
 ## Project rules
 
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and
   verification records with the same task commit.
+- Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
+  authorization. Preserve the separately hashed files listed in
+  `docs/memory/rules.md`.
 - Keep `src/domain/` pure: no React/Expo imports, clock reads or randomness.
   Inject dates and identifiers.
 - A multi-entity action must be one pure domain action and one Zustand store

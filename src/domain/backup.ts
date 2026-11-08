@@ -199,6 +199,13 @@ const budgetIncomeSchema = z.strictObject({
   amount: z.number().finite().positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
 });
+const budgetOtherIncomeSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  category: z.string().min(1).max(60),
+  amount: z.number().finite().positive().max(1_000_000_000),
+  day: z.number().int().min(1).max(31).optional(),
+});
 const budgetSectionSchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(30).refine((value) => value === value.trim()),
@@ -256,6 +263,7 @@ const monthBudgetSchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   source: z.enum(['plan', 'custom']),
   incomes: z.array(budgetIncomeSchema).max(1000),
+  otherIncomes: z.array(budgetOtherIncomeSchema).max(1000).optional(),
   sections: z.array(budgetSectionSchema).max(12),
   items: z.array(budgetItemSchema).max(100),
   linkedIncluded: z.boolean().optional(),
@@ -467,4 +475,8 @@ export function backupFileName(exportedAt: string): string {
   if (!Number.isFinite(date.getTime())) throw new Error('Invalid export date');
   const iso = date.toISOString();
   return `wealthwise-backup-${iso.slice(0, 10).replaceAll('-', '')}-${iso.slice(11, 16).replaceAll(':', '')}Z.json`;
+}
+
+export function encryptedBackupFileName(exportedAt: string): string {
+  return backupFileName(exportedAt).replace('.json', '-encrypted.json');
 }

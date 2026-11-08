@@ -1,3 +1,5 @@
+> AI agent context and durable project memory: [docs/memory/README.md](docs/memory/README.md).
+
 # WealthWise
 
 WealthWise is an offline-first personal finance app built with Expo and React
@@ -14,6 +16,7 @@ no cloud or network requests at runtime.
 - [Architecture and data](#architecture-and-data)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
+- [License](#license)
 - [Brand assets](#brand-assets)
 
 ## Features
@@ -36,13 +39,13 @@ no cloud or network requests at runtime.
 
 ## Screenshots
 
-<!-- Add current app screenshots here. -->
+Release screenshots were prepared by the owner; image files are not included
+in this repository.
 
 ## Getting started
 
-This repository uses npm and includes `package-lock.json`. No project-level
-minimum Node.js version is declared in `package.json` or `.nvmrc`; the Node
-version used for the release-preparation audit was v26.10.0.
+This repository uses npm and includes `package-lock.json`. Use Node.js 26;
+`.nvmrc` selects 26.13.0 and `package.json` permits `>=26.0.0 <27`.
 
 ```bash
 npm ci
@@ -118,19 +121,42 @@ under `app/`.
 
 Application data is stored locally on the device; there are no user accounts or
 runtime cloud synchronization. Backup files are created only when the user
-exports them. Backups contain readable financial data: the SHA-256 integrity
-check is not encryption or authentication. App lock uses device authentication
-and does not encrypt data stored on the device. Operating-system backups may
-include app data according to platform settings.
+exports them. Encrypted export is the default and protects the exported file
+with a passphrase; the passphrase is never stored, and a lost passphrase cannot
+be recovered. The optional plain-export choice is unencrypted and clearly
+warns before sharing. SHA-256 in the original backup JSON checks integrity; it
+is not encryption or authentication.
+
+Backup encryption protects exported files only. App data stored on this device
+remains unencrypted; an app lock or device authentication is not encryption.
+Encrypted backups are decrypted in memory before the existing integrity,
+validation and migration checks. Picked files use a temporary cache copy for
+reading and are removed afterward. The explicit plain-export choice also uses
+a temporary cache file for the system share sheet and removes it afterward.
+The plaintext result of decrypting an encrypted backup is never written to a
+temporary file. Operating-system backups may include app data according to
+platform settings.
 
 ## Limitations and disclaimer
 
-- Reminders and notifications are not implemented.
-- The interface has not been verified on physical iOS or Android devices;
-  automated layout tests simulate font scales and inspect component props.
+- Reminders and notifications are not implemented; they are planned for the
+  next release phase.
+- The owner reports that the app works on a physical device. Device model and
+  operating system were not recorded; this is owner verification, not
+  automated device evidence.
+- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
+  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
+  production-dependency-tree and development/build-tool findings; see the
+  progress ledger for package lists.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
+
+## License
+
+This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
+Sheikh. The license holder is based on the locally configured account name and
+should be confirmed by the owner.
 
 ## Brand assets
 
