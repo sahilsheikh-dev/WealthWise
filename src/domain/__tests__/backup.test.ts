@@ -9,14 +9,16 @@ import {
   validateImportData,
 } from '../backup';
 import { mockAppData } from '../../mock/data';
-import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixture } from '../../data/testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../../data/testFixtures/v1';
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
+import { addInvestmentEntry } from '../investmentActions';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
 const digest = async (text: string) => createHash('sha256').update(text).digest('hex');
+const migrationOptions = { digest, today: '2026-10-10', newId: () => 'backup-migrated-holding' };
 const reChecksum = async (raw: string, change: (envelope: Record<string, unknown>) => void) => {
   const envelope = JSON.parse(raw) as Record<string, unknown>;
   change(envelope);
@@ -31,7 +33,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 6 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 7 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -49,7 +51,39 @@ describe('backup validation and serialization', () => {
       ok: true,
       data: { efAllocation: customData.efAllocation },
     });
+  });
 
+  it('round-trips a manual holding snapshot adjustment through backup export and import', async () => {
+    const holding = mockAppData.holdings.find((item) =>
+      item.kind === 'manual' && item.id === 'holding-cash');
+    if (!holding || holding.kind !== 'manual' || !holding.valueAsOf) {
+      throw new Error('Expected a dated manual holding.');
+    }
+    const data = addInvestmentEntry(mockAppData, holding.id, {
+      date: holding.valueAsOf,
+      amount: 125,
+      note: 'Snapshot-day deposit',
+      kind: 'Deposit',
+    }, (() => {
+      let index = 0;
+      return () => `snapshot-round-trip-${++index}`;
+    })(), '2026-10-16');
+    const raw = await createBackup(data, {
+      exportedAt: '2026-10-16T10:00:00.000Z',
+      digest,
+    });
+    const imported = await parseBackup(raw, { digest });
+    if (!imported.ok) {
+      throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
+    }
+    const restored = imported.data.holdings.find((item) => item.id === holding.id);
+    if (!restored || restored.kind !== 'manual') throw new Error('Manual holding was not restored.');
+    expect(restored.logs.at(-1)).toMatchObject({
+      amount: 125,
+      date: holding.valueAsOf,
+      snapshotAdjustment: 125,
+    });
+    expect(restored.value).toBe(holding.value + 125);
   });
 
   it('round-trips every v5 collection and new stored field', async () => {
@@ -74,7 +108,7 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
-  it('imports schema-v6 backups containing the new budget and expense categories', async () => {
+  it('round trips v7 backups containing the current budget and expense categories', async () => {
     const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
     const data = {
       ...mockAppData,
@@ -113,7 +147,7 @@ describe('backup validation and serialization', () => {
         lines: categories.map((category) => ({ category, planned: 100 })),
       }],
     };
-    expect(SCHEMA_VERSION).toBe(6);
+    expect(SCHEMA_VERSION).toBe(7);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -130,11 +164,14 @@ describe('backup validation and serialization', () => {
     });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version seven', async () => {
+  it('round trips custom emergency-fund options and refuses schema version eight', async () => {
+    const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
+    const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
+    if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
     const data = {
       ...mockAppData,
       efCustomBuckets: [{ id: 'home-safe', name: 'Home safe', access: 'instant' as const, marketLinked: false }],
-      efBucketLinks: { 'home-safe': ['holding-pf'] },
+      efBucketLinks: { 'home-safe': [linkedHoldingId] },
       efAllocation: {
         cash: 0, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15,
         stocks: 0, insurance: 0, other: 0, 'home-safe': 10,
@@ -151,7 +188,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 7;
+    future.schemaVersion = 8;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -264,7 +301,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 7;
+    newer.schemaVersion = 8;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
@@ -289,7 +326,7 @@ describe('backup validation and serialization', () => {
     expect(() => backupFileName('not a date')).toThrow('Invalid export date');
   });
 
-  it('verifies a v1 data checksum before migration and imports the v3 result', async () => {
+  it('verifies a v1 data checksum before migration and imports the v7 result', async () => {
     const data = makeV1Fixture();
     const envelope = {
       app: 'wealthwise',
@@ -299,18 +336,18 @@ describe('backup validation and serialization', () => {
       checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
       data,
     };
-    const result = await parseBackup(JSON.stringify(envelope), { digest });
+    const result = await parseBackup(JSON.stringify(envelope), migrationOptions);
     expect(result).toMatchObject({
       ok: true,
       data: { settings: { monthlySalary: null, onboarded: true }, liabilities: [{ kind: 'recurring', type: 'Other' }] },
     });
 
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
-    await expect(parseBackup(JSON.stringify(corrupted), { digest }))
+    await expect(parseBackup(JSON.stringify(corrupted), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('verifies v2 data as written before migrating and validates the v3 result', async () => {
+  it('verifies v2 data as written before migrating and validates the v7 result', async () => {
     const data = makeV2Fixture();
     const envelope = {
       app: 'wealthwise',
@@ -320,7 +357,7 @@ describe('backup validation and serialization', () => {
       checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
       data,
     };
-    const result = await parseBackup(JSON.stringify(envelope), { digest });
+    const result = await parseBackup(JSON.stringify(envelope), migrationOptions);
     expect(result).toMatchObject({
       ok: true,
       data: {
@@ -331,10 +368,17 @@ describe('backup validation and serialization', () => {
 
     if (result.ok) {
       expect(result.data.settings.theme).toBe(data.settings.theme);
-      expect(result.data.transactions).toEqual(data.transactions);
+      expect(result.data.transactions).toHaveLength(data.transactions.length);
+      expect(result.data.transactions[0]).toEqual(data.transactions[0]);
+      expect(result.data.transactions.at(-1)).toMatchObject({
+        id: 'legacy-ef-tx',
+        type: 'invest',
+        category: 'Other investments',
+      });
+      expect(result.data.transactions.at(-1)).not.toHaveProperty('source');
     }
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
-    await expect(parseBackup(JSON.stringify(corrupted), { digest }))
+    await expect(parseBackup(JSON.stringify(corrupted), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
@@ -342,6 +386,7 @@ describe('backup validation and serialization', () => {
     [3, makeV3Fixture],
     [4, makeV4Fixture],
     [5, makeV5Fixture],
+    [6, makeV6Fixture],
   ] as const)('verifies the v%s checksum before migrating its data', async (schemaVersion, makeFixture) => {
     const data = makeFixture();
     const envelope = {
@@ -352,17 +397,21 @@ describe('backup validation and serialization', () => {
       checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
       data,
     };
-    const result = await parseBackup(JSON.stringify(envelope), { digest });
+    const result = await parseBackup(JSON.stringify(envelope), migrationOptions);
     expect(result).toMatchObject({
       ok: true,
-      data: { policies: [], budget: null, goals: expect.arrayContaining([expect.objectContaining({ links: [] })]) },
+      data: {
+        policies: [],
+        budget: null,
+        goals: expect.arrayContaining([expect.objectContaining({ auto: 'ef', links: expect.any(Array) })]),
+      },
     });
     if (!result.ok) throw new Error('Expected old backup to import.');
     expect(result.data.transactions).toHaveLength(data.transactions.length);
     expect(result.data.liabilities[0]).toMatchObject({ settlement: null });
 
     const alteredChecksum = { ...envelope, checksum: { ...envelope.checksum, value: 'incorrect' } };
-    await expect(parseBackup(JSON.stringify(alteredChecksum), { digest }))
+    await expect(parseBackup(JSON.stringify(alteredChecksum), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
@@ -406,7 +455,6 @@ describe('backup validation and serialization', () => {
       goals: [],
       holdings: [],
       liabilities: [],
-      efEntries: [],
     });
     expect(noFinancialHistory).toMatchObject({ ok: true });
     if (noFinancialHistory.ok) expect(noFinancialHistory.data.goals[0]?.year).toBe(2002);

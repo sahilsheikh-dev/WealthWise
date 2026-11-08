@@ -19,7 +19,6 @@ import {
 } from '../src/components/ui';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
   buildPortfolioRows,
@@ -35,7 +34,7 @@ import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const filters: ('All' | 'Recurring' | HoldingType | 'Emergency fund')[] = [
+const filters: ('All' | 'Recurring' | HoldingType)[] = [
   'All',
   'Recurring',
   'Mutual fund / SIP',
@@ -48,7 +47,6 @@ const filters: ('All' | 'Recurring' | HoldingType | 'Emergency fund')[] = [
   'Gold',
   'Silver',
   'Other',
-  'Emergency fund',
 ];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -85,15 +83,12 @@ export default function AssetsScreen() {
   const visibleRows = filter === 'Recurring'
     ? sipSorting.sort(filteredRows)
     : assetSorting.sort(filteredRows);
-  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
       totalAssets: totals.value,
-      monthlyExpenseBaseline: expenseBaseline,
-      emergencyEntryCount: data.efEntries.length,
     })])),
-    [asOf, data.efEntries.length, expenseBaseline, rows, totals.value],
+    [asOf, rows, totals.value],
   );
   const gainTone = totals.gain >= 0 ? colors.ok : colors.err;
 
@@ -160,24 +155,15 @@ export default function AssetsScreen() {
               dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {
-                  if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Deposit');
-                  else router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
+                  router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
                 } else if (action === 'withdraw') {
-                  if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Withdrawal');
-                  else router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
+                  router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
                 } else if (action === 'schedule') {
                   router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'entries') {
-                  if (row.kind === 'auto-ef') router.push('/emergency-fund');
-                  else router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
+                  router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
-                  if (row.kind === 'auto-ef') {
-                    const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
-                    if (!emergencyGoal) throw new Error('Emergency fund goal is missing.');
-                    router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } });
-                  } else {
-                    router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
-                  }
+                  router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'confirm' && row.kind === 'manual') {
                   actions.confirmHoldingValue(row.id);
                 }

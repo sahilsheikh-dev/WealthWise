@@ -35,7 +35,8 @@ describe('permanent progress ledger', () => {
       'CH-1', 'CH-2', 'CH-3', 'CH-4',
       'CR-1', 'CR-2', 'CR-3', 'CR-4', 'CR-5', 'CR-6', 'CR-7',
       'CR-8', 'CR-9', 'CR-10', 'CR-11', 'CR-12', 'CR-13', 'CR-14',
-      'CR-15', 'CR-16',
+      'CR-15', 'CR-16', 'CR-17', 'CR-18', 'CR-19', 'CR-20', 'CR-21',
+      'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -64,7 +65,7 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P21-A', 'P21-B',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P21-A', 'P21-B',
       'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
       'P28-A',
     ];
@@ -87,7 +88,7 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P21-A', 'P21-B',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P21-A', 'P21-B',
       'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
       'P28-A',
     ];
@@ -163,7 +164,7 @@ describe('permanent progress ledger', () => {
     expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-20 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-26 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -174,15 +175,48 @@ describe('permanent progress ledger', () => {
       'FX-BASE', 'CH-1', 'CH-2', 'CH-3', 'CH-4',
       'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8', 'CR-9', 'CR-10',
       'CR-11', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-16', 'CR-17',
-      'CR-18', 'CR-19', 'CR-20',
+      'CR-18', 'CR-19', 'CR-20', 'CR-21', 'CR-22', 'CR-23', 'CR-24',
+      'CR-25', 'CR-26',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
     expect(promptLog).toContain('| P18-LEDGER |');
     expect(promptLog).toContain('| P19-C |');
     expect(register).toContain('| CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 |');
-    expect(register).toContain('| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Planned | P21-A/B. |');
+    expect(register).toContain('| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 |');
+    expect(register).toContain('| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 |');
+    expect(register).toContain('| CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done |');
+    expect(register).toContain("| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Done |");
+    expect(register).toContain('| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done |');
+    expect(register).toContain('| CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done |');
+    expect(decisions).toContain('DEC-P20D-CR22');
+    expect(decisions).toContain('DEC-P20D-CR23');
+    expect(decisions).toContain('DEC-P20D-CR24');
+    expect(decisions).toContain('DEC-P20D-CR25');
     expect(decisions).toContain('DEC-FORM-COMPONENTS');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
+  });
+
+  it('closes P20-D, P21, P22-A and their gates only after green verification', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const statusFor = (id: string) => register.split('\n')
+      .find((line) => line.startsWith(`| ${id} |`))
+      ?.split('|')[3]?.trim();
+
+    for (const id of ['P20-D', 'P21-A', 'P21-B', 'P22-A']) {
+      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
+    }
+    for (const id of ['CR-8', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-20', 'CR-21', 'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    expect(statusFor('CR-17')).toBe('Superseded by CR-24');
+    expect(statusFor('CR-18')).toBe('Superseded by CR-22');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P22-B |'))).toContain('| Planned |');
+    expect(dashboard).toContain('Overall progress █████████░ 86% (43/50)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (4/4)');
+    expect(dashboard).toContain('Phase 21         ██████████ 100% (2/2)');
+    expect(dashboard).toContain('Phase 22         █████░░░░░ 50% (1/2)');
+    expect(ledger).toContain('### P20-D green-gate close-out');
   });
 });

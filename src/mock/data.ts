@@ -1,6 +1,5 @@
 import type {
   AppData,
-  EfEntry,
   Goal,
   Holding,
   Liability,
@@ -19,7 +18,7 @@ export const transactions: Transaction[] = [
   { id: 'tx-mfsip', type: 'invest', amount: 1_000, category: 'Mutual fund / SIP', note: 'Index fund', date: '2026-10-08' },
   { id: 'tx-stocks', type: 'invest', amount: 500, category: 'Stocks / ETF', note: 'Index ETF', date: '2026-10-08' },
   { id: 'tx-gold', type: 'invest', amount: 300, category: 'Gold / Silver', note: 'Digital gold', date: '2026-10-08' },
-  { id: 'tx-emergency-fund', type: 'invest', amount: 500, category: 'Emergency fund', note: 'Emergency fund contribution', date: '2026-10-08' },
+  { id: 'tx-emergency-fund', type: 'invest', amount: 500, category: 'Other investments', note: 'Emergency fund contribution', date: '2026-10-08' },
   { id: 'tx-other-invest', type: 'invest', amount: 200, category: 'Other investments', note: 'Other investment', date: '2026-10-08' },
   { id: 'tx-emi', type: 'expense', amount: 6_281, category: 'EMI', note: 'Bank EMI', date: '2026-10-08' },
   { id: 'tx-friend-payment', type: 'expense', amount: 5_000, category: 'Other', note: 'Borrowed from friend payment', date: '2026-10-02', source: { kind: 'liability-payment', parentId: 'liability-friend', entryId: 'friend-payment' } },
@@ -37,7 +36,11 @@ export const goals: Goal[] = [
   { id: 'goal-portfolio', name: 'First ₹5L portfolio', target: 500_000, saved: 315_841, year: 2026, links: [{ instrumentId: 'holding-sip', share: 30 }] },
   { id: 'goal-home', name: 'Home - Nagpur', target: 10_000_000, saved: 0, year: 2041, links: [{ instrumentId: 'policy-savings', share: 25 }] },
   { id: 'goal-farm', name: 'Poultry farm', target: 200_000, saved: 0, year: 2026, links: [] },
-  { id: 'goal-emergency', name: 'Emergency fund', target: 300_000, saved: 155_000, year: 2028, auto: 'ef', links: [] },
+  { id: 'goal-emergency', name: 'Emergency fund', target: 300_000, saved: 155_000, year: 2028, auto: 'ef', links: [
+    { instrumentId: 'holding-cash', share: 100 },
+    { instrumentId: 'holding-bank', share: 99.9 },
+    { instrumentId: 'holding-fd', share: 0.1 },
+  ] },
 ];
 
 export const holdings: Holding[] = [
@@ -58,6 +61,26 @@ export const holdings: Holding[] = [
     invested: 110_000,
     value: 135_456,
     valueAsOf: '2026-06-01',
+    logs: [],
+  },
+  {
+    id: 'holding-cash',
+    kind: 'manual',
+    name: 'Emergency cash',
+    type: 'Cash',
+    invested: 19_544,
+    value: 19_544,
+    valueAsOf: '2026-10-01',
+    logs: [],
+  },
+  {
+    id: 'holding-bank',
+    kind: 'manual',
+    name: 'Emergency savings',
+    type: 'Savings account',
+    invested: 135_456,
+    value: 135_456,
+    valueAsOf: '2026-10-01',
     logs: [],
   },
   {
@@ -136,11 +159,6 @@ export const policies: Policy[] = [{
   payments: [],
 }];
 
-export const emergencyFundEntries: EfEntry[] = [
-  { id: 'ef-opening', date: '2026-08-10', amount: 153_000, note: 'Opening balance' },
-  { id: 'ef-september', date: '2026-09-08', amount: 2_000, note: 'ICICI RD transfer' },
-];
-
 export const mockAppData: AppData = {
   settings: { name: 'Sahil', theme: 'system', monthlySalary: null, onboarded: true },
   transactions,
@@ -163,8 +181,7 @@ export const mockAppData: AppData = {
       { category: 'Stocks / ETF', planned: 1_000 },
       { category: 'Fixed deposit / RD', planned: 2_000 },
       { category: 'Gold / Silver', planned: 500 },
-      { category: 'Emergency fund', planned: 1_000 },
-      { category: 'Other investments', planned: 500 },
+      { category: 'Other investments', planned: 1_500 },
       { category: 'Shopping', planned: 3_000 },
       { category: 'Festival', planned: 1_500 },
       { category: 'Health', planned: 2_000 },
@@ -187,8 +204,7 @@ export const mockAppData: AppData = {
       { category: 'Stocks / ETF', mode: 'amount', value: 1_000 },
       { category: 'Fixed deposit / RD', mode: 'amount', value: 2_000 },
       { category: 'Gold / Silver', mode: 'amount', value: 500 },
-      { category: 'Emergency fund', mode: 'amount', value: 1_000 },
-      { category: 'Other investments', mode: 'amount', value: 500 },
+      { category: 'Other investments', mode: 'amount', value: 1_500 },
       { category: 'Shopping', mode: 'amount', value: 3_000 },
       { category: 'Festival', mode: 'amount', value: 1_500 },
       { category: 'Health', mode: 'amount', value: 2_000 },
@@ -214,14 +230,12 @@ export const mockAppData: AppData = {
       { category: 'Stocks / ETF', planned: 1_000 },
       { category: 'Fixed deposit / RD', planned: 2_000 },
       { category: 'Gold / Silver', planned: 500 },
-      { category: 'Emergency fund', planned: 1_000 },
-      { category: 'Other investments', planned: 500 },
+      { category: 'Other investments', planned: 1_500 },
       { category: 'Shopping', planned: 3_000 },
       { category: 'Festival', planned: 1_500 },
       { category: 'Health', planned: 2_000 },
     ],
   }],
-  efEntries: emergencyFundEntries,
   efAllocation: null,
   efCustomBuckets: [],
   efBucketLinks: {},

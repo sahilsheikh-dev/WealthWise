@@ -25,6 +25,7 @@ const name = z.string().max(40);
 const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
+  snapshotAdjustment: money.optional(),
 });
 const liabilityPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
@@ -41,7 +42,7 @@ const transactionSchema = z.strictObject({
   note,
   date: dateSchema,
   source: z.strictObject({
-    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin', 'ef-entry']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -92,9 +93,6 @@ const oneTimeLiabilitySchema = z.strictObject({
   if (liability.dueDate !== null && liability.dueDate < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
   }
-});
-const efEntrySchema = z.strictObject({
-  id: idSchema, date: dateSchema, amount: money.refine((amount) => amount !== 0), note,
 });
 const importEfAllocationSchema = z.record(
   idSchema,
@@ -234,7 +232,6 @@ export const importDataSchema = z.strictObject({
   budgetTemplates: z.array(budgetTemplateSchema).max(1000).optional(),
   defaultBudgetTemplateId: idSchema.nullable().optional(),
   monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
-  efEntries: z.array(efEntrySchema).max(100_000),
   efAllocation: importEfAllocationSchema,
   efCustomBuckets: importEfCustomBucketsSchema,
   efBucketLinks: importEfBucketLinksSchema,
@@ -256,7 +253,6 @@ export type BackupSummary = {
   plans: number;
   liabilities: number;
   policies: number;
-  efEntries: number;
   firstDate: ISODate | null;
   lastDate: ISODate | null;
 };
@@ -322,7 +318,7 @@ export function validateImportData(data: unknown):
       ...appData,
       goals: ensureEfGoal(appData.goals, {
         expenseBaseline: 0,
-        asOf: transactionDates.sort()[0] ?? appData.efEntries[0]?.date ?? '2000-01-01',
+        asOf: transactionDates.sort()[0] ?? '2000-01-01',
       }),
     };
   const integrityIssues = validateIntegrity(repaired);
@@ -334,7 +330,7 @@ export function validateImportData(data: unknown):
 
 export async function parseBackup(
   raw: string,
-  options: { digest: (text: string) => Promise<string> },
+  options: { digest: (text: string) => Promise<string>; today?: ISODate; newId?: () => string },
 ): Promise<ParseBackupResult> {
   if (raw.length > MAX_BACKUP_CHARS) {
     return { ok: false, reason: 'too-large', message: 'This file is too large to import.' };
@@ -362,7 +358,15 @@ export async function parseBackup(
   }
   let migrated: unknown = value.data;
   try {
-    migrated = migratePersisted(value.data, value.schemaVersion);
+    if (value.schemaVersion < SCHEMA_VERSION) {
+      if (!options.today || !options.newId) {
+        return { ok: false, reason: 'unsupported-version', message: 'This backup version cannot be imported by this app.' };
+      }
+      migrated = migratePersisted(value.data, value.schemaVersion, {
+        today: options.today,
+        newId: options.newId,
+      });
+    }
   } catch {
     return { ok: false, reason: 'unsupported-version', message: 'This backup version cannot be imported by this app.' };
   }
@@ -394,7 +398,6 @@ export function summarizeData(data: AppData): BackupSummary {
     plans: data.holdings.filter((holding) => holding.kind === 'plan').length,
     liabilities: data.liabilities.length,
     policies: data.policies.length,
-    efEntries: data.efEntries.length,
     firstDate: dates[0] ?? null,
     lastDate: dates.at(-1) ?? null,
   };

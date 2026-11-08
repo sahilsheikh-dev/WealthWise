@@ -12,6 +12,7 @@ import { createMetaStore, type BackupMeta } from '../src/data/metaStore';
 import { useAppStore } from '../src/data/store';
 import { backupFileName, createBackup, parseBackup, type ParseBackupResult } from '../src/domain/backup';
 import { confirmAsync } from '../src/lib/confirm';
+import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
 import { storageSummary, utf8ByteLength } from '../src/lib/storageGuard';
 import { typography } from '../src/theme/tokens';
@@ -111,7 +112,7 @@ export default function BackupScreen() {
         setMessage('The selected temporary file could not be removed.');
         return;
       }
-      const parsed = await parseBackup(text, { digest });
+      const parsed = await parseBackup(text, { digest, today: todayISO(), newId: () => Crypto.randomUUID() });
       if (!parsed.ok) {
         setMessage(parsed.message);
         setIssues(parsed.issues ?? []);
@@ -220,7 +221,7 @@ function ImportPreview({
   const counts = [
     `${summary.transactions} transactions`, `${summary.goals} goals`,
     `${summary.holdings} holdings`, `${summary.plans} plans`,
-    `${summary.liabilities} liabilities`, `${summary.efEntries} emergency-fund entries`,
+    `${summary.liabilities} liabilities`,
   ].join(' · ');
   const range = summary.firstDate && summary.lastDate
     ? `${formatDate(summary.firstDate)} – ${formatDate(summary.lastDate)}`

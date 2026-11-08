@@ -62,7 +62,7 @@ describe('budget templates and monthly views', () => {
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
       ['Survival (Needs)', 50, ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
-      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments']],
+      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
       ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],
@@ -107,7 +107,7 @@ describe('budget templates and monthly views', () => {
     expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(300);
     expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(200);
     expect(ordinary.lines.find((line) => line.category === 'Unexpected')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Emergency fund')?.planned).toBe(700);
+    expect(ordinary.lines.find((line) => line.category === 'Other investments')?.planned).toBe(800);
     expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(500);
     expect(ordinary.warnings).toEqual([]);
     const committed = suggestTemplate({

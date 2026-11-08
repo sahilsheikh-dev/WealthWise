@@ -1,11 +1,9 @@
 import { NotFoundError } from './actions';
-import { efBalanceOn, efEndOfDayBalances, EfBalanceError } from './efActions';
 import { investCategoryFor, LinkedTransactionError } from './links';
 import { snapshotAdjustmentForEntry, updateInvestmentEntry } from './investmentActions';
 import { holdingValue } from './portfolio';
 import type {
   AppData,
-  EfEntry,
   Holding,
   HoldingType,
   InvestmentEntry,
@@ -15,10 +13,10 @@ import type {
 } from './types';
 
 export type Instrument = {
-  id: 'ef' | string;
-  kind: 'ef' | 'holding';
+  id: string;
+  kind: 'holding';
   name: string;
-  type: HoldingType | 'Emergency fund';
+  type: HoldingType;
   valueNow: number;
   canWithdraw: boolean;
 };
@@ -38,21 +36,11 @@ export type LinkedTransactionPatch = {
   instrumentId?: string;
 };
 
-type InstrumentSource = Extract<
-  NonNullable<Transaction['source']>,
-  { kind: 'holding-entry' | 'ef-entry' }
->;
+type InstrumentSource = Extract<NonNullable<Transaction['source']>, { kind: 'holding-entry' }>;
 
 export type UnlinkedEntry =
-  | { kind: 'ef'; entry: EfEntry }
   | { kind: 'holding'; holdingId: string; holdingName: string; holdingKind: Holding['kind']; entry: InvestmentEntry }
   | { kind: 'liability'; liabilityId: string; liabilityName: string; entry: LiabilityPayment };
-
-function efGoal(data: AppData) {
-  const goal = data.goals.find((item) => item.auto === 'ef');
-  if (!goal) throw new NotFoundError('Emergency fund Goal', 'auto:ef');
-  return goal;
-}
 
 function assertDate(date: ISODate, today: ISODate): void {
   if (date > today) throw new Error('Date cannot be in the future');
@@ -78,16 +66,7 @@ function assertWithdrawalFits(holding: Holding, entry: Pick<InvestmentEntry, 'id
   }
 }
 
-function assertEfNonNegative(entries: EfEntry[]): void {
-  const negative = efEndOfDayBalances(entries).find(({ balance }) => balance < 0);
-  if (negative) throw new EfBalanceError(negative.date);
-}
-
 function instrument(data: AppData, id: string, asOf: ISODate): Instrument {
-  if (id === 'ef') {
-    const valueNow = efBalanceOn(data.efEntries, asOf);
-    return { id: 'ef', kind: 'ef', name: 'Emergency fund', type: 'Emergency fund', valueNow, canWithdraw: valueNow > 0 };
-  }
   const holding = data.holdings.find((item) => item.id === id);
   if (!holding) throw new NotFoundError('Investment', id);
   const valueNow = holdingValue(holding, asOf);
@@ -102,10 +81,7 @@ function instrument(data: AppData, id: string, asOf: ISODate): Instrument {
 }
 
 export function listInstruments(data: AppData, asOf: ISODate): Instrument[] {
-  return [
-    instrument(data, 'ef', asOf),
-    ...data.holdings.map((holding) => instrument(data, holding.id, asOf)),
-  ];
+  return data.holdings.map((holding) => instrument(data, holding.id, asOf));
 }
 
 function replaceTransaction(data: AppData, updated: Transaction): AppData {
@@ -118,15 +94,10 @@ function replaceTransaction(data: AppData, updated: Transaction): AppData {
 function entryForTransaction(
   data: AppData,
   source: InstrumentSource,
-): InvestmentEntry | EfEntry {
-  if (source.kind === 'holding-entry') {
-    const holding = data.holdings.find((item) => item.id === source.parentId);
-    const entry = holding?.logs.find((item) => item.id === source.entryId);
-    if (!entry) throw new NotFoundError('Investment entry', source.entryId);
-    return entry;
-  }
-  const entry = data.efEntries.find((item) => item.id === source.entryId);
-  if (!entry) throw new NotFoundError('Emergency fund entry', source.entryId);
+): InvestmentEntry {
+  const holding = data.holdings.find((item) => item.id === source.parentId);
+  const entry = holding?.logs.find((item) => item.id === source.entryId);
+  if (!entry) throw new NotFoundError('Investment entry', source.entryId);
   return entry;
 }
 
@@ -149,7 +120,7 @@ function removeLinkedEntry(data: AppData, source: InstrumentSource): AppData {
         : holding),
     };
   }
-  return { ...data, efEntries: data.efEntries.filter((entry) => entry.id !== source.entryId) };
+  return data;
 }
 
 function appendEntry(
@@ -164,19 +135,6 @@ function appendEntry(
 ): { data: AppData; source: NonNullable<Transaction['source']>; category: string; type: Transaction['type'] } {
   assertAmount(amount);
   assertDate(date, today);
-  const signedAmount = kind === 'Deposit' ? amount : -amount;
-  if (targetId === 'ef') {
-    const goal = efGoal(data);
-    const efEntry: EfEntry = { id: entryId, date, amount: signedAmount, note };
-    const efEntries = [...data.efEntries, efEntry];
-    assertEfNonNegative(efEntries);
-    return {
-      data: { ...data, efEntries },
-      source: { kind: 'ef-entry', parentId: goal.id, entryId },
-      category: kind === 'Deposit' ? 'Emergency fund' : 'Withdrawal',
-      type: kind === 'Deposit' ? 'invest' : 'income',
-    };
-  }
   const holding = data.holdings.find((item) => item.id === targetId);
   if (!holding) throw new NotFoundError('Investment', targetId);
   assertHoldingDate(holding, date);
@@ -232,7 +190,7 @@ export function updateLinkedTransaction(
   if (!transaction) throw new NotFoundError('Transaction', id);
   if ('type' in (patch as object) || 'category' in (patch as object)) throw new LinkedTransactionError();
   const source = transaction.source;
-  if (!source || (source.kind !== 'holding-entry' && source.kind !== 'ef-entry')) {
+  if (!source || source.kind !== 'holding-entry') {
     throw new LinkedTransactionError();
   }
   const oldEntry = entryForTransaction(data, source);
@@ -241,22 +199,13 @@ export function updateLinkedTransaction(
   assertAmount(nextAmount);
   assertDate(nextDate, options.today);
   const nextKind = transaction.type === 'income' ? 'Withdrawal' : 'Deposit';
-  const targetId = patch.instrumentId ?? (source.kind === 'ef-entry' ? 'ef' : source.parentId);
+  const targetId = patch.instrumentId ?? source.parentId;
 
-  if (targetId === (source.kind === 'ef-entry' ? 'ef' : source.parentId)) {
-    let updatedData = data;
-    if (source.kind === 'holding-entry') {
-      updatedData = updateInvestmentEntry(data, source.parentId, source.entryId, {
-        amount: nextAmount,
-        date: nextDate,
-      }, options.today);
-    } else {
-      const current = oldEntry as EfEntry;
-      const updatedEntry = { ...current, amount: nextKind === 'Deposit' ? nextAmount : -nextAmount, date: nextDate };
-      const efEntries = data.efEntries.map((entry) => entry.id === source.entryId ? updatedEntry : entry);
-      assertEfNonNegative(efEntries);
-      updatedData = { ...data, efEntries };
-    }
+  if (targetId === source.parentId) {
+    const updatedData = updateInvestmentEntry(data, source.parentId, source.entryId, {
+      amount: nextAmount,
+      date: nextDate,
+    }, options.today);
     return replaceTransaction(updatedData, {
       ...transaction,
       amount: nextAmount,
@@ -266,7 +215,6 @@ export function updateLinkedTransaction(
   }
 
   const withoutOld = removeLinkedEntry(data, source);
-  if (source.kind === 'ef-entry') assertEfNonNegative(withoutOld.efEntries);
   const appended = appendEntry(
     withoutOld,
     targetId,
@@ -291,12 +239,11 @@ export function updateLinkedTransaction(
 export function deleteLinkedTransaction(data: AppData, id: string): AppData {
   const transaction = data.transactions.find((item) => item.id === id);
   if (!transaction) throw new NotFoundError('Transaction', id);
-  if (!transaction.source || (transaction.source.kind !== 'holding-entry' && transaction.source.kind !== 'ef-entry')) {
+  if (!transaction.source || transaction.source.kind !== 'holding-entry') {
     throw new LinkedTransactionError();
   }
   entryForTransaction(data, transaction.source);
   const withoutEntry = removeLinkedEntry(data, transaction.source);
-  if (transaction.source.kind === 'ef-entry') assertEfNonNegative(withoutEntry.efEntries);
   return {
     ...withoutEntry,
     transactions: withoutEntry.transactions.filter((item) => item.id !== id),
@@ -338,10 +285,6 @@ function hasLinkedSource(
 
 export function findUnlinkedEntries(data: AppData): UnlinkedEntry[] {
   const rows: UnlinkedEntry[] = [];
-  const goal = data.goals.find((item) => item.auto === 'ef');
-  for (const entry of data.efEntries) {
-    if (goal && !hasLinkedSource(data, 'ef-entry', goal.id, entry.id)) rows.push({ kind: 'ef', entry });
-  }
   for (const holding of data.holdings) {
     for (const entry of holding.logs) {
       if (!hasLinkedSource(data, 'holding-entry', holding.id, entry.id)) {
@@ -362,20 +305,7 @@ export function findUnlinkedEntries(data: AppData): UnlinkedEntry[] {
 export function createMissingTransactions(data: AppData, newId: () => string): AppData {
   const missing = findUnlinkedEntries(data);
   if (missing.length === 0) return data;
-  const efParentId = efGoal(data).id;
   const transactions = missing.map((item): Transaction => {
-    if (item.kind === 'ef') {
-      const withdrawal = item.entry.amount < 0;
-      return {
-        id: newId(),
-        type: withdrawal ? 'income' : 'invest',
-        amount: Math.abs(item.entry.amount),
-        category: withdrawal ? 'Withdrawal' : 'Emergency fund',
-        note: withdrawal ? 'Emergency fund withdrawal' : 'Emergency fund Deposit',
-        date: item.entry.date,
-        source: { kind: 'ef-entry', parentId: efParentId, entryId: item.entry.id },
-      };
-    }
     if (item.kind === 'holding') {
       const withdrawal = item.entry.kind === 'Withdrawal';
       const holding = data.holdings.find((entry) => entry.id === item.holdingId)!;

@@ -1,6 +1,5 @@
-import { router, type Href } from 'expo-router';
-import { useIsFocused } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { router, useIsFocused, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { IconButton } from '../../src/components/IconButton';
+import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
+import { PendingItemRow } from '../../src/components/PendingItemRow';
 import {
   AppText,
   Button,
@@ -19,8 +20,6 @@ import {
   StatPillRow,
   WarningBanner,
 } from '../../src/components/ui';
-import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
-import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
@@ -43,7 +42,6 @@ export const HOME_QUICK_ACTIONS = [
   { id: 'transaction', label: 'Add Transaction', icon: 'file-plus' },
   { id: 'investment', label: 'New Investment', icon: 'trending-up' },
   { id: 'liability', label: 'New Liability', icon: 'credit-card' },
-  { id: 'emergency-fund', label: 'Log Emergency Fund', icon: 'shield' },
 ] as const;
 const metaStore = createMetaStore(AsyncStorage);
 
@@ -74,7 +72,7 @@ export default function HomeScreen() {
   }, []);
   const recordCount = data.transactions.length
     + data.goals.filter((goal) => !goal.auto).length
-    + data.holdings.length + data.liabilities.length + data.efEntries.length;
+    + data.holdings.length + data.liabilities.length;
   const nudge = shouldNudge({
     recordCount,
     lastExportAt: backupMeta.lastExportAt,
@@ -106,8 +104,13 @@ export default function HomeScreen() {
             onPress={() => router.push('/liabilities')}
           />
           <StatPill
-            label="Emergency Fund"
-            value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
+            label="Emergency fund"
+            value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
+            accessibilityLabel={`Emergency fund, ${formatAmount(summary.goals.find(({ goal }) => goal.auto === 'ef')?.saved ?? 0, 'exact', 1)}, ${
+              summary.emergencyMonths === null
+                ? 'cover unavailable'
+                : `${Math.trunc(summary.emergencyMonths * 10) / 10} months of cover`
+            }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
           />
@@ -136,30 +139,18 @@ export default function HomeScreen() {
                 router.push('/liability-form');
                 return;
               }
-              router.push('/ef-entry-form');
             }}
             />
           </View>
         ))}
       </View>
 
-      <SectionTitle>Spending by category</SectionTitle>
       <Card style={styles.categoryBreakdown}>
         <AppText
           weight="semibold"
           accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
           This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
         </AppText>
-        <View style={styles.spendingActions}>
-          <Button label="Open budget" icon="pie-chart" onPress={() => router.push('/(tabs)/budget')} />
-          {!monthBudget.budget ? (
-            <Button
-              label="Apply budget"
-              icon="layers"
-              onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } })}
-            />
-          ) : null}
-        </View>
         <Pressable
           testID="home-spending-toggle"
           accessibilityRole="button"
@@ -315,18 +306,38 @@ export default function HomeScreen() {
               <>
                 <AppText
                   style={[typography.meta, styles.goalMinimum, { color: colors.text3 }]}
-                  accessibilityLabel={`Minimum 3 months of expenses: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
-                  Minimum 3 months of expenses: <AmountText value={minimum ?? 0} tier="row" />
+                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(minimum ?? 0, 'exact', 1)}`}>
+                  Minimum 3 months of cover: <AmountText value={minimum ?? 0} tier="row" />
                 </AppText>
                 <AppText
                   style={[typography.meta, { color: colors.text3 }]}
-                  accessibilityLabel={summary.expenseBaseline <= 0
-                    ? 'Add expenses to calculate your 3-month minimum'
-                    : `Based on an average of ${formatAmount(summary.expenseBaseline, 'exact', 1)} monthly expenses`}>
-                  {summary.expenseBaseline <= 0
-                    ? 'Add expenses to calculate your 3-month minimum'
-                    : <>Based on an average of <AmountText value={summary.expenseBaseline} tier="row" /> monthly expenses</>}
+                  accessibilityLabel={summary.emergencyBaseSource === 'expenses'
+                    ? `Based on your average monthly expenses, ${formatAmount(summary.expenseBaseline, 'exact', 1)}`
+                    : summary.emergencyBaseSource === 'salary'
+                      ? 'Based on your monthly income'
+                      : 'Add your monthly income to see cover'}>
+                  {summary.emergencyBaseSource === 'expenses'
+                    ? <>Based on your average monthly expenses: <AmountText value={summary.expenseBaseline} tier="row" /></>
+                    : summary.emergencyBaseSource === 'salary'
+                      ? 'Based on your monthly income'
+                      : 'Add your monthly income to see cover'}
                 </AppText>
+                <View style={styles.emergencyGoalActions}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>
+                    {summary.emergencyMonths === null
+                      ? '—'
+                      : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo of cover`}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Track emergency fund"
+                    onPress={(event) => {
+                      event.stopPropagation?.();
+                      router.push('/emergency-fund');
+                    }}>
+                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+                  </Pressable>
+                </View>
                 {raised ? (
                   <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
                 ) : null}
@@ -362,4 +373,5 @@ const styles = StyleSheet.create({
   goalPercent: { fontSize: 12 },
   goalAmounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   goalMinimum: { marginTop: 7 },
+  emergencyGoalActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

@@ -1,4 +1,5 @@
 import { buildInstrumentCardModel } from '../instrumentCard';
+import { listInstruments } from '../instruments';
 import { buildPortfolioRows } from '../portfolio';
 import type { AppData } from '../types';
 import { mockAppData } from '../../mock/data';
@@ -6,8 +7,6 @@ import { mockAppData } from '../../mock/data';
 const context = {
   asOf: '2026-10-10',
   totalAssets: 500_000,
-  monthlyExpenseBaseline: 25_000,
-  emergencyEntryCount: mockAppData.efEntries.length,
 };
 
 function rowFor(data: AppData, id: string) {
@@ -23,31 +22,9 @@ function textContent(segments: ({ text: string } | { amount: number })[]) {
 }
 
 describe('buildInstrumentCardModel', () => {
-  it('builds an emergency fund model with percentage, coverage and the required actions', () => {
-    const model = buildInstrumentCardModel(rowFor(mockAppData, 'auto-ef'), context);
-    expect(model).toMatchObject({
-      kind: 'auto-ef',
-      subtitle: [{ text: 'Emergency fund, auto-synced' }],
-      progressCaption: expect.stringMatching(/% of your assets/),
-    });
-    expect(textContent(model.description)).toMatch(/months of expenses covered/);
-    expect(model.headerAction).toEqual({ id: 'edit', label: 'Edit' });
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
-  });
-
-  it('uses no-baseline copy and disables withdrawals when the emergency fund has no value', () => {
-    const data = { ...mockAppData, efEntries: [] };
-    const model = buildInstrumentCardModel(rowFor(data, 'auto-ef'), {
-      ...context,
-      totalAssets: 0,
-      monthlyExpenseBaseline: 0,
-    });
-    expect(model.description).toEqual([{ text: 'Log expenses to see months covered' }]);
-    expect(model.progressPct).toBe(0);
-    expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({
-      disabled: true,
-      accessibilityHint: 'Nothing to withdraw',
-    });
+  it('uses only real holdings as investment instruments', () => {
+    expect(listInstruments(mockAppData, context.asOf).map(({ id }) => id))
+      .toEqual(mockAppData.holdings.map(({ id }) => id));
   });
 
   it('includes stale-value confirmation and exact manual actions', () => {
@@ -142,4 +119,32 @@ describe('buildInstrumentCardModel', () => {
       invested: 0, value: 0, gain: 0, gainPct: null,
     }, context)).toThrow('missing its holding');
   });
+
+  it('covers untracked plan snapshots and negative manual holdings without an asset total', () => {
+    const planData = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
+        ? { ...holding, actualValue: 12_000, actualValueDate: '2026-10-01' }
+        : holding),
+    };
+    const planRow = rowFor(planData, 'holding-sip');
+    const plan = buildInstrumentCardModel({ ...planRow, value: 0 }, { ...context, totalAssets: 0 });
+    expect(plan.valueCaption).toBe('Actual value as of 1 Oct 2026');
+    expect(plan.actions.find(({ id }) => id === 'withdraw'))
+      .toMatchObject({ disabled: true, accessibilityHint: 'Nothing to withdraw' });
+
+    const lossData = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
+        ? { ...holding, invested: 1_000, value: 500, valueAsOf: '2026-10-01' }
+        : holding),
+    };
+    const loss = buildInstrumentCardModel(
+      rowFor(lossData, 'holding-cash'),
+      { ...context, totalAssets: 0 },
+    );
+    expect(loss.progressPct).toBe(0);
+    expect(loss.description[0]).toEqual({ text: 'Loss ' });
+  });
+
 });

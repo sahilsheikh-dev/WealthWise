@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const appRoot = join(process.cwd(), 'app');
-const noDefaultMenuScreens = new Set(['app/erase-data.tsx', 'app/(tabs)/budget.tsx']);
+const noDefaultMenuScreens = new Set(['app/erase-data.tsx']);
 
 function routeFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -31,5 +31,9 @@ describe('AppHeader menu usage', () => {
     }
     expect(usages.map(({ file }) => file)).toContain('app/(tabs)/transactions.tsx');
     expect(usages.map(({ file }) => file)).toContain('app/(tabs)/goals.tsx');
+    const budget = usages.find(({ file }) => file === 'app/(tabs)/budget.tsx');
+    expect(budget?.props).toContain('menu={[');
+    expect(budget?.props).toContain('...appMenu');
+    expect(budget?.props).toContain('menuIndicator={Boolean(reviewableMonth)}');
   });
 });

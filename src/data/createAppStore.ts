@@ -27,7 +27,6 @@ import {
   type SurplusAllocation,
 } from '../domain/cashFlow';
 import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
-import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import {
   addInstrumentTransaction,
   createMissingTransactions,
@@ -69,17 +68,19 @@ import {
   addPlanWithHistory,
   addPolicyWithHistory,
   clearDue,
+  clearDuesThrough,
   clearPastDues,
   undoClearDue,
+  undoClearDuesThrough,
   type AddPolicyInput,
   type DueTarget,
   type PastDuesMode,
 } from '../domain/dues';
 import { SCHEMA_VERSION } from '../domain/schemas';
-import { mockAppData } from '../mock/data';
+import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, EfEntry, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
+  AppData, BudgetLine, BudgetTemplate, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, Settings, Transaction,
 } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
@@ -106,12 +107,14 @@ export type AppActions = {
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
   clearDue: (target: DueTarget, rowId?: string) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
     addSkippedToOpening?: boolean;
   }) => { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
   undoClearDue: (target: DueTarget, entryId: string) => void;
+  undoClearDuesThrough: (target: DueTarget, entryIds: string[]) => void;
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
@@ -142,9 +145,6 @@ export type AppActions = {
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string, options?: { linkedTransactions: 'delete' | 'keep' }) => void;
   confirmHoldingValue: (id: string) => void;
-  addEfEntry: (input: Omit<EfEntry, 'id'>) => void;
-  updateEfEntry: (id: string, patch: EfEntryPatch) => void;
-  deleteEfEntry: (id: string) => void;
   setEfAllocation: (allocation: EfAllocation) => void;
   resetEfAllocation: () => void;
   addEfCustomBucket: (input: Omit<EfCustomBucket, 'id'>) => void;
@@ -165,7 +165,7 @@ export type AppActions = {
 };
 
 export type DevActions = {
-  loadDemoData: () => void;
+  loadDemoData: () => Promise<{ ok: true } | { ok: false; message: string }>;
   loadStressData: () => void;
   simulateCorruption: () => Promise<void>;
 };
@@ -309,6 +309,18 @@ export function createAppStore(
           });
           return entryId;
         },
+        clearDuesThrough(target, dueDate) {
+          let entryIds: string[] | undefined;
+          applyDataAction((data) => {
+            const result = clearDuesThrough(data, target, dueDate, {
+              date: deps.today(),
+              newId: deps.newId,
+            });
+            entryIds = result.entryIds;
+            return result.data;
+          });
+          return entryIds;
+        },
         clearPastDues(target, options) {
           let summary: { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
           applyDataAction((data) => {
@@ -320,6 +332,9 @@ export function createAppStore(
         },
         undoClearDue(target, entryId) {
           applyDataAction((data) => undoClearDue(data, target, entryId));
+        },
+        undoClearDuesThrough(target, entryIds) {
+          applyDataAction((data) => undoClearDuesThrough(data, target, entryIds));
         },
         addPlanWithHistory(input, mode, addSkippedToOpening = true) {
           applyDataAction((data) => addPlanWithHistory(data, input, {
@@ -432,15 +447,6 @@ export function createAppStore(
         },
         confirmHoldingValue(id) {
           applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
-        },
-        addEfEntry(input) {
-          applyDataAction((data) => addEfEntry(data, input, { newId: deps.newId }));
-        },
-        updateEfEntry(id, patch) {
-          applyDataAction((data) => updateEfEntry(data, id, patch));
-        },
-        deleteEfEntry(id) {
-          applyDataAction((data) => deleteEfEntry(data, id));
         },
         setEfAllocation(allocation) {
           applyDataAction((data) => setEfAllocation(data, allocation));
@@ -572,6 +578,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v3`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v4`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v5`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
@@ -603,13 +610,7 @@ export function createAppStore(
         ...(deps.isDev ?? (typeof __DEV__ !== 'undefined' && __DEV__) ? {
           devActions: {
             loadDemoData() {
-              const expenseBaseline = monthlyBaseline(mockAppData.transactions, 'expense', deps.today());
-              set({
-                data: {
-                  ...mockAppData,
-                  goals: ensureEfGoal(mockAppData.goals, { expenseBaseline, asOf: deps.today() }),
-                },
-              });
+              return actions.replaceAllData(buildDemoData(deps.today()));
             },
             loadStressData() {
               const transactions = createStressTransactions(deps.today(), deps.newId);
@@ -630,7 +631,10 @@ export function createAppStore(
       version: SCHEMA_VERSION,
       storage: jsonStorage!,
       partialize: (state) => ({ data: state.data }),
-      migrate: migratePersisted,
+      migrate: (persisted, version) => migratePersisted(persisted, version, {
+        today: deps.today(),
+        newId: deps.newId,
+      }),
       onRehydrateStorage: () => async (state, error) => {
         const storeApi = useStore!;
         if (error) {

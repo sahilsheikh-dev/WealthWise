@@ -13,7 +13,7 @@ export class GoalLockedError extends Error {
 
 export class GoalTargetBelowMinimumError extends Error {
   constructor(minimum: number) {
-    super(`The emergency fund target must be at least 3 months of expenses (${formatINR(minimum)})`);
+    super(`The emergency fund target must be at least 3 months of cover (${formatINR(minimum)})`);
     this.name = 'GoalTargetBelowMinimumError';
   }
 }
@@ -40,7 +40,6 @@ export function updateGoal(
     throw new GoalLockedError();
   }
   if (current.auto !== 'ef' && patch.auto !== undefined) throw new GoalLockedError();
-  if (current.auto === 'ef' && patch.links !== undefined) throw new GoalLockedError();
   const minimum = emergencyMinimumTarget(options.expenseBaseline);
   if (current.auto === 'ef' && patch.target !== undefined && minimum > 0 && patch.target < minimum) {
     throw new GoalTargetBelowMinimumError(minimum);

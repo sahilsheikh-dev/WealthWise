@@ -1,7 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 
-import { efBalance } from '../../domain/ef';
-import { goalSaved } from '../../domain/goals';
+import { goalSavedFor } from '../../domain/goalLinks';
 import { valueStaleness } from '../../domain/holdingActions';
 import { validateIntegrity } from '../../domain/links';
 import { createAppStore } from '../createAppStore';
@@ -31,7 +30,7 @@ async function hydrated(store: ReturnType<typeof createStore>) {
 }
 
 describe('Phase 5 store integration', () => {
-  it('enforces the EF balance invariant and atomically syncs deposit transactions across rehydration', async () => {
+  it('funds the emergency goal through linked assets and persists links atomically', async () => {
     const storage = new MemoryStorage();
     let id = 0;
     const store = createStore(storage, () => `ef-${++id}`);
@@ -43,44 +42,31 @@ describe('Phase 5 store integration', () => {
       expect(validateIntegrity(store.getState().data)).toEqual([]);
     };
 
-    perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-01', amount: 50_000, note: 'Deposit' },
-    ));
-    perform(() => store.getState().actions.addEfEntry(
-      { date: '2026-10-02', amount: -20_000, note: 'Withdrawal' },
-    ));
-    expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(30_000);
+    perform(() => store.getState().actions.addHolding({
+      name: 'Emergency cash', type: 'Savings account', invested: 50_000, value: 50_000,
+    }));
+    const holding = store.getState().data.holdings[0]!;
+    const goal = store.getState().data.goals.find(({ auto }) => auto === 'ef')!;
+    perform(() => store.getState().actions.setGoalLinks(goal.id, [{ instrumentId: holding.id, share: 60 }]));
+    expect(goalSavedFor(
+      store.getState().data.goals.find(({ auto }) => auto === 'ef')!,
+      store.getState().data,
+      '2026-10-10',
+    )).toBe(30_000);
 
-    const original = store.getState().data;
-    const beforeRejectedWrites = storage.setItemCalls;
-    store.getState().actions.addEfEntry(
-      { date: '2026-10-03', amount: -40_000, note: 'Too much' },
-    );
-    expect(store.getState().data).toBe(original);
-    expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-03');
-    expect(storage.setItemCalls).toBe(beforeRejectedWrites);
-
-    store.getState().actions.deleteEfEntry('ef-1');
-    expect(store.getState().data).toBe(original);
-    expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-02');
-    expect(storage.setItemCalls).toBe(beforeRejectedWrites);
-
-    perform(() => store.getState().actions.updateEfEntry('ef-1', { amount: 70_000 }));
-    expect(store.getState().data.transactions[0]).toMatchObject({ amount: 70_000, date: '2026-10-01' });
-    expect(goalSaved(store.getState().data.goals[0]!, efBalance(store.getState().data.efEntries))).toBe(50_000);
     const restored = createStore(storage, () => `restored-${++id}`);
     await hydrated(restored);
     expect(restored.getState().data).toEqual(store.getState().data);
     expect(validateIntegrity(restored.getState().data)).toEqual([]);
-    const removeWithdrawal = storage.setItemCalls;
-    store.getState().actions.deleteEfEntry('ef-3');
-    expect(storage.setItemCalls - removeWithdrawal).toBe(1);
+    const beforeUnlink = storage.setItemCalls;
+    restored.getState().actions.setGoalLinks(goal.id, []);
+    expect(storage.setItemCalls - beforeUnlink).toBe(1);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
-    const removeDeposit = storage.setItemCalls;
-    store.getState().actions.deleteEfEntry('ef-1');
-    expect(storage.setItemCalls - removeDeposit).toBe(1);
-    expect(store.getState().data.transactions).toEqual([]);
-    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    expect(goalSavedFor(
+      restored.getState().data.goals.find(({ auto }) => auto === 'ef')!,
+      restored.getState().data,
+      '2026-10-10',
+    )).toBe(0);
   });
 
   it('persists goal and holding actions in one write and dates value changes with injected today', async () => {

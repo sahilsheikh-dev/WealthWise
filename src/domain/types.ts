@@ -14,8 +14,7 @@ export type Transaction = {
     | { kind: 'holding-entry'; parentId: string; entryId: string }
     | { kind: 'liability-payment'; parentId: string; entryId: string }
     | { kind: 'policy-payment'; parentId: string; entryId: string }
-    | { kind: 'liability-origin'; parentId: string; entryId: string }
-    | { kind: 'ef-entry'; parentId: string; entryId: string };
+    | { kind: 'liability-origin'; parentId: string; entryId: string };
 };
 
 export type GoalLink = {
@@ -203,13 +202,6 @@ export type MonthBudget = {
   lines: BudgetLine[];
 };
 
-export type EfEntry = {
-  id: string;
-  date: ISODate;
-  amount: number;
-  note: string;
-};
-
 export type Settings = {
   name: string;
   theme: ThemeId;
@@ -250,7 +242,6 @@ export type AppData = {
   budgetTemplates?: BudgetTemplate[];
   defaultBudgetTemplateId?: string | null;
   monthBudgets?: MonthBudget[];
-  efEntries: EfEntry[];
   efAllocation?: EfAllocation | null;
   efCustomBuckets: EfCustomBucket[];
   efBucketLinks: Record<string, string[]>;
