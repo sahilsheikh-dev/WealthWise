@@ -77,13 +77,13 @@ Every release follows this lifecycle:
 ### Release process summary
 
 The current release is v1.0.0; the previous version is the initial release.
-Its APK asset is attached to the GitHub release, but its EAS build metadata
-remains owner to supply. The repository is private, so unauthenticated public
-download URLs currently return HTTP 404. The production AAB and iOS build have
-not been verified. Run the pre-build checklist in [`build-config.md`](./build-config.md),
-record each platform build and submission result in
-[`release-history.md`](./release-history.md), and wait for explicit owner
-approval before changing visibility, publishing or tagging.
+Its APK is attached to the public GitHub release. P28-C-R3 verified HTTP 200
+and `Content-Length: 112133413` for both latest and versioned download links
+and confirmed the APK SHA-256. EAS build metadata, the tag alignment and the
+owner's GitHub release-body edit remain pending. The production AAB has not
+been verified. Record build evidence in
+[`release-history.md`](./release-history.md); see
+[`build-config.md`](./build-config.md).
 
 ## Use the Release Prompt
 

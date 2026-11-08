@@ -9169,12 +9169,9 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 - `gh release view v1.0.0` verified the uploaded asset name
   `WealthWise-android.apk`, size 112,133,413 bytes (about 106.9 MiB), and
   SHA-256 `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`.
-  `gh repo view` reports the repository is private. Unauthenticated checks
-  returned final HTTP 404 and Content-Length 9 for both latest and versioned
-  links with `curl -I -L`. `curl -I` also returned HTTP 404 for both (latest
-  Content-Length 9; the versioned response omitted that header). The README
-  and published note contain their requested latest/versioned link forms, but
-  the public routes cannot be used while the repository is private.
+  At that time, `gh repo view` reported the repository as private and
+  unauthenticated links returned HTTP 404. This historical result was
+  superseded by P28-C-R3 after the repository became public.
 - Superseded by P28-C-R3: staging release-note content under `/tmp` is no
   longer permitted. The published v1.0.0 Markdown is the canonical release
   body source. The GitHub body was not edited in P28-C-R2.
@@ -9214,3 +9211,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   own versioned asset link.
 - Focused documentation tests: 3 suites and 12 tests passed. No assertions
   were weakened or replaced in this step.
+- Step 3: `curl -I -L` returned HTTP 200 and `Content-Length: 112133413` for
+  both latest and versioned APK links. The downloaded GitHub APK was
+  112,133,413 bytes and its SHA-256 matched the published digest. The scratch
+  APK was removed. Results are recorded in `release-history.md`.
