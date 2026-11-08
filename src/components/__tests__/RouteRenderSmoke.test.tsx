@@ -2615,9 +2615,7 @@ describe('route render smoke audit', () => {
         typeof child === 'string' ? child : String(child.type),
       )).toEqual(['view']);
       expect(oneTimeActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
-      const paymentActions = liabilityContent.findAll((node) => String(node.type) === 'actionrow')[0];
-      if (!paymentActions) throw new Error('One-time liability action row did not render.');
-      expect(paymentActions.props.stopParentPress).toBe(true);
+      expect(oneTimeActionContainer.findAllByProps({ label: 'Pay EMI' })).toHaveLength(1);
       act(() => liabilityCard.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({
         pathname: '/liability-form',
@@ -2642,9 +2640,8 @@ describe('route render smoke audit', () => {
         typeof child === 'string' ? child : String(child.type),
       )).toEqual(['view']);
       expect(recurringActionContainer.findAll((node) => node.type === 'text')).toHaveLength(0);
-      const recurringActionRow = recurringContent.findAll((node) => String(node.type) === 'actionrow')[0];
-      if (!recurringActionRow) throw new Error('Recurring liability action row did not render.');
-      expect(recurringActionRow.props.stopParentPress).toBe(true);
+      expect(recurringActionContainer.findAllByProps({ label: 'Pay EMI' })).toHaveLength(1);
+      expect(recurringActionContainer.findAllByProps({ label: 'Foreclosure' })).toHaveLength(1);
       const dueActions = recurringContent.findByType(DueActions);
       expect(dueActions.props.stopParentPress).toBe(true);
       const clearDue = recurringCard.findByProps({ accessibilityLabel: 'Clear due' });
@@ -3304,9 +3301,9 @@ describe('route render smoke audit', () => {
       }
     } else {
       expect(renderer.root.findAll((node) =>
-      typeof node.props.accessibilityLabel === 'string'
-      && node.props.accessibilityLabel.startsWith('Sort:'),
-      )).toHaveLength(1);
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(name === 'Liability payments' ? 0 : 1);
     }
     act(() => renderer.unmount());
     routeParams.mockReturnValue({});
@@ -3383,12 +3380,10 @@ describe('route render smoke audit', () => {
       if (!closedChip) throw new Error('Closed liability filter did not render.');
       act(() => closedChip.props.onPress());
       expect(cardIds()).toEqual(['liability-card-filter-liability-closed']);
-      const closedActionRow = renderer.root.findByProps({
+      const closedActionContainer = renderer.root.findByProps({
         testID: 'liability-card-actions-filter-liability-closed',
-      }).findAll((node) => String(node.type) === 'actionrow')[0];
-      if (!closedActionRow) throw new Error('Closed liability actions did not render.');
-      expect(closedActionRow.props.actions.map((action: { label: string }) => action.label))
-        .toContain('Edit closure note');
+      });
+      expect(closedActionContainer.findAllByProps({ label: 'Edit closure note' })).toHaveLength(1);
       expect(renderer.root.findAll((node) =>
         typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Sort:'),
@@ -3493,9 +3488,6 @@ describe('route render smoke audit', () => {
       )).toHaveLength(0);
       const paymentsScreen = renderer;
       if (!paymentsScreen) throw new Error('Closed liability payments screen did not render.');
-      const segmented = paymentsScreen.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
-      if (!segmented) throw new Error('Liability payment tabs did not render.');
-      act(() => segmented.props.onChange('Payments'));
       const flatList = paymentsScreen.root.findAll((node) => String(node.type) === 'flatlist')[0];
       if (!flatList) throw new Error('Closed liability payment list did not render.');
       const closingPayment = closed.payments[0];
@@ -4022,7 +4014,7 @@ describe('route render smoke audit', () => {
         renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
         expect(renderer.root.findAllByProps({ label: 'Deposit' })).toHaveLength(1);
         expect(renderer.root.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
-        expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(1);
+        expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(0);
         const list = renderer.root.find((node) => String(node.type) === 'flatlist');
         expect(list.props.data).toHaveLength(7);
         const openingRow = list.props.data[0];
@@ -4041,7 +4033,7 @@ describe('route render smoke audit', () => {
             typeof node.props.accessibilityLabel === 'string'
             && node.props.accessibilityLabel.startsWith('Recurring plan monthly'),
           )).not.toHaveLength(0);
-          expect(renderer.root.findAllByProps({ label: 'Edit recurring plan' })).toHaveLength(1);
+          expect(renderer.root.findAllByProps({ label: 'Edit recurring plan' })).toHaveLength(0);
         }
         act(() => renderer?.unmount());
         renderer = undefined;

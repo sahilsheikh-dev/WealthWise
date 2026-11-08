@@ -17,12 +17,12 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { valueStaleness } from '../src/domain/holdingActions';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
-import { valueStaleness } from '../src/domain/holdingActions';
-import { suggestedValuationMethod } from '../src/domain/valuation';
 import { planSchedule } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
@@ -157,32 +157,9 @@ export default function InvestmentEntriesScreen() {
           disabled={financial.value < 1}
           onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}&kind=Withdrawal` as Href)}
         />
-        <Button label="Entries" icon="list" style={styles.action} disabled />
-        <Button
-          label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
-          icon="edit-2"
-          style={styles.action}
-          onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
-        />
-      </View>
-      {holding.kind === 'plan' && capabilities?.recurring ? (
-        <Card>
-          <AppText style={[typography.label, { color: colors.text3 }]}>Recurring plan</AppText>
-          <AppText
-            style={styles.summaryLine}
-            accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
-            {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} · <AmountText value={holding.amount} tier="row" /> · Next due{' '}
-            {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
-          </AppText>
-          {holding.stopDate ? (
-            <AppText style={styles.summaryLine}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
-          ) : null}
+        {holding.kind === 'plan' && capabilities?.recurring ? (
           <Button
-            label="Edit recurring plan"
-            icon="edit-2"
-            onPress={() => router.push(`/investment-form?id=${encodeURIComponent(holding.id)}` as Href)}
-          />
-          <Button
+            style={styles.action}
             label={holding.stopDate ? 'Resume recurring' : 'Stop recurring'}
             icon={holding.stopDate ? 'play' : 'pause'}
             onPress={() => {
@@ -202,34 +179,67 @@ export default function InvestmentEntriesScreen() {
               }
             }}
           />
-        </Card>
-      ) : null}
+        ) : null}
+        <Button
+          label={method === 'unitsPrice' ? 'Update price' : 'Update value'}
+          icon="edit-2"
+          style={styles.action}
+          onPress={() => router.push(`/holding-valuation-form?id=${encodeURIComponent(holding.id)}` as Href)}
+        />
+      </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
-        <AppText style={styles.summaryLine} accessibilityLabel={`Invested ${formatAmount(financial.invested, 'exact', 1)}`}>
-          Invested <AmountText value={financial.invested} tier="row" />
-        </AppText>
-        <AppText
-          style={styles.summaryLine}
-          accessibilityLabel={`${cashOrBank ? 'Balance' : 'Current value'} ${formatAmount(financial.value, 'exact', 1)}`}>
-          {holding.valuationMethod === 'accrual' ? 'Estimated value' : cashOrBank ? 'Balance' : 'Current value'}{' '}
-          <AmountText value={financial.value} tier="row" />
-        </AppText>
-        <AppText style={styles.summaryLine}>
-          {valuationDate ? `Updated ${staleness.days ?? 0} days ago` : 'Value date unknown'}
-        </AppText>
-        {(holding.valuationMethod === 'manual' || holding.valuationMethod === 'unitsPrice') && staleness.stale
-          ? <AppText style={styles.summaryLine}>Value is over 90 days old</AppText>
-          : null}
-        {holdingCapabilities(holding.type).returns ? (
-          <AppText style={styles.summaryLine} accessibilityLabel={`Gain ${formatAmount(financial.gain, 'exact', 1)}`}>
-            {financial.gain >= 0 ? 'Gain ' : 'Loss '}
-            <AmountText value={Math.abs(financial.gain)} tier="row" />
-            {formatReturn(financial.returnSummary)}
-          </AppText>
+        {holding.kind === 'plan' && capabilities?.recurring ? (
+          <>
+            <AppText
+              style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}
+              accessibilityLabel={`Recurring plan ${holding.frequency}, ${formatAmount(holding.amount, 'exact', 1)}, next due ${recurringPlan?.summary.nextDue?.dueDate ?? 'none'}`}>
+              {holding.frequency[0]?.toUpperCase()}{holding.frequency.slice(1)} - <AmountText value={holding.amount} tier="row" />
+            </AppText>
+            <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>
+              Next due {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
+            </AppText>
+            {holding.stopDate ? (
+              <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
+            ) : null}
+          </>
         ) : null}
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Invested</AppText>
+            <AppText accessibilityLabel={`Invested ${formatAmount(financial.invested, 'exact', 1)}`} style={[typography.amount, styles.summaryValue]}>
+              <AmountText value={financial.invested} tier="row" />
+            </AppText>
+          </View>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>{holding.valuationMethod === 'accrual' ? 'Estimated value' : cashOrBank ? 'Balance' : 'Current value'}</AppText>
+            <AppText
+              accessibilityLabel={`${cashOrBank ? 'Balance' : 'Current value'} ${formatAmount(financial.value, 'exact', 1)}`}
+              style={[typography.amount, styles.summaryValue]}>
+              <AmountText value={financial.value} tier="row" />
+            </AppText>
+          </View>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Value date</AppText>
+            <AppText style={[typography.meta, styles.summaryValue]}>
+              {valuationDate ? `Updated ${staleness.days ?? 0} days ago` : 'Value date unknown'}
+            </AppText>
+          </View>
+          {holdingCapabilities(holding.type).returns ? (
+            <View style={styles.summaryCell}>
+              <AppText style={[typography.label, { color: colors.text3 }]}>Gain</AppText>
+              <AppText style={[typography.amount, styles.summaryValue]} accessibilityLabel={`Gain ${formatAmount(financial.gain, 'exact', 1)}`}>
+                {financial.gain >= 0 ? '+' : '-'}<AmountText value={Math.abs(financial.gain)} tier="row" />
+                <AppText style={[typography.meta, { color: colors.text2 }]}>{formatReturn(financial.returnSummary)}</AppText>
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+        {(holding.valuationMethod === 'manual' || holding.valuationMethod === 'unitsPrice') && staleness.stale
+          ? <AppText style={[typography.meta, styles.summaryLine, { color: colors.err }]}>Value is over 90 days old</AppText>
+          : null}
         {financial.ledger.costRecovered ? (
-          <AppText style={[styles.summaryLine, { color: colors.text3 }]}>Cost recovered</AppText>
+          <AppText style={[typography.meta, styles.summaryLine, { color: colors.text3 }]}>Cost recovered</AppText>
         ) : null}
       </Card>
       <ChipRow>
@@ -299,6 +309,9 @@ const styles = StyleSheet.create({
   summaryLine: { marginTop: 7, fontSize: 12 },
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
+  summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
+  summaryCell: { width: '48%', gap: 3 },
+  summaryValue: { minHeight: 18 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
 });

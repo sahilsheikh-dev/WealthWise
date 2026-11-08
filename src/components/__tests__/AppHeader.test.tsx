@@ -117,7 +117,7 @@ describe('AppHeader', () => {
   it('shows the default menu when there are no right-side props and opens the global items', () => {
     const rendererRef: { current?: TestRenderer.ReactTestRenderer } = {};
     act(() => {
-      rendererRef.current = TestRenderer.create(<AppHeader title="Transactions" />);
+      rendererRef.current = TestRenderer.create(<AppHeader title="Home" />);
     });
     const renderer = rendererRef.current;
     if (!renderer) throw new Error('Header renderer was not created.');
@@ -129,6 +129,17 @@ describe('AppHeader', () => {
     ]);
     act(() => menuItems.find((item) => item.props.accessibilityLabel === 'Backup and restore')?.props.onPress());
     expect(mockMenuAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show the default menu outside the Home route', () => {
+    mockPathname = '/assets';
+    const rendererRef: { current?: TestRenderer.ReactTestRenderer } = {};
+    act(() => {
+      rendererRef.current = TestRenderer.create(<AppHeader title="Assets" />);
+    });
+    const renderer = rendererRef.current;
+    if (!renderer) throw new Error('Header renderer was not created.');
+    expect(renderer.root.findAllByProps({ accessibilityLabel: 'More options' })).toHaveLength(0);
   });
 
   it('renders only the supplied right-side content for every menu/action combination', () => {

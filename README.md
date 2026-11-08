@@ -28,6 +28,17 @@ no cloud or network requests at runtime.
   balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
+  On the holding details screen, recurring-plan details and financial Summary
+  values are combined in one card; recurring Stop/Resume stays in the holding
+  action row.
+  Active recurring asset plans show Stop recurring; stopped plans show Resume
+  recurring. Liability cards and details consistently use Foreclosure.
+  The global three-dot options menu appears only on the Home/Index screen;
+  assets, liabilities, reminders, backup, security, profile and theme screens
+  keep screen-specific actions instead of showing duplicate global options.
+  Liability cards keep Pay EMI, Foreclosure and conditional Entries
+  actions in one row; liability detail pages use an entries-only asset-style
+  layout with a columned Summary card.
   Recurring plans can be stopped at an inclusive date or resumed without
   changing entries, current value, returns, goal links or Emergency Fund
   links.
@@ -206,10 +217,10 @@ and copied into SQLite on the next write. The copied bytes are read back and
 compared before the legacy copy is removed; SQLite failures and mismatches keep
 the legacy backend active. Web continues to use AsyncStorage. UI metadata and
 preferences remain in AsyncStorage. Persisted AppData schema
-version 20 is current; P29-Q changes only the storage backend. P29-U adds
+version 21 is current; P29-Q changes only the storage backend. P29-U adds
 optional holding valuation fields without restructuring existing holding data,
 and P29-W adds an optional recurring-liability closure record. The migration
-chain upgrades supported data from schema versions 1 through 19.
+chain upgrades supported data from schema versions 1 through 20.
 Backup import accepts dates from 1900 through 2100, verifies file integrity
 and validates imported data, applying supported migrations where required.
 Backup export refuses data that would change on import and refuses plain files

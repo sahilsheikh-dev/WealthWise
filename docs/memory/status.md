@@ -2,12 +2,20 @@
 
 # Status
 
-- Current task: P29-Y Gate 1 repair complete; P29-X stop/resume implementation
+- Current task: owner recurring-stop, foreclosure, and Home-only menu refinements complete.
+  P29-Y Gate 1 repair complete; P29-X stop/resume implementation
   remains the latest product change.
+  The recurring plan details and financial Summary now share one card on the
+  investment entries screen; Stop/Resume is in the holding action row above the
+  card. The owner's current edit has no Entries or Edit recurring plan control
+  on the holding screen; removed screen data is not to be restored.
   Schema v21 stores one optional `stopDate`; plan schedules, pending items,
   Budget linked rows, reminders and goal projections share the inclusive cutoff.
   Stop/resume is one store write with Undo and does not change entries, value,
   returns or links.
+  Verification: the real `npm test -- --coverage` run passed 92 suites with
+  1192 passed tests, 1 skipped and 1193 total. The six-gate sequence is
+  recorded in [PROGRESS.md](../PROGRESS.md).
   P29-W implements early foreclosure for recurring liabilities.
   The report-only inventory was committed first. Schema v20 adds optional
   closure metadata; close, payment, optional charge and zero-balance settlement
@@ -61,20 +69,22 @@
 - Schema version: v21. The P29-O2 ledger-only v19 storage redesign was
   cancelled; P29-U uses v19 for additive optional valuation metadata.
   P29-W adds optional recurring-liability closure metadata in v20.
+  P29-X adds optional recurring-stop metadata; P29-Z is documentation/ledger
+  consistency and adds no behavior, schema, or UI source change.
   P29-L removes the retired coverGoals and policy
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 92 suites, 1191 tests (1191 passed; one opt-in stress benchmark
+- Test counts: 92 suites, 1193 tests (1192 passed; one opt-in stress benchmark
   skipped); all six ordered gate results are recorded in
   [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
   1104-test run and P29-M's blocked reproduction remain historical records in
   [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 92 suites, 1191 tests passed, 1 skipped (P29-Y); all six final
+- Latest validated run: 92 suites, 1193 tests (1192 passed, 1 skipped); all six final
   gates exit 0. Fresh directory
   coverage and test counts are recorded in [PROGRESS.md](../PROGRESS.md).
   Exact commands and methodology are in [PROGRESS.md](../PROGRESS.md).
-- Latest full Jest run: 92 suites, 1191 tests passed, 1 skipped with coverage thresholds
+- Latest full Jest run: 92 suites, 1192 passed, 1 skipped, 1193 total; coverage thresholds
   met. Final ordered gate results are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

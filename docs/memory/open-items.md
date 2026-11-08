@@ -4,9 +4,32 @@
 
 ## Unresolved
 
+- **P29-Z documentation verification:** source wins over docs; schema v21,
+  migration/archive range through `.premigration.v20`, Foreclosure labels,
+  Home-only menu rule and real Gate 1 counts are recorded. No behavior, schema
+  or UI source change is part of P29-Z.
+- **Home-only global menu physical-device check (2026-11-05):** verify the
+  three-dot options menu remains present on Index/Home and absent on Assets,
+  Liabilities and detail screens, including backup, reminders, security,
+  profile and theme routes, at font scales 1.3 and 2.0.
+- **Recurring asset stop label physical-device check:** verify active recurring
+  cards show Stop recurring and stopped plans show Resume recurring while the
+  action remains within the shared instrument-card row.
+- **Holding and liability layout physical-device check (2026-11-05):** verify
+  the two-column investment Summary, same-row liability actions, conditional
+  Entries button and liability Summary/details layout at font scales 1.3 and
+  2.0 on iOS and Android. Automated route, ownership and focused font-scale
+  tests pass, and all six gates exit 0.
+- **Holding layout validation (2026-11-05):** the owner-edited holding screen
+  passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
+  are green: 92 suites passed, with 1192 tests passed and 1 skipped.
+- **Merged holding summary card physical-device check:** verify the Recurring
+  plan and Summary information remain readable in one card and Stop/Resume stays
+  in the action row at font scales 1.3 and 2.0 on iOS and Android.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
-  passed tests with `1` skipped. The project inventory, status memory and
+  passed tests with `1` skipped at that repair step. The final real run is
+  `1192` passed tests with `1` skipped (1193 total). The project inventory, status memory and
   ledger now match the repaired run; all six gates pass.
 - **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
   stop-date filtering, stopped card text, past unpaid dues, Deposit

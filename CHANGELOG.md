@@ -6,6 +6,20 @@
 
 ### Phase 29
 
+- Foreclosure is the consistent liability action label. Every recurring asset
+  card can stop or resume a plan from the same instrument-card action row. The
+  Home-only global options menu now appears only on Index/Home; it is not shown
+  on Assets, Liabilities, backup, reminders, security, profile or theme routes.
+- Holding and liability details now use owner-preserved compact layouts. The
+  investment Summary card combines recurring-plan and financial details into
+  two columns where appropriate, while liability cards expose Pay EMI, Close
+  loan early and conditional Entries buttons in one row. Liability entries
+  retain a columned asset-style Summary and remove the old Schedule/Payments
+  tabs and sort/filter controls.
+- The owner-edited holding details layout keeps Recurring plan details and
+  financial Summary values in one card, with Stop/Resume in the holding action
+  row. Removed unwanted screen controls and data remain removed; route smoke
+  tests pass at 1.3 and 2.0 font scales, and all six gates pass.
 - P29-X adds recurring-plan stop and resume controls. An inclusive optional
   stop date removes only schedule slots after the cutoff from Transactions,
   Home pending dues, Budget planned rows and reminders; past unpaid dues remain
