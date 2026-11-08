@@ -34,6 +34,7 @@ const policyFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter a policy name.').max(40),
   insurer: z.string().trim().max(40),
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
+  coverGoalId: z.string(),
   premium: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid premium.')
     .transform(Number).pipe(z.number().positive().max(10_000_000)),
   frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
@@ -86,6 +87,7 @@ export default function PolicyFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const policyId = Array.isArray(id) ? id[0] : id;
   const policy = useAppStore((state) => state.data.policies.find((item) => item.id === policyId));
+  const coverGoals = useAppStore((state) => state.data.coverGoals);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const today = todayISO();
@@ -102,6 +104,7 @@ export default function PolicyFormScreen() {
       name: policy?.name ?? '',
       insurer: policy?.insurer ?? '',
       kind: policy?.kind ?? 'other',
+      coverGoalId: policy?.coverGoalId ?? 'automatic',
       premium: policy ? String(policy.premium) : '',
       frequency: policy?.frequency ?? 'yearly',
       startDate: policy?.startDate ?? today,
@@ -230,6 +233,23 @@ export default function PolicyFormScreen() {
                 if (isPolicyKind(value)) field.onChange(value);
               }}
               error={errors.kind?.message}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="coverGoalId"
+          render={({ field }) => (
+            <Dropdown
+              label="Counts toward"
+              accessibilityLabel="Counts toward"
+              value={field.value}
+              options={[
+                { value: 'automatic', title: 'Automatic by type' },
+                ...coverGoals.map((goal) => ({ value: goal.id, title: goal.name })),
+              ]}
+              onChange={field.onChange}
+              error={errors.coverGoalId?.message}
             />
           )}
         />
@@ -392,6 +412,7 @@ function buildPolicyPatch(values: PolicyFormOutput): Partial<Omit<Policy, 'id' |
     name: values.name,
     insurer: values.insurer,
     kind: values.kind,
+    coverGoalId: values.coverGoalId === 'automatic' ? undefined : values.coverGoalId,
     premium: values.premium,
     frequency: values.frequency,
     startDate: values.startDate,

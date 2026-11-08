@@ -10,7 +10,7 @@ import {
 } from '../investmentActions';
 import { holdingInvested, holdingValue } from '../portfolio';
 import { addPlan } from '../planActions';
-import { estimatedValue, planInvested } from '../sip';
+import { planInvested, planValue } from '../sip';
 import type { AppData, PlanHolding } from '../types';
 
 const idSequence = (...ids: string[]) => {
@@ -41,7 +41,7 @@ describe('investment ledger actions and valuation', () => {
     expect(data.transactions[1]).toMatchObject({
       type: 'income', category: 'Withdrawal', note: 'Gold withdrawal', amount: 2_000,
     });
-    expect(holdingInvested(data.holdings[0]!)).toBe(13_000);
+    expect(holdingInvested(data.holdings[0]!)).toBe(15_000);
     expect(holdingValue(data.holdings[0]!, '2026-10-10')).toBe(13_000);
     expect(validateIntegrity(data)).toEqual([]);
 
@@ -136,7 +136,7 @@ describe('investment ledger actions and valuation', () => {
     expect(rows[3]).toMatchObject({ note: 'Other source', category: 'Other' });
   });
 
-  it('applies plan withdrawals using the same daily growth factor and excludes them from deposit progress', () => {
+  it('keeps plan current value to the opening balance and recorded entries', () => {
     const plan: PlanHolding = {
       id: 'plan', kind: 'plan', name: 'Growth', type: 'Mutual fund / SIP', frequency: 'monthly',
       amount: 100, ratePct: 12, stepUpPct: 0, tenureYears: 1, startDate: '2025-10-10',
@@ -146,9 +146,8 @@ describe('investment ledger actions and valuation', () => {
         { id: 'withdrawal', date: '2026-04-10', amount: 500, note: '', kind: 'Withdrawal' },
       ],
     };
-    const oracle = 1_000 + 1_000 * 1.12 - 500 * 1.12 ** (183 / 365);
-    expect(estimatedValue(plan, '2026-10-10')).toBeCloseTo(oracle, 8);
-    expect(planInvested(plan)).toBe(1_500);
+    expect(planValue(plan, '2026-10-10')).toBe(1_500);
+    expect(planInvested(plan)).toBe(2_000);
   });
 
   it('includes manual entries only after a value snapshot and preserves no-entry valuation', () => {
@@ -171,6 +170,44 @@ describe('investment ledger actions and valuation', () => {
         ? { ...holding, valueAsOf: undefined }
         : holding),
     };
-    expect(holdingValue(undatedSnapshot.holdings[0]!, '2026-10-10')).toBe(6_500);
+    expect(holdingValue(undatedSnapshot.holdings[0]!, '2026-10-10')).toBe(5_500);
+  });
+
+  it('clears holding links in plan and snapshot budget items without changing the asset links elsewhere', () => {
+    const manual = addHolding(empty(), {
+      name: 'Cash reserve', type: 'Cash', invested: 0, value: 30_000, valueAsOf: '2026-10-10',
+    }, () => 'manual');
+    const data: AppData = {
+      ...manual,
+      budgetPlan: {
+        ...manual.budgetPlan,
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'linked-plan', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10', source: 'custom', linkedIncluded: false, incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        items: [{
+          id: 'linked-snapshot', sectionId: 'investments', name: 'Emergency cash',
+          mode: 'amount', value: 30_000, frequency: 'monthly',
+          firstDueMonth: '2026-10', holdingId: 'manual',
+        }],
+      }],
+    };
+    const kept = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'keep' });
+    expect(kept.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(kept.transactions.every((transaction) => transaction.source === undefined)).toBe(true);
+
+    const deleted = deleteHoldingWithTransactions(data, 'manual', { linkedTransactions: 'delete' });
+    expect(deleted.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(deleted.transactions).toEqual([]);
   });
 });

@@ -27,7 +27,7 @@ export function createSafeStorage(
     onWriteSuccess?: (bytes: number) => void;
   },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 } | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 } | null = null;
   let prerepairRaw: string | null = null;
   return {
     async getItem(name) {
@@ -44,12 +44,22 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12 || envelope.version === 13) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4 || envelope.version === 5 || envelope.version === 6 || envelope.version === 7 || envelope.version === 8 || envelope.version === 9 || envelope.version === 10 || envelope.version === 11 || envelope.version === 12 || envelope.version === 13 || envelope.version === 14) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state
           ) {
             premigration = { raw, version: envelope.version };
+            const rawData: unknown = envelope.state.data;
+            const rawRecord = typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)
+              ? rawData as Record<string, unknown>
+              : null;
+            if (rawRecord && resolveEfAllocation({
+              efAllocation: rawRecord.efAllocation,
+              efCustomBuckets: Array.isArray(rawRecord.efCustomBuckets) ? rawRecord.efCustomBuckets : [],
+            }).repaired) {
+              prerepairRaw = raw;
+            }
           } else if (typeof envelope.state !== 'object' || envelope.state === null || !('data' in envelope.state)) {
             reason = 'invalid-schema';
           } else {

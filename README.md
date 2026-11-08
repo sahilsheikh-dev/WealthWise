@@ -31,8 +31,8 @@ no cloud or network requests at runtime.
   schedules, due tracking and cash-flow views.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
-- Insurance policies, policy-payment tracking and cover targets for term life,
-  health, motor, home and other cover.
+- Insurance policies, policy-payment tracking and editable cover goals for
+  term life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
 - Local payment reminders with privacy-aware notification text and an
@@ -110,9 +110,39 @@ in `src/domain/`. The domain layer has no React or Expo dependency; date and
 identifier inputs are supplied at the boundary where needed. Zod schemas
 validate persisted and imported data.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 13 is
+### Investment return calculations
+
+Invested is the opening amount plus all deposit entries. Withdrawals are shown
+separately and do not reduce Invested. Zero entries are ignored; same-day
+entries are summed. Current value uses a recorded valuation when one exists:
+add deposits and subtract withdrawals dated after that valuation, through the
+requested as-of date. Entries dated on or before the valuation are treated as
+already included. Without a recorded valuation, current value is opening plus
+posted deposits minus posted withdrawals through the as-of date. Values never
+fall below zero. The app does not estimate interest; current value changes
+only when entries are recorded or a valuation is entered.
+
+The absolute gain and return are:
+
+`gain = current value + withdrawals - Invested`
+
+`absolute return % = gain / Invested × 100`
+
+When Invested is zero, the return is `null` and the card says "No return yet".
+XIRR solves
+`sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`, using deposits
+as negative cash flows, withdrawals as positive cash flows, and current value
+as positive on the valuation date. Multiple entries use the XIRR label; one
+lump sum uses CAGR: `(current value / Invested)^(365 / span days) - 1`.
+Annualised XIRR/CAGR appears only when the first cash flow to valuation date
+span is at least 365 days. Under 365 days the card shows only the labelled
+absolute return. Cash and Bank holdings show Balance, Deposited and Withdrawn,
+never a return percentage, XIRR or CAGR. If entries predate a recorded
+valuation, the card explains that they are assumed included in the valuation.
+
+Zustand persists app data through AsyncStorage. Persisted schema version 15 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 13. Backup import verifies the file integrity and validates
+versions 1 through 14. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -121,24 +151,27 @@ under `app/`.
 
 ### Investment returns and linked amounts
 
-For a dated holding ledger, contributions are the sum of deposit entries and
-withdrawals are the sum of withdrawal entries; zero entries are ignored and
-same-date entries are summed. Absolute gain is
-`current value + withdrawals - contributions`. Absolute return is
-`absolute gain / contributions`; when contributions are zero, the app shows
-"No return yet".
+A goal's saved amount is the sum of the full current values of all assets linked
+to that goal, so an asset may be counted in multiple goals. Emergency-fund
+bucket targets use the user-set goal target with the three-month minimum
+retained only as a floor; each bucket's available amount is the sum of the full
+values of assets linked to that bucket.
 
-XIRR solves the dated cash-flow equation
-`sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`. Deposits are
-negative cash flows, withdrawals are positive cash flows, and current value is
-positive on the valuation date. XIRR and single-lump CAGR are shown only when
-the first cash flow to valuation span is at least 365 days; under that span,
-the app shows only absolute return.
+### Insurance cover goals
 
-CAGR is `(current value / contributions)^(365 / span days) - 1`. A goal's saved
-amount is the sum of the full current values of all assets linked to that goal,
-so an asset may be counted in multiple goals. Emergency-fund bucket targets use
-the user-set goal target with the three-month minimum retained only as a floor.
+Cover goals are a user-managed list of up to 20 goals. Names are unique without
+case sensitivity; each policy kind can be assigned to at most one goal, and a
+goal may cover a custom policy kind or no kind. Targets can use the existing
+income-multiple, fixed-amount, active-only or no-target modes. Active
+non-savings policies count toward an explicit goal assignment first, then fall
+back to the goal matching their policy kind. Savings policies are excluded
+from goal totals. Policies that do not count toward a goal remain visible under
+"Not in any cover goal"; Home's total cover, yearly premium and next renewal
+continue to use the existing policy summary. Custom-goal premiums use the
+generic Insurance premium category for future dues, planned rows and newly
+recorded payments. Typed premium categories remain derived from policy kind.
+Existing transactions keep their recorded category. The Budget Insurance
+system section and its categories are unchanged.
 
 ## Data and privacy
 

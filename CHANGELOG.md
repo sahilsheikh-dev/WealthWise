@@ -4,6 +4,35 @@
 
 ## [Unreleased]
 
+### Phase 29
+
+- Added Today controls, centered dropdown/paid/scope dialogs, goal-year support
+  for 1990–2100, the Home Insurance box and actual due-payment amounts.
+- Added Budget start-month handling, schema-v14 holding links, plan/manual
+  linked asset behavior, demo coverage and holding-link integrity.
+- P29-F4 stabilization tests and ledger audit pass: 84 suites and 1037 tests,
+  TypeScript, lint with zero warnings, Expo Doctor 21/21, and Android/iOS
+  exports all pass. Coverage uses a fresh `coverage-final.json`; no thresholds
+  or exclusions changed.
+- Owner decision DEC-P29E-HOLDING-DELETE withdraws the never-existing Undo
+  expectation after holding deletion. The accepted behavior is clearing every
+  Budget link in the same write; P29-B through P29-F4 are closed. No Home
+  source was edited.
+- P29-G adds editable Insurance cover goals and policy assignments, migrates
+  schema v14 to v15, and retains backup imports through v14. Existing policies
+  remain visible even when they do not count toward a cover goal; Home's total
+  cover, yearly premium and next-renewal semantics are unchanged.
+- P29-G validation: 84 suites and 1054 tests pass; TypeScript, lint with zero
+  warnings, Expo Doctor 21/21, and Android/iOS exports pass. Custom-goal future
+  premiums use the generic Insurance category; existing transaction history
+  retains its stored category.
+- P29-H corrects holding Invested, current value and return calculations with
+  opening capital included, dated valuation handling, no estimated interest,
+  and Cash/Bank return suppression. It does not change the persisted schema or
+  the owner-managed Home screen.
+- P29-H validation: 84 suites/1060 tests pass; TypeScript, lint with zero
+  warnings, Expo Doctor 21/21, and Android/iOS exports all pass.
+
 ### Investments and goals
 
 - Added shared pure return calculations for holdings and plans: absolute gain

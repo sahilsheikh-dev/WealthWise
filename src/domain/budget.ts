@@ -7,7 +7,10 @@ import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import { EARNED_INCOME_CATEGORIES } from './types';
 import { formatINR } from '../lib/format';
 import { BUDGET_GROUPS, budgetGroupFor, type BudgetGroup } from './budgetGroups';
-import { isInsuranceBudgetCategory, policyPremiumCategory } from './policyCategories';
+import {
+  isInsuranceBudgetCategory,
+  policyPremiumCategoryFor,
+} from './policyCategories';
 import type { ScheduleRow } from './schedule';
 import type {
   AppData,
@@ -223,7 +226,8 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
     for (const row of policySchedule(policy, asOf).rows) {
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
-        kind: 'policy', id: policy.id, name: policy.name, category: policyPremiumCategory(policy.kind),
+        kind: 'policy', id: policy.id, name: policy.name,
+        category: policyPremiumCategoryFor(policy, data.coverGoals),
         dueDate: row.dueDate, plannedAmount: row.amount, status: row.status,
         paidAmount: row.paidAmount ?? 0,
       });
@@ -272,7 +276,8 @@ export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISOD
   }
   for (const policy of data.policies) {
     rows.push(...linkedRowsFor(
-      'policy', policy.id, policy.name, policyPremiumCategory(policy.kind), key, policySchedule(policy, asOf).rows,
+      'policy', policy.id, policy.name, policyPremiumCategoryFor(policy, data.coverGoals), key,
+      policySchedule(policy, asOf).rows,
     ));
   }
   return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
@@ -602,7 +607,9 @@ export type BudgetMutationErrorCode =
   | 'section-limit'
   | 'invalid-item'
   | 'invalid-frequency'
-  | 'percent-only-monthly';
+  | 'percent-only-monthly'
+  | 'invalid-holding-link'
+  | 'holding-link-duplicate';
 
 export class BudgetMutationError extends Error {
   constructor(readonly code: BudgetMutationErrorCode, message: string) {
@@ -1165,10 +1172,21 @@ export function budgetLineActual(
   options: { excludePolicyPayments?: boolean } = {},
 ): number {
   const customCategories = customBudgetCategories(data);
+  const linkedHoldingIds = new Set(
+    [
+      ...(data.budgetPlan?.items ?? []),
+      ...(data.monthBudgets?.filter((snapshot) => snapshot.month === month).flatMap((snapshot) => snapshot.items) ?? []),
+    ]
+      .filter((item) => item.name === category && item.holdingId)
+      .map((item) => item.holdingId),
+  );
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
-    && budgetCategoryForTransaction(row, customCategories) === category
     && (row.type === 'expense' || row.type === 'invest')
+    && (
+      (row.source?.kind === 'holding-entry' && linkedHoldingIds.has(row.source.parentId))
+      || budgetCategoryForTransaction(row, customCategories) === category
+    )
     && !(options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }
@@ -1694,7 +1712,10 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
         ? 'EMI'
         : isInsuranceBudgetCategory(transaction.category)
           ? transaction.category
-          : policyPremiumCategory(data.policies.find((policy) => policy.id === source.parentId)?.kind ?? 'other');
+          : policyPremiumCategoryFor(
+            data.policies.find((policy) => policy.id === source.parentId) ?? { kind: 'other' },
+            data.coverGoals,
+          );
     const title = kind === 'plan'
       ? data.holdings.find((holding) => holding.id === source.parentId)?.name ?? 'Investment'
       : kind === 'liability'

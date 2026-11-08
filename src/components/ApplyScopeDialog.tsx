@@ -24,17 +24,19 @@ export function ApplyScopeDialog({
 }) {
   const [scope, setScope] = useState<'month' | 'following' | null>(null);
   useEffect(() => {
-    if (visible) setScope(null);
+    if (!visible) return;
+    const timer = setTimeout(() => setScope(null), 0);
+    return () => clearTimeout(timer);
   }, [visible]);
 
   return (
     <TopAnchoredSheet visible={visible} onClose={onCancel} sheetTestID="apply-scope-dialog" centered contentStyle={styles.card}>
       <View style={styles.content}>
-        <AppText weight="bold" style={typography.h2}>{title}</AppText>
+        <AppText weight="bold" style={typography.h1}>{title}</AppText>
         <Chip label="This month only" selected={scope === 'month'} onPress={() => setScope('month')} />
         <Chip label="This and following months" selected={scope === 'following'} onPress={() => setScope('following')} />
         <View style={styles.actions}>
-          <Button label="Cancel" variant="secondary" onPress={onCancel} />
+          <Button label="Cancel" variant="soft" onPress={onCancel} />
           <Button label="Apply" onPress={() => { if (scope) onApply(scope); }} />
         </View>
       </View>

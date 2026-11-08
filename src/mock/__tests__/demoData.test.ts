@@ -79,12 +79,17 @@ describe('four-month demo data', () => {
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
     ]));
     expect(coverGoalSummaries(data, today)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'term-life', state: 'gap' }),
-      expect.objectContaining({ type: 'health', target: 2_000_000 }),
-      expect.objectContaining({ type: 'motor', state: 'covered' }),
-      expect.objectContaining({ type: 'home', state: 'covered' }),
-      expect.objectContaining({ type: 'other', state: 'missing' }),
+      expect.objectContaining({ id: 'cover-term-life', kind: 'term-life', state: 'gap' }),
+      expect.objectContaining({ id: 'cover-health', kind: 'health', target: 2_000_000 }),
+      expect.objectContaining({ id: 'cover-motor', kind: 'motor', state: 'covered' }),
+      expect.objectContaining({ id: 'cover-home', kind: 'home', state: 'missing' }),
+      expect.objectContaining({ id: 'cover-other', kind: 'other', state: 'missing' }),
+      expect.objectContaining({ id: 'demo-cover-goal-family', kind: null, state: 'covered' }),
     ]));
+    expect(data.policies.find((policy) => policy.id === 'demo-policy-home')?.coverGoalId)
+      .toBe('demo-cover-goal-family');
+    expect(coverGoalSummaries(data, today).find((goal) => goal.id === 'demo-cover-goal-family')?.activePolicyIds)
+      .toContain('demo-policy-home');
     expect(data.transactions.filter((transaction) => transaction.source?.kind === 'policy-payment')
       .map((transaction) => transaction.category)).toEqual(expect.arrayContaining([
       'Health premium',

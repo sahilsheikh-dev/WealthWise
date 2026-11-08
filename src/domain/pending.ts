@@ -6,7 +6,7 @@ import {
 import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
 import { investCategoryFor } from './links';
-import { isInsuranceBudgetCategory, policyPremiumCategory } from './policyCategories';
+import { isInsuranceBudgetCategory, policyPremiumCategoryFor } from './policyCategories';
 import { policySchedule } from './policySchedule';
 import { liabilitySchedule, planSchedule } from './schedule';
 import type { AppData, ISODate, Transaction } from './types';
@@ -116,7 +116,7 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
     if (policy.status !== 'active') continue;
     const rows = policySchedule(policy, today).rows;
     const firstUnpaid = rows.find((row) => row.status !== 'paid');
-    const category = policyPremiumCategory(policy.kind);
+    const category = policyPremiumCategoryFor(policy, data.coverGoals);
     for (const row of rows) {
       if (row.status === 'paid' || monthKey(row.dueDate) !== month) continue;
       representedCategories.add(category);

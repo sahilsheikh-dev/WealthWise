@@ -1,33 +1,40 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
 
 # Status
 
-- Current task: P24-A CR-1 local reminders is complete. DEC-P24A and both the
-  research commit `372476c6c6185e926de57ead1d52bb0bdc57974a` and implementation
-  commit `f5a1a38...` are recorded in [PROGRESS.md](../PROGRESS.md) and
-  verified as commit objects; the abbreviated implementation hash must be
-  expanded by `git cat-file`.
-- Schema version: v13. No native module or persisted schema change was
-  introduced.
-- Current task: P29-A investment returns, emergency-fund buckets and full-value
-  linked goals is implemented and under final verification.
-- Test counts: 84 suites, 1013 tests passed on Node 26.13.0 in the 2026-11-02
-  P29-A coverage run.
-- Coverage: `src/data/` 94.23% lines / 87.74% branches; `src/domain/` 98.32%
-  lines / 93.05% branches; pure `src/lib/` 100% / 100%. The new
-  `src/domain/backupCrypto.ts` has 100% line and branch coverage.
-- KDF: scrypt `N=2^16, r=8, p=1` took 247.4 ms on the Node 26.13.0 development
-  machine. Real-phone timing remains unverified.
-- P29-A final gates pass in order: coverage exit 0, TypeScript exit 0, Expo lint
-  exit 0, Expo Doctor 21/21 exit 0, Android export exit 0 and iOS export exit 0.
-- P29-A coverage is computed by summing covered/total lines and branches per
-  directory: `src/data/` 95.34%/90.91%, `src/domain/` 99.04%/95.23%, pure
-  `src/lib/` 100%/100%.
+- Current task: P29-H asset invested/current-value/return correction. It is
+  complete; `app/(tabs)/index.tsx` remains user-owned and was not edited.
+- Phase 29 status: P29-A through P29-H are Done, including P29-F2, P29-F3 and
+  P29-F4. The owner decision DEC-P29E-HOLDING-DELETE withdraws Undo after
+  holding deletion; the retained requirement, clearing every Budget holding
+  link in the same write, is proven by the existing store test.
+- Schema version: v15. P29-E is the Budget holding-link migration; P29-G
+  migrates v14 cover goals to editable records.
+- Runtime: Node.js 26.13.0.
+- Test counts: 84 suites, 1060 tests.
+  Latest validated run: 84 suites, 1060 tests passed with
+  `npm test -- --coverage` on 2026-11-03.
+- All six P29-H gates exit 0: Jest coverage, TypeScript, Expo lint with zero
+  warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
+  and exit codes are in [PROGRESS.md](../PROGRESS.md).
+- Fresh P29-H coverage was generated after deleting `coverage/`, then measured
+  from `coverage-final.json`: `src/data` 658/696 lines (94.54%), 679/774
+  branches (87.73%); `src/domain` 3279/3342 lines (98.11%), 3193/3436
+  branches (92.93%); `src/lib` 107/107 lines and 126/126 branches (100%).
+  Informational branch coverage: `src/domain/budget.ts` 762/841 (90.61%) and
+  `src/data/createAppStore.ts` 93/107 (86.92%). Configured per-file thresholds
+  remain authoritative; P29-F2's advisory headroom targets were withdrawn.
+- `npx expo lint` exits 0 with zero warnings and no eslint-disable comments
+  added.
+- The P29-F4 assertion audit compares 531d659 with its audited worktree:
+  2050 to 2184 `expect(` occurrences (+134); 41 removed expectation lines are
+  documented replacements, not removed-only assertions.
+- The prior Gate 1 timeout output is unavailable and cannot be quoted. The
+  final fresh full run passes; see the ledger for the historical isolated-run
+  information and the preliminary TypeScript correction.
+- Coverage and UI tests are simulated. See [open-items.md](open-items.md) for
+  physical-device checks not verified.
 - Encrypted backups protect exported files only. On-device data remains
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
-- Open release items: source-workbook records that do not map faithfully to
-  the current app schema are not imported; see [open-items.md](open-items.md).
-
-The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth for
-step verdicts, coverage, device checks and release records. Simulated UI tests
-do not establish actual iOS or Android behavior.
+- The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth
+  for decisions, status, acceptance evidence, gates and device checks.

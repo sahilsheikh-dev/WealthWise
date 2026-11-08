@@ -89,6 +89,52 @@ it('hydrates v12 item recurrence defaults and archives the original bytes once',
   await second.getState().actions.eraseAllData();
   expect(storage.values.has(archiveKey)).toBe(false);
 });
+
+it('hydrates v14 cover goals, archives exact original bytes once and erases the archive', async () => {
+  const storage = new MemoryStorage();
+  const data = {
+    ...mockAppData,
+    coverGoals: [
+      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+      { type: 'health', targetMode: 'amount' },
+      { type: 'motor', targetMode: 'active-only' },
+      { type: 'home', targetMode: 'active-only' },
+      { type: 'other', targetMode: 'active-only' },
+    ],
+  };
+  const originalBytes = JSON.stringify({ state: { data }, version: 14 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { isDev: false });
+  await waitForHydration(first);
+  expect(first.getState().data.coverGoals).toEqual([
+    { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
+    { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
+    { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+    { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+    { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
+  ]);
+  const { coverGoals: _coverGoals, ...migratedOtherData } = first.getState().data;
+  const { coverGoals: _oldCoverGoals, ...otherData } = data;
+  expect(migratedOtherData).toEqual(otherData);
+  const archiveKey = 'wealthwise.app.v1.premigration.v14';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+
+  storage.values.set('wealthwise.app.v1', originalBytes);
+  storage.values.set(archiveKey, 'preserve-existing-v14-archive');
+  const third = makeStore(storage, { isDev: false });
+  await waitForHydration(third);
+  expect(storage.values.get(archiveKey)).toBe('preserve-existing-v14-archive');
+  expect((await third.getState().actions.eraseAllData()).ok).toBe(true);
+  expect(storage.values.has(archiveKey)).toBe(false);
+});
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
@@ -107,28 +153,144 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
-  it('persists a cover-goal target change once and Undo restores deep-equal data', async () => {
+  it('does not publish Undo or writes for unchanged or missing policies', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    const before = store.getState().data;
+
+    let writes = storage.setItemCalls;
+    actions.setPolicyStatus('missing-policy', 'active');
+    expect(storage.setItemCalls - writes).toBe(0);
+    expect(store.getState().data).toEqual(before);
+
+    actions.deletePolicy('missing-policy');
+    expect(store.getState().data).toEqual(before);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
+    actions.updatePolicy('missing-policy', { status: 'lapsed' });
+    expect(store.getState().data).toEqual(before);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
+    store.setState({ status: 'loading' });
+    const replacement = await actions.replaceAllData(before);
+    expect(replacement).toEqual({
+      ok: false,
+      message: 'Data can only be replaced after the app has loaded.',
+    });
+    expect(store.getState().data).toEqual(before);
+
+    store.setState({ status: 'ready' });
+    const invalid = await actions.replaceAllData(JSON.parse('{}'));
+    expect(invalid.ok).toBe(false);
+    expect(store.getState().data).toEqual(before);
+
+    storage.values.delete('wealthwise.app.v1.preimport');
+    const undo = await actions.undoImport();
+    expect(undo.ok).toBe(false);
+  });
+
+  it('adds a cover goal in one write and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
     await waitForHydration(store);
     useUIStore.getState().setActionToast(null);
     const before = store.getState().data;
-    let writes = storage.setItemCalls;
+    const writes = storage.setItemCalls;
 
-    store.getState().actions.setCoverGoalTarget({
-      type: 'health',
-      targetMode: 'amount',
-      targetValue: 1_000_000,
+    store.getState().actions.addCoverGoal({
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'amount', value: 1_000_000 },
     });
     expect(storage.setItemCalls - writes).toBe(1);
-    expect(store.getState().data.coverGoals.find((goal) => goal.type === 'health'))
-      .toEqual({ type: 'health', targetMode: 'amount', targetValue: 1_000_000 });
+    expect(store.getState().data.coverGoals.at(-1)).toEqual({
+      id: 'fixed-id',
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'amount', value: 1_000_000 },
+    });
 
     const undo = useUIStore.getState().actionToast?.onAction;
     if (!undo) throw new Error('Cover-goal Undo was not set.');
-    writes = storage.setItemCalls;
+    const undoWrites = storage.setItemCalls;
     undo();
+    expect(storage.setItemCalls - undoWrites).toBe(1);
+    expect(store.getState().data).toEqual(before);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('updates all cover-goal fields in one write and Undo restores deep-equal data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+
+    store.getState().actions.updateCoverGoal('cover-health', {
+      name: 'Family health',
+      kind: null,
+      target: { mode: 'amount', value: 1_000_000 },
+    });
     expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.coverGoals.find((goal) => goal.id === 'cover-health')).toEqual({
+      id: 'cover-health',
+      name: 'Family health',
+      kind: null,
+      target: { mode: 'amount', value: 1_000_000 },
+    });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Cover-goal Undo was not set.');
+    const undoWrites = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - undoWrites).toBe(1);
+    expect(store.getState().data).toEqual(before);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('deletes a cover goal and clears assigned policies in one write with exact Undo', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBeforeAdd = storage.setItemCalls;
+    store.getState().actions.addPolicy({
+      name: 'Assigned health',
+      insurer: 'Demo',
+      kind: 'health',
+      coverGoalId: 'cover-health',
+      premium: 1_000,
+      frequency: 'yearly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 10,
+      trackFrom: '2026-01-01',
+      currentValue: null,
+      valueAsOf: null,
+    });
+    expect(storage.setItemCalls - writesBeforeAdd).toBe(1);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    const assignedPolicy = before.policies[0];
+    if (!assignedPolicy) throw new Error('Assigned policy was not created.');
+    expect(assignedPolicy.coverGoalId).toBe('cover-health');
+    const writes = storage.setItemCalls;
+
+    store.getState().actions.deleteCoverGoal('cover-health');
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.coverGoals.some((goal) => goal.id === 'cover-health')).toBe(false);
+    expect(store.getState().data.policies).toEqual([{ ...assignedPolicy, coverGoalId: undefined }]);
+    expect(store.getState().data.transactions).toEqual(before.transactions);
+    expect(useUIStore.getState().actionToast).toMatchObject({ actionLabel: 'Undo' });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Cover-goal Undo was not set.');
+    const undoWrites = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - undoWrites).toBe(1);
     expect(store.getState().data).toEqual(before);
     useUIStore.getState().setActionToast(null);
   });
@@ -683,7 +845,7 @@ describe('createAppStore persistence', () => {
       linkedIncluded: true,
     }]);
     expect(storage.values.get('wealthwise.app.v1.premigration.v9')).toBe(rawV9);
-    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1')).toHaveLength(2);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1')).toHaveLength(1);
     expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v9')).toHaveLength(1);
 
     storage.setItemCalls = 0;
@@ -1005,7 +1167,7 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
-  it('clears one due and bulk-settles dues with one persisted write per action', async () => {
+  it('clears an actual due amount and undoes it with one persisted write per action', async () => {
     const storage = new MemoryStorage();
     const initial = {
       ...emptyAppData('2026-01-01'),
@@ -1034,16 +1196,29 @@ describe('createAppStore persistence', () => {
     const actions = store.getState().actions;
 
     let writesBefore = storage.setItemCalls;
+    const beforeClear = structuredClone(store.getState().data);
     const firstPending = pendingItems(store.getState().data, '2026-08', '2026-10-10')
       .find((item) => item.source.kind === 'plan');
     if (!firstPending || firstPending.source.kind !== 'plan') throw new Error('Expected a plan due.');
     const entryId = actions.clearDue(
       { kind: 'plan', id: 'past-plan' },
       firstPending.source.slotId,
+      75,
     );
     expect(entryId).toBe('due-1');
     expect(storage.setItemCalls - writesBefore).toBe(1);
+    const afterClear = store.getState().data;
+    const updatedHolding = afterClear.holdings.find((holding) => holding.id === 'past-plan');
+    if (!updatedHolding || updatedHolding.kind !== 'plan') throw new Error('Updated plan missing.');
+    expect(updatedHolding.logs[0]?.amount).toBe(75);
+    expect(afterClear.transactions.at(-1)?.amount).toBe(75);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
+
+    if (!entryId) throw new Error('Expected the cleared due entry ID.');
+    writesBefore = storage.setItemCalls;
+    actions.undoClearDue({ kind: 'plan', id: 'past-plan' }, entryId);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data).toEqual(beforeClear);
 
     writesBefore = storage.setItemCalls;
     const summary = actions.clearPastDues({ kind: 'plan', id: 'past-plan' }, {
@@ -1396,6 +1571,139 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
   });
 
+  it('creates and undoes a linked manual investment deposit in one persisted write each', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `linked-deposit-${++id}`,
+      today: () => '2026-10-12',
+    });
+    await waitForHydration(store);
+    const before = store.getState().data;
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.addInvestmentEntry('manual-cash', {
+      date: '2026-10-12',
+      amount: 125,
+      kind: 'Deposit',
+      note: 'Emergency cash',
+    });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    const holding = store.getState().data.holdings[0];
+    if (holding?.kind !== 'manual') throw new Error('Manual linked holding is missing.');
+    const entry = holding.logs[0];
+    if (!entry) throw new Error('Manual linked deposit was not created.');
+    expect(entry).toMatchObject({ date: '2026-10-12', amount: 125, kind: 'Deposit' });
+    expect(store.getState().data.transactions).toContainEqual(expect.objectContaining({
+      type: 'invest',
+      amount: 125,
+      date: '2026-10-12',
+      source: { kind: 'holding-entry', parentId: 'manual-cash', entryId: entry.id },
+    }));
+
+    const writesBeforeUndo = storage.setItemCalls;
+    store.getState().actions.deleteInvestmentEntry('manual-cash', entry.id);
+    expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
+  it('unlinks budget items when a holding is deleted in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      ...emptyAppData('2026-10-12'),
+      holdings: [{
+        id: 'manual-cash',
+        kind: 'manual' as const,
+        name: 'Cash reserve',
+        type: 'Cash' as const,
+        invested: 30_000,
+        value: 30_000,
+        valueAsOf: '2026-10-10',
+        logs: [],
+      }],
+      budgetPlan: {
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        incomes: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-10',
+        items: [{
+          id: 'cash-budget',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom' as const,
+        linkedIncluded: false,
+        incomes: [],
+        sections: [{ id: 'invest', name: 'Investments', type: 'invest' as const }],
+        items: [{
+          id: 'cash-snapshot',
+          sectionId: 'invest',
+          name: 'Emergency cash',
+          mode: 'amount' as const,
+          value: 125,
+          frequency: 'monthly' as const,
+          firstDueMonth: '2026-10',
+          holdingId: 'manual-cash',
+        }],
+      }],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const writesBefore = storage.setItemCalls;
+
+    store.getState().actions.deleteHolding('manual-cash', { linkedTransactions: 'keep' });
+
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(store.getState().data.holdings).toEqual([]);
+    expect(store.getState().data.budgetPlan?.items[0]?.holdingId).toBeUndefined();
+    expect(store.getState().data.monthBudgets?.[0]?.items[0]?.holdingId).toBeUndefined();
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
   it('migrates a v1 database once and preserves the exact pre-migration bytes', async () => {
     const storage = new MemoryStorage();
     const v1 = makeV1Fixture();
@@ -1413,12 +1721,15 @@ describe('createAppStore persistence', () => {
     const migratedTotals = netWorth(first.getState().data, '2026-09-03');
     const legacyPlan = v1.holdings.find((holding) => holding.kind === 'plan');
     if (!legacyPlan || legacyPlan.kind !== 'plan') throw new Error('Expected v1 plan fixture');
+    const legacyManual = first.getState().data.holdings.find((holding) => holding.id === 'legacy-manual');
+    if (!legacyManual || legacyManual.kind !== 'manual') throw new Error('Expected v1 manual holding');
     const planValueBeforeMigration = holdingValue({
       ...legacyPlan,
       logs: legacyPlan.logs.map((log) => ({ ...log, kind: 'Deposit' as const })),
     }, '2026-09-03');
+    expect(holdingValue(legacyManual, '2026-09-03')).toBe(900);
     expect(migratedTotals.liabilities).toBe(8_000);
-    expect(migratedTotals.assets).toBe(1_500 + planValueBeforeMigration);
+    expect(migratedTotals.assets).toBe(900 + 500 + planValueBeforeMigration);
     expect(migratedTotals.netWorth).toBe(migratedTotals.assets - 8_000);
     const copyWrites = storage.setItemCalls;
     const second = makeStore(storage);
@@ -2120,6 +2431,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v6', 'original-v6-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v7', 'original-v7-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v13', 'original-v13-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v14', 'original-v14-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2149,6 +2462,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v6',
     'wealthwise.app.v1.premigration.v7',
     'wealthwise.app.v1.premigration.v8',
+    'wealthwise.app.v1.premigration.v13',
+    'wealthwise.app.v1.premigration.v14',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

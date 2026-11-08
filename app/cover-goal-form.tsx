@@ -9,16 +9,21 @@ import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { COVER_POLICY_TYPES, type CoverPolicyType } from '../src/domain/types';
+import { policiesBecomingUnassigned } from '../src/domain/coverGoals';
+import { COVER_POLICY_TYPES, type CoverGoal, type CoverPolicyType } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
+import { confirmAsync } from '../src/lib/confirm';
 import { policySummary } from '../src/domain/policySummary';
 
 const coverGoalSchema = z.object({
-  targetMode: z.enum(['income-multiple', 'amount', 'active-only']),
+  name: z.string().trim().min(1, 'Enter a cover goal name.').max(40),
+  kind: z.enum(['none', 'term-life', 'health', 'motor', 'home', 'other']),
+  targetMode: z.enum(['income-multiple', 'amount', 'active-only', 'none']),
   value: z.string(),
 }).superRefine((values, context) => {
   if (values.targetMode === 'income-multiple'
@@ -26,12 +31,17 @@ const coverGoalSchema = z.object({
     context.addIssue({ code: 'custom', path: ['value'], message: 'Enter an integer from 1 to 50.' });
   }
   if (values.targetMode === 'amount'
-    && values.value !== ''
-    && !/^\d+(?:\.\d{1,2})?$/.test(values.value)) {
-    context.addIssue({ code: 'custom', path: ['value'], message: 'Enter a valid amount.' });
+    && (!/^\d+(?:\.\d{1,2})?$/.test(values.value)
+      || !Number.isFinite(Number(values.value))
+      || Number(values.value) > 100_000_000_000)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['value'],
+      message: 'Enter an amount from 0 to 100,000,000,000.',
+    });
   }
-  if (values.targetMode === 'active-only' && values.value !== '') {
-    context.addIssue({ code: 'custom', path: ['value'], message: 'Active-only targets do not use a value.' });
+  if ((values.targetMode === 'active-only' || values.targetMode === 'none') && values.value !== '') {
+    context.addIssue({ code: 'custom', path: ['value'], message: 'This target mode does not use a value.' });
   }
 });
 
@@ -41,6 +51,7 @@ const modeOptions: readonly DropdownOption[] = [
   { value: 'income-multiple', title: 'Income multiple' },
   { value: 'amount', title: 'Amount' },
   { value: 'active-only', title: 'Active policy only' },
+  { value: 'none', title: 'No target' },
 ];
 
 const typeLabels: Record<CoverPolicyType, string> = {
@@ -54,14 +65,23 @@ const typeLabels: Record<CoverPolicyType, string> = {
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function CoverGoalFormScreen() {
-  const params = useLocalSearchParams<{ type?: string }>();
-  const requestedType = Array.isArray(params.type) ? params.type[0] : params.type;
-  const type = COVER_POLICY_TYPES.find((item) => item === requestedType);
+  const params = useLocalSearchParams<{ id?: string }>();
+  const requestedId = Array.isArray(params.id) ? params.id[0] : params.id;
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
-  const goal = type ? data.coverGoals.find((item) => item.type === type) : undefined;
+  const goal = requestedId === undefined
+    ? undefined
+    : data.coverGoals.find((item) => item.id === requestedId);
+  const availableKinds = data.coverGoals.filter((item) => item.id !== goal?.id)
+    .map((item) => item.kind)
+    .filter((kind): kind is CoverPolicyType => kind !== null);
+  const kindOptions: readonly DropdownOption[] = [
+    { value: 'none', title: 'None' },
+    ...COVER_POLICY_TYPES.filter((kind) => !availableKinds.includes(kind))
+      .map((kind) => ({ value: kind, title: typeLabels[kind] })),
+  ];
   const {
     control,
     handleSubmit,
@@ -72,34 +92,55 @@ export default function CoverGoalFormScreen() {
     mode: 'onTouched',
     reValidateMode: 'onChange',
     defaultValues: {
-      targetMode: goal?.targetMode ?? (type === 'term-life' ? 'income-multiple' : 'amount'),
-      value: goal?.targetValue === undefined ? '' : String(goal.targetValue),
+      name: goal?.name ?? '',
+      kind: goal?.kind ?? 'none',
+      targetMode: goal?.target.mode ?? 'none',
+      value: goal && 'value' in goal.target ? String(goal.target.value) : '',
     },
   });
   const targetMode = useWatch({ control, name: 'targetMode' });
   const value = useWatch({ control, name: 'value' }) ?? '';
   const income = policySummary(data, today).yearlyIncomeEstimate;
 
-  if (!type || !goal) {
+  if (requestedId !== undefined && !goal) {
     return (
-      <FormScreen title="Cover target" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Cover goal" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Cover goal not found" />
       </FormScreen>
     );
   }
 
   const save = handleSubmit((values) => {
-    const targetValue = values.targetMode === 'active-only' || values.value === ''
-      ? undefined
-      : Number(values.value);
-    actions.setCoverGoalTarget({
-      type,
-      targetMode: values.targetMode,
-      ...(targetValue === undefined ? {} : { targetValue }),
-    });
+    const target: CoverGoal['target'] = values.targetMode === 'income-multiple'
+      ? { mode: values.targetMode, value: Number(values.value) }
+      : values.targetMode === 'amount'
+        ? { mode: values.targetMode, value: Number(values.value) }
+        : { mode: values.targetMode };
+    const input = {
+      name: values.name,
+      kind: values.kind === 'none' ? null : values.kind,
+      target,
+    };
+    if (goal) actions.updateCoverGoal(goal.id, input);
+    else actions.addCoverGoal(input);
     if (useAppStore.getState().lastError) return;
     router.back();
   });
+
+  const remove = async () => {
+    if (!goal) return;
+    const count = policiesBecomingUnassigned(data, goal.id);
+    const confirmed = await confirmAsync({
+      title: `Delete ${goal.name}?`,
+      message: `${count} ${count === 1 ? 'policy will' : 'policies will'} become unassigned. Policies and transactions will stay.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!confirmed) return;
+    actions.deleteCoverGoal(goal.id);
+    if (useAppStore.getState().lastError) return;
+    router.back();
+  };
 
   const helper = targetMode === 'income-multiple' && income !== null && value !== ''
     ? `That equals ${formatAmount(income * Number(value), 'exact', 1)} a year.`
@@ -109,13 +150,16 @@ export default function CoverGoalFormScreen() {
         : 'Enter a multiple from 1 to 50.'
       : targetMode === 'active-only'
         ? 'The goal is met when at least one active policy exists.'
-        : 'Leave the amount blank to show Set target.';
+        : targetMode === 'amount'
+          ? 'Enter a fixed cover amount.'
+          : 'This goal will not have a target.';
 
   return (
     <FormScreen
-      title="Cover target"
+      title={goal ? 'Edit cover goal' : 'Add cover goal'}
       onClose={() => router.back()}
       isDirty={isDirty}
+      headerAction={goal ? { label: 'Delete cover goal', onPress: () => { void remove(); } } : undefined}
       footer={
         <Button
           label="Save"
@@ -128,6 +172,37 @@ export default function CoverGoalFormScreen() {
       <FormErrorBanner message={lastError} />
       <Controller
         control={control}
+        name="name"
+        render={({ field }) => (
+          <TextField
+            label="Name"
+            accessibilityLabel="Cover goal name"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.name?.message}
+            maxLength={40}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="kind"
+        render={({ field }) => (
+          <Dropdown
+            label="Counts policies of type"
+            accessibilityLabel="Counts policies of type"
+            value={field.value}
+            options={kindOptions}
+            onChange={(nextKind) => {
+              if (nextKind === 'none' || isCoverPolicyType(nextKind)) field.onChange(nextKind);
+            }}
+            error={errors.kind?.message}
+          />
+        )}
+      />
+      <Controller
+        control={control}
         name="targetMode"
         render={({ field }) => (
           <Dropdown
@@ -136,7 +211,8 @@ export default function CoverGoalFormScreen() {
             value={field.value}
             options={modeOptions}
             onChange={(nextMode) => {
-              if (nextMode !== 'income-multiple' && nextMode !== 'amount' && nextMode !== 'active-only') return;
+              if (nextMode !== 'income-multiple' && nextMode !== 'amount'
+                && nextMode !== 'active-only' && nextMode !== 'none') return;
               field.onChange(nextMode);
               setValue('value', '', { shouldDirty: true, shouldValidate: true });
             }}
@@ -175,9 +251,11 @@ export default function CoverGoalFormScreen() {
           )}
         />
       ) : null}
-      <AppText accessibilityLabel={`${typeLabels[type]} cover target help`}>
-        {typeLabels[type]} · {helper}
-      </AppText>
+      <AppText accessibilityLabel="Cover goal target help">{helper}</AppText>
     </FormScreen>
   );
+}
+
+function isCoverPolicyType(value: string): value is CoverPolicyType {
+  return COVER_POLICY_TYPES.some((kind) => kind === value);
 }

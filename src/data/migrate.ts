@@ -1,7 +1,6 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
 import { shiftMonth } from '../domain/dates';
 import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
-import { defaultCoverGoals } from '../domain/coverGoals';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -655,7 +654,13 @@ export function migrateV11ToV12(data: unknown): unknown {
   };
   return {
     ...data,
-    coverGoals: defaultCoverGoals(),
+    coverGoals: [
+      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+      { type: 'health', targetMode: 'amount' },
+      { type: 'motor', targetMode: 'active-only' },
+      { type: 'home', targetMode: 'active-only' },
+      { type: 'other', targetMode: 'active-only' },
+    ],
     ...(data.budgetPlan === null || data.budgetPlan === undefined
       ? {}
       : { budgetPlan: moveLegacyInsuranceItems(data.budgetPlan) }),
@@ -703,6 +708,37 @@ export function migrateV13ToV14(persisted: unknown): unknown {
   };
 }
 
+export function migrateV14ToV15(persisted: unknown): unknown {
+  if (!isRecord(persisted) || !Array.isArray(persisted.coverGoals)) return persisted;
+  const names: Record<string, string> = {
+    'term-life': 'Term life',
+    health: 'Health',
+    motor: 'Motor',
+    home: 'Home',
+    other: 'Other',
+  };
+  const coverGoals = persisted.coverGoals.map((goal) => {
+    if (!isRecord(goal) || typeof goal.type !== 'string' || typeof goal.targetMode !== 'string') return goal;
+    const target = goal.targetMode === 'income-multiple' && typeof goal.targetValue === 'number'
+      ? { mode: 'income-multiple', value: goal.targetValue }
+      : goal.targetMode === 'amount' && typeof goal.targetValue === 'number'
+        ? { mode: 'amount', value: goal.targetValue }
+        : goal.targetMode === 'amount' && goal.targetValue === undefined
+          ? { mode: 'none' }
+          : goal.targetMode === 'active-only' && goal.targetValue === undefined
+            ? { mode: 'active-only' }
+            : null;
+    if (target === null) return goal;
+    return {
+      id: `cover-${goal.type}`,
+      name: names[goal.type] ?? goal.type,
+      kind: goal.type,
+      target,
+    };
+  });
+  return { ...persisted, coverGoals };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -740,6 +776,7 @@ export function migratePersisted(
     if (fromVersion <= 11) result = migrateV11ToV12(result);
     if (fromVersion <= 12) result = migrateV12ToV13(result);
     if (fromVersion <= 13) result = migrateV13ToV14(result);
+    if (fromVersion <= 14) result = migrateV14ToV15(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

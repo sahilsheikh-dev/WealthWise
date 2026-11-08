@@ -1,7 +1,6 @@
 import {
   behindBy,
   currentInstallmentAmount,
-  estimatedValue,
   installmentsDue,
   installmentsTracked,
   loggedCount,
@@ -78,7 +77,7 @@ describe('SIP domain calculations', () => {
     expect(scheduledDate(makePlan({ frequency: 'daily' }), 2)).toBe('2026-01-03');
   });
 
-  it('clamps behind counts and values plans from actual value or estimate', () => {
+  it('clamps behind counts and values plans from actual value or posted entries', () => {
     const plan = makePlan({
       opening: 500,
       logs: [
@@ -88,8 +87,8 @@ describe('SIP domain calculations', () => {
     });
 
     expect(behindBy(plan, '2026-01-01')).toBe(0);
-    expect(estimatedValue(plan, '2026-01-01')).toBe(3_500);
-    expect(planValue(plan, '2026-03-01')).toBeCloseTo(500 + 1_000 * 1.12 ** (59 / 365) + 2_000 * 1.12 ** (28 / 365), 6);
+    expect(planValue(plan, '2026-01-01')).toBe(1_500);
+    expect(planValue(plan, '2026-03-01')).toBe(3_500);
     expect(planValue({ ...plan, actualValue: 9_999, actualValueDate: '2026-03-01' }, '2026-03-01')).toBe(9_999);
     expect(behindBy(makePlan(), '2026-06-01')).toBeGreaterThanOrEqual(0);
     expect(planProgressPct(makePlan())).toBe(0);
@@ -109,8 +108,8 @@ describe('SIP domain calculations', () => {
     expect(loggedTotal(plan)).toBe(125);
     expect(loggedCount(plan)).toBe(2);
     expect(loggedTrackedCount(plan)).toBe(1);
-    expect(planInvested(plan)).toBe(0);
-    expect(estimatedValue(plan, '2026-02-20')).toBe(0);
+    expect(planInvested(plan)).toBe(225);
+    expect(planValue(plan, '2026-02-20')).toBe(0);
   });
 
   it('tracks only scheduled installments on or after trackFrom', () => {
@@ -123,7 +122,7 @@ describe('SIP domain calculations', () => {
     expect(behindBy(plan, '2026-01-01')).toBe(0);
   });
 
-  it('grows dated actual snapshots and includes only later logs', () => {
+  it('keeps dated actual snapshots fixed and includes only later logs', () => {
     const actualPlan = makePlan({
       actualValue: 10_000,
       actualValueDate: '2026-01-01',
@@ -134,8 +133,8 @@ describe('SIP domain calculations', () => {
       ],
     });
 
-    expect(planValue(actualPlan, '2026-01-01')).toBe(11_000);
-    expect(planValue(actualPlan, '2027-01-01')).toBeCloseTo(10_000 * 1.12 + 1_000 * 1.12 ** (183 / 365), 8);
+    expect(planValue(actualPlan, '2026-01-01')).toBe(10_000);
+    expect(planValue(actualPlan, '2027-01-01')).toBe(11_000);
     expect(planValue({ ...actualPlan, actualValueDate: '2026-01-01', logs: [actualPlan.logs[0]!] }, '2026-01-01')).toBe(10_000);
     const seedPlan = makePlan({
       startDate: '2024-01-01',
@@ -150,7 +149,7 @@ describe('SIP domain calculations', () => {
       ],
     });
     expect(behindBy(seedPlan, '2026-10-10')).toBe(1);
-    expect(planValue(seedPlan, '2027-09-30')).toBeCloseTo(118_000 * 1.12, 6);
+    expect(planValue(seedPlan, '2027-09-30')).toBe(118_000);
   });
 
   it('subtracts withdrawals dated after an actual-value snapshot and ignores earlier withdrawals', () => {

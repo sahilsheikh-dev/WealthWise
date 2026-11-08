@@ -42,7 +42,7 @@ import { AmountText } from '../AmountText';
 import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
-import { monthKey, shiftMonth } from '../../domain/dates';
+import { addDays, monthKey, shiftMonth } from '../../domain/dates';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
@@ -131,7 +131,7 @@ jest.mock('../../lib/authenticate', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), back: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({})),
   usePathname: jest.fn(() => '/'),
   useIsFocused: jest.fn(() => true),
@@ -147,11 +147,11 @@ jest.mock('../../data/store', () => {
       liabilities: [],
       policies: [],
       coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-        { type: 'health', targetMode: 'amount' },
-        { type: 'motor', targetMode: 'active-only' },
-        { type: 'home', targetMode: 'active-only' },
-        { type: 'other', targetMode: 'active-only' },
+        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
+        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
+        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
       ],
       budgetPlan: null,
       monthBudgets: [],
@@ -184,7 +184,9 @@ jest.mock('../../data/store', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
+      addCoverGoal: jest.fn(),
+      updateCoverGoal: jest.fn(),
+      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -250,11 +252,11 @@ jest.mock('../../data/useAppData', () => {
     liabilities: [],
     policies: [],
     coverGoals: [
-      { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-      { type: 'health', targetMode: 'amount' },
-      { type: 'motor', targetMode: 'active-only' },
-      { type: 'home', targetMode: 'active-only' },
-      { type: 'other', targetMode: 'active-only' },
+      { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
+      { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
+      { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
+      { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
+      { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
     ],
     budgetPlan: null,
     monthBudgets: [],
@@ -289,7 +291,9 @@ jest.mock('../../data/useAppData', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      setCoverGoalTarget: jest.fn(),
+      addCoverGoal: jest.fn(),
+      updateCoverGoal: jest.fn(),
+      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -568,6 +572,48 @@ jest.mock('../../lib/confirm', () => ({
   choiceAsync: async () => null,
   confirmAsync: (...args: Parameters<typeof mockConfirmAsync>) => mockConfirmAsync(...args),
 }));
+jest.mock('../../components/PaidAmountDialog', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    PaidAmountDialog: ({ visible, title, dueAmount, dueDate, onPaid, onNotPaid }: {
+      visible: boolean;
+      title: string;
+      dueAmount: number;
+      dueDate?: string;
+      onPaid: (amount: number) => void;
+      onNotPaid: () => void;
+    }) => visible ? ReactModule.createElement('paid-dialog', {
+      testID: 'paid-amount-dialog',
+      title,
+      dueAmount,
+      dueDate,
+      onPaid,
+      onNotPaid,
+    }, ReactModule.createElement('button', {
+      accessibilityLabel: 'Paid',
+      onPress: () => onPaid(dueAmount),
+    }, 'Paid'),
+    ReactModule.createElement('button', {
+      accessibilityLabel: 'Not paid',
+      onPress: onNotPaid,
+    }, 'Not paid')) : null,
+  };
+});
+jest.mock('../../components/ApplyScopeDialog', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    ApplyScopeDialog: ({ visible, onApply, onCancel }: {
+      visible: boolean;
+      onApply: (scope: 'month' | 'following') => void;
+      onCancel: () => void;
+    }) => visible ? ReactModule.createElement('apply-scope-dialog', {
+      testID: 'apply-scope-dialog',
+    },
+    ReactModule.createElement('button', { onPress: () => onApply('month') }, 'This month only'),
+    ReactModule.createElement('button', { onPress: () => onApply('following') }, 'This and following months'),
+    ReactModule.createElement('button', { onPress: onCancel }, 'Cancel')) : null,
+  };
+});
 
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => {
@@ -657,6 +703,19 @@ function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
     .join(' ');
 }
 
+function expectNoInlineBudgetScopeControl(renderer: TestRenderer.ReactTestRenderer): void {
+  const isScopeOption = (option: unknown): boolean =>
+    typeof option === 'object'
+    && option !== null
+    && 'label' in option
+    && option.label === 'This month only';
+  const scopeControls = renderer.root.findAll((node) =>
+    String(node.type) === 'segmentedcontrol'
+    && Array.isArray(node.props.options)
+    && node.props.options.some(isScopeOption));
+  expect(scopeControls).toHaveLength(0);
+}
+
 function textContent(value: React.ReactNode): string {
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   if (Array.isArray(value)) return value.map(textContent).join('');
@@ -685,18 +744,6 @@ function makeInvestmentTestPlan(): PlanHolding {
   };
 }
 
-function budgetScopeControl(renderer: TestRenderer.ReactTestRenderer | undefined) {
-  if (!renderer) throw new Error('Budget screen renderer was not created.');
-  const scope = renderer.root.findAll((node) => {
-    const options = node.props.options;
-    return String(node.type) === 'segmentedcontrol'
-      && Array.isArray(options)
-      && options.some((option: unknown) => typeof option === 'object'
-        && option !== null && 'label' in option && option.label === 'This month only');
-  })[0];
-  if (!scope) throw new Error('Budget scope control was not rendered.');
-  return scope;
-}
 
 function selectDropdownOption(
   renderer: TestRenderer.ReactTestRenderer | undefined,
@@ -1000,8 +1047,8 @@ describe('route render smoke audit', () => {
         month: todayISO().slice(0, 7), incomeId: budgetIncome.id, scope: 'month',
       }, React.createElement(BudgetIncomeFormScreen)],
       ...demoData.coverGoals.map((goal) => [
-        `Cover target ${goal.type}`,
-        { type: goal.type },
+        `Cover goal ${goal.name}`,
+        { id: goal.id },
         React.createElement(CoverGoalFormScreen),
       ] as [string, Record<string, string>, React.ReactElement]),
       ['Insurance from Goals/Budget/Home', {}, React.createElement(InsuranceScreen)],
@@ -1122,8 +1169,12 @@ describe('route render smoke audit', () => {
         expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
         expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
           .toContain(form.title);
+        expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
+          .not.toContain('Apply changes to');
+        expect(renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')
+          .some((node) => node.props.label === 'Apply changes to')).toBe(false);
         if (form.name.startsWith('item')) {
-          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
+          expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
             .not.toContain('Custom');
           expect(renderer.root.findAllByType('text').map((node) => node.children.join('')))
@@ -1134,8 +1185,6 @@ describe('route render smoke audit', () => {
             accessibilityLabel: form.name.startsWith('item') ? 'Delete item' : 'Delete income',
           })).toBeDefined();
         }
-        expect(budgetScopeControl(renderer).props.value)
-          .toBe(form.params.scope === 'month' ? 'month' : 'following');
         act(() => renderer.unmount());
       }
     } finally {
@@ -1188,7 +1237,8 @@ describe('route render smoke audit', () => {
     try {
       routeParams.mockReturnValue({ month, sectionId: 'pets', scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
-      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(1);
+      expectNoInlineBudgetScopeControl(renderer);
+      expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Budget item frequency' }).props.options)
         .toEqual([
           { value: 'monthly', title: 'Monthly' },
@@ -1199,11 +1249,24 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('500');
-        budgetScopeControl(renderer).props.onChange('month');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      const cancelScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      act(() => cancelScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
+      expect(actions.addBudgetItem).not.toHaveBeenCalled();
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.addBudgetItem).toHaveBeenCalledWith(month, {
         sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 500, frequency: 'monthly',
+        firstDueMonth: month,
       }, 'month', todayISO());
       const itemSaveToast = useUIStore.getState().actionToast;
       expect(itemSaveToast?.actionLabel).toBe('Undo');
@@ -1226,24 +1289,44 @@ describe('route render smoke audit', () => {
       expect(renderer.root.findAllByType(Dropdown)).toHaveLength(2);
       const firstDueMonth = shiftMonth(month, 3);
       const firstDueDropdown = renderer.root.findAllByType(Dropdown)
-        .find((node) => node.props.label === 'First due month');
-      if (!firstDueDropdown) throw new Error('First due month control missing.');
-      expect(firstDueDropdown.props.options).toHaveLength(12);
+        .find((node) => node.props.label === 'Start month');
+      if (!firstDueDropdown) throw new Error('Start month control missing.');
+      expect(firstDueDropdown.props.value).toBe(month);
+      expect(firstDueDropdown.props.options).toHaveLength(25);
       expect(firstDueDropdown.props.options[0]).toMatchObject({ value: month });
       const firstDueControl = renderer.root.findAllByProps({
-        accessibilityLabel: 'Budget item first due month',
+        accessibilityLabel: 'Budget item start month',
       }).find((node) => typeof node.props.onPress === 'function');
-      if (!firstDueControl) throw new Error('First due month button missing.');
+      if (!firstDueControl) throw new Error('Start month button missing.');
       act(() => firstDueControl.props.onPress());
       act(() => renderer?.root.findByProps({ accessibilityLabel: formatMonth(firstDueMonth) }).props.onPress());
       const valueTypeControl = renderer.root.findAll((node) =>
         String(node.type) === 'segmentedcontrol' && node.props.value === 'amount',
       )[0];
       expect(valueTypeControl?.props.options).toEqual([{ label: 'Amount', value: 'amount' }]);
+      const addCallsBeforeConflict = actions.addBudgetItem.mock.calls.length;
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Quarterly pet care');
         renderer?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('700');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item start-month scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.addBudgetItem).toHaveBeenCalledTimes(addCallsBeforeConflict);
+      expect(visibleText(renderer))
+        .toContain('This month only conflicts with a start month later than the viewed month.');
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.addBudgetItem).toHaveBeenLastCalledWith(month, {
         sectionId: 'pets',
@@ -1251,23 +1334,29 @@ describe('route render smoke audit', () => {
         mode: 'amount',
         value: 700,
         frequency: 'quarterly',
-        firstDueMonth,
+        firstDueMonth: shiftMonth(month, 3),
       }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
 
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Delete item' })).toBeDefined();
-      expect(budgetScopeControl(renderer).props.value).toBe('month');
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet boarding');
         renderer?.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('12');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.editBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', {
         name: 'Pet boarding', mode: 'amount', value: 300, dueDay: 12,
-        frequency: 'monthly', firstDueMonth: null,
+        frequency: 'monthly', firstDueMonth: month, holdingId: null,
       }, 'month', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1276,15 +1365,27 @@ describe('route render smoke audit', () => {
       actions.restoreBudgetPlanAndMonth.mockClear();
       routeParams.mockReturnValue({ month, sectionId: 'pets', itemId: 'pet-care', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetItemFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
         await Promise.resolve();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Delete item?',
-        message: expect.stringContaining('Pet care'),
-      }));
+      const cancelDeleteScopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      act(() => cancelDeleteScopeDialog.findAllByProps({ children: 'Cancel' })[0].props.onPress());
+      expect(renderer.root.findAllByProps({ testID: 'apply-scope-dialog' })).toHaveLength(0);
+      expect(actions.deleteBudgetStructureItem).not.toHaveBeenCalled();
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget item delete scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.deleteBudgetStructureItem).toHaveBeenCalledWith(month, 'pet-care', 'month', todayISO());
       const itemDeleteToast = useUIStore.getState().actionToast;
       expect(itemDeleteToast?.actionLabel).toBe('Undo');
@@ -1295,6 +1396,7 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Trips');
         const type = renderer?.root.findAll((node) => String(node.type) === 'segmentedcontrol')
@@ -1302,15 +1404,28 @@ describe('route render smoke audit', () => {
         type?.props.onChange('invest');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget section scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
       expect(actions.addSection).toHaveBeenCalledWith(month, { name: 'Trips', type: 'invest' }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
 
       routeParams.mockReturnValue({ month, sectionId: 'pets', name: 'Pets', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetSectionFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget category name' }).props.onChangeText('Animal care');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget section edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.renameSection).toHaveBeenCalledWith(month, 'pets', 'Animal care', 'month', todayISO());
       act(() => renderer?.unmount());
@@ -1318,12 +1433,19 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, scope: 'following' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('1500');
         selectDropdownOption(renderer, 'Income category', 'Freelance');
         renderer?.root.findByProps({ accessibilityLabel: 'Income day' }).props.onChangeText('15');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
         name: 'Consulting', amount: 1500, category: 'Freelance', day: 15,
@@ -1333,11 +1455,18 @@ describe('route render smoke audit', () => {
 
       routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Contract income');
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12500');
         selectDropdownOption(renderer, 'Income category', 'Freelance');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income edit scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
+        await Promise.resolve();
       });
       expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, 'salary-row', {
         name: 'Contract income', amount: 12500, category: 'Freelance',
@@ -1352,9 +1481,16 @@ describe('route render smoke audit', () => {
       actions.restoreBudgetPlanAndMonth.mockClear();
       routeParams.mockReturnValue({ month, incomeId: 'salary-row', scope: 'month' });
       renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      expectNoInlineBudgetScopeControl(renderer);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Delete income' }).props.onPress();
         await Promise.resolve();
+        await Promise.resolve();
+      });
+      await act(async () => {
+        const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+        if (!scopeDialog) throw new Error('Budget income delete scope dialog missing.');
+        scopeDialog.findAllByProps({ children: 'This month only' })[0].props.onPress();
         await Promise.resolve();
       });
       expect(actions.removeBudgetItem).toHaveBeenCalledWith(month, {
@@ -1553,19 +1689,31 @@ describe('route render smoke audit', () => {
         .findAll((node) => typeof node.props.testID === 'string'
           && node.props.testID.startsWith('cover-goal-card-'));
       expect([...new Set(coverCards.map((card) => card.props.testID))]).toEqual([
-        'cover-goal-card-term-life',
-        'cover-goal-card-health',
-        'cover-goal-card-motor',
-        'cover-goal-card-home',
-        'cover-goal-card-other',
+        'cover-goal-card-cover-term-life',
+        'cover-goal-card-cover-health',
+        'cover-goal-card-cover-motor',
+        'cover-goal-card-cover-home',
+        'cover-goal-card-cover-other',
+        'cover-goal-card-demo-cover-goal-family',
       ]);
-      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-term-life' });
+      const addCoverGoalButtons = insuranceRoot.findAllByProps({ accessibilityLabel: 'Add cover goal' });
+      expect(addCoverGoalButtons.length).toBeGreaterThan(0);
+      router.push.mockClear();
+      act(() => addCoverGoalButtons[0]?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
+      router.push.mockClear();
+      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-cover-term-life' });
       const goalPressable = termLifeCard.findAll((node) => String(node.type) === 'pressable')[0];
       const lastGoalChild = goalPressable?.children.at(-1);
       expect(typeof lastGoalChild === 'object' && lastGoalChild !== null && 'props' in lastGoalChild
         ? lastGoalChild.props.testID
-        : undefined).toBe('cover-goal-progress-term-life');
+        : undefined).toBe('cover-goal-progress-cover-term-life');
       expect(insuranceRoot.findByProps({ testID: 'term-life-income-line' })).toBeDefined();
+      act(() => goalPressable?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/cover-goal-form',
+        params: { id: 'cover-term-life' },
+      });
 
       const activePolicy = demoData.policies.find((policy) => policy.status === 'active');
       if (!activePolicy) throw new Error('Demo data has no active policy fixture.');
@@ -1582,9 +1730,25 @@ describe('route render smoke audit', () => {
       const paidButton = policyCard.findAllByType('button')
         .find((button) => button.props.accessibilityLabel === 'Paid');
       if (!paidButton) throw new Error('Active policy has no Paid action.');
+      screenActions.clearDue.mockClear();
+      await act(async () => {
+        paidButton.props.onPress();
+        await Promise.resolve();
+      });
+      const declinedPolicyDialog = insuranceRoot.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        declinedPolicyDialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(screenActions.clearDue).not.toHaveBeenCalled();
       screenActions.clearDue.mockReturnValueOnce('paid-policy-entry');
       await act(async () => {
         paidButton.props.onPress();
+        await Promise.resolve();
+      });
+      const policyPaidDialog = insuranceRoot.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        policyPaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
         await Promise.resolve();
       });
       const undo = useUIStore.getState().actionToast?.onAction;
@@ -1593,6 +1757,7 @@ describe('route render smoke audit', () => {
       expect(screenActions.clearDue).toHaveBeenCalledWith(
         { kind: 'policy', id: activePolicy.id },
         expect.any(String),
+        expect.any(Number),
       );
       expect(screenActions.undoClearDue).toHaveBeenCalledWith(
         { kind: 'policy', id: activePolicy.id },
@@ -1657,11 +1822,14 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('renders policy create/edit fields and every cover-target mode', async () => {
+  it('renders policy and editable cover-goal forms with delete confirmation', async () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
       deletePolicy: jest.Mock;
+      addCoverGoal: jest.Mock;
+      updateCoverGoal: jest.Mock;
+      deleteCoverGoal: jest.Mock;
     };
     const router = jest.requireMock('expo-router').router as { back: jest.Mock };
     const storeState = useAppStore((state) => state);
@@ -1695,6 +1863,11 @@ describe('route render smoke audit', () => {
           .toBeGreaterThan(0);
       }
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' })).toHaveLength(0);
+      const countsToward = renderer.root.findByProps({ accessibilityLabel: 'Counts toward' });
+      expect(countsToward.props.options).toEqual([
+        { value: 'automatic', title: 'Automatic by type' },
+        ...demoData.coverGoals.map((goal) => ({ value: goal.id, title: goal.name })),
+      ]);
       expect(renderer.root.findByProps({ accessibilityLabel: 'Policy start date' }).props.maximumDate)
         .toBe(todayISO());
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy end date' })).toHaveLength(0);
@@ -1722,46 +1895,188 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       renderer = undefined;
 
-      const noIncomeData = {
-        ...demoData,
-        budgetPlan: null,
-        monthBudgets: [],
-        transactions: demoData.transactions.filter((transaction) => transaction.type !== 'income'),
-      };
-      Object.assign(routeData, noIncomeData);
-      storeState.data = noIncomeData;
-      for (const [type, expectedMode] of [
-        ['term-life', 'income-multiple'],
-        ['health', 'amount'],
-        ['motor', 'active-only'],
-        ['home', 'active-only'],
-        ['other', 'active-only'],
-      ] as const) {
-        routeParams.mockReturnValue({ type });
-        renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-        const mode = renderer.root.findByType(Dropdown);
-        expect(mode.props.value).toBe(expectedMode);
-        if (type === 'term-life') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'text')
-            .some((node) => node.children.join('').includes(
-              'Add income or a planned budget to calculate the target amount.',
-            ))).toBe(true);
-        }
-        if (expectedMode === 'active-only') {
-          expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
-        }
-        act(() => mode.props.onChange('amount'));
-        expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(1);
-        act(() => renderer?.unmount());
-        renderer = undefined;
-      }
+      routeParams.mockReturnValue({});
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.maxLength).toBe(40);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
+        .toEqual([{ value: 'none', title: 'None' }]);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' }).props.options)
+        .toEqual(expect.arrayContaining([
+          { value: 'income-multiple', title: 'Income multiple' },
+          { value: 'amount', title: 'Amount' },
+          { value: 'active-only', title: 'Active policy only' },
+          { value: 'none', title: 'No target' },
+        ]));
+      const targetMode = renderer.root.findByProps({ accessibilityLabel: 'Target mode' });
+      expect(targetMode.props.value).toBe('none');
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
+      act(() => targetMode.props.onChange('income-multiple'));
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' }).length).toBeGreaterThan(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('active-only'));
+      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('amount'));
+      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield').length)
+        .toBeGreaterThan(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+        .props.onChange('none'));
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
+          .props.onChangeText('Travel protection');
+      });
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(screenActions.addCoverGoal).toHaveBeenLastCalledWith({
+        name: 'Travel protection',
+        kind: null,
+        target: { mode: 'none' },
+      });
+      expect(router.back).toHaveBeenCalled();
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      const customGoal = demoData.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
+      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
+      const editableData = { ...demoData, coverGoals: [customGoal] };
+      Object.assign(routeData, editableData);
+      storeState.data = editableData;
+      routeParams.mockReturnValue({ id: customGoal.id });
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.value)
+        .toBe('Family protection');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
+        .toEqual(expect.arrayContaining([
+          { value: 'none', title: 'None' },
+          { value: 'term-life', title: 'Term life' },
+          { value: 'health', title: 'Health' },
+          { value: 'motor', title: 'Motor' },
+          { value: 'home', title: 'Home' },
+          { value: 'other', title: 'Other' },
+        ]));
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
+          .props.onChangeText('Renamed protection');
+        renderer?.root.findByProps({ accessibilityLabel: 'Counts policies of type' })
+          .props.onChange('health');
+        renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
+          .props.onChange('amount');
+      });
+      act(() => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Target amount' })
+          .props.onChangeText('250000');
+      });
+      await act(async () => {
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      expect(screenActions.updateCoverGoal).toHaveBeenLastCalledWith(customGoal.id, {
+        name: 'Renamed protection',
+        kind: 'health',
+        target: { mode: 'amount', value: 250_000 },
+      });
+      expect(router.back).toHaveBeenCalled();
+      act(() => renderer?.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ id: customGoal.id });
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      mockConfirmAsync.mockClear();
+      screenActions.deleteCoverGoal.mockClear();
+      router.back.mockClear();
+      const deleteGoalButton = renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' });
+      await act(async () => {
+        deleteGoalButton.props.onPress();
+        await Promise.resolve();
+      });
+      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Delete Family protection?',
+        message: '1 policy will become unassigned. Policies and transactions will stay.',
+      }));
+      expect(screenActions.deleteCoverGoal).toHaveBeenCalledWith(customGoal.id);
+      expect(router.back).toHaveBeenCalled();
     } finally {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       storeState.data = previousStoreData;
       routeParams.mockReturnValue(previousParams);
       screenActions.deletePolicy.mockClear();
+      screenActions.deleteCoverGoal.mockClear();
       mockConfirmAsync.mockClear();
+    }
+  });
+
+  it('shows an actionable empty cover-goal section', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = (jest.requireMock('expo-router').useLocalSearchParams as jest.Mock)();
+    const router = jest.requireMock('expo-router').router as { push: jest.Mock };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const emptyGoalsData = { ...buildDemoData(todayISO()), coverGoals: [] };
+      Object.assign(routeData, emptyGoalsData);
+      storeState.data = emptyGoalsData;
+      renderer = renderScreen(React.createElement(InsuranceScreen));
+      const coverSection = renderer.root.findByProps({ testID: 'insurance-cover-goals' });
+      expect(coverSection.findByProps({ title: 'No cover goals yet' })).toBeDefined();
+      const unassignedSection = renderer.root.findByProps({ testID: 'insurance-unassigned-cover' });
+      expect(unassignedSection.findAllByType('text')
+        .some((node) => node.children.join('') === 'Not in any cover goal')).toBe(true);
+      const activeCoverTotal = emptyGoalsData.policies
+        .filter((policy) => policy.status === 'active')
+        .reduce((sum, policy) => sum + (policy.sumAssured ?? 0), 0);
+      expect(unassignedSection.findByType(AmountText).props.value).toBe(activeCoverTotal);
+      const listedPolicy = emptyGoalsData.policies[0];
+      if (!listedPolicy) throw new Error('Demo data has no policy to display.');
+      expect(renderer.root.findByProps({ testID: `policy-card-${listedPolicy.id}` })).toBeDefined();
+      const addButtons = coverSection.findAllByProps({ accessibilityLabel: 'Add cover goal' });
+      expect(addButtons.length).toBeGreaterThanOrEqual(2);
+      router.push.mockClear();
+      act(() => addButtons.at(-1)?.props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      (jest.requireMock('expo-router').useLocalSearchParams as jest.Mock).mockReturnValue(previousParams);
+    }
+  });
+
+  it.each([1.3, 2])('keeps cover-goal forms accessible at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const previousFontScale = mockFontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const data = buildDemoData(todayISO());
+      const customGoal = data.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
+      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
+      Object.assign(routeData, data);
+      storeState.data = data;
+      routeParams.mockReturnValue({ id: customGoal.id });
+      mockFontScale = fontScale;
+      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 
@@ -1894,12 +2209,10 @@ describe('route render smoke audit', () => {
         markPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(today)}`,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
-      });
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      const paidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(paidDialog.props.title).toBe('Test plan');
+      expect(paidDialog.props.dueAmount).toBe(1_000);
       expect(textOf(dueHome)).toContain('Test plan');
       expect(dueHome.root.findAll((node) =>
         node.type === 'button' && ['Pay', 'Clear due', 'View schedule'].includes(String(node.children[0])),
@@ -1907,10 +2220,9 @@ describe('route render smoke audit', () => {
       expect(dueHome.root.findAllByProps({ testID: 'pending-item-action-sheet' })).toHaveLength(0);
       expect(dueRow.props.onPress).toBeUndefined();
       await act(async () => {
-        markPaid.props.onPress();
+        paidDialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledTimes(2);
       const actions = (jest.requireMock('../../data/useAppData') as {
         useAppActions: () => { clearDue: jest.Mock };
       }).useAppActions();
@@ -1955,6 +2267,108 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it('opens the paid-amount dialog from the payment-confirm route and Not paid leaves the due unchanged', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      clearDue: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const data = { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] };
+    const due = pendingItems(data, monthKey(today), today)[0];
+    if (!due?.dueDate) throw new Error('Payment-confirm fixture has no dated pending due.');
+    Object.assign(routeData, data);
+    store.data = data;
+    actions.clearDue.mockClear();
+    routeParams.mockReturnValue({ dueItemId: due.id, dueDate: due.dueDate });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(PaymentConfirmScreen));
+      expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain(due.title);
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(dialog.props.title).toBe(due.title);
+      expect(dialog.props.dueAmount).toBe(due.amount);
+      expect(dialog.props.dueDate).toBe(due.dueDate);
+      await act(async () => {
+        dialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(renderer.root.findAllByProps({ testID: 'paid-amount-dialog' })).toHaveLength(0);
+      expect(actions.clearDue).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      actions.clearDue.mockClear();
+    }
+  });
+
+  it('opens the paid-amount dialog from a Transactions due row without clearing on Not paid', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const store = useAppStore((state) => state);
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      clearDue: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousData = { ...routeData };
+    const previousStoreData = store.data;
+    const previousParams = routeParams();
+    const previousMonth = useUIStore.getState().txMonth;
+    const today = todayISO();
+    const month = monthKey(today);
+    const data = { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] };
+    const due = pendingItems(data, month, today)[0];
+    if (!due?.dueDate) throw new Error('Transactions fixture has no dated pending due.');
+    Object.assign(routeData, data);
+    store.data = data;
+    useUIStore.getState().setTxMonth(month);
+    routeParams.mockReturnValue({});
+    actions.clearDue.mockClear();
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(TransactionsScreen));
+      const dueRow = renderer.root.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('pending-item-'),
+      ).find((node) => node.props.testID === due.id || node.findAllByProps({
+        accessibilityLabel: 'Paid',
+      }).length > 0);
+      if (!dueRow) throw new Error('Transactions pending row did not render.');
+      await act(async () => {
+        dueRow.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      const dialog = renderer.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(dialog.props.title).toBe(due.title);
+      expect(dialog.props.dueAmount).toBe(due.amount);
+      expect(dialog.props.dueDate).toBe(due.dueDate);
+      await act(async () => {
+        dialog.findByProps({ accessibilityLabel: 'Not paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(renderer.root.findAllByProps({ testID: 'paid-amount-dialog' })).toHaveLength(0);
+      expect(actions.clearDue).not.toHaveBeenCalled();
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      useUIStore.getState().setTxMonth(previousMonth);
+      actions.clearDue.mockClear();
+    }
+  });
+
   it('clears a confirmed Home due with Undo and previews earlier dues', async () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const actions = (jest.requireMock('../../data/useAppData') as {
@@ -1996,7 +2410,8 @@ describe('route render smoke audit', () => {
     try {
       Object.assign(routeData, { ...emptyAppData(today), holdings: [makeInvestmentTestPlan()] });
       store.data = routeData;
-      actions.clearDue.mockImplementation((_target, _slotId) => {
+      actions.clearDue.mockReset();
+      actions.clearDue.mockImplementation((_target, _slotId, _amount) => {
         addLinkedTransactions(['paid-entry'], singlePlan);
         return 'paid-entry';
       });
@@ -2012,7 +2427,16 @@ describe('route render smoke audit', () => {
         markPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(actions.clearDue).toHaveBeenCalledWith({ kind: 'plan', id: 'investment-plan-test' }, expect.any(String));
+      const singlePaidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      await act(async () => {
+        singlePaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.clearDue).toHaveBeenCalledWith(
+        { kind: 'plan', id: 'investment-plan-test' },
+        expect.any(String),
+        1_000,
+      );
       expect(useUIStore.getState().actionToast?.message).toBe(`${formatAmount(1_000, 'exact', 1)} marked as paid`);
       const singleUndo = useUIStore.getState().actionToast?.onAction;
       if (!singleUndo) throw new Error('Single-due Undo action was not set.');
@@ -2039,18 +2463,22 @@ describe('route render smoke audit', () => {
       const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
-      const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
       await act(async () => {
         laterMarkPaid.props.onPress();
         await Promise.resolve();
       });
-      expect(mockConfirmAsync).toHaveBeenCalledWith({
-        title: 'Was this paid?',
-        message: expectedMessage,
-        confirmLabel: 'Paid',
-        cancelLabel: 'Not paid',
+      expect(mockConfirmAsync).not.toHaveBeenCalled();
+      const laterPaidDialog = home.root.findByProps({ testID: 'paid-amount-dialog' });
+      expect(laterPaidDialog.props.title).toBe('Test plan');
+      await act(async () => {
+        laterPaidDialog.findByProps({ accessibilityLabel: 'Paid' }).props.onPress();
+        await Promise.resolve();
       });
-      expect(actions.clearDuesThrough).toHaveBeenCalledWith({ kind: 'plan', id: laterPlan.id }, currentMonth + '-01');
+      expect(actions.clearDuesThrough).toHaveBeenCalledWith(
+        { kind: 'plan', id: laterPlan.id },
+        currentMonth + '-01',
+        1_000,
+      );
       const throughUndo = useUIStore.getState().actionToast?.onAction;
       if (!throughUndo) throw new Error('Clear-through Undo action was not set.');
       act(() => throughUndo());
@@ -2586,8 +3014,12 @@ describe('route render smoke audit', () => {
         label.includes(`target ${exactA}`) && label.includes(`saved ${exactB}`),
       )).toBe(true);
       const assetsLabels = labelsFor(React.createElement(AssetsScreen));
-      expect(assetsLabels.some((label) => label.startsWith(`Gain ${exactA}`))).toBe(true);
-      expect(assetsLabels).toContain(`Cash, invested ${exactB}`);
+      expect(assetsLabels.some((label) =>
+        label.startsWith(`Gain ${formatAmount(0, 'exact', 1)}`),
+      )).toBe(true);
+      expect(assetsLabels).toContain(`Invested, ${formatAmount(259_259_256, 'exact', 1)}`);
+      expect(assetsLabels).toContain('Cash');
+      expect(assetsLabels).not.toContain(`Cash, invested ${exactB}`);
       expect(labelsFor(React.createElement(LiabilitiesScreen))).toEqual(expect.arrayContaining([
         exactA,
         `Monthly EMI, ${exactB}`,
@@ -3133,6 +3565,129 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('renders ledger-based asset totals and Cash/Bank details at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const assets: ManualHolding[] = [
+      {
+        id: 'return-fd',
+        kind: 'manual',
+        name: 'Fixed deposit',
+        type: 'Fixed deposit',
+        invested: 1_000,
+        value: 1_100,
+        valueAsOf: today,
+        logs: [{
+          id: 'backdated-deposit',
+          date: addDays(today, -1),
+          amount: 200,
+          note: '',
+          kind: 'Deposit',
+        }],
+      },
+      {
+        id: 'cash-balance',
+        kind: 'manual',
+        name: 'Cash reserve',
+        type: 'Cash',
+        invested: 500,
+        value: 500,
+        valueAsOf: today,
+        logs: [{
+          id: 'cash-deposit',
+          date: today,
+          amount: 100,
+          note: '',
+          kind: 'Deposit',
+        }],
+      },
+      {
+        id: 'bank-balance',
+        kind: 'manual',
+        name: 'Bank reserve',
+        type: 'Savings account',
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: today,
+        logs: [{
+          id: 'bank-withdrawal',
+          date: today,
+          amount: 100,
+          note: '',
+          kind: 'Withdrawal',
+        }],
+      },
+    ];
+    const data: AppData = { ...emptyAppData(today), holdings: assets };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(AssetsScreen));
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Invested, ${formatAmount(2_800, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Gain, ${formatAmount(-100, 'exact', 1)}`,
+      })).toBeDefined();
+
+      const fixedCard = renderer.root.findByProps({ testID: 'asset-card-manual-Fixed deposit' });
+      expect(fixedCard.findAllByType('text')
+        .some((node) => node.children.join('').includes(
+          'Entries dated before the last valuation are assumed included in it.',
+        ))).toBe(true);
+
+      for (const [testID, expectedLabel] of [
+        ['asset-card-manual-Cash reserve', 'Deposited'],
+        ['asset-card-manual-Bank reserve', 'Withdrawn'],
+      ]) {
+        const card = renderer.root.findByProps({ testID });
+        const content = card.findAllByType('text').map((node) => node.children.join('')).join(' ');
+        expect(content).toContain(expectedLabel);
+        expect(content).not.toMatch(/No return yet|absolute|XIRR|CAGR|% of your assets/);
+        expect(content).not.toContain('Invested');
+        expect(content).not.toContain('Gain');
+      }
+
+      const cashCard = renderer.root.findByProps({ testID: 'asset-card-manual-Cash reserve' });
+      expect(cashCard.findByProps({ accessibilityLabel: 'Cash' })).toBeDefined();
+      expect(cashCard.findByProps({
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}. Withdrawn ${formatAmount(0, 'exact', 1)}`,
+      })).toBeDefined();
+
+      act(() => renderer?.unmount());
+      renderer = undefined;
+      routeParams.mockReturnValue({ id: 'cash-balance' });
+      renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Balance ${formatAmount(500, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Withdrawn ${formatAmount(0, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findAllByProps({
+        accessibilityLabel: `Invested ${formatAmount(600, 'exact', 1)}`,
+      })).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+      mockFontScale = previousFontScale;
     }
   });
 
@@ -3724,6 +4279,36 @@ describe('route render smoke audit', () => {
     } finally {
       data.monthBudgets = previousBudgets;
       routeParams.mockReturnValue({});
+    }
+  });
+
+  it('shows Today only off the current Budget month and returns to the current routed month', () => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const router = jest.requireMock('expo-router').router as { replace: jest.Mock };
+    const current = monthKey(todayISO());
+    const past = shiftMonth(current, -1);
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      routeParams.mockReturnValue({ month: current });
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Go to current month' })).toHaveLength(0);
+      act(() => renderer?.unmount());
+
+      routeParams.mockReturnValue({ month: past });
+      router.replace.mockClear();
+      renderer = renderScreen(React.createElement(BudgetScreen));
+      const todayButton = renderer.root.findByProps({ accessibilityLabel: 'Go to current month' });
+      expect(todayButton).toBeDefined();
+      act(() => todayButton.props.onPress());
+      expect(router.replace).toHaveBeenCalledWith({
+        pathname: '/(tabs)/budget',
+        params: { month: current },
+      });
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Go to current month' })).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      routeParams.mockReturnValue({});
+      router.replace.mockClear();
     }
   });
 

@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -14,15 +14,30 @@ An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior
 requires atomicity.
 
+## Asset values and returns
+
+Pure portfolio selectors in `src/domain/portfolio.ts` and `src/domain/sip.ts`
+derive Invested from opening capital plus deposits; withdrawals do not reduce
+Invested. A dated valuation includes only later deposits/withdrawals through
+the requested as-of date. With no dated valuation, value starts from opening
+capital and posted ledger activity; rate-based interest is not estimated.
+Values are clamped at zero. `src/domain/investmentReturns.ts` supplies the
+shared gain, absolute-return, XIRR and CAGR calculations. Cash and Bank
+holdings show balance and deposit/withdrawal totals but no holding-level return.
+The asset list, holding cards and portfolio totals use the same domain
+calculations; the investment-entry screen shows values and ledger totals.
+
 ## Schema and archives
 
-Current persisted schema is v13. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v13. `createAppStore.ts` sets the
+Current persisted schema is v15. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v14. The v14-to-v15 migration
+converts the five legacy Insurance cover goals to stable editable records.
+`createAppStore.ts` sets the
 persist version from `SCHEMA_VERSION`.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v12` before the migrated write. With the current
+`${persistName}.premigration.v14` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration

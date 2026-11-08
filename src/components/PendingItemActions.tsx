@@ -7,8 +7,6 @@ import { useAppActions } from '../data/useAppData';
 import { duesThroughPreview, type DueTarget } from '../domain/dues';
 import { pendingActionLabel, pendingTransactionType, type PendingItem } from '../domain/pending';
 import { formatAmount } from '../lib/amountDisplay';
-import { formatDate } from '../lib/format';
-import { confirmAsync } from '../lib/confirm';
 import { useUIStore } from '../data/uiStore';
 import { Button } from './ui';
 import { PaidAmountDialog } from './PaidAmountDialog';
@@ -75,6 +73,41 @@ export function PendingItemActions({
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
     if (item.source.kind === 'budget' || item.source.kind === 'income') {
+      const budget = useAppStore.getState().data;
+      const linkedItem = [
+        ...(budget.budgetPlan?.items ?? []),
+        ...(budget.monthBudgets?.filter((snapshot) => snapshot.month === today.slice(0, 7)).flatMap((snapshot) => snapshot.items) ?? []),
+      ].find((candidate) => candidate.name === item.category && candidate.holdingId);
+      const linkedHolding = linkedItem
+        ? budget.holdings.find((holding) => holding.id === linkedItem.holdingId)
+        : undefined;
+      if (linkedHolding?.kind === 'manual') {
+        actions.addInvestmentEntry(linkedHolding.id, {
+          date: today,
+          amount: actualAmount,
+          kind: 'Deposit',
+          note: item.title,
+        });
+        const state = useAppStore.getState();
+        if (state.lastError) {
+          Alert.alert('Could not clear planned item', state.lastError);
+          return;
+        }
+        const transaction = state.data.transactions.findLast((row) =>
+          row.source?.kind === 'holding-entry'
+          && row.source.parentId === linkedHolding.id
+          && row.date === today
+          && row.amount === actualAmount);
+        if (!transaction) {
+          Alert.alert('Could not clear planned item', 'The linked holding entry was not created.');
+          return;
+        }
+        clearedAmount = actualAmount;
+        undo = () => {
+          if (!transaction.source || transaction.source.kind !== 'holding-entry') return;
+          actions.deleteInvestmentEntry(linkedHolding.id, transaction.source.entryId);
+        };
+      } else {
       actions.addTransaction({
         type: pendingTransactionType(item),
         amount: actualAmount,
@@ -98,6 +131,7 @@ export function PendingItemActions({
         const error = useAppStore.getState().lastError;
         if (error) Alert.alert('Could not undo planned item', error);
       };
+      }
     } else {
       const source = item.source;
       if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
@@ -150,13 +184,6 @@ export function PendingItemActions({
       Alert.alert('Could not clear due', 'There are no unpaid dues through this date.');
       return;
     }
-    const confirmed = await confirmAsync({
-      title: 'Clear dues?',
-      message: `Clear ${preview.count} dues through ${formatDate(item.dueDate)}? This includes ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`,
-      confirmLabel: 'Clear due',
-    });
-    if (!confirmed) return;
-
     const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
     const state = useAppStore.getState();
     if (!entryIds || state.lastError) {

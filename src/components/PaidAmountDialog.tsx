@@ -28,10 +28,12 @@ export function PaidAmountDialog({
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (visible) {
+    if (!visible) return;
+    const timer = setTimeout(() => {
       setAmount(String(dueAmount));
       setError(undefined);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [dueAmount, visible]);
 
   const paid = () => {
@@ -51,7 +53,7 @@ export function PaidAmountDialog({
       centered
       contentStyle={styles.card}>
       <View style={styles.content}>
-        <AppText weight="bold" style={typography.h2}>Was this paid?</AppText>
+        <AppText weight="bold" style={typography.h1}>Was this paid?</AppText>
         <AppText weight="semibold" style={[typography.name, styles.item]}>{title}</AppText>
         {dueDate ? <AppText style={[typography.meta, { color: colors.text2 }]}>Due {formatDate(dueDate)}</AppText> : null}
         <MoneyField
@@ -63,7 +65,7 @@ export function PaidAmountDialog({
         />
         <View style={styles.actions}>
           <Button label="Paid" onPress={paid} />
-          <Button label="Not paid" variant="secondary" onPress={onNotPaid} />
+          <Button label="Not paid" variant="soft" onPress={onNotPaid} />
         </View>
       </View>
     </TopAnchoredSheet>

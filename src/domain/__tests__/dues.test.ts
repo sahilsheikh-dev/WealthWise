@@ -15,6 +15,7 @@ import {
 } from '../dues';
 import { loanState, amortizedBalanceAfter } from '../liability';
 import { validateIntegrity } from '../links';
+import { deleteCoverGoal } from '../coverGoals';
 import { liabilitySchedule, planSchedule, upcomingDue } from '../schedule';
 import { policySchedule } from '../policySchedule';
 import type { OneTimeLiability, PlanHolding, Policy, RecurringLiability } from '../types';
@@ -375,6 +376,43 @@ describe('one-tap dues and undo', () => {
       note: '',
       date: '2026-01-01',
     }]);
+  });
+
+  it('keeps custom-goal premium history valid and derives typed categories after goal deletion', () => {
+    const customGoal = {
+      id: 'custom-cover',
+      name: 'Custom cover',
+      kind: null,
+      target: { mode: 'none' as const },
+    };
+    const original = {
+      ...withPolicy(policy({ coverGoalId: customGoal.id })),
+      coverGoals: [...base().coverGoals, customGoal],
+    };
+    let id = 0;
+    const customPayment = clearDue(original, { kind: 'policy', id: 'policy' }, {
+      date: '2026-02-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(customPayment.data.transactions[0]).toMatchObject({
+      category: 'Insurance premium',
+      source: { kind: 'policy-payment', parentId: 'policy' },
+    });
+    expect(validateIntegrity(customPayment.data)).toEqual([]);
+
+    const afterDelete = deleteCoverGoal(customPayment.data, customGoal.id);
+    expect(afterDelete.policies[0]?.coverGoalId).toBeUndefined();
+    expect(afterDelete.transactions[0]?.category).toBe('Insurance premium');
+    expect(validateIntegrity(afterDelete)).toEqual([]);
+
+    const typedPayment = clearDue(afterDelete, { kind: 'policy', id: 'policy' }, {
+      date: '2026-03-01',
+      newId: () => `custom-${++id}`,
+    });
+    expect(typedPayment.data.transactions.find((transaction) =>
+      transaction.source?.kind === 'policy-payment' && transaction.source.entryId === typedPayment.entryId,
+    )?.category).toBe('Health premium');
+    expect(validateIntegrity(typedPayment.data)).toEqual([]);
   });
 
   it('throws NothingToClearError without changing the input reference', () => {
@@ -785,5 +823,36 @@ describe('bulk due handling', () => {
     expect(() => duesThroughPreview(data, { kind: 'policy', id: 'missing' }, '2026-01-01', '2026-01-01'))
       .toThrow(NotFoundError);
     expect(data.transactions).toEqual([]);
+  });
+
+  it('records actual paid amounts for lower, higher, and invalid plan and policy dues', () => {
+    const planData = withPlan();
+    const lower = clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'lower-entry', actualAmount: 75,
+    });
+    expect(lower.data.holdings[0]).toMatchObject({ kind: 'plan' });
+    if (lower.data.holdings[0]?.kind !== 'plan') throw new Error('Plan missing.');
+    expect(lower.data.holdings[0].logs[0]?.amount).toBe(75);
+
+    const policyData = withPolicy();
+    const higher = clearDue(policyData, { kind: 'policy', id: 'policy' }, {
+      date: '2026-01-31', newId: () => 'higher-policy-entry', actualAmount: 75,
+    });
+    expect(higher.data.policies[0]?.payments[0]?.amount).toBe(75);
+    expect(higher.data.transactions[0]?.amount).toBe(75);
+
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 0,
+    })).toThrow('Paid amount must be greater than zero');
+    expect(() => clearDue(planData, { kind: 'plan', id: 'plan' }, {
+      date: '2026-01-31', newId: () => 'invalid-entry', actualAmount: 100_000_000_001,
+    })).toThrow('Paid amount must be greater than zero');
+  });
+
+  it('rejects one-time liability payments above the outstanding balance', () => {
+    const data = { ...base(), liabilities: [oneTimeLiability({ principal: 100 })] };
+    expect(() => clearDue(data, { kind: 'liability', id: 'one-time' }, {
+      date: '2026-01-01', newId: () => 'overpayment', actualAmount: 101,
+    })).toThrow('Paid amount exceeds the outstanding liability balance.');
   });
 });
