@@ -11,9 +11,11 @@
   identified Release 2 bugs remain, but supplied no failing IDs or reproduction
   details; see [open-items.md](open-items.md) and the
   [checklist report](../releases/device-test-checklist.md). The GitHub
-  release-body edit remains pending. All six ordered gates passed: 92 suites,
-  1,196 tests passed and 1 skipped. Exact exits and coverage are in
-  [PROGRESS.md](../PROGRESS.md).
+  release-body edit remains pending. The owner checklist commit subject was
+  corrected locally without changing its tree; the commit mapping and
+  unpushed state are in [PROGRESS.md](../PROGRESS.md). All six ordered gates
+  passed: 92 suites, 1,196 tests passed and 1 skipped. Exact exits and coverage
+  are in [PROGRESS.md](../PROGRESS.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
