@@ -198,8 +198,17 @@ export type Budget = {
   lines: BudgetLine[];
 };
 
-export type BudgetPlanLine = {
-  category: string;
+export type BudgetSection = {
+  id: string;
+  name: string;
+  type: 'spend' | 'invest';
+  system?: 'income' | 'debt' | 'insurance';
+};
+
+export type BudgetItem = {
+  id: string;
+  sectionId: string;
+  name: string;
   mode: 'amount' | 'percent';
   value: number;
   dueDay?: number;
@@ -207,7 +216,8 @@ export type BudgetPlanLine = {
 
 export type BudgetPlan = {
   incomes: BudgetIncomeItem[];
-  lines: BudgetPlanLine[];
+  sections: BudgetSection[];
+  items: BudgetItem[];
   repeatMonthly: boolean;
   repeatFrom: string | null;
 };
@@ -216,7 +226,8 @@ export type MonthBudget = {
   month: string;
   source: 'plan' | 'custom';
   incomes: BudgetIncomeItem[];
-  lines: BudgetLine[];
+  sections: BudgetSection[];
+  items: BudgetItem[];
   linkedIncluded?: boolean;
 };
 

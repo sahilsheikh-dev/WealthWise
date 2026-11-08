@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
-import { AmountText } from './AmountText';
 import { AppText } from './ui';
 import type { BudgetOverview } from '../domain/budget';
 import { useTheme } from '../theme/useTheme';
@@ -48,31 +47,19 @@ export function StackedBar({
   };
   return (
     <View testID="stacked-bar" accessibilityRole="image" accessibilityLabel={summary}>
-      {(['planned', 'actual'] as const).map((period) => (
-        <View key={period} style={styles.chartRow}>
-          <AppText style={styles.periodLabel}>{period === 'planned' ? 'Planned' : 'Actual'}</AppText>
-          <View style={[styles.stackedTrack, { backgroundColor: colors.surface2 }]}>
-            {stackSegments(period, values).map((segment) => (
-              <View
-                key={segment.id}
-                testID={`stacked-segment-${period}-${segment.id}`}
-                accessibilityLabel={`${period} ${segment.id}`}
-                style={{
-                  width: `${segment.value}%`,
-                  backgroundColor: colorByToken[segment.color],
-                }}
-              />
-            ))}
-          </View>
-        </View>
-      ))}
-      <View style={styles.legend}>
-        <LegendItem label="Spending" color={colors.primary} />
-        <LegendItem label="Investing" color={colors.purple} />
-        <LegendItem label="Left" color={colors.ok} />
-        <LegendItem label="Over" color={colors.err} />
+      <View testID="stacked-track" style={[styles.stackedTrack, { backgroundColor: colors.surface2 }]}>
+        {stackSegments('planned', values).map((segment) => (
+          <View
+            key={segment.id}
+            testID={`stacked-segment-planned-${segment.id}`}
+            accessibilityLabel={`Planned ${segment.id}`}
+            style={{
+              width: `${segment.value}%`,
+              backgroundColor: colorByToken[segment.color],
+            }}
+          />
+        ))}
       </View>
-      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{summary}</AppText>
     </View>
   );
 }
@@ -86,56 +73,14 @@ function LegendItem({ label, color }: { label: string; color: string }) {
   );
 }
 
-export function SectionBars({
-  sections,
-  summary,
-}: {
-  sections: BudgetOverview['sections'];
-  summary: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View testID="section-bars" accessibilityRole="image" accessibilityLabel={summary} style={styles.sectionBars}>
-      {sections.map((section) => {
-        const over = section.actual > section.planned;
-        const ratio = section.planned > 0
-          ? Math.min(1, section.actual / section.planned)
-          : section.actual > 0 ? 1 : 0;
-        return (
-          <View key={section.id} testID={`section-bar-${section.id}`} style={styles.sectionBar}>
-            <View style={styles.sectionHeading}>
-              <AppText style={styles.sectionName}>{section.name}</AppText>
-              <AppText
-                style={typography.meta}
-                accessibilityLabel={`${section.name}: actual ${section.actual}; planned ${section.planned}`}>
-                <AmountText value={section.actual} tier="row" /> / <AmountText value={section.planned} tier="row" />
-              </AppText>
-            </View>
-            <View style={[styles.sectionTrack, { backgroundColor: colors.surface2 }]}>
-              {ratio > 0 ? (
-                <View
-                  testID={`section-bar-overlay-${section.id}`}
-                  style={{
-                    width: `${ratio * 100}%`,
-                    backgroundColor: over ? colors.err : colors.primary,
-                  }}
-                />
-              ) : null}
-            </View>
-          </View>
-        );
-      })}
-      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{summary}</AppText>
-    </View>
-  );
-}
-
 export function PaceLine({
   pace,
   summary,
+  shortSummary,
 }: {
   pace: NonNullable<BudgetOverview['pace']>;
   summary: string;
+  shortSummary: string;
 }) {
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
@@ -171,7 +116,7 @@ export function PaceLine({
         <LegendItem label="Planned pace" color={colors.primary} />
         <LegendItem label="Actual" color={colors.ok} />
       </View>
-      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{summary}</AppText>
+      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{shortSummary}</AppText>
     </View>
   );
 }
@@ -230,16 +175,9 @@ function PaceSegments({
 }
 
 const styles = StyleSheet.create({
-  chartRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  periodLabel: { width: 48, ...typography.meta },
-  stackedTrack: { height: 16, flex: 1, flexDirection: 'row', overflow: 'hidden', borderRadius: 8 },
+  stackedTrack: { height: 12, width: '100%', flexDirection: 'row', overflow: 'hidden', borderRadius: 6 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginVertical: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  sectionBars: { gap: 10 },
-  sectionBar: { gap: 5 },
-  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  sectionName: { flex: 1, minWidth: 0, ...typography.meta },
-  sectionTrack: { height: 6, overflow: 'hidden', borderRadius: 3 },
   pacePlot: { position: 'relative', width: '100%' },
 });

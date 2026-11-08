@@ -5,13 +5,18 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { PaceLine, SectionBars, StackedBar } from '../../src/components/BudgetCharts';
-import { BudgetItemEditSheet } from '../../src/components/BudgetItemEditSheet';
+import { PaceLine, StackedBar } from '../../src/components/BudgetCharts';
+import { BudgetManagementSheet, type BudgetManagementMode, type BudgetManagementValues } from '../../src/components/BudgetManagementSheet';
+import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
-import { budgetOverview, effectiveMonthBudget, type BudgetOverviewItem } from '../../src/domain/budget';
+import {
+  budgetOverview,
+  createDefaultBudgetPlan,
+  effectiveMonthBudget,
+} from '../../src/domain/budget';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { todayISO } from '../../src/lib/clock';
@@ -47,7 +52,8 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
-  const [editingItem, setEditingItem] = useState<BudgetOverviewItem | null>(null);
+  const [sheetMode, setSheetMode] = useState<BudgetManagementMode | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set());
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -73,9 +79,25 @@ export default function BudgetScreen() {
     },
   }), [lastAllowedMonth, month, touchingHeader]);
 
+  const createBudget = useCallback(() => {
+    const currentMonthKey = today.slice(0, 7);
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === currentMonthKey) ?? null;
+    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(currentMonthKey), currentMonthKey);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not create budget', error);
+      return;
+    }
+    setActionToast({
+      message: 'Budget created',
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(null, currentMonthKey, previousMonth),
+    });
+  }, [actions, data.monthBudgets, setActionToast, today]);
+
   const apply = useCallback(async () => {
     if (!data.budgetPlan) {
-      router.push('/budget-setup');
+      createBudget();
       return;
     }
     const previous = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
@@ -100,7 +122,7 @@ export default function BudgetScreen() {
       actionLabel: 'Undo',
       onAction: () => actions.restoreMonthBudget(month, previous),
     });
-  }, [actions, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
+  }, [actions, createBudget, data.budgetPlan, data.monthBudgets, month, setActionToast, today]);
 
   useEffect(() => {
     if (!routeApply || autoApplyStarted.current) return;
@@ -108,12 +130,48 @@ export default function BudgetScreen() {
     void apply();
   }, [routeApply, apply]);
 
-  const editBudgetItem = (item: BudgetOverviewItem) => {
+  const openBudgetItem = (item: (typeof overview.sections)[number]['items'][number]) => {
     switch (item.source.kind) {
       case 'line':
+        {
+          const category = item.source.category;
+          const budgetItem = effectiveMonthBudget(data, month, today).budget?.items
+            .find((candidate) => candidate.name === category);
+          if (!budgetItem) {
+            Alert.alert('Could not edit item', 'This budget item is no longer available.');
+            return;
+          }
+          setSheetMode({
+            kind: 'edit-item',
+            sectionId: budgetItem.sectionId,
+            itemId: budgetItem.id,
+            name: budgetItem.name,
+            mode: budgetItem.mode,
+            value: budgetItem.value,
+            ...(budgetItem.dueDay === undefined ? {} : { day: budgetItem.dueDay }),
+          });
+          return;
+        }
       case 'income':
-        if (item.editable) setEditingItem(item);
-        return;
+        {
+          if (!item.editable) return;
+          const incomeId = item.source.incomeId;
+          const income = effectiveMonthBudget(data, month, today).budget?.incomes
+            .find((candidate) => candidate.id === incomeId);
+          if (!income) {
+            Alert.alert('Could not edit income', 'This income item is no longer available.');
+            return;
+          }
+          setSheetMode({
+            kind: 'edit-income',
+            itemId: income.id,
+            name: income.name,
+            category: income.category,
+            amount: income.amount,
+            ...(income.day === undefined ? {} : { day: income.day }),
+          });
+          return;
+        }
       case 'plan':
         router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
         return;
@@ -125,61 +183,150 @@ export default function BudgetScreen() {
     }
   };
 
-  const saveBudgetItem = (item: BudgetOverviewItem, values: {
-    amount: number;
-    day?: number;
-    scope: 'month' | 'following';
-  }) => {
-    if (item.source.kind !== 'line' && item.source.kind !== 'income') return false;
+  const saveManagement = (values: BudgetManagementValues) => {
+    if (!sheetMode) return false;
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    actions.editBudgetItem(
-      month,
-      item.source,
-      { amount: values.amount, ...(values.day === undefined ? {} : { dueDay: values.day }) },
-      values.scope,
-      today,
-    );
+    switch (sheetMode.kind) {
+      case 'add-section':
+        actions.addSection(month, { name: values.name, type: values.sectionType }, values.scope, today);
+        break;
+      case 'rename-section':
+        actions.renameSection(month, sheetMode.sectionId, values.name, values.scope, today);
+        break;
+      case 'add-item':
+        actions.addBudgetItem(month, {
+          sectionId: sheetMode.sectionId,
+          name: values.name,
+          mode: values.itemMode,
+          value: values.value,
+          ...(values.day === undefined ? {} : { dueDay: values.day }),
+        }, values.scope, today);
+        break;
+      case 'edit-item':
+        actions.editBudgetStructureItem(month, sheetMode.itemId, {
+          name: values.name,
+          mode: values.itemMode,
+          value: values.value,
+          ...(values.day === undefined ? {} : { dueDay: values.day }),
+        }, values.scope, today);
+        break;
+      case 'add-income':
+        actions.addBudgetIncome(month, {
+          name: values.name,
+          category: values.category,
+          amount: values.amount,
+          ...(values.day === undefined ? {} : { day: values.day }),
+        }, values.scope, today);
+        break;
+      case 'edit-income':
+        actions.editBudgetItem(month, {
+          kind: 'income',
+          incomeId: sheetMode.itemId,
+          category: sheetMode.category,
+        }, {
+          amount: values.amount,
+          ...(values.day === undefined ? {} : { dueDay: values.day }),
+        }, values.scope, today);
+        break;
+    }
     const error = useAppStore.getState().lastError;
     if (error) {
-      Alert.alert('Could not update budget item', error);
+      Alert.alert('Could not save budget changes', error);
       return false;
     }
     setActionToast({
-      message: `${item.title} updated`,
+      message: sheetMode.kind === 'add-section' || sheetMode.kind === 'add-item' || sheetMode.kind === 'add-income'
+        ? `${values.name} added`
+        : sheetMode.kind === 'rename-section' || sheetMode.kind === 'edit-item'
+          ? `${values.name} updated`
+          : `${sheetMode.name} updated`,
       actionLabel: 'Undo',
       onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
     });
     return true;
   };
 
-  const removeBudgetItem = (item: BudgetOverviewItem, scope: 'month' | 'following') => {
-    if (item.source.kind !== 'line' && item.source.kind !== 'income') return false;
+  const removeBudgetItem = (mode: Extract<BudgetManagementMode, { kind: 'edit-item' | 'edit-income' }>, scope: 'month' | 'following') => {
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    actions.removeBudgetItem(month, item.source, scope, today);
+    if (mode.kind === 'edit-item') {
+      actions.deleteBudgetStructureItem(month, mode.itemId, scope, today);
+    } else {
+      actions.removeBudgetItem(month, {
+        kind: 'income',
+        incomeId: mode.itemId,
+        category: mode.category,
+      }, scope, today);
+    }
     const error = useAppStore.getState().lastError;
     if (error) {
       Alert.alert('Could not remove budget item', error);
       return false;
     }
     setActionToast({
-      message: `${item.title} removed`,
+      message: `${mode.name} removed`,
       actionLabel: 'Undo',
       onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
     });
     return true;
   };
 
-  const editingBudget = editingItem
-    ? effectiveMonthBudget(data, month, today).budget
-    : null;
-  const editingSource = editingItem?.source;
-  const editingDay = editingSource?.kind === 'line'
-    ? editingBudget?.lines.find((line) => line.category === editingSource.category)?.dueDay
-    : editingSource?.kind === 'income'
-      ? editingBudget?.incomes.find((income) => income.id === editingSource.incomeId)?.day
-      : undefined;
+  const confirmRemoveItem = (mode: Extract<BudgetManagementMode, { kind: 'edit-item' | 'edit-income' }>) => {
+    Alert.alert(
+      'Remove item?',
+      `Remove ${mode.name} from the selected month range? Transactions will remain unchanged.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'This month only',
+          onPress: () => {
+            if (removeBudgetItem(mode, 'month')) setSheetMode(null);
+          },
+        },
+        {
+          text: 'This and following months',
+          style: 'destructive',
+          onPress: () => {
+            if (removeBudgetItem(mode, 'following')) setSheetMode(null);
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmDeleteSection = (sectionId: string, sectionName: string) => {
+    const itemCount = effectiveMonthBudget(data, month, today).budget?.items
+      .filter((item) => item.sectionId === sectionId).length ?? 0;
+    Alert.alert(
+      'Delete section?',
+      `Delete ${sectionName} and its ${itemCount} ${itemCount === 1 ? 'item' : 'items'}? Transactions will remain unchanged.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        ...(['month', 'following'] as const).map((scope) => ({
+          text: scope === 'month' ? 'This month only' : 'This and following months',
+          style: scope === 'following' ? 'destructive' as const : 'default' as const,
+          onPress: () => {
+            const previousPlan = data.budgetPlan;
+            const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+            actions.deleteSection(month, sectionId, scope, today);
+            const error = useAppStore.getState().lastError;
+            if (error) {
+              Alert.alert('Could not delete section', error);
+              return;
+            }
+            setActionToast({
+              message: `${sectionName} deleted`,
+              actionLabel: 'Undo',
+              onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
+            });
+          },
+        })),
+      ],
+    );
+  };
+
+  const activeBudget = effectiveMonthBudget(data, month, today).budget;
   const laterCustomMonths = (data.monthBudgets ?? [])
     .filter((budget) => budget.month > month && budget.source === 'custom').length;
 
@@ -189,7 +336,9 @@ export default function BudgetScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <AppHeader
             title="Budget"
-            rightActions={[{ icon: 'edit-2', label: 'Edit budget', onPress: () => router.push('/budget-setup') }]}
+            rightActions={overview.mode === 'past'
+              ? []
+              : [{ icon: 'plus', label: 'Add category', onPress: () => setSheetMode({ kind: 'add-section' }) }]}
             showDefaultMenu={false}
           />
           <View
@@ -216,7 +365,7 @@ export default function BudgetScreen() {
           </View>
 
           <View testID="budget-cash-flow">
-            <Card>
+            <Card style={styles.screenCard}>
               <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Cash flow</AppText>
               <View style={[styles.metricRows, stackMetrics && styles.metricRowsStacked]}>
                 <MetricRow
@@ -234,117 +383,197 @@ export default function BudgetScreen() {
 
           {overview.sections.length === 0 ? (
             <View testID="budget-empty-state">
-              <Card>
+              <Card style={styles.screenCard}>
                 <AppText weight="bold" style={[typography.name, styles.cardTitle]}>
-                  {overview.mode === 'future' && data.budgetPlan ? 'Not planned' : 'No budget for this month'}
+                  {overview.mode === 'future' && data.budgetPlan ? 'Not planned' : !data.budgetPlan ? 'No budget yet' : 'Not planned'}
                 </AppText>
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   {overview.mode === 'future' && data.budgetPlan
                     ? 'This future month has no budget snapshot.'
-                    : 'Set up a budget to start planning this month.'}
+                    : !data.budgetPlan
+                      ? 'Create a budget to start planning.'
+                      : `Apply your plan to ${formatMonth(month)} to start planning this month.`}
                 </AppText>
-                <Button
-                  label={overview.mode === 'future' && data.budgetPlan
-                    ? `Apply plan to ${formatMonth(month)}`
-                    : 'Set up budget'}
-                  icon={overview.mode === 'future' && data.budgetPlan ? 'check' : 'plus'}
-                  variant="primary"
-                  onPress={() => {
-                    if (overview.mode === 'future' && data.budgetPlan) void apply();
-                    else router.push('/budget-setup');
-                  }}
-                />
+                {overview.mode !== 'past' ? (
+                  <Button
+                    label={!data.budgetPlan ? 'Create budget' : `Apply plan to ${formatMonth(month)}`}
+                    icon={!data.budgetPlan ? 'plus' : 'check'}
+                    variant="primary"
+                    onPress={() => {
+                      if (data.budgetPlan) void apply();
+                      else createBudget();
+                    }}
+                  />
+                ) : null}
               </Card>
             </View>
           ) : (
             <>
               <View testID="budget-overview-card">
-                <Card>
-                  <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Overview</AppText>
+                <Card style={styles.overviewCard}>
+                  <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
                   <StackedBar values={overview.stacked} summary={overview.summary.stacked} />
-                  <View style={styles.metricRows}>
+                  <View style={styles.metricTable}>
+                    <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
+                      <View style={styles.metricTableLabel} />
+                      <AppText style={[typography.label, styles.metricColumn]}>Planned</AppText>
+                      <AppText style={[typography.label, styles.metricColumn]}>Actual</AppText>
+                    </View>
                     <OverviewMetricRow label="Income" planned={overview.stacked.income.planned} actual={overview.stacked.income.actual} stacked={stackMetrics} />
                     <OverviewMetricRow label="Spending" planned={overview.stacked.spend.planned} actual={overview.stacked.spend.actual} stacked={stackMetrics} />
                     <OverviewMetricRow label="Investing" planned={overview.stacked.invest.planned} actual={overview.stacked.invest.actual} stacked={stackMetrics} />
                     <OverviewMetricRow label="Left" planned={overview.stacked.left.planned} actual={overview.stacked.left.actual} stacked={stackMetrics} />
                   </View>
-                </Card>
-              </View>
-
-              <View testID="budget-planned-vs-actual">
-                <Card>
-                  <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Planned vs actual</AppText>
-                  <SectionBars sections={overview.sections} summary={overview.summary.sections} />
+                  <AppText
+                    testID="budget-overview-summary"
+                    numberOfLines={1}
+                    accessibilityLabel={overview.summary.stacked}
+                    style={[typography.meta, { color: colors.text2 }]}>
+                    {overview.stacked.left.actual < 0
+                      ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
+                      : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
+                  </AppText>
                 </Card>
               </View>
 
               {overview.pace ? (
                 <View testID="budget-pace">
-                  <Card>
-                    <AppText weight="bold" style={[typography.name, styles.cardTitle]}>Pace</AppText>
-                    <PaceLine pace={overview.pace} summary={overview.summary.pace ?? ''} />
+                  <Card style={styles.overviewCard}>
+                    <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Pace</AppText>
+                    <PaceLine
+                      pace={overview.pace}
+                      summary={overview.summary.pace ?? ''}
+                      shortSummary={overview.stacked.left.actual < 0
+                        ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
+                        : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
+                    />
                   </Card>
                 </View>
               ) : null}
 
-              {overview.sections.map((section) => (
-                <View key={section.id} testID={`budget-section-${section.id}`}>
-                  <Card style={styles.sectionCard}>
-                    <AppText weight="bold" style={[typography.name, styles.sectionTitle]}>{section.name}</AppText>
-                    {section.items.map((item, index) => (
-                      <View
-                        key={item.id}
-                        testID={`budget-row-${item.id}`}
-                        style={[
-                          styles.overviewRow,
-                          stackMetrics && styles.overviewRowStacked,
-                          index < section.items.length - 1
-                            ? [styles.rowDivider, { borderBottomColor: colors.border }]
-                            : undefined,
-                        ]}>
-                        <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
-                        <View style={styles.rowValueAndAction}>
-                          <AppText
-                            style={typography.meta}
-                            accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
-                            <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
-                          </AppText>
-                          {overview.mode !== 'past' && (item.kind === 'linked' || item.editable) ? (
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={`Edit ${item.title}`}
-                              onPress={() => editBudgetItem(item)}
-                              style={styles.editButton}>
-                              <Feather name="edit-2" size={16} color={colors.primary} />
-                            </Pressable>
+              <View testID="budget-section-list">
+                <Card style={styles.sectionListCard}>
+                  {overview.sections.map((section) => {
+                    const definition = activeBudget?.sections.find((candidate) => candidate.id === section.id);
+                    const isSystem = definition?.system !== undefined;
+                    const expanded = expandedSections.has(section.id);
+                    const label = section.id === 'other-not-in-budget' ? 'Unbudgeted' : section.name;
+                    const progress = section.planned > 0
+                      ? Math.min(100, section.actual / section.planned * 100)
+                      : section.actual > 0 ? 100 : 0;
+                    return (
+                      <View key={section.id} testID={`budget-section-${section.id}`}>
+                        <BudgetSummaryToggle
+                          label={label}
+                          spent={section.actual}
+                          planned={section.planned}
+                          expanded={expanded}
+                          accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} ${label}`}
+                          testID={`budget-section-toggle-${section.id}`}
+                          progress={progress}
+                          onPress={() => setExpandedSections((current) => {
+                            const next = new Set(current);
+                            if (next.has(section.id)) next.delete(section.id);
+                            else next.add(section.id);
+                            return next;
+                          })}>
+                          {expanded ? (
+                            <View style={styles.sectionDetails}>
+                              {section.items.map((item, index) => (
+                                <View
+                                  key={item.id}
+                                  testID={`budget-row-${item.id}`}
+                                  style={[
+                                    styles.overviewRow,
+                                    stackMetrics && styles.overviewRowStacked,
+                                    index < section.items.length - 1
+                                      ? [styles.rowDivider, { borderBottomColor: colors.border }]
+                                      : undefined,
+                                  ]}>
+                                  <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                                  <View style={styles.rowValueAndAction}>
+                                    <AppText
+                                      style={typography.meta}
+                                      accessibilityLabel={`${item.title}, ${formatAmount(item.actual, 'exact', 1)} of ${formatAmount(item.planned, 'exact', 1)}`}>
+                                      <AmountText value={item.actual} tier="row" /> / <AmountText value={item.planned} tier="row" />
+                                    </AppText>
+                                    {overview.mode !== 'past' && (item.kind === 'linked' || item.editable) ? (
+                                      <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Edit ${item.title}`}
+                                        onPress={() => openBudgetItem(item)}
+                                        style={styles.editButton}>
+                                        <Feather name="edit-2" size={16} color={colors.primary} />
+                                      </Pressable>
+                                    ) : null}
+                                  </View>
+                                </View>
+                              ))}
+                              {section.items.length === 0 ? (
+                                <AppText style={[typography.meta, { color: colors.text3 }]}>No items yet.</AppText>
+                              ) : null}
+                              {overview.mode !== 'past' && !isSystem && definition ? (
+                                <View style={styles.sectionActions}>
+                                  <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => setSheetMode({ kind: 'rename-section', sectionId: section.id, name: section.name })}>
+                                    <AppText weight="semibold" style={{ color: colors.primary }}>Rename</AppText>
+                                  </Pressable>
+                                  <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => confirmDeleteSection(section.id, section.name)}>
+                                    <AppText weight="semibold" style={{ color: colors.err }}>Delete section</AppText>
+                                  </Pressable>
+                                  <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => setSheetMode({ kind: 'add-item', sectionId: section.id })}>
+                                    <AppText weight="semibold" style={{ color: colors.primary }}>Add item</AppText>
+                                  </Pressable>
+                                </View>
+                              ) : null}
+                              {overview.mode !== 'past' && definition?.system === 'income' ? (
+                                <View style={styles.sectionActions}>
+                                  <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => setSheetMode({ kind: 'add-income' })}>
+                                    <AppText weight="semibold" style={{ color: colors.primary }}>Add income</AppText>
+                                  </Pressable>
+                                </View>
+                              ) : null}
+                            </View>
                           ) : null}
-                        </View>
+                        </BudgetSummaryToggle>
                       </View>
-                    ))}
-                  </Card>
-                </View>
-              ))}
+                    );
+                  })}
+                </Card>
+              </View>
             </>
           )}
         </ScrollView>
-        {editingItem && overview.mode !== 'past'
-          && (editingItem.source.kind === 'line' || editingItem.source.kind === 'income') ? (
-            <BudgetItemEditSheet
-              key={editingItem.id}
-              visible
-              title={editingItem.title}
-              amount={editingItem.planned}
-              day={editingDay}
-              incomeDetails={editingItem.source.kind === 'income'
-                ? { name: editingItem.title, category: editingItem.source.category }
-                : undefined}
-              laterCustomMonths={laterCustomMonths}
-              onClose={() => setEditingItem(null)}
-              onSave={(values) => saveBudgetItem(editingItem, values)}
-              onRemove={(scope) => removeBudgetItem(editingItem, scope)}
-            />
-          )
-          : null}
+        {sheetMode && overview.mode !== 'past' ? (
+          <BudgetManagementSheet
+            key={`${sheetMode.kind}-${'itemId' in sheetMode ? sheetMode.itemId : 'sectionId' in sheetMode ? sheetMode.sectionId : 'new'}`}
+            visible
+            mode={sheetMode}
+            fontScale={fontScale}
+            defaultScope={
+              sheetMode.kind.startsWith('add-')
+                ? 'following'
+                : overview.mode === 'current' && data.monthBudgets?.some((budget) => budget.month === month)
+                  ? 'month'
+                  : 'following'
+            }
+            laterCustomMonths={laterCustomMonths}
+            onClose={() => setSheetMode(null)}
+            onSave={saveManagement}
+            onRemove={
+              sheetMode.kind === 'edit-item' || sheetMode.kind === 'edit-income'
+                ? () => confirmRemoveItem(sheetMode)
+                : undefined
+            }
+          />
+        ) : null}
       </View>
     </Screen>
   );
@@ -378,16 +607,27 @@ function OverviewMetricRow({
   actual: number;
   stacked: boolean;
 }) {
+  const { colors } = useTheme();
+  const swatchColor = label === 'Spending'
+    ? colors.primary
+    : label === 'Investing'
+      ? colors.purple
+      : label === 'Left'
+        ? colors.ok
+        : colors.text3;
   return (
-    <View style={[styles.overviewMetricRow, stacked && styles.overviewMetricRowStacked]}>
-      <AppText style={typography.meta}>{label}</AppText>
+    <View
+      testID={`budget-overview-metric-${label.toLowerCase()}`}
+      style={[styles.overviewMetricRow, stacked && styles.overviewMetricRowStacked, { borderBottomColor: colors.border }]}>
+      <View style={styles.metricTableLabel}>
+        <View style={[styles.metricSwatch, { backgroundColor: swatchColor }]} />
+        <AppText style={typography.meta}>{label}</AppText>
+      </View>
       <View style={[styles.overviewMetricValues, stacked && styles.overviewMetricValuesStacked]}>
         <View style={styles.metricValue}>
-          <AppText style={styles.valueLabel}>Planned</AppText>
           <AmountText value={planned} tier="row" weight="semibold" />
         </View>
         <View style={styles.metricValue}>
-          <AppText style={styles.valueLabel}>Actual</AppText>
           <AmountText value={actual} tier="row" weight="semibold" />
         </View>
       </View>
@@ -397,22 +637,31 @@ function OverviewMetricRow({
 
 const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
-  content: { paddingBottom: 28, gap: 10 },
+  content: { paddingBottom: 28, gap: 16 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
   disabled: { opacity: 0.45 },
   cardTitle: { marginBottom: 8 },
+  screenCard: { marginTop: 0 },
+  overviewCard: { marginTop: 0, padding: 16, gap: 16 },
+  overviewTitle: { marginBottom: 0 },
   metricRows: { gap: 8 },
   metricRowsStacked: { gap: 12 },
   metricRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  overviewMetricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  metricTable: { gap: 0 },
+  metricTableHeader: { minHeight: 32, flexDirection: 'row', alignItems: 'center' },
+  metricTableRowStacked: { alignItems: 'flex-end' },
+  metricTableLabel: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  metricColumn: { width: 80, textAlign: 'right' },
+  metricSwatch: { width: 8, height: 8, borderRadius: 4 },
+  overviewMetricRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   overviewMetricRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
-  overviewMetricValues: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' },
-  overviewMetricValuesStacked: { justifyContent: 'space-between' },
-  metricValue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  valueLabel: { ...typography.label },
-  sectionCard: { paddingVertical: 12, gap: 0 },
-  sectionTitle: { paddingHorizontal: 4, paddingBottom: 8 },
-  overviewRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 4, paddingVertical: 6 },
+  overviewMetricValues: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  overviewMetricValuesStacked: { justifyContent: 'flex-end' },
+  metricValue: { width: 80, alignItems: 'flex-end' },
+  sectionListCard: { marginTop: 0, padding: 16, gap: 16 },
+  sectionDetails: { gap: 12 },
+  sectionActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 18, paddingTop: 4 },
+  overviewRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 6 },
   overviewRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
   rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
   rowTitle: { flex: 1, minWidth: 0 },

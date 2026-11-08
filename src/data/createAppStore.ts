@@ -53,6 +53,14 @@ import {
   applyBudgetPlanToMonth,
   clearMonthBudget,
   customizeMonthBudget,
+  addSection as addBudgetSectionData,
+  addIncomeItem as addBudgetIncomeData,
+  renameSection as renameBudgetSectionData,
+  changeSectionType as changeBudgetSectionTypeData,
+  deleteSection as deleteBudgetSectionData,
+  addItem as addBudgetItemData,
+  editItem as editBudgetItemStructureData,
+  deleteItem as deleteBudgetItemData,
   editBudgetItem as editBudgetItemData,
   ensureCurrentMonthBudget,
   removeBudgetItem as removeBudgetItemData,
@@ -80,9 +88,15 @@ import { SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
 import { createStressTransactions } from '../domain/stressData';
 import type {
-  AppData, BudgetIncomeItem, BudgetLine, BudgetPlan, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
+  AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, EfCustomBucket, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, Settings, Transaction,
 } from '../domain/types';
-import type { BudgetItemScope, BudgetItemSource, BudgetItemValues } from '../domain/budget';
+import type {
+  BudgetIncomeInput,
+  BudgetItemPatch,
+  BudgetItemScope,
+  BudgetItemSource,
+  BudgetItemValues,
+} from '../domain/budget';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
 import { useUIStore } from './uiStore';
@@ -136,13 +150,21 @@ export type AppActions = {
   saveAndApplyBudgetPlan: (plan: BudgetPlan, month: string) => void;
   applyBudgetPlan: (month: string) => void;
   setBudgetRepeat: (repeatMonthly: boolean, repeatFrom: string | null) => void;
-  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: BudgetLine[] }) => void;
+  customizeMonthBudget: (month: string, input: { incomes: BudgetIncomeItem[]; lines?: { category: string; planned: number; dueDay?: number }[] }, today: ISODate) => void;
   restoreMonthBudget: (month: string, budget: MonthBudget | null) => void;
   restoreBudgetPlanAndMonth: (plan: BudgetPlan | null, month: string, budget: MonthBudget | null) => void;
   editBudgetItem: (
     month: string, source: BudgetItemSource, values: BudgetItemValues, scope: BudgetItemScope, today: ISODate,
   ) => void;
   removeBudgetItem: (month: string, source: BudgetItemSource, scope: BudgetItemScope, today: ISODate) => void;
+  addSection: (month: string, input: Pick<BudgetSection, 'name' | 'type'>, scope: BudgetItemScope, today: ISODate) => void;
+  renameSection: (month: string, sectionId: string, name: string, scope: BudgetItemScope, today: ISODate) => void;
+  changeSectionType: (month: string, sectionId: string, type: BudgetSection['type'], scope: BudgetItemScope, today: ISODate) => void;
+  deleteSection: (month: string, sectionId: string, scope: BudgetItemScope, today: ISODate) => void;
+  addBudgetItem: (month: string, input: Omit<BudgetItem, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  addBudgetIncome: (month: string, input: Omit<BudgetIncomeInput, 'id'>, scope: BudgetItemScope, today: ISODate) => void;
+  editBudgetStructureItem: (month: string, itemId: string, patch: BudgetItemPatch, scope: BudgetItemScope, today: ISODate) => void;
+  deleteBudgetStructureItem: (month: string, itemId: string, scope: BudgetItemScope, today: ISODate) => void;
   clearMonthBudget: (month: string) => void;
   ensureCurrentMonthBudget: (today: ISODate) => void;
   deleteGoal: (id: string) => void;
@@ -421,8 +443,8 @@ export function createAppStore(
         setBudgetRepeat(repeatMonthly, repeatFrom) {
           applyDataAction((data) => setBudgetRepeat(data, repeatMonthly, repeatFrom));
         },
-        customizeMonthBudget(month, input) {
-          applyDataAction((data) => customizeMonthBudget(data, month, input));
+        customizeMonthBudget(month, input, today) {
+          applyDataAction((data) => customizeMonthBudget(data, month, input, today));
         },
         restoreMonthBudget(month, budget) {
           applyDataAction((data) => restoreMonthBudget(data, month, budget));
@@ -435,6 +457,30 @@ export function createAppStore(
         },
         removeBudgetItem(month, source, scope, today) {
           applyDataAction((data) => removeBudgetItemData(data, month, source, scope, today));
+        },
+        addSection(month, input, scope, today) {
+          applyDataAction((data) => addBudgetSectionData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        renameSection(month, sectionId, name, scope, today) {
+          applyDataAction((data) => renameBudgetSectionData(data, month, { sectionId, name }, scope, today));
+        },
+        changeSectionType(month, sectionId, type, scope, today) {
+          applyDataAction((data) => changeBudgetSectionTypeData(data, month, { sectionId, type }, scope, today));
+        },
+        deleteSection(month, sectionId, scope, today) {
+          applyDataAction((data) => deleteBudgetSectionData(data, month, { sectionId }, scope, today));
+        },
+        addBudgetItem(month, input, scope, today) {
+          applyDataAction((data) => addBudgetItemData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        addBudgetIncome(month, input, scope, today) {
+          applyDataAction((data) => addBudgetIncomeData(data, month, { ...input, id: deps.newId() }, scope, today));
+        },
+        editBudgetStructureItem(month, itemId, patch, scope, today) {
+          applyDataAction((data) => editBudgetItemStructureData(data, month, { itemId, patch }, scope, today));
+        },
+        deleteBudgetStructureItem(month, itemId, scope, today) {
+          applyDataAction((data) => deleteBudgetItemData(data, month, { itemId }, scope, today));
         },
         clearMonthBudget(month) {
           applyDataAction((data) => clearMonthBudget(data, month));
@@ -590,6 +636,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v6`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v7`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v8`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v9`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

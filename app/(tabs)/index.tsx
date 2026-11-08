@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { router, useIsFocused, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
@@ -6,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
 import {
@@ -22,7 +22,7 @@ import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
-import { budgetMonthView } from '../../src/domain/budget';
+import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
@@ -84,6 +84,20 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
+  const createBudget = () => {
+    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
+    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(month), month);
+    const error = useAppStore.getState().lastError;
+    if (error) {
+      Alert.alert('Could not create budget', error);
+      return;
+    }
+    setActionToast({
+      message: 'Budget created',
+      actionLabel: 'Undo',
+      onAction: () => actions.restoreBudgetPlanAndMonth(null, month, previousMonth),
+    });
+  };
   const handleDuePress = async (item: PendingItem) => {
     if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
     if (!item.dueDate) {
@@ -233,20 +247,15 @@ export default function HomeScreen() {
       </View>
 
       <Card style={styles.categoryBreakdown}>
-        <Pressable
-          testID="home-spending-toggle"
-          accessibilityRole="button"
+        <BudgetSummaryToggle
+          label="This month:"
+          spent={monthBudget.actualSpend}
+          planned={monthBudget.plannedSpend}
+          expanded={spendingExpanded}
           accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
-          accessibilityState={{ expanded: spendingExpanded }}
-          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}
-          style={[styles.spendingToggle, { borderTopColor: colors.border }]}>
-          <AppText
-            weight="semibold"
-            accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
-            This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
-          </AppText>
-          <Feather name={spendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
-        </Pressable>
+          testID="home-spending-toggle"
+          topBorder
+          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}>
         {spendingExpanded ? spendingByCategory.length > 0 ? (
           <View testID="home-spending-details" style={styles.categoryRows}>
             {spendingByCategory.map(({ category, amount }) => (
@@ -259,14 +268,15 @@ export default function HomeScreen() {
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
         {!monthBudget.budget ? (
           <Button
-            label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
-            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            label={data.budgetPlan ? 'Apply budget' : 'Create budget'}
+            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Create budget'}
             onPress={() => {
-              if (!data.budgetPlan) router.push('/budget-setup');
+              if (!data.budgetPlan) createBudget();
               else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
             }}
           />
         ) : null}
+        </BudgetSummaryToggle>
       </Card>
 
       {nudge.show ? (
@@ -459,7 +469,6 @@ const styles = StyleSheet.create({
   categoryBreakdown: { gap: 10 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  spendingToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
