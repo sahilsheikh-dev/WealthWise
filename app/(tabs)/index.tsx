@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { AppHeader } from '../../src/components/AppHeader';
 import {
   AppText,
   Button,
@@ -16,14 +17,18 @@ import {
   StatusBadge,
 } from '../../src/components/ui';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
+import { useAppStore } from '../../src/data/store';
 import { useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { addDays } from '../../src/domain/dates';
-import { homeSummary } from '../../src/domain/summary';
+import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { upcomingDue } from '../../src/domain/schedule';
+import { homeSummary } from '../../src/domain/summary';
 import { currentHour, todayISO } from '../../src/lib/clock';
+import { choiceAsync } from '../../src/lib/confirm';
 import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
+import { buildHomeMenu } from '../../src/lib/homeMenu';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -35,9 +40,12 @@ const actions = [
 ];
 const metaStore = createMetaStore(AsyncStorage);
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
+
 export default function HomeScreen() {
-  const { colors } = useTheme();
+  const { colors, themeId } = useTheme();
   const data = useAppData();
+  const devActions = useAppStore((state) => state.devActions);
   const today = todayISO();
   const summary = homeSummary(data, today);
   const dueItems = upcomingDue(data, today, 5);
@@ -54,17 +62,45 @@ export default function HomeScreen() {
     nudgeDismissedUntil: backupMeta.nudgeDismissedUntil,
     today,
   });
+  const themeLabels = {
+    system: 'System', light: 'Light', dark: 'Dark', sky: 'Sky', mint: 'Mint', blush: 'Blush', midnight: 'Midnight',
+  } as const;
+  const menu = buildHomeMenu({
+    hasUnlinked: findUnlinkedEntries(data).length > 0,
+    isDev: __DEV__,
+    themeLabel: themeLabels[themeId],
+  }).map((item) => ({
+    ...item,
+    onPress: () => {
+      if (item.label === 'Backup and restore') router.push('/backup');
+      else if (item.label === 'Security') router.push('/security');
+      else if (item.label === 'Profile') router.push('/profile-form' as Href);
+      else if (item.label === 'Theme') router.push('/theme' as Href);
+      else if (item.label === 'Link missing transactions') router.push('/link-missing' as Href);
+      else if (item.label === 'Erase all data') router.push('/erase-data');
+      else if (item.label === 'Load demo data' && devActions) {
+        void choiceAsync({
+          title: 'Load Demo Data?',
+          message: 'Replace local app data with the bundled sample data?',
+          choices: [{ id: 'load', label: 'Load Demo Data' }],
+        }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
+      } else if (item.label === 'Simulate corrupt storage' && devActions) {
+        void choiceAsync({
+          title: 'Simulate Corrupt Storage?',
+          message: 'The app will restart and show its recovery screen.',
+          choices: [{ id: 'continue', label: 'Continue', destructive: true }],
+        }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });
+      }
+    },
+  }));
   return (
     <Screen>
-      <View style={styles.homeHeader}>
-        <AppText style={[typography.meta, { color: colors.text3 }]}>{greetingFor(currentHour())},</AppText>
-        <AppText weight="bold" style={typography.h1}>{data.settings.name || 'Welcome'}</AppText>
-      </View>
+      <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} menu={menu} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
         <StatPillRow>
-          <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
+          <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" onPress={() => router.push('/assets' as Href)} />
           <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" onPress={() => router.push('/liabilities')} />
           <StatPill
             label="Emergency Fund"

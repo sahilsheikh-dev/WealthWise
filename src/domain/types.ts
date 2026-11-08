@@ -1,5 +1,8 @@
 export type ISODate = string;
 
+export const THEME_IDS = ['system', 'light', 'dark', 'sky', 'mint', 'blush', 'midnight'] as const;
+export type ThemeId = (typeof THEME_IDS)[number];
+
 export type Transaction = {
   id: string;
   type: 'income' | 'expense' | 'invest';
@@ -128,7 +131,9 @@ export type EfEntry = {
 
 export type Settings = {
   name: string;
-  theme: 'system' | 'dark' | 'light';
+  theme: ThemeId;
+  monthlySalary: number | null;
+  onboarded: boolean;
 };
 
 export type AppData = {

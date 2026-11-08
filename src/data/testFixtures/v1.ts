@@ -93,3 +93,30 @@ export function makeV1Fixture() {
     }],
   };
 }
+
+export function makeV2Fixture() {
+  const v1 = makeV1Fixture();
+  const { loans, ...rest } = v1;
+  return {
+    ...rest,
+    transactions: v1.transactions.map((transaction) => ({
+      ...transaction,
+      source: transaction.source
+        ? { ...transaction.source, kind: transaction.source.kind === 'plan-log'
+          ? 'holding-entry' as const
+          : transaction.source.kind === 'loan-payment'
+            ? 'liability-payment' as const
+            : transaction.source.kind }
+        : undefined,
+    })),
+    holdings: v1.holdings.map((holding) => holding.kind === 'manual'
+      ? { ...holding, logs: [] }
+      : { ...holding, logs: holding.logs.map((entry) => ({ ...entry, kind: 'Deposit' as const })) }),
+    liabilities: loans.map((loan) => ({
+      ...loan,
+      kind: 'recurring' as const,
+      type: 'Other' as const,
+      payments: loan.payments.map((payment) => ({ ...payment, kind: 'EMI' as const })),
+    })),
+  };
+}

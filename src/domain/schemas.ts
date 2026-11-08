@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { formatDate, formatINR } from '../lib/format';
 import { addDays, isValidISO } from './dates';
 import { emiCoversInterest } from './liability';
-import type { AppData, ISODate, Transaction } from './types';
+import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -139,8 +139,10 @@ const efEntrySchema = z.object({
 });
 
 const settingsSchema = z.object({
-  name: z.string(),
-  theme: z.enum(['system', 'dark', 'light']),
+  name: z.string().max(40),
+  theme: z.enum(THEME_IDS),
+  monthlySalary: z.number().finite().min(0.01).max(1_000_000_000).nullable(),
+  onboarded: z.boolean(),
 });
 
 export const appDataSchema = z.object({
@@ -521,3 +523,28 @@ export type HoldingFormInput = z.input<ReturnType<typeof makeHoldingFormSchema>>
 export type HoldingFormOutput = z.output<ReturnType<typeof makeHoldingFormSchema>>;
 export type EfEntryFormInput = z.input<ReturnType<typeof makeEfEntryFormSchema>>;
 export type EfEntryFormOutput = z.output<ReturnType<typeof makeEfEntryFormSchema>>;
+
+function profileFields() {
+  return {
+    name: z.string().trim().min(1, 'Enter your name').max(40, 'Keep your name under 40 characters'),
+    monthlySalary: z.union([
+      z.literal('').transform(() => null),
+      moneyInputSchema({
+        minimum: 0.01,
+        maximum: 1_000_000_000,
+        maximumMessage: 'Salary must be 1,000,000,000 or less',
+      }),
+    ]).optional().transform((salary) => salary ?? null),
+  };
+}
+
+export function makeOnboardingFormSchema() {
+  return z.object(profileFields());
+}
+
+export function makeProfileFormSchema() {
+  return z.object(profileFields());
+}
+
+export type ProfileFormInput = z.input<ReturnType<typeof makeProfileFormSchema>>;
+export type ProfileFormOutput = z.output<ReturnType<typeof makeProfileFormSchema>>;

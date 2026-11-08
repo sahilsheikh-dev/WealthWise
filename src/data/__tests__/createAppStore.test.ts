@@ -10,7 +10,7 @@ import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
 import { createAppStore } from '../createAppStore';
-import { makeV1Fixture } from '../testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
@@ -67,6 +67,94 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it.each([
+    ['same day', '2026-10-10', '2026-10-10', 5_000],
+    ['later day', '2026-10-09', '2026-10-10', 5_000],
+    ['whole balance', '2026-10-10', '2026-10-10', 10_000],
+  ])('accepts an emergency fund deposit and %s withdrawal from an empty store', async (_label, depositDate, withdrawalDate, withdrawal) => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `ef-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addEfEntry({ date: depositDate, amount: 10_000, note: 'Deposit' });
+    actions.addEfEntry({ date: withdrawalDate, amount: -withdrawal, note: 'Withdrawal' });
+
+    const state = store.getState();
+    expect(state.lastError).toBeNull();
+    expect(efBalance(state.data.efEntries)).toBe(10_000 - withdrawal);
+    expect(state.data.transactions).toHaveLength(2);
+    expect(state.data.transactions[1]).toMatchObject({
+      type: 'income',
+      amount: withdrawal,
+      category: 'Withdrawal',
+      note: 'Emergency fund withdrawal',
+    });
+    expect(validateIntegrity(state.data)).toEqual([]);
+  });
+
+  it('rejects an overdraw without mutating emergency fund data', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    store.getState().actions.addEfEntry({ date: '2026-10-10', amount: 10_000, note: '' });
+    const before = store.getState().data;
+    store.getState().actions.addEfEntry({ date: '2026-10-10', amount: -10_001, note: '' });
+    expect(store.getState().lastError).toBe('This would make the balance negative on 2026-10-10');
+    expect(store.getState().data).toBe(before);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
+  it.each(['manual', 'plan', 'emergency fund'] as const)('links and guards a withdrawal from a %s instrument', async (kind) => {
+    const storage = new MemoryStorage();
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: mockAppData }, version: 3 }));
+    let id = 0;
+    const store = makeStore(storage, { newId: () => `withdrawal-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const writesBefore = storage.setItemCalls;
+
+    if (kind === 'manual' || kind === 'plan') {
+      const holding = store.getState().data.holdings.find((item) => item.kind === kind);
+      if (!holding) throw new Error(`Missing ${kind} holding fixture.`);
+      actions.addInvestmentEntry(holding.id, {
+        date: '2026-10-10',
+        amount: 1,
+        kind: 'Withdrawal',
+        note: 'Test withdrawal',
+      });
+    } else {
+      actions.addEfEntry({ date: '2026-10-10', amount: -1, note: 'Test withdrawal' });
+    }
+
+    const result = store.getState();
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    expect(result.lastError).toBeNull();
+    expect(result.data.transactions.at(-1)).toMatchObject({
+      type: 'income',
+      category: 'Withdrawal',
+      amount: 1,
+    });
+    expect(validateIntegrity(result.data)).toEqual([]);
+
+    const beforeRejectedWithdrawal = result.data;
+    if (kind === 'manual' || kind === 'plan') {
+      const holding = beforeRejectedWithdrawal.holdings.find((item) => item.kind === kind);
+      if (!holding) throw new Error(`Missing ${kind} holding after withdrawal.`);
+      actions.addInvestmentEntry(holding.id, {
+        date: '2026-10-10',
+        amount: 1_000_000_000,
+        kind: 'Withdrawal',
+        note: 'Too large',
+      });
+    } else {
+      actions.addEfEntry({ date: '2026-10-10', amount: -1_000_000, note: 'Too large' });
+    }
+    expect(store.getState().lastError).toBeTruthy();
+    expect(store.getState().data).toBe(beforeRejectedWithdrawal);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+  });
+
   it('persists each instrument transaction action once', async () => {
     const storage = new MemoryStorage();
     const seed = emptyAppData('2026-10-10');
@@ -80,7 +168,7 @@ describe('createAppStore persistence', () => {
       valueAsOf: '2026-10-10',
       logs: [{ id: 'old-entry', date: '2026-10-01', amount: 50, kind: 'Deposit', note: '' }],
     });
-    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 2 }));
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data: seed }, version: 3 }));
     let id = 0;
     const store = makeStore(storage, { newId: () => `instrument-${++id}` });
     await waitForHydration(store);
@@ -173,6 +261,27 @@ describe('createAppStore persistence', () => {
     expect(second.getState().data).toEqual(first.getState().data);
     expect(storage.values.get('wealthwise.app.v1.premigration.v1')).toBe(raw);
     expect(storage.setItemCalls).toBe(copyWrites);
+  });
+
+  it('migrates a v2 database once and does not overwrite its premigration copy', async () => {
+    const storage = new MemoryStorage();
+    const v2 = makeV2Fixture();
+    const raw = JSON.stringify({ state: { data: v2 }, version: 2 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    expect(store.getState().data.settings).toEqual({
+      ...v2.settings,
+      monthlySalary: null,
+      onboarded: true,
+    });
+    expect(storage.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
+    const writesAfterMigration = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2').length;
+    const restored = makeStore(storage);
+    await waitForHydration(restored);
+    expect(restored.getState().data).toEqual(store.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2'))
+      .toHaveLength(writesAfterMigration);
   });
   it('starts empty with an emergency fund goal and rehydrates transactions across instances', async () => {
     const storage = new MemoryStorage();
@@ -377,10 +486,27 @@ describe('createAppStore persistence', () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);
     await waitForHydration(store);
+    const themeWrites = storage.setItemCalls;
+    store.getState().actions.updateSettings({ theme: 'midnight' });
+    expect(storage.setItemCalls - themeWrites).toBe(1);
     store.getState().actions.updateSettings({ name: 'Asha', theme: 'dark' });
     const restored = makeStore(storage);
     await waitForHydration(restored);
-    expect(restored.getState().data.settings).toEqual({ name: 'Asha', theme: 'dark' });
+    expect(restored.getState().data.settings).toEqual({
+      name: 'Asha', theme: 'dark', monthlySalary: null, onboarded: false,
+    });
+  });
+
+  it('completes onboarding in one persisted write', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    const before = storage.setItemCalls;
+    store.getState().actions.completeOnboarding({ name: 'Asha', monthlySalary: 75_000 });
+    expect(storage.setItemCalls - before).toBe(1);
+    expect(store.getState().data.settings).toMatchObject({
+      name: 'Asha', monthlySalary: 75_000, onboarded: true,
+    });
   });
 
   it('materializes the emergency fund goal after hydrating legacy valid data', async () => {
@@ -694,6 +820,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   const storage = new MemoryStorage();
   const secureStore = new Map([['wealthwise.lock.v1', '{"enabled":true}']]);
   storage.values.set('wealthwise.app.v1.premigration.v1', 'original-v1-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -712,6 +839,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   for (const key of [
     'wealthwise.app.v1.preimport',
     'wealthwise.app.v1.premigration.v1',
+    'wealthwise.app.v1.premigration.v2',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',

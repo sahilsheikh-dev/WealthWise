@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
+import { AppHeader } from '../../src/components/AppHeader';
+import { AppText, Card, ProgressBar, Screen, SectionTitle } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { efBalance, monthlyBaseline } from '../../src/domain/ef';
 import { ensureEfGoal, goalProgressPct, goalSaved, goalTotals } from '../../src/domain/goals';
@@ -9,6 +10,8 @@ import { todayISO } from '../../src/lib/clock';
 import { formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
@@ -23,15 +26,7 @@ export default function GoalsScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Goals" right={(
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="New goal"
-          onPress={() => router.push('/goal-form')}
-          style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
-          <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New goal</AppText>
-        </Pressable>
-      )} />
+      <AppHeader title="Goals" rightActions={[{ icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') }]} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AppText weight="bold" style={[typography.big, styles.total]}>{formatINRShort(totals.target)}</AppText>

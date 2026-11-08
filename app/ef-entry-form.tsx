@@ -19,14 +19,17 @@ import { makeEfEntryFormSchema, type EfEntryFormInput, type EfEntryFormOutput } 
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 const kindOptions = [
   { label: 'Deposit', value: 'Deposit' },
   { label: 'Withdrawal', value: 'Withdrawal' },
 ] as const;
 
 export default function EfEntryFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, kind } = useLocalSearchParams<{ id?: string; kind?: 'Deposit' | 'Withdrawal' }>();
   const entryId = Array.isArray(id) ? id[0] : id;
+  const requestedKind = Array.isArray(kind) ? kind[0] : kind;
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -53,7 +56,7 @@ export default function EfEntryFormScreen() {
           date: entry.date,
           note: entry.note,
         }
-        : { kind: 'Deposit', amount: '', date: today, note: '' },
+        : { kind: requestedKind ?? 'Deposit', amount: '', date: today, note: '' },
     });
   const close = () => {
     if (!isDirty) return router.back();

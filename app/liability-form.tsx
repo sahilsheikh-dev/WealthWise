@@ -29,6 +29,8 @@ const kindOptions = [
   { label: 'One-time', value: 'one-time' },
 ] as const;
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function LiabilityFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const liabilityId = Array.isArray(id) ? id[0] : id;

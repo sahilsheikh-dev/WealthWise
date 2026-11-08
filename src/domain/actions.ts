@@ -11,7 +11,7 @@ export class NotFoundError extends Error {
 
 export function emptyAppData(asOf: ISODate): AppData {
   return {
-    settings: { name: '', theme: 'system' },
+    settings: { name: '', theme: 'system', monthlySalary: null, onboarded: false },
     transactions: [],
     goals: ensureEfGoal([], { expenseBaseline: 0, asOf }),
     holdings: [],
@@ -63,4 +63,11 @@ export function deleteTransaction(data: AppData, id: string): AppData {
 
 export function updateSettings(data: AppData, patch: Partial<Settings>): AppData {
   return { ...data, settings: { ...data.settings, ...patch } };
+}
+
+export function completeOnboarding(
+  data: AppData,
+  profile: { name: string; monthlySalary: number | null },
+): AppData {
+  return updateSettings(data, { ...profile, onboarded: true });
 }

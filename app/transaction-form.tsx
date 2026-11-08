@@ -42,6 +42,8 @@ const typeOptions = [
 const createInvestmentChoice = '__create-investment__';
 const noInvestmentChoice = '__no-investment__';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function TransactionFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const transactionId = Array.isArray(id) ? id[0] : id;

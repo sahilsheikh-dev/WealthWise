@@ -50,6 +50,8 @@ function plusDays(value: string, days: number) {
 
 type InvestmentKind = 'recurring' | 'one-time';
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
+
 export default function InvestmentFormScreen() {
   const { id, fromTransaction } = useLocalSearchParams<{ id?: string; fromTransaction?: string }>();
   const holdingId = Array.isArray(id) ? id[0] : id;
@@ -140,14 +142,17 @@ function PlanEditor({
   const stepUpPct = useWatch({ control, name: 'stepUpPct' });
   const tenureYears = useWatch({ control, name: 'tenureYears' });
   const frequency = useWatch({ control, name: 'frequency' });
-  const previewValues = [amount, ratePct, stepUpPct || '0', tenureYears].map(Number);
-  const preview = previewValues.every(Number.isFinite) && previewValues[0]! > 0 && previewValues[3]! > 0
+  const previewValues: [number, number, number, number] = [
+    Number(amount), Number(ratePct), Number(stepUpPct || '0'), Number(tenureYears),
+  ];
+  const [previewAmount, previewRatePct, previewStepUpPct, previewTenureYears] = previewValues;
+  const preview = previewValues.every(Number.isFinite) && previewAmount > 0 && previewTenureYears > 0
     ? projection({
       ...(plan ?? { id: 'preview', kind: 'plan', name: '', type: 'Mutual fund / SIP', startDate: today, trackFrom: today, opening: 0, actualValue: null, actualValueDate: null, logs: [] }),
-      amount: previewValues[0]!,
-      ratePct: previewValues[1]!,
-      stepUpPct: previewValues[2]!,
-      tenureYears: previewValues[3]!,
+      amount: previewAmount,
+      ratePct: previewRatePct,
+      stepUpPct: previewStepUpPct,
+      tenureYears: previewTenureYears,
       frequency: frequency as Frequency,
     })
     : null;

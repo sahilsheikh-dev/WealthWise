@@ -11,11 +11,11 @@ import {
   Fab,
   ListItem,
   Screen,
-  ScreenHeader,
   SearchField,
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
+import { AppHeader } from '../../src/components/AppHeader';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { shiftMonth } from '../../src/domain/dates';
@@ -23,6 +23,7 @@ import { describeSource } from '../../src/domain/links';
 import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatDate, formatINR, formatMonth } from '../../src/lib/format';
+import { savingsLine } from '../../src/lib/savingsLine';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -33,6 +34,8 @@ const transactionTone = {
   invest: { tone: 'primary' as const, symbol: '' },
 };
 
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
+
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
@@ -41,6 +44,7 @@ export default function TransactionsScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const summary = useMemo(() => monthSummary(data.transactions, month), [data.transactions, month]);
+  const savings = savingsLine(summary);
   const rows = useMemo(
     () => filterTransactions(data.transactions, { month, type: filter, query }),
     [data.transactions, filter, month, query],
@@ -51,7 +55,7 @@ export default function TransactionsScreen() {
   return (
     <Screen scroll={false}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Transactions" />
+        <AppHeader title="Transactions" />
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -75,20 +79,26 @@ export default function TransactionsScreen() {
           <StatPill label="Expense" value={formatINR(summary.expense)} tone="err" />
           <StatPill label="Invested" value={formatINR(summary.invest)} tone="primary" />
         </View>
-        {summary.withdrawals > 0 ? (
+        {savings.kind !== 'none' && savings.withdrawals > 0 ? (
           <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
             Includes {formatINR(summary.withdrawals)} withdrawn from investments
           </AppText>
         ) : null}
-        {summary.income > 0 ? (
+        {savings.kind === 'rates' ? (
           <View style={styles.rates}>
             <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Saved {summary.savedPct!.toFixed(1)}% of {summary.withdrawals > 0 ? 'earned income' : 'income'} ({summary.withdrawals > 0 ? 'earned income' : 'income'} minus expenses)
+              {savings.basis === 'earned income'
+                ? `Saved ${savings.savedPct.toFixed(1)}% of earned income`
+                : `Saved ${savings.savedPct.toFixed(1)}% of income after expenses`}
             </AppText>
             <AppText style={[typography.meta, { color: colors.primary }]}>
-              Invested {summary.investedPct!.toFixed(1)}%
+              Invested {savings.investedPct.toFixed(1)}%
             </AppText>
           </View>
+        ) : savings.kind === 'no-earned-income' ? (
+          <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
+            No earned income logged this month
+          </AppText>
         ) : (
           <AppText style={[typography.meta, styles.savingsLine, { color: colors.text3 }]}>
             No income logged this month
