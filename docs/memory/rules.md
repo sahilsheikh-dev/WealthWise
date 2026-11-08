@@ -1,14 +1,30 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Rules
 
 ## Invariants
 
-- At task preflight, list dirty files and checkpoint exactly those named files
-  as `chore: user manual changes (checkpoint)` before other work. Preserve
-  manual edits. Never use checkout, restore, stash, reset, or old-code
-  reapplication to revert them. If source-owner edits break a test, update the
-  test and record old/new/reason in `docs/PROGRESS.md`.
+- **R1 — Dirty-file preflight:** list every dirty file before other work. If
+  files are dirty, inspect their diff and commit exactly those named files
+  before proceeding, using a Conventional Commit subject derived from the
+  actual changes. If dirty files cover unrelated areas, make one commit per
+  area and name only the files in that area. Never use a generic checkpoint
+  subject. Preserve owner edits; never use checkout, restore, stash, reset, or
+  old-code reapplication to revert them.
+- **R2 — Phase and revision IDs:** align each task with existing work. A fix
+  or change to a completed subtask stays in its original phase and is logged
+  as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
+  `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
+  new areas.
+- **R3 — History and release approval:** never push, amend or rewrite history
+  unless the owner explicitly asks. Release publication and tag creation,
+  movement or deletion require explicit owner approval.
+- **R4 — Documentation scope:** keep routine committed documentation within
+  `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`; do not commit
+  release-draft contents (the `docs/releases/drafts/.gitkeep` exception is
+  allowed). Other documentation files may be changed only when explicitly
+  named in the owner's task. Reports and generated output belong in chat or
+  `/tmp`.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -18,8 +34,11 @@
 - Preserve unrequested behavior; remove replaced implementations rather than
   keeping parallel paths. Never weaken tests to get green.
 - Reports, audits, checklists, and generated output belong in chat replies or
-  `/tmp`, never in the repository. Commit documentation only under
-  `docs/memory/` and `docs/PROGRESS.md`.
+  `/tmp`, never in the repository.
+- Keep release drafts under `docs/releases/drafts/`. After GitHub publication
+  is verified, move each released Markdown file into
+  `docs/releases/published/`; never leave published records at the release
+  root or duplicated in the drafts folder.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -30,11 +49,23 @@
 - Demo fixtures use deterministic synthetic data, stable IDs/dates and valid
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
+- After each EAS build and before publishing a GitHub release, attach the
+  Android APK as `WealthWise-android.apk`, verify its download route with
+  `curl -I` (302) and `curl -I -L` (final 200), update the README Download
+  section, and record EAS build ID, Android build number/versionCode and
+  artifact name in `docs/releases/release-history.md`. A release is not
+  complete until README, build history and GitHub assets agree. Production
+  Android AABs go to Google Play, APKs to GitHub, and iOS builds to
+  TestFlight/App Store; signing credentials are EAS-managed. See
+  [`build-config.md`](../releases/build-config.md).
 
 ## Protected file hashes
 
 Git blob IDs at the P25-C preflight (verify with `git hash-object` before
 relying on them after an authorized edit):
+
+Reverified with `git hash-object` on 2026-11-08; all six current blob IDs below
+match the recorded values.
 
 | File | Git blob ID | Rule |
 |---|---|---|
@@ -48,9 +79,11 @@ relying on them after an authorized edit):
 ## Commits and ledger
 
 Read and update `docs/PROGRESS.md` with each task commit. Preserve uncommitted
-user changes; if dirty at preflight, checkpoint them with
-`chore: user manual changes (checkpoint)`. Commit each task step separately.
-Never push, amend, or rewrite history. Every reported/recorded commit hash must
+user changes; if dirty at preflight, commit named files with descriptive
+Conventional Commit messages derived from their diffs. Commit each task step
+separately. Never push, amend, or rewrite history unless the owner explicitly
+asks; release publication and tag changes require explicit owner approval.
+Every reported/recorded commit hash must
 be copied from `git log` and verified with `git cat-file -t`. Record assumptions
 as `Assumed: ...`; state superseded assertions and the replacement/reason.
 

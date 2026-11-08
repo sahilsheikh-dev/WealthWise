@@ -1,37 +1,36 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-06 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
-- **P28-B first release:** six gates pass; build and tag commands remain
-  unrun pending owner release execution. The current accepted audit risk is
-  7 production advisories: 4 moderate and 3 high, with no Expo SDK
-  57-compatible patch fix.
+- **Published v1.0.0 tag after main history rewrite:** the tag remains
+  unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
+  into the original commit history. The 2026-11-08 `git ls-remote --tags
+  origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
+  origin/main` exited 1. Owner decision is pending; do not move or delete the
+  tag without explicit owner approval.
+- **P28-C v1.0.0 production builds:** the GitHub Release and remote tag were
+  published and verified on 2026-11-07 at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; permanent notes are in
+  `docs/releases/published/`. Neither the production AAB nor the
+  `android-apk` profile build exists. Before building, rerun the six gates,
+  export and restore a backup, pass physical-device checks on iOS and Android,
+  and confirm owner approval. The dependency audit has 7 production advisories
+  (4 moderate, 3 high); no Expo SDK 57-compatible patch fix is available, and
+  no major upgrade or force fix is approved.
+- **iOS download URL:** the owner will supply a TestFlight or App Store link.
+  Keep the README text as “Not available yet” until then; do not invent a URL.
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
   months, Received dues, projected cash flow, virtual future months and
   v21-to-v22 native migration/restart. Automated evidence is complete and all
   six gates pass; native device behavior remains unverified.
-- **P29-AB stop/resume terminology decision:** the owner set the active action
-  to "Stop investment"; the resume action remains "Resume recurring". Source
-  and tests preserve both labels; no wording change is approved.
-
-- **P28-A synthetic v13 equality:** the synthetic v13 backup with explicit
+- **Pre-build synthetic v13 equality:** the synthetic v13 backup with explicit
   net-worth, goal and Emergency Fund equality assertions is not yet present.
-  The P28 report commit records the gap; owner/device validation is still
-  required.
-- **P28-A Expo audit owner decision:** `npm audit --omit=dev` currently reports
-  7 production vulnerability nodes (4 moderate, 3 high). Fixes suggested by
-  npm require Expo/Router major upgrades rather than SDK-57 patch fixes. No
-  major upgrade or force audit fix was approved.
-
-- **P27-A Expo SDK audit owner decision:** current `npm audit` reports 7
-  production vulnerability nodes; npm offers Expo SDK/Router major fixes rather
-  than patch-level SDK-57 fixes. No major upgrade or `audit fix --force` is
-  approved. Native-device bundle, hydration and dependency behavior remain
-  subject to normal physical-device verification.
+  Owner/device validation remains required; the pre-build checklist is in
+  [`build-config.md`](../releases/build-config.md).
 - **P26-A physical-device checks:** verify touch targets, scalable labels and
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
   screen-reader navigation, cold hydration, first render and action writes on
@@ -45,17 +44,18 @@
   preserves valid links, net worth and goal values. No schema change.
 - **Emergency Fund form font-scale and device check:** verify the resolved
   link picker and EF allocation form at 1.3x and 2.0x on physical devices.
-- **P29-Z documentation verification:** source wins over docs; schema v21,
-  migration/archive range through `.premigration.v20`, Foreclosure labels,
-  Home-only menu rule and real Gate 1 counts are recorded. No behavior, schema
-  or UI source change is part of P29-Z.
+- **P29-Z documentation verification (historical, superseded 2026-11-08):**
+  source wins over docs; current schema v22 and the migration/archive chain
+  through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
+  Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
+  change.
 - **Home-only global menu physical-device check (2026-11-05):** verify the
   three-dot options menu remains present on Index/Home and absent on Assets,
   Liabilities and detail screens, including backup, reminders, security,
   profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop label physical-device check:** verify active recurring
-  cards show Stop investment and stopped plans show Resume recurring while the
-  action remains within the shared instrument-card row.
+- **Recurring asset stop/resume label physical-device check:** verify active
+  recurring cards show Stop investment and stopped plans show Resume
+  investment while the action remains within the shared instrument-card row.
 - **Holding and liability layout physical-device check (2026-11-05):** verify
   the two-column investment Summary, same-row liability actions, conditional
   Entries button and liability Summary/details layout at font scales 1.3 and
@@ -335,3 +335,15 @@
   require a different platform-specific file destination design.
 - Previous phase-specific assumptions remain in the linked
   [progress ledger](../PROGRESS.md), not duplicated here.
+
+## Resolved
+
+- **Historical checkpoint commit message audit (2026-11-07):** reviewed all
+  five matching commits on `origin/main` and recorded proposed descriptive
+  subjects in [PROGRESS.md](../PROGRESS.md). Their remote messages remain
+  unchanged because repository policy prohibits rewriting/pushing shared
+  history.
+- **v1.0.0 release commit messages (2026-11-07):** replaced generic checkpoint
+  messages with descriptions of release-draft preparation and publication
+  documentation. The changes are local and unpushed; see the verified
+  old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
