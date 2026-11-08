@@ -1,24 +1,16 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Card, ProgressBar, Screen, ScreenHeader, SectionTitle } from '../../src/components/ui';
-import { useAppData } from '../../src/data/useAppData';
-import { efBalance, monthlyBaseline } from '../../src/domain/ef';
-import { ensureEfGoal, goalProgressPct, goalSaved, goalTotals } from '../../src/domain/goals';
-import { todayISO } from '../../src/lib/clock';
+import { goals } from '../../src/mock/data';
 import { formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
-  const data = useAppData();
-  const asOf = todayISO();
-  const emergencyBalance = efBalance(data.efEntries);
-  const goals = ensureEfGoal(data.goals, {
-    expenseBaseline: monthlyBaseline(data.transactions, 'expense', asOf),
-    asOf,
-  });
-  const totals = goalTotals(goals, emergencyBalance);
+  const totalTarget = goals.reduce((total, goal) => total + goal.target, 0);
+  const totalSaved = goals.reduce((total, goal) => total + goal.saved, 0);
+  const percent = (totalSaved / totalTarget) * 100;
 
   return (
     <Screen>
@@ -27,7 +19,7 @@ export default function GoalsScreen() {
           accessibilityRole="button"
           accessibilityLabel="New goal"
           onPress={() => {
-            // TODO(phase4)
+            // TODO(phase5)
           }}
           style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
           <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New goal</AppText>
@@ -35,16 +27,15 @@ export default function GoalsScreen() {
       )} />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
-        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINRShort(totals.target)}</AppText>
+        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINRShort(totalTarget)}</AppText>
         <AppText style={[typography.meta, { color: colors.text3 }]}>
-          {formatINRShort(totals.saved)} saved, {totals.pct.toFixed(2)}% funded
+          {formatINRShort(totalSaved)} saved, {percent.toFixed(2)}% funded
         </AppText>
-        <ProgressBar percent={totals.pct} />
+        <ProgressBar percent={percent} />
       </Card>
       <SectionTitle>Active goals</SectionTitle>
       {goals.map((goal) => {
-        const saved = goalSaved(goal, emergencyBalance);
-        const goalPercent = goalProgressPct(goal, saved);
+        const goalPercent = Math.min(100, (goal.saved / goal.target) * 100);
         return (
           <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalHeader}>
@@ -58,8 +49,8 @@ export default function GoalsScreen() {
             </View>
             <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
-              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
+              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(goal.saved)} saved</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - goal.saved))} left</AppText>
             </View>
           </View>
         );

@@ -52,12 +52,23 @@ export function AppText({
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
 }> & ComponentProps<typeof Text>) {
   const { colors } = useTheme();
-  const fontFamily = {
+  const fontFamilies = {
+    '400': 'Montserrat_400Regular',
+    '500': 'Montserrat_500Medium',
+    '600': 'Montserrat_600SemiBold',
+    '700': 'Montserrat_700Bold',
+    normal: 'Montserrat_400Regular',
+    medium: 'Montserrat_500Medium',
+    bold: 'Montserrat_700Bold',
+  };
+  const requestedFamily = {
     regular: 'Montserrat_400Regular',
     medium: 'Montserrat_500Medium',
     semibold: 'Montserrat_600SemiBold',
     bold: 'Montserrat_700Bold',
   }[weight];
+  const styleWeight = StyleSheet.flatten(style)?.fontWeight;
+  const fontFamily = (styleWeight && fontFamilies[String(styleWeight) as keyof typeof fontFamilies]) || requestedFamily;
   return (
     <Text {...props} style={[{ color: colors.text1, fontFamily }, style]}>
       {children}
@@ -165,20 +176,17 @@ export function Chip({
   selected = false,
   onPress,
   accessibilityLabel,
-  accessibilityHint,
 }: {
   label: string;
   selected?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
-  accessibilityHint?: string;
 }) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityHint={accessibilityHint}
       accessibilityState={{ selected }}
       onPress={onPress}
       style={[

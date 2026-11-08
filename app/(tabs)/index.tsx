@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { View, StyleSheet, Pressable } from 'react-native';
 
 import {
@@ -11,11 +10,8 @@ import {
   StatPill,
   StatPillRow,
 } from '../../src/components/ui';
-import { homeSummary } from '../../src/domain/summary';
+import { displaySummary, goals } from '../../src/mock/data';
 import { formatINR, formatINRShort } from '../../src/lib/format';
-import { useAppData } from '../../src/data/useAppData';
-import { currentHour, todayISO } from '../../src/lib/clock';
-import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -28,25 +24,19 @@ const actions = [
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const data = useAppData();
-  const summary = homeSummary(data, todayISO());
   return (
     <Screen>
       <View style={styles.homeHeader}>
-        <AppText style={[typography.meta, { color: colors.text3 }]}>{greetingFor(currentHour())},</AppText>
-        <AppText weight="bold" style={typography.h1}>{data.settings.name || 'Welcome'}</AppText>
+        <AppText style={[typography.meta, { color: colors.text3 }]}>Good evening,</AppText>
+        <AppText weight="bold" style={typography.h1}>Sahil</AppText>
       </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net worth</AppText>
-        <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(summary.netWorth)}</AppText>
+        <AppText weight="bold" style={[typography.big, styles.netWorth]}>{formatINR(displaySummary.netWorth)}</AppText>
         <StatPillRow>
-          <StatPill label="Assets" value={formatINRShort(summary.assets)} tone="ok" />
-          <StatPill label="Liabilities" value={formatINRShort(summary.liabilities)} tone="err" />
-          <StatPill
-            label="Emergency fund"
-            value={summary.emergencyMonths === null ? '—' : `${summary.emergencyMonths.toFixed(1)} mo`}
-            tone="primary"
-          />
+          <StatPill label="Assets" value={formatINRShort(displaySummary.assets)} tone="ok" />
+          <StatPill label="Liabilities" value={formatINRShort(displaySummary.liabilities)} tone="err" />
+          <StatPill label="Emergency fund" value={`${displaySummary.emergencyMonthsCovered} mo`} tone="primary" />
         </StatPillRow>
       </Card>
 
@@ -57,11 +47,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={action.label}
             onPress={() => {
-              if (action.label === 'Add txn') {
-                router.push('/transaction-form');
-                return;
-              }
-              // TODO(phase4)
+              // TODO(phase5)
             }}
             style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name={action.icon} size={17} color={colors.primary} />
@@ -71,22 +57,25 @@ export default function HomeScreen() {
       </View>
 
       <SectionTitle>Goal progress</SectionTitle>
-      {summary.goals.slice(0, 3).map(({ goal, saved, pct }) => (
-        <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.goalTop}>
-            <View style={styles.goalNameBlock}>
-              <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
+      {goals.slice(0, 3).map((goal) => {
+        const percent = Math.min(100, (goal.saved / goal.target) * 100);
+        return (
+          <View key={goal.id} style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.goalTop}>
+              <View style={styles.goalNameBlock}>
+                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+                <AppText style={[typography.meta, { color: colors.text3 }]}>Target {goal.year}</AppText>
+              </View>
+              <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{percent.toFixed(1)}%</AppText>
             </View>
-            <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
+            <ProgressBar percent={percent} />
+            <View style={styles.goalAmounts}>
+              <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(goal.saved)} saved</AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - goal.saved))} left</AppText>
+            </View>
           </View>
-          <ProgressBar percent={pct} />
-          <View style={styles.goalAmounts}>
-            <AppText style={[typography.meta, { color: colors.ok }]}>{formatINRShort(saved)} saved</AppText>
-            <AppText style={[typography.meta, { color: colors.text3 }]}>{formatINRShort(Math.max(0, goal.target - saved))} left</AppText>
-          </View>
-        </View>
-      ))}
+        );
+      })}
     </Screen>
   );
 }
