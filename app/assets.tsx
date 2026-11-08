@@ -21,6 +21,7 @@ import {
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import {
   buildPortfolioRows,
   filterRows,
@@ -28,27 +29,18 @@ import {
   portfolioTotals,
 } from '../src/domain/portfolio';
 import { planSchedule } from '../src/domain/schedule';
-import type { HoldingType } from '../src/domain/types';
+import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const filters: ('All' | 'Recurring' | HoldingType)[] = [
+const filters = [
   'All',
   'Recurring',
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-];
+  ...HOLDING_TYPES,
+] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -63,7 +55,11 @@ export default function AssetsScreen() {
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
-    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
+    if (
+      row.kind !== 'plan' ||
+      row.holding?.kind !== 'plan' ||
+      !holdingCapabilities(row.holding.type).recurring
+    ) {
       return { ...row, nextDue: null, progress: null, status: null };
     }
     const schedule = planSchedule(row.holding, asOf);

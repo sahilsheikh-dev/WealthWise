@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 97% (87/90)
+Overall progress ██████████ 97% (89/92)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         ██████████ 100% (11/11)
+Phase 29         ██████████ 100% (13/13)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -177,6 +177,8 @@ Phase 29         ██████████ 100% (11/11)
 | P29-F4 | — | Done | Final assertion audit, acceptance tests, zero-warning lint and all six gates pass; the owner withdrew holding-delete Undo as a requirement. | 2026-11-02 |
 | P29-G | — | Done | Editable Insurance cover goals, v14-to-v15 migration, backup compatibility, acceptance tests and all six final gates pass. | 2026-11-02 |
 | P29-H | — | Done | Opening-inclusive invested/current values, shared return calculations, no estimated interest and Cash/Bank suppression; 84 suites/1060 tests and all six gates pass. | 2026-11-03 |
+| P29-I | — | Done | Schema v16 migration, shared holding capabilities, Fixed-deposit one-time controls, legacy entry preservation, backup compatibility and acceptance tests pass; 85 suites/1078 tests and all six gates exit 0. | 2026-11-03 |
+| P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2798,6 +2800,8 @@ evidence present in exports/checkpoints.
 | P29-F4 | Phase 29 stabilization | — | — | 2026-11-02 | Finish F3 with the final assertion audit, acceptance tests, lint and six gates; no features or source behavior changes. | Done; all six gates pass and acceptance evidence is complete after the owner withdrew the holding-delete Undo requirement. | `d01bdac`, `0ef0df0`, `c9238d4`, `d47ff67`; closeout `86a3baa`, `4ea3b56`, `f70e968` | Assumed: exact prior Gate 1 failure excerpts cannot be reconstructed from available logs; no failure details were fabricated. | current request |
 | P29-G | Phase 29 | — | — | 2026-11-02 | Make Insurance cover goals user-managed and assign policies explicitly, with schema v15 migration and no Home source changes. | Done; editable goals, explicit/kind-fallback policy counting, v14-to-v15 migration/archive, backup chain, store Undo and UI acceptance tests pass; all six final gates exit 0. | P29-G implementation, tests and documentation close-out commit; verified with `git cat-file -t` | DEC-P29G-COVER-MANAGEMENT supersedes the fixed, non-deletable five-goal rule in DEC-P23-COVER. Assumed: custom goals use the generic Insurance premium category; typed premium categories remain derived from policy kind; the Budget Insurance system section/categories stay unchanged and should not be made editable without a separate scope decision. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-H | Phase 29 | — | — | 2026-11-03 | Correct invested, current-value and return semantics for asset holdings without a schema change. | Done; 84 suites/1060 tests and all six gates pass; P29-H report and coverage are recorded below. | Step 1 `2829c31`; impact analysis `a9cb81d`; behavior `e60c893`; migration regression `0db51f9`; closeout commit verified in Git. | Assumed: this is new Phase 29 work; schema remains v15; an undated stored value is not a recorded valuation; manual opening flow uses injected as-of date when no start date exists; `app/(tabs)/index.tsx` remains user-owned and unchanged. | current request |
+| P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Done; 85 suites/1078 tests and all six gates exit 0; final capability matrix, assertions, coverage and device limitations are recorded below. | Inventory `eeeec26`; migration `34fa401`; capabilities `ce3bf4e`; regression/docs `13ef972`; persisted-link tests `94c3dfb`; each verified with `git cat-file -t`. | DEC-P29I-CAPABILITIES: Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the manual model has no rate or maturity fields so no new ones were introduced; the emergency-fund `FD / RD` bucket and links remain unchanged. `app/(tabs)/index.tsx` unchanged. | current request |
+| P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 
 ## 7. Change-request register
 
@@ -6280,3 +6284,449 @@ Investment Entries Balance/Deposited/Withdrawn labels, back-dated helper text,
 and large-amount rendering at font scales 1.3 and 2.0 remain unverified on
 physical iOS and Android devices. TestRenderer and Expo exports are not
 physical-device evidence.
+
+## P29-J liability outstanding-balance audit (2026-11-03)
+
+**Assumed:** P29-J is new Phase 29 audit work. Schema remains v15, liability
+behavior is not changed unless the audit proves a plain calculation bug, and
+the user-owned `app/(tabs)/index.tsx` is read-only.
+
+### Step 1 — read-only characterization
+
+The recurring-liability outstanding balance is calculated by `loanState()` in
+`src/domain/liability.ts` (lines 173–210). The path is actual-days/365 simple
+interest, not standard monthly amortization:
+
+1. Start with the principal (or a saved settlement balance and date).
+2. Select recorded payments whose dates are on or before `asOf`, sort by date
+   and stable payment ID, and clamp any pre-start payment date to the loan start.
+3. Before each payment, accrue `balance × annual rate / 100 × elapsed days / 365`.
+   `daysBetween()` in `src/domain/dates.ts` uses UTC calendar-day differences.
+4. Add accrued interest to the balance, then subtract the entire payment and
+   clamp the balance to zero. There is no separate interest-vs-principal split
+   in this state calculation.
+5. After the last payment, accrue the same daily formula through `asOf`.
+
+For the owner's start date 2025-08-07 and first due/payment date 2025-09-07,
+the first period is 31 days. At 15.03%, that period's interest is principal
+× 0.1503 × 31 / 365. A payment recorded after its due date accrues through its
+actual payment date; `loanState()` itself does not consult the schedule due
+date. A missed payment likewise leaves the balance accruing through the
+requested `asOf`. The balance is not rounded after each accrual or payment;
+the calculation retains JavaScript number precision. Rendering goes through
+`AmountText`/`formatAmount`, so displayed precision follows its display tier.
+
+Characterization coverage was added in
+`src/domain/__tests__/liability.test.ts` — `characterizes the reported
+personal-loan inputs with an explicitly illustrative principal`. The fixture
+uses the provided rate, EMI, start date, first due date and 14 assumed
+on-schedule payment dates, with a round synthetic principal of 250,000; it is
+not asserted to be the owner's principal. The test verifies the 31-day
+first-period interest, balance after each of 14 payments, and the extra
+interest from a seven-day-late payment. Focused test result: 12 tests passed.
+No source behavior, schema or Home-screen code changed.
+
+Assertion correction before comparison: the first Step 1 fixture used a
+synthetic principal reverse-calibrated to the reported approximate app
+balance, which risked appearing to reproduce missing owner data. It was
+replaced with the round illustrative principal 250,000 and recomputed
+characterization outputs; reason: principal and payment records are explicitly
+blank, so an arbitrary input must be clearly illustrative rather than tuned
+to the observed result.
+
+### Step 2 — numerical comparison
+
+The owner's bank outstanding and its as-of date, principal, tenure, and app
+payment records were blank. The following is therefore a generic example,
+not the owner's account: principal 250,000 (illustrative only), annual rate
+15.03%, EMI 5,713, start 2025-08-07, and 14 assumed full EMI payments on the
+7th of each month from 2025-09-07 through 2026-10-07. Each row is the balance
+immediately after that payment.
+
+| k | Payment date | App actual/365 | Monthly, full month from first period | Monthly after first 31 actual days | Actual/365 daily |
+|---:|---|---:|---:|---:|---:|
+| 1 | 2025-09-07 | 247,478.30 | 247,418.25 | 247,478.30 | 247,478.30 |
+| 2 | 2025-10-07 | 244,822.51 | 244,804.16 | 244,864.97 | 244,822.51 |
+| 3 | 2025-11-07 | 242,234.72 | 242,157.34 | 242,218.90 | 242,234.72 |
+| 4 | 2025-12-07 | 239,514.14 | 239,477.36 | 239,539.69 | 239,514.14 |
+| 5 | 2026-01-07 | 236,858.59 | 236,763.81 | 236,826.93 | 236,858.59 |
+| 6 | 2026-02-07 | 234,169.14 | 234,016.28 | 234,080.18 | 234,169.14 |
+| 7 | 2026-03-07 | 231,156.08 | 231,234.33 | 231,299.04 | 231,156.08 |
+| 8 | 2026-04-07 | 228,393.83 | 228,417.54 | 228,483.06 | 228,393.83 |
+| 9 | 2026-05-07 | 225,502.28 | 225,565.47 | 225,631.81 | 225,502.28 |
+| 10 | 2026-06-07 | 222,667.86 | 222,677.68 | 222,744.85 | 222,667.86 |
+| 11 | 2026-07-07 | 219,705.57 | 219,753.72 | 219,821.73 | 219,705.57 |
+| 12 | 2026-08-07 | 216,797.16 | 216,793.13 | 216,861.99 | 216,797.16 |
+| 13 | 2026-09-07 | 213,851.62 | 213,795.47 | 213,865.19 | 213,851.62 |
+| 14 | 2026-10-07 | 210,780.42 | 210,760.25 | 210,830.85 | 210,780.42 |
+
+The app and actual/365 columns are identical because `loanState()` uses that
+day-count formula. At payment 14, the full-month convention is 20.17 below
+the app result; retaining the first 31-day actual period and using monthly
+steps thereafter is 50.43 above it. The two monthly variants differ by 70.60.
+These convention deltas are far below one EMI (5,713) in this generic
+example. The first 31-day period contributes 60.05 more interest than a
+rate/12 period (365/12 equivalent days) on the same opening principal; later calendar
+months and compounding determine the final net differences.
+
+This comparison does not establish a match to the bank: its balance and
+statement date are absent, and the synthetic principal was not supplied by
+the owner. It also cannot explain the app's approximate 201,000 display using
+the generic 250,000 principal. If the example were instead viewed on
+2026-11-03, 27 days after its 14th payment, the app's actual/365 balance would
+be 213,123.89; that is a different as-of date, not an apples-to-apples
+comparison with the 2026-10-07 row.
+
+Gap decomposition for the owner's account:
+
+| Factor | Evidence / unresolved input |
+|---|---|
+| Day-count basis | App is actual/365. Generic daily-vs-monthly differences above are under one EMI; bank method cannot be identified without a statement. |
+| First-period handling | App accrues 31 actual days from 2025-08-07 to 2025-09-07. Bank's first-period convention is unknown. |
+| Payment timing | App uses recorded dates. The exact app payment dates and bank debit dates are not supplied; late dates accrue through the date paid. |
+| Number recorded | Owner says 14 installments were paid, but the app's recorded dates and amounts are blank; it is unverified that all 14 are in app data. |
+| Rounding | App does not round each period; bank statement rounding is unknown. |
+| Amount/date comparison | Bank outstanding and its as-of date are blank, so the actual gap and whether it exceeds one EMI cannot be calculated. |
+
+Inputs needed to compare the actual account: principal at disbursement,
+contractual tenure in months, bank outstanding and statement date, app's 14
+payment rows (date and amount), and bank debit dates if different. The tenure
+is also needed to verify the scheduled payoff, though principal and payment
+history determine the balance calculation itself.
+
+### DEC-P29J-LIABILITY-AUDIT — report and proposal
+
+The supplied evidence does not establish a plain bug: the current path applies
+all recorded payments dated on or before `asOf`, accrues actual/365 interest
+between payment dates, and does not add a second monthly-interest charge.
+There is no actual statement balance/date or app payment ledger to check for
+an omitted payment, a wrong date/day count, or duplicated interest. Therefore
+P29-J is report-only; no liability behavior or schema was changed.
+
+If a bank statement and the corresponding input record confirm standard
+monthly reducing-balance amortization, propose changing the shared recurring
+liability balance model only after owner approval. Do not separately change
+screens: use one approved domain rule and let each current caller continue to
+consume it. The affected surfaces/callers are:
+
+| Surface | Current source path | Effect of an approved method switch |
+|---|---|---|
+| Home net-worth/liability totals | `src/domain/summary.ts` → `netWorth()`; `app/(tabs)/index.tsx` is user-owned and must remain read-only | Liability total and net worth change with the new balance; no Home source edit is expected. |
+| Liabilities list, total outstanding, row summaries and payoff info | `app/liabilities.tsx` → `liabilitySummary()` / `liabilitiesOverview()` | Displayed balances, cleared state, progress and payoff projections may change. |
+| Liability Schedule/Payments detail | `app/liability-payments.tsx`, `src/domain/schedule.ts` | Balance summary and interest/principal/balance-after schedule rows may change. |
+| Add/edit payment form and payment validation | `app/liability-payment-form.tsx`, `src/domain/liabilityActions.ts` | Suggested amount/current balance and overpayment validation may change. |
+| Clear-due suggested balance | `app/clear-dues.tsx` → `amortizedBalanceAfter()` and `src/domain/dues.ts` | Suggested balance and paid-through schedule may change. |
+| Budget/Transactions loan proceeds and repayment caps | `src/domain/cashFlow.ts`, `src/domain/dues.ts` | Existing-loan allocation limits and due clearing amounts may change. |
+
+Existing test evidence that would need review or updated expected values under
+an approved switch:
+
+| Test file | Exact test(s) |
+|---|---|
+| `src/domain/__tests__/liability.test.ts` | `preserves the existing recurring balance and payoff math`; `accrues daily interest and applies payments on their dates`; `characterizes the reported personal-loan inputs with an explicitly illustrative principal`; `summarizes recurring payoff dates and extra-payment savings` |
+| `src/domain/__tests__/selectors.test.ts` | `calculates net worth by summing assets and subtracting loan balances`; `summarizes active loan commitments, payoff date, cleared and never cases` |
+| `src/domain/__tests__/dues.test.ts` | `keeps the pre-refactor plan and recurring-liability outputs across a fixed date grid`; `settles recurring liabilities at an explicit or amortized balance and ignores historical payments after settlement`; `records recurring-liability dues by due date and caps each payment at the remaining balance`; `marks installments through settlement as assumed paid and stops after a zero balance`; `clears recurring liability dues oldest-first and updates its balance and schedule` |
+| `src/domain/__tests__/cashFlow.test.ts` | `records borrowed, new and existing loan proceeds, repayments, withdrawals and own funds`; `does not replace an existing liability origin or exceed its principal`; `rejects surplus allocations without targets or above the outstanding balance` |
+| `src/domain/__tests__/linkedActions.test.ts` | `creates an auto-EMI loan, syncs payments and removes linked transactions` |
+| `src/data/__tests__/createAppStore.test.ts` | `clears recurring liability installments and undoes linked payments in one write each`; `runs the loan payment scenario through store actions and deletes all linked records`; `round-trips linked plans, liability payments, goals and holdings` |
+| `src/domain/__tests__/schedule.test.ts` | `handles cleared and one-time liability schedule statuses` |
+| `src/components/__tests__/EmergencyGoalScreens.test.tsx` | `shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities` |
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | `renders every registered screen with the four-month demo data`; `renders each route form with representative create and edit entry params`; `opens linked plan, liability, and policy rows in their edit routes`; add explicit liability balance assertions for list, detail, payment form and clear-due routes if the method changes. |
+
+A future “balance per statement” recalibration should be a distinct,
+explicitly dated statement-balance anchor with an audited forward-calculation
+rule. Do not reuse the existing `settlement` field: it marks a liability
+settled and causes schedule rows through its date to be treated as assumed
+paid. A separate anchor likely needs a schema/backup migration and UI for
+statement date and balance; that work is outside this no-schema-change audit
+and requires approval.
+
+### P29-J acceptance and audit record
+
+| Frozen line | Evidence |
+|---|---|
+| Document the outstanding calculation, day-count basis, first 31-day period, payment application, late-payment accrual and rounding. | `src/domain/__tests__/liability.test.ts` — `characterizes the reported personal-loan inputs with an explicitly illustrative principal`; implementation path documented in Step 1 above. |
+| Compare all 14 installment balances under app, standard monthly (full first month and actual 31-day first period), and actual/365 daily methods. | Generic 250,000 principal comparison table in Step 2 above. Actual owner principal/statement remains unavailable. |
+| Identify which model matches the bank and quantify the account's gap. | Not determinable: owner bank outstanding/as-of date and principal/payment records are blank. No match is claimed. |
+| Propose-only method change and statement recalibration; do not change behavior pending approval. | `DEC-P29J-LIABILITY-AUDIT` proposal above. No production source or schema changes. |
+
+**Assumed:** the synthetic 250,000 principal and scheduled payment dates exist
+only to compare conventions; they do not represent the owner's loan. The
+owner's bank balance, bank method, contractual principal/tenure and app
+payment rows remain unverified. Device checks are not relevant to this
+domain-only audit; no UI behavior changed.
+
+### P29-J final verification
+
+| Gate | Command | Exit code |
+|---|---|---:|
+| 1 | `rm -rf coverage && npm test -- --coverage` | 0 |
+| 2 | `npx tsc --noEmit` | 0 |
+| 3 | `npx expo lint` (zero warnings) | 0 |
+| 4 | `npx expo-doctor` (21/21 checks) | 0 |
+| 5 | `npx expo export --platform android` | 0 |
+| 6 | `npx expo export --platform ios` | 0 |
+
+Coverage was computed from the freshly regenerated `coverage/coverage-final.json`.
+Executable statement locations are grouped by their immediate directory under
+`src/`; a source line is covered when any statement at that line ran. Branch
+coverage sums executed versus total Istanbul branch arms.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 658/696 (94.54%) | 679/774 (87.73%) |
+| `src/domain` | 3279/3342 (98.11%) | 3193/3436 (92.93%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+Informational branch coverage: `src/domain/budget.ts` 762/841 (90.61%);
+`src/data/createAppStore.ts` 93/107 (86.92%). Configured repository thresholds
+remain authoritative.
+
+Assertion-count audit against `337fcc5` (the P29-J Step 2 commit):
+
+| Test file | Before | HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 0 | 0 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 158 | 158 | 0 | 0 | 0 |
+| **Total** | **169** | **169** | **0** | **0** | **0** |
+
+No `expect(` assertion was removed. The memory-doc test's expected inventory
+was updated from 1060 to 1061 tests. The progress-ledger test's expected
+overall and Phase 29 counts were updated from 87/90 and 11/11 to 88/91 and
+12/12, and its required P29 ID lists now include P29-J. These are additions
+or replacements of ledger expectations, not weakened assertions.
+
+## P29-I holding capabilities (2026-11-03)
+
+**Assumed:** P29-I is new Phase 29 work. The current schema was v15 and the
+requested next schema version is v16. Implementation and focused verification
+are complete; full gates and closeout remain in progress.
+
+### Step 1 — read-only capability inventory
+
+`HoldingType` in `src/domain/types.ts` already stores `Fixed deposit` and
+`Recurring deposit` as separate values. No split is needed for current-schema
+records. The emergency-fund bucket label `FD / RD` and its bucket links are
+separate concepts and remain unchanged. The app has no holding type named
+`Bank`; `Savings account` is the current bank-like holding type.
+
+All ten current types are currently selectable in both manual-holding and
+recurring-plan forms. Because no central capability rule exists yet, each
+type currently offers the same surfaces:
+
+| Holding type | Manual form | Recurring-plan form | Entry controls | Monthly deposit / schedule | Budget link |
+|---|---|---|---|---|---|
+| Mutual fund / SIP | Yes | Yes | Yes | Yes | Yes |
+| Stocks / ETF | Yes | Yes | Yes | Yes | Yes |
+| Fixed deposit | Yes | Yes | Yes | Yes | Yes |
+| Recurring deposit | Yes | Yes | Yes | Yes | Yes |
+| EPFO / PF | Yes | Yes | Yes | Yes | Yes |
+| Savings account (Bank-like) | Yes | Yes | Yes | Yes | Yes |
+| Cash | Yes | Yes | Yes | Yes | Yes |
+| Gold | Yes | Yes | Yes | Yes | Yes |
+| Silver | Yes | Yes | Yes | Yes | Yes |
+| Other | Yes | Yes | Yes | Yes | Yes |
+
+Current behavior paths: `app/assets.tsx` routes Deposit, Withdraw, Entries and
+Schedule from cards; `src/domain/instrumentCard.ts` constructs those actions
+for every manual holding or plan. `app/investment-form.tsx` offers all types
+in both form modes. `app/investment-entry-form.tsx` accepts every holding
+without a type guard. `app/investment-entries.tsx` exposes Add investment
+entry and renders plan schedules. `app/budget-item-form.tsx` lists all
+holdings; `src/domain/budget.ts` permits any holding link. A linked plan
+provides its schedule to Budget, while a linked manual holding can have a
+generic editable Budget-item frequency. `src/domain/pending.ts` creates dues
+for every plan and `src/domain/reminders.ts` plans reminders from those dues.
+
+The demo already includes a Fixed deposit with no entry log and a Recurring
+deposit plan with entry logs. The owner confirmed for the capability decision
+that Fixed deposit is the only one-time holding type; Cash and Savings
+account may also use recurring plans. The later matrix and migration do not
+change the emergency-fund bucket label or links.
+
+### DEC-P29I-CAPABILITIES — schema v16 migration
+
+The persisted schema is bumped from v15 to v16 as requested. `migrateV15ToV16`
+is pure and one-way: legacy combined type strings `FD / RD` and
+`Fixed deposit / RD` become Fixed deposit only when the holding is manual and
+has no entries; an entry-bearing combined holding or a combined scheduled plan
+becomes Recurring deposit. An already separate Fixed deposit plan is
+reclassified as Recurring deposit so its persisted schedule is retained under
+the new capability rule. Existing entries are copied, not deleted. Other
+fields and the Emergency fund `FD / RD` bucket/link data are unchanged.
+
+Safe storage archives raw v15 bytes exactly once at
+`.premigration.v15`; erase-all removes that archive. The migration rejects v17,
+the next unsupported schema. Backup tests cover importing v15 and an encrypted
+v16 round trip; the existing v1–v14 import tests remain in the chain.
+
+**Assumed:** schema v16 is warranted by the owner-requested schema bump even
+though current types are already separate. The migration also recognizes
+legacy combined strings defensively. Fixed deposit is the only one-time
+holding type; Cash and Savings account remain eligible for recurring plans.
+
+The exhaustive `holdingCapabilities(type)` map is the shared source for entry,
+recurring-plan, and return availability. It is applied to card actions, manual
+and plan forms, entry screens and entry actions, transaction-linked deposits,
+schedule/due/reminder generation, and Budget link options/actions. New
+Fixed-deposit deposits and entries are rejected while maturity withdrawals
+remain available. Existing entries remain visible/editable/deletable with the
+required helper note; changing a holding with entries to Fixed deposit is
+blocked. Persisted plans and Fixed-deposit Budget links are rejected by schema
+and integrity validation. Migration reclassifies a legacy Fixed-deposit plan
+as Recurring deposit to retain its schedule. The Emergency fund bucket label
+and links remain unchanged.
+
+The existing manual-holding schema/form has no rate or maturity fields.
+**Assumed:** no new rate or maturity model is added; the existing opening
+amount, valuation update, and withdrawal controls are the closest available
+implementation of the frozen form request.
+
+Focused validation before the full suite: 12 suites, 348 tests passed,
+including holding capability matrix/actions, form and route behavior, and
+migration. Final validation: 85 suites, 1078 tests pass; all six ordered gates
+exit 0. The final acceptance matrix and fresh coverage follow.
+
+Assertion replacements:
+
+| File and exact test | Old | New | Reason |
+|---|---|---|---|
+| `src/domain/__tests__/instrumentCard.test.ts` — `includes stale-value confirmation and exact manual actions` | `['deposit', 'withdraw', 'entries', 'confirm']` | `['withdraw', 'confirm']` | Fixed deposits cannot accept new deposits or entries. |
+| `src/domain/__tests__/instrumentCard.test.ts` — `uses fresh manual value dates without stale actions` | `['deposit', 'withdraw', 'entries']` | `['withdraw']` | Same capability rule; `keeps legacy fixed-deposit entries visible without offering new deposits` proves legacy entries remain accessible. |
+| `src/domain/__tests__/goalLinks.test.ts` — `demo data covers full emergency assets and shared recurring deposits` | `189_000` | `187_000` | Demo recurring contribution moved off the one-time Fixed deposit; the demo asserts the Fixed deposit is entry-free and RD plan has entries. |
+| `src/domain/__tests__/schemas.test.ts` — `accepts the typed mock app data and exports schema version sixteen` | `15` | `16` | P29-I adds the v15-to-v16 migration. |
+| `src/mock/__tests__/demoData.test.ts` — `has four complete months and a custom upcoming override for the item editor demo` | Required every investment category in every month | Excludes the one-time FD/RD category from the monthly loop and asserts two RD-plan investment entries | The monthly deposit rule no longer applies to Fixed deposits; the recurring plan remains represented by its recorded installments. |
+| `src/components/__tests__/TransactionForm.test.tsx` — `stores, labels and budgets invest category %s end to end` | Included the direct deposit case `['Fixed deposit / RD', 'invest-fd', 'Fixed deposit']` | Removed that impossible case; `does not offer fixed deposits for transaction-linked investment deposits` asserts it is absent from choices | The UI must not offer a one-time holding as a deposit target; RD remains tested end to end. |
+| `src/lib/__tests__/memoryDocs.test.ts` — `keeps all memory pages indexed, headed and aligned with source schema/test records` | `84` suites / `1061` tests | `85` suites / `1078` tests | Current inventory increased with P29-I tests; both counts remain exact. |
+| `src/lib/__tests__/progressLedger.test.ts` — `keeps progress bars, percentages and counts consistent with dashboard statuses` | Overall `96% (88/92)`; Phase 29 `92% (12/13)`; P29-I absent from the Done assertion list | Overall `97% (89/92)`; Phase 29 `100% (13/13)`; P29-I asserted Done | P29-I is complete; dashboard counts and the completion assertion now match the ledger. |
+
+No assertion was deleted without a replacement or reason. Behavior changes,
+focused evidence and these assertion replacements are recorded. The dashboard
+and the progress-ledger test now count P29-I as Done.
+
+The first fresh full coverage run exited 1: 82 suites passed and 3 failed
+(1075 passed, 3 failed). `demoData.test.ts` still required a recurring
+deposit-category transaction in all four months after that category was moved
+off the Fixed deposit; `TransactionForm.test.tsx` still attempted to submit a
+Fixed-deposit deposit despite the new action guard; `memoryDocs.test.ts` still
+expected schema v15 and the earlier 84/1061 inventory. The first two test
+expectations were corrected to prove the new one-time rule and retained RD
+behavior, while memory documentation and its exact inventory assertion were
+updated to v16 and 85/1078. The three affected suites then passed (41 tests).
+This initial Gate 1 result is retained. After those fixes and a focused
+month-snapshot integrity test, the final ordered Gate 1 run passed 85 suites
+and 1078 tests; all six final gates passed.
+
+### P29-I final capability matrix
+
+| Holding type | Manual holding | Recurring plan | New entries | Recurring schedule / monthly deposit | Budget link | Returns |
+|---|---|---|---|---|---|---|
+| Mutual fund / SIP | Yes | Yes | Yes | Yes | Yes | Yes |
+| Stocks / ETF | Yes | Yes | Yes | Yes | Yes | Yes |
+| Fixed deposit | Yes | No | No | No | No | Yes |
+| Recurring deposit | Yes | Yes | Yes | Yes | Yes | Yes |
+| EPFO / PF | Yes | Yes | Yes | Yes | Yes | Yes |
+| Savings account (Bank-like) | Yes | Yes | Yes | Yes | Yes | No |
+| Cash | Yes | Yes | Yes | Yes | Yes | No |
+| Gold | Yes | Yes | Yes | Yes | Yes | Yes |
+| Silver | Yes | Yes | Yes | Yes | Yes | Yes |
+| Other | Yes | Yes | Yes | Yes | Yes | Yes |
+
+`Savings account` is the application's bank-like holding; there is no distinct
+`Bank` type. `Fixed deposit` is the only one-time type. The emergency-fund
+bucket remains `FD / RD` and its links are unchanged.
+
+### P29-I frozen-spec acceptance
+
+| Frozen requirement | Exact test evidence | Result |
+|---|---|---|
+| Existing type inventory and one shared capability matrix | `src/domain/__tests__/holdingCapabilities.test.ts` — `defines entry, recurring and return capabilities for every holding type` | Pass |
+| Legacy combined FD/RD migration: no entries/no schedule becomes FD; entries or schedule becomes RD; preserve unrelated data and already-separated records | `src/data/__tests__/migrate.test.ts` — `splits legacy combined FD/RD holdings by entries and schedule without changing other data`; `leaves already-separated v15 holdings and malformed non-data inputs unchanged` | Pass |
+| Migration is pure and schema v16 is current | `src/domain/__tests__/schemas.test.ts` — `accepts the typed mock app data and exports schema version sixteen`; migration test asserts source holdings remain unchanged | Pass |
+| Archive raw v15 bytes once; erase-all removes archive | `src/data/__tests__/createAppStore.test.ts` — `hydrates v15 holding types, archives exact original bytes once and erases the archive`; `src/data/__tests__/safeStorage.test.ts` — `copies the raw v%s payload exactly once and never overwrites its archive` (v1–v15 cases) | Pass |
+| Reject schema v17 | `src/domain/__tests__/backup.test.ts` — `round trips custom emergency-fund options and refuses schema version seventeen`; `src/data/__tests__/migrate.test.ts` — `rejects invalid input and unknown or future versions` | Pass |
+| Backup import chain v1–v15 | `src/domain/__tests__/backup.test.ts` — `verifies a v1 data checksum before migration and imports the v7 result`; `verifies v2 data as written before migrating and validates the v7 result`; `verifies the v%s checksum before migrating its data` (v3–v6); `verifies v7 checksums before migrating backups to schema nine`; `verifies v8 checksums as written before migrating income totals`; `verifies a v9 checksum over the original data before migrating its budget lines`; `verifies v10 checksums as written before migrating policy fields`; `verifies v11 backup bytes and imports seeded cover goals`; `verifies v12 backup bytes before adding monthly recurrence defaults`; `imports a v%s backup through the editable cover-goal migration` (v13–v14); `imports a v15 backup and separates its legacy combined holding type` | Pass |
+| Encrypted v16 backup round trip | `src/domain/__tests__/backup.test.ts` — `round-trips an encrypted v16 backup containing a linked investment item` | Pass |
+| Fixed-deposit capability: no recurring plan or persisted plan | `src/domain/__tests__/holdingCapabilities.test.ts` — `rejects adding or changing a plan to a one-time holding type`; `rejects persisted plans with a one-time holding type` | Pass |
+| No new deposit/entry; maturity payout remains; type change with existing entries is blocked | `src/domain/__tests__/investmentActions.test.ts` — `blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts`; `src/domain/__tests__/instruments.test.ts` — `rejects failed destination guards atomically` | Pass |
+| Existing entries retained, editable/deletable, surfaced with required note; add controls hidden | `src/domain/__tests__/instrumentCard.test.ts` — `keeps legacy fixed-deposit entries visible without offering new deposits`; `src/domain/__tests__/investmentActions.test.ts` — `blocks new fixed-deposit entries and type changes with existing entries while allowing maturity payouts`; `src/components/__tests__/RouteRenderSmoke.test.tsx` — `renders ledger-based asset totals and Cash/Bank details at font scale %s` | Pass |
+| Budget link add/edit refusal and persisted plan/snapshot integrity | `src/domain/__tests__/budget.test.ts` — `rejects new and edited Budget links to fixed deposits`; `src/domain/__tests__/holdingCapabilities.test.ts` — `flags a persisted Budget schedule linked to a fixed deposit` | Pass |
+| Schedule, pending dues, reminders and transaction-linked deposits use capabilities | `src/domain/__tests__/schedule.test.ts` — `does not project recurring schedule rows for a fixed deposit plan`; `src/domain/__tests__/pending.test.ts` — `excludes a non-recurring fixed deposit plan from pending dues`; `src/domain/__tests__/reminders.test.ts` — `does not plan reminders for a fixed deposit with legacy schedule fields`; `src/components/__tests__/TransactionForm.test.tsx` — `does not offer fixed deposits for transaction-linked investment deposits` | Pass |
+| Form and linked-asset choices at font scales 1.3 and 2.0 | `src/components/__tests__/RouteRenderSmoke.test.tsx` — `uses capability-filtered investment and Budget form choices at font scale %s`; `renders ledger-based asset totals and Cash/Bank details at font scale %s` | Pass |
+| Demo has entry-free FD and RD plan with entries | `src/domain/__tests__/goalLinks.test.ts` — `demo data covers full emergency assets and shared recurring deposits`; `src/mock/__tests__/demoData.test.ts` — `has four complete months and a custom upcoming override for the item editor demo` | Pass |
+
+### P29-I final assertion-count audit
+
+Counts compare `expect(` occurrences in test files at the pre-capability
+baseline `34fa401` with the final implementation head. Added/removed counts
+are expectation lines in the unified diff; moved/replaced lines count as one
+removed and one added. The documentation-only closeout commit does not change
+test assertions.
+
+| Test file | At 34fa401 | At HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/components/__tests__/RouteRenderSmoke.test.tsx` | 447 | 461 | 14 | 0 | +14 |
+| `src/components/__tests__/TransactionForm.test.tsx` | 32 | 33 | 1 | 0 | +1 |
+| `src/data/__tests__/migrate.test.ts` | 113 | 114 | 1 | 0 | +1 |
+| `src/domain/__tests__/backup.test.ts` | 86 | 86 | 0 | 0 | 0 |
+| `src/domain/__tests__/budget.test.ts` | 317 | 319 | 2 | 0 | +2 |
+| `src/domain/__tests__/goalLinks.test.ts` | 43 | 47 | 5 | 1 | +4 |
+| `src/domain/__tests__/holdingCapabilities.test.ts` | 0 | 7 | 7 | 0 | +7 |
+| `src/domain/__tests__/instrumentCard.test.ts` | 25 | 27 | 4 | 2 | +2 |
+| `src/domain/__tests__/instruments.test.ts` | 50 | 53 | 3 | 0 | +3 |
+| `src/domain/__tests__/investmentActions.test.ts` | 43 | 50 | 7 | 0 | +7 |
+| `src/domain/__tests__/pending.test.ts` | 39 | 40 | 1 | 0 | +1 |
+| `src/domain/__tests__/reminders.test.ts` | 31 | 32 | 1 | 0 | +1 |
+| `src/domain/__tests__/schedule.test.ts` | 41 | 44 | 3 | 0 | +3 |
+| `src/domain/__tests__/schemas.test.ts` | 245 | 248 | 4 | 1 | +3 |
+| `src/lib/__tests__/memoryDocs.test.ts` | 11 | 11 | 2 | 2 | 0 |
+| `src/lib/__tests__/progressLedger.test.ts` | 158 | 158 | 1 | 1 | 0 |
+| `src/mock/__tests__/demoData.test.ts` | 92 | 93 | 1 | 0 | +1 |
+| **Total** | **1773** | **1823** | **58** | **8** | **+50** |
+
+The eight removed expectation lines are the five replacement groups listed
+above: two one-time action arrays in `instrumentCard.test.ts`; the demo
+emergency total in `goalLinks.test.ts`; the schema version in `schemas.test.ts`;
+the two exact test-inventory counts in `memoryDocs.test.ts`; and the progress
+dashboard counts in `progressLedger.test.ts` (two assertions). Each has an old value,
+replacement and reason above. The demo monthly category loop and transaction
+form fixture change are test-case expectation replacements even though they do
+not remove `expect(` lines.
+
+### P29-I final gates and coverage
+
+All commands ran in required order on Node.js 26.13.0. Gate 1's first run
+exited 1 for the three documented stale expectations above. After correction,
+the final ordered run passed:
+
+| Gate | Command | Exit code | Result |
+|---|---|---:|---|
+| 1 | `npm test -- --coverage` (after `rm -rf coverage`) | 0 | 85 suites, 1078 tests pass |
+| 2 | `npx tsc --noEmit` | 0 | Pass |
+| 3 | `npx expo lint` | 0 | Pass, zero warnings |
+| 4 | `npx expo-doctor` | 0 | 21/21 checks |
+| 5 | `npx expo export --platform android` | 0 | Exported |
+| 6 | `npx expo export --platform ios` | 0 | Exported |
+
+Coverage was computed from the freshly regenerated `coverage/coverage-final.json`
+using `istanbul-lib-coverage`: source files were grouped by immediate `src/`
+directory and each group's `getCoverageSummary().lines` and `.branches` were
+reported; branches count each Istanbul branch arm. The two requested file
+branch percentages use the same file coverage map's `toSummary().branches`.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 676/714 (94.67%) | 713/809 (88.13%) |
+| `src/domain` | 3318/3381 (98.13%) | 3262/3506 (93.04%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+| File | Branches | Required floor | Result |
+|---|---:|---:|---|
+| `src/domain/budget.ts` | 770/849 (90.69%) | 90% | Pass |
+| `src/data/createAppStore.ts` | 93/107 (86.91%) | 85% | Pass |
+
+Physical-device checks for Fixed-deposit entry controls, maturity payouts,
+legacy entries, recurring deposits, Budget links and large-font layouts remain
+unverified; see [`docs/memory/open-items.md`](memory/open-items.md). Layout
+tests are simulated. No source changes were made to
+`app/(tabs)/index.tsx` or `app/(tabs)/budget.tsx`.

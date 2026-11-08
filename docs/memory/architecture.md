@@ -27,17 +27,26 @@ holdings show balance and deposit/withdrawal totals but no holding-level return.
 The asset list, holding cards and portfolio totals use the same domain
 calculations; the investment-entry screen shows values and ledger totals.
 
+Recurring liability balances in `src/domain/liability.ts` accrue actual
+calendar days over 365, applying each recorded payment on its date and
+continuing accrual to the requested as-of date. No per-period monetary
+rounding is performed. This describes the app's current calculation only; a
+lender's statement convention must be confirmed before changing it. The
+P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
+
 ## Schema and archives
 
-Current persisted schema is v15. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v14. The v14-to-v15 migration
-converts the five legacy Insurance cover goals to stable editable records.
+Current persisted schema is v16. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v15. The v14-to-v15 migration
+converts the five legacy Insurance cover goals to stable editable records; the
+v15-to-v16 migration applies holding capabilities and separates legacy FD/RD
+records without dropping entries or schedules.
 `createAppStore.ts` sets the
 persist version from `SCHEMA_VERSION`.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v14` before the migrated write. With the current
+`${persistName}.premigration.v15` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration

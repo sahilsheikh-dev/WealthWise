@@ -23,6 +23,7 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { pendingDues, type PastDuesMode } from '../src/domain/dues';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import {
   makeHoldingFormSchema,
   makePlanFormSchema,
@@ -32,17 +33,13 @@ import {
   type PlanFormOutput,
 } from '../src/domain/schemas';
 import { projection } from '../src/domain/sip';
-import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
+import { HOLDING_TYPES, type Frequency, type ManualHolding, type PlanHolding } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const holdingTypes: HoldingType[] = [
-  'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
-  'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
-];
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
 const openingBalanceHint = 'Money you had already put in before you started tracking here. It counts towards your invested amount.';
 const actualValueHint = "Today's value from your statement or investment app. Leave it blank and we will use our estimate.";
@@ -291,7 +288,8 @@ function ManualEditor({
   const today = todayISO();
   const schema = useMemo(() => makeHoldingFormSchema({
     otherNames: data.holdings.filter((item) => item.id !== holding?.id).map((item) => item.name),
-  }), [data.holdings, holding?.id]);
+    entriesExist: Boolean(holding?.logs.length),
+  }), [data.holdings, holding?.id, holding?.logs.length]);
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: holding ? {
@@ -300,6 +298,8 @@ function ManualEditor({
   });
   const invested = useWatch({ control, name: 'invested' });
   const value = useWatch({ control, name: 'value' });
+  const holdingType = useWatch({ control, name: 'type' });
+  const keepsEarlierEntries = Boolean(holding?.logs.length) && !holdingCapabilities(holdingType).entries;
   const numeric = (raw: string) => Number(raw.replaceAll(',', ''));
   const belowCost = Number.isFinite(numeric(invested)) && Number.isFinite(numeric(value)) && numeric(value) < numeric(invested);
   const save = (values: HoldingFormOutput) => {
@@ -337,6 +337,7 @@ function ManualEditor({
       {modeControl}
       {holding ? <ReadOnlyInvestmentKind label="Investment type" value="One-time (FD, gold, PF...)" /> : null}
       <ManualFields control={control} errors={errors} onNameChange={onNameChange} />
+      {keepsEarlierEntries ? <HelperText>Entries from earlier are kept.</HelperText> : null}
       {holding ? <Button label="Value is still correct today" variant="soft" disabled={holding.valueAsOf === today} onPress={() => actions.confirmHoldingValue(holding.id)} /> : null}
       {belowCost ? <HelperText tone="warning">Value is below what you invested</HelperText> : null}
     </FormScreen>
@@ -368,7 +369,7 @@ function PlanFields({
     <>
       <FormSection title="Basics">
         <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={holdingTypes.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.filter((type) => holdingCapabilities(type).recurring).map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
         <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">
@@ -465,7 +466,7 @@ function ManualFields({
   return (
     <FormSection title="Investment">
       <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-      <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Type" choices={holdingTypes} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+      <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Type" choices={HOLDING_TYPES} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
       <Controller control={control} name="invested" render={({ field }) => <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />} />
       <Controller control={control} name="value" render={({ field }) => <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />} />
     </FormSection>

@@ -1,4 +1,5 @@
 import { addDays, addMonths, monthKey, shiftMonth } from './dates';
+import { holdingCapabilities } from './holdingCapabilities';
 import { pendingItems } from './pending';
 import type { AppData, ISODate } from './types';
 import { formatAmount } from '../lib/amountDisplay';
@@ -40,7 +41,9 @@ function searchHorizon(data: AppData, today: ISODate): string {
     if (month > latestMonth) latestMonth = month;
   };
   for (const holding of data.holdings) {
-    if (holding.kind === 'plan') extendTo(addMonths(holding.startDate, holding.tenureYears * 12));
+    if (holding.kind === 'plan' && holdingCapabilities(holding.type).recurring) {
+      extendTo(addMonths(holding.startDate, holding.tenureYears * 12));
+    }
   }
   for (const liability of data.liabilities) {
     if (liability.kind === 'recurring') {

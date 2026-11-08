@@ -115,12 +115,16 @@ describe('four-month demo data', () => {
           expect.objectContaining({ type: 'expense', category }),
         ]));
       }
-      for (const category of INVESTMENT_FORM_CATEGORIES) {
+      for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
         expect(rows).toEqual(expect.arrayContaining([
           expect.objectContaining({ type: 'invest', category }),
         ]));
       }
     }
+    expect(data.transactions.filter((transaction) =>
+      transaction.type === 'invest'
+      && transaction.source?.kind === 'holding-entry'
+      && transaction.source.parentId === 'demo-holding-recurring-deposit')).toHaveLength(2);
     expect(BUDGET_GROUPS.every((group) => group.categories.length > 0)).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'amount')).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'percent')).toBe(true);
