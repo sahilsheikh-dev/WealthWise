@@ -13,12 +13,20 @@ import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixtu
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
 import { addInvestmentEntry } from '../investmentActions';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
+import { makeV9Fixture } from '../../data/testFixtures/v9';
+import { makeV10Fixture } from '../../data/testFixtures/v10';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
 const digest = async (text: string) => createHash('sha256').update(text).digest('hex');
-const migrationOptions = { digest, today: '2026-10-10', newId: () => 'backup-migrated-holding' };
+let migratedId = 0;
+const migrationOptions = {
+  digest,
+  today: '2026-10-10',
+  newId: () => `backup-migrated-${++migratedId}`,
+};
 const reChecksum = async (raw: string, change: (envelope: Record<string, unknown>) => void) => {
   const envelope = JSON.parse(raw) as Record<string, unknown>;
   change(envelope);
@@ -33,12 +41,126 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 7 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 11 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
     });
+
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
+  });
+
+  it('verifies v7 checksums before migrating backups to schema nine', async () => {
+    const { budgetPlan, monthBudgets, ...rest } = mockAppData;
+    const oldData = {
+      ...rest,
+      budgetTemplates: [{
+        id: 'legacy-plan',
+        name: 'Legacy plan',
+        plannedIncome: budgetPlan?.incomes.reduce((sum, income) => sum + income.amount, 0) ?? null,
+        lines: budgetPlan?.items.map((item) => ({
+          category: item.name,
+          mode: item.mode,
+          value: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })) ?? [],
+      }],
+      defaultBudgetTemplateId: 'legacy-plan',
+      monthBudgets: (monthBudgets ?? []).map(({
+        source: _source, linkedIncluded: _linked, incomes, sections: _sections, items, ...snapshot
+      }) => ({
+        ...snapshot,
+        lines: items.map((item) => ({
+          category: item.name,
+          planned: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })),
+        plannedIncome: incomes.reduce((sum, income) => sum + income.amount, 0),
+        templateId: 'legacy-plan',
+        templateName: 'Legacy plan',
+        customized: false,
+        linkedIncluded: true,
+      })),
+    };
+    const checksum = await digest(canonicalJson(oldData));
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 7,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: checksum },
+      data: oldData,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.budgetPlan).toMatchObject({ repeatMonthly: false, repeatFrom: null });
+    expect(imported.data.monthBudgets?.[0]?.linkedIncluded).toBe(false);
+    expect(imported.data).not.toHaveProperty('budgetTemplates');
+
+    const tampered = { ...envelope, data: { ...oldData, settings: { ...oldData.settings, name: 'tampered' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v8 checksums as written before migrating income totals', async () => {
+    const data = {
+      ...mockAppData,
+      budgetPlan: {
+        plannedIncome: 15_000,
+        lines: [{ category: 'Food', mode: 'amount' as const, value: 2_000 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-11',
+      },
+      monthBudgets: [{
+        month: '2026-10',
+        source: 'custom' as const,
+        plannedIncome: 12_000,
+        lines: [{ category: 'Food', planned: 1_000 }],
+      }],
+    };
+    const checksum = await digest(canonicalJson(data));
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 8,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: checksum },
+      data,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.budgetPlan?.incomes).toEqual([
+      expect.objectContaining({ name: 'Salary', category: 'Business', amount: 15_000, day: 1 }),
+    ]);
+    expect(imported.data.monthBudgets?.[0]?.incomes).toEqual([
+      expect.objectContaining({ name: 'Income', category: 'Business', amount: 12_000 }),
+    ]);
+    const tampered = { ...envelope, data: { ...data, settings: { ...data.settings, name: 'changed' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('verifies v10 checksums as written before migrating policy fields', async () => {
+    const oldData = makeV10Fixture();
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 10,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(oldData)) },
+      data: oldData,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.policies[0]).toMatchObject({
+      kind: 'life-savings',
+      status: 'active',
+      sumAssured: 500_000,
+      endDate: '2042-01-15',
+    });
+    const tampered = { ...envelope, data: { ...oldData, settings: { ...oldData.settings, name: 'changed' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
   it('round-trips a customized emergency-fund allocation', async () => {
@@ -108,7 +230,7 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
-  it('round trips v7 backups containing the current budget and expense categories', async () => {
+  it('round trips v10 backups containing user-managed budget items and expense categories', async () => {
     const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
     const data = {
       ...mockAppData,
@@ -131,23 +253,19 @@ describe('backup validation and serialization', () => {
           date: '2026-10-12',
         })),
       ],
-      budgetTemplates: [{
-        id: 'new-categories',
-        name: 'New categories',
-        plannedIncome: 10_000,
-        lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
-      }],
-      defaultBudgetTemplateId: 'new-categories',
-      monthBudgets: [{
-        month: '2026-10',
-        templateId: 'new-categories',
-        templateName: 'New categories',
-        customized: false,
-        plannedIncome: 10_000,
-        lines: categories.map((category) => ({ category, planned: 100 })),
-      }],
+      budgetPlan: budgetPlanFromLines(categories.map((category) => ({
+        category, mode: 'amount' as const, value: 100,
+      })), {
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-10', categories.map((category) => ({
+        category, planned: 100,
+      })), {
+        source: 'plan',
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
+      })],
     };
-    expect(SCHEMA_VERSION).toBe(7);
+    expect(SCHEMA_VERSION).toBe(11);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -158,13 +276,34 @@ describe('backup validation and serialization', () => {
           ...categories.map((category) => expect.objectContaining({ category })),
           expect.objectContaining({ id: 'legacy-invest-other', type: 'invest', category: 'Other' }),
         ]),
-        budgetTemplates: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
-        monthBudgets: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
+        budgetPlan: { items: expect.arrayContaining(categories.map((category) => expect.objectContaining({ name: category }))) },
+        monthBudgets: [{ items: expect.arrayContaining(categories.map((category) => expect.objectContaining({ name: category }))) }],
       },
     });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version eight', async () => {
+  it('verifies a v9 checksum over the original data before migrating its budget lines', async () => {
+    const oldData = makeV9Fixture(mockAppData) as Record<string, unknown>;
+    const checksum = await digest(canonicalJson(oldData));
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 9,
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: checksum },
+      data: oldData,
+    };
+    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
+    expect(imported.data.budgetPlan?.items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'Food', sectionId: 'survival' })]),
+    );
+    const tampered = { ...envelope, data: { ...oldData, settings: { ...mockAppData.settings, name: 'changed' } } };
+    await expect(parseBackup(JSON.stringify(tampered), migrationOptions))
+      .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('round trips custom emergency-fund options and refuses schema version eleven', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -188,7 +327,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 8;
+    future.schemaVersion = 12;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -231,11 +370,10 @@ describe('backup validation and serialization', () => {
           ? { ...oneTime, dueDate: '2026-08-31' }
           : item),
       },
-      { ...mockAppData, policies: [{ ...policy, frequency: 'single' as const, premiumYears: 1 }] },
-      { ...mockAppData, policies: [{ ...policy, maturityDate: '2021-01-01' }] },
-      { ...mockAppData, policies: [{ ...policy, kind: 'term' as const, currentValue: 1 }] },
+      { ...mockAppData, policies: [{ ...policy, policyNumber: 'P'.repeat(31) }] },
+      { ...mockAppData, policies: [{ ...policy, endDate: policy.startDate }] },
+      { ...mockAppData, policies: [{ ...policy, kind: 'term-life' as const, currentValue: 1 }] },
       { ...mockAppData, policies: [{ ...policy, kind: 'ulip' as const, valueAsOf: null }] },
-      { ...mockAppData, budget: { plannedIncome: null, lines: [{ category: 'Not allowed', planned: 1 }] } },
       { ...mockAppData, budget: { plannedIncome: null, lines: [
         { category: 'Food', planned: 1 }, { category: 'Food', planned: 2 },
       ] } },
@@ -243,51 +381,66 @@ describe('backup validation and serialization', () => {
     for (const invalid of invalidDatas) {
       expect(validateImportData(invalid).ok).toBe(false);
     }
+    expect(validateImportData({
+      ...mockAppData,
+      budget: { plannedIncome: null, lines: [{ category: 'Domestic help', planned: 1 }] },
+    }).ok).toBe(true);
     expect(validateImportData(null)).toMatchObject({ ok: false, reason: 'invalid-data' });
     expect(canonicalJson({ z: 1, m: 2, a: 3 })).toBe('{"a":3,"m":2,"z":1}');
     expect(canonicalJson(undefined)).toBe('null');
   });
 
-  it('validates budget templates and month snapshots on backup import', () => {
+  it('validates a budget plan and month snapshots on backup import', () => {
     const budgetData = {
       ...mockAppData,
-      budgetTemplates: [{
-        id: 'monthly', name: 'Monthly', plannedIncome: 10_000,
-        lines: [{ category: 'Food', mode: 'percent' as const, value: 25 }],
-      }],
-      defaultBudgetTemplateId: 'monthly',
-      monthBudgets: [{
-        month: '2026-10', templateId: 'monthly', templateName: 'Monthly',
-        customized: false, plannedIncome: 10_000,
-        lines: [{ category: 'Food', planned: 2_500 }],
-      }],
+      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 25, dueDay: 31 }], {
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 2_500, dueDay: 31 }], {
+        source: 'plan',
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
+        linkedIncluded: true,
+      })],
     };
     expect(validateImportData(budgetData)).toMatchObject({ ok: true });
 
     const invalidData = [
       {
         ...budgetData,
-        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Food', mode: 'percent' as const, value: 101 }] }],
+        budgetPlan: { ...budgetData.budgetPlan, items: [{ ...budgetData.budgetPlan.items[0]!, value: 101 }] },
       },
       {
         ...budgetData,
-        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Unknown', mode: 'amount' as const, value: 1 }] }],
+        budgetPlan: { ...budgetData.budgetPlan, items: [{ ...budgetData.budgetPlan.items[0]!, mode: 'amount', value: 1, dueDay: 0 }] },
       },
       {
         ...budgetData,
-        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [
-          { category: 'Food', mode: 'amount' as const, value: 1 },
-          { category: 'Food', mode: 'amount' as const, value: 2 },
-        ] }],
+        budgetPlan: { ...budgetData.budgetPlan, items: [{ ...budgetData.budgetPlan.items[0]!, sectionId: 'missing-section' }] },
       },
       {
         ...budgetData,
-        monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [{ category: 'Unknown', planned: 1 }] }],
+        budgetPlan: { ...budgetData.budgetPlan, items: [{ ...budgetData.budgetPlan.items[0]!, sectionId: 'wants' }] },
       },
       {
         ...budgetData,
-        monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [
-          { category: 'Food', planned: 1 }, { category: 'Food', planned: 2 },
+        budgetPlan: { ...budgetData.budgetPlan, items: [
+          ...budgetData.budgetPlan.items,
+          { ...budgetData.budgetPlan.items[0]!, id: 'duplicate-id' },
+        ] },
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0]!, items: [{ ...budgetData.monthBudgets[0]!.items[0]!, sectionId: 'missing-section' }] }],
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0]!, items: [{ ...budgetData.monthBudgets[0]!.items[0]!, dueDay: 32 }] }],
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0]!, items: [
+          ...budgetData.monthBudgets[0]!.items,
+          { ...budgetData.monthBudgets[0]!.items[0]!, id: 'duplicate-id' },
         ] }],
       },
     ];
@@ -301,7 +454,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 8;
+    newer.schemaVersion = 12;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

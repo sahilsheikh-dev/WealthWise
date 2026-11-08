@@ -1,10 +1,11 @@
 import { emptyAppData } from '../actions';
 import { availableBalance, monthPositionAt } from '../cashFlow';
-import { pendingItems } from '../pending';
+import { pendingActionLabel, pendingItems } from '../pending';
 import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
 import { monthSummary } from '../transactions';
 import type { AppData, OneTimeLiability, PlanHolding, RecurringLiability } from '../types';
+import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 const base = () => emptyAppData('2026-01-01');
 
@@ -56,6 +57,59 @@ const oneTime = (changes: Partial<OneTimeLiability> = {}): OneTimeLiability => (
 });
 
 describe('pending item projection', () => {
+  it('creates clamped income dues, allocates recorded earnings across same-category items, and supports future months', () => {
+    const data = {
+      ...base(),
+      budgetPlan: budgetPlanFromLines([], {
+        incomes: [
+          { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
+          { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
+        ],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+      }),
+      monthBudgets: [monthBudgetFromLines('2026-02', [], {
+        incomes: [
+          { id: 'salary-1', name: 'Salary', category: 'Salary' as const, amount: 1_000, day: 31 },
+          { id: 'salary-2', name: 'Bonus', category: 'Salary' as const, amount: 500, day: 15 },
+        ],
+        source: 'plan',
+        linkedIncluded: true,
+      })],
+    };
+    const future = pendingItems(data, '2026-02', '2026-01-20');
+    expect(future.filter((item) => item.source.kind === 'income')).toEqual([
+      expect.objectContaining({
+        title: 'Bonus', category: 'Salary', amount: 500,
+        dueDate: '2026-02-15', status: 'upcoming',
+      }),
+      expect.objectContaining({
+        title: 'Salary', category: 'Salary', amount: 1_000,
+        dueDate: '2026-02-28', status: 'upcoming',
+      }),
+    ]);
+    data.transactions.push({
+      id: 'partial-income', type: 'income', amount: 1_200, category: 'Salary',
+      note: '', date: '2026-02-03',
+    });
+    expect(pendingItems(data, '2026-02', '2026-02-05')
+      .filter((item) => item.source.kind === 'income')
+      .map((item) => [item.title, item.amount]))
+      .toEqual([['Bonus', 300]]);
+    data.transactions.push({
+      id: 'remaining-income', type: 'income', amount: 300, category: 'Salary',
+      note: '', date: '2026-02-04',
+    });
+    expect(pendingItems(data, '2026-02', '2026-02-05')
+      .some((item) => item.source.kind === 'income')).toBe(false);
+  });
+
+  it('uses Paid wording for expense/investment rows and Received for income rows', () => {
+    expect(pendingActionLabel('expense')).toBe('Marked as paid');
+    expect(pendingActionLabel('invest')).toBe('Marked as paid');
+    expect(pendingActionLabel('income')).toBe('Received');
+  });
+
   it('places unpaid schedule slots into past, current, and future months with FIFO actions', () => {
     const data = {
       ...base(),
@@ -107,20 +161,15 @@ describe('pending item projection', () => {
     const data: AppData = {
       ...base(),
       holdings: [plan()],
-      monthBudgets: [{
-        month: '2026-02',
-        templateId: null,
-        templateName: null,
-        customized: true,
-        plannedIncome: 10_000,
-        lines: [
-          { category: 'Food', planned: 300 },
-          { category: 'Fashion', planned: 250 },
-          { category: 'EMI', planned: 400 },
-          { category: 'Insurance', planned: 100 },
-          { category: 'Mutual fund / SIP', planned: 500 },
-        ],
-      }],
+      monthBudgets: [monthBudgetFromLines('2026-02', [
+        { category: 'Food', planned: 300 },
+        { category: 'Fashion', planned: 250 },
+        { category: 'EMI', planned: 400 },
+        { category: 'Insurance', planned: 100 },
+        { category: 'Mutual fund / SIP', planned: 500 },
+      ], {
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 10_000 }],
+      })],
       transactions: [
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: '2026-02-04' },
         { id: 'fashion', type: 'expense', amount: 250, category: 'Fashion', note: '', date: '2026-02-05' },
@@ -130,6 +179,33 @@ describe('pending item projection', () => {
     expect(rows.filter((row) => row.kind === 'budget')).toEqual([
       expect.objectContaining({ title: 'Food', amount: 200, status: 'planned', actionable: true }),
     ]);
+    expect(rows.find((row) => row.title === 'Food')).not.toHaveProperty('dueDate');
+  });
+
+  it('clamps budget due days to the month length, including leap February', () => {
+    const dueOnLastDay = (month: string, today: string) => {
+      const data = {
+        ...base(),
+        monthBudgets: [monthBudgetFromLines(month, [{ category: 'Bills', planned: 100, dueDay: 31 }], { incomes: [] })],
+      };
+      return pendingItems(data, month, today).find((item) => item.kind === 'budget');
+    };
+
+    expect(dueOnLastDay('2025-02', '2025-02-01')).toMatchObject({
+      dueDate: '2025-02-28', status: 'upcoming',
+    });
+    expect(dueOnLastDay('2024-02', '2024-02-01')).toMatchObject({
+      dueDate: '2024-02-29', status: 'upcoming',
+    });
+    expect(dueOnLastDay('2026-04', '2026-04-01')).toMatchObject({
+      dueDate: '2026-04-30', status: 'upcoming',
+    });
+    const earlyDue = {
+      ...base(),
+      monthBudgets: [monthBudgetFromLines('2026-05', [{ category: 'Bills', planned: 100, dueDay: 5 }], { incomes: [] })],
+    };
+    expect(pendingItems(earlyDue, '2026-05', '2026-05-06').find((item) => item.kind === 'budget'))
+      .toMatchObject({ dueDate: '2026-05-05', status: 'overdue' });
   });
 
   it('does not add pending projections to month totals or the available balance', () => {
@@ -137,10 +213,9 @@ describe('pending item projection', () => {
       ...base(),
       holdings: [plan()],
       liabilities: [oneTime()],
-      monthBudgets: [{
-        month: '2026-02', templateId: null, templateName: null, customized: true,
-        plannedIncome: 1_000, lines: [{ category: 'Food', planned: 500 }],
-      }],
+      monthBudgets: [monthBudgetFromLines('2026-02', [{ category: 'Food', planned: 500 }], {
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
+      })],
       transactions: [
         { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: '2026-02-01' },
         { id: 'food', type: 'expense', amount: 100, category: 'Food', note: '', date: '2026-02-02' },
@@ -199,4 +274,5 @@ describe('pending item projection', () => {
     expect(pendingItems({ ...base(), liabilities: [oneTime({ dueDate: null })] }, '2026-02', '2026-02-15'))
       .toEqual([]);
   });
+
 });

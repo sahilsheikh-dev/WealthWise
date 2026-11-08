@@ -9,7 +9,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AppState, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RecoveryScreen } from '../src/components/RecoveryScreen';
@@ -21,7 +21,6 @@ import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { useTheme } from '../src/theme/useTheme';
-import { todayISO } from '../src/lib/clock';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -52,8 +51,6 @@ function AppContent() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
                 <Stack.Screen name="liabilities" />
-                <Stack.Screen name="budget-templates" />
-                <Stack.Screen name="budget-history" />
                 <Stack.Screen name="emergency-fund" />
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="link-missing" />
@@ -62,8 +59,6 @@ function AppContent() {
                 <Stack.Screen name="investment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entry-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-form" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="budget-month-form" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="budget-template-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="liability-payment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="goal-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entries" />
@@ -91,15 +86,6 @@ export default function RootLayout() {
     Montserrat_700Bold,
   });
   const hydrated = useAppStore((state) => state.hydrated);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') return;
-      const today = todayISO();
-      useAppStore.getState().actions.ensureMonthBudget(today.slice(0, 7), today);
-    });
-    return () => subscription.remove();
-  }, []);
 
   useEffect(() => {
     if ((loaded || error) && hydrated) {

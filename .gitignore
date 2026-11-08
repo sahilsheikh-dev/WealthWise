@@ -82,3 +82,5 @@ android/local.properties
 # Local backup and exported financial data
 *.backup.json
 wealthwise-backup-*.json
+
+.claude

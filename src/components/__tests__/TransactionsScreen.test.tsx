@@ -37,6 +37,7 @@ jest.mock('../../data/store', () => ({
 }));
 jest.mock('../../data/useAppData', () => ({
   useAppData: () => mockData,
+  useAppActions: () => ({}),
 }));
 jest.mock('../../data/uiStore', () => ({
   useUIStore: (selector: (state: { txMonth: string; setTxMonth: jest.Mock }) => unknown) =>
@@ -60,14 +61,24 @@ jest.mock('../../theme/useTheme', () => ({
 jest.mock('../AppHeader', () => ({
   AppHeader: ({ title, rightActions, menu }: {
     title: string;
-    rightActions?: { label: string; icon: string; onPress: () => void }[];
+    rightActions?: {
+      label: string;
+      icon: string;
+      onPress: () => void;
+      expanded?: boolean;
+      showIndicator?: boolean;
+    }[];
     menu?: { label: string; icon: string; onPress: () => void }[];
   }) => {
     const ReactModule = jest.requireActual('react') as typeof React;
     return ReactModule.createElement('header', null,
       ReactModule.createElement('text', null, title),
       ...(rightActions ?? []).map((action) =>
-        ReactModule.createElement('button', { accessibilityLabel: action.label, onPress: action.onPress }, action.icon),
+        ReactModule.createElement('button', {
+          accessibilityLabel: action.label,
+          accessibilityState: action.expanded === undefined ? {} : { expanded: action.expanded },
+          onPress: action.onPress,
+        }, action.icon),
       ),
       ...(menu ?? []).map((item) =>
         ReactModule.createElement('button', { accessibilityLabel: item.label, onPress: item.onPress }, item.label),
@@ -120,6 +131,13 @@ function flattenStyles(style: unknown): Record<string, unknown>[] {
   );
 }
 
+function openFilterPanel(renderer: TestRenderer.ReactTestRenderer): void {
+  const panel = renderer.root.findAllByProps({ testID: 'transaction-filter-panel' });
+  if (panel.length === 0) {
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+  }
+}
+
 function hasAncestor(
   node: TestRenderer.ReactTestInstance,
   ancestor: TestRenderer.ReactTestInstance,
@@ -169,14 +187,23 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('keeps the sort chip in the horizontal filter row at font scale 2.0', () => {
+  it('keeps the sort chip in the closed-by-default inline filter panel at font scale 2.0', () => {
     mockFontScale = 2;
     try {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
       act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
       if (!renderer) throw new Error('Transactions renderer was not created.');
 
-      const row = renderer.root.findByProps({ testID: 'transaction-filter-row' });
+      expect(renderer.root.findAllByProps({ testID: 'transaction-filter-panel' })).toHaveLength(0);
+      expect(renderer.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string' && node.props.accessibilityLabel.startsWith('Sort:'),
+      )).toHaveLength(0);
+      const filterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
+      expect(filterButton.props.accessibilityState).toEqual({ expanded: false });
+      act(() => filterButton.props.onPress());
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.accessibilityState)
+        .toEqual({ expanded: true });
+      const row = renderer.root.findByProps({ testID: 'transaction-filter-panel' });
       const scroller = row.findAll((node) => String(node.type) === 'scrollview')[0];
       if (!scroller) throw new Error('Transactions filter scroller did not render.');
       expect(scroller.props.horizontal).toBe(true);
@@ -276,13 +303,9 @@ describe('Transactions available-balance card', () => {
         !('height' in style) && !('maxHeight' in style),
       )).toBe(true);
       const orderedIds = currentRenderer.root.findAll((node) =>
-        ['available-balance-card', 'unlinked-entry-notice', 'transaction-filter-row'].includes(String(node.props.testID)),
+        ['available-balance-card', 'unlinked-entry-notice'].includes(String(node.props.testID)),
       ).map((node) => node.props.testID).filter((id, index, ids) => ids.indexOf(id) === index);
-      expect(orderedIds).toEqual([
-        'available-balance-card',
-        'unlinked-entry-notice',
-        'transaction-filter-row',
-      ]);
+      expect(orderedIds).toEqual(['available-balance-card', 'unlinked-entry-notice']);
 
       act(() => notice.props.onPress());
       expect(router.push).toHaveBeenCalledWith('/link-missing');
@@ -295,7 +318,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('always shows only the user-kept balance elements and keeps the review action', () => {
+  it('keeps the Review action and routes its selected month to Budget', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
       { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: '2026-09-02' },
@@ -327,10 +350,10 @@ describe('Transactions available-balance card', () => {
       const collapsedFigures = cashCard.findAll((node) =>
         node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
       ).map((node) => node.props.accessibilityLabel);
-      expect([...new Set(collapsedFigures)]).toEqual(['₹830', '₹600']);
+      expect([...new Set(collapsedFigures)]).toEqual(['₹830']);
       const collapsedLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
       expect(collapsedLabels).toContain('Available balance');
-      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(true);
+      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(false);
       expect(collapsedLabels).not.toContain('Brought forward');
       expect(cashCard.findAll((node) =>
         String(node.type) === 'view' && String(node.props.testID).startsWith('balance-metric-'),
@@ -346,15 +369,15 @@ describe('Transactions available-balance card', () => {
 
       const reviewLabel = `Review ${formatMonth('2026-09')}`;
       expect(currentRenderer.root.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
+      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       const reviewButton = currentRenderer.root.findAll((node) => String(node.type) === 'pressable')
         .find((node) => node.findAllByType('text').some((text) =>
           text.children.join(' ').replace(/\s+/g, ' ').trim() === reviewLabel,
         ));
       if (!reviewButton) throw new Error('Review action was not rendered.');
       act(() => reviewButton.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: '2026-09' } });
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month: '2026-09' } });
       expect(cashCard.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
-      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
         .not.toContain('NaN');
     } finally {
@@ -457,7 +480,8 @@ describe('Transactions available-balance card', () => {
       );
       expect(metricRows).toHaveLength(0);
       const contentScroll = currentRenderer.root.findByProps({ testID: 'transactions-content-scroll' });
-      for (const testID of ['transactions-month-row', 'transaction-filter-row', 'transactions-list']) {
+      openFilterPanel(currentRenderer);
+      for (const testID of ['transactions-month-row', 'transaction-filter-panel', 'transactions-list']) {
         const section = currentRenderer.root.findByProps({ testID });
         expect(hasAncestor(section, contentScroll)).toBe(true);
         expect(flattenStyles(section.props.style).some((style) => style.position === 'absolute')).toBe(false);
@@ -470,6 +494,7 @@ describe('Transactions available-balance card', () => {
   it('marks a negative available balance as a shortfall with the danger tone', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
+      { id: 'prior-income', type: 'income', amount: 100, category: 'Salary', note: 'Prior pay', date: '2026-09-01' },
       { id: 'small-income', type: 'income', amount: 20, category: 'Salary', note: 'Pay', date: '2026-10-01' },
       { id: 'large-expense', type: 'expense', amount: 150, category: 'Food', note: 'Food', date: '2026-10-02' },
     ];
@@ -481,7 +506,7 @@ describe('Transactions available-balance card', () => {
       if (!renderer) throw new Error('Transactions renderer was not created.');
       const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
-      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹130' });
+      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹30' });
       expect(amount.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ color: expect.any(String) }),
       ]));
@@ -509,6 +534,7 @@ describe('Transactions sorting', () => {
       });
       if (!renderer) throw new Error('Transactions renderer was not created.');
 
+      openFilterPanel(renderer);
       expect(renderer.root.findByProps({ label: `Category: ${category} ×` })).toBeDefined();
       expect(renderer.root.findAll((node) => String(node.type) === 'listitem').map((node) => node.props.title))
         .toEqual([category === 'Gifts' ? 'gift entry' : `${category.toLowerCase()} entry`]);
@@ -529,6 +555,7 @@ describe('Transactions sorting', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Transactions renderer was not created.');
+    openFilterPanel(renderer);
     const titles = () => renderer?.root.findAll((node) => String(node.type) === 'listitem').map((node) => node.props.title);
     expect(titles()).toEqual(['Lunch']);
     const categoryChip = renderer.root.findByProps({ label: 'Category: Food ×' });
@@ -551,6 +578,7 @@ describe('Transactions sorting', () => {
     });
     if (!renderer) throw new Error('Transactions renderer was not created.');
 
+    openFilterPanel(renderer);
     const chips = () => renderer?.root.findAll((node) => String(node.type) === 'chip') ?? [];
     const expenseFilter = chips().find((node) => node.props.label === 'Expense');
     if (!expenseFilter) throw new Error('Expense filter chip was not rendered.');

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -11,6 +11,8 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
 import { IconButton } from '../src/components/IconButton';
+import { TopAnchoredSheet } from '../src/components/TopAnchoredSheet';
+import { FormShell } from '../src/components/FormShell';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -21,7 +23,6 @@ import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -60,9 +61,9 @@ export default function GoalFormScreen() {
           target: String(effectiveTarget ?? goal.target),
           saved: String(goal.saved),
           year: String(goal.year),
-          links: goal.links.map((link) => ({ instrumentId: link.instrumentId, share: String(link.share) })),
+          links: goal.links.map(({ instrumentId }) => ({ instrumentId })),
         }
-        : { name: '', target: '', saved: '0', year: '', links: [] },
+        : { name: '', target: '', saved: '', year: '', links: [] },
     });
   const links = useWatch({ control, name: 'links' }) ?? [];
   const instruments = useMemo(() => linkableInstruments(data, today), [data, today]);
@@ -102,7 +103,7 @@ export default function GoalFormScreen() {
   };
 
   if (goalId && !goal) return (
-    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Goal not found" />
     </FormScreen>
   );
@@ -157,16 +158,6 @@ export default function GoalFormScreen() {
                     Current value {formatAmount(instrument?.value ?? 0, 'exact', 1)}
                   </AppText>
                 </View>
-                <Controller control={control} name={`links.${index}.share`} render={({ field }) => (
-                  <TextField
-                    label="Share %"
-                    accessibilityLabel={`Share of ${instrument?.name ?? 'asset'} for this goal`}
-                    value={field.value ?? ''}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.links?.[index]?.share?.message}
-                  />
-                )} />
                 <IconButton
                   icon="x"
                   label={`Remove ${instrument?.name ?? 'asset'} from goal`}
@@ -195,49 +186,47 @@ export default function GoalFormScreen() {
       <Controller control={control} name="year" render={({ field }) => (
         <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} icon="calendar-outline" />
       )} />
-      <Modal
+      <TopAnchoredSheet
         visible={pickerVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setPickerVisible(false)}
+        onClose={() => setPickerVisible(false)}
+        sheetTestID="goal-asset-picker-sheet"
+        contentStyle={[styles.picker, { backgroundColor: colors.surface }]}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.picker, { backgroundColor: colors.surface }]}>
-            <AppText weight="bold" style={typography.h1}>Link an asset</AppText>
-            <ScrollView>
-              {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
-                .map((instrument) => {
-                  const selectedShare = goal?.links.find((link) => link.instrumentId === instrument.id)?.share ?? 0;
-                  const freeShare = Math.min(100, instrument.freeShare + selectedShare);
-                  return (
-                    <Pressable
-                      key={instrument.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}, ${freeShare}% available`}
-                      onPress={() => {
-                        if (freeShare < 0.1) return;
-                        setValue('links', [...links, {
-                          instrumentId: instrument.id,
-                          share: String(freeShare),
-                        }], { shouldDirty: true, shouldValidate: true });
-                        setPickerVisible(false);
-                      }}
-                      style={[styles.pickerRow, { borderBottomColor: colors.border }]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <AppText weight="semibold">{instrument.name}</AppText>
-                        <AppText style={{ color: colors.text3 }}>
-                          {formatAmount(instrument.value, 'exact', 1)} · {freeShare}% free
-                        </AppText>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-            </ScrollView>
-            <Button label="Done" onPress={() => setPickerVisible(false)} />
-          </View>
-        </View>
-      </Modal>
+        <FormShell
+          title="Link an asset"
+          titleAlignment="center"
+          rightActions={[{
+            icon: 'x',
+            label: 'Close',
+            hint: 'Close the asset picker',
+            onPress: () => setPickerVisible(false),
+          }]}
+          bodyTestID="goal-asset-picker-list"
+          footer={<Button label="Done" onPress={() => setPickerVisible(false)} />}>
+          {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
+            .map((instrument) => (
+              <Pressable
+                key={instrument.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
+                onPress={() => {
+                  setValue('links', [...links, {
+                    instrumentId: instrument.id,
+                  }], { shouldDirty: true, shouldValidate: true });
+                  setPickerVisible(false);
+                }}
+                style={[styles.pickerRow, { borderBottomColor: colors.border }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <AppText weight="semibold">{instrument.name}</AppText>
+                  <AppText style={{ color: colors.text3 }}>
+                    {formatAmount(instrument.value, 'exact', 1)}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+        </FormShell>
+      </TopAnchoredSheet>
     </FormScreen>
   );
 }
@@ -246,7 +235,6 @@ const styles = StyleSheet.create({
   linkSection: { gap: 8 },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   linkName: { flex: 1, gap: 2 },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
-  picker: { maxHeight: '80%', padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, gap: 12 },
+  picker: { alignSelf: 'stretch' },
   pickerRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });

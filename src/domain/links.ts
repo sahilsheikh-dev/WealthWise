@@ -1,4 +1,3 @@
-import { BUDGET_CATEGORIES } from './schemas';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
@@ -242,7 +241,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
   const savingsPolicies = new Set(data.policies
     .filter((policy) => policy.kind === 'life-savings' || policy.kind === 'ulip')
     .map((policy) => policy.id));
-  const allocatedShares = new Map<string, number>();
   for (const [goalIndex, goal] of data.goals.entries()) {
     const seen = new Set<string>();
     for (const [linkIndex, link] of goal.links.entries()) {
@@ -253,49 +251,25 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
         add('duplicate-goal-link', 'A goal cannot link the same asset more than once.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
       }
       seen.add(link.instrumentId);
-      const total = (allocatedShares.get(link.instrumentId) ?? 0) + link.share;
-      allocatedShares.set(link.instrumentId, total);
-      if (total > 100) add('goal-link-overallocated', 'Shares across goals cannot exceed 100% of an asset.', ['goals', goalIndex, 'links', linkIndex, 'share']);
     }
   }
   if (data.budget) {
     const seen = new Set<string>();
-    const allowed = new Set<string>(BUDGET_CATEGORIES);
     for (const [index, line] of data.budget.lines.entries()) {
-      if (!allowed.has(line.category)) add('invalid-budget-category', 'Budget category is not allowed.', ['budget', 'lines', index, 'category']);
       if (seen.has(line.category)) add('duplicate-budget-category', 'Budget categories must be unique.', ['budget', 'lines', index, 'category']);
       seen.add(line.category);
     }
   }
-  const budgetTemplateIds = new Set((data.budgetTemplates ?? []).map(({ id }) => id));
-  if (data.defaultBudgetTemplateId && !budgetTemplateIds.has(data.defaultBudgetTemplateId)) {
-    add('missing-default-budget-template', 'Default budget template does not exist.', ['defaultBudgetTemplateId']);
-  }
-  for (const [templateIndex, template] of (data.budgetTemplates ?? []).entries()) {
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of template.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
+  if (data.budgetPlan) {
+    const sectionIds = new Set(data.budgetPlan.sections.map((section) => section.id));
+    for (const [itemIndex, item] of data.budgetPlan.items.entries()) {
+      if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['budgetPlan', 'items', itemIndex, 'sectionId']);
     }
   }
   for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
-    if (budget.templateId !== null && !budgetTemplateIds.has(budget.templateId)) {
-      add('missing-budget-template', 'Month budget template does not exist.', ['monthBudgets', monthIndex, 'templateId']);
-    }
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of budget.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
+    const sectionIds = new Set(budget.sections.map((section) => section.id));
+    for (const [itemIndex, item] of budget.items.entries()) {
+      if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['monthBudgets', monthIndex, 'items', itemIndex, 'sectionId']);
     }
   }
   for (const policy of data.policies) {
@@ -306,8 +280,4 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
 
   }
   return issues;
-}
-
-function allowedBudgetCategory(category: string): boolean {
-  return (BUDGET_CATEGORIES as readonly string[]).includes(category);
 }

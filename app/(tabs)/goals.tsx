@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
+import { AppText, Card, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
@@ -13,7 +15,7 @@ import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { SORT_OPTIONS } from '../../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -23,6 +25,8 @@ export default function GoalsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
   const sorting = useSort('goals');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const asOf = todayISO();
   const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
   const expenseBaseline = emergencyBaseline.amount;
@@ -42,10 +46,44 @@ export default function GoalsScreen() {
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleGoals = normalizedQuery
+    ? sortedGoals.filter((goal) =>
+      `${goal.name} ${goal.auto === 'ef' ? 'Emergency fund' : ''}`.toLowerCase().includes(normalizedQuery),
+    )
+    : sortedGoals;
+  const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
+    || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
 
   return (
     <Screen>
-      <AppHeader title="Goals" rightActions={[{ icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') }]} />
+      <AppHeader
+        title="Goals"
+        rightActions={[
+          {
+            icon: 'filter',
+            label: 'Filter',
+            onPress: () => setFilterPanelOpen((open) => !open),
+            expanded: filterPanelOpen,
+            showIndicator: filterActive,
+          },
+          { icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') },
+        ]}
+      />
+      {filterPanelOpen ? (
+        <View testID="goal-filter-panel">
+          <ChipRow>
+            <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+          </ChipRow>
+        </View>
+      ) : null}
+      <SearchField
+        accessibilityLabel="Search goals"
+        placeholder="Search goal name"
+        value={query}
+        onChangeText={setQuery}
+        onClear={() => setQuery('')}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -56,10 +94,7 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <ChipRow>
-        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
-      </ChipRow>
-      {sortedGoals.map((goal) => {
+      {visibleGoals.map((goal) => {
         const view = goalView(goal, { expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
@@ -92,7 +127,6 @@ export default function GoalsScreen() {
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
-            <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -105,24 +139,11 @@ export default function GoalsScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' ? (
+            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
               <View style={styles.projection}>
                 <AppText style={[typography.meta, { color: colors.text2 }]}>
-                  {projection.projectedDate === 'Already reached'
-                    ? 'Already reached'
-                    : projection.projectedDate
-                      ? `Projected completion ${formatDate(projection.projectedDate)}`
-                      : 'Not reachable with current contributions'}
+                  Projected completion {formatDate(projection.projectedDate)}
                 </AppText>
-                {projection.status !== 'none' ? (
-                  <AppText style={[typography.meta, { color: projection.status === 'behind' ? colors.err : colors.primary }]}>
-                    {projection.status === 'on-track'
-                      ? 'On track'
-                      : projection.status === 'ahead'
-                        ? 'Ahead'
-                        : 'Behind'}
-                  </AppText>
-                ) : null}
               </View>
             ) : null}
             {goal.auto === 'ef' ? (
@@ -162,9 +183,11 @@ export default function GoalsScreen() {
                 ) : null}
               </>
             ) : null}
+            <GoalProgressRow percent={goalPercent} />
           </Pressable>
         );
       })}
+      {normalizedQuery && visibleGoals.length === 0 ? <EmptyState title="No matches" /> : null}
     </Screen>
   );
 }

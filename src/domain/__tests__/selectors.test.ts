@@ -45,6 +45,7 @@ const baseData = (changes: Partial<AppData> = {}): AppData => ({
   liabilities: [],
   policies: [],
   budget: null,
+  budgetPlan: null,
   efCustomBuckets: [],
   efBucketLinks: {},
   ...changes,
@@ -273,6 +274,7 @@ describe('transaction selectors', () => {
       tx('b', 'expense', 3, '2026-10-02', 'Rent'),
       tx('c', 'invest', 4, '2026-10-02', 'Index fund'),
       tx('other-investment', 'invest', 5, '2026-10-03', 'Other', 'Other'),
+      tx('custom-investment', 'invest', 7, '2026-10-03', 'Fund', 'Fund'),
       tx('other-expense', 'expense', 6, '2026-10-03', 'Other', 'Other'),
       tx('a', 'income', 2, '2026-10-01', 'Salary'),
       tx('z', 'expense', 1, '2026-09-30', 'Rent'),
@@ -280,12 +282,19 @@ describe('transaction selectors', () => {
     expect(filterTransactions(txs, { month: '2026-10', type: 'all', query: ' RENT ' }).map((item) => item.id)).toEqual(['b']);
     expect(filterTransactions(txs, { month: '2026-10', type: 'income', query: '' }).map((item) => item.id)).toEqual(['a']);
     expect(filterTransactions(txs, {
-      month: '2026-10', type: 'invest', query: '', category: 'Other investments',
+      month: '2026-10',
+      type: 'invest',
+      query: '',
+      category: 'Other investments',
+      customCategories: new Set(['Fund']),
     }).map((item) => item.id)).toEqual(['other-investment', 'c']);
+    expect(filterTransactions(txs, {
+      month: '2026-10', type: 'invest', query: '', category: 'Fund', customCategories: new Set(['Fund']),
+    }).map((item) => item.id)).toEqual(['custom-investment']);
     const filtered = filterTransactions(txs, { month: '2026-10', type: 'all', query: '' });
-    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'c', 'b', 'a']);
+    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'custom-investment', 'c', 'b', 'a']);
     expect(groupByDate(filtered).map((group) => [group.date, group.items.map((item) => item.id)])).toEqual([
-      ['2026-10-03', ['other-investment', 'other-expense']],
+      ['2026-10-03', ['other-investment', 'other-expense', 'custom-investment']],
       ['2026-10-02', ['c', 'b']],
       ['2026-10-01', ['a']],
     ]);

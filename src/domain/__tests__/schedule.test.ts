@@ -62,6 +62,7 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
   liabilities,
   policies: [],
   budget: null,
+  budgetPlan: null,
   efCustomBuckets: [],
   efBucketLinks: {},
 });

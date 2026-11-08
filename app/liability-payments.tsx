@@ -109,7 +109,7 @@ export default function LiabilityPaymentsScreen() {
           ...(liability.kind === 'recurring' && schedule.summary.overdue + schedule.summary.ongoing > 0
             ? [{
               label: 'Clear past dues',
-              icon: 'edit' as const,
+              icon: 'check-circle' as const,
               onPress: () => router.push(
                 `/clear-dues?kind=liability&id=${encodeURIComponent(liability.id)}` as Href,
               ),
@@ -117,7 +117,7 @@ export default function LiabilityPaymentsScreen() {
             : []),
           {
             label: 'Edit',
-            icon: 'edit',
+            icon: 'edit-2',
             onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }),
           },
           {

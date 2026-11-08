@@ -1,5 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
+import type { ReactTestInstance } from 'react-test-renderer';
 
 import HomeScreen from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
@@ -10,9 +11,16 @@ import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockData: { current: AppData } = { current: emptyAppData('2026-10-11') };
 const mockThemeId: { current: ThemeId } = { current: 'system' };
+const mockFontScale: { current: number } = { current: 1 };
+const mockPush = jest.fn();
+
+function lastChildTestID(node: ReactTestInstance): unknown {
+  const child = node.children.at(-1);
+  return typeof child === 'string' ? undefined : child?.props.testID;
+}
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  router: { push: (...args: unknown[]) => mockPush(...args), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
 }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -40,7 +48,9 @@ jest.mock('../../theme/useTheme', () => ({
 }));
 jest.mock('../../components/AppHeader', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
-  return { AppHeader: () => ReactModule.createElement('header') };
+  return {
+    AppHeader: (props: Record<string, unknown>) => ReactModule.createElement('header', props),
+  };
 });
 jest.mock('../../components/ScreenErrorBoundary', () => ({ ScreenErrorBoundary: () => null }));
 jest.mock('../../components/ui', () => {
@@ -54,6 +64,7 @@ jest.mock('../../components/ui', () => {
     EmptyState: node('empty'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
+    SearchField: node('searchfield'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
@@ -75,7 +86,7 @@ jest.mock('react-native', () => {
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),
     View: node('view'),
-    useWindowDimensions: () => ({ fontScale: 1 }),
+    useWindowDimensions: () => ({ fontScale: mockFontScale.current }),
   };
 });
 
@@ -126,11 +137,6 @@ function renderedText(root: TestRenderer.ReactTestInstance): string {
   const collect = (node: TestRenderer.ReactTestInstance): string =>
     node.children.map((child) => typeof child === 'string' ? child : collect(child)).join(' ');
   return collect(root);
-}
-
-function flattenStyle(style: unknown): Record<string, unknown> {
-  if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyle));
-  return typeof style === 'object' && style !== null ? style as Record<string, unknown> : {};
 }
 
 describe('three-month emergency target screens', () => {
@@ -228,7 +234,7 @@ describe('three-month emergency target screens', () => {
     },
   );
 
-  it('shows custom allocation rows, linked holding values, and wrap-safe styles', () => {
+  it('keeps normal allocation rows detail-first with a final progress bar and one header edit action', () => {
     const empty = emptyAppData('2026-10-11');
     mockData.current = {
       ...empty,
@@ -249,12 +255,13 @@ describe('three-month emergency target screens', () => {
         stocks: 0, insurance: 0, other: 0, 'custom-reserve': 10,
       },
     };
+    mockFontScale.current = 1;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
     if (!renderer) throw new Error('Emergency fund did not render.');
     const text = renderedText(renderer.root);
     expect(text).toContain('Home reserve');
-    expect(text).toContain('Savings account');
+    expect(text).not.toContain('Savings account');
     expect(renderer.root.findAllByProps({ label: 'Manage links' })).toHaveLength(0);
     expect(renderer.root.findAllByProps({ label: 'Link assets' })).toHaveLength(0);
     expect(text).not.toContain('Deposit');
@@ -262,20 +269,121 @@ describe('three-month emergency target screens', () => {
     expect(text).not.toContain('Passbook');
     expect(renderer.root.findAllByProps({ label: 'Link assets' })).toHaveLength(0);
 
-    const customRow = renderer.root.findAll((node) => flattenStyle(node.props.style).paddingVertical === 10)[0];
-    expect(customRow).toBeDefined();
-    expect(flattenStyle(customRow?.props.style)).toMatchObject({ gap: 5, paddingVertical: 10, borderBottomWidth: 1 });
-    const chip = renderer.root.findAll((node) => flattenStyle(node.props.style).borderRadius === 16)[0];
-    expect(chip).toBeDefined();
-    expect(flattenStyle(chip?.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap', minHeight: 30 });
+    const header = renderer.root.findByType('header');
+    expect(header.props).toMatchObject({
+      title: 'Emergency fund',
+      showBack: true,
+      showDefaultMenu: false,
+      rightActions: [{ icon: 'edit-2', label: 'Edit allocation' }],
+    });
+    expect(renderer.root.findAllByProps({ label: 'Edit emergency fund allocation' })).toHaveLength(0);
+    expect(text).not.toContain('Over');
+    expect(text).not.toContain('Under');
+    expect(text).not.toContain('On target');
+    const items = renderer.root.findAll((node) => {
+      const testID = node.props.testID;
+      return typeof testID === 'string'
+        && testID.startsWith('emergency-fund-allocation-item-')
+        && lastChildTestID(node)
+          === `emergency-fund-progress-${testID.replace('emergency-fund-allocation-item-', '')}`;
+    });
+    expect(items).toHaveLength(4);
+    for (const item of items) {
+      const bucketId = String(item.props.testID).replace('emergency-fund-allocation-item-', '');
+      expect(item.findAll((node) => node.props.testID === `emergency-fund-status-${bucketId}`)).toHaveLength(0);
+    }
+    expect(renderer.root.findAll((node) =>
+      String(node.props.testID).startsWith('emergency-fund-progress-status-'))).toHaveLength(0);
+    mockPush.mockClear();
+    act(() => header.props.rightActions[0].onPress());
+    expect(mockPush).toHaveBeenCalledWith('/ef-allocation-form');
   });
 
-  it('offers to link assets when the allocation table is empty', () => {
+  it.each([1.3, 2])('keeps details first and the progress bar last at font scale %s', (fontScale) => {
+    const empty = emptyAppData('2026-10-11');
+    mockData.current = {
+      ...empty,
+      holdings: [{
+        id: 'holding-cash', kind: 'manual', name: 'Savings account', type: 'Savings account',
+        invested: 2_500, value: 2_500, logs: [],
+      }],
+      goals: [{
+        id: 'ef-goal', name: 'Emergency fund', target: 100_000, saved: 0, year: 2028, auto: 'ef',
+        links: [{ instrumentId: 'holding-cash', share: 100 }],
+      }],
+      efBucketLinks: { cash: ['holding-cash'] },
+    };
+    mockFontScale.current = fontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
+    if (!renderer) throw new Error('Emergency fund did not render.');
+    const item = renderer.root.findAllByProps({ testID: 'emergency-fund-allocation-item-cash' })
+      .find((node) => lastChildTestID(node) === 'emergency-fund-progress-cash');
+    if (!item) throw new Error('Cash allocation row did not render with its progress bar last.');
+    expect(lastChildTestID(item)).toBe('emergency-fund-progress-cash');
+    expect(item.findAll((node) => node.props.testID === 'emergency-fund-status-cash')).toHaveLength(0);
+  });
+
+  it('offers to link assets while showing the three requested default allocation items', () => {
     mockData.current = emptyAppData('2026-10-11');
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
     if (!renderer) throw new Error('Emergency fund did not render.');
     expect(renderer.root.findAllByProps({ title: 'No assets linked' }).length).toBeGreaterThan(0);
     expect(renderer.root.findByProps({ label: 'Link assets' })).toBeDefined();
+    const items = renderer.root.findAll((node) => {
+      const testID = node.props.testID;
+      return typeof testID === 'string'
+        && testID.startsWith('emergency-fund-allocation-item-')
+        && lastChildTestID(node)
+          === `emergency-fund-progress-${testID.replace('emergency-fund-allocation-item-', '')}`;
+    });
+    expect(items).toHaveLength(3);
+  });
+
+  it('renders Home, Goals and Emergency fund for malformed persisted allocations', async () => {
+    const empty = emptyAppData('2026-10-11');
+    const custom = { id: 'renamed-option', name: 'Renamed', access: 'instant' as const, marketLinked: false };
+    const scenarios: { name: string; allocation: Record<string, number>; customBuckets?: AppData['efCustomBuckets'] }[] = [
+      { name: '99.99 total', allocation: { cash: 9.99, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: '100.01 total', allocation: { cash: 10.01, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'unknown deleted option', allocation: { ...empty.efAllocation, 'deleted-option': 0 } },
+      { name: 'negative value', allocation: { cash: -1, bank: 41, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'NaN value', allocation: { cash: Number.NaN, bank: 40, 'fd-rd': 35, 'mutual-funds-bonds': 15 } },
+      { name: 'empty object', allocation: {} },
+      { name: 'removed custom option', allocation: { ...empty.efAllocation, 'deleted-option': 0 }, customBuckets: [] },
+      {
+        name: 'renamed custom option',
+        allocation: { cash: 10, bank: 30, 'fd-rd': 35, 'mutual-funds-bonds': 15, 'old-option': 10 },
+        customBuckets: [custom],
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      mockData.current = {
+        ...empty,
+        efAllocation: scenario.allocation,
+        efCustomBuckets: scenario.customBuckets ?? [],
+      };
+      let home: TestRenderer.ReactTestRenderer | undefined;
+      let goals: TestRenderer.ReactTestRenderer | undefined;
+      let emergency: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        home = TestRenderer.create(<HomeScreen />);
+        goals = TestRenderer.create(<GoalsScreen />);
+        emergency = TestRenderer.create(<EmergencyFundScreen />);
+        await Promise.resolve();
+      });
+      if (!home || !goals || !emergency) throw new Error(`${scenario.name}: a screen did not render.`);
+      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit allocation.';
+      expect(renderedText(emergency.root)).toContain(repairMessage);
+      expect(emergency.root.findAllByType('text').filter((node) =>
+        node.children.join('') === repairMessage)).toHaveLength(1);
+      await act(async () => {
+        home?.unmount();
+        goals?.unmount();
+        emergency?.unmount();
+      });
+    }
   });
 });

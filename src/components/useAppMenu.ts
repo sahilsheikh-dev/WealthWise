@@ -1,7 +1,9 @@
 import { router, usePathname, type Href } from 'expo-router';
+import { Alert } from 'react-native';
 import { useMemo } from 'react';
 
 import { useAppStore } from '../data/store';
+import { useUIStore } from '../data/uiStore';
 import { buildAppMenu } from '../lib/appMenu';
 import { choiceAsync, confirmAsync } from '../lib/confirm';
 import { useTheme } from '../theme/useTheme';
@@ -27,6 +29,8 @@ const destinations: Record<string, string> = {
 
 export function useAppMenu(): HeaderMenuItem[] {
   const devActions = useAppStore((state) => state.devActions);
+  const undoImport = useAppStore((state) => state.actions.undoImport);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   const pathname = usePathname();
   const { themeId } = useTheme();
   const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
@@ -43,14 +47,31 @@ export function useAppMenu(): HeaderMenuItem[] {
       } else if (item.label === 'Load demo data (4 months)' && devActions) {
         void confirmAsync({
           title: 'Load demo data?',
-          message: 'Replace local app data with four months of sample data? You can undo this from Backup and restore.',
+          message: 'Replace local app data with four months of sample data?',
           confirmLabel: 'Load demo data',
           destructive: true,
         }).then((confirmed) => {
           if (!confirmed) return;
           void devActions.loadDemoData().then((result) => {
             if (result.ok) {
-              router.push('/backup');
+              Alert.alert('Demo data loaded', 'Four months of sample data are ready.', [
+                {
+                  text: 'Undo',
+                  style: 'cancel',
+                  onPress: () => {
+                    void undoImport().then((undoResult) => {
+                      if (undoResult.ok) {
+                        setActionToast({ message: 'Demo data removed' });
+                        return;
+                      }
+                      Alert.alert('Could not undo demo data', undoResult.message);
+                    }).catch((error: unknown) => {
+                      Alert.alert('Could not undo demo data', error instanceof Error ? error.message : 'An unexpected error occurred.');
+                    });
+                  },
+                },
+                { text: 'OK' },
+              ]);
               return;
             }
             void confirmAsync({
@@ -58,6 +79,8 @@ export function useAppMenu(): HeaderMenuItem[] {
               message: result.message,
               confirmLabel: 'OK',
             });
+          }).catch((error: unknown) => {
+            Alert.alert('Could not load demo data', error instanceof Error ? error.message : 'An unexpected error occurred.');
           });
         });
       } else if (item.label === 'Generate stress-test data' && devActions) {
@@ -74,5 +97,5 @@ export function useAppMenu(): HeaderMenuItem[] {
         }).then((choice) => { if (choice === 'continue') void devActions.simulateCorruption(); });
       }
     },
-  })), [devActions, isDev, pathname, themeId]);
+  })), [devActions, isDev, pathname, setActionToast, themeId, undoImport]);
 }

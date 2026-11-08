@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { InstrumentCardAction, InstrumentCardModel, InstrumentCardTextSegment } from '../domain/instrumentCard';
 import { typography } from '../theme/tokens';
@@ -30,6 +30,12 @@ export function InstrumentCard({
     confirm: 'check-circle',
   };
   return (
+    <Pressable
+      testID={`asset-card-${model.kind}-${model.name}`}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${model.name}`}
+      accessibilityHint="Opens this asset for editing"
+      onPress={() => onAction(model.headerAction.id)}>
     <Card style={styles.card}>
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{model.name}</AppText>}
@@ -42,8 +48,6 @@ export function InstrumentCard({
         )}
         value={<AmountText value={model.value} tier="tile" weight="bold" style={typography.amount} />}
         valueCaption={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>}
-        editLabel={`Edit ${model.name}`}
-        onEdit={() => onAction(model.headerAction.id)}
       />
       {goalCount ? (
         <AppText style={[typography.meta, { color: colors.primary }]}>
@@ -67,6 +71,7 @@ export function InstrumentCard({
           target={dueTarget}
           pendingCount={model.pendingDueCount}
           nextAmount={model.pendingDueAmount ?? 0}
+          stopParentPress
         />
       ) : null}
       <AppText
@@ -86,7 +91,10 @@ export function InstrumentCard({
             <Button
               key={action.id}
               label={action.label}
-              onPress={() => onAction(action.id)}
+              onPress={(event) => {
+                event?.stopPropagation();
+                onAction(action.id);
+              }}
               disabled={action.disabled}
               accessibilityHint={action.accessibilityHint}
               icon={actionIcons[action.id]}
@@ -97,6 +105,7 @@ export function InstrumentCard({
         })}
       </View>
     </Card>
+    </Pressable>
   );
 }
 

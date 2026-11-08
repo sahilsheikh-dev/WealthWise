@@ -1,4 +1,6 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
+import { shiftMonth } from '../domain/dates';
+import { budgetGroupFor, defaultBudgetSections } from '../domain/budget';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -158,6 +160,75 @@ export type V6ToV7Options = {
   today: string;
   newId: () => string;
 };
+
+export function migrateV9ToV10(data: unknown, options: V6ToV7Options): unknown {
+  if (!isRecord(data)
+    || (data.budgetPlan !== null && !isRecord(data.budgetPlan))
+    || (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets))) {
+    throw new PersistedVersionError(9, 'unknown-version');
+  }
+  const sections = defaultBudgetSections();
+  const mapCategory = (category: unknown): string => {
+    if (typeof category !== 'string') throw new PersistedVersionError(9, 'unknown-version');
+    const mapped = budgetGroupFor(category);
+    return mapped?.id
+      ?? sections.find((section) => section.type === 'spend' && section.system === undefined)?.id
+      ?? 'survival';
+  };
+  const plan = data.budgetPlan;
+  const budgetPlan = plan === null ? null : (() => {
+    if (!isRecord(plan) || !Array.isArray(plan.incomes) || !Array.isArray(plan.lines)) {
+      throw new PersistedVersionError(9, 'unknown-version');
+    }
+    const items = plan.lines.map((line) => {
+      if (!isRecord(line) || typeof line.category !== 'string' || typeof line.value !== 'number'
+        || (line.mode !== 'amount' && line.mode !== 'percent')) {
+        throw new PersistedVersionError(9, 'unknown-version');
+      }
+      return {
+        id: options.newId(),
+        sectionId: mapCategory(line.category),
+        name: line.category,
+        mode: line.mode,
+        value: line.value,
+        ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}),
+      };
+    });
+    const { lines: _lines, ...planWithoutLines } = plan;
+    return { ...planWithoutLines, sections: sections.map((section) => ({ ...section })), items };
+  })();
+  const monthBudgets = data.monthBudgets?.map((snapshot) => {
+    if (!isRecord(snapshot) || typeof snapshot.month !== 'string'
+      || !Array.isArray(snapshot.incomes) || !Array.isArray(snapshot.lines)) {
+      throw new PersistedVersionError(9, 'unknown-version');
+    }
+    const items = snapshot.lines.map((line, index) => {
+      if (!isRecord(line) || typeof line.category !== 'string' || typeof line.planned !== 'number') {
+        throw new PersistedVersionError(9, 'unknown-version');
+      }
+      const sectionId = mapCategory(line.category);
+      return {
+        id: `v10-${snapshot.month}-${index}`,
+        sectionId,
+        name: line.category,
+        mode: 'amount',
+        value: line.planned,
+        ...(typeof line.dueDay === 'number' ? { dueDay: line.dueDay } : {}),
+      };
+    });
+    const { lines: _lines, ...snapshotWithoutLines } = snapshot;
+    return {
+      ...snapshotWithoutLines,
+      sections: sections.map((section) => ({ ...section })),
+      items,
+    };
+  });
+  return {
+    ...data,
+    budgetPlan,
+    ...(monthBudgets === undefined ? {} : { monthBudgets }),
+  };
+}
 
 function migrateBudgetLines<T extends Record<string, unknown>>(
   container: T,
@@ -344,6 +415,212 @@ export function migrateV6ToV7(data: unknown, options: V6ToV7Options): unknown {
   return result;
 }
 
+export function migrateV7ToV8(data: unknown): unknown {
+  if (!isRecord(data)) {
+    throw new PersistedVersionError(7, 'unknown-version');
+  }
+  const templates = Array.isArray(data.budgetTemplates) ? data.budgetTemplates : [];
+  if (!templates.every(isRecord)) throw new PersistedVersionError(7, 'unknown-version');
+  if (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets)) {
+    throw new PersistedVersionError(7, 'unknown-version');
+  }
+
+  const templateById = new Map<string, Record<string, unknown>>();
+  for (const template of templates) {
+    if (typeof template.id !== 'string' || !Array.isArray(template.lines)) {
+      throw new PersistedVersionError(7, 'unknown-version');
+    }
+    templateById.set(template.id, template);
+  }
+
+  const snapshots = Array.isArray(data.monthBudgets) ? data.monthBudgets : [];
+  if (!snapshots.every(isRecord)) throw new PersistedVersionError(7, 'unknown-version');
+  const counts = new Map<string, number>();
+  const latestMonth = new Map<string, string>();
+  for (const snapshot of snapshots) {
+    if (typeof snapshot.templateId !== 'string') continue;
+    const id = snapshot.templateId;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+    if (typeof snapshot.month === 'string'
+      && snapshot.month > (latestMonth.get(id) ?? '')) latestMonth.set(id, snapshot.month);
+  }
+
+  const defaultId = typeof data.defaultBudgetTemplateId === 'string'
+    ? data.defaultBudgetTemplateId
+    : null;
+  const templateOrder = new Map(templates.map((template, index) => [template.id as string, index]));
+  const selected = (defaultId === null ? undefined : templateById.get(defaultId))
+    ?? [...templateById.entries()].sort(([leftId], [rightId]) => {
+      const countDifference = (counts.get(rightId) ?? 0) - (counts.get(leftId) ?? 0);
+      if (countDifference !== 0) return countDifference;
+      const monthDifference = (latestMonth.get(rightId) ?? '').localeCompare(latestMonth.get(leftId) ?? '');
+      if (monthDifference !== 0) return monthDifference;
+      return (templateOrder.get(leftId) ?? 0) - (templateOrder.get(rightId) ?? 0);
+    })[0]?.[1];
+
+  let budgetPlan: Record<string, unknown> | null = null;
+  if (selected) {
+    if (!Array.isArray(selected.lines)) throw new PersistedVersionError(7, 'unknown-version');
+    budgetPlan = {
+      plannedIncome: selected.plannedIncome ?? null,
+      lines: selected.lines.filter((line): line is Record<string, unknown> =>
+        isRecord(line) && line.category !== 'EMI' && line.category !== 'Insurance',
+      ),
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+  }
+
+  const monthBudgets = snapshots.map((snapshot) => {
+    const { templateId: _templateId, templateName: _templateName, customized: _customized, linkedIncluded: _linkedIncluded, ...rest } = snapshot;
+    return { ...rest, source: 'custom', linkedIncluded: false };
+  });
+  const { budgetTemplates: _budgetTemplates, defaultBudgetTemplateId: _defaultBudgetTemplateId, ...rest } = data;
+  return { ...rest, budgetPlan, monthBudgets };
+}
+
+const earnedIncomeCategories = new Set([
+  'Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Other',
+]);
+const nonEarnedIncomeCategories = new Set([
+  'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds',
+]);
+
+function mostCommonEarnedIncomeCategory(transactions: unknown[], today: string): string {
+  const currentMonth = today.slice(0, 7);
+  const firstMonth = shiftMonth(currentMonth, -2);
+  const counts = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (!isRecord(transaction)
+      || transaction.type !== 'income'
+      || typeof transaction.category !== 'string'
+      || !earnedIncomeCategories.has(transaction.category)
+      || typeof transaction.date !== 'string'
+      || transaction.date > today
+      || transaction.date.slice(0, 7) < firstMonth
+      || transaction.date.slice(0, 7) > currentMonth
+      || nonEarnedIncomeCategories.has(transaction.category)) continue;
+    counts.set(transaction.category, (counts.get(transaction.category) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort(([leftCategory, leftCount], [rightCategory, rightCount]) =>
+      rightCount - leftCount || leftCategory.localeCompare(rightCategory),
+    )[0]?.[0] ?? 'Salary';
+}
+
+export function migrateV8ToV9(data: unknown, options: V6ToV7Options): unknown {
+  if (!isRecord(data)
+    || !isRecord(data.settings)
+    || !Array.isArray(data.transactions)
+    || (data.budgetPlan !== null && !isRecord(data.budgetPlan))
+    || (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets))) {
+    throw new PersistedVersionError(8, 'unknown-version');
+  }
+  const category = mostCommonEarnedIncomeCategory(data.transactions, options.today);
+  const budgetPlan = data.budgetPlan === null
+    ? null
+    : (() => {
+      const plan = data.budgetPlan;
+      if (!isRecord(plan) || (plan.plannedIncome !== null && typeof plan.plannedIncome !== 'number')) {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const salary = data.settings.monthlySalary;
+      if (salary !== null && typeof salary !== 'number') {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const amount = plan.plannedIncome ?? salary ?? 0;
+      if (!Number.isFinite(amount) || amount < 0) {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const { plannedIncome: _plannedIncome, ...rest } = plan;
+      return {
+        ...rest,
+        incomes: amount === 0
+          ? []
+          : [{ id: options.newId(), name: 'Salary', category, amount, day: 1 }],
+      };
+    })();
+  const monthBudgets = data.monthBudgets?.map((snapshot) => {
+    if (!isRecord(snapshot)
+      || (snapshot.plannedIncome !== null && typeof snapshot.plannedIncome !== 'number')) {
+      throw new PersistedVersionError(8, 'unknown-version');
+    }
+    const { plannedIncome: _plannedIncome, ...rest } = snapshot;
+    const amount = snapshot.plannedIncome;
+    if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) {
+      throw new PersistedVersionError(8, 'unknown-version');
+    }
+    return {
+      ...rest,
+      incomes: amount === null
+        ? []
+        : [{ id: options.newId(), name: 'Income', category, amount }],
+    };
+  });
+  return {
+    ...data,
+    budgetPlan,
+    ...(monthBudgets === undefined ? {} : { monthBudgets }),
+  };
+}
+
+export function migrateV10ToV11(data: unknown, options: Pick<V6ToV7Options, 'today'>): unknown {
+  if (!isRecord(data) || !Array.isArray(data.policies)) {
+    throw new PersistedVersionError(10, 'unknown-version');
+  }
+  const policies = data.policies.map((value) => {
+    if (!isRecord(value) || !Array.isArray(value.payments)) {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const payments = value.payments;
+    if (!payments.every(isRecord)) throw new PersistedVersionError(10, 'unknown-version');
+    const paymentDates = payments.flatMap((payment) =>
+      typeof payment.date === 'string' ? [payment.date] : [],
+    ).sort();
+    const startDate = typeof value.startDate === 'string'
+      ? value.startDate
+      : paymentDates[0] ?? options.today;
+    const legacyKind = value.kind;
+    const kind = legacyKind === 'term'
+      ? 'term-life'
+      : legacyKind === 'vehicle'
+        ? 'motor'
+        : legacyKind;
+    if (kind !== 'term-life' && kind !== 'health' && kind !== 'life-savings'
+      && kind !== 'ulip' && kind !== 'motor' && kind !== 'home' && kind !== 'other') {
+      throw new PersistedVersionError(10, 'unknown-version');
+    }
+    const frequency = value.frequency === 'single'
+      ? 'yearly'
+      : value.frequency === 'monthly' || value.frequency === 'quarterly'
+        || value.frequency === 'half-yearly' || value.frequency === 'yearly'
+        ? value.frequency
+        : 'yearly';
+    const premiumYears = value.frequency === 'single'
+      ? 1
+      : typeof value.premiumYears === 'number' ? value.premiumYears : 1;
+    const sumAssured = typeof value.coverAmount === 'number' && value.coverAmount >= 0
+      ? value.coverAmount
+      : undefined;
+    const endDate = typeof value.maturityDate === 'string' && value.maturityDate > startDate
+      ? value.maturityDate
+      : undefined;
+    const { coverAmount: _coverAmount, maturityDate: _maturityDate, ...rest } = value;
+    return {
+      ...rest,
+      kind,
+      frequency,
+      startDate,
+      trackFrom: typeof value.trackFrom === 'string' ? value.trackFrom : startDate,
+      premiumYears,
+      status: 'active',
+      ...(sumAssured === undefined ? {} : { sumAssured }),
+      ...(endDate === undefined ? {} : { endDate }),
+    };
+  });
+  return { ...data, policies };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -364,6 +641,19 @@ export function migratePersisted(
     if (fromVersion <= 6) {
       if (!options) throw new PersistedVersionError(6, 'unknown-version');
       result = migrateV6ToV7(result, options);
+    }
+    if (fromVersion <= 7) result = migrateV7ToV8(result);
+    if (fromVersion <= 8) {
+      if (!options) throw new PersistedVersionError(8, 'unknown-version');
+      result = migrateV8ToV9(result, options);
+    }
+    if (fromVersion <= 9) {
+      if (!options) throw new PersistedVersionError(9, 'unknown-version');
+      result = migrateV9ToV10(result, options);
+    }
+    if (fromVersion <= 10) {
+      if (!options) throw new PersistedVersionError(10, 'unknown-version');
+      result = migrateV10ToV11(result, options);
     }
     return result;
   };

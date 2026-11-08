@@ -36,7 +36,12 @@ describe('permanent progress ledger', () => {
       'CR-1', 'CR-2', 'CR-3', 'CR-4', 'CR-5', 'CR-6', 'CR-7',
       'CR-8', 'CR-9', 'CR-10', 'CR-11', 'CR-12', 'CR-13', 'CR-14',
       'CR-15', 'CR-16', 'CR-17', 'CR-18', 'CR-19', 'CR-20', 'CR-21',
-      'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26',
+      'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26', 'CR-27', 'CR-28',
+      'CR-29', 'CR-30', 'CR-31', 'CR-32', 'CR-33', 'CR-34', 'CR-35', 'CR-36',
+      'CR-37', 'CR-38', 'CR-39', 'CR-40', 'CR-41', 'CR-42', 'CR-43', 'CR-44', 'CR-45', 'CR-46',
+      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55', 'CR-56', 'CR-57',
+      'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
+      'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -65,8 +70,8 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P21-A', 'P21-B',
-      'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
       'P28-A',
     ];
 
@@ -88,8 +93,8 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P21-A', 'P21-B',
-      'P22-A', 'P22-B', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P24-A', 'P25-A', 'P26-A', 'P27-A',
       'P28-A',
     ];
 
@@ -105,7 +110,7 @@ describe('permanent progress ledger', () => {
       'P15-D', 'P15-E', 'P15-G', 'P15-H', 'P15-I', 'P15-J',
       'P15-fix-0', 'P15-FIX-R1', 'P15-FIX-R2', 'P15-FIX-R3',
       'P15-FIX-R4', 'P15-FIX-R5', 'P15-FIX-R6', 'P15-LEDGER',
-      'P15-SEED', 'P15-F', 'P15-K', 'P15-L', 'P15-M',
+      'P15-F', 'P15-K', 'P15-L', 'P15-M',
     ];
 
     for (const id of legacyIds) {
@@ -164,7 +169,7 @@ describe('permanent progress ledger', () => {
     expect(phase18).toContain('100% (9/9)');
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-26 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-69 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -176,7 +181,13 @@ describe('permanent progress ledger', () => {
       'CR-4', 'CR-5', 'CR-6', 'CR-7', 'CR-8', 'CR-9', 'CR-10',
       'CR-11', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-16', 'CR-17',
       'CR-18', 'CR-19', 'CR-20', 'CR-21', 'CR-22', 'CR-23', 'CR-24',
-      'CR-25', 'CR-26',
+      'CR-25', 'CR-26', 'CR-27', 'CR-28', 'CR-29', 'CR-30', 'CR-31',
+      'CR-32', 'CR-33', 'CR-34', 'CR-35', 'CR-36', 'CR-37', 'CR-38', 'CR-39',
+      'CR-40', 'CR-41', 'CR-42', 'CR-43', 'CR-44', 'CR-45', 'CR-46',
+      'CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55',
+      'CR-56', 'CR-57', 'CR-58', 'CR-59', 'CR-60', 'CR-61',
+      'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
+      'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
@@ -186,37 +197,137 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 |');
     expect(register).toContain('| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 |');
     expect(register).toContain('| CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done |');
-    expect(register).toContain("| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Done |");
-    expect(register).toContain('| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Done |');
+    expect(register).toContain("| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Superseded by CR-30 |");
+    expect(register).toContain('| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Superseded by CR-32 |');
     expect(register).toContain('| CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done |');
     expect(decisions).toContain('DEC-P20D-CR22');
     expect(decisions).toContain('DEC-P20D-CR23');
     expect(decisions).toContain('DEC-P20D-CR24');
     expect(decisions).toContain('DEC-P20D-CR25');
+    expect(decisions).toContain('DEC-BUDGET-SCREEN');
+    expect(decisions).toContain('DEC-P20H-retired');
+    expect(decisions).toContain('DEC-P21C-CR37-38');
+    expect(decisions).toContain('DEC-P21C1-CR39');
+    expect(decisions).toContain('DEC-P20K-CR44-46');
+    expect(decisions).toContain('DEC-BUDGET-DIRECTION');
+    expect(decisions).toContain('DEC-BUDGET-SPEC');
+    expect(decisions).toContain('DEC-P20Q-CR62-65');
+    expect(decisions).toContain('DEC-P20S');
+    expect(decisions).toContain('DEC-P20M-CR52');
+    expect(decisions).toContain('DEC-P20M-CR53-55');
+    expect(decisions).toContain('DEC-P20O-CR58');
+    expect(decisions).toContain('DEC-P20O-CR59');
+    expect(decisions).toContain('DEC-P20O-DEMO');
+    expect(decisions).toContain('DEC-P20J-LEGACY-SHARES');
+    expect(decisions).toContain('DEC-P20L-CR47');
+    expect(decisions).toContain('DEC-P20L-CR48');
     expect(decisions).toContain('DEC-FORM-COMPONENTS');
     expect(ledger).toContain('5aeefb96e70df7c388e5eb39454285204adb5707');
   });
 
-  it('closes P20-D, P21, P22-A and their gates only after green verification', () => {
+  it('tracks completed P20-M through P20-T while preserving P20-L and P21-D', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const statusFor = (id: string) => register.split('\n')
       .find((line) => line.startsWith(`| ${id} |`))
       ?.split('|')[3]?.trim();
 
-    for (const id of ['P20-D', 'P21-A', 'P21-B', 'P22-A']) {
-      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
-    }
-    for (const id of ['CR-8', 'CR-12', 'CR-13', 'CR-14', 'CR-15', 'CR-20', 'CR-21', 'CR-22', 'CR-23', 'CR-24', 'CR-25', 'CR-26']) {
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-E |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-F |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-G |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-H |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-I |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-J |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-O |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-P |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Q |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-R |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-T |'))).toContain('| Done |');
+    for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
-    expect(statusFor('CR-17')).toBe('Superseded by CR-24');
-    expect(statusFor('CR-18')).toBe('Superseded by CR-22');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P22-B |'))).toContain('| Planned |');
-    expect(dashboard).toContain('Overall progress █████████░ 86% (43/50)');
-    expect(dashboard).toContain('Phase 20         ██████████ 100% (4/4)');
-    expect(dashboard).toContain('Phase 21         ██████████ 100% (2/2)');
-    expect(dashboard).toContain('Phase 22         █████░░░░░ 50% (1/2)');
-    expect(ledger).toContain('### P20-D green-gate close-out');
+    expect(statusFor('CR-29')).toBe('Done');
+    for (const id of ['CR-47', 'CR-48', 'CR-49', 'CR-50', 'CR-51', 'CR-52', 'CR-53', 'CR-54', 'CR-55']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    expect(statusFor('CR-56')).toBe('Done');
+    expect(statusFor('CR-57')).toBe('Done');
+    expect(statusFor('CR-58')).toBe('Done');
+    expect(statusFor('CR-59')).toBe('Done; visible hints and unbudgeted read-only rule superseded by P20-S');
+    expect(statusFor('CR-60')).toBe('Done');
+    expect(statusFor('CR-61')).toBe('Done');
+    expect(statusFor('CR-62')).toBe('Done');
+    expect(statusFor('CR-63')).toBe('Done; collapsible rows superseded by P20-R');
+    expect(statusFor('CR-64')).toBe('Done; text-button affordances superseded by P20-R');
+    expect(statusFor('CR-65')).toBe('Done');
+    for (const id of ['CR-66', 'CR-67', 'CR-68', 'CR-69']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    for (const id of ['CR-70', 'CR-72', 'CR-73', 'CR-74', 'CR-75']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    expect(statusFor('CR-71')).toBe('Done; FormScreen freeze superseded by CR-76');
+    for (const id of ['CR-76', 'CR-77']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    expect(statusFor('CR-30')).toBe('Done');
+    expect(statusFor('CR-32')).toBe('Done');
+    expect(statusFor('CR-33')).toBe('Done');
+    expect(statusFor('CR-34')).toBe('Done');
+    expect(statusFor('CR-35')).toBe('Done; corrected by CR-43');
+    expect(statusFor('CR-36')).toBe('Superseded by CR-40');
+    expect(statusFor('CR-37')).toBe('Done');
+    expect(statusFor('CR-38')).toBe('Done');
+    expect(statusFor('CR-39')).toBe('Done');
+    for (const id of ['CR-40', 'CR-41', 'CR-42', 'CR-43']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    for (const id of ['CR-44', 'CR-45', 'CR-46']) {
+      expect(statusFor(id)).toBe('Done');
+    }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P21-D |'))).toContain('| Done |');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P21-C1 |'))).toContain('| Done;');
+    expect(statusFor('CR-25')).toBe('Superseded by CR-32');
+    expect(statusFor('CR-24')).toBe('Superseded by CR-30');
+    expect(statusFor('CR-21')).toBe('Superseded by CR-27');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P22-B |'))).toBeUndefined();
+    expect(ledger).not.toContain('P22-B spreadsheet importer');
+    expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
+    expect(dashboard).toContain('Overall progress █████████░ 93% (63/68)');
+    expect(dashboard).toContain('Phase 20         ██████████ 100% (20/20)');
+    expect(dashboard).toContain('Phase 21         ██████████ 100% (5/5)');
+    expect(dashboard).toContain('Phase 22         ██████████ 100% (1/1)');
+    expect(ledger).toContain('DEC-TRACKER-CLEANUP');
+    expect(ledger).toContain('DEC-P20E-CR27');
+    expect(ledger).toContain('DEC-P20E-CR31');
+    expect(ledger).toContain('DEC-P20L-CR50');
+    expect(ledger).toContain('DEC-P20L-CR49');
+    expect(ledger).toContain('DEC-P20L-GATE-TEST');
+    expect(ledger).toContain('P20-L / P21-D device checks not verified');
+    expect(ledger).toContain('DEC-P21D-CR51');
+    expect(ledger).toContain('DEC-P20F-STATUS');
+    expect(ledger).toContain('DEC-P20G');
+    expect(ledger).toContain('DEC-P20H-retired');
+    expect(ledger).toContain('DEC-P20I-CR35-36');
+    expect(ledger).toContain('DEC-P20J-CR40-43');
+    expect(ledger).toContain('DEC-P20K-CR44-46');
+    expect(ledger).toContain('DEC-P20M-CR53-55');
+    expect(ledger).toContain('DEC-P20O-CR58');
+    expect(ledger).toContain('DEC-P20O-CR59');
+    expect(ledger).toContain('DEC-BUDGET-V10');
+    expect(ledger).toContain('DEC-P20P-CR60-61');
+    expect(ledger).toContain('DEC-P20P-DEMO');
+    expect(ledger).toContain('schema v9');
+    expect(ledger).toContain('DEC-P21C-CR37-38');
+    expect(ledger).toContain('DEC-P21C1-CR39');
   });
 });
