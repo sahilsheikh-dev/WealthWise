@@ -9,6 +9,9 @@
   Authorized plain pushes are complete and remotely verified: main, develop,
   all 30 phase branches, `history/by-phase`, and all 30 phase completion tags.
   The `v1.0.0` tag was not changed; no force push was used.
+- P28-F release `v1.1.0` was merged to and pushed on `main` at `0f4fdc5`,
+  then back-merged and pushed to `develop` at `8ce4e38`. The local and remote
+  branch refs matched after each push; `main` and `develop` have the same tree.
 - Final ordered gates on `develop`: all six exit 0. Gate 1 has 98 suites,
   1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
@@ -26,12 +29,12 @@
 - Release 2 code changes are complete: recurrence-aware income summaries and
   editable non-due rows, verified persistence-source precedence, shared paid
   sync/Undo, capped Entries schedules, and the restored aggregate Pace graph
-  without the stacked bar. N39 and N40
-  remain Fail pending device re-test; N41-N43 remain Not run. Device model,
-  Android version, tester and date fields remain blank. P28-F is preparing
-  v1.1.0 on `release/v1.1.0`; version, changelog, README What's new and draft
-  notes are in progress. The README Download remains v1.0.0 until publication.
-  Build, device re-test, v1.1.0 tag and publication remain pending owner action.
+  without the stacked bar. N39 and N40 remain Fail pending device re-test;
+  N41-N43 remain Not run. Device model, Android version, tester and date fields
+  remain blank. P28-F release preparation and integration are complete on
+  `release/v1.1.0`; version, changelog, README What's new and draft notes are
+  committed. The README Download remains v1.0.0 until publication. Owner APK
+  build, device re-test, v1.1.0 tag and publication remain pending.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
   and a final tree equal to main. The later route-diagnostic and ledger
