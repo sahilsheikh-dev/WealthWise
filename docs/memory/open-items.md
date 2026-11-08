@@ -16,6 +16,12 @@
 - **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
   contributor credits in v1.0.0, and the template requires release-specific,
   verified contributors. This correction is included in PRs #1-#3.
+- **P28-F-R3 v1.1.0 publication:** the owner-approved release is published
+  with the required `WealthWise-android.apk` asset. The tag points to the
+  verified EAS source commit; the uploaded artifact matched the EAS build,
+  and latest/versioned links returned HTTP 200 at 112,147,677 bytes. The
+  owner-approved `preview` profile and reused versionCode 1 exceptions are
+  recorded in the release history.
 - **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
@@ -48,20 +54,16 @@
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
   No release edit was made in P28-C-R3.
-- **v1.1.0 owner steps:** P28-F release preparation and integration are
-  complete; `release/v1.1.0` was merged/pushed to main and back-merged/pushed
-  to develop. The Android APK build, v1.1.0 tag and publication remain pending
-  owner action. No EAS/Gradle build or GitHub release edit was performed.
-- **v1.1.0 draft correction:** contributor credits and template guidance are
-  corrected and integrated. No publication or tag action has been taken;
-  wait for owner APK build and approval before tagging or publishing.
+- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
+  profile and reused versionCode 1 for this release. For future releases,
+  restore the configured `android-apk` profile and increment versionCode.
 - **Branch publication audit:** GitHub currently exposes 34 heads: main,
   develop, `history/by-phase`, all 30 phase branches and `release/v1.1.0`.
   Merged task branches are deleted. PRs #1-#7 form the chronological Release 2
   follow-up and audit path. `codex-changes`,
   `phase/25-release-and-backups` and `task/P28-E-phase-history` remain outside
   this PR chain; `history/by-phase` remains a read-only archive. The v1.1.0
-  tag is absent pending owner build/approval.
+  tag and GitHub release are published.
 - **Stale phase tags (owner decision):** `phase-28-complete` and
   `phase-29-complete` target commits behind their current phase branch tips.
   No tag was moved. Decide whether to retain or update them in a separately
