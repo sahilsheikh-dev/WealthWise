@@ -1,6 +1,7 @@
 import type { StateStorage } from 'zustand/middleware';
 
 import { mockAppData } from '../../mock/data';
+import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
 import { createSafeStorage } from '../safeStorage';
 
 class MemoryStorage implements StateStorage {
@@ -24,6 +25,16 @@ class MemoryStorage implements StateStorage {
 }
 
 const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
+
+function makeLegacyData(version: 1 | 2 | 3): unknown {
+  if (version === 1) return makeV1Fixture();
+  const v2 = makeV2Fixture();
+  if (version === 2) return v2;
+  return {
+    ...v2,
+    settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+  };
+}
 
 describe('createSafeStorage', () => {
   it('returns valid serialized data without creating a backup', async () => {
@@ -99,24 +110,45 @@ describe('createSafeStorage', () => {
     expect(base.values.has('blocked')).toBe(false);
   });
 
-  it('preserves the exact v2 payload once before its first migrated write', async () => {
+  it.each([1, 2, 3] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
+    const name = 'wealthwise.app.v1';
     const base = new MemoryStorage();
-    const raw = blob({
-      ...mockAppData,
-      settings: { name: 'Legacy v2', theme: 'dark' },
-    }, 2);
-    base.values.set('wealthwise.app.v1', raw);
+    const raw = blob(makeLegacyData(version), version);
+    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 4 });
+    const premigrationKey = `${name}.premigration.v${version}`;
+    base.values.set(name, raw);
     const safe = createSafeStorage(
       base,
       { onWriteError: jest.fn(), onCorrupt: jest.fn() },
       { blockWrites: () => false },
     );
-    await safe.getItem('wealthwise.app.v1');
-    await safe.setItem('wealthwise.app.v1', 'migrated');
-    expect(base.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
-    await safe.getItem('wealthwise.app.v1');
-    await safe.setItem('wealthwise.app.v1', 'migrated-again');
-    expect(base.setCalls.filter((key) => key === 'wealthwise.app.v1.premigration.v2')).toHaveLength(1);
-    expect(base.values.get('wealthwise.app.v1.premigration.v2')).toBe(raw);
+    await safe.getItem(name);
+    await safe.setItem(name, migrated);
+    expect(base.values.get(premigrationKey)).toBe(raw);
+    expect(base.setCalls.filter((key) => key === premigrationKey)).toHaveLength(1);
+
+    const nextLaunch = createSafeStorage(
+      base,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await nextLaunch.getItem(name);
+    await nextLaunch.setItem(name, migrated);
+    expect(base.setCalls.filter((key) => key === premigrationKey)).toHaveLength(1);
+    expect(base.values.get(premigrationKey)).toBe(raw);
+
+    const existingArchive = 'previously archived bytes';
+    const alreadyArchived = new MemoryStorage();
+    alreadyArchived.values.set(name, raw);
+    alreadyArchived.values.set(premigrationKey, existingArchive);
+    const safeWithArchive = createSafeStorage(
+      alreadyArchived,
+      { onWriteError: jest.fn(), onCorrupt: jest.fn() },
+      { blockWrites: () => false },
+    );
+    await safeWithArchive.getItem(name);
+    await safeWithArchive.setItem(name, migrated);
+    expect(alreadyArchived.values.get(premigrationKey)).toBe(existingArchive);
+    expect(alreadyArchived.setCalls.filter((key) => key === premigrationKey)).toHaveLength(0);
   });
 });
