@@ -51,11 +51,13 @@
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
 - For every GitHub release, attach the Android APK named exactly
-  `WealthWise-android.apk`. Include its versioned Download block and SHA-256
-  in the published Markdown and GitHub release body. The README Download
-  section and latest release Download block must be identical. When a newer
-  version is published, change only the previous release's Download block to
-  use that release's versioned link. Verify both links with `curl -I -L`;
+  `WealthWise-android.apk`. Include the Download block and SHA-256 in the
+  published Markdown and GitHub release body. The README Download section and
+  latest release Download block must be identical and use the latest route;
+  older releases use their own versioned link. Add or replace only the
+  Download block in an existing published note; do not otherwise rewrite the
+  file. When a newer version is published, change only the previous release's
+  Download block to use that release's versioned link. Verify both links with `curl -I -L`;
   both must return HTTP 200 and the APK hash must match. Record EAS build ID,
   Android `versionCode`, source commit and artifact in the Builds table. A
   release is incomplete until both links return 200, the hash matches, and

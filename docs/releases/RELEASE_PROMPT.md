@@ -483,11 +483,12 @@ For every GitHub release:
    gh release upload vX.Y.Z /path/to/WealthWise-android.apk
    ```
 
-2. Add the Download block containing the version, release date, versioned
-   asset link, verified SHA-256, iOS availability message and releases-page
-   link to both the published Markdown and GitHub release body. Never use the
-   `latest` route in a published version's block. For an old published
-   record, add only its Download block; do not otherwise rewrite the file.
+2. Add the Download block containing the version, release date, asset link,
+   verified SHA-256, iOS availability message and releases-page link to both
+   the published Markdown and GitHub release body. The latest published block
+   must match the README and use the latest route. Older releases use their
+   own versioned asset link. When adding a block to an existing published
+   note, add or replace only that block; do not otherwise rewrite the file.
 
 3. Keep the README Download section and the latest release Download block
    byte-identical. When a newer version is published, replace only the
@@ -629,7 +630,8 @@ Before considering the release complete, verify:
 - Updated release history.
 - Attached `WealthWise-android.apk`; both download routes return HTTP 200 and
   the APK SHA-256 matches.
-- Versioned Download block with SHA-256 in published Markdown and release body.
+- Download block with SHA-256 in published Markdown and release body; the
+  latest block matches the README and older release blocks use versioned links.
 - Both latest and versioned links checked with `curl -I -L`, including final
   status and `Content-Length`.
 - README Download version/date, version-labelled latest link, SHA-256, iOS

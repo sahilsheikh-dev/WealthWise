@@ -5,17 +5,14 @@
 ## Unresolved
 
 - **v1.0.0 GitHub release body (owner action):** the canonical body is
-  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). The owner can apply
-  it with `gh release edit v1.0.0 --notes-file
-  docs/releases/published/v1.0.0.md`; no release edit was made in P28-C-R3.
+  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
+  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
+  No release edit was made in P28-C-R3.
 - **v1.0.0 physical-device checklist (owner action):** run every item in
   [`device-test-checklist.md`](../releases/device-test-checklist.md) on an
   Android device and report any failure. All results remain Not run.
 - **Release 2 known bug follow-ups:** track P29-AB-R1, the Phase 30 stale-values
   work, and P20-N-R1. Record failures; do not fix these as part of P28-C-R3.
-- **v1.0.0 tag alignment:** resolved 2026-11-08 with explicit owner approval.
-  The remote tag now points to the verified EAS source commit and is an
-  ancestor of `origin/main`; see [`release-history.md`](../releases/release-history.md).
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget

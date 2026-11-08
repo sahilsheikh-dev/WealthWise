@@ -138,11 +138,13 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   stored in `/tmp`.
 - For every GitHub release:
   - Attach the Android APK under the exact name `WealthWise-android.apk`.
-  - Include a Download block with the versioned asset link and SHA-256 in both
-    the published Markdown and GitHub release body.
-  - Keep the README Download section and latest release Download block
-    identical. When a newer version is published, replace only the previous
-    release's Download block with its versioned link.
+  - Include the Download block and SHA-256 in both the published Markdown and
+    GitHub release body. The latest published block matches the README and
+    uses the latest route; older releases use their versioned asset link.
+  - Add or replace only the Download block in an existing published note; do
+    not otherwise rewrite the file.
+  - When a newer version is published, replace only the previous release's
+    Download block with its versioned link.
   - Verify both latest and versioned links with `curl -I -L`; both must return
     HTTP 200, and the downloaded APK's SHA-256 must match.
   - Record EAS build ID, Android `versionCode`, source commit, exact artifact

@@ -18,7 +18,7 @@ Release date: YYYY-MM-DD
 - [Download the latest Android app (vX.Y.Z)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
 - iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
-SHA-256 of the vX.Y.Z APK: <verified SHA-256>
+SHA-256 of the vX.Y.Z APK: <hash>
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
 [One or two sentences summarizing verified user-visible changes.]

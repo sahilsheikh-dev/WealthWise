@@ -54,8 +54,11 @@ Every release follows this lifecycle:
    TestFlight/App Store only.
 10. Download the APK artifact, name it exactly `WealthWise-android.apk`,
     and attach it to the GitHub release draft with `gh release upload`.
-11. Add a Download block with the versioned asset link and SHA-256 to both the
-    published Markdown and GitHub release body.
+11. Add the Download block and SHA-256 to both the published Markdown and
+    GitHub release body. The latest published block matches the README and
+    uses the latest route; older published notes use their versioned asset
+    links. Add or replace only the Download block in an existing published
+    note; do not otherwise rewrite the file.
 12. Keep the README Download section and latest release Download block
     identical. When a newer version is published, replace only the previous
     release's Download block with its versioned link.

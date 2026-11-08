@@ -67,11 +67,14 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
   creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
   subject `docs: draft vX.Y.Z release notes`. After publication is verified,
   move it to `docs/releases/published/` and commit the move; never leave a
-  published file in drafts or a draft in published. Include the versioned
-  Download block and SHA-256 in published Markdown and the GitHub release
-  body. The README Download section and latest release Download block must be
-  identical. When a newer version is published, change only the previous
-  release's Download block to its versioned link. Verify both download links
+  published file in drafts or a draft in published. Include the Download
+  block and SHA-256 in published Markdown and the GitHub release body. The
+  README Download section and latest release Download block must be identical
+  and use the latest route; older releases use their own versioned link. When
+  adding a Download block to an existing published note, add or replace only
+  that block; do not otherwise rewrite the file. When a newer version is
+  published, change only the previous release's Download block to its
+  versioned link. Verify both download links
   with `curl -I -L`; both must return HTTP 200 and the APK hash must match.
   Record EAS build ID, Android `versionCode`, source commit and artifact in
   the `release-history.md` Builds table. A release is incomplete until both
