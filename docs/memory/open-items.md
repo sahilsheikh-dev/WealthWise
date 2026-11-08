@@ -13,6 +13,14 @@
   placeholders. The reason is to keep scope explicit and unrelated changes
   separate; proposed subjects and staged diff-stats are shown before commit.
   The hook and docs tests pass.
+- **P28-C-R4 release documentation:** completed; the README and latest
+  published Download blocks match, public digest/commit identifiers are
+  absent, and the task is integrated into `develop`. The authorized refs were
+  pushed and verified. The release body remains intentionally unchanged.
+- **P28-E remote history:** all 30 phase branches, `history/by-phase`, and 30
+  annotated phase completion tags were pushed and verified. `main`, `develop`,
+  and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
+  was used.
 
 ## Unresolved
 
@@ -26,32 +34,39 @@
   No release edit was made in P28-C-R3.
 - **Release 2 device re-test:** the owner confirms the income recurrence and
   edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
-  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
-  tester and date remain blank. Physical-device re-test is pending.
+  keeps N39 and N40 at Fail until the repaired behavior is re-tested on-device;
+  N41-N43 remain Not run. Device model, Android version, tester and date remain
+  blank. Physical-device re-test is pending.
 - **Local checklist commit is not pushed:** its subject was corrected at the
   owner's request, and the report commit was replayed unchanged. See the
   old-to-new hash mapping and tree verification in
   [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 release preparation:** pending because the per-section Pace graph is
-  a visible feature. This task made no version change and performed no release
-  preparation, build, export or push.
-- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
-  quarterly/yearly income appears every month; device re-test of due/non-due
-  months, Received dues, projected cash flow and backup restore remains open.
-- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
-  not refresh immediately. Verify the repaired persistence path and immediate
-  screen updates across relevant flows on device.
-- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
-  Pace graph, per-section controls, contrast and scalable layout on device.
+- **v1.1.0 release preparation:** pending because the restored aggregate Pace
+  graph is a visible feature. This task made no version change and performed
+  no release preparation or EAS/Gradle build; the required Expo exports passed.
+- **P29-AB-R2 physical-device check:** N39 remains Fail based on the owner's
+  pre-fix reproduction; automated recurrence tests pass. Re-test due/non-due
+  months, Received dues, projected cash flow and backup restore on-device.
+- **P30-A/B/C physical-device check:** N40 remains Fail based on the owner's
+  pre-fix reproduction; persistence and mounted-screen regressions pass in
+  tests. Re-test immediate edits and restart behavior on-device.
+- **P20-N-R2 physical-device check:** N41 remains Not run; verify the aggregate
+  Pace graph, absence of the stacked bar, dark-theme contrast and scalable
+  layout on-device.
+- **P20-A-R1 paid-sync check:** N42 remains Not run; verify linked plan and
+  liability actions, shared ledger updates and Undo across the listed surfaces.
+- **P29-O1-R1/P29-W-R1 Entries check:** N43 remains Not run; verify completed/
+  pending counts, collapsed paid rows and schedule caps on-device.
 - **P29-W-R1 physical-device check:** automated route tests inspect pending
   liability EMI rows and verify the schedule stops at the last EMI date, but
   native rendering and font scaling still need device confirmation.
+- **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are complete on
+  local `develop`; this continuation was not pushed. The earlier authorized
+  P28-E branch/archive publication remains recorded above.
 - **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
   layout and date ordering on Assets and Liabilities at font scales 1.3 and
-  2.0 on devices. TestRenderer checks are simulated.
-- **Requested task integration and P28-E history archive:** P29-W-R1 is complete
-  locally on its task branch; phase merges, the read-only history archive,
-  authorized plain pushes and remote verification have not yet been completed.
+  2.0 on devices. TestRenderer checks are simulated. The six ordered
+  repository gates pass locally; integration is complete on local `develop`.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund
