@@ -107,6 +107,53 @@ async function waitForHydration(store: ReturnType<typeof makeStore>) {
 }
 
 describe('createAppStore persistence', () => {
+  it('does not publish Undo or writes for unchanged policies and cover goals', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    const before = store.getState().data;
+
+    let writes = storage.setItemCalls;
+    actions.setPolicyStatus('missing-policy', 'active');
+    expect(storage.setItemCalls - writes).toBe(0);
+    expect(store.getState().data).toEqual(before);
+
+    actions.deletePolicy('missing-policy');
+    expect(store.getState().data).toEqual(before);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
+    actions.updatePolicy('missing-policy', { status: 'lapsed' });
+    expect(store.getState().data).toEqual(before);
+    expect(useUIStore.getState().actionToast).toBeNull();
+
+    writes = storage.setItemCalls;
+    useUIStore.getState().setActionToast(null);
+    actions.setCoverGoalTarget({
+      type: 'health',
+      targetMode: before.coverGoals.find((goal) => goal.type === 'health')?.targetMode ?? 'amount',
+    });
+    expect(store.getState().data).toEqual(before);
+
+    store.setState({ status: 'loading' });
+    const replacement = await actions.replaceAllData(before);
+    expect(replacement).toEqual({
+      ok: false,
+      message: 'Data can only be replaced after the app has loaded.',
+    });
+    expect(store.getState().data).toEqual(before);
+
+    store.setState({ status: 'ready' });
+    const invalid = await actions.replaceAllData(JSON.parse('{}'));
+    expect(invalid.ok).toBe(false);
+    expect(store.getState().data).toEqual(before);
+
+    storage.values.delete('wealthwise.app.v1.preimport');
+    const undo = await actions.undoImport();
+    expect(undo.ok).toBe(false);
+  });
+
   it('persists a cover-goal target change once and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage);

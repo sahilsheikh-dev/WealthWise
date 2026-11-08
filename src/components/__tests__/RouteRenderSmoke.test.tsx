@@ -2129,7 +2129,6 @@ describe('route render smoke audit', () => {
       const laterMarkPaid = laterRow.findByProps({ accessibilityLabel: 'Paid' });
       const preview = duesThroughPreview(routeData, { kind: 'plan', id: laterPlan.id }, currentMonth + '-01', today);
       expect(preview.count).toBeGreaterThan(1);
-      const expectedMessage = `Test plan, ${formatAmount(1_000, 'exact', 1)}, due ${formatDate(currentMonth + '-01')}\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`;
       await act(async () => {
         laterMarkPaid.props.onPress();
         await Promise.resolve();

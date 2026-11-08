@@ -95,6 +95,83 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
+  it('covers frozen start-month and repeat guards with real outcomes', () => {
+    const recurringWithoutStart: BudgetItem = {
+      id: 'quarterly-no-start',
+      sectionId: 'survival',
+      name: 'Quarterly no start',
+      mode: 'amount',
+      value: 300,
+      frequency: 'quarterly',
+    };
+    expect(() => isItemDueInMonth(recurringWithoutStart, '2026-04'))
+      .toThrow('Choose the first due month for a recurring item.');
+    expect(() => nextDueMonth(recurringWithoutStart, '2026-04'))
+      .toThrow('Choose the first due month for a recurring item.');
+    expect(() => plannedForMonth(recurringWithoutStart, '2026-04'))
+      .toThrow('Choose the first due month for a recurring item.');
+
+    const data = emptyAppData('2026-10-10');
+    expect(clearMonthBudget(data, '2026-03')).toEqual(data);
+    expect(setBudgetRepeat(data, false, null)).toEqual(data);
+    expect(ensureCurrentMonthBudget(data, '2026-10-10', () => 'new-id')).toEqual(data);
+
+    const planWithRepeat = {
+      ...createDefaultBudgetPlan('2026-10'),
+      repeatMonthly: true,
+      repeatFrom: '2027-01',
+    };
+    const repeated = { ...data, budgetPlan: planWithRepeat };
+    expect(ensureCurrentMonthBudget(repeated, '2026-10-10', () => 'new-id')).toEqual(repeated);
+
+    const monthBudget = createDefaultBudgetPlan('2026-10');
+    expect(budgetOverview({
+      ...data,
+      budgetPlan: {
+        ...monthBudget,
+        incomes: [],
+        items: [],
+      },
+    }, '2026-03', '2026-10-10').summary.stacked).toBeDefined();
+
+    const snapshot = monthBudgetFromLines('2026-10', [], { incomes: [] });
+    const stored = {
+      ...data,
+      monthBudgets: [snapshot],
+    };
+    expect(clearMonthBudget(stored, '2026-10').monthBudgets).toHaveLength(0);
+    expect(restoreBudgetPlanAndMonth(data, null, '2026-10', null)).toEqual(data);
+    expect(() => restoreBudgetPlanAndMonth(data, null, '2026-10', {
+      ...snapshot,
+      month: '2026-11',
+    })).toThrow('Cannot restore a budget to a different month.');
+
+    expect(effectiveMonthBudget(stored, '2026-10', '2026-10-10').virtual).toBe(false);
+    const percentItem: BudgetItem = {
+      id: 'pct',
+      sectionId: 'survival',
+      name: 'Percent',
+      value: 10,
+      mode: 'percent',
+      frequency: 'monthly',
+    };
+    const percentPlan = {
+      ...createDefaultBudgetPlan('2026-10'),
+      repeatMonthly: true,
+      repeatFrom: '2026-10',
+      incomes: [],
+      items: [percentItem],
+    };
+    const percentData = { ...data, budgetPlan: percentPlan };
+    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').budget).toBeNull();
+    expect(effectiveMonthBudget(percentData, '2025-12', '2026-10-10').budget).toBeNull();
+    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').virtual).toBe(false);
+    expect(setBudgetRepeat({
+      ...data,
+      budgetPlan: { ...createDefaultBudgetPlan('2026-10'), repeatMonthly: false, repeatFrom: '2026-10' },
+    }, true, '2026-11').budgetPlan?.repeatFrom).toBe('2026-11');
+  });
+
   it('schedules all recurring frequencies across year boundaries and reports the next due month', () => {
     const item = (frequency: BudgetItem['frequency'], firstDueMonth?: string): BudgetItem => ({
       id: `${frequency}-item`,
