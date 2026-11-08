@@ -9,7 +9,7 @@ requests at runtime.
 - [For users](#for-users)
 - [Features](#features)
 - [Download](#download)
-- [What's new in v1.0.0](#whats-new-in-v100)
+- [What's new in v1.1.0](#whats-new-in-v110)
 - [Screenshots](#screenshots)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
@@ -55,19 +55,20 @@ requests at runtime.
   Encrypted backup export is available with a passphrase.
 
 ## Download
-Latest version: v1.0.0
-Release date: 2026-11-07
-- [Download the latest Android app (v1.0.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)
+Latest version: v1.1.0
+Release date: 2026-11-08
+- [Download the latest Android app (v1.1.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.1.0.apk)
 - iOS: Not available yet. An App Store or TestFlight link will be added when supplied by the owner.
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
-### What's new in v1.0.0
+### What's new in v1.1.0
 
-The initial stable release brings together budgets, transactions, goals,
-investments, liabilities, insurance policies, local reminders and portable
-backups. It also includes accessibility, font-scale and long-history
-reliability improvements. See the [v1.0.0 changelog](CHANGELOG.md).
+Release 2 makes recurring income count only in due months, restores the
+aggregate Budget Pace graph, and keeps linked paid investment/liability
+records in sync. Entries now show schedule progress and collapsed paid
+history, stop at maturity or the final EMI, and edited values survive restart.
+See the [v1.1.0 changelog](CHANGELOG.md).
 
 ### Screenshots
 
@@ -169,7 +170,7 @@ npx expo export --platform ios
 
 ### Release process
 
-The current published version is v1.0.0. Follow
+The current published version is v1.1.0. Follow
 [`docs/releases/build-config.md`](docs/releases/build-config.md) and
 [`docs/releases/RELEASE_PROMPT.md`](docs/releases/RELEASE_PROMPT.md). A release
 updates the README Download and What's new sections and the link to the

@@ -31,19 +31,25 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 4. Run all six gates in order and complete the physical-device checklist.
    Expo exports are allowed; EAS and Gradle builds are only run when separately
    authorized.
-5. After build approval, attach the Android APK as exactly
-   `WealthWise-android.apk`. Production Android AABs are for Google Play; APKs
-   are for GitHub. iOS distribution is not currently offered.
+5. After build approval, attach the current release Android APK as
+   `WealthWise-android-latest-vX.Y.Z.apk`. The latest-route URL must use this
+   exact filename. When publishing a newer version, remove `latest` from the
+   previous filename and rename that asset to
+   `WealthWise-android-vX.Y.Z.apk`; its historical link must point to that
+   release and filename, never the latest route.
+   Production Android AABs are for Google Play; APKs are for GitHub. iOS
+   distribution is not currently offered.
 6. Verify the APK digest privately against the artifact before publication.
-   Never publish the digest in the README, release notes, GitHub body or
-   release history.
+   Never include it in human-authored release material. GitHub may expose a
+   platform-generated asset digest that cannot be removed by editing the
+   release.
 7. Keep the README Download block byte-identical to the latest published
-   release Download block. Older published notes use their versioned asset
-   link. Update the README Download and What's new sections and its releases
-   page link for every release.
-8. Check both latest and versioned download URLs with `curl -I -L`; both must
-   return HTTP 200 and the expected artifact size. Record the observed status
-   and size in the internal verification record.
+   release Download block. Older published notes use their versioned release
+   URL and versioned asset filename. Update the README Download and What's new
+   sections and its releases page link for every release.
+8. Check the current `/latest/` URL and every affected version-specific URL
+   with `curl -I -L`; each must return HTTP 200 and the expected artifact size.
+   Record the observed status and size in the internal verification record.
 9. Record the EAS build ID, profile, Android `versionCode`, date and status in
    the Builds table. Do not list source commits or APK digests there.
 10. Publish only after explicit approval and successful verification. Move
@@ -57,10 +63,11 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - Preserve published notes. When updating an existing note, change only its
   Download block; older releases use versioned links.
 - The expected download URL is
-  `https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk`
-  for the latest release and
-  `https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk`
-  for a versioned release.
+  `https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk`
+  for the latest release. Its asset filename includes both `latest` and the
+  version. When superseded, remove `latest` from the old asset filename,
+  rename it to `WealthWise-android-vX.Y.Z.apk`, and use
+  `https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk`.
 - A release is incomplete until links, expected artifact size, notes, README,
   release history and GitHub assets agree.
 - Never commit signing credentials, publish without approval, or rewrite
@@ -68,12 +75,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Current published version: v1.0.0
-- Release date: 2026-11-07
+- Current published version: v1.1.0
+- Release date: 2026-11-08
 - GitHub release:
-  [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
+  [WealthWise v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0)
 - APK artifact verification: both URLs returned HTTP 200 with a content
-  length of 112,133,413 bytes. The digest was verified privately and is not
+  length of 112,147,677 bytes. The digest was verified privately and is not
   published.
 - Production AAB: not verified.
 
