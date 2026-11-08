@@ -9,12 +9,13 @@ import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, ChipRow, ProgressBar, Screen, SectionTitle, StatusBadge } from '../../src/components/ui';
+import { useAppMenu } from '../../src/components/useAppMenu';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { BUDGET_GROUPS, budgetMonthView } from '../../src/domain/budget';
-import { reviewableMonths } from '../../src/domain/cashFlow';
+import { normalizeMoney, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { pendingItems } from '../../src/domain/pending';
 import { transactionCategoryLabel } from '../../src/domain/transactions';
@@ -26,7 +27,6 @@ import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
-import { useAppMenu } from '../../src/components/useAppMenu';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
@@ -63,6 +63,7 @@ export default function BudgetScreen() {
   const appMenu = useAppMenu();
   const today = todayISO();
   const view = useMemo(() => budgetMonthView(data, month), [data, month]);
+  const closingBalance = normalizeMoney(view.position.closing);
   const monthPendingItems = useMemo(
     () => pendingItems(data, month, today),
     [data, month, today],
@@ -126,7 +127,6 @@ export default function BudgetScreen() {
               { icon: 'database', label: 'Budget templates', onPress: () => router.push('/budget-templates') },
               ...appMenu,
             ]}
-            menuIndicator={Boolean(reviewableMonth)}
           />
           <View
             onTouchStart={() => setTouchingHeader(true)}
@@ -177,15 +177,15 @@ export default function BudgetScreen() {
             <View style={[styles.closingPosition, stackMetrics && styles.closingPositionStacked, { borderTopColor: colors.border }]}>
               <View style={styles.closingPositionLabel}>
                 <AppText weight="semibold">Closing balance</AppText>
-                {view.position.closing < 0 ? (
+                {closingBalance < 0 ? (
                   <AppText style={[typography.meta, { color: colors.err }]}>Deficit</AppText>
                 ) : null}
               </View>
               <AmountText
-                value={view.position.closing}
+                value={closingBalance}
                 tier="tile"
                 weight="bold"
-                tone={view.position.closing < 0 ? 'err' : 'primary'}
+                tone={closingBalance < 0 ? 'err' : closingBalance > 0 ? 'primary' : 'neutral'}
                 style={styles.closingAmount}
               />
             </View>

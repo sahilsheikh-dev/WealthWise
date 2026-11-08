@@ -327,10 +327,10 @@ describe('Transactions available-balance card', () => {
       const collapsedFigures = cashCard.findAll((node) =>
         node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
       ).map((node) => node.props.accessibilityLabel);
-      expect([...new Set(collapsedFigures)]).toEqual(['₹830', '₹600']);
+      expect([...new Set(collapsedFigures)]).toEqual(['₹830']);
       const collapsedLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
       expect(collapsedLabels).toContain('Available balance');
-      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(true);
+      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(false);
       expect(collapsedLabels).not.toContain('Brought forward');
       expect(cashCard.findAll((node) =>
         String(node.type) === 'view' && String(node.props.testID).startsWith('balance-metric-'),
@@ -470,6 +470,7 @@ describe('Transactions available-balance card', () => {
   it('marks a negative available balance as a shortfall with the danger tone', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
+      { id: 'prior-income', type: 'income', amount: 100, category: 'Salary', note: 'Prior pay', date: '2026-09-01' },
       { id: 'small-income', type: 'income', amount: 20, category: 'Salary', note: 'Pay', date: '2026-10-01' },
       { id: 'large-expense', type: 'expense', amount: 150, category: 'Food', note: 'Food', date: '2026-10-02' },
     ];
@@ -481,7 +482,7 @@ describe('Transactions available-balance card', () => {
       if (!renderer) throw new Error('Transactions renderer was not created.');
       const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
       expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
-      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹130' });
+      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹30' });
       expect(amount.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ color: expect.any(String) }),
       ]));
