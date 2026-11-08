@@ -19,8 +19,9 @@
   `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
   and `phase/28-qa-and-release` was retained.
-  Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
-  and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
+  `phase/25-release-and-backups` remains outside this Release 2 PR chain.
+  P28-E's final-verification commit was reconciled in P28-E-R2; the separate
+  `codex-changes` branch remains under review.
 - Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
   Gate 1 has 98 suites, 1,244 passed, 1 skipped; coverage is
   95.96/92.01/98.01/97.62% overall,
@@ -76,13 +77,13 @@
   correction through Phase 28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
   GitHub PRs. The v1.1.0 tag points to the verified EAS source commit and its
-  GitHub release is published. `codex-changes`, `phase/25-release-and-backups`, and
-  `task/P28-E-phase-history` remain outside the merged Release 2 chain; the
-  `history/by-phase` branch is a read-only archive. `task/P28-E-phase-history`
-  has one unique documentation commit, but its branch comparison with develop
-  spans 35 files, including application code; it was not blindly pushed or
-  merged. The separate `codex-changes` branch was also left untouched. No
-  unrelated branch or tag was changed.
+  GitHub release is published. `phase/25-release-and-backups` remains outside
+  the Release 2 chain; `history/by-phase` is a read-only archive. P28-E's
+  final-verification commit `72fb325` is preserved by P28-E-R2, with its
+  stale status edits reconciled instead of merged verbatim. `codex-changes`
+  remains local pending a safe port: it targets schema v2 rather than v22,
+  includes generated coverage, and review found a persisted-data migration
+  bug and a failing migration assertion. No unsafe branch content was pushed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> Phase 28 -> develop -> release -> main -> develop.
