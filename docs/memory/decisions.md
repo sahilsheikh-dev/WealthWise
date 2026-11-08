@@ -14,6 +14,7 @@ authoritative rationale and history.
 - [DEC-P29H-ASSET-VALUATION](../PROGRESS.md#dec-p29h-asset-valuation)
 - [DEC-P29I-CAPABILITIES](../PROGRESS.md#dec-p29i-capabilities--schema-v16-migration)
 - [DEC-P29J-LIABILITY-AUDIT](../PROGRESS.md#dec-p29j-liability-audit)
+- [DEC-P29L-SIMPLE-INSURANCE](../PROGRESS.md#dec-p29l-simple-insurance)
 - [DEC-P24A](../PROGRESS.md#dec-p24a-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)

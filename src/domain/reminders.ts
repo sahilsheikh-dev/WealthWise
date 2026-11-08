@@ -53,7 +53,7 @@ function searchHorizon(data: AppData, today: ISODate): string {
     }
   }
   for (const policy of data.policies) {
-    extendTo(addMonths(policy.startDate, policy.premiumYears * 12));
+    extendTo(policy.trackFrom);
     if (policy.endDate) extendTo(policy.endDate);
   }
   for (const budget of data.monthBudgets ?? []) {

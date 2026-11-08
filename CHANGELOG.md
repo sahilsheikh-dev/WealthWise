@@ -18,11 +18,11 @@
   expectation after holding deletion. The accepted behavior is clearing every
   Budget link in the same write; P29-B through P29-F4 are closed. No Home
   source was edited.
-- P29-G adds editable Insurance cover goals and policy assignments, migrates
-  schema v14 to v15, and retains backup imports through v14. Existing policies
-  remain visible even when they do not count toward a cover goal; Home's total
-  cover, yearly premium and next-renewal semantics are unchanged.
-- P29-G validation: 84 suites and 1054 tests pass; TypeScript, lint with zero
+- P29-G temporarily introduced editable Insurance cover goals and policy
+  assignments. P29-L supersedes and removes that complexity; see the current
+  Insurance tracker behavior below.
+- Historical P29-G validation (before P29-L removed cover goals): 84 suites and
+  1054 tests pass; TypeScript, lint with zero
   warnings, Expo Doctor 21/21, and Android/iOS exports pass. Custom-goal future
   premiums use the generic Insurance category; existing transaction history
   retains its stored category.
@@ -50,6 +50,13 @@
 - P29-K scope popups apply the selected month scope immediately. Close,
   backdrop and Android back dismiss without applying; counted category-delete
   copy remains in the popup and Undo is unchanged. No schema or domain changes.
+- P29-L replaces cover goals, filtering/search and policy lifecycle controls
+  with a simple editable policy list and Term/Life placeholders. Premiums recur
+  from the selected next due date, including custom month intervals, and flow
+  through Transactions, Home, Budget and reminders. Schema v16 migrates to v17,
+  dropping only cover goals and policy cover-goal assignments while preserving
+  older backup imports, hidden legacy policy fields and savings-policy goal
+  links. Home remains unchanged.
 
 ### Investments and goals
 

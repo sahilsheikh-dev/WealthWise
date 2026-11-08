@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (90/94)
+Overall progress ██████████ 96% (91/95)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 93% (14/15)
+Phase 29         █████████░ 94% (15/16)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -164,7 +164,7 @@ Phase 29         █████████░ 93% (14/15)
 | CR-94 | — | Done | Add editable month-by-month historical budgets matching transaction actuals from July 2022 through October 2026. | 2026-11-01 |
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
 | CR-96 | — | Done | P29-K: Budget scope choices apply immediately; Close, backdrop and Android back dismiss without applying. | 2026-11-03 |
-| CR-97 | — | In progress | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | 2026-11-03 |
+| CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
 | P28-A | — | Planned | QA and release. | 2026-10-15 |
@@ -182,7 +182,8 @@ Phase 29         █████████░ 93% (14/15)
 | P29-I | — | Done | Schema v16 migration, shared holding capabilities, Fixed-deposit one-time controls, legacy entry preservation, backup compatibility and acceptance tests pass; 85 suites/1078 tests and all six gates exit 0. | 2026-11-03 |
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
-| P29-L | — | In progress | Inventory complete; Home remains read-only. Implementation, migration, tests, documentation and final gates pending. | 2026-11-03 |
+| P29-L | — | Done | Simple editable Insurance tracker, Term/Life placeholders, custom premium schedules, v16-to-v17 migration, backup compatibility and Home unchanged; tests and six gates pass. | 2026-11-03 |
+| P29-M | — | Blocked | Store-level reproduction confirms early premium payments are persisted but remain unmatched to the due slot. Correct slot association is ambiguous for v16 payment history without a persisted slot identifier; implementing it requires a schema change, explicitly out of scope. See the P29-M findings below. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2808,7 +2809,8 @@ evidence present in exports/checkpoints.
 | P29-I | Phase 29 | — | — | 2026-11-03 | Inventory and capability-gate holding entries, recurring deposits, schedules and Budget links; schema v16 per owner request. | Done; 85 suites/1078 tests and all six gates exit 0; final capability matrix, assertions, coverage and device limitations are recorded below. | Inventory `eeeec26`; migration `34fa401`; capabilities `ce3bf4e`; regression/docs `13ef972`; persisted-link tests `94c3dfb`; each verified with `git cat-file -t`. | DEC-P29I-CAPABILITIES: Fixed deposit is the only one-time type; Cash and Savings account may use recurring plans. Assumed: schema v16 is required by the task although the type split is already present; the manual model has no rate or maturity fields so no new ones were introduced; the emergency-fund `FD / RD` bucket and links remain unchanged. `app/(tabs)/index.tsx` unchanged. | current request |
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 | P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
-| P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | In progress; inventory/report-only step complete. Home imports only `policySummary`; no Home edit is required. | Inventory commit follows. | DEC-P29L-SIMPLE-INSURANCE records removal of cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
+| P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | Done; inventory, implementation, migration, tests, documentation and all six gates are complete. Home imports only `policySummary`; no Home edit was required. | Inventory `8255857`; implementation and closeout commit hashes verified with `git cat-file -t` and reported with the task. | DEC-P29L-SIMPLE-INSURANCE removes cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
+| P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Blocked after reproducing the early-payment defect at the real store. The payment and linked transaction persist in one write, but the schedule still reports the original slot as unpaid. A correct fix requires persisted slot identity so early payments can be distinguished from legacy payments preceding `trackFrom`; this changes schema and is forbidden by this task. No behavior changes made. | Temporary store-level reproduction run: `npx jest src/data/__tests__/createAppStore.test.ts --runInBand -t "reproduces an early premium payment"`; write-count, PolicyPayment and linked-transaction assertions passed before the selector assertion failed. Temporary test was removed; repository tests are not left failing. | Assumed: P29-M is the next Phase 29 task. Schema v17 and the no-schema-change constraint remain in force; implementation stops pending explicit schema authorization. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -3008,7 +3010,7 @@ not device evidence.
 | CR-94 | Add historical monthly budgets through October 2026 using transaction logs; keep past actuals immutable and budgets flexible to recorded categories. | Done | The local backup has 52 custom month snapshots. Focused validation confirms each month's planned expense/investment category matches its transaction actual, every month is covered, the checksum is valid and `parseBackup` accepts the result. The backup remains ignored user data and was not committed. |
 | CR-95 | Include all income types in each historical budget, classify them from transaction logs, route unknown spending categories to Unexpected Extras, keep planned and actual equal, and link transaction logs. | Done | Added backward-compatible optional `otherIncomes` month-snapshot data and rendered separate non-earned rows without changing earned-income planning. The 52-month local backup now contains all income categories, matches planned/actual income and expense/investment category totals, retains all 716 transactions and their 119 explicit source links, and passes `parseBackup`. No unsupported expense/investment category was present. |
 | CR-96 | P29-K: Budget scope selection applies immediately; Close, backdrop and Android back discard the pending operation. | Done | Shared `ApplyScopeDialog` is used by item, section and income Save/Delete flows; section-delete counts remain in the popup and Undo is preserved. No schema/domain change. |
-| CR-97 | P29-L: Replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | In progress | Inventory is recorded in the P29-L section; implementation and all acceptance evidence remain pending. |
+| CR-97 | P29-L: Replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | Done | The P29-L acceptance matrix, migration/backup evidence and six ordered gates are recorded in the final P29-L section. |
 
 ## 8. Known issues and risks
 
@@ -6837,3 +6839,209 @@ legacy entries, recurring deposits, Budget links and large-font layouts remain
 unverified; see [`docs/memory/open-items.md`](memory/open-items.md). Layout
 tests are simulated. No source changes were made to
 `app/(tabs)/index.tsx` or `app/(tabs)/budget.tsx`.
+
+### P29-L — Simplified Insurance tracker (schema v17)
+
+**Decision — DEC-P29L-SIMPLE-INSURANCE (2026-11-03).** The owner replaced the
+P29-G user-managed cover-goal tracker with a simple editable Insurance details
+list. Cover goals, assignments, target/gap calculations, insurance filters and
+search, and policy lifecycle controls are removed from the current product.
+The Term and Life rows are unstored placeholders; saved policies are editable
+and deletable, and premiums are scheduled as pending dues. Schema v17 drops
+only `coverGoals` and `Policy.coverGoalId`; earlier migration steps remain to
+preserve the import chain. The Home screen and its Insurance summary remain
+unchanged. This decision supersedes P29-G's cover-goal behavior but does not
+rewrite its historical record.
+
+**Assumptions.** Assumed: the Term placeholder maps to `term-life`; the Life
+placeholder maps to `life-savings`. Assumed: policy premium categories remain
+derived from policy kind, and savings-policy premiums use the existing generic
+Insurance category. Assumed: the Budget Insurance system section/categories
+stay fixed and out of scope; making them editable should be a separate product
+decision because it would change a system-owned category contract. Assumed:
+P29-L is implementation work in Phase 29, as recorded in the phase ledger.
+
+**Retained compatibility fields.** `nominee` and `premiumYears` remain stored
+for older data compatibility but are no longer edited by this form or used to
+generate dues. `status` remains to label ended policies and suppress their
+dues. `trackFrom` remains the effective editable next-due date. `endDate`
+continues to cap schedules. Savings-policy `currentValue` and `valueAsOf`
+remain used by existing asset calculations; savings-policy goal links remain
+in place so linked savings assets continue to contribute to goals. Editing a
+policy preserves these hidden fields.
+
+**Replaced assertions (old / new / reason).** Assertions were retired only
+where P29-L removes the feature; no surviving behavioral assertion or
+threshold was weakened.
+
+| Old assertion / coverage | New assertion / coverage | Reason |
+|---|---|---|
+| `src/domain/__tests__/coverGoals.test.ts`: default goals, stable goal IDs, target modes, cover gaps, missing states and goal totals | `RouteRenderSmoke.test.tsx`: `shows the two unstored Insurance placeholders and a simple add action`; `EmergencyGoalScreens.test.tsx` no longer expects Insurance cover-goal content in Goals | Cover goals and their target/gap UI are removed, not hidden. |
+| `coverGoals.test.ts`: explicit assignment precedence, type fallback, single-goal counting, and inactive/savings policy exclusions | `policySummary.test.ts`: `summarizes active cover, annualized premiums, next renewal, upcoming dues and income cover`; `pending.test.ts`: `projects active policy dues with their typed insurance category and excludes inactive policies` | The cover-goal counting model no longer exists; active-cover summary and premium-category rules remain independently tested. |
+| `coverGoals.test.ts`: add/update/delete goals, typed duplicate-name/kind/limit/target errors, and clearing policy goal assignments | `policyActions.test.ts`: `adds and updates policies while retaining their schedule and payment history`; `createAppStore.test.ts`: `persists policy add and delete atomically and Undo restores deep-equal data` | Goal actions and their errors are removed; the replacement CRUD is policy CRUD with its own store/Undo behavior. |
+| `coverGoals.test.ts`: rejects missing policy-goal references and preserves policies/transactions when deleting a goal | `migrate.test.ts`: `removes only cover goals and policy assignments when migrating v16 to v17`; `policyActions.test.ts`: `deletes a policy without deleting its insurance transaction` | v17 drops the retired assignment field; policy deletion continues to preserve its transaction history. |
+| `coverGoals.test.ts`: policy-category suggestion for a custom goal without a kind | `policySuggestions.test.ts`: typed suggestions stay derived from policy kind; `budget.test.ts`: `derives scheduled premium categories from policy kind` | Custom goal kinds are removed; typed category selection remains type-based. |
+| `coverGoals.test.ts`: cover-goal totals remain separate from net worth, emergency-fund progress and savings-goal links | Existing net-worth, Emergency-fund and goal-link tests remain; `policyActions.test.ts`: `retains hidden legacy fields and savings-policy goal links when editing a policy` | Cover-goal totals are deleted; unrelated financial calculations and savings-policy links are preserved. |
+| `RouteRenderSmoke.test.tsx`: Insurance filter/search, lifecycle/status controls, cover-goal cards and `/cover-goal-form` route | `RouteRenderSmoke.test.tsx`: `shows the two unstored Insurance placeholders and a simple add action`; `renders the simplified policy form with custom frequency fields`; `EmergencyGoalScreens.test.tsx`: `removes all Insurance content and the old compact cover row from Goals and Home` | P29-L explicitly removes the complex Insurance navigation and lifecycle UX. |
+| `RouteRenderSmoke.test.tsx`: cover-goal form fields, target choices, save/delete confirmations and Undo | `RouteRenderSmoke.test.tsx`: `renders the simplified policy form with custom frequency fields`; `confirms policy deletion and removes the selected policy`; store Undo test above | The form now edits policy details, and goal-target interaction is no longer applicable. |
+| `EmergencyGoalScreens.test.tsx`: Insurance cover-goal bar/summary on Goals | `EmergencyGoalScreens.test.tsx`: `removes all Insurance content and the old compact cover row from Goals and Home`; Home's unchanged summary is asserted by `RouteRenderSmoke.test.tsx`: `keeps Budget as the other Insurance entry point and removes Insurance from Goals` and `policySummary.test.ts`: `keeps savings policies in the unchanged total-cover summary` | Goal-linked Insurance display is removed while Home total cover remains unchanged. |
+| `schemas.test.ts`, `actions.test.ts`, `selectors.test.ts`, and `createAppStore.test.ts`: current-schema fixtures and assertions include `coverGoals` / `coverGoalId` | Current schema fixtures omit both retired fields; `schemas.test.ts` validates v17 and `migrate.test.ts` validates the v16→v17 drop | The persisted current schema no longer contains cover-goal data. |
+| `backup.test.ts`: current backups include user-managed cover goals and policy assignments | `backup.test.ts`: `imports a v16 backup while dropping only the retired insurance-goal fields`; `round-trips an encrypted v17 backup containing a linked investment item` | Historical imports remain supported while current backups no longer serialize retired fields. |
+| `budgetCategories.test.ts`: a custom cover goal with no kind selects the generic Insurance category | `budget.test.ts`: `derives scheduled premium categories from policy kind`; `pending.test.ts`: `projects savings-policy dues under the generic insurance category` | The custom-goal exception is removed; savings-policy premium categorization remains. |
+| `demoData.test.ts`: demo cover-goal assignments and cover-gap states | `demoData.test.ts`: `includes a paid-premium Term policy and leaves the Life placeholder available` | Demo now exercises the new tracker and placeholder behavior. |
+| `reminders.test.ts`: expected two premium reminders for a policy with an end date | `reminders.test.ts`: `plans a reminder for a premium due the following week` and the full schedule assertions; the existing end-date fixture now expects six scheduled reminders | A policy's due schedule continues at each interval through its end date; the old count omitted valid dues and was corrected to match the schedule rule. |
+| `progressLedger.test.ts`: P29-L/CR-97 incomplete dashboard counts and status | Updated ledger assertions require P29-L and CR-97 to be Done and the corresponding dashboard totals to match | The ledger now reflects completed implementation and verification. |
+
+#### P29-L acceptance evidence
+
+| Frozen requirement | Exact test evidence |
+|---|---|
+| Term and Life placeholders are unstored, appear when their type has no saved policy, and route to preselected add forms; additional policies can be added | `RouteRenderSmoke.test.tsx`: `shows the two unstored Insurance placeholders and a simple add action`; `demoData.test.ts`: `includes a paid-premium Term policy and leaves the Life placeholder available` |
+| Simple policy form includes required details, optional details, five frequencies and custom interval fields | `RouteRenderSmoke.test.tsx`: `renders the simplified policy form with custom frequency fields`; `policyActions.test.ts`: `adds and updates policies while retaining their schedule and payment history` |
+| Saved policies can be edited/deleted; Undo restores data; transactions are preserved | `policyActions.test.ts`: `deletes a policy without deleting its insurance transaction`; `createAppStore.test.ts`: `persists policy add and delete atomically and Undo restores deep-equal data`; `RouteRenderSmoke.test.tsx`: `confirms policy deletion and removes the selected policy` |
+| Monthly, quarterly, half-yearly, yearly and custom schedules use the next due date, clamp month ends and stop at end date | `dues.test.ts`: `schedules each %s frequency with calendar month-end clamping`; `generates a yearly policy schedule from the selected next due date`; `stops policy dues after endDate and suppresses dues for inactive policies` |
+| First due does not predate `trackFrom`; paying a due records the payment and advances tracking | `dues.test.ts`: `starts at the selected next due date and advances after the first premium is paid`; `records each policy payment on the slot date and settles policy tracking without writes` |
+| Pending dues are projected to Transactions, Home upcoming dues, Budget and reminders; past due policies remain overdue | `pending.test.ts`: `creates an upcoming premium due on the selected date in its month`; `dues.test.ts`: `includes policy dues in Home upcoming dues when there are no liabilities`; `budget.test.ts`: `shows a policy premium on its selected next due date in the Insurance section`; `reminders.test.ts`: `plans a reminder for a premium due the following week`; `RouteRenderSmoke.test.tsx`: `stacks Transactions due rows at font scale %s` |
+| Deletion removes future pending dues; ended policies produce no dues but remain visible | `pending.test.ts`: `removes pending premium dues when a policy is deleted`; `dues.test.ts`: `stops policy dues after endDate and suppresses dues for inactive policies`; `budget.test.ts`: `keeps inactive policy history but excludes it from linked dues and budget commitments` |
+| Policies retain the Home total-cover, yearly premium and renewal summary semantics | `policySummary.test.ts`: `summarizes active cover, annualized premiums, next renewal, upcoming dues and income cover`; `keeps savings policies in the unchanged total-cover summary`; `RouteRenderSmoke.test.tsx`: `keeps Budget as the other Insurance entry point and removes Insurance from Goals` |
+| v16→v17 migration drops only `coverGoals` and `coverGoalId`; the raw v16 archive is exact, written once and erased by erase-all | `migrate.test.ts`: `removes only cover goals and policy assignments when migrating v16 to v17`; `createAppStore.test.ts`: `hydrates v16 policies, archives exact bytes once, and erases the v16 archive` |
+| v1–v16 backup imports remain compatible; encrypted v17 round trip works; future schema v18 is refused | `backup.test.ts`: `verifies a v1 data checksum before migration and imports the v7 result`; `verifies v2 data as written before migrating and validates the v7 result`; `verifies the v%s checksum before migrating its data` (v3–v6); `verifies v7 checksums before migrating backups to schema nine`; `verifies v8 checksums as written before migrating income totals`; `verifies a v9 checksum over the original data before migrating its budget lines`; `verifies v10 checksums as written before migrating policy fields`; `verifies v11 backup bytes and removes superseded cover goals during migration`; `verifies v12 backup bytes before adding monthly recurrence defaults`; `imports a v%s backup and drops its superseded cover goals` (v13–v14); `imports a v15 backup and separates its legacy combined holding type`; `imports a v16 backup while dropping only the retired insurance-goal fields`; `round-trips an encrypted v17 backup containing a linked investment item`; and `round trips custom emergency-fund options and refuses schema version eighteen` |
+| Savings-policy goal links and hidden legacy data survive editing; premium category rules remain derived from policy kind | `policyActions.test.ts`: `retains hidden legacy fields and savings-policy goal links when editing a policy`; `budget.test.ts`: `derives scheduled premium categories from policy kind`; `pending.test.ts`: `projects savings-policy dues under the generic insurance category` |
+| Insurance list remains accessible at font scales 1.3 and 2.0; Home source stays unchanged | `RouteRenderSmoke.test.tsx`: `keeps the Insurance list accessible at font scale %s`; Home's total-cover evidence above; protected Home file hash remains `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` |
+
+#### Assertion count audit
+
+Counts are literal `expect(` occurrences, compared between inventory commit
+`8255857` and the P29-L working tree. Added/removed counts are per-file
+positive deltas; the net is current minus baseline.
+
+| Test file | Baseline | Current | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `EmergencyGoalScreens.test.tsx` | 79 | 79 | 0 | 0 | 0 |
+| `RouteRenderSmoke.test.tsx` | 466 | 439 | 0 | 27 | -27 |
+| `createAppStore.test.ts` | 428 | 407 | 0 | 21 | -21 |
+| `migrate.test.ts` | 114 | 117 | 3 | 0 | +3 |
+| `safeStorage.test.ts` | 28 | 28 | 0 | 0 | 0 |
+| `actions.test.ts` | 23 | 23 | 0 | 0 | 0 |
+| `backup.test.ts` | 86 | 89 | 3 | 0 | +3 |
+| `budget.test.ts` | 319 | 319 | 0 | 0 | 0 |
+| `budgetCategories.test.ts` | 21 | 20 | 0 | 1 | -1 |
+| deleted `coverGoals.test.ts` | 37 | 0 | 0 | 37 | -37 |
+| `dues.test.ts` | 145 | 145 | 0 | 0 | 0 |
+| `pending.test.ts` | 40 | 43 | 3 | 0 | +3 |
+| `policyActions.test.ts` | 23 | 22 | 0 | 1 | -1 |
+| `policySummary.test.ts` | 12 | 12 | 0 | 0 | 0 |
+| `reminders.test.ts` | 32 | 34 | 2 | 0 | +2 |
+| `schedule.test.ts` | 44 | 44 | 0 | 0 | 0 |
+| `schemas.test.ts` | 248 | 235 | 0 | 13 | -13 |
+| `selectors.test.ts` | 82 | 82 | 0 | 0 | 0 |
+| `progressLedger.test.ts` | 160 | 160 | 0 | 0 | 0 |
+| `routeKinds.test.ts` | 33 | 33 | 0 | 0 | 0 |
+| `demoData.test.ts` | 93 | 92 | 0 | 1 | -1 |
+| new `policySuggestions.test.ts` | 0 | 7 | 7 | 0 | +7 |
+| **Total** | **2513** | **2430** | **18** | **101** | **-83** |
+
+#### Verification
+
+Executed in the repository-required order after deleting the prior
+`coverage/coverage-final.json`; all six gates passed:
+
+| # | Gate | Exit | Result |
+|---:|---|---:|---|
+| 1 | `npm test -- --coverage` | 0 | 86 suites, 1086 tests passed; generated fresh coverage |
+| 2 | `npx tsc --noEmit` | 0 | Passed |
+| 3 | `npx expo lint` | 0 | Passed without warnings |
+| 4 | `npx expo-doctor` | 0 | 21/21 checks passed |
+| 5 | `npx expo export --platform android` | 0 | Exported |
+| 6 | `npx expo export --platform ios` | 0 | Exported |
+
+Coverage was computed from the freshly regenerated
+`coverage/coverage-final.json` with `istanbul-lib-coverage`: files were grouped
+by immediate `src/` directory, using each group's `getCoverageSummary().lines`
+and `.branches`; branch counts are branch arms. Per-file branch coverage uses
+the same map's `toSummary().branches`.
+
+| Directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 660/699 (94.42%) | 700/795 (88.05%) |
+| `src/domain` | 3186/3236 (98.45%) | 3132/3363 (93.13%) |
+| `src/lib` | 107/107 (100%) | 126/126 (100%) |
+
+| File | Branches | Required floor | Result |
+|---|---:|---:|---|
+| `src/domain/budget.ts` | 770/849 (90.69%) | 90% | Pass |
+| `src/data/createAppStore.ts` | 73/84 (86.90%) | 85% | Pass |
+
+Physical-device checks remain unverified: screen layout/accessibility at font
+scales 1.3 and 2.0, native navigation/back behavior, reminder delivery, and
+premium-due interactions on iOS and Android. UI tests are simulated and Expo
+exports are not physical-device verification. No source change was made to
+`app/(tabs)/index.tsx` or `app/(tabs)/budget.tsx`.
+
+### P29-M — Insurance premium payment slot identity (blocked; no schema change)
+
+**Reproduction result, before any behavior change.** A real
+`createAppStore` was hydrated with an active monthly Health policy whose
+`trackFrom` and next slot were 2026-11-07. With the injected store date
+2026-11-04, `actions.clearDue({ kind: 'policy', id }, 'policy:0', 900)` made
+exactly one persisted write. It appended a PolicyPayment dated 2026-11-04 and a
+linked expense transaction for 900 in `Health premium`, with source
+`{ kind: 'policy-payment', parentId, entryId }`. Yet `policySchedule` still
+returned 2026-11-07 as its next unpaid due; the expected next slot was
+2026-12-07. The focused temporary store test failed at that exact selector
+assertion after its write/payment/transaction assertions passed. The test was
+removed after reproduction because this task's schema prohibition prevents a
+safe implementation; no regression test that blesses stale behavior remains.
+
+**Root cause.** In [policySchedule.ts](../src/domain/policySchedule.ts),
+payments are accepted only when `payment.date >= policy.trackFrom`. P29-L sets
+`trackFrom` to the user-selected next due date. Therefore an early payment
+dated before that due date is removed before FIFO matching, even though
+`clearDue` correctly accepts slot `policy:0`. `clearDue` in
+[dues.ts](../src/domain/dues.ts) records the payment and linked transaction
+but does not persist the `rowId` it was asked to clear. The PolicyPayment
+schema/type has only `id`, `date`, `amount`, and `note`; the linked transaction
+source has only `parentId` and `entryId`, not a due slot identity. The UI
+routes do not independently lose the store update.
+
+**Entry-point trace.** All routes call the same store wrapper, which invokes
+the pure `clearDue` action through `applyDataAction`; each successful single
+payment action causes one Zustand set/persisted write.
+
+| Entry point | Store call / identity passed | Recorded state | Stale derivation |
+|---|---|---|---|
+| Insurance card | `app/insurance.tsx` finds the first non-paid row in `policySchedule` and calls `clearDue` with its row id. | `Policy.payments` and linked transaction are appended in one write. | Insurance card recomputes `policySchedule`; the date filter excludes the early payment, so the same due date remains and the Paid action is still enabled. |
+| Home Upcoming and due | `app/(tabs)/index.tsx` gets `source.slotId` from `pendingItems`; actionable rows use `clearDue`, while a non-actionable overdue row may use `clearDuesThrough`. | Same payment/transaction update; a batch clear is one store action/write. | `pendingItems` is derived from `policySchedule`, so the slot remains in Home and later reminder planning. |
+| Transactions due row | `PendingItemActions` receives the policy `slotId` from `pendingItems` and calls `clearDue` (or `clearDuesThrough` for a non-actionable overdue item). | Same one-write payment and linked transaction. | The pending selector still returns the slot; the paid transaction can appear in the month list but is not linked to a cleared schedule slot. |
+| `/payment-confirm` | Resolves `dueItemId` against `pendingItems`, then uses `PendingItemActions` and the same store action. | Same one-write payment and linked transaction. | The route can continue resolving the same due because it remains pending. |
+| Reminder action | Reminder previews are generated by `planReminders` over `pendingItems`; the notification target opens `/payment-confirm`, which follows the path above. | Same one-write payment and linked transaction. | The stale selector schedules the original due again. |
+
+Budget actuals change because the transaction is present and linked to
+PolicyPayment; the linked planned row and every pending view still use
+`policySchedule`, so they keep the old slot. Existing Undo removes the linked
+payment and transaction in one store operation; it restores the prior state
+but cannot resolve the missing slot association.
+
+**Why the task stops here.** Removing the lower date bound would make the
+reproduction pass, but it would also count pre-existing v16 payments that
+precede `trackFrom` against future slots. The persisted v16/v17 data cannot
+distinguish (a) an old premium payment before the configured next due from
+(b) a new early payment for that due: both have the same four PolicyPayment
+fields and the same `trackFrom`. The due `rowId` is currently transient and is
+not written. Matching by dates, array order, or amount cannot prove which slot
+was settled for old data, consecutive early payments, or edited tracking
+dates. Persisting a slot identifier (or equivalent unambiguous marker) in the
+payment and validating/backing it up requires a schema update and migration.
+That is explicitly prohibited by P29-M, so no implementation or broad route /
+frequency matrix was attempted after the store-level proof.
+
+No behavior assertions were replaced or weakened. The required next step is
+owner authorization for a schema version bump and a migration policy for
+legacy payments whose slot cannot be reconstructed. Until then, current
+behavior remains unchanged. P29-M's full frequency/entry-point/Undo matrix
+and six gates are not run because implementation is blocked by that constraint.
+
+Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
+`100% (15/15)`; new `96% (91/95)` and `94% (15/16)`; reason: P29-M is now
+recorded as a blocked task, adding one item to the denominator without
+increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.

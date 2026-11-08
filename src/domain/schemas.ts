@@ -9,7 +9,6 @@ import { holdingCapabilities } from './holdingCapabilities';
 import {
   EARNED_INCOME_CATEGORIES,
   NON_EARNED_INCOME_CATEGORIES,
-  COVER_POLICY_TYPES,
   HOLDING_TYPES,
   THEME_IDS,
   type AppData,
@@ -17,7 +16,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 17;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -163,9 +162,9 @@ const policySchema = z.object({
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
   kind: policyKindSchema,
-  coverGoalId: idSchema.optional(),
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: isoDateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
   policyNumber: z.string().max(30).optional(),
@@ -189,40 +188,10 @@ const policySchema = z.object({
   if ((policy.currentValue === null) !== (policy.valueAsOf === null)) {
     context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
   }
+  if (policy.frequency === 'custom' && policy.customIntervalMonths === undefined) {
+    context.addIssue({ code: 'custom', path: ['customIntervalMonths'], message: 'Custom frequency requires an interval in months.' });
+  }
 });
-const coverGoalTargetSchema = z.discriminatedUnion('mode', [
-  z.strictObject({ mode: z.literal('income-multiple'), value: moneySchema.min(1).max(50) }),
-  z.strictObject({ mode: z.literal('amount'), value: moneySchema.min(0) }),
-  z.strictObject({ mode: z.literal('active-only') }),
-  z.strictObject({ mode: z.literal('none') }),
-]);
-const coverGoalSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1).max(40).refine((name) => name.trim().length > 0),
-  kind: z.enum(COVER_POLICY_TYPES).nullable(),
-  target: coverGoalTargetSchema,
-});
-const coverGoalsSchema = z.array(coverGoalSchema).max(20)
-  .superRefine((goals, context) => {
-    const ids = new Set<string>();
-    const names = new Set<string>();
-    const kinds = new Set<string>();
-    goals.forEach((goal, index) => {
-      const normalizedName = goal.name.trim().toLowerCase();
-      if (ids.has(goal.id)) {
-        context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Cover goal IDs must be unique' });
-      }
-      if (names.has(normalizedName)) {
-        context.addIssue({ code: 'custom', path: [index, 'name'], message: 'Cover goal names must be unique' });
-      }
-      if (goal.kind !== null && kinds.has(goal.kind)) {
-        context.addIssue({ code: 'custom', path: [index, 'kind'], message: 'Cover goal kinds must be unique' });
-      }
-      ids.add(goal.id);
-      names.add(normalizedName);
-      if (goal.kind !== null) kinds.add(goal.kind);
-    });
-  });
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
@@ -457,24 +426,12 @@ export const appDataSchema = z.object({
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
   policies: z.array(policySchema),
-  coverGoals: coverGoalsSchema,
   budget: budgetSchema.nullable(),
   budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).optional(),
   efAllocation: efAllocationSchema,
   efCustomBuckets: efCustomBucketsSchema,
   efBucketLinks: efBucketLinksSchema,
-}).superRefine((data, context) => {
-  const goalIds = new Set(data.coverGoals.map((goal) => goal.id));
-  data.policies.forEach((policy, index) => {
-    if (policy.coverGoalId !== undefined && !goalIds.has(policy.coverGoalId)) {
-      context.addIssue({
-        code: 'custom',
-        path: ['policies', index, 'coverGoalId'],
-        message: 'Policy cover goal does not exist.',
-      });
-    }
-  });
 });
 
 export type AppDataSchemaOutput = z.infer<typeof appDataSchema>;

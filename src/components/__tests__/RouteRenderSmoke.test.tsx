@@ -11,7 +11,6 @@ import BudgetIncomeFormScreen from '../../../app/budget-income-form';
 import BudgetItemFormScreen from '../../../app/budget-item-form';
 import BudgetSectionFormScreen from '../../../app/budget-section-form';
 import ClearDuesScreen from '../../../app/clear-dues';
-import CoverGoalFormScreen from '../../../app/cover-goal-form';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfBucketFormScreen from '../../../app/ef-bucket-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
@@ -147,13 +146,6 @@ jest.mock('../../data/store', () => {
       holdings: [],
       liabilities: [],
       policies: [],
-      coverGoals: [
-        { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
-        { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
-        { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-        { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-        { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-      ],
       budgetPlan: null,
       monthBudgets: [],
       efAllocation: null,
@@ -185,9 +177,6 @@ jest.mock('../../data/store', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      addCoverGoal: jest.fn(),
-      updateCoverGoal: jest.fn(),
-      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -252,13 +241,6 @@ jest.mock('../../data/useAppData', () => {
     holdings: [],
     liabilities: [],
     policies: [],
-    coverGoals: [
-      { id: 'cover-term-life', name: 'Term life', kind: 'term-life', target: { mode: 'income-multiple', value: 10 } },
-      { id: 'cover-health', name: 'Health', kind: 'health', target: { mode: 'none' } },
-      { id: 'cover-motor', name: 'Motor', kind: 'motor', target: { mode: 'active-only' } },
-      { id: 'cover-home', name: 'Home', kind: 'home', target: { mode: 'active-only' } },
-      { id: 'cover-other', name: 'Other', kind: 'other', target: { mode: 'active-only' } },
-    ],
     budgetPlan: null,
     monthBudgets: [],
     efAllocation: null,
@@ -292,9 +274,6 @@ jest.mock('../../data/useAppData', () => {
       updatePolicy: jest.fn(),
       deletePolicy: jest.fn(),
       addPolicyPayment: jest.fn(),
-      addCoverGoal: jest.fn(),
-      updateCoverGoal: jest.fn(),
-      deleteCoverGoal: jest.fn(),
       addLiabilityPayment: jest.fn(),
       updateLiabilityPayment: jest.fn(),
       deleteLiabilityPayment: jest.fn(),
@@ -788,7 +767,6 @@ describe('route render smoke audit', () => {
     ['Assets', React.createElement(AssetsScreen)],
     ['Emergency fund', React.createElement(EmergencyFundScreen)],
     ['Insurance', React.createElement(InsuranceScreen)],
-    ['Cover goal form', React.createElement(CoverGoalFormScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
     ['Emergency fund allocation item form', React.createElement(EfBucketFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
@@ -1049,11 +1027,6 @@ describe('route render smoke audit', () => {
       ['Budget income edit', {
         month: todayISO().slice(0, 7), incomeId: budgetIncome.id, scope: 'month',
       }, React.createElement(BudgetIncomeFormScreen)],
-      ...demoData.coverGoals.map((goal) => [
-        `Cover goal ${goal.name}`,
-        { id: goal.id },
-        React.createElement(CoverGoalFormScreen),
-      ] as [string, Record<string, string>, React.ReactElement]),
       ['Insurance from Goals/Budget/Home', {}, React.createElement(InsuranceScreen)],
       ['Investment entry add', { holdingId: entryHolding.id, kind: 'Deposit', date: todayISO() },
         React.createElement(InvestmentEntryFormScreen)],
@@ -1711,40 +1684,31 @@ describe('route render smoke audit', () => {
       const insuranceRoot = insuranceRenderer.root;
       const header = insuranceRoot.findByType('header');
       const headerActions = header.findAllByType('button').map((button) => button.props.accessibilityLabel);
-      expect(headerActions).toEqual(['Filter', 'Add policy']);
-
-      const coverCards = insuranceRoot.findByProps({ testID: 'insurance-cover-goals' })
-        .findAll((node) => typeof node.props.testID === 'string'
-          && node.props.testID.startsWith('cover-goal-card-'));
-      expect([...new Set(coverCards.map((card) => card.props.testID))]).toEqual([
-        'cover-goal-card-cover-term-life',
-        'cover-goal-card-cover-health',
-        'cover-goal-card-cover-motor',
-        'cover-goal-card-cover-home',
-        'cover-goal-card-cover-other',
-        'cover-goal-card-demo-cover-goal-family',
-      ]);
-      const addCoverGoalButtons = insuranceRoot.findAllByProps({ accessibilityLabel: 'Add cover goal' });
-      expect(addCoverGoalButtons.length).toBeGreaterThan(0);
+      expect(headerActions).toEqual(['Add insurance']);
+      const lifePlaceholder = insuranceRoot.findByProps({ accessibilityLabel: 'Add details for Life insurance' });
+      expect(lifePlaceholder).toBeDefined();
+      expect(insuranceRoot.findAllByProps({ accessibilityLabel: 'Add details for Term insurance' }))
+        .toHaveLength(0);
       router.push.mockClear();
-      act(() => addCoverGoalButtons[0]?.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
-      router.push.mockClear();
-      const termLifeCard = insuranceRoot.findByProps({ testID: 'cover-goal-card-cover-term-life' });
-      const goalPressable = termLifeCard.findAll((node) => String(node.type) === 'pressable')[0];
-      const lastGoalChild = goalPressable?.children.at(-1);
-      expect(typeof lastGoalChild === 'object' && lastGoalChild !== null && 'props' in lastGoalChild
-        ? lastGoalChild.props.testID
-        : undefined).toBe('cover-goal-progress-cover-term-life');
-      expect(insuranceRoot.findByProps({ testID: 'term-life-income-line' })).toBeDefined();
-      act(() => goalPressable?.props.onPress());
+      act(() => lifePlaceholder.props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({
-        pathname: '/cover-goal-form',
-        params: { id: 'cover-term-life' },
+        pathname: '/policy-form',
+        params: { kind: 'life-savings', name: 'Life insurance' },
       });
+      router.push.mockClear();
+      act(() => header.findByProps({ accessibilityLabel: 'Add insurance' }).props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/policy-form');
+      router.push.mockClear();
 
       const activePolicy = demoData.policies.find((policy) => policy.status === 'active');
       if (!activePolicy) throw new Error('Demo data has no active policy fixture.');
+      const endedPolicy = demoData.policies.find((policy) => policy.status !== 'active');
+      if (!endedPolicy) throw new Error('Demo data has no ended policy fixture.');
+      const endedCard = insuranceRoot.findByProps({ testID: `policy-card-${endedPolicy.id}` });
+      expect(endedCard.findAll((node) =>
+        String(node.type) === 'badge' && node.props.label === 'Ended',
+      )).toHaveLength(1);
+      expect(endedCard.findAllByProps({ accessibilityLabel: 'Paid' })).toHaveLength(0);
       const policyPressable = insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` });
       const policyCard = policyPressable.parent ?? policyPressable;
       const actions = policyCard.findAll((node) => {
@@ -1791,26 +1755,6 @@ describe('route render smoke audit', () => {
         { kind: 'policy', id: activePolicy.id },
         'paid-policy-entry',
       );
-
-      const filterButton = header.findByProps({ accessibilityLabel: 'Filter' });
-      act(() => filterButton.props.onPress());
-      expect(insuranceRoot.findByProps({ testID: 'insurance-filter-panel' })).toBeDefined();
-      for (const status of ['All', 'Active', 'Lapsed', 'Matured', 'Cancelled']) {
-        expect(insuranceRoot.findAllByProps({ accessibilityLabel: status }).length).toBeGreaterThan(0);
-      }
-      const lapsedPolicy = demoData.policies.find((policy) => policy.status === 'lapsed');
-      if (!lapsedPolicy) throw new Error('Demo data has no lapsed policy fixture.');
-      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'Lapsed' })[0]?.props.onPress());
-      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${lapsedPolicy.id}` }).length)
-        .toBeGreaterThan(0);
-      expect(insuranceRoot.findAllByProps({ testID: `policy-card-${activePolicy.id}` })).toHaveLength(0);
-      act(() => insuranceRoot.findAllByProps({ accessibilityLabel: 'All' })[0]?.props.onPress());
-      const searchField = insuranceRoot.findByProps({ accessibilityLabel: 'Search policies' });
-      act(() => searchField.props.onChangeText('no matching policy'));
-      expect(insuranceRoot.findByProps({ title: 'No matches' })).toBeDefined();
-      act(() => searchField.props.onClear());
-      act(() => insuranceRoot.findByProps({ accessibilityLabel: 'Add policy' }).props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/policy-form');
       act(() => insuranceRoot.findByProps({ testID: `policy-card-${activePolicy.id}` }).props.onPress());
       expect(router.push).toHaveBeenLastCalledWith({
         pathname: '/policy-form',
@@ -1831,7 +1775,6 @@ describe('route render smoke audit', () => {
       mockFontScale = 2;
       const largeTextRenderer = renderScreen(React.createElement(InsuranceScreen));
       renderer = largeTextRenderer;
-      expect(largeTextRenderer.root.findAllByProps({ testID: 'term-life-income-line' })).toHaveLength(0);
       const largeTextRow = largeTextRenderer.root.findAll((node) => {
         const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
         return styles.some((style) => typeof style === 'object' && style !== null
@@ -1850,16 +1793,9 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('renders policy and editable cover-goal forms with delete confirmation', async () => {
+  it('renders the simplified policy form with custom frequency fields', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
-      deletePolicy: jest.Mock;
-      addCoverGoal: jest.Mock;
-      updateCoverGoal: jest.Mock;
-      deleteCoverGoal: jest.Mock;
-    };
-    const router = jest.requireMock('expo-router').router as { back: jest.Mock };
     const storeState = useAppStore((state) => state);
     const previousRouteData = { ...routeData };
     const previousStoreData = storeState.data;
@@ -1872,40 +1808,71 @@ describe('route render smoke audit', () => {
     try {
       Object.assign(routeData, demoData);
       storeState.data = demoData;
-      routeParams.mockReturnValue({});
+      routeParams.mockReturnValue({ kind: 'term-life', name: 'Term insurance' });
       renderer = renderScreen(React.createElement(PolicyFormScreen));
       const createLabels = [
         'Policy name',
         'Insurer',
-        'Policy kind',
+        'Policy type',
         'Premium',
         'Premium frequency',
-        'Policy start date',
+        'Next premium due date',
         'Sum assured',
         'Policy number',
-        'Nominee',
         'Policy note',
       ];
       for (const label of createLabels) {
         expect(renderer.root.findAllByProps({ accessibilityLabel: label }).length)
           .toBeGreaterThan(0);
       }
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' })).toHaveLength(0);
-      const countsToward = renderer.root.findByProps({ accessibilityLabel: 'Counts toward' });
-      expect(countsToward.props.options).toEqual([
-        { value: 'automatic', title: 'Automatic by type' },
-        ...demoData.coverGoals.map((goal) => ({ value: goal.id, title: goal.name })),
-      ]);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Policy start date' }).props.maximumDate)
-        .toBe(todayISO());
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy end date' })).toHaveLength(0);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Policy name' }).props.value)
+        .toBe('Term insurance');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Policy type' }).props.value)
+        .toBe('term-life');
+      const frequency = renderer.root.findByProps({ accessibilityLabel: 'Premium frequency' });
+      expect(frequency.props.options).toEqual(expect.arrayContaining([
+        { value: 'monthly', title: 'Monthly' },
+        { value: 'quarterly', title: 'Quarterly' },
+        { value: 'half-yearly', title: 'Half-yearly' },
+        { value: 'yearly', title: 'Yearly' },
+        { value: 'custom', title: 'Custom' },
+      ]));
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Custom interval in months' })).toHaveLength(0);
+      act(() => frequency.props.onChange('custom'));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Custom interval in months' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Custom interval in months' }).props.value)
+        .toBe('1');
       act(() => renderer?.unmount());
       renderer = undefined;
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
 
+  it('confirms policy deletion and removes the selected policy', async () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const screenActions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      deletePolicy: jest.Mock;
+    };
+    const router = jest.requireMock('expo-router').router as { back: jest.Mock };
+    const storeState = useAppStore((state) => state);
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const demoData = buildDemoData(todayISO());
+    const policy = demoData.policies[0];
+    if (!policy) throw new Error('Demo data has no policy deletion fixture.');
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      Object.assign(routeData, demoData);
+      storeState.data = demoData;
       routeParams.mockReturnValue({ id: policy.id });
       renderer = renderScreen(React.createElement(PolicyFormScreen));
-      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Policy status' }).length)
-        .toBeGreaterThan(0);
       screenActions.deletePolicy.mockClear();
       mockConfirmAsync.mockClear();
       router.back.mockClear();
@@ -1916,114 +1883,9 @@ describe('route render smoke audit', () => {
       });
       expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
         title: `Delete ${policy.name}?`,
-        message: 'Recorded premium payments stay in Transactions.',
+        message: 'Upcoming premium dues will be removed. Recorded payments stay in Transactions.',
       }));
       expect(screenActions.deletePolicy).toHaveBeenCalledWith(policy.id);
-      expect(router.back).toHaveBeenCalled();
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({});
-      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.maxLength).toBe(40);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
-        .toEqual([{ value: 'none', title: 'None' }]);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' }).props.options)
-        .toEqual(expect.arrayContaining([
-          { value: 'income-multiple', title: 'Income multiple' },
-          { value: 'amount', title: 'Amount' },
-          { value: 'active-only', title: 'Active policy only' },
-          { value: 'none', title: 'No target' },
-        ]));
-      const targetMode = renderer.root.findByProps({ accessibilityLabel: 'Target mode' });
-      expect(targetMode.props.value).toBe('none');
-      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
-      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
-      act(() => targetMode.props.onChange('income-multiple'));
-      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' }).length).toBeGreaterThan(0);
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
-        .props.onChange('active-only'));
-      expect(renderer.root.findAllByProps({ keyboardType: 'number-pad' })).toHaveLength(0);
-      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield')).toHaveLength(0);
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
-        .props.onChange('amount'));
-      expect(renderer.root.findAll((node) => String(node.type) === 'moneyfield').length)
-        .toBeGreaterThan(0);
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
-        .props.onChange('none'));
-      act(() => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
-          .props.onChangeText('Travel protection');
-      });
-      await act(async () => {
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(screenActions.addCoverGoal).toHaveBeenLastCalledWith({
-        name: 'Travel protection',
-        kind: null,
-        target: { mode: 'none' },
-      });
-      expect(router.back).toHaveBeenCalled();
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      const customGoal = demoData.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
-      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
-      const editableData = { ...demoData, coverGoals: [customGoal] };
-      Object.assign(routeData, editableData);
-      storeState.data = editableData;
-      routeParams.mockReturnValue({ id: customGoal.id });
-      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' }).props.value)
-        .toBe('Family protection');
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' }).props.options)
-        .toEqual(expect.arrayContaining([
-          { value: 'none', title: 'None' },
-          { value: 'term-life', title: 'Term life' },
-          { value: 'health', title: 'Health' },
-          { value: 'motor', title: 'Motor' },
-          { value: 'home', title: 'Home' },
-          { value: 'other', title: 'Other' },
-        ]));
-      act(() => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Cover goal name' })
-          .props.onChangeText('Renamed protection');
-        renderer?.root.findByProps({ accessibilityLabel: 'Counts policies of type' })
-          .props.onChange('health');
-        renderer?.root.findByProps({ accessibilityLabel: 'Target mode' })
-          .props.onChange('amount');
-      });
-      act(() => {
-        renderer?.root.findByProps({ accessibilityLabel: 'Target amount' })
-          .props.onChangeText('250000');
-      });
-      await act(async () => {
-        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
-      });
-      expect(screenActions.updateCoverGoal).toHaveBeenLastCalledWith(customGoal.id, {
-        name: 'Renamed protection',
-        kind: 'health',
-        target: { mode: 'amount', value: 250_000 },
-      });
-      expect(router.back).toHaveBeenCalled();
-      act(() => renderer?.unmount());
-      renderer = undefined;
-
-      routeParams.mockReturnValue({ id: customGoal.id });
-      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-      mockConfirmAsync.mockClear();
-      screenActions.deleteCoverGoal.mockClear();
-      router.back.mockClear();
-      const deleteGoalButton = renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' });
-      await act(async () => {
-        deleteGoalButton.props.onPress();
-        await Promise.resolve();
-      });
-      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Delete Family protection?',
-        message: '1 policy will become unassigned. Policies and transactions will stay.',
-      }));
-      expect(screenActions.deleteCoverGoal).toHaveBeenCalledWith(customGoal.id);
       expect(router.back).toHaveBeenCalled();
     } finally {
       if (renderer) act(() => renderer?.unmount());
@@ -2031,12 +1893,11 @@ describe('route render smoke audit', () => {
       storeState.data = previousStoreData;
       routeParams.mockReturnValue(previousParams);
       screenActions.deletePolicy.mockClear();
-      screenActions.deleteCoverGoal.mockClear();
       mockConfirmAsync.mockClear();
     }
   });
 
-  it('shows an actionable empty cover-goal section', () => {
+  it('shows the two unstored Insurance placeholders and a simple add action', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const storeState = useAppStore((state) => state);
     const previousRouteData = { ...routeData };
@@ -2046,27 +1907,25 @@ describe('route render smoke audit', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
 
     try {
-      const emptyGoalsData = { ...buildDemoData(todayISO()), coverGoals: [] };
-      Object.assign(routeData, emptyGoalsData);
-      storeState.data = emptyGoalsData;
+      const emptyPolicyData = { ...buildDemoData(todayISO()), policies: [] };
+      Object.assign(routeData, emptyPolicyData);
+      storeState.data = emptyPolicyData;
       renderer = renderScreen(React.createElement(InsuranceScreen));
-      const coverSection = renderer.root.findByProps({ testID: 'insurance-cover-goals' });
-      expect(coverSection.findByProps({ title: 'No cover goals yet' })).toBeDefined();
-      const unassignedSection = renderer.root.findByProps({ testID: 'insurance-unassigned-cover' });
-      expect(unassignedSection.findAllByType('text')
-        .some((node) => node.children.join('') === 'Not in any cover goal')).toBe(true);
-      const activeCoverTotal = emptyGoalsData.policies
-        .filter((policy) => policy.status === 'active')
-        .reduce((sum, policy) => sum + (policy.sumAssured ?? 0), 0);
-      expect(unassignedSection.findByType(AmountText).props.value).toBe(activeCoverTotal);
-      const listedPolicy = emptyGoalsData.policies[0];
-      if (!listedPolicy) throw new Error('Demo data has no policy to display.');
-      expect(renderer.root.findByProps({ testID: `policy-card-${listedPolicy.id}` })).toBeDefined();
-      const addButtons = coverSection.findAllByProps({ accessibilityLabel: 'Add cover goal' });
-      expect(addButtons.length).toBeGreaterThanOrEqual(2);
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Add details for Term insurance' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Add details for Life insurance' })).toBeDefined();
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Filter' })).toHaveLength(0);
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Search policies' })).toHaveLength(0);
       router.push.mockClear();
-      act(() => addButtons.at(-1)?.props.onPress());
-      expect(router.push).toHaveBeenLastCalledWith('/cover-goal-form');
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Add details for Term insurance' })
+        .props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith({
+        pathname: '/policy-form',
+        params: { kind: 'term-life', name: 'Term insurance' },
+      });
+      router.push.mockClear();
+      act(() => renderer?.root.findByType('header').findByProps({ accessibilityLabel: 'Add insurance' })
+        .props.onPress());
+      expect(router.push).toHaveBeenLastCalledWith('/policy-form');
     } finally {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
@@ -2075,7 +1934,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it.each([1.3, 2])('keeps cover-goal forms accessible at font scale %s', (fontScale) => {
+  it.each([1.3, 2])('keeps the Insurance list accessible at font scale %s', (fontScale) => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const storeState = useAppStore((state) => state);
@@ -2086,19 +1945,15 @@ describe('route render smoke audit', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
 
     try {
-      const data = buildDemoData(todayISO());
-      const customGoal = data.coverGoals.find((goal) => goal.id === 'demo-cover-goal-family');
-      if (!customGoal) throw new Error('Demo data has no custom cover goal.');
+      const data = { ...buildDemoData(todayISO()), policies: [] };
       Object.assign(routeData, data);
       storeState.data = data;
-      routeParams.mockReturnValue({ id: customGoal.id });
+      routeParams.mockReturnValue({});
       mockFontScale = fontScale;
-      renderer = renderScreen(React.createElement(CoverGoalFormScreen));
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Cover goal name' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Counts policies of type' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Target mode' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Delete cover goal' })).toBeDefined();
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Save' })).toBeDefined();
+      renderer = renderScreen(React.createElement(InsuranceScreen));
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Add details for Term insurance' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Add details for Life insurance' })).toBeDefined();
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Add insurance' })).toBeDefined();
     } finally {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);

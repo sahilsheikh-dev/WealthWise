@@ -8,28 +8,24 @@ const MONTHS_PER_PAYMENT: Record<Policy['frequency'], number> = {
   quarterly: 3,
   'half-yearly': 6,
   yearly: 12,
+  custom: 1,
 };
 
 function dueDateAt(policy: Policy, index: number): string {
-  return addMonths(policy.startDate, index * MONTHS_PER_PAYMENT[policy.frequency]);
-}
-
-function firstTrackedIndex(policy: Policy, count: number): number {
-  let index = 0;
-  while (index < count && dueDateAt(policy, index) < policy.trackFrom) index += 1;
-  return index;
+  const interval = policy.frequency === 'custom'
+    ? policy.customIntervalMonths ?? 1
+    : MONTHS_PER_PAYMENT[policy.frequency];
+  return addMonths(policy.trackFrom, index * interval);
 }
 
 export function policySchedule(policy: Policy, asOf: string): PlanSchedule {
   if (policy.status !== 'active') return { rows: [], summary: summarizeSlots([]) };
-  let count = (policy.premiumYears ?? 0) * (12 / MONTHS_PER_PAYMENT[policy.frequency]);
-  while (count > 0 && policy.endDate !== undefined && dueDateAt(policy, count - 1) > policy.endDate) {
-    count -= 1;
-  }
-  const first = firstTrackedIndex(policy, count);
+  const lastDate = policy.endDate ?? '2100-12-31';
+  let count = 0;
+  while (count < 1400 && dueDateAt(policy, count) <= lastDate) count += 1;
   const slots = generateSlots(
     count,
-    first,
+    0,
     (index) => dueDateAt(policy, index),
     () => policy.premium,
     (index) => `policy:${index}`,

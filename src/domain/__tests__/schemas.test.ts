@@ -31,81 +31,10 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version sixteen', () => {
+  it('accepts the typed mock app data and exports schema version seventeen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(16);
+    expect(SCHEMA_VERSION).toBe(17);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
-  });
-
-  it('validates editable cover goal constraints and policy assignments', () => {
-    const goals = mockAppData.coverGoals;
-    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: goals.slice(1) }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: [...goals, goals[0]],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-term-life'
-        ? { ...goal, name: ' hEaLtH ' }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-term-life'
-        ? { ...goal, kind: 'health' as const }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: [...goals, ...Array.from({ length: 16 }, (_, index) => ({
-        id: `custom-${index}`,
-        name: `Custom ${index}`,
-        kind: null,
-        target: { mode: 'none' as const },
-      }))],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-term-life'
-        ? { ...goal, target: { mode: 'income-multiple' as const, value: 51 } }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-term-life'
-        ? { ...goal, target: { mode: 'income-multiple' as const, value: 0 } }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-health'
-        ? { ...goal, target: { mode: 'amount' as const, value: -1 } }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-health'
-        ? { ...goal, target: { mode: 'amount' as const, value: 100_000_000_001 } }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-health'
-        ? { ...goal, target: { mode: 'active-only' as const, value: 1 } }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      coverGoals: goals.map((goal) => goal.id === 'cover-health'
-        ? { ...goal, name: ' '.repeat(41) }
-        : goal),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...mockAppData.policies[0], coverGoalId: 'missing-goal' }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({ ...mockAppData, coverGoals: undefined }).success).toBe(false);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {

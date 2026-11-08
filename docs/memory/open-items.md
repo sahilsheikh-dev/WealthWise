@@ -1,14 +1,23 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-03 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-04 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
-- **P29-L:** the Insurance feature inventory is recorded in
-  [PROGRESS.md](../PROGRESS.md). Remove cover-goal management and policy
-  lifecycle controls while retaining historical policies, savings-policy
-  values/goal links and all premium-dues integrations. Schema v17 migration,
-  simplified forms/list, Undo, backups, demo and final gates remain in progress.
+- **P29-M blocked (2026-11-04):** the store writes an early insurance premium
+  payment and its linked transaction once, but `policySchedule` filters out
+  payments dated before `trackFrom`, so every due selector keeps the slot
+  pending. The current PolicyPayment and transaction-source shapes do not
+  persist slot identity. Removing the date filter would incorrectly apply
+  pre-existing v16 payments to future slots; a reliable fix needs a persisted
+  slot marker and schema migration. P29-M forbids schema changes, so no fix
+  was made. Owner authorization for a schema version bump and a migration
+  rule for legacy payments is required before resuming; see
+  [PROGRESS.md](../PROGRESS.md).
+- **P29-L complete:** the Insurance dependency inventory, simplification and
+  v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
+  former P29-G cover-goal feature is removed; Home remains unchanged. Its
+  physical-device checks below remain unverified.
 - **P29-J bank-balance comparison:** no calculation bug was proven. The owner
   did not provide the bank outstanding/as-of date, principal, contractual
   tenure, or app payment date/amount records. The actual statement-method
@@ -21,7 +30,8 @@
   Undo after deleting a linked holding is withdrawn. Deletion has never offered
   Undo, and adding it is out of scope. The retained requirement is that all
   Budget item links to the deleted holding are cleared in the same persisted
-  write; the acceptance test passes. P29-B through P29-K are Done.
+  write; the acceptance test passes. P29-B through P29-L are Done; P29-M is
+  blocked by its no-schema-change constraint.
 
 - **Spreadsheet backup scope:** supplied monthly income and expense items,
   historical loan payments, and the provided emergency-fund activity are
@@ -93,11 +103,18 @@
   targets on iOS and Android devices. Automated Jest and exports do not prove
   native rendering.
 
-- **P29-G:** verify editable cover-goal forms, delete confirmation and Undo,
-  policy assignment dropdowns, unassigned policies, custom-goal premium
-  categories, and font scales 1.3 and 2.0 on iOS and Android. The Home total
-  cover source was not changed; automated route tests and Expo exports do not
-  verify native presentation.
+- **P29-L:** verify Term/Life placeholders, full policy editing and deletion
+  confirmation/Undo, all premium frequencies including custom month-end
+  clamping, pending/overdue dues, payment advancement, reminder behavior and
+  large-font layout at scales 1.3 and 2.0 on iOS and Android. Home's
+  `policySummary` source and screen remain unchanged. Jest and Expo exports
+  simulate or build the app; they do not verify native presentation.
+- **P29-M:** the reported early-payment defect remains unresolved. Native
+  checks for one-write clearing, next-due movement, reminder advancement,
+  Undo and all frequency/entry-point combinations are not complete because
+  correct persisted slot identity requires a schema change prohibited by the
+  task. The owner's reported device behavior is recorded as report, not a
+  reproduced physical-device run.
 
 - **P24-A:** verify local-notification delivery and timing, permission and
   blocked-settings flows, reboot restoration behavior, lock-screen text,
@@ -121,8 +138,8 @@
   is not treated as a recorded valuation; current value is based on opening
   capital and posted entries, with no estimated interest. Manual holdings have
   no start-date field, so their opening cash flow uses the injected as-of date.
-- P29-H itself did not change schema v15 or the user-owned Home screen; P29-I
-  subsequently advanced the persisted schema to v16.
+- P29-H did not change schema v15; P29-I advanced it to v16 and P29-L to v17.
+  Home remained unmodified throughout these steps.
 - **Assumed for P29-I:** the current manual holding model and form do not
   contain rate or maturity fields. No new fields were introduced; Fixed
   deposits use their opening amount, recorded valuation and withdrawal for
@@ -131,11 +148,19 @@
   instruction or pointer files are intended.
 - Fixed Emergency fund allocation items use the same form as custom items but
   retain their built-in title and metadata; fixed titles are read-only.
-- **Assumed for P29-G:** policies assigned to a no-kind custom cover goal use
-  the generic Insurance premium category for future rows/payments; typed
-  premium categories remain derived from policy kind. The Budget Insurance
-  system section and its categories remain fixed and out of scope; making them
-  editable needs a separate scope decision.
+- **Assumed for P29-L:** the Life placeholder maps to `life-savings`; Term maps
+  to `term-life`. Typed premium categories remain derived from policy kind;
+  savings-policy premiums use the existing generic Insurance category. The
+  Budget Insurance system section and its categories remain fixed and out of
+  scope; making them editable needs a separate product decision.
+- P29-L preserves `nominee`, `status`, `premiumYears`, `trackFrom`, `endDate`,
+  savings-policy `currentValue`/`valueAsOf`, and savings-policy goal links.
+  `status` still marks Ended records and suppresses dues; `trackFrom` is the
+  user-editable next-due date; `endDate` still caps legacy schedules;
+  `currentValue` and goal links remain used by savings-policy goal calculations.
+  `nominee` and `premiumYears` remain intact for data compatibility although
+  the simplified tracker no longer edits them or uses `premiumYears` to
+  schedule dues.
 - The P20-V form omits the Percent option for non-monthly schedules because the
   frozen SegmentedControl has no disabled option API; validation rejects
   non-monthly percent items as well.
