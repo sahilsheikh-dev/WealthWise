@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
@@ -11,6 +11,7 @@ import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
 import { IconButton } from '../src/components/IconButton';
+import { TopAnchoredSheet } from '../src/components/TopAnchoredSheet';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -185,43 +186,39 @@ export default function GoalFormScreen() {
       <Controller control={control} name="year" render={({ field }) => (
         <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} icon="calendar-outline" />
       )} />
-      <Modal
+      <TopAnchoredSheet
         visible={pickerVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setPickerVisible(false)}
+        onClose={() => setPickerVisible(false)}
+        sheetTestID="goal-asset-picker-sheet"
+        contentStyle={[styles.picker, { backgroundColor: colors.surface }]}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.picker, { backgroundColor: colors.surface }]}>
-            <AppText weight="bold" style={typography.h1}>Link an asset</AppText>
-            <ScrollView>
-              {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
-                .map((instrument) => (
-                    <Pressable
-                      key={instrument.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
-                      onPress={() => {
-                        setValue('links', [...links, {
-                          instrumentId: instrument.id,
-                        }], { shouldDirty: true, shouldValidate: true });
-                        setPickerVisible(false);
-                      }}
-                      style={[styles.pickerRow, { borderBottomColor: colors.border }]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <AppText weight="semibold">{instrument.name}</AppText>
-                        <AppText style={{ color: colors.text3 }}>
-                          {formatAmount(instrument.value, 'exact', 1)}
-                        </AppText>
-                      </View>
-                    </Pressable>
-                ))}
-            </ScrollView>
-            <Button label="Done" onPress={() => setPickerVisible(false)} />
-          </View>
-        </View>
-      </Modal>
+        <AppText weight="bold" style={typography.h1}>Link an asset</AppText>
+        <ScrollView style={styles.pickerScroll}>
+          {instruments.filter((instrument) => !links.some((link) => link.instrumentId === instrument.id))
+            .map((instrument) => (
+              <Pressable
+                key={instrument.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
+                onPress={() => {
+                  setValue('links', [...links, {
+                    instrumentId: instrument.id,
+                  }], { shouldDirty: true, shouldValidate: true });
+                  setPickerVisible(false);
+                }}
+                style={[styles.pickerRow, { borderBottomColor: colors.border }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <AppText weight="semibold">{instrument.name}</AppText>
+                  <AppText style={{ color: colors.text3 }}>
+                    {formatAmount(instrument.value, 'exact', 1)}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+        </ScrollView>
+        <Button label="Done" onPress={() => setPickerVisible(false)} />
+      </TopAnchoredSheet>
     </FormScreen>
   );
 }
@@ -230,7 +227,7 @@ const styles = StyleSheet.create({
   linkSection: { gap: 8 },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   linkName: { flex: 1, gap: 2 },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' },
-  picker: { maxHeight: '80%', padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, gap: 12 },
+  picker: { paddingHorizontal: 20, paddingBottom: 16, gap: 12, alignSelf: 'stretch' },
+  pickerScroll: { flexShrink: 1 },
   pickerRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
 });
