@@ -7,6 +7,7 @@ export type Transaction = {
   category: string;
   note: string;
   date: ISODate;
+  source?: { kind: 'plan-log' | 'loan-payment' | 'ef-entry'; parentId: string; entryId: string };
 };
 
 export type Goal = {
@@ -60,8 +61,10 @@ export type PlanHolding = {
   stepUpPct: number;
   tenureYears: number;
   startDate: ISODate;
+  trackFrom: ISODate;
   opening: number;
   actualValue: number | null;
+  actualValueDate: ISODate | null;
   logs: LogEntry[];
 };
 

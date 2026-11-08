@@ -22,11 +22,11 @@ import {
   portfolioTotals,
   type PortfolioRow,
 } from '../../src/domain/portfolio';
-import { behindBy, installmentsDue, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
+import { behindBy, installmentsTracked, loggedCount, planInvested, planProgressPct, planValue, projection } from '../../src/domain/sip';
 import type { Holding, HoldingType } from '../../src/domain/types';
 import { useAppData } from '../../src/data/useAppData';
 import { todayISO } from '../../src/lib/clock';
-import { formatINR, formatINRShort } from '../../src/lib/format';
+import { formatDate, formatINR, formatINRShort } from '../../src/lib/format';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -64,7 +64,7 @@ export default function InvestScreen() {
             accessibilityRole="button"
             accessibilityLabel="New SIP"
             onPress={() => {
-              // TODO(phase5)
+              // TODO(phase4)
             }}
             style={[styles.headerButton, { backgroundColor: colors.primaryDim }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.primary }]}>New SIP</AppText>
@@ -73,7 +73,7 @@ export default function InvestScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add holding"
             onPress={() => {
-              // TODO(phase5)
+              // TODO(phase4)
             }}
             style={[styles.headerButton, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
             <AppText weight="semibold" style={[typography.chip, { color: colors.text2 }]}>Add</AppText>
@@ -159,7 +159,7 @@ function PlanCard({
   asOf: ReturnType<typeof todayISO>;
 }) {
   const { colors } = useTheme();
-  const due = installmentsDue(holding, asOf);
+  const due = installmentsTracked(holding, asOf);
   const overdue = behindBy(holding, asOf);
   const planProjection = projection(holding);
   const currentValue = planValue(holding, asOf);
@@ -177,14 +177,16 @@ function PlanCard({
         <View style={styles.planValue}>
           <AppText weight="bold" style={typography.amount}>{formatINR(currentValue)}</AppText>
           <AppText style={[typography.meta, { color: colors.text3 }]}>
-            {holding.actualValue === null ? 'Estimated value' : 'Actual value'}
+            {holding.actualValue === null
+              ? 'Estimated value'
+              : `Actual value as of ${formatDate(holding.actualValueDate!)}`}
           </AppText>
         </View>
       </View>
       <ProgressBar percent={progress} />
       <AppText style={[typography.meta, styles.planDescription, { color: colors.text2 }]}>
         Invested {formatINR(planInvested(holding))}. Plan: {formatINRShort(contributionPlan)} in contributions.
-        {' '}{loggedCount(holding)} logged · {due} due so far.
+        {' '}{loggedCount(holding)} logged, {due} due since tracking began.
       </AppText>
       {overdue > 0 ? (
         <AppText style={[typography.meta, { color: colors.err, marginTop: 4 }]}>{overdue} behind</AppText>
@@ -192,13 +194,13 @@ function PlanCard({
       <ActionRow
         actions={[
           { label: 'Log installment', variant: 'primary', onPress: () => {
-            // TODO(phase5)
+            // TODO(phase4)
           } },
           { label: `Logs (${loggedCount(holding)})`, onPress: () => {
-            // TODO(phase5)
+            // TODO(phase4)
           } },
           { label: 'Edit', onPress: () => {
-            // TODO(phase5)
+            // TODO(phase4)
           } },
         ]}
       />

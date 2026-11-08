@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Screen, ScreenHeader } from '../../src/components/ui';
+import { useAppStore } from '../../src/data/store';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -15,23 +16,55 @@ type MenuRowProps = {
 };
 
 export default function MoreScreen() {
-  const { isDark, toggleTheme } = useTheme();
+  const { themePreference, toggleTheme } = useTheme();
+  const name = useAppStore((state) => state.data.settings.name);
+  const devActions = useAppStore((state) => state.devActions);
   return (
     <Screen>
       <ScreenHeader title="More" />
       <View style={styles.list}>
-        <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
+        <MenuRow label="Your name" icon="user" detail={name || 'Not set'} onPress={() => router.push('/name-form')} />
+        <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
         <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
+        <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
         <MenuRow label="Export" icon="download" detail="Coming soon" disabled />
-        <MenuRow
-          label="Switch theme"
-          icon={isDark ? 'sun' : 'moon'}
-          detail={isDark ? 'Dark' : 'Light'}
-          onPress={toggleTheme}
-        />
+        <MenuRow label="Reset" icon="rotate-ccw" detail="Coming soon" disabled />
       </View>
+      {__DEV__ && devActions ? (
+        <View style={styles.devList}>
+          <AppText style={[typography.label, styles.devHeading]}>DEVELOPER TOOLS</AppText>
+          <MenuRow
+            label="Load demo data"
+            icon="database"
+            onPress={() => Alert.alert('Load demo data?', 'Replace local app data with the bundled sample data?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Load demo data', onPress: devActions.loadDemoData },
+            ])}
+          />
+          <MenuRow
+            label="Erase all data"
+            icon="trash-2"
+            onPress={() => Alert.alert('Erase all data?', 'This replaces your local data with an empty account.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Erase all data', style: 'destructive', onPress: devActions.eraseAll },
+            ])}
+          />
+          <MenuRow
+            label="Simulate corrupt storage"
+            icon="alert-triangle"
+            onPress={() => Alert.alert('Simulate corrupt storage?', 'The app will restart and show its recovery screen.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Continue', style: 'destructive', onPress: () => void devActions.simulateCorruption() },
+            ])}
+          />
+        </View>
+      ) : null}
     </Screen>
   );
+}
+
+function themePreferenceLabel(preference: 'system' | 'dark' | 'light'): string {
+  return preference[0]!.toUpperCase() + preference.slice(1);
 }
 
 function MenuRow({ label, icon, detail, disabled = false, onPress }: MenuRowProps) {
@@ -61,6 +94,8 @@ function MenuRow({ label, icon, detail, disabled = false, onPress }: MenuRowProp
 
 const styles = StyleSheet.create({
   list: { marginHorizontal: 20, marginTop: 12 },
+  devList: { marginHorizontal: 20, marginTop: 24 },
+  devHeading: { marginBottom: 4 },
   row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   iconWrap: { width: 36, height: 36, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   label: { flex: 1, fontSize: 13 },

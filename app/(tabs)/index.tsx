@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { View, StyleSheet, Pressable } from 'react-native';
 
 import {
@@ -13,7 +14,8 @@ import {
 import { homeSummary } from '../../src/domain/summary';
 import { formatINR, formatINRShort } from '../../src/lib/format';
 import { useAppData } from '../../src/data/useAppData';
-import { todayISO } from '../../src/lib/clock';
+import { currentHour, todayISO } from '../../src/lib/clock';
+import { greetingFor } from '../../src/lib/greeting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -31,8 +33,8 @@ export default function HomeScreen() {
   return (
     <Screen>
       <View style={styles.homeHeader}>
-        <AppText style={[typography.meta, { color: colors.text3 }]}>Good evening,</AppText>
-        <AppText weight="bold" style={typography.h1}>{data.settings.name}</AppText>
+        <AppText style={[typography.meta, { color: colors.text3 }]}>{greetingFor(currentHour())},</AppText>
+        <AppText weight="bold" style={typography.h1}>{data.settings.name || 'Welcome'}</AppText>
       </View>
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net worth</AppText>
@@ -55,7 +57,11 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={action.label}
             onPress={() => {
-              // TODO(phase5)
+              if (action.label === 'Add txn') {
+                router.push('/transaction-form');
+                return;
+              }
+              // TODO(phase4)
             }}
             style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Feather name={action.icon} size={17} color={colors.primary} />
