@@ -29,7 +29,9 @@
   and a final tree equal to main. The later route-diagnostic and ledger
   revisions are outside the read-only snapshot. Full details are in
   [PROGRESS.md](../PROGRESS.md).
-- The protected Budget and Home hashes remain unchanged; current values and
+- Protected hashes reverified with `git hash-object`: Budget
+  `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
+  `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
