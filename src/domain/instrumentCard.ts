@@ -1,5 +1,4 @@
 import { valueStaleness } from './holdingActions';
-import { holdingCapabilities } from './holdingCapabilities';
 import { behindBy, installmentsTracked, loggedTrackedCount, planInvested, planProgressPct, planValue, projection } from './sip';
 import { planSchedule } from './schedule';
 import { investmentEntryTotals } from './investmentReturns';
@@ -55,7 +54,6 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
   }
 
   if (holding.kind === 'plan') {
-    const capabilities = holdingCapabilities(holding.type);
     const schedule = planSchedule(holding, ctx.asOf);
     const projectionData = projection(holding);
     const overdue = behindBy(holding, ctx.asOf);
@@ -110,14 +108,13 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       pendingDueAmount: schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0,
       headerAction: { id: 'edit', label: 'Edit' },
       actions: [
-        ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Log installment' }] : []),
+        { id: 'deposit', label: 'Log installment' },
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
-        ...(capabilities.recurring ? [{ id: 'schedule' as const, label: `Schedule (${holding.logs.length})` }] : []),
+        { id: 'schedule', label: `Schedule (${holding.logs.length})` },
       ],
     };
   }
 
-  const capabilities = holdingCapabilities(holding.type);
   const stale = valueStaleness(holding.valueAsOf, ctx.asOf);
   const valueCaption = !holding.valueAsOf
     ? 'Value date unknown'
@@ -130,10 +127,6 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
   const entryTotals = investmentEntryTotals(holding.logs);
   const hasBackdatedEntries = Boolean(holding.valueAsOf)
     && holding.logs.some((entry) => entry.date < (holding.valueAsOf ?? ''));
-  const helperLines = [
-    ...(hasBackdatedEntries ? ['Entries dated before the last valuation are assumed included in it.'] : []),
-    ...(!capabilities.entries && holding.logs.length > 0 ? ['Entries from earlier are kept.'] : []),
-  ];
   return {
     kind: 'manual',
     name: holding.name,
@@ -156,13 +149,15 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { amount: Math.abs(row.gain) },
         { text: returnText },
       ],
-    ...(helperLines.length > 0 ? { helperLine: helperLines.join(' ') } : {}),
+    ...(hasBackdatedEntries ? {
+      helperLine: 'Entries dated before the last valuation are assumed included in it.',
+    } : {}),
     statuses: stale.stale ? [{ label: 'Stale value', tone: 'neutral' }] : [],
     headerAction: { id: 'edit', label: 'Edit' },
     actions: [
-      ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
+      { id: 'deposit', label: 'Deposit' },
       { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
-      ...(capabilities.entries || holding.logs.length > 0 ? [{ id: 'entries' as const, label: `Entries (${holding.logs.length})` }] : []),
+      { id: 'entries', label: `Entries (${holding.logs.length})` },
       ...(stale.stale ? [{ id: 'confirm' as const, label: 'Confirm' }] : []),
     ],
   };

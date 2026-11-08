@@ -283,16 +283,7 @@ describe('goal asset links', () => {
     const retirement = data.goals.find((goal) => goal.id === 'demo-goal-retirement');
     const home = data.goals.find((goal) => goal.id === 'demo-goal-home');
     if (!emergency || !retirement || !home) throw new Error('Demo goal fixtures missing');
-    const fixedDeposit = data.holdings.find((holding) => holding.id === 'demo-holding-fd');
-    const recurringDeposit = data.holdings.find((holding) => holding.id === 'demo-holding-recurring-deposit');
-    if (!fixedDeposit || !recurringDeposit || recurringDeposit.kind !== 'plan') {
-      throw new Error('Demo deposit capability fixtures missing');
-    }
-    expect(fixedDeposit.type).toBe('Fixed deposit');
-    expect(fixedDeposit.logs).toEqual([]);
-    expect(recurringDeposit.type).toBe('Recurring deposit');
-    expect(recurringDeposit.logs.length).toBeGreaterThan(0);
-    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(187_000);
+    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(189_000);
     expect(goalSavedFor(retirement, data, '2026-10-12')).toBeGreaterThan(0);
     expect(goalSavedFor(home, data, '2026-10-12')).toBeGreaterThan(0);
   });

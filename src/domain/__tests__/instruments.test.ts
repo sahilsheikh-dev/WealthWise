@@ -123,19 +123,6 @@ describe('instrument-linked transactions', () => {
     expect(() => addInstrumentTransaction(planData, {
       kind: 'deposit', instrumentId: 'plan', amount: 10, date: '2026-10-11', note: '',
     }, ids('unused'), today)).toThrow('Date cannot be in the future');
-
-    const fixedDeposit = addHolding(empty(), {
-      name: 'Fixed deposit', type: 'Fixed deposit', invested: 100, value: 100, valueAsOf: today,
-    }, () => 'fixed');
-    expect(() => addInstrumentTransaction(fixedDeposit, {
-      kind: 'deposit', instrumentId: 'fixed', amount: 10, date: today, note: '',
-    }, ids('unused'), today))
-      .toThrow('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
-    const payout = addInstrumentTransaction(fixedDeposit, {
-      kind: 'withdrawal', instrumentId: 'fixed', amount: 100, date: today, note: 'Maturity payout',
-    }, ids('payout-entry', 'payout-tx'), today);
-    expect(payout.holdings[0]?.logs[0]).toMatchObject({ kind: 'Withdrawal', amount: 100 });
-    expect(payout.transactions[0]).toMatchObject({ type: 'income', category: 'Withdrawal' });
   });
 
   it('blocks transaction type/category patching and preserves liability transaction locks', () => {

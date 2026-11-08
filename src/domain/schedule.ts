@@ -10,7 +10,6 @@ import {
   type SlotSummary,
 } from './slots';
 import { policySchedule } from './policySchedule';
-import { holdingCapabilities } from './holdingCapabilities';
 import { PERIODS_PER_YEAR, scheduledDate, totalPeriods } from './sip';
 import type {
   AppData,
@@ -101,17 +100,13 @@ function planRows(plan: PlanHolding, asOf: ISODate): ScheduleRow[] {
 }
 
 export function planSchedule(plan: PlanHolding, asOf: ISODate): PlanSchedule {
-  if (!holdingCapabilities(plan.type).recurring) {
-    const rows: ScheduleRow[] = [];
-    return { rows, summary: summarizeSlots(rows) };
-  }
   const rows = planRows(plan, asOf);
   return { rows, summary: summarizeSlots(rows) };
 }
 
 export function planNextRows(plan: PlanHolding, asOf: ISODate, count: number): ScheduleRow[] {
   const take = Math.max(0, Math.floor(count));
-  if (take === 0 || !holdingCapabilities(plan.type).recurring) return [];
+  if (take === 0) return [];
   const total = totalPeriods(plan);
   const first = firstPlanIndex(plan);
   const depositCount = plan.logs.reduce((count, entry) =>

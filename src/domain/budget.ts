@@ -1,7 +1,6 @@
 import { liabilitySchedule, planSchedule } from './schedule';
 import { policySchedule } from './policySchedule';
 import { investCategoryFor } from './links';
-import { holdingCapabilities } from './holdingCapabilities';
 import { monthEndDate, monthPositionAt, normalizeMoney } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
@@ -954,10 +953,6 @@ export function addItem(
       if (!data.holdings.some((holding) => holding.id === input.holdingId)) {
         throw new BudgetMutationError('invalid-holding-link', 'Linked asset does not exist.');
       }
-      const linkedHolding = data.holdings.find((holding) => holding.id === input.holdingId);
-      if (!linkedHolding || !holdingCapabilities(linkedHolding.type).recurring) {
-        throw new BudgetMutationError('invalid-holding-link', 'Fixed deposits cannot be linked to recurring Budget schedules.');
-      }
       if (items.some((item) => item.holdingId === input.holdingId)) {
         throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
       }
@@ -1007,10 +1002,6 @@ export function editItem(
       }
       if (!data.holdings.some((holding) => holding.id === nextHoldingId)) {
         throw new BudgetMutationError('invalid-holding-link', 'Linked asset does not exist.');
-      }
-      const linkedHolding = data.holdings.find((holding) => holding.id === nextHoldingId);
-      if (!linkedHolding || !holdingCapabilities(linkedHolding.type).recurring) {
-        throw new BudgetMutationError('invalid-holding-link', 'Fixed deposits cannot be linked to recurring Budget schedules.');
       }
       if (items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId)) {
         throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');

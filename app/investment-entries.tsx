@@ -18,7 +18,6 @@ import {
 } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { useSort } from '../src/data/useSort';
 import { holdingInvested, holdingValue, isCashOrBankHoldingType } from '../src/domain/portfolio';
 import { investmentEntryTotals } from '../src/domain/investmentReturns';
@@ -55,14 +54,13 @@ export default function InvestmentEntriesScreen() {
   const scheduleSorting = useSort('schedules');
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
-  const capabilities = holding ? holdingCapabilities(holding.type) : null;
   const entrySortList = holding?.kind === 'plan' ? 'logs' : 'entries';
   const entrySorting = useSort(entrySortList);
   const [tab, setTab] = useState<Tab>('Schedule');
   const [filter, setFilter] = useState<Filter>('All');
   const schedule = useMemo(
-    () => holding?.kind === 'plan' && capabilities?.recurring ? planSchedule(holding, today) : null,
-    [capabilities?.recurring, holding, today],
+    () => holding?.kind === 'plan' ? planSchedule(holding, today) : null,
+    [holding, today],
   );
   const entries = useMemo(
     () => holding
@@ -72,7 +70,7 @@ export default function InvestmentEntriesScreen() {
       : [],
     [holding],
   );
-  const effectiveTab: Tab = holding?.kind === 'manual' || !capabilities?.recurring ? 'Entries' : tab;
+  const effectiveTab: Tab = holding?.kind === 'manual' ? 'Entries' : tab;
   const filteredSchedule = useMemo(() => {
     if (!schedule) return [];
     return filter === 'All'
@@ -114,13 +112,11 @@ export default function InvestmentEntriesScreen() {
         fallbackHref="/assets"
         rightActions={[{
           icon: 'plus',
-          label: capabilities?.entries ? 'Add investment entry' : 'Record maturity payout',
-          onPress: () => router.push(
-            `/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}${capabilities?.entries ? '' : '&kind=Withdrawal'}` as Href,
-          ),
+          label: 'Add investment entry',
+          onPress: () => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href),
         }]}
         menu={[
-          ...(holding.kind === 'plan' && capabilities?.recurring && (schedule?.summary.overdue ?? 0) + (schedule?.summary.ongoing ?? 0) > 0
+          ...(holding.kind === 'plan' && (schedule?.summary.overdue ?? 0) + (schedule?.summary.ongoing ?? 0) > 0
             ? [{
               label: 'Clear past dues',
               icon: 'check-circle' as const,
@@ -159,7 +155,7 @@ export default function InvestmentEntriesScreen() {
           },
         ]}
       />
-      {holding.kind === 'plan' && capabilities?.recurring ? (
+      {holding.kind === 'plan' ? (
         <View style={styles.segment}>
           <SegmentedControl
             value={effectiveTab}

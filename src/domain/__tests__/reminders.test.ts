@@ -60,16 +60,6 @@ function plannedHolding(changes: Partial<PlanHolding> = {}): PlanHolding {
 }
 
 describe('reminder planner', () => {
-  it('does not plan reminders for a fixed deposit with legacy schedule fields', () => {
-    const data = {
-      ...emptyAppData('2024-02-01'),
-      holdings: [plannedHolding({ type: 'Fixed deposit', tenureYears: 20 })],
-    };
-
-    expect(planReminders(data, preferences, new Date(2024, 1, 1, 8), 60))
-      .toEqual([]);
-  });
-
   it('includes unpaid plans, recurring liabilities, active policies, and skips manual or inactive sources', () => {
     const manual: ManualHolding = {
       id: 'manual',

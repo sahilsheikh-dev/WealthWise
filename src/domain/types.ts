@@ -74,20 +74,17 @@ export const LIABILITY_TYPES = [
 
 export type LiabilityType = (typeof LIABILITY_TYPES)[number];
 
-export const HOLDING_TYPES = [
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-] as const;
-
-export type HoldingType = (typeof HOLDING_TYPES)[number];
+export type HoldingType =
+  | 'Mutual fund / SIP'
+  | 'Stocks / ETF'
+  | 'Fixed deposit'
+  | 'Recurring deposit'
+  | 'EPFO / PF'
+  | 'Savings account'
+  | 'Cash'
+  | 'Gold'
+  | 'Silver'
+  | 'Other';
 
 export type ManualHolding = {
   id: string;

@@ -22,7 +22,6 @@ import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
 import { customBudgetCategories } from '../src/domain/budget';
 import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { suggestPolicyForTransaction } from '../src/domain/coverGoals';
@@ -205,17 +204,13 @@ export default function TransactionFormScreen() {
       ? [transaction.category]
       : []),
   ];
-  const depositInstruments = instruments.filter((item) =>
-    holdingCapabilities(item.type).entries ||
-    (transaction?.source?.kind === 'holding-entry' && transaction.source.parentId === item.id && transaction.type === 'invest'),
-  );
   const instrumentChoices = [
-    ...depositInstruments.map((item) => item.id),
+    ...instruments.map((item) => item.id),
     ...(!editing || (transaction?.type === 'invest' && !transaction.source) ? [createInvestmentChoice] : []),
     ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
-    ...depositInstruments.map((item) => [item.id, `${item.name} (${item.type})`]),
+    ...instruments.map((item) => [item.id, `${item.name} (${item.type})`]),
     [createInvestmentChoice, '+ Create new investment'],
     [noInvestmentChoice, 'Not linked'],
   ]);

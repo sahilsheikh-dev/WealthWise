@@ -151,9 +151,9 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 16 is
+Zustand persists app data through AsyncStorage. Persisted schema version 15 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 15. Backup import verifies the file integrity and validates
+versions 1 through 14. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -167,16 +167,6 @@ to that goal, so an asset may be counted in multiple goals. Emergency-fund
 bucket targets use the user-set goal target with the three-month minimum
 retained only as a floor; each bucket's available amount is the sum of the full
 values of assets linked to that bucket.
-
-### Holding entry capabilities
-
-Fixed deposits are one-time holdings: they do not accept new deposits or
-recurring schedules and cannot be linked to recurring Budget schedules.
-Maturity proceeds are recorded as withdrawals. Recurring deposits, SIPs and
-other recurring-capable holdings retain their supported entry and schedule
-flows. Existing entries on a Fixed deposit are preserved and remain available
-for review, editing and deletion; the app blocks changing a holding with
-entries to Fixed deposit.
 
 ### Insurance cover goals
 

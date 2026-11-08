@@ -12,7 +12,6 @@ authoritative rationale and history.
 - [DEC-P29F4](../PROGRESS.md#dec-p29f4-final-stabilization-audit)
 - [DEC-P29E-HOLDING-DELETE](../PROGRESS.md#dec-p29e-holding-delete-owner-decision-and-acceptance-correction)
 - [DEC-P29H-ASSET-VALUATION](../PROGRESS.md#dec-p29h-asset-valuation)
-- [DEC-P29I-CAPABILITIES](../PROGRESS.md#dec-p29i-capabilities--schema-v16-migration)
 - [DEC-P29J-LIABILITY-AUDIT](../PROGRESS.md#dec-p29j-liability-audit)
 - [DEC-P24A](../PROGRESS.md#dec-p24a-2026-11-01)
 - [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)

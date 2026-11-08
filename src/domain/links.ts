@@ -1,5 +1,4 @@
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
-import { holdingCapabilities } from './holdingCapabilities';
 import { GENERIC_INSURANCE_CATEGORY, policyPremiumCategory, policyPremiumCategoryFor } from './policyCategories';
 import type { AppData, CoverGoal, HoldingType, InvestmentEntry, Transaction } from './types';
 
@@ -308,28 +307,12 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     const sectionIds = new Set(data.budgetPlan.sections.map((section) => section.id));
     for (const [itemIndex, item] of data.budgetPlan.items.entries()) {
       if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['budgetPlan', 'items', itemIndex, 'sectionId']);
-      const holding = item.holdingId
-        ? data.holdings.find((candidate) => candidate.id === item.holdingId)
-        : undefined;
-      if (holding && !holdingCapabilities(holding.type).recurring) {
-        add('one-time-budget-link', 'Fixed deposits cannot be linked to recurring Budget schedules.', [
-          'budgetPlan', 'items', itemIndex, 'holdingId',
-        ]);
-      }
     }
   }
   for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
     const sectionIds = new Set(budget.sections.map((section) => section.id));
     for (const [itemIndex, item] of budget.items.entries()) {
       if (!sectionIds.has(item.sectionId)) add('missing-budget-section', 'Budget item section does not exist.', ['monthBudgets', monthIndex, 'items', itemIndex, 'sectionId']);
-      const holding = item.holdingId
-        ? data.holdings.find((candidate) => candidate.id === item.holdingId)
-        : undefined;
-      if (holding && !holdingCapabilities(holding.type).recurring) {
-        add('one-time-budget-link', 'Fixed deposits cannot be linked to recurring Budget schedules.', [
-          'monthBudgets', monthIndex, 'items', itemIndex, 'holdingId',
-        ]);
-      }
     }
   }
   for (const policy of data.policies) {

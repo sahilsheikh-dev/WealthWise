@@ -75,12 +75,6 @@ const policy = (changes: Partial<Policy> = {}): Policy => ({
 });
 
 describe('pending item projection', () => {
-  it('excludes a non-recurring fixed deposit plan from pending dues', () => {
-    const data = { ...base(), holdings: [plan({ type: 'Fixed deposit' })] };
-
-    expect(pendingItems(data, '2026-02', '2026-02-01')).toEqual([]);
-  });
-
   it('creates recurring budget dues only in due months and clamps the due day', () => {
     const data = {
       ...base(),

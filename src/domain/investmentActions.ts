@@ -1,5 +1,4 @@
 import { NotFoundError } from './actions';
-import { holdingCapabilities } from './holdingCapabilities';
 import { findLinkedTransaction, investCategoryFor } from './links';
 import { holdingValue } from './portfolio';
 import { formatINR } from '../lib/format';
@@ -47,9 +46,6 @@ export function addInvestmentEntry(
   today: ISODate,
 ): AppData {
   const holding = getHolding(data, holdingId);
-  if (input.kind === 'Deposit' && !holdingCapabilities(holding.type).entries) {
-    throw new Error('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
-  }
   const adjustment = snapshotAdjustmentForEntry(holding, input);
   const entry: InvestmentEntry = {
     ...input,

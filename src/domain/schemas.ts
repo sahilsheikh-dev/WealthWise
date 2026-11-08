@@ -5,25 +5,34 @@ import { addDays, isValidISO, monthKey, shiftMonth } from './dates';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
-import { holdingCapabilities } from './holdingCapabilities';
 import {
   EARNED_INCOME_CATEGORIES,
   NON_EARNED_INCOME_CATEGORIES,
   COVER_POLICY_TYPES,
-  HOLDING_TYPES,
   THEME_IDS,
   type AppData,
   type ISODate,
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 15;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
 const moneySchema = z.number().finite().min(-100_000_000_000).max(100_000_000_000);
 const frequencySchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
-const holdingTypeSchema = z.enum(HOLDING_TYPES);
+const holdingTypeSchema = z.enum([
+  'Mutual fund / SIP',
+  'Stocks / ETF',
+  'Fixed deposit',
+  'Recurring deposit',
+  'EPFO / PF',
+  'Savings account',
+  'Cash',
+  'Gold',
+  'Silver',
+  'Other',
+]);
 const investmentEntrySchema = z.object({
   id: idSchema,
   date: isoDateSchema,
@@ -95,13 +104,6 @@ const planHoldingSchema = z.object({
   actualValueDate: isoDateSchema.nullable(),
   logs: z.array(investmentEntrySchema),
 }).superRefine((holding, context) => {
-  if (!holdingCapabilities(holding.type).recurring) {
-    context.addIssue({
-      code: 'custom',
-      path: ['type'],
-      message: `${holding.type} does not support a recurring deposit schedule.`,
-    });
-  }
   if ((holding.actualValue === null) !== (holding.actualValueDate === null)) {
     context.addIssue({
       code: 'custom',
@@ -733,13 +735,6 @@ export function makePlanFormSchema(
     actualValue: value.actualValue ?? null,
     actualValueDate: value.actualValueDate || null,
   })).superRefine((value, context) => {
-    if (!holdingCapabilities(value.type).recurring) {
-      context.addIssue({
-        code: 'custom',
-        path: ['type'],
-        message: `${value.type} does not support a recurring deposit schedule.`,
-      });
-    }
     if (isValidISO(value.trackFrom) && value.trackFrom < value.startDate) {
       context.addIssue({ code: 'custom', path: ['trackFrom'], message: "Tracking can't start before the plan" });
     } else if (value.trackFrom && !isValidISO(value.trackFrom)) {
@@ -916,21 +911,13 @@ export function makeGoalFormSchema(
   });
 }
 
-export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean }) {
+export function makeHoldingFormSchema(ctx: { otherNames: string[] }) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
     type: holdingTypeFormSchema,
     invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
     value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
-  }).superRefine((value, context) => {
-    if (ctx.entriesExist && !holdingCapabilities(value.type).entries) {
-      context.addIssue({
-        code: 'custom',
-        path: ['type'],
-        message: 'Remove the existing entries before changing this holding to Fixed deposit.',
-      });
-    }
   });
 }
 

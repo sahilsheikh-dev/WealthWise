@@ -1,5 +1,4 @@
 import { NotFoundError } from './actions';
-import { holdingCapabilities } from './holdingCapabilities';
 import { syncHoldingTransactions } from './investmentActions';
 import type { AppData, PlanHolding } from './types';
 
@@ -19,9 +18,6 @@ function assertPlanInvariants(plan: Pick<PlanHolding, 'startDate' | 'trackFrom' 
 }
 
 export function addPlan(data: AppData, input: AddPlanInput, newId: () => string): AppData {
-  if (!holdingCapabilities(input.type).recurring) {
-    throw new Error(`${input.type} does not support a recurring deposit schedule.`);
-  }
   const plan: PlanHolding = { ...input, id: newId(), kind: 'plan', logs: [] };
   assertPlanInvariants(plan);
   return { ...data, holdings: [...data.holdings, plan] };
@@ -30,9 +26,6 @@ export function addPlan(data: AppData, input: AddPlanInput, newId: () => string)
 export function updatePlan(data: AppData, id: string, patch: PlanPatch): AppData {
   const current = getPlan(data, id);
   const updated = { ...current, ...patch };
-  if (!holdingCapabilities(updated.type).recurring) {
-    throw new Error(`${updated.type} does not support a recurring deposit schedule.`);
-  }
   assertPlanInvariants(updated);
   const transactions = syncHoldingTransactions(data.transactions, current, updated);
   return {

@@ -40,13 +40,6 @@
   warnings, Expo Doctor 21/21, and Android/iOS exports all pass. A generic
   14-payment comparison found only sub-EMI convention differences; the owner's
   actual bank comparison remains open pending the missing records.
-- P29-I makes Fixed deposits one-time holdings while preserving legacy entries,
-  keeps Recurring deposits and other recurring-capable holdings on their
-  existing entry/schedule paths, and migrates schema v15 to v16 with raw-byte
-  archival and backup compatibility through v15.
-- P29-I validation: 85 suites/1078 tests pass; TypeScript, lint with zero
-  warnings, Expo Doctor 21/21, and Android/iOS exports all pass. Manual holding
-  forms have no existing rate or maturity fields; no new fields were added.
 
 ### Investments and goals
 

@@ -73,7 +73,7 @@ const INVESTMENT_AMOUNTS: Record<string, number> = {
 const INVESTMENT_HOLDING_IDS: Record<string, string> = {
   'Mutual fund / SIP': 'demo-holding-mutual-fund',
   'Stocks / ETF': 'demo-holding-stocks',
-  'Fixed deposit / RD': 'demo-holding-recurring-deposit',
+  'Fixed deposit / RD': 'demo-holding-fd',
   'Gold / Silver': 'demo-holding-gold',
   'Other investments': 'demo-holding-epf',
 };
@@ -642,7 +642,7 @@ export function buildDemoData(today: ISODate): AppData {
   }
 
   for (const month of months) {
-    for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
+    for (const category of INVESTMENT_FORM_CATEGORIES) {
       const holdingId = INVESTMENT_HOLDING_IDS[category];
       if (!holdingId) throw new Error(`No demo holding for investment category ${category}.`);
       data = addInvestmentEntry(data, holdingId, {

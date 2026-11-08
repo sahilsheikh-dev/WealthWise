@@ -45,7 +45,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 16 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 15 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -357,7 +357,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(16);
+    expect(SCHEMA_VERSION).toBe(15);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -395,7 +395,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version seventeen', async () => {
+  it('round trips custom emergency-fund options and refuses schema version sixteen', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -419,7 +419,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 17;
+    future.schemaVersion = 16;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -456,42 +456,7 @@ describe('backup validation and serialization', () => {
     ]);
   });
 
-  it('imports a v15 backup and separates its legacy combined holding type', async () => {
-    const data = {
-      ...mockAppData,
-      holdings: [
-        ...mockAppData.holdings,
-        {
-          id: 'legacy-unstarted',
-          kind: 'manual' as const,
-          name: 'Legacy deposit',
-          type: 'FD / RD',
-          invested: 1_000,
-          value: 1_050,
-          logs: [],
-        },
-      ],
-    };
-    const envelope = {
-      app: 'wealthwise',
-      formatVersion: BACKUP_FORMAT_VERSION,
-      schemaVersion: 15,
-      exportedAt: '2026-10-13T10:00:00.000Z',
-      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(data)) },
-      data,
-    };
-    const imported = await parseBackup(JSON.stringify(envelope), migrationOptions);
-    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
-    expect(imported.data.holdings.at(-1)).toMatchObject({
-      id: 'legacy-unstarted',
-      type: 'Fixed deposit',
-      invested: 1_000,
-      value: 1_050,
-      logs: [],
-    });
-  });
-
-  it('round-trips an encrypted v16 backup containing a linked investment item', async () => {
+  it('round-trips an encrypted v15 backup containing a linked investment item', async () => {
     const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
     if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
     const plan = budgetPlanFromLines(
@@ -505,7 +470,7 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 16 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 15 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -642,7 +607,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 17;
+    newer.schemaVersion = 16;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });

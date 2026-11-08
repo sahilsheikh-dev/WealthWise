@@ -31,9 +31,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version sixteen', () => {
+  it('accepts the typed mock app data and exports schema version fifteen', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(16);
+    expect(SCHEMA_VERSION).toBe(15);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
   });
 
@@ -539,7 +539,6 @@ describe('makeTransactionFormSchema', () => {
         name: 'Long term', amount: 10_000.25, ratePct: 12.25, stepUpPct: 0, tenureYears: 10,
         trackFrom: '2026-10-10', opening: 0, actualValue: null, actualValueDate: null,
       });
-      expect(schema.safeParse({ ...planValues, type: 'Fixed deposit' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: ' another ' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: '' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: 'x'.repeat(41) }).success).toBe(false);
@@ -757,14 +756,6 @@ describe('makeTransactionFormSchema', () => {
       const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
       const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };
       expect(holdingSchema.parse(holding)).toMatchObject({ invested: 1000, value: 900 });
-      const holdingWithEntriesSchema = makeHoldingFormSchema({ otherNames: [], entriesExist: true });
-      const blockedTypeChange = holdingWithEntriesSchema.safeParse({ ...holding, type: 'Fixed deposit' });
-      expect(blockedTypeChange.success).toBe(false);
-      if (!blockedTypeChange.success) {
-        expect(blockedTypeChange.error.issues.some((issue) =>
-          issue.message === 'Remove the existing entries before changing this holding to Fixed deposit.',
-        )).toBe(true);
-      }
       expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
 

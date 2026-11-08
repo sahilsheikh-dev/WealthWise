@@ -18,7 +18,6 @@ import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { shiftMonth } from '../src/domain/dates';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { todayISO } from '../src/lib/clock';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { formatMonth } from '../src/lib/format';
@@ -251,9 +250,7 @@ export default function BudgetItemFormScreen() {
               candidate.id !== itemId && candidate.holdingId === field.value);
             const options = [
               { value: '', title: 'None' },
-              ...data.holdings
-                .filter((holding) => holdingCapabilities(holding.type).recurring || holding.id === item?.holdingId)
-                .map((holding) => ({ value: holding.id, title: holding.name })),
+              ...data.holdings.map((holding) => ({ value: holding.id, title: holding.name })),
             ];
             return (
               <Dropdown
@@ -267,11 +264,6 @@ export default function BudgetItemFormScreen() {
             );
           }}
         />
-      ) : null}
-      {linkedHolding && !holdingCapabilities(linkedHolding.type).recurring ? (
-        <AppText style={[typography.meta, { color: colors.text3 }]}>
-          Fixed deposits cannot be newly linked to recurring Budget schedules. Clear this existing link to remove it.
-        </AppText>
       ) : null}
       {linkedHolding?.kind === 'plan' ? (
         <>

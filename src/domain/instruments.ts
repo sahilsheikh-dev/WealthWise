@@ -1,6 +1,5 @@
 import { NotFoundError } from './actions';
 import { investCategoryFor, LinkedTransactionError } from './links';
-import { holdingCapabilities } from './holdingCapabilities';
 import { snapshotAdjustmentForEntry, updateInvestmentEntry } from './investmentActions';
 import { holdingValue } from './portfolio';
 import type {
@@ -138,9 +137,6 @@ function appendEntry(
   assertDate(date, today);
   const holding = data.holdings.find((item) => item.id === targetId);
   if (!holding) throw new NotFoundError('Investment', targetId);
-  if (kind === 'Deposit' && !holdingCapabilities(holding.type).entries) {
-    throw new Error('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
-  }
   assertHoldingDate(holding, date);
   const entry: InvestmentEntry = { id: entryId, date, amount, kind, note };
   if (kind === 'Withdrawal') assertWithdrawalFits(holding, entry, today);

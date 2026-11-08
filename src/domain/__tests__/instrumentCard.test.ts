@@ -38,7 +38,7 @@ describe('buildInstrumentCardModel', () => {
     expect(model.valueCaption).toContain('Value not updated in');
     expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
     expect(model.headerAction.id).toBe('edit');
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'confirm']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'confirm']);
   });
 
   it('uses fresh manual value dates without stale actions', () => {
@@ -51,24 +51,7 @@ describe('buildInstrumentCardModel', () => {
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
     expect(model.valueCaption).toBe('Updated 1 Oct 2026');
     expect(model.statuses).toEqual([]);
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw']);
-  });
-
-  it('keeps legacy fixed-deposit entries visible without offering new deposits', () => {
-    const data = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
-        ? {
-          ...holding,
-          valueAsOf: '2026-10-10',
-          logs: [{ id: 'legacy', date: '2026-10-01', amount: 100, kind: 'Deposit' as const, note: '' }],
-        }
-        : holding),
-    };
-    const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries']);
-    expect(model.helperLine).toContain('Entries from earlier are kept.');
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
 
   it('shows unknown value dates and disables withdrawal for a zero-value manual holding', () => {

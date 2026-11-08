@@ -135,64 +135,6 @@ it('hydrates v14 cover goals, archives exact original bytes once and erases the 
   expect((await third.getState().actions.eraseAllData()).ok).toBe(true);
   expect(storage.values.has(archiveKey)).toBe(false);
 });
-
-it('hydrates v15 holding types, archives exact original bytes once and erases the archive', async () => {
-  const storage = new MemoryStorage();
-  const data = {
-    ...mockAppData,
-    holdings: [
-      ...mockAppData.holdings,
-      {
-        id: 'legacy-combined-fd',
-        kind: 'manual' as const,
-        name: 'Legacy fixed',
-        type: 'FD / RD' as const,
-        invested: 1_000,
-        value: 1_000,
-        logs: [],
-      },
-      {
-        id: 'legacy-combined-rd',
-        kind: 'manual' as const,
-        name: 'Legacy recurring',
-        type: 'Fixed deposit / RD' as const,
-        invested: 2_000,
-        value: 2_100,
-        logs: [{ id: 'legacy-rd-entry', date: '2026-10-01', amount: 100, note: 'keep', kind: 'Deposit' as const }],
-      },
-    ],
-  };
-  const originalBytes = JSON.stringify({ state: { data }, version: 15 });
-  storage.values.set('wealthwise.app.v1', originalBytes);
-
-  const first = makeStore(storage, { isDev: false });
-  await waitForHydration(first);
-  expect(first.getState().data.holdings).toEqual(expect.arrayContaining([
-    expect.objectContaining({ id: 'legacy-combined-fd', type: 'Fixed deposit', logs: [] }),
-    expect.objectContaining({
-      id: 'legacy-combined-rd',
-      type: 'Recurring deposit',
-      logs: [{ id: 'legacy-rd-entry', date: '2026-10-01', amount: 100, note: 'keep', kind: 'Deposit' }],
-    }),
-  ]));
-  const archiveKey = 'wealthwise.app.v1.premigration.v15';
-  expect(storage.values.get(archiveKey)).toBe(originalBytes);
-  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
-  expect(archiveWrites).toBe(1);
-
-  const second = makeStore(storage, { isDev: false });
-  await waitForHydration(second);
-  expect(storage.values.get(archiveKey)).toBe(originalBytes);
-  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
-
-  storage.values.set('wealthwise.app.v1', originalBytes);
-  storage.values.set(archiveKey, 'preserve-existing-v15-archive');
-  const third = makeStore(storage, { isDev: false });
-  await waitForHydration(third);
-  expect(storage.values.get(archiveKey)).toBe('preserve-existing-v15-archive');
-  expect((await third.getState().actions.eraseAllData()).ok).toBe(true);
-  expect(storage.values.has(archiveKey)).toBe(false);
-});
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
 }>('crypto');
@@ -2491,7 +2433,6 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v8', 'original-v8-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v13', 'original-v13-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v14', 'original-v14-bytes');
-  storage.values.set('wealthwise.app.v1.premigration.v15', 'original-v15-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2523,7 +2464,6 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v8',
     'wealthwise.app.v1.premigration.v13',
     'wealthwise.app.v1.premigration.v14',
-    'wealthwise.app.v1.premigration.v15',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

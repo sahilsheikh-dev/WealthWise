@@ -70,14 +70,6 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
 });
 
 describe('plan schedules', () => {
-  it('does not project recurring schedule rows for a fixed deposit plan', () => {
-    const fixedDeposit = plan({ type: 'Fixed deposit' });
-
-    expect(planSchedule(fixedDeposit, '2026-03-01').rows).toEqual([]);
-    expect(planSchedule(fixedDeposit, '2026-03-01').summary.nextDue).toBeNull();
-    expect(planNextRows(fixedDeposit, '2026-03-01', 5)).toEqual([]);
-  });
-
   it('matches deposits FIFO, ignores withdrawals and excludes slots before trackFrom', () => {
     const result = planSchedule(plan({
       logs: [
