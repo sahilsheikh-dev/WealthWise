@@ -130,6 +130,39 @@ describe('pending item projection', () => {
     expect(rows.filter((row) => row.kind === 'budget')).toEqual([
       expect.objectContaining({ title: 'Food', amount: 200, status: 'planned', actionable: true }),
     ]);
+    expect(rows.find((row) => row.title === 'Food')).not.toHaveProperty('dueDate');
+  });
+
+  it('clamps budget due days to the month length, including leap February', () => {
+    const dueOnLastDay = (month: string, today: string) => {
+      const data = {
+        ...base(),
+        monthBudgets: [{
+          month, templateId: null, templateName: null, customized: true, plannedIncome: null,
+          lines: [{ category: 'Bills', planned: 100, dueDay: 31 }],
+        }],
+      };
+      return pendingItems(data, month, today).find((item) => item.kind === 'budget');
+    };
+
+    expect(dueOnLastDay('2025-02', '2025-02-01')).toMatchObject({
+      dueDate: '2025-02-28', status: 'upcoming',
+    });
+    expect(dueOnLastDay('2024-02', '2024-02-01')).toMatchObject({
+      dueDate: '2024-02-29', status: 'upcoming',
+    });
+    expect(dueOnLastDay('2026-04', '2026-04-01')).toMatchObject({
+      dueDate: '2026-04-30', status: 'upcoming',
+    });
+    const earlyDue = {
+      ...base(),
+      monthBudgets: [{
+        month: '2026-05', templateId: null, templateName: null, customized: true,
+        plannedIncome: null, lines: [{ category: 'Bills', planned: 100, dueDay: 5 }],
+      }],
+    };
+    expect(pendingItems(earlyDue, '2026-05', '2026-05-06').find((item) => item.kind === 'budget'))
+      .toMatchObject({ dueDate: '2026-05-05', status: 'overdue' });
   });
 
   it('does not add pending projections to month totals or the available balance', () => {

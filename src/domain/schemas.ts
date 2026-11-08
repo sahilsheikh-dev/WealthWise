@@ -194,10 +194,12 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const budgetCategorySet = new Set<string>(BUDGET_CATEGORIES);
+const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
 const budgetTemplateLineSchema = z.object({
   category: z.string().min(1).max(60),
   mode: z.enum(['amount', 'percent']),
   value: moneySchema.min(0).max(1_000_000_000),
+  dueDay: budgetDueDaySchema,
 }).superRefine((line, context) => {
   if (line.mode === 'percent' && line.value > 100) {
     context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
@@ -226,9 +228,11 @@ const monthBudgetSchema = z.object({
   templateName: z.string().min(1).max(40).nullable(),
   customized: z.boolean(),
   plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  linkedIncluded: z.boolean().optional(),
   lines: z.array(z.object({
     category: z.string().min(1).max(60),
     planned: moneySchema.min(0).max(1_000_000_000),
+    dueDay: budgetDueDaySchema,
   })).max(1000),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
@@ -247,6 +251,7 @@ const budgetSchema = z.object({
   lines: z.array(z.object({
     category: z.string(),
     planned: moneySchema.min(0).max(1_000_000_000),
+    dueDay: budgetDueDaySchema,
   })).default([]),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();

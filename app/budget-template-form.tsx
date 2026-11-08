@@ -28,7 +28,7 @@ type TemplateForm = {
   name: string;
   plannedIncome: string;
   applyToMonth: boolean;
-  lines: { category: string; mode: BudgetTemplateLine['mode']; value: string }[];
+  lines: { category: string; mode: BudgetTemplateLine['mode']; value: string; dueDay?: number }[];
 };
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -52,7 +52,7 @@ export default function BudgetTemplateFormScreen() {
   [data, month]);
   const defaults = useMemo<TemplateForm>(() => {
     const savedLines = template?.lines ?? (storedMonth?.lines ?? []).map((line) => ({
-      category: line.category, mode: 'amount' as const, value: line.planned,
+      category: line.category, mode: 'amount' as const, value: line.planned, dueDay: line.dueDay,
     }));
     const values = new Map(savedLines.map((line) => [line.category, line]));
     return {
@@ -65,7 +65,12 @@ export default function BudgetTemplateFormScreen() {
       applyToMonth: false,
       lines: BUDGET_CATEGORIES.map((category) => {
         const line = values.get(category);
-        return { category, mode: line?.mode ?? 'amount', value: line ? String(line.value) : '' };
+        return {
+          category,
+          mode: line?.mode ?? 'amount',
+          value: line ? String(line.value) : '',
+          ...(line?.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+        };
       }),
     };
   }, [incomeBaseline, month, saveAsTemplate, storedMonth, template]);
@@ -83,16 +88,23 @@ export default function BudgetTemplateFormScreen() {
       return;
     }
     if (suggestMode === 'blank') {
-      setValue('lines', BUDGET_CATEGORIES.map((category) => ({ category, mode: 'amount', value: '' })));
+      setValue('lines', BUDGET_CATEGORIES.map((category) => {
+        const dueDay = watched.lines?.find((line) => line.category === category)?.dueDay;
+        return { category, mode: 'amount', value: '', ...(dueDay === undefined ? {} : { dueDay }) };
+      }));
       setWarnings([]);
       return;
     }
     const suggestion = suggestTemplate({ plannedIncome, commitments });
-    setValue('lines', BUDGET_CATEGORIES.map((category) => ({
-      category,
-      mode: 'amount',
-      value: String(suggestion.lines.find((line) => line.category === category)?.planned ?? ''),
-    })));
+    setValue('lines', BUDGET_CATEGORIES.map((category) => {
+      const dueDay = watched.lines?.find((line) => line.category === category)?.dueDay;
+      return {
+        category,
+        mode: 'amount',
+        value: String(suggestion.lines.find((line) => line.category === category)?.planned ?? ''),
+        ...(dueDay === undefined ? {} : { dueDay }),
+      };
+    }));
     setWarnings(suggestion.warnings);
   };
 
@@ -105,6 +117,7 @@ export default function BudgetTemplateFormScreen() {
         category: line.category,
         mode: line.mode,
         value: Number(line.value),
+        ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
       }));
       if (!values.name.trim() || values.name.trim().length > 40
         || (plannedIncome !== null && (!Number.isFinite(plannedIncome) || plannedIncome <= 0))

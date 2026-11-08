@@ -52,7 +52,12 @@ describe('four-month demo data', () => {
     expect(data.budgetTemplates?.[0]?.lines.some((line) => line.mode === 'amount')).toBe(true);
     expect(data.budgetTemplates?.[0]?.lines.some((line) => line.mode === 'percent')).toBe(true);
     expect(data.monthBudgets?.find(({ month }) => month === monthKey(today)))
-      .toMatchObject({ customized: false, templateName: 'Four-month five-group plan' });
+      .toMatchObject({
+        customized: false,
+        templateName: 'Four-month five-group plan',
+        linkedIncluded: true,
+        lines: expect.arrayContaining([expect.objectContaining({ category: 'Bills', dueDay: 5 })]),
+      });
     expect(data.monthBudgets?.some((budget) => budget.customized)).toBe(true);
   });
 
@@ -69,6 +74,30 @@ describe('four-month demo data', () => {
       expect(view.position.expense).toBe(summary.expense);
       expect(view.position.invest).toBe(summary.invest);
       expect(view.position.flow).toBe(summary.net);
+      if (month === monthKey(today)) {
+        const stored = data.monthBudgets?.find((budget) => budget.month === month);
+        expect(stored?.linkedIncluded).toBe(true);
+        expect(view.linkedByCategory?.length).toBeGreaterThan(0);
+        expect(view.groupTotals).toHaveLength(BUDGET_GROUPS.length);
+        for (const linked of view.linkedByCategory ?? []) {
+          const ownPlanned = stored?.lines.find((line) => line.category === linked.category)?.planned ?? 0;
+          const linkedPlanned = linked.rows.reduce((sum, row) => sum + row.amount, 0);
+          expect(view.lines.find((line) => line.category === linked.category)?.planned)
+            .toBe(ownPlanned + linkedPlanned);
+        }
+        for (const group of BUDGET_GROUPS) {
+          expect(view.groupTotals?.find((row) => row.groupId === group.id)?.planned).toBe(
+            view.lines.filter((line) => group.categories.includes(line.category))
+              .reduce((sum, line) => sum + line.planned, 0),
+          );
+        }
+        const legacyView = budgetMonthView({
+          ...data,
+          monthBudgets: data.monthBudgets?.map((budget) => ({ ...budget, linkedIncluded: false })),
+        }, month);
+        expect(view.actualSpend).toBe(legacyView.actualSpend);
+        expect(view.actualSave).toBe(legacyView.actualSave);
+      }
     }
   });
 
@@ -109,6 +138,16 @@ describe('four-month demo data', () => {
     expect(pendingItems(data, currentMonth, today).some((item) =>
       item.kind === 'budget' && item.status === 'planned',
     )).toBe(true);
+    const billsDue = pendingItems(data, currentMonth, today)
+      .filter((item) => item.kind === 'budget' && item.category === 'Bills');
+    expect(billsDue).toHaveLength(1);
+    expect(billsDue[0]).toMatchObject({
+      title: 'Bills',
+      dueDate: `${currentMonth}-05`,
+      status: 'overdue',
+    });
+    expect(pendingItems(data, currentMonth, today)
+      .filter((item) => item.title === 'Bills')).toHaveLength(1);
     expect(pending.some((item) =>
       item.kind === 'due'
       && item.source.kind === 'plan'
