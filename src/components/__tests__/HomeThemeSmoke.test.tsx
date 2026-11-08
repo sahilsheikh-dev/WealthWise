@@ -157,7 +157,7 @@ describe('Home screen theme smoke', () => {
     await act(async () => renderer?.unmount());
 
     mockData.budgetPlan = {
-      plannedIncome: 10_000,
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
       lines: [{ category: 'Food', mode: 'amount', value: 1_000 }],
       repeatMonthly: false,
       repeatFrom: null,

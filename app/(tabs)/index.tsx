@@ -56,7 +56,7 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const monthBudget = budgetMonthView(data, month);
+  const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
     .filter((item) => item.kind === 'due')

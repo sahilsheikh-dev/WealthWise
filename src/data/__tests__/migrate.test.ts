@@ -6,6 +6,7 @@ import {
   migrateV5ToV6,
   migrateV6ToV7,
   migrateV7ToV8,
+  migrateV8ToV9,
   PersistedVersionError,
 } from '../migrate';
 import { makeV1Fixture, makeV2Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -102,7 +103,7 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 9)).toThrow(
+    expect(() => migratePersisted({}, 10)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
@@ -161,7 +162,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version7: true } };
-    expect(migratePersisted(persisted, 8)).toBe(persisted);
+    expect(migratePersisted(persisted, 9)).toBe(persisted);
   });
 
   it('migrates v7 snapshots and selects the plan by default, usage and recency', () => {
@@ -188,6 +189,7 @@ describe('schema migration', () => {
         { month: '2026-02', templateId: 'latest', templateName: 'Latest', customized: false, plannedIncome: 30_000, linkedIncluded: true, lines: [{ category: 'Food', planned: 6_000 }] },
       ],
     });
+
     const selectedDefault = migrateV7ToV8(makeLegacy('first'));
     expect(selectedDefault).toMatchObject({
       budgetPlan: {
@@ -219,6 +221,53 @@ describe('schema migration', () => {
       budgetPlan: { plannedIncome: number };
     };
     expect(firstFallback.budgetPlan.plannedIncome).toBe(10_000);
+  });
+
+  it('migrates v8 income totals, category defaults, and dayless snapshots', () => {
+    let id = 0;
+    const v8 = {
+      ...mockAppData,
+      settings: { ...mockAppData.settings, monthlySalary: 900 },
+      transactions: [
+        { id: 'salary-1', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-08-01' },
+        { id: 'salary-2', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-09-01' },
+        { id: 'freelance', type: 'income' as const, amount: 100, category: 'Freelance', note: '', date: '2026-10-01' },
+      ],
+      budgetPlan: {
+        plannedIncome: null,
+        lines: [],
+        repeatMonthly: true,
+        repeatFrom: '2026-11',
+      },
+      monthBudgets: [
+        { month: '2026-09', source: 'custom' as const, plannedIncome: 500, lines: [] },
+        { month: '2026-10', source: 'custom' as const, plannedIncome: null, lines: [] },
+      ],
+    };
+    const migrated = migrateV8ToV9(v8, {
+      today: '2026-10-10',
+      newId: () => `migrated-${++id}`,
+    }) as {
+      budgetPlan: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] };
+      monthBudgets: { incomes: { id: string; name: string; category: string; amount: number; day?: number }[] }[];
+    };
+    expect(migrated.budgetPlan.incomes).toEqual([
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 900, day: 1 },
+    ]);
+    expect(migrated.monthBudgets).toEqual([
+      { month: '2026-09', source: 'custom', lines: [], incomes: [
+        { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 500 },
+      ] },
+      { month: '2026-10', source: 'custom', lines: [], incomes: [] },
+    ]);
+    const zero = migrateV8ToV9({
+      ...v8,
+      budgetPlan: { ...v8.budgetPlan, plannedIncome: 0 },
+      settings: { ...v8.settings, monthlySalary: 0 },
+    }, { today: '2026-10-10', newId: () => 'unused' }) as {
+      budgetPlan: { incomes: unknown[] };
+    };
+    expect(zero.budgetPlan.incomes).toEqual([]);
   });
 
   it('rejects malformed v7 budget containers and migrates an empty template list', () => {
@@ -369,7 +418,8 @@ describe('schema migration', () => {
       budgetTemplates: [{
         id: 'migrated-template',
         name: 'Migrated plan',
-        plannedIncome: mockAppData.budgetPlan?.plannedIncome ?? null,
+        plannedIncome: mockAppData.budgetPlan?.incomes
+          .reduce((sum, income) => sum + income.amount, 0) ?? null,
         lines: [
           ...(mockAppData.budgetPlan?.lines ?? []).filter((line) => line.category !== 'Other investments'),
           { category: 'Other investments', mode: 'amount' as const, value: 500 },

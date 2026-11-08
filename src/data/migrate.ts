@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION } from '../domain/schemas';
+import { shiftMonth } from '../domain/dates';
 
 export class PersistedVersionError extends Error {
   constructor(readonly fromVersion: number, readonly reason: 'unknown-version' | 'future-version') {
@@ -408,6 +409,91 @@ export function migrateV7ToV8(data: unknown): unknown {
   return { ...rest, budgetPlan, monthBudgets };
 }
 
+const earnedIncomeCategories = new Set([
+  'Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Other',
+]);
+const nonEarnedIncomeCategories = new Set([
+  'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds',
+]);
+
+function mostCommonEarnedIncomeCategory(transactions: unknown[], today: string): string {
+  const currentMonth = today.slice(0, 7);
+  const firstMonth = shiftMonth(currentMonth, -2);
+  const counts = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (!isRecord(transaction)
+      || transaction.type !== 'income'
+      || typeof transaction.category !== 'string'
+      || !earnedIncomeCategories.has(transaction.category)
+      || typeof transaction.date !== 'string'
+      || transaction.date > today
+      || transaction.date.slice(0, 7) < firstMonth
+      || transaction.date.slice(0, 7) > currentMonth
+      || nonEarnedIncomeCategories.has(transaction.category)) continue;
+    counts.set(transaction.category, (counts.get(transaction.category) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort(([leftCategory, leftCount], [rightCategory, rightCount]) =>
+      rightCount - leftCount || leftCategory.localeCompare(rightCategory),
+    )[0]?.[0] ?? 'Salary';
+}
+
+export function migrateV8ToV9(data: unknown, options: V6ToV7Options): unknown {
+  if (!isRecord(data)
+    || !isRecord(data.settings)
+    || !Array.isArray(data.transactions)
+    || (data.budgetPlan !== null && !isRecord(data.budgetPlan))
+    || (data.monthBudgets !== undefined && !Array.isArray(data.monthBudgets))) {
+    throw new PersistedVersionError(8, 'unknown-version');
+  }
+  const category = mostCommonEarnedIncomeCategory(data.transactions, options.today);
+  const budgetPlan = data.budgetPlan === null
+    ? null
+    : (() => {
+      const plan = data.budgetPlan;
+      if (!isRecord(plan) || (plan.plannedIncome !== null && typeof plan.plannedIncome !== 'number')) {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const salary = data.settings.monthlySalary;
+      if (salary !== null && typeof salary !== 'number') {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const amount = plan.plannedIncome ?? salary ?? 0;
+      if (!Number.isFinite(amount) || amount < 0) {
+        throw new PersistedVersionError(8, 'unknown-version');
+      }
+      const { plannedIncome: _plannedIncome, ...rest } = plan;
+      return {
+        ...rest,
+        incomes: amount === 0
+          ? []
+          : [{ id: options.newId(), name: 'Salary', category, amount, day: 1 }],
+      };
+    })();
+  const monthBudgets = data.monthBudgets?.map((snapshot) => {
+    if (!isRecord(snapshot)
+      || (snapshot.plannedIncome !== null && typeof snapshot.plannedIncome !== 'number')) {
+      throw new PersistedVersionError(8, 'unknown-version');
+    }
+    const { plannedIncome: _plannedIncome, ...rest } = snapshot;
+    const amount = snapshot.plannedIncome;
+    if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) {
+      throw new PersistedVersionError(8, 'unknown-version');
+    }
+    return {
+      ...rest,
+      incomes: amount === null
+        ? []
+        : [{ id: options.newId(), name: 'Income', category, amount }],
+    };
+  });
+  return {
+    ...data,
+    budgetPlan,
+    ...(monthBudgets === undefined ? {} : { monthBudgets }),
+  };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -430,6 +516,10 @@ export function migratePersisted(
       result = migrateV6ToV7(result, options);
     }
     if (fromVersion <= 7) result = migrateV7ToV8(result);
+    if (fromVersion <= 8) {
+      if (!options) throw new PersistedVersionError(8, 'unknown-version');
+      result = migrateV8ToV9(result, options);
+    }
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

@@ -7,6 +7,7 @@ import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import {
   appDataSchema,
   BUDGET_CATEGORIES,
+  EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
 import { THEME_IDS, type AppData, type ISODate } from './types';
@@ -173,8 +174,15 @@ const budgetSchema = z.strictObject({
     seen.add(line.category);
   });
 });
+const budgetIncomeSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  category: z.enum(EARNED_INCOME_CATEGORIES),
+  amount: z.number().finite().positive().max(1_000_000_000),
+  day: z.number().int().min(1).max(31).optional(),
+});
 const budgetPlanSchema = z.strictObject({
-  plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
+  incomes: z.array(budgetIncomeSchema).max(1000),
   lines: z.array(z.strictObject({
     category: z.string().min(1).max(60),
     mode: z.enum(['amount', 'percent']),
@@ -205,7 +213,7 @@ const budgetPlanSchema = z.strictObject({
 const monthBudgetSchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   source: z.enum(['plan', 'custom']),
-  plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
+  incomes: z.array(budgetIncomeSchema).max(1000),
   linkedIncluded: z.boolean().optional(),
   lines: z.array(z.strictObject({
     category: z.string().min(1).max(60),

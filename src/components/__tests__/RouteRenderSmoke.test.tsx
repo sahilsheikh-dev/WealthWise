@@ -166,6 +166,8 @@ jest.mock('../../data/store', () => {
       undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
+      saveBudgetPlan: jest.fn(),
+      saveAndApplyBudgetPlan: jest.fn(),
     },
   };
 
@@ -232,6 +234,8 @@ jest.mock('../../data/useAppData', () => {
       undoClearDuesThrough: jest.fn(),
       completeOnboarding: jest.fn(),
       updateSettings: jest.fn(),
+      saveBudgetPlan: jest.fn(),
+      saveAndApplyBudgetPlan: jest.fn(),
     },
   };
 
@@ -561,7 +565,7 @@ describe('route render smoke audit', () => {
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
   ];
 
-  it.each([1, 1.3, 2])('renders the single-plan setup and grouped inputs at font scale %s', async (fontScale) => {
+  it.each([1, 1.3, 2])('renders the income-item setup and grouped inputs at font scale %s', async (fontScale) => {
     mockFontScale = fontScale;
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     try {
@@ -570,7 +574,8 @@ describe('route render smoke audit', () => {
       for (const id of ['survival', 'savings-investments', 'wants', 'festival-donations-culture', 'unexpected-extras']) {
         expect(setup.root.findByProps({ testID: `budget-category-group-${id}` }).props.accessibilityRole).toBe('button');
       }
-      expect(setup.root.findAllByProps({ accessibilityLabel: 'Planned monthly income' }).length).toBeGreaterThan(0);
+      expect(setup.root.findAll((node) => node.type === 'text' && node.props.children === 'Income')).toHaveLength(1);
+      expect(setup.root.findAllByProps({ label: 'Add income' })).toHaveLength(1);
       expect(setup.root.findAllByType(Switch)).toHaveLength(1);
       expect(setup.root.findByType(Switch).props.accessibilityLabel).toBe('Repeat every month from next month');
       expect(setup.root.findAllByProps({ label: 'Start from suggested split' })).toHaveLength(1);
@@ -747,7 +752,7 @@ describe('route render smoke audit', () => {
         monthBudgets: [{
           month: today.slice(0, 7),
           source: 'custom' as const,
-          plannedIncome: 10_000,
+          incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
           lines: [{ category: 'Food', planned: 1_000 }],
         }],
       });
@@ -1245,7 +1250,7 @@ describe('route render smoke audit', () => {
       monthBudgets: [{
         month,
         source: 'custom' as const,
-        plannedIncome: 1_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
         lines: [
           { category: 'Food', planned: 300 },
           { category: 'Shopping', planned: 200 },
@@ -1355,7 +1360,7 @@ describe('route render smoke audit', () => {
       monthBudgets: [{
         month,
         source: 'custom',
-        plannedIncome: 1_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
         lines: [{ category: 'Food', planned: 300 }],
       }],
     };
@@ -1461,7 +1466,7 @@ describe('route render smoke audit', () => {
       monthBudgets: [{
         month: '2026-10',
         source: 'custom' as const,
-        plannedIncome: 123_456_789,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 123_456_789 }],
         lines: [{ category: 'Food', planned: 123_456_789 }],
       }],
     };
@@ -1744,7 +1749,8 @@ describe('route render smoke audit', () => {
     appData.liabilities = name === 'Liability payments' ? [liability] : [];
     appData.monthBudgets = name === 'Budget spending' ? [{
       month: todayISO().slice(0, 7), source: 'custom' as const,
-      plannedIncome: 1000, lines: [{ category: 'Food', planned: 500 }],
+      incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 1000 }],
+      lines: [{ category: 'Food', planned: 500 }],
     }] : [];
     storeData.holdings = name === 'Link missing transactions' ? [holding] : [];
     storeData.liabilities = [];
@@ -2299,7 +2305,7 @@ describe('route render smoke audit', () => {
       data.monthBudgets = [{
         month,
         source: 'custom' as const,
-        plannedIncome: 10_000,
+        incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
         lines: ['Festival', 'Donation', 'Gifts'].map((lineCategory) => ({
           category: lineCategory,
           planned: 500,
@@ -2348,7 +2354,7 @@ describe('route render smoke audit', () => {
       act(() => renderer.unmount());
 
       data.budgetPlan = {
-        plannedIncome: 1_000,
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000 }],
         lines: [{ category: 'Food', mode: 'amount', value: 200 }],
         repeatMonthly: false,
         repeatFrom: null,
@@ -2393,7 +2399,7 @@ describe('route render smoke audit', () => {
     data.monthBudgets = [{
       month,
       source: 'custom' as const,
-      plannedIncome: 1_000,
+      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 1_000 }],
       lines: [{ category: 'Food', planned: 200 }],
     }];
     try {
@@ -2480,7 +2486,7 @@ describe('route render smoke audit', () => {
     data.monthBudgets = [{
       month,
       source: 'custom',
-      plannedIncome: 2_000,
+      incomes: [{ id: 'income', name: 'Income', category: 'Salary', amount: 2_000 }],
       lines: [
         { category: 'Bills', planned: 120, dueDay: 5 },
         { category: 'Food', planned: 100 },
@@ -2557,7 +2563,7 @@ describe('route render smoke audit', () => {
     data.monthBudgets = [{
       month: selectedMonth,
       source: 'custom' as const,
-      plannedIncome: 10_000,
+      incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       lines: [
         { category: 'Food', planned: 4_000 },
         { category: 'Other investments', planned: 1_000 },
@@ -2672,5 +2678,49 @@ describe('route render smoke audit', () => {
   it('shows no tab bar on the Budget setup route', () => {
     const setup = renderScreen(React.createElement(BudgetSetupScreen));
     expect(setup.root.findAll((node) => node.props.testID === 'bottom-tab-bar')).toHaveLength(0);
+  });
+
+  it('adds, removes, validates, and saves budget income items', async () => {
+    const data = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      saveBudgetPlan: jest.Mock;
+    };
+    const previousPlan = data.budgetPlan;
+    data.budgetPlan = null;
+    actions.saveBudgetPlan.mockClear();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetSetupScreen));
+      act(() => renderer?.root.findByProps({ label: 'Add income' }).props.onPress());
+      act(() => renderer?.root.findByProps({ label: 'Add income' }).props.onPress());
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Income 2 name' })).toHaveLength(2);
+      act(() => renderer?.root.findAllByProps({ label: 'Remove income' })[1]?.props.onPress());
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Income 2 name' })).toHaveLength(0);
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 name' }).props.onChangeText('Salary'));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 amount' }).props.onChangeText('0'));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 day' }).props.onChangeText('32'));
+      await act(async () => {
+        renderer?.root.findByProps({ label: 'Save only' }).props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.saveBudgetPlan).not.toHaveBeenCalled();
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 amount' }).props.onChangeText('75000'));
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Income 1 day' }).props.onChangeText('15'));
+      await act(async () => {
+        renderer?.root.findByProps({ label: 'Save only' }).props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(actions.saveBudgetPlan).toHaveBeenCalledWith({
+        incomes: [{ id: expect.any(String), name: 'Salary', category: 'Salary', amount: 75_000, day: 15 }],
+        lines: [],
+        repeatMonthly: false,
+        repeatFrom: null,
+      });
+    } finally {
+      act(() => renderer?.unmount());
+      data.budgetPlan = previousPlan;
+    }
   });
 });

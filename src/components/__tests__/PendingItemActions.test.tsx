@@ -205,6 +205,7 @@ describe('later due and planned item actions', () => {
       note: '',
       date: '2026-10-12',
     });
+
     expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
       message: 'Marked ₹125 as paid',
       actionLabel: 'Undo',
@@ -212,6 +213,34 @@ describe('later due and planned item actions', () => {
     }));
     const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
     toast.onAction();
+    expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
+  });
+
+  it('records an income due as one Received transaction with undo', () => {
+    const due = item({ kind: 'income', incomeId: 'salary-1' }, 'Salary');
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PendingItemActions item={due} today="2026-10-12" compact actionLabel="Received" />,
+      );
+    });
+    if (!renderer) throw new Error('Income due actions did not render.');
+    act(() => renderer?.root.findByType('button').props.onPress());
+    expect(mockActions.addTransaction).toHaveBeenCalledTimes(1);
+    expect(mockActions.addTransaction).toHaveBeenCalledWith({
+      type: 'income',
+      amount: 125,
+      category: 'Salary',
+      note: 'Scheduled item',
+      date: '2026-10-12',
+    });
+    expect(mockSetActionToast).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Received ₹125',
+      actionLabel: 'Undo',
+      onAction: expect.any(Function),
+    }));
+    const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
+    act(() => toast.onAction());
     expect(mockActions.deleteTransaction).toHaveBeenCalledWith('budget-transaction');
   });
 
