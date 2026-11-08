@@ -5,10 +5,15 @@
   public latest and versioned v1.0.0 APK links return HTTP 200 with
   Content-Length 112133413, and the downloaded artifact's SHA-256 matches the
   release record. EAS build metadata is verified and the approved `v1.0.0`
-  tag points to the build commit on `origin/main`. The owner release-body edit
-  and physical-device checklist remain pending. All six ordered gates passed:
-  92 suites, 1,196 tests passed and 1 skipped. Exact exits and coverage are in
-  [PROGRESS.md](../PROGRESS.md). See [open-items.md](open-items.md).
+  tag points to the build commit on `origin/main`. The owner reports completing
+  the device checklist and entered Pass for all 43 rows, including N39. Device
+  identity/tester/date fields are blank. The owner also reports previously
+  identified Release 2 bugs remain, but supplied no failing IDs or reproduction
+  details; see [open-items.md](open-items.md) and the
+  [checklist report](../releases/device-test-checklist.md). The GitHub
+  release-body edit remains pending. All six ordered gates passed: 92 suites,
+  1,196 tests passed and 1 skipped. Exact exits and coverage are in
+  [PROGRESS.md](../PROGRESS.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -61,7 +66,8 @@
   release approval rules and committed draft workflow are documented under
   `docs/releases/`. P28-C-R2 records the v1.0.0 APK asset and download details;
   P28-C-R3 verifies the public links, EAS artifact and approved tag alignment.
-  No build, submission, GitHub release-body edit or branch push was made.
+  The owner entered Pass for all 43 device checklist rows. No build,
+  submission, GitHub release-body edit or branch push was made.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and

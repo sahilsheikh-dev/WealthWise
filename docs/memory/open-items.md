@@ -8,17 +8,22 @@
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
   No release edit was made in P28-C-R3.
-- **v1.0.0 physical-device checklist (owner action):** run every item in
-  [`device-test-checklist.md`](../releases/device-test-checklist.md) on an
-  Android device and report any failure. All results remain Not run.
-- **Release 2 known bug follow-ups:** track P29-AB-R1, the Phase 30 stale-values
-  work, and P20-N-R1. Record failures; do not fix these as part of P28-C-R3.
+- **v1.0.0 device report details:** the owner-entered
+  [`device-test-checklist.md`](../releases/device-test-checklist.md) marks all
+  43 checks Pass, including N39. Device model, Android version, tester and
+  date are not recorded. The owner separately reports previously identified
+  Release 2 bugs remain, but no failing checklist IDs, reproduction steps,
+  expected/actual behavior, or screenshots were supplied. Request those
+  details before drafting a scoped fix prompt; do not infer checklist failures.
+- **Release 2 known bug follow-ups:** retain P29-AB-R1, the Phase 30
+  stale-values work, and P20-N-R1 as tracked follow-ups. The current device
+  report does not establish which of these reproduce or their exact symptoms.
 
-- **P29-AB income recurrence physical-device check:** verify frequency and
-  first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget
-  months, Received dues, projected cash flow, virtual future months and
-  v21-to-v22 native migration/restart. Automated evidence is complete and all
-  six gates pass; native device behavior remains unverified.
+- **P29-AB income recurrence physical-device check:** owner marked checklist
+  item N39 Pass, covering quarterly/yearly first-due months, planned income,
+  Received dues, due/non-due projected cash flow and backup restore. Font
+  scales 1.3/2.0, virtual future months, and native v21-to-v22
+  migration/restart are not documented by N39 and remain unverified.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund

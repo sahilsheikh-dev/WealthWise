@@ -3418,8 +3418,10 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     P28-A/P28-B/P28-C and their recorded revisions are complete. The v1.0.0
     APK, EAS build metadata, public latest/versioned links and checksum are
     verified; the approved tag points to the build commit on `origin/main`.
-    The owner release-body edit and physical-device checklist remain pending.
-    See [`docs/releases/build-config.md`](releases/build-config.md), the
+    The owner entered Pass for all 43 device checklist rows. The header
+    metadata and separate Release 2 bug reproduction details remain
+    outstanding; the GitHub release-body edit is pending. See
+    [`docs/releases/build-config.md`](releases/build-config.md), the
     release-build record and the device checklist.
 11. **Phase 29 — Product delivery** (Done through P29-AB): the dashboard is
     the current source for completed work and open device checks.
@@ -9257,14 +9259,14 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   version's release-preparation task.
 - Step 7: added the Android owner checklist with all X1–X4 and A1–N39 checks,
   device metadata fields, and every result set to Not run (43 checks). Linked
-  it from the release index and build guidance. Physical-device execution
-  remains pending.
+  it from the release index and build guidance. The later owner report below
+  records all 43 results as Pass.
 - Step 8: Phase 28 dashboard count is 7/7 and the full ledger is 117/118.
   The parent P28-C revision text and derived test expectations were updated;
   no unrelated or product assertion changed. `status.md`, `open-items.md` and
   `project.md` record the verified build/tag/link state, six gates and owner
-  actions. Remaining owner actions are the GitHub release-body edit and the
-  physical-device checklist; Release 2 follow-ups remain separately tracked.
+  actions. Remaining owner work is the GitHub release-body edit and supplying
+  details for the separately reported Release 2 bugs.
 
 - Final gates, run in the required order; all commands exited 0:
 
@@ -9280,3 +9282,19 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 - No application behavior changed. No build, branch push or GitHub release
   edit was performed. The sole remote change was the explicitly approved
   `v1.0.0` tag alignment described above.
+
+### Owner device-validation report (2026-11-08)
+
+- The owner manually updated the checklist (preserved in checkpoint commit
+  `3ed74ba2ae338c9722ce49ed77f38222d15ebb7b`): all 43 rows are marked Pass,
+  including X1-X3 (download/hash/install) and N39 (quarterly/yearly income and
+  backup restore). No failure notes or screenshots are attached.
+- The checklist header's device model, Android version, tester and date fields
+  remain blank; no values were inferred.
+- The owner says previously identified Release 2 bugs remain, but no failing
+  checklist IDs, symptoms, expected/actual results or reproduction steps were
+  supplied. Consequently no failure is attributed to N39: its entered result
+  remains Pass. Existing Release 2 follow-ups P29-AB-R1, Phase 30 stale-values
+  work and P20-N-R1 remain tracked pending clarification.
+- No application fix was made. A complete Release 2 implementation prompt
+  requires the owner to identify the reported failures and their reproductions.
