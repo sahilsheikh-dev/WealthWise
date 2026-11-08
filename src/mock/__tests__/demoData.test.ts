@@ -1,10 +1,10 @@
-import { BUDGET_GROUPS, budgetMonthView } from '../../domain/budget';
+import { BUDGET_GROUPS, budgetMonthView, budgetOverview } from '../../domain/budget';
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
-import { budgetGroupRows, pendingItems } from '../../domain/pending';
+import { pendingItems } from '../../domain/pending';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -40,7 +40,7 @@ describe('four-month demo data', () => {
   });
 
   it('has four complete months of income, every budget expense category, and each investment category', () => {
-    expect(data.monthBudgets?.map(({ month }) => month)).toEqual([monthKey(today)]);
+    expect(data.monthBudgets?.map(({ month }) => month)).toEqual(months);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);
       expect(rows).toEqual(expect.arrayContaining([
@@ -64,6 +64,7 @@ describe('four-month demo data', () => {
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),
     });
+
     expect(data.budgetPlan?.lines.some((line) => line.category === 'EMI' || line.category === 'Insurance')).toBe(false);
     expect(data).not.toHaveProperty('budgetTemplates');
     expect(data.monthBudgets?.find(({ month }) => month === monthKey(today)))
@@ -72,6 +73,12 @@ describe('four-month demo data', () => {
         linkedIncluded: true,
         lines: expect.arrayContaining([expect.objectContaining({ category: 'Bills', dueDay: 5 })]),
       });
+  });
+
+  it('shows past, current and upcoming months in the budget overview demo', () => {
+    expect(budgetOverview(data, months[0]!, today).mode).toBe('past');
+    expect(budgetOverview(data, monthKey(today), today).mode).toBe('current');
+    expect(budgetOverview(data, shiftMonth(monthKey(today), 1), today).mode).toBe('future');
   });
 
   it('reconciles every stored budget view with the transaction totals', () => {
@@ -199,19 +206,6 @@ describe('four-month demo data', () => {
         id: item.source.parentId,
       }, item.dueDate, today).count > 1,
     )).toBe(true);
-  });
-
-  it('renders paid, overdue, partial and linked rows for the current budget', () => {
-    const rows = budgetGroupRows(data, monthKey(today), today);
-    expect(rows.some((row) => row.status === 'paid')).toBe(true);
-    expect(rows.some((row) => row.status === 'overdue')).toBe(true);
-    expect(rows.some((row) => row.actualAmount > 0 && row.actualAmount < row.plannedAmount)).toBe(true);
-    expect(rows.some((row) => row.automatic)).toBe(true);
-    expect(rows.find((row) => row.category === 'Festival')).toMatchObject({
-      status: 'paid',
-      plannedAmount: 1_000,
-      actualAmount: 1_000,
-    });
   });
 
   it('shows the linked-asset emergency fund and reachable and unreachable goal projections', () => {

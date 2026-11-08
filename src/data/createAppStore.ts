@@ -17,6 +17,7 @@ import {
   type AddLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { updatePolicy, type PolicyPatch } from '../domain/policyActions';
 import { setGoalLinks } from '../domain/goalLinks';
 import {
   allocateSurplus,
@@ -115,6 +116,7 @@ export type AppActions = {
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
   addPolicyWithHistory: (input: AddPolicyInput, mode: PastDuesMode) => void;
+  updatePolicy: (id: string, patch: PolicyPatch) => void;
   addLiability: (input: AddLiabilityInput) => void;
   updateLiability: (id: string, patch: LiabilityPatch) => void;
   deleteLiability: (id: string, options: { linkedTransactions: 'delete' | 'keep' }) => void;
@@ -352,6 +354,9 @@ export function createAppStore(
             asOf: deps.today(),
             newId: deps.newId,
           }).data);
+        },
+        updatePolicy(id, patch) {
+          applyDataAction((data) => updatePolicy(data, id, patch));
         },
         addLiability(input) {
           applyDataAction((data) => addLiability(data, input, deps.newId));

@@ -11,6 +11,7 @@ import { buildDemoData } from '../../mock/demoData';
 import {
   BUDGET_CATEGORY_WEIGHTS,
   BUDGET_GROUPS,
+  budgetOverview,
   applyBudgetPlanToMonth,
   budgetGroupFor,
   budgetMonthView,
@@ -755,6 +756,163 @@ describe('budget plans and monthly views', () => {
     expect(transactionCategoryLabel('Fund', 'invest')).toBe('Other investments');
     expect(view.unallocated).toBeNull();
     expect(outstandingAt(emptyAppData('2026-03-01'), '2026-03-31')).toEqual({ count: 0, amount: 0 });
+  });
+
+  it('returns an empty overview when no effective budget exists', () => {
+    const overview = budgetOverview(emptyAppData('2026-03-01'), '2026-02', '2026-03-15');
+    expect(overview).toMatchObject({
+      mode: 'past',
+      sections: [],
+      pace: null,
+      summary: { stacked: 'No budget for this month.', sections: 'No budget sections.', pace: null },
+    });
+    expect(overview.stacked).toEqual({
+      income: { planned: 0, actual: 0 },
+      spend: { planned: 0, actual: 0 },
+      invest: { planned: 0, actual: 0 },
+      left: { planned: 0, actual: 0 },
+    });
+  });
+
+  it('builds ordered, reconciled overview sections with shared income categories and linked rows', () => {
+    const linkedPlan: PlanHolding = {
+      ...plan,
+      logs: [{ id: 'sip-entry', date: '2026-03-05', amount: 100, note: '', kind: 'Deposit' }],
+    };
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      holdings: [linkedPlan],
+      liabilities: [liability],
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
+        linkedIncluded: true,
+        incomes: [
+          { id: 'salary-one', name: 'Primary salary', category: 'Salary' as const, amount: 6_000 },
+          { id: 'salary-two', name: 'Second salary', category: 'Salary' as const, amount: 4_000 },
+          { id: 'freelance', name: 'Freelance', category: 'Freelance' as const, amount: 1_000 },
+        ],
+        lines: [
+          { category: 'Food', planned: 1_000 },
+          { category: 'Rent', planned: 500 },
+          { category: 'Mutual fund / SIP', planned: 0 },
+          { category: 'Unexpected', planned: 50 },
+        ],
+      }],
+      transactions: [
+        { id: 'salary', type: 'income' as const, amount: 7_000, category: 'Salary', note: '', date: '2026-03-02' },
+        { id: 'freelance-earned', type: 'income' as const, amount: 400, category: 'Freelance', note: '', date: '2026-03-03' },
+        { id: 'food', type: 'expense' as const, amount: 200, category: 'Food', note: '', date: '2026-03-04' },
+        { id: 'rent', type: 'expense' as const, amount: 700, category: 'Rent', note: '', date: '2026-03-08' },
+        { id: 'future-expense', type: 'expense' as const, amount: 999, category: 'Travel', note: '', date: '2026-03-20' },
+        {
+          id: 'sip-transaction', type: 'invest' as const, amount: 100, category: 'Mutual fund / SIP',
+          note: '', date: '2026-03-05',
+          source: { kind: 'holding-entry' as const, parentId: linkedPlan.id, entryId: 'sip-entry' },
+        },
+        {
+          id: 'liability-payment', type: 'expense' as const, amount: 25, category: 'EMI',
+          note: '', date: '2026-03-10',
+          source: { kind: 'liability-payment' as const, parentId: liability.id, entryId: 'partial' },
+        },
+      ],
+    };
+    const overview = budgetOverview(data, '2026-03', '2026-03-15');
+    expect(overview.mode).toBe('current');
+    expect(overview.sections.map(({ id, name }) => [id, name])).toEqual([
+      ['income', 'Income'],
+      ['survival', 'Survival (Needs)'],
+      ['savings-investments', 'Savings and Investments'],
+      ['wants', 'Wants'],
+      ['festival-donations-culture', 'Festival, Donations, Culture'],
+      ['unexpected-extras', 'Unexpected Extras'],
+      ['debt-repayments', 'Debt repayments'],
+      ['insurance', 'Insurance'],
+    ]);
+    expect(overview.sections[0]?.items.map(({ title, actual }) => [title, actual])).toEqual([
+      ['Primary salary', 6_000],
+      ['Second salary', 1_000],
+      ['Freelance', 400],
+    ]);
+    expect(overview.sections.find(({ id }) => id === 'savings-investments')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'linked', title: 'Monthly fund', planned: 100, actual: 100, editable: false }),
+      ]),
+    );
+    expect(overview.sections.find(({ id }) => id === 'debt-repayments')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'linked', title: 'Friend', planned: 475, actual: 25, editable: false }),
+      ]),
+    );
+    expect(overview.stacked).toEqual({
+      income: { planned: 11_000, actual: 7_400 },
+      spend: { planned: 2_025, actual: 925 },
+      invest: { planned: 100, actual: 100 },
+      left: { planned: 8_875, actual: 6_375 },
+    });
+    expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
+    expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
+    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
+    expect(overview.pace?.planned.at(-1)).toBe(2_025);
+  });
+
+  it('derives future overviews from plan edits and describes negative left as over budget', () => {
+    const data = emptyAppData('2026-03-01');
+    data.budgetPlan = {
+      incomes: incomes(500),
+      lines: [{ category: 'Food', mode: 'amount', value: 700 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-04',
+    };
+    const before = budgetOverview(data, '2026-04', '2026-03-15');
+    expect(before.mode).toBe('future');
+    expect(before.pace).toBeNull();
+    expect(before.stacked.left.planned).toBe(-200);
+    expect(before.summary.stacked).toContain('Planned over by ₹200');
+    data.budgetPlan.lines = [{ category: 'Food', mode: 'amount', value: 400 }];
+    const after = budgetOverview(data, '2026-04', '2026-03-15');
+    expect(after.sections.find(({ id }) => id === 'survival')?.planned).toBe(400);
+    expect(after.stacked.left.planned).toBe(100);
+  });
+
+  it('includes unmatched policy payments and unplanned income in an actual overspend summary', () => {
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      policies: [policy],
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
+        incomes: incomes(100),
+        lines: [{ category: 'Food', planned: 50 }],
+      }],
+      transactions: [
+        { id: 'salary', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-03-02' },
+        { id: 'rental', type: 'income' as const, amount: 30, category: 'Rental', note: '', date: '2026-03-03' },
+        { id: 'food', type: 'expense' as const, amount: 150, category: 'Food', note: '', date: '2026-03-04' },
+        {
+          id: 'unmatched-policy-payment',
+          type: 'expense' as const,
+          amount: 20,
+          category: 'Insurance',
+          note: '',
+          date: '2026-03-06',
+          source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'unmatched-entry' },
+        },
+      ],
+    };
+    const overview = budgetOverview(data, '2026-03', '2026-03-15');
+    expect(overview.sections.find(({ id }) => id === 'income')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Rental', planned: 0, actual: 30, kind: 'income' }),
+      ]),
+    );
+    expect(overview.sections.find(({ id }) => id === 'insurance')?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Health cover', planned: 0, actual: 20, kind: 'linked' }),
+      ]),
+    );
+    expect(overview.stacked.left.actual).toBe(-40);
+    expect(overview.summary.stacked).toContain('Actual over by ₹40');
   });
 
   it('reports overdue obligations without a separate budget history model', () => {
