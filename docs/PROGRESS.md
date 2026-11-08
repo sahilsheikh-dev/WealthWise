@@ -2,6 +2,183 @@
 
 # Wealth Wise master progress ledger
 
+## Historical checkpoint commit message correction (2026-11-07)
+
+- With explicit owner authorization, corrected five historical checkpoint
+  subjects on `main` and force-pushed using a lease from
+  `6d50bdb9887ced961433c93daaf3a4c67f341d7c`. Each replacement commit has the
+  same tree as its original:
+  - `9b9066bb3c51c33a78e98b2779d664f16f2c2700` ->
+    `9e8bde709c618fe5359258507e8182a4c873499c` — `docs: add release
+    management documentation`.
+  - `b0586fcbdf0787a0acd929f8bb3f2e044d699389` ->
+    `3ef87b1cb54370addd987ad382f8350a25778858` — `docs: align Phase 29
+    progress counter`.
+  - `ff349515887dae09ac5ebc34776ec2754ed80dbe` ->
+    `f467e58701a91b709009f03eb1b7b47a3f5d1332` — `chore: update Expo SDK 57
+    patch dependencies`.
+  - `ecc5c354579bf5812effe5adc3492e61cfd98f4f` ->
+    `c94aca65b842c3fe2b6590bb3c3e3093e50fdcf3` — `fix: clarify Budget
+    due-day field labels`.
+  - `75e9097bcf62c09cf22149160318e6392fb1060c` ->
+    `46ffe0966dcacd8839244f4a7e9e87ddb2c3cbaa` — `fix: simplify Budget
+    management sheet labels`.
+- Verified the rewritten subjects and unchanged tree IDs, and confirmed
+  `origin/main` now resolves to `91cfde59c4cd4821377399c55fb1ba3052aaf9f2`.
+  The published `v1.0.0` tag was intentionally left unchanged at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; no tests or builds were needed
+  for this message-only history change.
+
+## Release commit message correction (2026-11-07)
+
+- Reworded local commit `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15` to
+  `60a4c8b1d287fbea1cec7f622690aa898b61bda0`
+  (`docs: prepare initial v1.0.0 release draft`), matching its release-draft
+  and status changes.
+- Reworded local commit `8c0857c2c50dfc87cc67808cdc0bf09aa7139739` to
+  `be1e626f8b13e499f94bc86b1a517ed33d0cab14`
+  (`docs: record v1.0.0 release publication`), matching its publication
+  record, history and release-documentation changes.
+- Replayed descendant `8324822981153b602f5168e08b6759537fc0f111` unchanged in
+  content as `a29d861d0d8541c942e06b9ebbdc04f61e7c8c29`; no commits were
+  pushed. Existing Copilot co-author trailers were retained. All replacement
+  commits were verified in Git.
+
+## Published release notes directory (2026-11-07)
+
+- Created `docs/releases/published/` and moved the already-published
+  `v1.0.0.md` record there.
+- Updated the release prompt, README, configuration, history, and release
+  rules to require all published Markdown records to live in `published/`;
+  drafts move there after publication verification and are removed from
+  `drafts/`.
+- Updated current status/open-items memory links. This documentation-only
+  change does not alter the GitHub Release or its published notes.
+
+## v1.0.0 GitHub Release published (2026-11-07)
+
+- Published the approved `v1.0.0` GitHub Release at
+  https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0.
+  GitHub reports it is published, not a draft or prerelease, at
+  `2026-11-07T14:12:34Z` (2026-11-07).
+- The `v1.0.0` tag resolves to target commit
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`, matching `origin/main` at
+  publication. The release notes' date placeholder was corrected to
+  `2026-11-07` and the published body reverified.
+- Archived the final notes in `docs/releases/v1.0.0.md`, updated release
+  configuration/history/index and the memory status/open items, and removed
+  the published draft.
+- Pre-publication worktree edits were checkpointed exactly in
+  `6a407b45226ac9e3dc8e2a6399467fe05f6a0a15`
+  (`chore: user manual changes (checkpoint)`). That checkpoint included the
+  deletion of the placeholder `docs/releases/v1.0.0.md`; the permanent record
+  was recreated as requested after publication. The owner's release README
+  line reflow was preserved.
+- No application source or version files were changed. No tests/builds were
+  run. The EAS production build remains unrun.
+
+## Initial v1.0.0 release draft prepared (2026-11-07)
+
+- Preflight worktree was clean. The initial unscoped GitHub CLI listing showed
+  a `v0.1.0` draft; subsequent repository-scoped CLI/API checks returned no
+  releases or tags. Neither result shows a published stable baseline. Reconcile
+  the discrepancy during approval revalidation. The repository initial commit
+  is `f27258093e14809fe923e480381488ece0d859a9`; target branch `main` is at
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`.
+- Recommended version is `v1.0.0`, consistent with `app.json`, `package.json`
+  and `CHANGELOG.md`. The initial commit is the history baseline; 365 commits
+  follow it through the target. GitHub CLI returned no merged PRs; GitHub's
+  contributors endpoint verifies `sahilsheikh-dev` and `Copilot`.
+- Saved the unpublished, source-checked release draft at
+  `docs/releases/drafts/v1.0.0.md`. No version files, tags, GitHub releases,
+  permanent release records or application code were changed.
+- No tests or builds were run for this documentation-only draft. Publication
+  awaits explicit approval; revalidate the target commit and release notes
+  before publishing.
+
+## Release README approval prompts (2026-11-07)
+
+- Added copyable draft-preparation and post-approval publication prompts to
+  `docs/releases/README.md`. The preparation prompt explicitly prohibits
+  publishing and waits for approval; the second prompt revalidates the target
+  commit and release notes before publication and permanent documentation
+  updates.
+- Documentation-only change; no release was prepared or published. No tests
+  were run.
+
+## P29-AB completion record (2026-11-07)
+
+- Owner checkpoint: initial worktree was clean; no owner-manual checkpoint
+  commit was required. Owner edits remained untouched.
+- Added v22 Budget income recurrence: monthly, quarterly, half-yearly and
+  yearly; non-monthly first-due month; strict backup/import support.
+- Preserved owner UI edits: no Insurance or Transactions Available balance
+  border/divider restoration; recurring action remains "Stop investment".
+  The stopped-plan action is now "Resume investment".
+- Gate 1 passed 91 suites: 1193 tests passed, 1 skipped. All files coverage
+  was 95.90% statements, 91.89% branches, 97.75% functions, 97.57% lines.
+  Gate 2 TypeScript passed; Gate 3 lint passed with one existing array-style
+  warning; Gate 4 Expo Doctor passed 21/21; Gate 5 Android export passed with
+  a 5.5 MB bundle; Gate 6 iOS export passed with a 5.2 MB bundle.
+
+## P28-B first-release 1.0.0 metadata (2026-11-07)
+
+- Owner-edit preflight: the worktree was clean; no owner checkpoint commit was
+  required. Protected Home and Budget routes were not edited.
+- Release metadata is aligned to version `1.0.0` in `app.json`,
+  `package.json` and the `package-lock.json` root. CHANGELOG documents the
+  user-visible result from Phases 24 through 29, including Budget income
+  recurrence and schema v22.
+- Exact release commands, not run:
+  `eas build --platform all --profile production`
+  then
+  `git tag -a v1.0.0 -m "WealthWise 1.0.0"`
+- Tag preflight found 17 local tags, no local `v1.0.0`, and no tags returned by
+  `git ls-remote --tags origin`. No tag was created, moved, or deleted.
+- Assertion replacement: old `Phase 29 ██████████ 97% (31/32)`; new
+  `Phase 29         ██████████ 97% (31/32)`; reason: preserve the owner's
+  dashboard column alignment. The memory test counts now match the latest
+  validated 91-suite, 1194-test run rather than the stale 92/1195 record.
+- Six ordered gates: Gate 1 `npm test -- --coverage` exit 0 (91 suites; 1193
+  passed, 1 skipped, 1194 total); Gate 2 `npx tsc --noEmit` exit 0; Gate 3
+  `npx expo lint` exit 0 (one array-style warning); Gate 4 `npx expo-doctor`
+  exit 0 (21/21); Gate 5 Android export exit 0 (5.5 MB bundle); Gate 6 iOS
+  export exit 0 (5.2 MB bundle).
+- Fresh Gate 1 coverage by `src/` directory: `src/data` 758/807 lines
+  (93.93%) and 793/912 branches (86.95%); `src/domain` 3567/3628 lines
+  (98.32%) and 3505/3776 branches (92.82%); `src/lib` 107/107 lines and
+  126/126 branches (100%). Overall coverage: 95.90% statements, 91.89%
+  branches, 97.75% functions and 97.57% lines. Coverage thresholds unchanged.
+
+## P28-B Assets resume action label (2026-11-07)
+
+- The Assets and investment-entries action, its confirmation title, icon
+  selection, accessibility hint, domain assertion and current documentation
+  now use "Resume investment" instead of "Resume recurring".
+- Focused domain regression and TypeScript verification are recorded in chat.
+  No commit was requested or created.
+
+## Release management documentation (2026-11-07)
+
+- Added the release-management documentation set under `docs/releases/`:
+  [README](releases/README.md), reusable
+  [release prompt](releases/RELEASE_PROMPT.md),
+  [release configuration](releases/release-config.md),
+  [release history](releases/release-history.md),
+  [v1.0.0 release record](releases/v1.0.0.md), and the `drafts/` directory.
+- The documentation defines source-verified release discovery, semantic
+  versioning, draft preparation, explicit publication approval, and archival
+  of published release notes and history. It prohibits inventing release
+  details, publishing without approval, and overwriting published records.
+- The user-added files were preserved and checkpointed exactly in
+  `9b9066b` (`chore: user manual changes (checkpoint)`), verified as a commit.
+  No release build or tag was performed by this documentation setup.
+- Release metadata remains unverified: `release-config.md` has `UPDATE_ME`
+  repository identity fields; `release-history.md` marks v1.0.0 as Verify; and
+  `v1.0.0.md` retains placeholders for actual publication date, GitHub Release
+  URL, target commit, verified notes and full changelog URL. These must be
+  populated only after checking the actual published GitHub Release and tag.
+
 ## Contents
 
 1. [How to use this file](#1-how-to-use-this-file)
@@ -50,7 +227,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (106/110)
+Overall progress ██████████ 97% (108/111)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -78,8 +255,8 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
-Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29 ██████████ 97% (30/31)
+Phase 28         ██████████ 100% (1/1)
+Phase 29         ██████████ 97% (31/32)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -167,7 +344,7 @@ Phase 29 ██████████ 97% (30/31)
 | CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
 | P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
 | P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, robust schedule benchmark. | 2026-10-15 |
-| P28-A | — | Planned | QA and release. | 2026-10-15 |
+| P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, owner-confirmed `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections, and the release checklist. Protected routes remain unchanged. | 2026-11-07 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -199,7 +376,18 @@ Phase 29 ██████████ 97% (30/31)
 | P29-X | — | Done | Recurring investment stop/resume implementation preserves entries, valuation, returns and links, suppresses schedule rows after the inclusive stop date and restores future dues on resume. Schema v21 is additive with identity-preserving migration and archive support through `.premigration.v20`. Focused and full gates pass. | 2026-11-05 |
 | P29-Y | — | Done | Repaired the red Gate 1 memory expectations and matched the real suite/test counts without weakening assertions; all six ordered gates pass. The source-of-truth run evidence is recorded in the latest verification section. | 2026-11-05 |
 | P29-Z | — | Done | Documentation and ledger consistency restored from source: Foreclosure label, Home-only AppHeader menu, schema v21 migration chain, archive range through `.premigration.v20`, real Gate 1 counts and owner holding/liability UI history. No behavior, schema or UI source change. | 2026-11-05 |
+| P29-AA | — | Done | Emergency Fund now links manual holdings, recurring plans and Fixed deposits through their live holding IDs. Deleted plans clear EF bucket and goal links in one write; hydration removes dangling links once, archives raw bytes and writes the repaired state; valid links, net worth and goal values remain unchanged. No schema change. Real Gate 1: 92 suites, 1194 passed, 1 skipped. All six gates exit 0. | 2026-11-06 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
+
+DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
+present in `AppData.holdings`; plan and manual deletion must clear stale bucket
+and EF goal links, while no schema change is needed because repair is a
+hydration-only transformation. Replaced assertion: old / any EF bucket ID must
+remain valid forever and deletion/save can surface
+`Every linked investment must exist.` / new / EF links may be repaired once from
+live holding IDs, and valid saving/deletion uses the shared holding collection
+/ reason / stale deleted-plan links and legacy dangling data prevented otherwise
+valid EF saves.
 
 ### Unchanged fix, change, and request IDs
 
@@ -2599,24 +2787,92 @@ physical-device test are complete; device/OS details were not recorded. Phase
 
 ### Phase 26 — Accessibility, performance and final gates
 
-Planned P26-A [P15-M].
+- **P26-A complete (2026-11-06):** report-only inventory committed first as
+  `cfbe023`; accessibility fixes followed in `d4071a5`, performance fixes in
+  `f59b01a`, and regressions/log cleanup in `08b3992`. The report is at
+  [P26-A-report.md](P26-A-report.md). `app/(tabs)/index.tsx` and
+  `app/(tabs)/budget.tsx` remained unedited with protected hashes unchanged;
+  findings for those user-owned screens are reported read-only.
+- Accessibility fixes raise compact actions and search clear targets to 44px,
+  and replace fitted/single-line bottom-tab labels with scalable wrapping
+  labels. Source scanning excludes the protected Home/Budget routes,
+  `SortChip.tsx`, and test files because those surfaces are externally
+  governed or intentionally frozen. Goals memoization was restored because
+  React Compiler rejected it; transactions sorting/group derivation and
+  liability sorting/overview derivation remain memoized.
+- Gate-repair assertions replace old bottom-tab fitting expectations with
+  wrapping/scaling assertions in `BottomTabBar.test.tsx` and
+  `TabsLayout.test.tsx`; the superseded assertions required
+  `adjustsFontSizeToFit`, `minimumFontScale: 0.75`, and one-line labels.
+  The replacement assertions preserve scalable wrapping and document why the
+  old expectations are invalid. These test replacements do not weaken
+  accessibility behavior.
+- Real Gate 1 rerun: 93 suites passed, 1199 tests passed, 1 skipped, 1200
+  total. Gate 2 TypeScript, Gate 3 Expo lint, Gate 4 Expo Doctor 21/21,
+  Gate 5 Android export, and Gate 6 iOS export all exit 0. Lint was rerun
+  cleanly after removing one exhaustive-deps warning.
+- Fresh coverage from the final Gate 1 run, grouped by immediate `src/`
+  directory: `src/data` 749/798 lines (93.86%) and 780/896 branches (87.05%);
+  `src/domain` 3549/3609 lines (98.34%) and 3480/3747 branches (92.87%);
+  `src/lib` 107/107 lines (100%) and 126/126 branches (100%). The repository
+  coverage thresholds remain unchanged; this directory grouping does not
+  include uninstrumented directories such as `src/components` in the
+  coverage-final map.
+- Five-sample Node/TestRenderer medians in the P26-A report: demo/50-year
+  cold hydration 0 ms/147 ms, demo/50-year Home first render 9 ms/11 ms,
+  demo/50-year Budget first render 3 ms/2 ms, and 50-year action write 3 ms.
+  The 50-year fixture stores 2,604,654 bytes. These are Jest/Node
+  measurements, not physical-device evidence. Native layout, touch and
+  font-scale behavior remain pending physical-device verification.
 
 ### Phase 27 — Cleanup
 
-Planned P27-A: dead-code/dependency review (including whether
-`SectionHeaderRow` and `fitsInline` remain used after the ChipRow redesign),
-bundle audit, README and a robust schedule benchmark.
+- **P27-A complete (2026-11-07):** report committed first as `b805fb1`.
+  Dead-code cleanup was committed as `a8a2d78`; dependency cleanup as
+  `61714ec`; and the robust schedule benchmark as `dd0c930`. The canonical
+  inventory is [P27-A-report.md](P27-A-report.md).
+- Knip and ts-prune were run. Knip's high-confidence orphan production paths
+  were verified by grep and removed: `SectionHeaderRow`, `fitsInline`,
+  `BudgetCategorySections`, and the standalone `scripts/dryRunMigration.ts`.
+  Orphaned tests for removed code were removed; this did not delete tests to
+  gain coverage. `src/lib/sorting.ts` remains protected, so legacy
+  `monthReview` metadata stays unchanged. `app/(tabs)/index.tsx` and
+  `app/(tabs)/budget.tsx` were not edited.
+- `@expo/ui`, `expo-device`, `expo-glass-effect`, `expo-image`,
+  `expo-symbols`, and `expo-web-browser` had no source/config reference and
+  were removed from direct dependencies. Config-required Expo dependencies,
+  Expo native packages used by transitive tooling, and Expo build/plugins were
+  retained. No install-script approval or audit-force operation was performed.
+- Current `npm audit --omit=dev --json` reported 7 vulnerability nodes (4
+  moderate, 3 high), not the 27 mentioned in the task or the historical 67 in
+  older ledger notes; the attached snapshot was not an audit record.
+  SDK-57-compatible patch fixes were not offered by npm, and only Expo SDK/Router
+  major-owner decisions remain.
+- Android export measured 16,674,443 bytes (15.90 MiB, 69 files); iOS export
+  measured 15,396,647 bytes (14.68 MiB, 65 files). The largest file on each
+  platform is the single Hermes bundle. No unused source asset was proven by
+  `check:assets`; branding checks pass.
+- The 50-year daily schedule benchmark now asserts exactly 18,250 rows and uses
+  a generous 60-second safety ceiling instead of the previous 10-second
+  wall-clock assertion.
+- Gate results after every implementation commit: Gate 1 0, Gate 2 0, Gate 3 0,
+  Gate 4 0, Gate 5 0, Gate 6 0. Final Gate 1 passed 91 suites/1192 tests: 1191
+  passed and 1 skipped. Coverage is `src/data` 749/798 lines (93.86%) and
+  780/896 branches (87.05%); `src/domain` 3549/3609 lines (98.34%) and
+  3480/3747 branches (92.87%); `src/lib` 107/107 and 126/126 (100%).
 
 ### Phase 28 — QA and release
 
-Planned P28-A: property tests, QA checklist, release engineering and local
-diagnostics.
-
-**Assumed:** this task explicitly assigns the release-preparation work to
-P25-A, which the prior ledger had reserved for encrypted backups. To preserve
-the unimplemented feature in the roadmap without claiming it shipped, encrypted
-backups move to P25-B [P15-L]. This task does not implement encryption or
-perform a store release.
+P28-A: report-only release preparation began with
+`docs/P28-A-report.md`, covering release identity, permissions, storage/archive
+keys, erase-all, migration fixtures and accepted npm risks. The owner confirmed
+version `0.2.0`; `app.json`, `package.json`, package-lock root/package entries,
+CHANGELOG and README were aligned without source behavior or schema changes.
+`docs/RELEASE-CHECKLIST.md` records owner pre-build steps, the full device-test
+ledger, exported-backup rollback and exact not-run EAS/tag commands. No store
+build, tag or submission was run. The `npm audit --omit=dev` result is 7
+production vulnerability nodes; no major upgrade, force fix or install-script
+approval occurred.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
 they most directly evidence; round/ledger close-out commits use that round or
@@ -2838,7 +3094,7 @@ evidence present in exports/checkpoints.
 | P29-U | Phase 29 | — | 16d1c9bc | 2026-11-05 | Add optional valuation methods to the current holding model, with shared values, v19 additive migration and a default-off monthly update reminder. | Done; compatibility tests compare mock, demo and all checked-in old-version fixtures; configured accrual/unit vectors, reminders and all six ordered gates are recorded below. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29U-LEGACY-VALUATION-COMPAT. Assumed: P29-U is new Phase 29 work; inferred defaults remain suggestions until saved. Conflict: plan `ratePct` is already required in v18, so preserve it instead of weakening the existing schema; manual holdings may omit it. Manual opening value has no start date and is treated as current when no snapshot date exists; an opening amount without a historical unit price is valued at the latest price. Replaced assertions are listed in the P29-U section below. | current request |
 | P29-V | Phase 29 | — | — | 2026-11-05 | Prevent SQLite migration data loss, support historical dates through 1900, revise stress tiers to the supported date window, and ensure backup exports round-trip or refuse before file creation. | Done; failure-injection tests cover SQLite open/write/read-back errors, date/stress fixtures validate through import, the 50-year tier round-trips plain and encrypted, larger tiers report the character limit, and all six ordered gates pass. | Single task commit; hash verified with `git cat-file -t` and reported in the task response. | DEC-P29V-SQLITE-VERIFIED-FALLBACK, DEC-P29V-DATE-STRESS-BOUNDS, DEC-P29V-BACKUP-ROUNDTRIP. Assumed: P29-V is new Phase 29 work; dense means 200-year transaction/holding-entry and daily-SIP record counts mapped into the 126-year supported window. No schema bump. Replaced assertions are listed in the P29-V section below. | current request |
 | P29-W | Phase 29 | — | 16d1c9bc | 2026-11-05 | Inventory early recurring-liability closure and implement the owner's frozen foreclosure behavior across due, payment, Budget, reminder, Home and net-worth surfaces. | Step 1 report-only inventory committed first (`bf2610cb5add9a8857b07f3cad50415c0e624cbf`). Step 2 adds an optional closure record in schema v20, a one-write close action with Undo, linked payment and separate excess charge, Closed filter, and note-only closed-loan editing. | Focused store, backup/migration and route tests pass; final six ordered gate results and implementation commit object are recorded below. | DEC-P29W-FORECLOSURE-INVENTORY; DEC-P29W-FORECLOSURE-RECORD. Assumed: P29-W is new Phase 29 work. Existing `settlement` is a dated balance anchor, not an explicit closed-state marker; the optional closure record is required to distinguish foreclosure from ordinary settlement. No Home source edit. Replaced assertions are listed below. | current request |
-| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume recurring restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
+| P29-X | Phase 29 | — | 16d1c9bc | 2026-11-05 | Stop or resume recurring investments while preserving holdings, entries, value, returns and links. | Added inclusive stop-date behavior and Resume investment restoration on schema v21; scheduled dues after stop are removed from shared projections while overdue and past unpaid dues remain. | Report-only inventory `a4a47e63515c90a61903322ae73fe55fa40bf4b8`, implementation commit `b20b4a76b2afb5114ce9934d54d9145a574521a7`, layout follow-up `ee3966e` and all ordered gates verified. | Assumed: stopDate is the inclusive last scheduled date. Replaced assertions are recorded in the P29-X implementation record. | current request |
 | P29-Y | Phase 29 | — | 16d1c9bc | 2026-11-05 | Repair stale Gate 1 memory assertions and verify the real counts. | Memory and progress expectations were reconciled to real Jest output without weakening assertions; ordered gates pass. | Commit `7ffa09ad75b2ad42883c1d573ba8133d15cf1304`; real suite/test evidence is preserved in this ledger. | Replaced assertions: stale suite/test counts and latest-run text / real source-derived counts / owner asked Gate 1 repaired. | current request |
 | P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
 
@@ -7104,6 +7360,10 @@ Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
 recorded as a blocked task, adding one item to the denominator without
 increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
 
+P28-A assertion replacement: old `Overall progress 96% (107/111)` and Phase
+28 `0% (0/1)`; new `97% (108/111)` and Phase 28 `100% (1/1)`; reason: the
+release-report, metadata and checklist work is completed and counted as Done.
+
 ### DEC-P29N — Reminders prompt (2026-11-04)
 
 - **Assumed:** P29-N is new Phase 29 work. Schema remains v17; no AppData
@@ -8555,7 +8815,7 @@ entries.
 | P29-X Step 1 | Done | Report-only inventory committed first as `a4a47e63515c90a61903322ae73fe55fa40bf4b8`; schedule, dues, Budget, reminders, goals, card and store paths were inventoried before product edits. |
 | P29-X schema | Done | Schema v21 adds optional `PlanHolding.stopDate`; migration from v20 is identity-preserving and the existing premigration archive supports `.premigration.v20`. |
 | P29-X stop/resume behavior | Done | Pure `stopPlan()` and `resumePlan()` mutations plus one-write store Undo actions. `planSchedule()` and `planNextRows()` apply the inclusive cutoff; goal projections stop future contributions. |
-| P29-X UI | Done | Recurring-plan section has Stop recurring / Resume recurring controls and card text; stop date uses a validated form and confirmation dialog. |
+| P29-X UI | Done | Recurring-plan section has Stop investment / Resume investment controls and card text; stop date uses a validated form and confirmation dialog. |
 | P29-X verification | Done | Focused schedule/store tests passed; all six ordered gates passed before implementation commit. |
 
 P29-X final verification:
@@ -8646,7 +8906,7 @@ DEC-P29LAYOUT-ASSET-LIABILITY: the holding Summary card is a single card that
 contains recurring-plan details and financial values. The Summary uses
 single-column rows for Monthly amount, Next due and Value date, and two-column
 detail cells for Invested, Current value/balance, date and Gain. `Stop
-recurring` / `Resume recurring` remains in the holding action row/footer area.
+investment` / `Resume investment` remains in the holding action row/footer area.
 The owner's removed holding Entries and Edit recurring-plan controls are not
 restored.
 
@@ -8696,7 +8956,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   “Foreclosure” / reason: owner renamed the recurring-liability early closure
   action consistently across card, entries and form surfaces.
 - Replaced assertions: old / only one-time and recurring holding card paths /
-  new / every recurring plan card exposes Stop recurring or Resume recurring /
+  new / every recurring plan card exposes Stop investment or Resume investment /
   reason: owner requires stop/resume on all recurring asset cards.
 - Replaced assertions: old / global three-dot menu available where no explicit
   right actions exist / new / menu appears only for Home route variants /
@@ -8705,8 +8965,8 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   Home route variants; explicit supplied `menu` and `showDefaultMenu={false}`
   behavior remains independent.
 - DEC-P29RECURRING-CARD: instrument-card actions use id `stop` for both stop
-  and resume labels; active plans show Stop recurring, stopped plans show
-  Resume recurring.
+  and resume labels; active plans show Stop investment, stopped plans show
+  Resume investment.
 - Validation state before final ordered rerun: focused AppHeader,
   instrument-card and route smoke tests passed; TypeScript passed; Gate 1 real
   run passed 92 suites, 1192 passed tests, 1 skipped, 1193 total.

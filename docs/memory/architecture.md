@@ -51,8 +51,8 @@ P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
 
 ## Schema and archives
 
-Current persisted schema is v21. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v20. The v14-to-v15 migration
+Current persisted schema is v22. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v21. The v14-to-v15 migration
 converted legacy Insurance goals; the v15-to-v16 migration applies holding
 capabilities and separates legacy FD/RD records without dropping entries or
 schedules. The v16-to-v17 migration removes only retired cover-goal records
@@ -70,6 +70,9 @@ note, and separate charge transaction id.
 The v20-to-v21 migration is identity-preserving. Plan holdings can optionally
 store `stopDate`; shared schedule, pending, Budget, reminder and goal
 projection paths treat it as an inclusive cutoff.
+The v21-to-v22 migration is additive and marks existing Budget income items
+monthly with no first-due month. Recurrence-aware income totals use the
+shared income due-month rule while frozen month snapshots retain saved values.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through

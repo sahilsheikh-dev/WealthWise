@@ -31,8 +31,8 @@ no cloud or network requests at runtime.
   On the holding details screen, recurring-plan details and financial Summary
   values are combined in one card; recurring Stop/Resume stays in the holding
   action row.
-  Active recurring asset plans show Stop recurring; stopped plans show Resume
-  recurring. Liability cards and details consistently use Foreclosure.
+  Active recurring asset plans show Stop investment; stopped plans show Resume
+  investment. Liability cards and details consistently use Foreclosure.
   The global three-dot options menu appears only on the Home/Index screen;
   assets, liabilities, reminders, backup, security, profile and theme screens
   keep screen-specific actions instead of showing duplicate global options.
@@ -47,6 +47,9 @@ no cloud or network requests at runtime.
   Close, backdrop and Android back dismiss without changing the budget.
 - Savings goals, goal-linked assets and an emergency fund with editable
   allocation items.
+- Emergency Fund holdings link by holding ID across manual holdings, recurring
+  plans and migrated Fixed deposits. Deletion and hydration remove dangling
+  links without changing net worth or valid goal/link amounts.
 - Simple editable insurance policy tracking with scheduled premium dues for
   term life, life, health, motor, home and other cover.
 - Local backup export and restore with schema validation and a SHA-256
@@ -352,10 +355,11 @@ platform settings.
 - The owner reports that the app works on a physical device. Device model and
   operating system were not recorded; this is owner verification, not
   automated device evidence.
-- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
-  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
-  production-dependency-tree and development/build-tool findings; see the
-  progress ledger for package lists.
+- The current `npm audit --omit=dev` run reports 7 production advisories:
+  4 moderate and 3 high. These are accepted release risks because patch-level
+  fixes that remain within Expo SDK 57 are not available. Major Expo/Router
+  upgrades or `npm audit fix --force` require separate owner approval and are
+  not included in this release.
 - WealthWise is not financial, tax, legal or insurance advice. Insurance cover
   multiples and similar figures are planning guidelines only, not a judgment
   of adequacy or a recommendation.
@@ -363,8 +367,7 @@ platform settings.
 ## License
 
 This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
-Sheikh. The license holder is based on the locally configured account name and
-should be confirmed by the owner.
+Sheikh.
 
 ## Brand assets
 

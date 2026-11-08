@@ -54,6 +54,7 @@ import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
+  repairEfLinkedHoldings,
   saveEfPlan,
   setEfAllocation,
   setEfBucketLinks,
@@ -757,6 +758,8 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v19`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v20`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v21`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v22`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
@@ -878,6 +881,10 @@ export function createAppStore(
         if (allocationNeedsRepair) {
           data = { ...data, efAllocation: allocationResolution.allocation };
         }
+        const efLinkResolution = repairEfLinkedHoldings(data);
+        if (efLinkResolution.repaired) {
+          data = efLinkResolution.data;
+        }
         const today = deps.today();
         data = ensureCurrentMonthBudget(data, today, deps.newId);
         let undoImport: { savedAt: ISODate } | null = null;
@@ -895,7 +902,7 @@ export function createAppStore(
         } catch {
           undoImport = null;
         }
-        suppressNextWrite = true;
+        suppressNextWrite = !efLinkResolution.repaired;
         try {
           storeApi.setState({ data, undoImport, hydrated: true, status: 'ready' });
         } finally {

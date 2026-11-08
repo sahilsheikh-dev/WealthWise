@@ -226,6 +226,8 @@ export type BudgetIncomeItem = {
   category: EarnedIncomeCategory;
   amount: number;
   day?: number;
+  frequency?: BudgetItemFrequency;
+  firstDueMonth?: string;
 };
 
 export type BudgetOtherIncomeItem = {

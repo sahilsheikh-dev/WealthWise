@@ -802,6 +802,26 @@ describe('route render smoke audit', () => {
     ['Investment entry form edit', React.createElement(InvestmentEntryFormScreen)],
   ];
 
+  it.each([
+    ['Home', () => React.createElement(HomeScreen)],
+    ['Transactions', () => React.createElement(TransactionsScreen)],
+    ['Goals', () => React.createElement(GoalsScreen)],
+    ['Budget', () => React.createElement(BudgetScreen)],
+  ])('%s renders at 1.3x and 2.0x text scale', async (_name, createScreen) => {
+    for (const fontScale of [1.3, 2]) {
+      mockFontScale = fontScale;
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        renderer = renderScreen(createScreen());
+        await Promise.resolve();
+      });
+      if (!renderer) throw new Error(`${_name} did not render at ${fontScale}x.`);
+      act(() => renderer?.unmount());
+      renderer = undefined;
+    }
+    mockFontScale = 1;
+  });
+
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
@@ -1482,7 +1502,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
-        name: 'Consulting', amount: 1500, category: 'Freelance', day: 15,
+        name: 'Consulting', amount: 1500, category: 'Freelance', day: 15, frequency: 'monthly',
       }, 'following', todayISO());
       act(() => renderer?.unmount());
       renderer = undefined;
@@ -1503,7 +1523,7 @@ describe('route render smoke audit', () => {
         await Promise.resolve();
       });
       expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, 'salary-row', {
-        name: 'Contract income', amount: 12500, category: 'Freelance',
+        name: 'Contract income', amount: 12500, category: 'Freelance', frequency: 'monthly',
       }, 'month', todayISO());
       const incomeRenderer = renderer;
       if (!incomeRenderer) throw new Error('Budget income form renderer was not created.');
