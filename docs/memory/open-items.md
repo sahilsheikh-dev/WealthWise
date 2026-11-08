@@ -72,12 +72,14 @@
 - **Local-only branch audit:** the release-policy commits are integrated
   through PRs #21-#25; their merged task branch was deleted as required.
   Other local task branches whose commits are already in `main` remain local
-  only because merged task branches are deleted by policy. The local
-  `task/P28-E-phase-history` branch has one unique documentation commit, but
-  its comparison with `develop` spans 35 files, including application code;
-  it was not pushed or merged because it is outside this release change and
-  needs separate review. `codex-changes` is likewise outside this release
-  chain and was left untouched.
+  only because merged task branches are deleted by policy. P28-E's final
+  verification commit `72fb325` is preserved and its stale status text is
+  reconciled on the P28-E-R2 task branch for chronological PR integration.
+  `codex-changes` is not safe to publish as-is: it is based on schema v2
+  rather than current v22, includes generated coverage files, and review
+  found a persisted-data migration bug, a failing migration assertion, and
+  merge conflicts with current `main`. It remains local pending a decision
+  to port any still-needed changes.
 - **v1.1.0 release integrity:** the owner explicitly approved the `preview`
   profile and reused versionCode 1 for this release. For future releases,
   restore the configured `android-apk` profile and increment versionCode.
