@@ -37,10 +37,10 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 91 suites, 1195 tests (1194 passed; one opt-in stress benchmark
-  skipped) in the real P28-C-R2/P28-A-R1 Gate 1 run on 2026-11-08. All six ordered gates
-  exited 0. See [status.md](status.md) and the [progress ledger](../PROGRESS.md)
-  for exact gate results and coverage.
+- Test counts: 92 suites, 1197 tests (1196 passed; one opt-in stress
+  benchmark skipped) in the P28-C-R3 Gate 1 run on 2026-11-08. All six ordered
+  gates exited 0. See [status.md](status.md) and the
+  [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.

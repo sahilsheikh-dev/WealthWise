@@ -22,7 +22,6 @@ no cloud or network requests at runtime.
 - [Brand assets](#brand-assets)
 
 ## Download
-
 Latest version: v1.0.0
 Release date: 2026-11-07
 - [Download the latest Android app (v1.0.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk)

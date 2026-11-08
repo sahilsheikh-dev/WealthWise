@@ -1,36 +1,37 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
-- Current task: P28-C-R2 and P28-A-R1 are complete; no application behavior
-  changed. The v1.0.0 APK is uploaded to the GitHub release, with its verified
-  size and SHA-256 recorded in the Builds table. The repository is private, so
-  both unauthenticated public download routes return HTTP 404. The GitHub
-  release-body edit, EAS build metadata and tag decision remain pending owner
-  action; no release body or tag was changed. The Builds row is pending owner
-  data. All six ordered gates passed; exact counts and exits are in
+- Current task: P28-C-R3 is complete; no application behavior changed. The
+  public latest and versioned v1.0.0 APK links return HTTP 200 with
+  Content-Length 112133413, and the downloaded artifact's SHA-256 matches the
+  release record. EAS build metadata is verified and the approved `v1.0.0`
+  tag points to the build commit on `origin/main`. The owner release-body edit
+  and physical-device checklist remain pending. All six ordered gates passed:
+  92 suites, 1,196 tests passed and 1 skipped. Exact exits and coverage are in
   [PROGRESS.md](../PROGRESS.md). See [open-items.md](open-items.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
   remote tip are recorded in [PROGRESS.md](../PROGRESS.md). The published
-  `v1.0.0` tag remains unchanged at its original history.
+  `v1.0.0` tag was later aligned with the verified EAS build source under the
+  explicit P28-C-R3 approval; details are in [PROGRESS.md](../PROGRESS.md).
 - The two v1.0.0 release-documentation message corrections and their
   release-folder follow-up are included in the rewritten, pushed `main`
   history; details are recorded in [PROGRESS.md](../PROGRESS.md).
 - Release-management documentation is present under `docs/releases/`:
   reusable workflow prompt, configuration, release history and
   `published/v1.0.0.md` record.
-  The v1.0.0 GitHub Release was published on 2026-11-07 at
-  `1c1426d03fadccc51278ed9af5426cacd4c9d7af`; its remote tag and release URL
-  are verified. The process requires verified changes and explicit
+  The v1.0.0 GitHub Release was published on 2026-11-07 and its release URL
+  is verified. The tag was aligned to the verified build source in P28-C-R3.
+  The process requires verified changes and explicit
   publication approval. The release README now gives separate prompts for
   preparing an unpublished draft and publishing only after approval.
   See the release publication entry in [PROGRESS.md](../PROGRESS.md).
 - P28-B first-release metadata is aligned to version 1.0.0. The v1.0.0 GitHub
-  Release and remote tag are published; the tag remains off current
-  `origin/main`, and its owner decision is pending. The APK asset is uploaded,
-  but public links are inaccessible while the repository is private. EAS build
-  identifiers and the Android `versionCode` remain owner to supply.
+  Release and APK are published; the public links, EAS build and approved
+  remote tag alignment are verified in P28-C-R3. The GitHub release body's
+  stored `targetCommitish` still shows the original target because no release
+  edit was made.
 - Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
@@ -57,10 +58,10 @@
 
 - P28-C release organization and build management are complete. The reusable
   release-notes template, EAS profiles/version identifiers, build history,
-  release approval rules and draft ignore policy are documented under
+  release approval rules and committed draft workflow are documented under
   `docs/releases/`. P28-C-R2 records the v1.0.0 APK asset and download details;
-  no build, submission, release-body edit, publication, or tag change was made
-  as part of this task.
+  P28-C-R3 verifies the public links, EAS artifact and approved tag alignment.
+  No build, submission, GitHub release-body edit or branch push was made.
 
 - P27-A cleanup is complete. Report-only commit `b805fb1`; implementation
   commits are `a8a2d78` (dead code), `61714ec` (dependencies), and
@@ -160,15 +161,15 @@
   coverGoalId data; P29-M2 adds PolicyPayment dueDate and supports migrations
   and backups through v17.
 - Runtime: Node.js 26.13.0.
-- Test counts: 91 suites, 1195 tests (1194 passed; one opt-in stress benchmark
-  skipped) in the real 2026-11-08 P28-C-R2/P28-A-R1 Gate 1 run; all six ordered gate results are recorded in
-  [PROGRESS.md](../PROGRESS.md). P29-M2's 1120-test run, P29-N's
-  1104-test run and P29-M's blocked reproduction remain historical records in
-  [PROGRESS.md](../PROGRESS.md).
-- Latest validated run: 91 suites, 1195 tests (1194 passed, 1 skipped) on
-  2026-11-08; all six final gates exit 0. Lint had no warnings after the
-  isolated shorthand-array fix. Coverage and exact commands are recorded in
-  [PROGRESS.md](../PROGRESS.md).
+- The historical 2026-11-08 P28-C-R2/P28-A-R1 run had 91 suites and 1195
+  tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
+  1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
+  historical records in [PROGRESS.md](../PROGRESS.md).
+- Test counts: 92 suites, 1197 tests (1196 passed; one opt-in stress benchmark
+  skipped) in the latest P28-C-R3 run.
+- Latest validated run: 92 suites, 1197 tests (1196 passed, 1 skipped) on
+  2026-11-08; all six final gates exit 0. Coverage and exact commands are
+  recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).

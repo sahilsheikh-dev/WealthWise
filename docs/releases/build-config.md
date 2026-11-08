@@ -92,8 +92,9 @@ Before creating a release build:
 2. Confirm the intended source commit, release notes, app version and
    production EAS profile.
 3. Export a fresh app backup and verify that it can be restored.
-4. Complete and record the iOS and Android physical-device pass for the
-   release candidate.
+4. Run and record the Android physical-device
+   [release checklist](./device-test-checklist.md). Automated tests and Expo
+   exports do not replace device checks.
 5. Confirm EAS signing credentials and store access without copying secrets
    into the repository.
 6. Confirm the owner explicitly approved release publication and tagging.
@@ -110,11 +111,12 @@ infer a successful build or submission from a command being started.
 
 Before publishing a GitHub release, download the `android-apk` EAS artifact,
 rename it exactly `WealthWise-android.apk`, and attach it to the release draft
-with `gh release upload`. Verify the published download route with
-`curl -I -L`; record the expected redirect (302) and final success (200).
-Update the root README Download section with the current version/date, working
-Android asset link, owner-supplied iOS link and any new installation notes.
-Keep the Old versions link. Record the APK EAS build ID, `versionCode` and
-artifact name in the Builds table. Production iOS binaries are for TestFlight
-or the App Store only. A release is complete only after the README,
-`release-history.md` and GitHub release assets agree.
+with `gh release upload`. Verify both latest and versioned download links
+using `curl -I -L`; both final responses must be HTTP 200. Record each final
+status and `Content-Length`, download the APK, and verify its SHA-256 against
+the release record. Keep the root README Download section byte-identical to
+the latest published release Download block. Record the APK EAS build ID,
+`versionCode`, source commit, profile, date and artifact name in the Builds
+table. A release is incomplete until both links return HTTP 200, the checksum
+matches, and the README, published notes, `release-history.md` and GitHub
+assets agree.

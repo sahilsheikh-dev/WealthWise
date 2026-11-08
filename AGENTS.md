@@ -5,12 +5,11 @@ This `AGENTS.md` is the repository's single instruction entry point for every
 AI tool. Keep tool-specific instruction files out of the repository; update
 these shared instructions instead.
 
-Reports, audits, checklists, and generated output belong in chat responses or
-under `/tmp`, never in the repository. Routine documentation changes in Git
-are limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-except that only `.gitkeep` may be committed under
-`docs/releases/drafts/`. Change other documentation only when the owner
-explicitly requests those files.
+Reports, audits and generated output belong in chat or `/tmp`; release content
+must remain in Git and never be placed under `/tmp`. Routine documentation
+changes in Git are limited to `docs/memory/*`, `docs/PROGRESS.md`, and
+`docs/releases/**`, including release drafts. Change other documentation only
+when the owner explicitly requests those files.
 
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
@@ -33,12 +32,11 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 - **R3 — History and release approval:** never push, amend or rewrite history
   unless the owner explicitly asks. Release publication and tag creation,
   movement or deletion require explicit owner approval.
-- **R4 — Documentation scope:** keep routine committed documentation within
-  `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`; do not commit
-  release-draft contents (the `docs/releases/drafts/.gitkeep` exception is
-  allowed). Other documentation files may be changed only when explicitly
-  named in the owner's task. Reports and generated output belong in chat or
-  `/tmp`.
+- **R4 — Documentation scope:** routine documentation committed to Git is
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
+  including drafts. Other documentation files may be changed only when the
+  owner explicitly names them. Reports and generated output belong in chat or
+  `/tmp`; release content must never be placed there.
 - If an owner edit causes a test failure, update the test to match the source
   and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and
@@ -65,19 +63,25 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
 - For every GitHub release, attach the Android APK named exactly
-  `WealthWise-android.apk`. Include a Download block with that version's
-  versioned asset link and SHA-256 in both its published Markdown and GitHub
-  release body. Update the README Download section with the latest version,
-  release date, version-labelled latest link, SHA-256, iOS availability
-  message and older-versions link. Verify both the latest and versioned links
-  with `curl -I` and `curl -I -L`, recording the observed results. Record the
-  EAS build ID, Android `versionCode`, source commit and artifact in the
-  `release-history.md` Builds table. A release remains incomplete until the
-  README, published Markdown, release history and GitHub assets agree. Old
-  published notes may receive only their own versioned Download block; do not
-  otherwise rewrite them. Follow `docs/releases/build-config.md`; production
-  Android AABs go to Google Play, APKs to GitHub, and iOS builds to
-  TestFlight/App Store.
+  `WealthWise-android.apk`. Anyone starting or continuing release work
+  creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
+  subject `docs: draft vX.Y.Z release notes`. After publication is verified,
+  move it to `docs/releases/published/` and commit the move; never leave a
+  published file in drafts or a draft in published. Include the Download
+  block and SHA-256 in published Markdown and the GitHub release body. The
+  README Download section and latest release Download block must be identical
+  and use the latest route; older releases use their own versioned link. When
+  adding a Download block to an existing published note, add or replace only
+  that block; do not otherwise rewrite the file. When a newer version is
+  published, change only the previous release's Download block to its
+  versioned link. Verify both download links
+  with `curl -I -L`; both must return HTTP 200 and the APK hash must match.
+  Record EAS build ID, Android `versionCode`, source commit and artifact in
+  the `release-history.md` Builds table. A release is incomplete until both
+  links return 200, the hash matches, and the README, published Markdown,
+  release history and GitHub assets agree. Follow
+  `docs/releases/build-config.md`; production Android AABs go to Google Play
+  and APKs to GitHub. iOS distribution is not currently offered.
 
 ## Schema and verification
 
