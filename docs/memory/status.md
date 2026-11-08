@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
 
 # Status
+- Branching adoption: local `develop` was bootstrapped from main baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d`. The baseline contains legacy
+  unreleased Release 2 history; the new stable-main rule applies
+  prospectively. P28-D adds COMMON RULES, the branch/gate workflow, and
+  contributor/security templates. All six gates pass; Gate 1: 98 suites,
+  1,230 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall,
+  `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
+  96.95/92.85/98.80/98.32%, `src/lib` 100% in all measures.
 - Commit-subject enforcement is active in the repository: the old behavior
   allowed non-descriptive placeholder subjects; the new POSIX hook requires a
   supported Conventional Commit subject and rejects placeholders. The reason
@@ -187,12 +195,11 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 97 suites, 1228 tests (1227 passed; one opt-in stress benchmark
-  skipped) in the latest Release 2 stabilization run.
-- Latest validated run: 97 suites, 1228 tests (1227 passed, 1 skipped) on
-  2026-11-08; Gates 1-4 exit 0. Expo exports were not run because builds are
-  outside task scope. Coverage and exact commands are recorded in
-  [PROGRESS.md](../PROGRESS.md).
+- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
+  skipped) in the P28-D run.
+- Latest validated run: 98 suites, 1231 tests (1230 passed, 1 skipped) on
+  2026-11-08; all six gates exit 0. Coverage and exact commands are recorded
+  in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).

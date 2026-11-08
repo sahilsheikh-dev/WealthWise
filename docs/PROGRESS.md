@@ -51,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (122/123)
+Overall progress ██████████ 99% (123/124)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (7/7)
+Phase 28         ██████████ 100% (8/8)
 Phase 29         ██████████ 97% (33/34)
 Phase 30         ██████████ 100% (3/3)
 ```
@@ -177,6 +177,7 @@ Phase 30         ██████████ 100% (3/3)
 | P28-C-R1 | — | Done | Added pending-safe app downloads and What's new, an Android APK profile, post-build asset/link/README/history checklist, and corrected README schema, recurrence, Insurance and test claims. Fixed the existing lint warning in its own commit. Its pending-APK status was updated by P28-C-R2. All six ordered gates passed at that revision; no build, publication, tag or protected-route changes. | 2026-11-08 |
 | P28-C-R2 | — | Done | Published the v1.0.0 APK Download details, tightened release requirements across shared policy files, and recorded the uploaded asset's name, size and digest. Its `/tmp` release-block staging approach was superseded by P28-C-R3. No release-body edit, build, tag or push. | 2026-11-08 |
 | P28-C-R3 | — | Done | Finalized release rules, Download parity and its derived Jest regression; verified both public APK links and SHA-256, matched the EAS build, aligned the approved v1.0.0 tag, and added the owner-run device checklist. No app behavior changed; GitHub release-body edit and physical-device tests remain owner actions. | 2026-11-08 |
+| P28-D | — | Done | Established shared branching, commit and gate rules; added contributor/security guidance and GitHub templates. `develop` bootstrapped at `a258579c4b580d6f3a157b8d13de53334aa8d34d`; rule applies prospectively to legacy unreleased history. All six gates pass; Gate 1: 98 suites, 1,230 passed, 1 skipped. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -378,29 +379,73 @@ default-item, validation and save/rehydration coverage.
 
 ## 3. Standing rules
 
-- **R1 — Dirty-file preflight and commit subjects:** before other work, list
-  every dirty file and run `git diff --stat` plus the complete diff. Before
-  committing, show the proposed subject and staged diff-stat. Commit exactly
-  the named files with a descriptive Conventional Commit subject that states
-  what actually changed; use one commit per unrelated area. Do not use
-  placeholder or update-only subjects, and never bypass the commit hook.
-  Preserve owner edits and never revert them.
-  Reason and supersession: the earlier wording did not require a proposed
-  subject/staged-stat preview; the current rule makes both visible before
-  commit and relies on the hook to enforce descriptive subjects. CM-1 records
-  the old/new behavior and why the change was made.
-- **R2 — Phase and revision IDs:** align each task with existing work. A fix
-  or change to a completed subtask stays in its original phase and is logged
-  as `<ID>-R<n>`; add `Revised by <ID>-R<n>` to the original row. Create a new
-  phase and subtasks only for genuinely new areas.
-- **R3 — History and release approval:** never push, amend or rewrite history
-  unless the owner explicitly asks. Release publication and tag creation or
-  movement require explicit owner approval.
-- **R4 — Documentation scope:** routine documentation committed to Git is
-  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-  including drafts. Other documentation files may be changed only when
-  explicitly named in the owner's task. Reports and generated output belong
-  in chat or `/tmp`; release content must never be placed there.
+These COMMON RULES apply to every prompt and task, whether or not a prompt
+repeats or pastes them. If a task explicitly authorizes a narrower exception,
+apply only that exception and preserve all other rules.
+
+- **R1 — Preflight and commits:** before other work, list every dirty file and
+  run `git diff --stat` plus the complete diff. Before each commit, show the
+  proposed subject and staged diff-stat. Commit exactly the named files, use
+  one commit per unrelated area, and use a descriptive Conventional Commit
+  subject stating what changed. Allowed types are `feat`, `fix`, `docs`,
+  `test`, `chore`, `refactor`, `perf`, `style`, `build`, `ci`, and `revert`;
+  optional scopes are allowed. Use a descriptive subject and never bypass
+  the hook, which rejects prohibited placeholder subjects. Preserve owner
+  edits; never use checkout, restore, stash, reset, or old-code reapplication
+  to undo them. Enable the hook with
+  `git config core.hooksPath .githooks`.
+- **R2 — Phase and revision IDs:** align work with its existing phase. A fix
+  to a completed subtask stays in that phase and uses `<ID>-R<n>`; the
+  original row must say `Revised by <ID>-R<n>`. Create a new phase only for
+  genuinely new work.
+- **R3 — History, pushes and release approval:** agents do not push unless
+  the owner explicitly authorizes it, and never force-push or rewrite history.
+  Never publish releases or create, move, or delete release tags without
+  explicit owner approval.
+- **R4 — Documentation scope:** routine Git documentation is limited to
+  `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
+  `SECURITY.md`, and `.github/**`. Change other documentation only when
+  explicitly authorized. Reports and generated output belong in chat or
+  `/tmp`; release content must remain in Git, never `/tmp`.
+
+### Branching
+
+- `main` is stable, released code; changes arrive by release or hotfix merge
+  and receive a `vX.Y.Z` tag. The initial branching adoption baseline may
+  contain legacy unreleased history; this rule applies prospectively.
+- `develop` is the integration branch and must pass all six gates.
+- Create one `phase/NN-slug` branch per phase from `develop`. A revision to a
+  completed phase reopens its existing phase branch from `develop` (R2).
+- Create `task/ID-slug` branches from their phase branch, one per subtask or
+  revision. Example: `task/P29-AB-R2-income-rows`.
+- Create `release/vX.Y.Z` from `develop` for versioning, changelog and draft
+  release notes. Merge it `--no-ff` into `main`, tag it, then back-merge into
+  `develop`. Create `hotfix/vX.Y.Z` from `main`, merge to `main`, tag, and
+  merge to `develop`.
+- External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
+  into `develop`. Contributor PRs are squash-merged with a Conventional
+  Commit title.
+- Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
+  release/hotfix to `main` with `--no-ff`. Agents never commit directly to
+  `main` or `develop`, except the explicitly authorized bootstrap. Delete
+  merged task branches and keep phase branches. Do not push unless asked;
+  report merge commands in chat.
+
+### Gates
+
+Run these six gates in order and record each real exit code:
+
+```bash
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
+```
+
+Expo exports are allowed when required. EAS builds and local Gradle builds
+are not authorized unless explicitly requested.
 - **Release documentation:** anyone starting or continuing release work
   creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it as
   `docs: draft vX.Y.Z release notes`. After publication is verified, move the
@@ -2884,6 +2929,7 @@ evidence present in exports/checkpoints.
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
+| P28-D | Phase 28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | Bootstrap commit hash to be recorded after commit. | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
 | P20-N-R1 | Phase 20 | — | current | 2026-11-08 | Replace Budget's stacked allocation bar with per-section actual-versus-planned Pace. | Red route test before production edits: expected zero stacked bars, received two at font scales 1.0, 1.3 and 2.0. After the change, chart/domain/route/demo suites pass (4 suites, 247 tests). The full Gate 1 passed 97 suites, 1,227 tests passed, 1 skipped; Gates 2-4 passed. Exports were skipped under the no-build instruction. | `f904769` (`feat: add section-based Budget Pace chart`). | Old: stacked-bar proportion assertions and global spending-pace assertions. New: section timelines, dashed/solid pairs, toggles, axes, accessibility, and contrast; route asserts no stacked bar. Reason: the chart now compares actual and planned pace by section. | current request |
 | P30-A | Phase 30 | — | current | 2026-11-08 | Diagnose edited values that appear stale after actions or restart. | Three restart tests fail: failed SQLite write, SQLite read-back mismatch and temporary legacy fallback all restore old SQLite bytes. Real store action JSON/fresh hydration match; all eight mounted screen refresh checks and previous-state immutability checks pass. | Diagnosis commit: `a251c3a60a0d0ef8b101d9721246c05f8559d41f` (`test: reproduce persisted value loss after restart`). | Confirmed stale SQLite preference. Not confirmed: UI memoization/React Compiler, module-level caches (none found), in-place mutation, broad/missing subscriptions, or route-param object caching. | current request |
 | P30-B | Phase 30 | — | current | 2026-11-08 | Fix confirmed persisted-value loss and expose failed writes. | All three restart reproductions now pass; deletion tombstones also prevent stale SQLite values returning. A mounted StorageErrorBanner test confirms an unpersistable update is announced. | Implementation commit: `ec019effd1b1f29190885c4effb5235be50898cd` (`fix: prefer verified fallback data after restart`). | The old adapter selected SQLite first after process restart despite a newer legacy fallback. A durable, read-back-verified authority marker now resolves source precedence; old failed-write assertions were replaced by restart-passing assertions because the newest verified value must win. | current request |
@@ -9378,6 +9424,31 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   `79bad92c8161d136c1477f6e817c7ecb55b6caa7`.
 - The rewritten commits remain local and unpushed; `main` is two commits ahead
   of `origin/main`. No file content was changed by the history rewrite.
+
+### P28-D branching and contributor-doc bootstrap (2026-11-08)
+
+- Created local `develop` from the exact main adoption baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d` (commit object verified).
+  Existing main history includes unreleased Release 2 changes; the stable-main
+  rule applies prospectively and no history was rewritten.
+- Added the COMMON RULES section to AGENTS.md, mirrored R1-R4, branch policy,
+  merge policy and six gates in the shared rules/ledger, and added
+  contributor/security guidance, PR/issue templates and CODEOWNERS.
+- New Jest documentation checks require the common-rule declaration and all
+  branch prefixes in CONTRIBUTING.md and shared rules. Progress totals remain
+  derived from ledger rows.
+- This bootstrap commit is the sole direct commit to `develop` authorized by
+  the owner. Push is deferred to the authorized final branch-publishing step.
+- Six gates, in order: `npm test -- --coverage` exit 0 on retry (98 suites;
+  1,230 passed, 1 skipped, 1,231 total); `npx tsc --noEmit` exit 0;
+  `npx expo lint` exit 0; `npx expo-doctor` exit 0 (21/21);
+  `npx expo export --platform android` exit 0 (5.5 MB bundle);
+  `npx expo export --platform ios` exit 0 (5.2 MB bundle). Coverage:
+  overall 95.96/92.01/98.01/97.62% (statements/branches/functions/lines);
+  `src/data` 91.03/87.39/94.46/94.17%; `src/domain`
+  96.95/92.85/98.80/98.32%; `src/lib` 100% in all measures. The initial
+  parallel Gate 1 attempt exited 1 on two 5-second crypto/stress test
+  timeouts; both tests pass in isolation and the complete retry passed.
 
 ### Release 2 stabilization close-out (2026-11-08)
 

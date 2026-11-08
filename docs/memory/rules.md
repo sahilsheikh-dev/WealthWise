@@ -4,14 +4,13 @@
 
 ## Invariants
 
-- **R1 — Dirty-file preflight and commit subjects:** before other work, list
-  every dirty file and run `git diff --stat` plus the complete diff. Before
-  committing, show the proposed subject and staged diff-stat. Commit exactly
-  the named files with a descriptive Conventional Commit subject that states
-  what actually changed; use one commit per unrelated area. Do not use
-  placeholder or update-only subjects, and never bypass the commit hook.
-  Preserve owner edits and never revert them.
-- Enable commit-message enforcement in each clone with
+- **COMMON RULES apply to every prompt**, even if not repeated in a prompt.
+  R1 requires a dirty-file preflight with `git diff --stat` and the complete
+  diff; before each commit show its subject and staged diff-stat, commit only
+  named files, and use a descriptive Conventional Commit subject. Allowed
+  types are `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `perf`,
+  `style`, `build`, `ci`, and `revert`; optional scopes are allowed. The
+  hook rejects prohibited placeholder subjects. Never bypass it; enable it with
   `git config core.hooksPath .githooks`.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
@@ -19,13 +18,29 @@
   `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
   new areas.
 - **R3 — History and release approval:** never push, amend or rewrite history
-  unless the owner explicitly asks. Release publication and tag creation,
-  movement or deletion require explicit owner approval.
+  unless the owner explicitly authorizes a push; never force-push. Release
+  publication and tag creation, movement or deletion require explicit owner
+  approval.
 - **R4 — Documentation scope:** routine documentation committed to Git is
-  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-  including release drafts. Other documentation files may be changed only
-  when explicitly named in the owner's task. Reports and generated output
-  belong in chat or `/tmp`; release content must never be placed there.
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`,
+  `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
+  files may be changed only when explicitly named. Reports and generated
+  output belong in chat or `/tmp`; release content must remain in Git.
+- Branching: `main` is stable released code; `develop` is integration and
+  must pass all six gates; phase branches use `phase/NN-slug`, task branches
+  use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
+  use `hotfix/vX.Y.Z`, and external contributors use `contrib/ISSUE-slug`
+  with PRs into `develop`. The branching adoption baseline can contain legacy
+  unreleased history; the stable-main rule applies prospectively. Merge tasks
+  into phases and phases into `develop` with `--no-ff`; release/hotfix to
+  `main` also uses `--no-ff`; contributor PRs are squash-merged with a
+  Conventional Commit title. Agents do not push unless asked, do not commit
+  directly to `main`/`develop` except an authorized bootstrap, delete merged
+  task branches, and keep phase branches.
+- The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
+  `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
+  and `npx expo export --platform ios`. Expo exports are allowed; EAS and
+  Gradle builds are not unless explicitly authorized.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and

@@ -12,6 +12,10 @@
 
 ## Unresolved
 
+- **Branching baseline exception:** the initial `develop` baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
+  which contains legacy unreleased Release 2 work. Branch protection and
+  release-only main merges apply prospectively; no history rewrite was made.
 - **v1.0.0 GitHub release body (owner action):** the canonical body is
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
