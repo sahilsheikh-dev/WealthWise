@@ -1,82 +1,178 @@
+> AI agent context and durable project memory: [docs/memory/README.md](docs/memory/README.md).
+
 # WealthWise
 
-WealthWise is a local-first Expo / React Native finance app with TypeScript,
-Expo Router, a typed design system, domain validation, local persistence,
-backup and restore, and optional device-authenticated app lock. It has no cloud
-services or account authentication.
+WealthWise is an offline-first personal finance app built with Expo and React
+Native. It keeps application data on the device using local storage and makes
+no cloud or network requests at runtime.
 
-## Create and install
+## Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Getting started](#getting-started)
+- [Commands](#commands)
+- [Project structure](#project-structure)
+- [Architecture and data](#architecture-and-data)
+- [Data and privacy](#data-and-privacy)
+- [Limitations and disclaimer](#limitations-and-disclaimer)
+- [License](#license)
+- [Brand assets](#brand-assets)
+
+## Features
+
+- Home overview of net worth, account balances, emergency-fund progress,
+  Insurance cover and scheduled dues.
+- Income, expense and investment transactions, with linked holding and policy
+  entries where supported.
+- Manual and planned investment holdings, investment-entry history, and
+  recurring and one-time liabilities with payment tracking.
+- Monthly budgets with spend/invest sections, income entries, recurring item
+  schedules, due tracking and cash-flow views.
+- Savings goals, goal-linked assets and an emergency fund with editable
+  allocation items.
+- Insurance policies, policy-payment tracking and cover targets for term life,
+  health, motor, home and other cover.
+- Local backup export and restore with schema validation and a SHA-256
+  integrity check.
+- Local payment reminders with privacy-aware notification text and an
+  in-app paid/not-paid confirmation route.
+- Optional device-authenticated app lock and locally stored theme preferences.
+
+## Screenshots
+
+Release screenshots were prepared by the owner; image files are not included
+in this repository.
+
+## Getting started
+
+This repository uses npm and includes `package-lock.json`. Use Node.js 26;
+`.nvmrc` selects 26.13.0 and `package.json` permits `>=26.0.0 <27`.
 
 ```bash
-npx create-expo-app@latest WealthWise --template blank-typescript
-cd WealthWise
-npx expo install expo-router expo-font expo-status-bar expo-splash-screen expo-constants expo-linking react-native-safe-area-context react-native-screens @expo/vector-icons @expo-google-fonts/montserrat
+npm ci
+npm run start
 ```
 
-Then copy the Phase 1 source into the project and start it:
+Use the Expo development server to open the app. The `ios` and `android`
+commands below run native projects locally and require the corresponding
+development toolchain.
+
+## Commands
+
+These commands correspond to scripts in `package.json`:
+
+| Command | Purpose |
+|---|---|
+| `npm run start` | Start the Expo development server. |
+| `npm run ios` | Run the app on an iOS simulator/device using the local native toolchain. |
+| `npm run android` | Run the app on an Android emulator/device using the local native toolchain. |
+| `npm run web` | Start the web development server. |
+| `npm test -- --coverage` | Run Jest tests and collect coverage. |
+| `npm run typecheck` | Run TypeScript without emitting files. |
+| `npm run lint` | Run Expo lint. |
+| `npm run build:branding` | Regenerate branding assets. |
+| `npm run check:assets` | Validate generated/committed branding assets. |
+| `npm run reset-project` | Destructive Expo starter-template reset; **do not run on this application**. |
+
+The additional release checks used for this repository are:
 
 ```bash
-npx expo start
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
 ```
 
-Open the QR code with Expo Go, or use the interactive terminal menu to launch
-an iOS simulator or Android emulator.
+`eas.json` defines development, preview and production EAS profiles. There is
+no app-build command in `package.json`.
 
-## Structure
+## Project structure
 
-- `app/` contains the Expo Router root stack, Home/Transactions/Goals tabs, domain
-  forms, backup, security, liabilities, onboarding, and Emergency fund screens.
-- `src/theme/` contains the system-aware theme registry and six accessible palettes.
-- `src/components/ui.tsx` contains reusable accessible, themed UI components.
-- `src/domain/` contains the data schema, pure financial logic, and backup
-  validation.
-- `src/data/` contains the local store, persistence, and separate backup
-  metadata store.
-- `src/mock/data.ts` contains demo values and precomputed summary figures.
-- `src/lib/format.ts` provides Indian currency and date formatting.
+- `app/` — Expo Router routes and the four tab screens.
+- `src/domain/` — domain types, Zod schemas, migrations, pure financial rules,
+  summaries and backup validation.
+- `src/data/` — Zustand store, persistence, safe storage and data migrations.
+- `src/components/` — shared UI, including reusable form controls in
+  `src/components/form/`.
+- `src/hooks/` — application hooks.
+- `src/lib/` — shared pure utilities and platform-facing helpers.
+- `src/mock/` — demo data and its tests.
+- `src/theme/` and `src/constants/` — theme definitions and application
+  constants.
+- `assets/` and `scripts/` — bundled visual assets and branding/asset scripts.
+- `docs/PROGRESS.md` — project decisions, phase history, verification record
+  and release-preparation audit.
 
-## Validation
+## Architecture and data
 
-```bash
-npm test -- --coverage
-npx expo lint
-npx tsc --noEmit
-npx expo config --type public
-```
+The app uses Expo SDK 57, Expo Router routes in `app/`, and a pure domain layer
+in `src/domain/`. The domain layer has no React or Expo dependency; date and
+identifier inputs are supplied at the boundary where needed. Zod schemas
+validate persisted and imported data.
 
-Theme preference and transaction data are stored locally on this device.
-Backup and restore are available from the Home menu.
+Zustand persists app data through AsyncStorage. Persisted schema version 13 is
+the current version. The migration chain upgrades supported data from schema
+versions 1 through 13. Backup import verifies the file integrity and validates
+the imported data, applying supported migrations where required.
 
-The optional monthly take-home income in onboarding and Profile is used to
-estimate how much of your income goes to EMIs. It is stored locally in the
-existing `monthlySalary` field for backup compatibility.
+The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
+liabilities, investments, insurance, forms, backup and settings live directly
+under `app/`.
 
-## Branding
+## Data and privacy
 
-The primary mark is concept A: a rising geometric W. It is legible at small
-sizes, works as a one-color adaptive icon, and remains recognizable on both
-light and dark backgrounds.
+Application data is stored locally on the device; there are no user accounts or
+runtime cloud synchronization. Backup files are created only when the user
+exports them. Encrypted export is the default and protects the exported file
+with a passphrase; the passphrase is never stored, and a lost passphrase cannot
+be recovered. The optional plain-export choice is unencrypted and clearly
+warns before sharing. SHA-256 in the original backup JSON checks integrity; it
+is not encryption or authentication.
 
-To regenerate the app icon, Android adaptive assets, favicon, splash marks, and
-in-app BrandMark images, run:
+Backup encryption protects exported files only. App data stored on this device
+remains unencrypted; an app lock or device authentication is not encryption.
+Encrypted backups are decrypted in memory before the existing integrity,
+validation and migration checks. Picked files use a temporary cache copy for
+reading and are removed afterward. The explicit plain-export choice also uses
+a temporary cache file for the system share sheet and removes it afterward.
+The plaintext result of decrypting an encrypted backup is never written to a
+temporary file. Operating-system backups may include app data according to
+platform settings.
+
+## Limitations and disclaimer
+
+- Local reminders cover up to 60 nearest dated dues and refresh when the app
+  opens, returns to the foreground, or relevant data/settings change. A long
+  gap without opening the app may leave the reminder window empty. Notification
+  delivery is local only; no push tokens, network service, or exact alarms are
+  used. Android and iOS local notifications may require a development or
+  production build for native validation.
+- The owner reports that the app works on a physical device. Device model and
+  operating system were not recorded; this is owner verification, not
+  automated device evidence.
+- `npm audit --omit=dev` reported 27 advisories (6 high, 20 moderate, 1 low);
+  `npm audit` reported 55 (6 high, 44 moderate, 5 low). These include
+  production-dependency-tree and development/build-tool findings; see the
+  progress ledger for package lists.
+- WealthWise is not financial, tax, legal or insurance advice. Insurance cover
+  multiples and similar figures are planning guidelines only, not a judgment
+  of adequacy or a recommendation.
+
+## License
+
+This project is licensed under the MIT License. Copyright (c) 2026 Sahil Aspak
+Sheikh. The license holder is based on the locally configured account name and
+should be confirmed by the owner.
+
+## Brand assets
+
+To regenerate the app icon, Android adaptive assets, favicon, splash marks and
+in-app BrandMark images:
 
 ```bash
 npm run build:branding
 npm run check:assets
 ```
 
-To choose another SVG direction, change `BRAND_CONCEPT` at the top of
-`scripts/build-branding.mjs` to `a`, `b`, or `c`, then rebuild. Update the
-brand-level colors in `assets/branding/brand.json` when changing the separate
-launcher/splash identity; in-app theme colors remain independent.
-
-## Data and privacy
-
-Wealth Wise stores app data locally on this device. A backup export contains all
-financial data in a readable plain-text JSON file, so anyone who can access a
-copy can read it. Its SHA-256 checksum detects accidental file damage; it is
-not encryption and does not prove who created or changed a file.
-
-App lock uses the device's local authentication and does not encrypt data stored
-on this device. On iOS, the operating system's device backup may include app
-data; an app cannot disable that operating-system backup from within the app.
+Brand source files are in `assets/branding/`; in-app theme colors are managed
+separately in `src/theme/`.

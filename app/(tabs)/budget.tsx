@@ -199,6 +199,8 @@ export default function BudgetScreen() {
           params: { month, incomeId: item.source.incomeId, scope: scopeFor(false) },
         });
         return;
+      case 'other-income':
+        return;
       case 'plan':
         router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
         return;

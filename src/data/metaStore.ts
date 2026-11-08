@@ -11,16 +11,39 @@ const sortSpecSchema = z.strictObject({
   key: z.string(),
   dir: z.enum(['asc', 'desc']),
 });
+const reminderPreferencesSchema = z.strictObject({
+  enabled: z.boolean(),
+  localTime: z.string().regex(/^(?:[01]\d|2[0-3]):(?:00|30)$/),
+  dayBefore: z.boolean(),
+  sameDay: z.boolean(),
+  showAmounts: z.boolean(),
+});
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
   nudgeDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   storageWarnDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   sortSpecs: z.record(z.string(), sortSpecSchema).optional(),
+  reminders: reminderPreferencesSchema.optional(),
 });
 
 export type BackupMeta = z.infer<typeof metaSchema>;
+export type PersistedReminderPreferences = z.infer<typeof reminderPreferencesSchema>;
+
+export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
+  enabled: false,
+  localTime: '09:00',
+  dayBefore: true,
+  sameDay: true,
+  showAmounts: false,
+};
 
 export function createMetaStore(storage: StateStorage) {
+  const listeners = new Set<(meta: BackupMeta) => void>();
+
+  function publish(meta: BackupMeta): void {
+    for (const listener of listeners) listener(meta);
+  }
+
   async function getMeta(): Promise<BackupMeta> {
     let raw: string | null;
     try {
@@ -39,7 +62,18 @@ export function createMetaStore(storage: StateStorage) {
     const validated = metaSchema.safeParse({ ...current, ...patch });
     if (!validated.success) throw new Error('Backup metadata is invalid.');
     await storage.setItem(META_KEY, JSON.stringify(validated.data));
+    publish(validated.data);
     return validated.data;
+  }
+
+  async function clearMeta(): Promise<void> {
+    await storage.removeItem(META_KEY);
+    publish({});
+  }
+
+  function subscribe(listener: (meta: BackupMeta) => void): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   }
 
   async function getSortSpec(
@@ -66,5 +100,5 @@ export function createMetaStore(storage: StateStorage) {
     });
   }
 
-  return { getMeta, updateMeta, getSortSpec, updateSortSpec };
+  return { getMeta, updateMeta, clearMeta, subscribe, getSortSpec, updateSortSpec };
 }

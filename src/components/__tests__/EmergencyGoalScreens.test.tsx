@@ -391,7 +391,7 @@ describe('three-month emergency target screens', () => {
     }
   });
 
-  it.each([1.3, 2])('renders the Home Insurance Card after Emergency fund with ordered details and a final bar at font scale %s', async (fontScale) => {
+  it.each([1.3, 2])('renders the Home Insurance section after upcoming dues and before Goal Progress at font scale %s', async (fontScale) => {
     const empty = emptyAppData('2026-10-11');
     const policy: Policy = {
       id: 'home-term-life',
@@ -413,6 +413,17 @@ describe('three-month emergency target screens', () => {
       ...empty,
       policies: [policy],
       coverGoals: defaultCoverGoals(),
+      liabilities: [{
+        id: 'upcoming-friend-payment',
+        kind: 'one-time',
+        name: 'Friend',
+        type: 'Borrowed money',
+        principal: 20_000,
+        ratePct: 0,
+        startDate: '2026-01-01',
+        dueDate: '2026-10-20',
+        payments: [],
+      }],
       transactions: [{
         id: 'recent-salary',
         type: 'income',
@@ -433,14 +444,27 @@ describe('three-month emergency target screens', () => {
 
     const cards = renderer.root.findAll((node) => String(node.type) === 'card');
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    const cardType = cards[0]!.type;
-    expect(renderedText(cards[0]!)).toContain('Net Worth');
-    expect(cards[0]!.findByProps({ label: 'Emergency fund' })).toBeDefined();
+    const netWorthCard = cards.at(0);
+    if (!netWorthCard) throw new Error('Home summary card is missing.');
+    expect(renderedText(netWorthCard)).toContain('Net Worth');
+    expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
     const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
     expect(insurancePressable.props.accessibilityRole).toBe('button');
     expect(insurancePressable.props.accessibilityLabel).toBe('Open Insurance');
     expect(insurancePressable.parent).toBeDefined();
-    expect(cards[1]).toBe(insurancePressable.findByType(cardType));
+    const orderedMarkers = renderer.root.findAll((node) => {
+      const text = node.type === 'text' ? renderedText(node).trim() : '';
+      return node.props.testID === 'home-insurance-card'
+        || ['Upcoming and due', 'Insurance', 'Goal Progress'].includes(text);
+    }).map((node) => node.props.testID ?? renderedText(node).trim());
+    const upcomingIndex = orderedMarkers.indexOf('Upcoming and due');
+    const insuranceHeadingIndex = orderedMarkers.indexOf('Insurance');
+    const insuranceCardIndex = orderedMarkers.indexOf('home-insurance-card');
+    const goalProgressIndex = orderedMarkers.indexOf('Goal Progress');
+    expect(upcomingIndex).toBeGreaterThanOrEqual(0);
+    expect(insuranceHeadingIndex).toBeGreaterThan(upcomingIndex);
+    expect(insuranceCardIndex).toBeGreaterThan(insuranceHeadingIndex);
+    expect(goalProgressIndex).toBeGreaterThan(insuranceCardIndex);
     const detailRowIds = [
       'home-insurance-row-total-cover',
       'home-insurance-row-yearly-premium',
@@ -453,7 +477,8 @@ describe('three-month emergency target screens', () => {
       'home-insurance-row-yearly-premium',
       'home-insurance-row-next-renewal',
     ]);
-    const insuranceCard = insurancePressable.findByType(cardType);
+    const insuranceCard = insurancePressable.findAll((node) => String(node.type) === 'card').at(0);
+    if (!insuranceCard) throw new Error('Home Insurance card is missing.');
     expect(lastChildTestID(insuranceCard)).toBe('home-insurance-term-progress');
     expect(insurancePressable.findByProps({ testID: 'home-insurance-term-progress' })
       .findByProps({ testID: 'goal-progress-row' })).toBeDefined();

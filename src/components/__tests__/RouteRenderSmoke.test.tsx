@@ -1,5 +1,8 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Sharing from 'expo-sharing';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
@@ -27,7 +30,9 @@ import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
 import OnboardingScreen from '../../../app/onboarding';
 import PolicyFormScreen from '../../../app/policy-form';
+import PaymentConfirmScreen from '../../../app/payment-confirm';
 import ProfileFormScreen from '../../../app/profile-form';
+import RemindersScreen from '../../../app/reminders';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
@@ -41,6 +46,8 @@ import { monthKey, shiftMonth } from '../../domain/dates';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
 import { emptyAppData } from '../../domain/actions';
+import { createBackup } from '../../domain/backup';
+import { encryptBackup, isEncryptedBackup } from '../../domain/backupCrypto';
 import type { AppData, Goal, ManualHolding, OneTimeLiability, PlanHolding, RecurringLiability } from '../../domain/types';
 import { useUIStore } from '../../data/uiStore';
 import { useAppStore } from '../../data/store';
@@ -53,6 +60,10 @@ import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/bu
 let mockFontScale = 1;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const mockKeyboardListeners: Record<string, (event: { endCoordinates: { height: number } }) => void> = {};
+const mockFileWrites: string[] = [];
+let mockPickedFileText = '';
+let mockDocumentPickerResult: { canceled: boolean; assets?: { uri: string }[] | null } = { canceled: true };
+const mockGetRandomBytesAsync = jest.fn(async (length: number) => new Uint8Array(length).fill(7));
 const mockConfirmAsync = jest.fn(async (_options: {
   title: string;
   message: string;
@@ -67,22 +78,24 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('expo-crypto', () => ({
   digestStringAsync: jest.fn(async () => 'digest'),
+  getRandomBytesAsync: (length: number) => mockGetRandomBytesAsync(length),
+  randomUUID: jest.fn(() => 'backup-import-id'),
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
 }));
 
 jest.mock('expo-document-picker', () => ({
-  getDocumentAsync: jest.fn(async () => ({ canceled: true })),
+  getDocumentAsync: jest.fn(async () => mockDocumentPickerResult),
 }));
 
 jest.mock('expo-file-system', () => ({
   File: class {
     uri: string;
     exists: boolean;
-    constructor(uri = '') { this.uri = uri; this.exists = false; }
+    constructor(uri = '', name = '') { this.uri = name ? `${uri}/${name}` : uri; this.exists = false; }
     create() { this.exists = true; }
-    write() { return undefined; }
+    write(contents: string) { mockFileWrites.push(contents); return undefined; }
     delete() { this.exists = false; }
-    async text() { return ''; }
+    async text() { return mockPickedFileText; }
   },
   Paths: { cache: '' },
 }));
@@ -213,10 +226,20 @@ jest.mock('../../data/store', () => {
     useAppStore,
     metaStore: {
       getMeta: async () => ({}),
+      updateMeta: async (patch: object) => patch,
       updateSortSpec: async () => ({}),
     },
   };
 });
+
+jest.mock('../../lib/reminderNotifications', () => ({
+  reminderNotificationAdapter: {
+    getPermissionState: jest.fn(async () => 'granted'),
+    requestPermission: jest.fn(async () => 'granted'),
+    openSettings: jest.fn(async () => undefined),
+    scheduleTest: jest.fn(async () => undefined),
+  },
+}));
 
 jest.mock('../../data/useAppData', () => {
   const mockData = {
@@ -457,7 +480,21 @@ jest.mock('../../components/form/ChoiceField', () => {
 jest.mock('../../components/form/SwitchRow', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    SwitchRow: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
+    SwitchRow: ({ label, value, onValueChange }: {
+      label: string;
+      value: boolean;
+      onValueChange: (value: boolean) => void;
+    }) => ReactModule.createElement(
+      'view',
+      null,
+      ReactModule.createElement('text', null, label),
+      ReactModule.createElement('switch', {
+        accessibilityRole: 'switch',
+        accessibilityLabel: label,
+        value,
+        onValueChange,
+      }),
+    ),
   };
 });
 
@@ -555,6 +592,7 @@ jest.mock('react-native', () => {
   );
   return {
     Alert: { alert: jest.fn() },
+    AppState: { addEventListener: () => ({ remove: jest.fn() }), currentState: 'active' },
     BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
     FlatList,
     Keyboard: {
@@ -568,6 +606,7 @@ jest.mock('react-native', () => {
     Platform: { OS: 'ios' },
     PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
+    ActivityIndicator: node('activityindicator'),
     ScrollView: node('scrollview'),
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Switch: node('switch'),
@@ -586,6 +625,43 @@ function renderScreen(screen: React.ReactElement) {
   });
   if (!renderer) throw new Error('Route did not render.');
   return renderer;
+}
+
+function findPressable(renderer: TestRenderer.ReactTestRenderer, label: string) {
+  const control = renderer.root.findAllByProps({ accessibilityLabel: label })
+    .find((node) => typeof node.props.onPress === 'function');
+  if (!control) throw new Error(`Button ${label} was not rendered.`);
+  return control;
+}
+
+function pressControl(renderer: TestRenderer.ReactTestRenderer, label: string) {
+  const control = findPressable(renderer, label);
+  const onPress = control.props.onPress;
+  if (typeof onPress !== 'function') throw new Error(`Button ${label} has no press handler.`);
+  act(() => onPress());
+}
+
+async function pressControlAndWait(renderer: TestRenderer.ReactTestRenderer, label: string) {
+  const control = findPressable(renderer, label);
+  const onPress = control.props.onPress;
+  if (typeof onPress !== 'function') throw new Error(`Button ${label} has no press handler.`);
+  await act(async () => {
+    const result = onPress();
+    if (result instanceof Promise) await result;
+  });
+}
+
+function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
+  return renderer.root.findAllByType('text')
+    .map((node) => textContent(node.props.children))
+    .join(' ');
+}
+
+function textContent(value: React.ReactNode): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.map(textContent).join('');
+  if (React.isValidElement<{ children?: React.ReactNode }>(value)) return textContent(value.props.children);
+  return '';
 }
 
 function makeInvestmentTestPlan(): PlanHolding {
@@ -648,6 +724,8 @@ function openDropdown(
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
+    ['Reminders', React.createElement(RemindersScreen)],
+    ['Payment confirmation', React.createElement(PaymentConfirmScreen)],
     ['Home', React.createElement(HomeScreen)],
     ['Budget', React.createElement(BudgetScreen)],
     ['Budget section form', React.createElement(BudgetSectionFormScreen)],
@@ -700,6 +778,142 @@ describe('route render smoke audit', () => {
         ? 'budget-form'
         : undefined;
     assertNoVerbText(renderer.root, { screen: screenKind });
+  });
+
+  it('exports encrypted backups by default without writing plaintext or persisting the passphrase', async () => {
+    mockFileWrites.length = 0;
+    mockFontScale = 1;
+    mockConfirmAsync.mockClear();
+    mockConfirmAsync.mockResolvedValue(true);
+    mockGetRandomBytesAsync.mockClear();
+    jest.mocked(Sharing.isAvailableAsync).mockResolvedValue(true);
+    jest.mocked(Sharing.shareAsync).mockClear();
+    jest.mocked(AsyncStorage.setItem).mockClear();
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      for (const fontScale of [1.3, 2]) {
+        mockFontScale = fontScale;
+        renderer = renderScreen(React.createElement(BackupScreen));
+        const passphrase = renderer.root.findByProps({ accessibilityLabel: 'Passphrase' });
+        const confirmation = renderer.root.findByProps({ accessibilityLabel: 'Confirm passphrase' });
+        act(() => {
+          passphrase.props.onChangeText('a sufficiently long passphrase');
+          confirmation.props.onChangeText('a sufficiently long passphrase');
+        });
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Passphrase' }).props.secureTextEntry).toBe(true);
+        pressControl(renderer, 'Show passphrase');
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Passphrase' }).props.secureTextEntry).toBe(false);
+        if (fontScale === 2) {
+          await pressControlAndWait(renderer, 'Export encrypted backup');
+        }
+        act(() => renderer?.unmount());
+        renderer = undefined;
+      }
+
+      expect(mockGetRandomBytesAsync.mock.calls.map(([length]) => length)).toEqual([16, 12]);
+      expect(mockFileWrites).toHaveLength(1);
+      const writtenFile = mockFileWrites[0];
+      if (!writtenFile) throw new Error('The encrypted export did not write a file.');
+      expect(isEncryptedBackup(writtenFile)).toBe(true);
+      expect(writtenFile).not.toContain('a sufficiently long passphrase');
+      expect(AsyncStorage.setItem).toHaveBeenCalled();
+      const persistedValues = jest.mocked(AsyncStorage.setItem).mock.calls
+        .map(([, value]) => value)
+        .join('\n');
+      expect(persistedValues).not.toContain('a sufficiently long passphrase');
+      expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
+    } finally {
+      mockFontScale = 1;
+      if (renderer) act(() => renderer?.unmount());
+    }
+  });
+
+  it('retries encrypted imports after a wrong passphrase and still accepts plain backups', async () => {
+    const plainText = await createBackup(emptyAppData(todayISO()), {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest: async () => 'digest',
+    });
+    const correctPassphrase = 'a sufficiently long passphrase';
+    const encryptedText = await encryptBackup(plainText, correctPassphrase, {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://encrypted-backup', name: 'encrypted.json', lastModified: 0 }],
+    });
+    mockPickedFileText = encryptedText;
+    mockConfirmAsync.mockClear();
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BackupScreen));
+      await pressControlAndWait(renderer, 'Import from file');
+      expect(visibleText(renderer)).toContain('This backup is encrypted.');
+      const passphrase = renderer.root.findByProps({ accessibilityLabel: 'Backup passphrase' });
+      await act(async () => {
+        passphrase.props.onChangeText('an incorrect long passphrase');
+        await Promise.resolve();
+      });
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Backup passphrase' }).props.value)
+        .toBe('an incorrect long passphrase');
+      await pressControlAndWait(renderer, 'Unlock backup');
+      expect(visibleText(renderer)).toContain('AES-GCM cannot distinguish between those causes.');
+      expect(useAppStore.getState().actions.replaceAllData).not.toHaveBeenCalled();
+
+      const retry = renderer.root.findByProps({ accessibilityLabel: 'Backup passphrase' });
+      await act(async () => {
+        retry.props.onChangeText(correctPassphrase);
+        await Promise.resolve();
+      });
+      await pressControlAndWait(renderer, 'Unlock backup');
+      expect(visibleText(renderer)).toContain('Backup from');
+      expect(useAppStore.getState().actions.replaceAllData).not.toHaveBeenCalled();
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      mockPickedFileText = plainText;
+      jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({
+        canceled: false,
+        assets: [{ uri: 'file://plain-backup', name: 'plain.json', lastModified: 0 }],
+      });
+    }
+
+    let plainRenderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      plainRenderer = renderScreen(React.createElement(BackupScreen));
+      await pressControlAndWait(plainRenderer, 'Import from file');
+      expect(visibleText(plainRenderer)).toContain('Backup from');
+    } finally {
+      if (plainRenderer) act(() => plainRenderer?.unmount());
+      mockPickedFileText = '';
+      jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({ canceled: true, assets: null });
+    }
+  }, 30_000);
+
+  it('requires an explicit warning when opting out of encryption', async () => {
+    mockFileWrites.length = 0;
+    mockConfirmAsync.mockClear();
+    mockConfirmAsync.mockResolvedValue(true);
+    jest.mocked(Sharing.isAvailableAsync).mockResolvedValue(true);
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BackupScreen));
+      const encryptSwitch = renderer.root.findByProps({ accessibilityLabel: 'Encrypt exported backup' });
+      act(() => encryptSwitch.props.onValueChange(false));
+      expect(visibleText(renderer)).toContain('This file will be unencrypted.');
+      await pressControlAndWait(renderer, 'Export plain backup');
+      expect(mockConfirmAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Export plain backup?',
+        message: expect.stringContaining('will not be encrypted'),
+      }));
+      expect(mockFileWrites[0]).toMatch(/"app":\s*"wealthwise"/);
+      expect(isEncryptedBackup(mockFileWrites[0] ?? '')).toBe(false);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+    }
   });
 
   it('renders every registered screen with the four-month demo data', () => {
@@ -2222,8 +2436,8 @@ describe('route render smoke audit', () => {
       expect(negativeBalance.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Shortfall');
       expect(negativeRenderer.root.findAllByProps({ testID: 'pending-items-section' })).toHaveLength(0);
-      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000'))
-        .toHaveLength(0);
+      expect(negativeBalance.findAll((node) => node.props.accessibilityLabel === '-₹1,000').length)
+        .toBeGreaterThan(0);
       act(() => negativeRenderer.unmount());
     } finally {
       Object.assign(routeData, previousRouteData);
@@ -2273,6 +2487,9 @@ describe('route render smoke audit', () => {
   });
 
   it('announces exact large amounts in screen-level accessibility labels', () => {
+    const today = todayISO();
+    const month = monthKey(today);
+    const previousMonth = shiftMonth(month, -1);
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as ReturnType<typeof emptyAppData>;
     const previousRouteData = { ...routeData };
     const store = useAppStore((state) => state);
@@ -2280,9 +2497,9 @@ describe('route render smoke audit', () => {
     const data = {
       ...emptyAppData(todayISO()),
       transactions: [
-        { id: 'large-income', type: 'income' as const, amount: 123_456_789, category: 'Salary', note: 'Salary', date: '2026-10-10' },
-        { id: 'large-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-10-11' },
-        { id: 'prior-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: '2026-09-11' },
+        { id: 'large-income', type: 'income' as const, amount: 123_456_789, category: 'Salary', note: 'Salary', date: today },
+        { id: 'large-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: today },
+        { id: 'prior-expense', type: 'expense' as const, amount: 12_345_678, category: 'Food', note: 'Food', date: `${previousMonth}-11` },
       ],
       goals: [{
         id: 'large-goal',
@@ -2346,7 +2563,7 @@ describe('route render smoke audit', () => {
         plannedIncome: 123_456_789,
         lines: [{ category: 'Food', planned: 123_456_789 }],
       },
-      monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 123_456_789 }], {
+      monthBudgets: [monthBudgetFromLines(month, [{ category: 'Food', planned: 123_456_789 }], {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 123_456_789 }],
       })],
     };
@@ -3287,11 +3504,12 @@ describe('route render smoke audit', () => {
     const previous = { monthBudgets: data.monthBudgets, transactions: data.transactions };
     const month = monthKey(todayISO());
     data.transactions = [
-      { id: 'salary', type: 'income', amount: 500, category: 'Salary', note: '', date: todayISO() },
+      { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: todayISO() },
+      { id: 'borrowed', type: 'income', amount: 100, category: 'Borrowed', note: '', date: todayISO() },
       { id: 'food', type: 'expense', amount: 50, category: 'Food', note: '', date: todayISO() },
       { id: 'transport', type: 'expense', amount: 25, category: 'Transport', note: '', date: todayISO() },
     ];
-    data.monthBudgets = [monthBudgetFromLines(month, [
+    const snapshot = monthBudgetFromLines(month, [
       { category: 'Food', planned: 200 },
       {
         category: 'Quarterly maintenance',
@@ -3308,7 +3526,9 @@ describe('route render smoke audit', () => {
       { category: 'Transport', planned: 100 },
     ], {
       incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 1_000 }],
-    })];
+    });
+    snapshot.otherIncomes = [{ id: 'borrowed', name: 'Borrowed', category: 'Borrowed', amount: 100 }];
+    data.monthBudgets = [snapshot];
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     routeParams.mockReturnValue({ month });
     try {
@@ -3340,6 +3560,7 @@ describe('route render smoke audit', () => {
       expect(survival.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Survival (Needs)');
       expect(renderer.root.findByProps({ testID: 'budget-row-line:' + month + ':Food' })).toBeDefined();
+      expect(renderer.root.findByProps({ testID: 'budget-row-other-income:borrowed' })).toBeDefined();
       const foodRow = renderer.root.findByProps({ testID: `budget-row-line:${month}:Food` });
       expect(foodRow.findByProps({ accessibilityLabel: 'Edit Food' })).toBeDefined();
       expect(foodRow.findAllByType('text').map((node) => node.children.join('')).join(' '))
@@ -3415,7 +3636,7 @@ describe('route render smoke audit', () => {
       expect(renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel)
         .toBe(overviewAccessibility);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-income' })
-        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([500, 1_000]);
+        .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([1_100, 1_100]);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-spending' })
         .findAllByType(AmountText).map((amount) => amount.props.value)).toEqual([75, 300]);
       const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
