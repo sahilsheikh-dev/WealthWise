@@ -9702,6 +9702,14 @@ Gradle build, version bump, or release preparation was performed.
   remotely verified. The v1.0.0 tag was not changed. The status-ledger
   follow-up was integrated into Phase 28 and develop, pushed, and re-verified;
   no force push was used.
+- On 2026-11-08, the owner directed deletion of local `codex-changes`
+  (`d033d6a`). Its October schema-v2 loan/liability alternative is superseded
+  by current schema-v22 behavior; the branch also contained generated
+  coverage and an unsafe migration, so no changes were ported or pushed.
+  Phase 29 remains 39/40 because parent task P29-O is still unclosed: its
+  planned unified-ledger migration was not part of P29-O1, while the separate
+  P29-O2 storage redesign was cancelled. Owner decision on closing or
+  rescoping P29-O remains open.
 
 ## 12. Phase branch index
 

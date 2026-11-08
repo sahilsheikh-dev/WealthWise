@@ -62,6 +62,10 @@
   main (`b0aeef9`), and #15 back-merged main into develop (`6f5df18`). The
   publication task branch was deleted; the phase branch remains at its
   recorded tip. Main, develop, release and Phase 28 have identical trees.
+- **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
+  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
+  with checked-in coverage output and an unsafe migration; current schema-v22
+  loan/liability behavior supersedes its source changes. Nothing was ported.
 
 ## Unresolved
 
@@ -75,11 +79,6 @@
   only because merged task branches are deleted by policy. P28-E's final
   verification commit `72fb325` is preserved and its stale status text is
   reconciled on the P28-E-R2 task branch for chronological PR integration.
-  `codex-changes` is not safe to publish as-is: it is based on schema v2
-  rather than current v22, includes generated coverage files, and review
-  found a persisted-data migration bug, a failing migration assertion, and
-  merge conflicts with current `main`. It remains local pending a decision
-  to port any still-needed changes.
 - **v1.1.0 release integrity:** the owner explicitly approved the `preview`
   profile and reused versionCode 1 for this release. For future releases,
   restore the configured `android-apk` profile and increment versionCode.
@@ -166,9 +165,15 @@
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
   removed. The cancelled storage design does not affect the current schema
-  v20; P29-O1's unified holding actions remain supported. Historical
+  v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
+- **P29-O parent remains the one unclosed Phase 29 dashboard row (39/40):**
+  its report-only inventory is done, but the originally planned unified-ledger
+  migration was not included in P29-O1. P29-O2's separate storage redesign
+  was cancelled and its prototype removed. No P29-O implementation is
+  currently in progress; an owner decision is needed on whether to close P29-O
+  as superseded/cancelled or define a different scope.
 - **P29-O1 physical-device checks:** verify manual and recurring holding
   cards, Entries, opening amount edits and Recurring plan details at font
   scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
