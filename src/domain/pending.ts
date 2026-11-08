@@ -228,7 +228,7 @@ function pendingItemsWithCache(
       );
       const planned = item.mode === 'amount'
         ? plannedValue
-        : Math.round(plannedValue * plannedIncomeOf(budget, month, !virtual) / 100);
+        : Math.round(plannedValue * plannedIncomeOf(budget, month) / 100);
       const remaining = Math.max(0, planned - budgetLineActual(data, month, category, {
         excludePolicyPayments: true,
         customCategories: cache.customCategories ??= customBudgetCategories(data),

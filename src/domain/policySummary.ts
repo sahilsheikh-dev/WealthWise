@@ -45,12 +45,12 @@ export function policySummary(data: AppData, today: ISODate): PolicySummary {
   }).sort((left, right) => left.date.localeCompare(right.date)
     || left.name.localeCompare(right.name)
     || left.policyId.localeCompare(right.policyId));
-  const effective = effectiveMonthBudget(data, monthKey(today), today);
-  const effectiveBudget = effective.budget;
-  const yearlyIncomeEstimate = effectiveBudget !== null
+  const currentBudget = effectiveMonthBudget(data, monthKey(today), today).budget;
+  const yearlyIncomeEstimate = currentBudget !== null
     ? normalizeMoney(Array.from({ length: 12 }, (_, index) => {
       const month = shiftMonth(monthKey(today), index);
-      return plannedIncomeOf(effectiveBudget, month, !effective.virtual);
+      const budget = effectiveMonthBudget(data, month, today).budget ?? currentBudget;
+      return budget && budget.incomes.length > 0 ? plannedIncomeOf(budget, month) : 0;
     }).reduce((sum, amount) => sum + amount, 0))
     : (() => {
       const earliestMonth = shiftMonth(monthKey(today), -2);

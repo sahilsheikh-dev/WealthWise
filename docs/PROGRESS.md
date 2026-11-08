@@ -51,7 +51,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (117/118)
+Overall progress ██████████ 99% (118/119)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
 Phase 28         ██████████ 100% (7/7)
-Phase 29         ██████████ 97% (32/33)
+Phase 29         ██████████ 97% (33/34)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -207,7 +207,8 @@ Phase 29         ██████████ 97% (32/33)
 | P29-Y | — | Done | Repaired the red Gate 1 memory expectations and matched the real suite/test counts without weakening assertions; all six ordered gates pass. The source-of-truth run evidence is recorded in the latest verification section. | 2026-11-05 |
 | P29-Z | — | Done | Documentation and ledger consistency restored from source: Foreclosure label, Home-only AppHeader menu, schema v21 migration chain, archive range through `.premigration.v20`, real Gate 1 counts and owner holding/liability UI history. No behavior, schema or UI source change. | 2026-11-05 |
 | P29-AA | — | Done | Emergency Fund now links manual holdings, recurring plans and Fixed deposits through their live holding IDs. Deleted plans clear EF bucket and goal links in one write; hydration removes dangling links once, archives raw bytes and writes the repaired state; valid links, net worth and goal values remain unchanged. No schema change. Real Gate 1: 92 suites, 1194 passed, 1 skipped. All six gates exit 0. | 2026-11-06 |
-| P29-AB | — | Done | Budget income recurrence supports monthly, quarterly, half-yearly and yearly frequencies with strict backup/import support; v22 migration defaults existing income monthly. All six ordered gates pass. | 2026-11-07 |
+| P29-AB | — | Done; Revised by P29-AB-R1 | Budget income recurrence supports monthly, quarterly, half-yearly and yearly frequencies with strict backup/import support; v22 migration defaults existing income monthly. | 2026-11-07 |
+| P29-AB-R1 | — | Done | Recurrence-aware Budget overview, totals, annual income estimate and frozen-snapshot-safe schedule edits; failing domain/store/route reproductions now pass. No schema change. | 2026-11-08 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -2994,7 +2995,8 @@ evidence present in exports/checkpoints.
 | P29-Y | Phase 29 | — | 16d1c9bc | 2026-11-05 | Repair stale Gate 1 memory assertions and verify the real counts. | Memory and progress expectations were reconciled to real Jest output without weakening assertions; ordered gates pass. | Commit `7ffa09ad75b2ad42883c1d573ba8133d15cf1304`; real suite/test evidence is preserved in this ledger. | Replaced assertions: stale suite/test counts and latest-run text / real source-derived counts / owner asked Gate 1 repaired. | current request |
 | P29-Z | Phase 29 | — | 16d1c9bc | 2026-11-05 | Align documentation and ledger with owner-edited source without changing behavior, schema or UI. | Updated schema, migration/archive, Foreclosure, Home-only menu and real gate evidence; added dashboard rows and source-backed replaced assertions. | Worktree was clean before this task; source wins over docs; protected Home/Budget hashes remained unchanged. | Owner's Foreclosure, Home menu and holding/liability layout edits are user-authored source facts. No behavior/UI change belongs to this commit. | current request |
 | P29-AA | Phase 29 | — | — | 2026-11-06 | Repair Emergency Fund holding links on deletion and hydration. | Done; valid links, net worth and goal values preserved; all six gates passed at completion. | Implementation and gate evidence recorded in this ledger. | Original Gate 1 count is historical, not the current suite count. No schema change. | current request |
-| P29-AB | Phase 29 | — | — | 2026-11-07 | Add Budget income recurrence and strict backup/import support. | Done; v21-to-v22 migration defaults prior incomes monthly; all six gates pass. | Implementation and gate evidence recorded in this ledger. | Physical-device checks remain open. | current request |
+| P29-AB | Phase 29 | — | — | 2026-11-07 | Add Budget income recurrence and strict backup/import support. | Done; Revised by P29-AB-R1. | Implementation and original gate evidence recorded in this ledger. | Physical-device checks remain open. | current request |
+| P29-AB-R1 | Phase 29 | P29-AB | — | 2026-11-08 | Fix quarterly, half-yearly and yearly income appearing every month in Budget consumers. | Done; failing 12-month domain, store/hydration, edit-snapshot and route reproductions now pass; no schema change. | Commit `fix: honor recurring income schedules in summaries`; hash available in Git. | Old overview rows/totals and policy estimate ignored recurrence; old following-scope frequency edits rewrote the frozen month snapshot. Replaced with due-month outputs and snapshot-preserving edits because scheduled amounts and frozen history must agree. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -3425,7 +3427,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     outstanding; the GitHub release-body edit is pending. See
     [`docs/releases/build-config.md`](releases/build-config.md), the
     release-build record and the device checklist.
-11. **Phase 29 — Product delivery** (Done through P29-AB): the dashboard is
+11. **Phase 29 — Product delivery** (Done through P29-AB-R1): the dashboard is
     the current source for completed work and open device checks.
 12. **Phase 30 — Release 2 stabilization** (Planned):
     - P30-A — [placeholder]
@@ -4353,7 +4355,8 @@ was resolved in CR-26. No schema change was made; `SCHEMA_VERSION` remains 7.
 | P28-B release metadata | Done | v1.0.0 app/package metadata and published notes | See dashboard and release history |
 | P28-C release organization/build management | Done | Reusable notes, EAS build configuration, build history and release rules | See dashboard and build history; production build remains unbuilt |
 | P29-AA Emergency Fund link integrity | Done | Deletion/hydration repair preserving valid links and balances | Six gates passed at completion; original test counts remain historical |
-| P29-AB Budget income recurrence | Done | Monthly, quarterly, half-yearly and yearly income schedules; migration and backup/import | Six gates passed; native-device check remains open |
+| P29-AB Budget income recurrence | Done; Revised by P29-AB-R1 | Monthly, quarterly, half-yearly and yearly income schedules; migration and backup/import | Original six gates passed; recurrence UI/device retest remains open |
+| P29-AB-R1 income recurrence consumers | Done | `src/domain/budget.ts`, `src/domain/pending.ts`, `src/domain/policySummary.ts` | Recurrence table, store persistence/hydration, frozen-snapshot edit and route font-scale tests; full coverage and Gates 2-4 passed |
 
 ### Fix round
 
@@ -9024,6 +9027,47 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   Gate 2 TypeScript passed; Gate 3 lint passed with one existing array-style
   warning; Gate 4 Expo Doctor passed 21/21; Gate 5 Android export passed with
   a 5.5 MB bundle; Gate 6 iOS export passed with a 5.2 MB bundle.
+
+### P29-AB-R1 recurring income correction (2026-11-08)
+
+- Evidence-first reproduction used the exact form payload fields
+  (`name`, `amount`, `category`, `day`, `frequency`, `firstDueMonth`) at
+  domain, store/hydration and route levels before production edits. The
+  baseline overview listed the combined monthly, quarterly, half-yearly and
+  yearly items as 55,000 every month; the policy estimate was 660,000. A
+  following-scope edit also changed the stored current-month snapshot from the
+  quarterly schedule to the new half-yearly schedule.
+- Reproduced 12 months from 2026-03 through 2027-02 before and after the
+  fix. The due-month totals are 13,000; 19,000; 25,000; 13,000; 1,000;
+  1,000; 13,000; 19,000; 1,000; 13,000; 1,000; 1,000 in every tested
+  consumer: `plannedIncomeOf`, overview income rows and totals, summary text,
+  Received dues, projected cash flow, virtual months, applied snapshots and
+  backup import. Non-due entries contribute zero; due entries contribute the
+  full amount. The policy estimate is 119,000 over its current-February-to-
+  January 12-month window because the first 1,000 monthly item is first due in
+  March; the separately tested March-to-February table totals 120,000.
+- Assertion replacements: old — monthly overview showed 55,000 in each of
+  12 months and policy estimate 660,000; new — each consumer follows the
+  item’s due month and the annual estimate uses the effective monthly budget;
+  reason — a frequency must affect every monthly consumer, not only the
+  recurrence helper. Old — a following-scope frequency edit rewrote the
+  current frozen snapshot; new — changing frequency/first-due metadata updates
+  the   plan but leaves that snapshot data-equal; reason — past and
+  current snapshots remain frozen. Monthly income behavior and v22 schema
+  compatibility are unchanged.
+- Form route tests submit both scopes and edit quarterly income to half-yearly
+  at font scales 1.3 and 2.0. The Budget route announces a non-due quarterly
+  item as zero planned at both scales. Store tests verify persisted JSON,
+  fresh hydration, and following/month-only edit scopes.
+- Real gates, in order: `npm test -- --coverage` exit 0 (94 suites; 1,211
+  passed, 1 skipped; 95.90% statements, 91.94% branches, 97.75% functions,
+  97.57% lines overall; `src/data` 90.63/86.95/93.07/93.92%,
+  `src/domain` 96.96/92.88/98.79/98.31%, pure `src/lib` 100% in all
+  measures); `npx tsc --noEmit` exit 0; `npx expo lint` exit 0;
+  `npx expo-doctor` exit 0 (21/21). Android and iOS export gates were skipped
+  under the explicit no-build instruction. No version bump, release
+  preparation, build or push.
+- Commit: `fix: honor recurring income schedules in summaries`.
 
 ### P28-B first-release 1.0.0 metadata (2026-11-07)
 

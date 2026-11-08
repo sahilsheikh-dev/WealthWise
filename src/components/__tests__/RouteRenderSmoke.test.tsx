@@ -1575,6 +1575,172 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it.each([
+    [1.3, 'month', 'This month only'],
+    [2, 'following', 'This and following months'],
+  ] as const)(
+    'submits the quarterly income form payload and scope at font scale %s',
+    async (fontScale, scope, scopeLabel) => {
+      const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+      const storeState = useAppStore((state) => state);
+      const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+        addBudgetIncome: jest.Mock;
+        editBudgetIncome: jest.Mock;
+      };
+      const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      const today = todayISO();
+      const month = monthKey(today);
+      const firstDueMonth = shiftMonth(month, 1);
+      const previousRouteData = { ...routeData };
+      const previousStoreData = storeState.data;
+      const previousParams = routeParams();
+      const previousFontScale = mockFontScale;
+      mockFontScale = fontScale;
+      routeParams.mockReturnValue({ month, scope });
+      actions.addBudgetIncome.mockClear();
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      try {
+        renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+        await act(async () => {
+          renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Quarterly contract');
+          renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12000');
+          selectDropdownOption(renderer, 'Income category', 'Freelance');
+          await Promise.resolve();
+        });
+        selectDropdownOption(renderer, 'Income frequency', 'Quarterly');
+        await act(async () => {
+          renderer?.root.findByProps({ accessibilityLabel: 'Income first due month' }).props.onChangeText(firstDueMonth);
+          await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+        });
+        await act(async () => {
+          const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+          if (!scopeDialog) throw new Error('Income recurrence scope dialog missing.');
+          scopeDialog.findAllByProps({ children: scopeLabel })[0].props.onPress();
+          await Promise.resolve();
+        });
+        expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
+          name: 'Quarterly contract',
+          amount: 12_000,
+          category: 'Freelance',
+          frequency: 'quarterly',
+          firstDueMonth,
+        }, scope, today);
+        act(() => renderer?.unmount());
+        renderer = undefined;
+
+        const income = {
+          id: 'quarterly-route',
+          name: 'Quarterly contract',
+          category: 'Freelance' as const,
+          amount: 12_000,
+          day: 5,
+          frequency: 'quarterly' as const,
+          firstDueMonth,
+        };
+        const plan = budgetPlanFromLines([], {
+          incomes: [income],
+          repeatMonthly: true,
+          repeatFrom: month,
+        });
+        const snapshot = monthBudgetFromLines(month, [], {
+          incomes: [income],
+          source: 'plan',
+          sections: plan.sections,
+        });
+        const data = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+        Object.assign(routeData, data);
+        storeState.data = data;
+        routeParams.mockReturnValue({ month, incomeId: income.id, scope });
+        actions.editBudgetIncome.mockClear();
+        renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+        const updatedFirstDueMonth = shiftMonth(month, 2);
+        await act(async () => {
+          renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Adjusted contract');
+          renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('13000');
+          selectDropdownOption(renderer, 'Income frequency', 'Half-yearly');
+          renderer?.root.findByProps({ accessibilityLabel: 'Income first due month' }).props.onChangeText(updatedFirstDueMonth);
+          await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+        });
+        await act(async () => {
+          const scopeDialog = renderer?.root.findByProps({ testID: 'apply-scope-dialog' });
+          if (!scopeDialog) throw new Error('Income edit recurrence scope dialog missing.');
+          scopeDialog.findAllByProps({ children: scopeLabel })[0].props.onPress();
+          await Promise.resolve();
+        });
+        expect(actions.editBudgetIncome).toHaveBeenCalledWith(month, income.id, {
+          name: 'Adjusted contract',
+          amount: 13_000,
+          category: 'Freelance',
+          day: 5,
+          frequency: 'half-yearly',
+          firstDueMonth: updatedFirstDueMonth,
+        }, scope, today);
+      } finally {
+        if (renderer) act(() => renderer?.unmount());
+        Object.assign(routeData, previousRouteData);
+        storeState.data = previousStoreData;
+        routeParams.mockReturnValue(previousParams);
+        mockFontScale = previousFontScale;
+      }
+    },
+  );
+
+  it.each([1.3, 2])(
+    'shows zero planned for a non-due quarterly income in the Budget route at font scale %s',
+    (fontScale) => {
+      const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+      const storeState = useAppStore((state) => state);
+      const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+      const previousRouteData = { ...routeData };
+      const previousStoreData = storeState.data;
+      const previousParams = routeParams();
+      const previousFontScale = mockFontScale;
+      const today = todayISO();
+      const currentMonth = monthKey(today);
+      const month = shiftMonth(currentMonth, 1);
+      const firstDueMonth = shiftMonth(month, 1);
+      const income = {
+        id: 'quarterly-route',
+        name: 'Quarterly contract',
+        category: 'Freelance' as const,
+        amount: 12_000,
+        day: 5,
+        frequency: 'quarterly' as const,
+        firstDueMonth,
+      };
+      const data = {
+        ...emptyAppData(today),
+        budgetPlan: budgetPlanFromLines([], {
+          incomes: [income],
+          repeatMonthly: true,
+          repeatFrom: currentMonth,
+        }),
+      };
+      Object.assign(routeData, data);
+      storeState.data = data;
+      routeParams.mockReturnValue({ month });
+      mockFontScale = fontScale;
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      try {
+        renderer = renderScreen(React.createElement(BudgetScreen));
+        const row = renderer.root.findAll((node) =>
+          typeof node.props.accessibilityLabel === 'string'
+          && node.props.accessibilityLabel.startsWith('Quarterly contract, '),
+        )[0];
+        if (!row) throw new Error('Quarterly income overview row was not rendered.');
+        expect(row.props.accessibilityLabel).toBe(
+          `Quarterly contract, ${formatAmount(0, 'exact', 1)} of ${formatAmount(0, 'exact', 1)}`,
+        );
+      } finally {
+        if (renderer) act(() => renderer?.unmount());
+        Object.assign(routeData, previousRouteData);
+        storeState.data = previousStoreData;
+        routeParams.mockReturnValue(previousParams);
+        mockFontScale = previousFontScale;
+      }
+    },
+  );
+
   it('wires Budget section, item, income and unbudgeted entry points to routes', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const storeState = useAppStore((state) => state);
