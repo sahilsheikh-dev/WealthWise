@@ -9,6 +9,17 @@
   1,230 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, `src/lib` 100% in all measures.
+- P28-C-R4: README and release documentation now follow the requested
+  user-first structure; its Download block matches the latest published
+  v1.0.0 block. Public README/published notes contain no 40/64-character
+  identifiers or checksum text; release instructions require private
+  verification, expected-size link checks, and README Download/What's new
+  updates. All six gates exit 0: 98 suites, 1,231 passed, 1 skipped;
+  coverage 95.96/92.01/98.01/97.62% overall, `src/data`
+  91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%,
+  `src/lib` 100%; TypeScript and lint pass, Expo Doctor 21/21, Android export
+  5.5 MB and iOS export 5.2 MB. No release body edit, version bump, EAS/
+  Gradle build, or push.
 - Commit-subject enforcement is active in the repository: the old behavior
   allowed non-descriptive placeholder subjects; the new POSIX hook requires a
   supported Conventional Commit subject and rejects placeholders. The reason
