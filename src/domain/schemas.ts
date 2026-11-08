@@ -5,7 +5,7 @@ import { addDays, isValidISO } from './dates';
 import { emiCoversInterest } from './liability';
 import { THEME_IDS, type AppData, type ISODate, type Transaction } from './types';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -47,7 +47,7 @@ const transactionSchema = z.object({
   note: z.string(),
   date: isoDateSchema,
   source: z.object({
-    kind: z.enum(['holding-entry', 'liability-payment', 'ef-entry']),
+    kind: z.enum(['holding-entry', 'liability-payment', 'policy-payment', 'liability-origin', 'ef-entry']),
     parentId: idSchema,
     entryId: idSchema,
   }).optional(),
@@ -60,6 +60,10 @@ const goalSchema = z.object({
   saved: moneySchema,
   year: z.number().int().finite(),
   auto: z.literal('ef').optional(),
+  links: z.array(z.object({
+    instrumentId: idSchema,
+    share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10), 'Share must use at most one decimal place'),
+  })),
 });
 
 const manualHoldingSchema = z.object({
@@ -108,17 +112,25 @@ const liabilityBaseSchema = {
   startDate: isoDateSchema,
   payments: z.array(liabilityPaymentSchema),
 };
+const liabilitySettlementSchema = z.object({
+  asOf: isoDateSchema,
+  balance: moneySchema.min(0),
+});
 const recurringLiabilitySchema = z.object({
   ...liabilityBaseSchema,
   kind: z.literal('recurring'),
   tenureMonths: z.number().int().min(1).max(1200),
   emi: moneySchema.positive(),
+  settlement: liabilitySettlementSchema.nullable(),
 }).superRefine((liability, context) => {
+  if (liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
+    context.addIssue({ code: 'custom', path: ['settlement', 'asOf'], message: 'Settlement cannot predate the liability start date' });
+  }
   if (liability.payments.some((payment) => payment.kind === 'Payment')) {
     context.addIssue({ code: 'custom', path: ['payments'], message: 'Recurring liabilities use EMI or prepayment entries' });
   }
 });
-const oneTimeLiabilitySchema = z.object({
+const oneTimeLiabilitySchema = z.strictObject({
   ...liabilityBaseSchema,
   kind: z.literal('one-time'),
   dueDate: isoDateSchema.nullable(),
@@ -129,6 +141,67 @@ const oneTimeLiabilitySchema = z.object({
   if (liability.dueDate !== null && liability.dueDate < liability.startDate) {
     context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
   }
+});
+
+const policyKindSchema = z.enum(['term', 'health', 'life-savings', 'ulip', 'vehicle', 'home', 'other']);
+const policyPaymentSchema = z.object({
+  id: idSchema,
+  date: isoDateSchema,
+  amount: moneySchema.positive(),
+  note: z.string(),
+});
+const policySchema = z.object({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  insurer: z.string().max(40),
+  kind: policyKindSchema,
+  premium: moneySchema.positive().max(10_000_000),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'single']),
+  startDate: isoDateSchema,
+  premiumYears: z.number().int().min(1).max(80).nullable(),
+  trackFrom: isoDateSchema,
+  coverAmount: moneySchema.positive().max(100_000_000_000).nullable(),
+  currentValue: moneySchema.min(0).max(100_000_000_000).nullable(),
+  valueAsOf: isoDateSchema.nullable(),
+  maturityDate: isoDateSchema.nullable(),
+  payments: z.array(policyPaymentSchema),
+}).superRefine((policy, context) => {
+  if ((policy.frequency === 'single') !== (policy.premiumYears === null)) {
+    context.addIssue({ code: 'custom', path: ['premiumYears'], message: 'Single policies have no premium term; recurring policies require a term' });
+  }
+  if (policy.maturityDate !== null && policy.maturityDate < policy.startDate) {
+    context.addIssue({ code: 'custom', path: ['maturityDate'], message: 'Maturity date cannot be before the policy started' });
+  }
+  const savingsKind = policy.kind === 'life-savings' || policy.kind === 'ulip';
+  if (!savingsKind && policy.currentValue !== null) {
+    context.addIssue({ code: 'custom', path: ['currentValue'], message: 'Only savings policies can have a current value' });
+  }
+  if ((policy.currentValue === null) !== (policy.valueAsOf === null)) {
+    context.addIssue({ code: 'custom', path: ['valueAsOf'], message: 'Current value and value date must both be set or both be null' });
+  }
+});
+
+const expenseBudgetCategories = ['Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education', 'Other'] as const;
+const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'] as const;
+export const BUDGET_CATEGORIES = [...expenseBudgetCategories, ...investmentBudgetCategories] as const;
+const budgetSchema = z.object({
+  plannedIncome: moneySchema.positive().max(1_000_000_000).nullable(),
+  lines: z.array(z.object({
+    category: z.string(),
+    planned: moneySchema.min(0).max(1_000_000_000),
+  })),
+}).superRefine((budget, context) => {
+  const seen = new Set<string>();
+  const allowed = new Set<string>(BUDGET_CATEGORIES);
+  budget.lines.forEach((line, index) => {
+    if (!allowed.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Choose an allowed budget category' });
+    }
+    if (seen.has(line.category)) {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget categories must be unique' });
+    }
+    seen.add(line.category);
+  });
 });
 
 const efEntrySchema = z.object({
@@ -164,6 +237,8 @@ export const appDataSchema = z.object({
   goals: z.array(goalSchema),
   holdings: z.array(z.discriminatedUnion('kind', [manualHoldingSchema, planHoldingSchema])),
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])),
+  policies: z.array(policySchema),
+  budget: budgetSchema.nullable(),
   efEntries: z.array(efEntrySchema),
   efAllocation: efAllocationSchema,
 });
@@ -178,10 +253,12 @@ type SchemaMatchesAppData = AppDataSchemaOutput extends AppData
 export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 
 export const TRANSACTION_CATEGORIES = {
-  expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Other'],
+  expense: ['Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health', 'Bills', 'Education', 'Other'],
+  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Own funds', 'Other'],
   invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
+
+export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Own funds'] as const;
 
 type MoneyOptions = {
   minimum?: number;

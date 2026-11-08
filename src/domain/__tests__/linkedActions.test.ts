@@ -27,7 +27,7 @@ const makePlan = (): Omit<PlanHolding, 'id' | 'kind' | 'logs'> => ({
   actualValue: null,
   actualValueDate: null,
 });
-const makeLiability = (): Omit<RecurringLiability, 'id' | 'payments' | 'emi'> & { emi: number | null } => ({
+const makeLiability = (): Omit<RecurringLiability, 'id' | 'payments' | 'emi' | 'settlement'> & { emi: number | null } => ({
   kind: 'recurring',
   type: 'Other',
   name: 'Home loan',

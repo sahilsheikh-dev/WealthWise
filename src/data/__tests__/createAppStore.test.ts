@@ -11,7 +11,7 @@ import { holdingValue } from '../../domain/portfolio';
 import { mockAppData } from '../../mock/data';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
-import { makeV1Fixture, makeV2Fixture } from '../testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture } from '../testFixtures/v1';
 import { emptyAppData } from '../../domain/actions';
 
 class MemoryStorage implements StateStorage {
@@ -302,6 +302,29 @@ describe('createAppStore persistence', () => {
     expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v2'))
       .toHaveLength(writesAfterMigration);
   });
+
+  it('hydrates v4 into v5, archives the original bytes once, and removes that archive on erase', async () => {
+    const storage = new MemoryStorage();
+    const v4 = makeV4Fixture();
+    const raw = JSON.stringify({ state: { data: v4 }, version: 4 });
+    storage.values.set('wealthwise.app.v1', raw);
+    const first = makeStore(storage);
+    await waitForHydration(first);
+    expect(first.getState().data.goals.every((goal) => goal.links.length === 0)).toBe(true);
+    expect(first.getState().data.liabilities.find((entry) => entry.kind === 'recurring')?.settlement).toBeNull();
+    expect(first.getState().data.policies).toEqual([]);
+    expect(first.getState().data.budget).toBeNull();
+    expect(storage.values.get('wealthwise.app.v1.premigration.v4')).toBe(raw);
+    const archivedWrites = storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4').length;
+    const second = makeStore(storage);
+    await waitForHydration(second);
+    expect(second.getState().data).toEqual(first.getState().data);
+    expect(storage.calls.filter((call) => call === 'set:wealthwise.app.v1.premigration.v4'))
+      .toHaveLength(archivedWrites);
+    await second.getState().actions.eraseAllData();
+    expect(storage.values.has('wealthwise.app.v1.premigration.v4')).toBe(false);
+  });
+
   it('starts empty with an emergency fund goal and rehydrates transactions across instances', async () => {
     const storage = new MemoryStorage();
     const first = makeStore(storage);
@@ -858,6 +881,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v1', 'original-v1-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v2', 'original-v2-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v3', 'original-v3-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v4', 'original-v4-bytes');
   const store = makeStore(storage, {
     removeLockSettings: async () => { secureStore.delete('wealthwise.lock.v1'); },
   });
@@ -878,6 +902,7 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v1',
     'wealthwise.app.v1.premigration.v2',
     'wealthwise.app.v1.premigration.v3',
+    'wealthwise.app.v1.premigration.v4',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',
     'wealthwise.meta.v1',

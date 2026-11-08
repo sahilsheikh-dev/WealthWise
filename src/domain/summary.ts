@@ -6,6 +6,7 @@ import {
   type RecurringLiabilitySummary,
 } from './liability';
 import { holdingValue } from './portfolio';
+import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import type { AppData, ISODate, RecurringLiability } from './types';
 
 export function netWorth(data: AppData, asOf: ISODate): {
@@ -87,7 +88,7 @@ export function incomeBaselineFor(
     data.transactions,
     'income',
     asOf,
-    { excludeCategories: ['Withdrawal'] },
+    { excludeCategories: NON_EARNED_INCOME_CATEGORIES },
   );
   if (earnedIncome > 0) return { amount: earnedIncome, source: 'transactions' };
   if (data.settings.monthlySalary !== null) {

@@ -78,7 +78,7 @@ jest.mock('react-native', () => {
 
 describe('Home screen theme smoke', () => {
   it('opens a goal editor on the first card tap from Home and Goals', async () => {
-    const goal = { id: 'goal-tap', name: 'Trip', target: 50_000, saved: 1_000, year: 2027 };
+    const goal = { id: 'goal-tap', name: 'Trip', target: 50_000, saved: 1_000, year: 2027, links: [] };
     mockData.goals = [goal];
     const expectedRoute = { pathname: '/goal-form', params: { id: goal.id } };
     let home: TestRenderer.ReactTestRenderer | undefined;

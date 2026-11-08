@@ -1,4 +1,5 @@
 import type { ISODate, Transaction } from './types';
+import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 
 export type TransactionMonthSummary = {
   income: number;
@@ -20,7 +21,10 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
   const withdrawals = rows
     .filter((transaction) => transaction.type === 'income' && transaction.category === 'Withdrawal')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const earnedIncome = income - withdrawals;
+  const nonEarnedIncome = rows
+    .filter((transaction) => transaction.type === 'income' && (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(transaction.category))
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const earnedIncome = income - nonEarnedIncome;
   const expense = total('expense');
   const invest = total('invest');
   return {
