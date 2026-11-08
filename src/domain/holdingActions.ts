@@ -22,6 +22,15 @@ export function deleteHolding(data: AppData, id: string): AppData {
   return { ...data, holdings: data.holdings.filter((holding) => holding.id !== id) };
 }
 
+export function confirmHoldingValue(data: AppData, id: string, today: ISODate): AppData {
+  const current = data.holdings.find((holding) => holding.id === id);
+  if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
+  return {
+    ...data,
+    holdings: data.holdings.map((holding) => holding.id === id ? { ...current, valueAsOf: today } : holding),
+  };
+}
+
 export function valueStaleness(
   valueAsOf: ISODate | undefined,
   asOf: ISODate,

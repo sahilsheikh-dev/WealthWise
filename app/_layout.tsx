@@ -13,6 +13,8 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RecoveryScreen } from '../src/components/RecoveryScreen';
+import { LockGate } from '../src/components/LockGate';
+import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
@@ -27,10 +29,10 @@ function AppContent() {
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <StorageErrorBanner />
+      {status === 'ready' ? <StorageErrorBanner /> : null}
       {status === 'recovery' ? (
-        <RecoveryScreen newerVersion={recoveryReason === 'newer-version'} />
-      ) : (
+        <RecoveryScreen reason={recoveryReason ?? 'corrupt'} />
+      ) : status === 'loading' ? null : (
         <Stack
           screenOptions={{
             headerShown: false,
@@ -50,6 +52,9 @@ function AppContent() {
           <Stack.Screen name="ef-entry-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="plan-logs" />
           <Stack.Screen name="loan-payments" />
+          <Stack.Screen name="backup" />
+          <Stack.Screen name="security" />
+          <Stack.Screen name="erase-data" />
         </Stack>
       )}
     </View>
@@ -77,7 +82,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppContent />
+        <SecurityProvider>
+          <LockGate>
+            <AppContent />
+          </LockGate>
+        </SecurityProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

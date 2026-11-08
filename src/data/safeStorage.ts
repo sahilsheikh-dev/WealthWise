@@ -49,8 +49,16 @@ export function createSafeStorage(
 
       if (reason === null) return raw;
 
-      const backupKey = `${name}.corrupt.${Date.now()}`;
-      await base.setItem(backupKey, raw);
+      const backupKey = `${name}.corrupt.latest`;
+      if (reason !== 'newer-version') {
+        const latest = await base.getItem(backupKey);
+        if (latest !== raw) {
+          if (latest !== null) {
+            await base.setItem(`${name}.corrupt.previous`, latest);
+          }
+          await base.setItem(backupKey, raw);
+        }
+      }
       hooks.onCorrupt({ name, backupKey, reason });
       return null;
     },

@@ -44,6 +44,7 @@ export default function GoalsScreen() {
       {goals.map((goal) => {
         const saved = goalSaved(goal, emergencyBalance);
         const goalPercent = goalProgressPct(goal, saved);
+        const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
         return (
           <Pressable
             key={goal.id}
@@ -57,6 +58,9 @@ export default function GoalsScreen() {
                 <AppText style={[typography.meta, { color: colors.text3 }]}>
                   Target {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
                 </AppText>
+                {targetYearPassed ? (
+                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
+                ) : null}
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>

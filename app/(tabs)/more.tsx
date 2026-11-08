@@ -13,6 +13,7 @@ type MenuRowProps = {
   icon: keyof typeof Feather.glyphMap;
   detail?: string;
   disabled?: boolean;
+  danger?: boolean;
   onPress?: () => void;
 };
 
@@ -28,8 +29,9 @@ export default function MoreScreen() {
         <MenuRow label="Theme" icon="sliders" detail={themePreferenceLabel(themePreference)} onPress={toggleTheme} />
         <MenuRow label="Loans" icon="credit-card" onPress={() => router.push('/loans')} />
         <MenuRow label="Emergency fund" icon="shield" onPress={() => router.push('/emergency-fund')} />
-        <MenuRow label="Export" icon="download" detail="Coming soon" disabled />
-        <MenuRow label="Reset" icon="rotate-ccw" detail="Coming soon" disabled />
+        <MenuRow label="Backup and restore" icon="download" onPress={() => router.push('/backup')} />
+        <MenuRow label="Security" icon="lock" onPress={() => router.push('/security')} />
+        <MenuRow label="Erase all data" icon="trash-2" danger onPress={() => router.push('/erase-data')} />
       </View>
       {__DEV__ && devActions ? (
         <View style={styles.devList}>
@@ -43,17 +45,6 @@ export default function MoreScreen() {
                 message: 'Replace local app data with the bundled sample data?',
                 choices: [{ id: 'load', label: 'Load demo data' }],
               }).then((choice) => { if (choice === 'load') devActions.loadDemoData(); });
-            }}
-          />
-          <MenuRow
-            label="Erase all data"
-            icon="trash-2"
-            onPress={() => {
-              void choiceAsync({
-                title: 'Erase all data?',
-                message: 'This replaces your local data with an empty account.',
-                choices: [{ id: 'erase', label: 'Erase all data', destructive: true }],
-              }).then((choice) => { if (choice === 'erase') devActions.eraseAll(); });
             }}
           />
           <MenuRow
@@ -77,7 +68,7 @@ function themePreferenceLabel(preference: 'system' | 'dark' | 'light'): string {
   return preference[0]!.toUpperCase() + preference.slice(1);
 }
 
-function MenuRow({ label, icon, detail, disabled = false, onPress }: MenuRowProps) {
+function MenuRow({ label, icon, detail, disabled = false, danger = false, onPress }: MenuRowProps) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -93,9 +84,9 @@ function MenuRow({ label, icon, detail, disabled = false, onPress }: MenuRowProp
         pressed && !disabled && styles.pressed,
       ]}>
       <View style={[styles.iconWrap, { backgroundColor: colors.surface2 }]}>
-        <Feather name={icon} size={17} color={disabled ? colors.text3 : colors.primary} />
+        <Feather name={icon} size={17} color={disabled ? colors.text3 : danger ? colors.err : colors.primary} />
       </View>
-      <AppText weight="semibold" style={[styles.label, disabled && { color: colors.text3 }]}>{label}</AppText>
+      <AppText weight="semibold" style={[styles.label, danger && { color: colors.err }, disabled && { color: colors.text3 }]}>{label}</AppText>
       {detail ? <AppText style={[typography.meta, { color: colors.text3 }]}>{detail}</AppText> : null}
       <Feather name="chevron-right" size={16} color={colors.text3} />
     </Pressable>

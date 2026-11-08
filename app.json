@@ -12,6 +12,7 @@
       "bundleIdentifier": "com.anonymous.WealthWise"
     },
     "android": {
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "white",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,7 +43,15 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Unlock Wealth Wise"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

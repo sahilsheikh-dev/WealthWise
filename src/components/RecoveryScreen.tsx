@@ -1,14 +1,22 @@
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useAppActions } from '../data/useAppData';
+import { todayISO } from '../lib/clock';
 import { AppText, Button, Card, Screen } from './ui';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { confirmAsync } from '../lib/confirm';
 
-export function RecoveryScreen({ newerVersion = false }: { newerVersion?: boolean }) {
-  const { resolveRecovery } = useAppActions();
+type RecoveryReason = 'corrupt' | 'newer-version' | 'read-error';
+
+export function RecoveryScreen({ reason }: { reason: RecoveryReason }) {
+  const { resolveRecovery, retryHydration, getCorruptBackup } = useAppActions();
   const { colors } = useTheme();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const startFresh = () => {
     void confirmAsync({
       title: 'Start fresh?',
@@ -17,20 +25,60 @@ export function RecoveryScreen({ newerVersion = false }: { newerVersion?: boolea
       destructive: true,
     }).then((confirmed) => { if (confirmed) resolveRecovery('start-fresh'); });
   };
+  const shareDamagedData = async () => {
+    setBusy(true);
+    setMessage(null);
+    let file: File | null = null;
+    try {
+      const raw = await getCorruptBackup();
+      if (raw === null) {
+        setMessage('The damaged data file is not available to share.');
+        return;
+      }
+      if (!(await Sharing.isAvailableAsync())) {
+        setMessage('Sharing is not available on this device.');
+        return;
+      }
+      file = new File(Paths.cache, `wealthwise-damaged-${todayISO().replaceAll('-', '')}.txt`);
+      file.create({ overwrite: true });
+      file.write(raw);
+      await Sharing.shareAsync(file.uri, { mimeType: 'text/plain', dialogTitle: 'Share damaged data file' });
+    } catch {
+      setMessage('The damaged data file could not be shared.');
+    } finally {
+      try {
+        if (file?.exists) file.delete();
+      } catch {
+        setMessage('The temporary damaged-data file could not be removed from this device.');
+      }
+      setBusy(false);
+    }
+  };
+  const newerVersion = reason === 'newer-version';
+  const readError = reason === 'read-error';
 
   return (
     <Screen>
       <View style={styles.content}>
         <Card>
           <AppText weight="bold" style={typography.h1}>
-            {newerVersion ? 'Update Wealth Wise' : 'Saved data could not be read'}
+            {newerVersion ? 'Update Wealth Wise' : readError ? 'Saved data is temporarily unavailable' : 'Saved data could not be read'}
           </AppText>
           <AppText style={[styles.body, { color: colors.text2 }]}>
             {newerVersion
               ? 'This data was saved by a newer version of the app. Update Wealth Wise to open it safely.'
-              : 'We could not read your saved data. A copy has been kept on this device. You can start fresh without deleting that backup.'}
+              : readError
+                ? "Your saved data couldn't be read right now. It has not been changed."
+                : 'Your saved data could not be read. A copy of the damaged data is kept on this device.'}
           </AppText>
-          {!newerVersion ? <Button label="Start fresh" variant="primary" onPress={startFresh} /> : null}
+          {readError ? <Button label="Try again" variant="primary" disabled={busy} onPress={retryHydration} /> : null}
+          {reason === 'corrupt' ? (
+            <>
+              <Button label="Share damaged data file" disabled={busy} onPress={() => void shareDamagedData()} />
+              <Button label="Start fresh" variant="danger-text" disabled={busy} onPress={startFresh} />
+            </>
+          ) : null}
+          {message ? <AppText accessibilityRole="alert" style={[typography.meta, { color: colors.err }]}>{message}</AppText> : null}
         </Card>
       </View>
     </Screen>

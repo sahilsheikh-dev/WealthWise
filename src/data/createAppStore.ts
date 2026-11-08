@@ -11,7 +11,7 @@ import {
   type AddLoanInput, type LoanPatch, type LoanPaymentPatch,
 } from '../domain/loanActions';
 import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
-import { addHolding, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
+import { addHolding, confirmHoldingValue, deleteHolding, updateHolding, type HoldingPatch } from '../domain/holdingActions';
 import { addEfEntry, deleteEfEntry, updateEfEntry, type EfEntryPatch } from '../domain/efActions';
 import { validateIntegrity } from '../domain/links';
 import { monthlyBaseline } from '../domain/ef';
@@ -21,6 +21,11 @@ import { mockAppData } from '../mock/data';
 import type { AppData, EfEntry, Holding, ISODate, LogEntry, Settings, Transaction } from '../domain/types';
 import { migratePersisted } from './migrate';
 import { createSafeStorage } from './safeStorage';
+import { validateImportData } from '../domain/backup';
+
+const PERSIST_NAME = 'wealthwise.app.v1';
+const PREIMPORT_KEY = `${PERSIST_NAME}.preimport`;
+const META_KEY = 'wealthwise.meta.v1';
 
 export type AppActions = {
   addTransaction: (input: Omit<Transaction, 'id'>) => void;
@@ -44,17 +49,22 @@ export type AppActions = {
   addHolding: (input: Omit<Extract<Holding, { kind: 'manual' }>, 'id' | 'kind' | 'valueAsOf'>) => void;
   updateHolding: (id: string, patch: HoldingPatch) => void;
   deleteHolding: (id: string) => void;
+  confirmHoldingValue: (id: string) => void;
   addEfEntry: (input: Omit<EfEntry, 'id'>, options: { recordTransaction: boolean }) => void;
   updateEfEntry: (id: string, patch: EfEntryPatch) => void;
   deleteEfEntry: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   dismissStorageError: () => void;
   resolveRecovery: (action: 'start-fresh') => void;
+  retryHydration: () => void;
+  getCorruptBackup: () => Promise<string | null>;
+  replaceAllData: (data: AppData) => Promise<{ ok: true } | { ok: false; message: string }>;
+  undoImport: () => Promise<{ ok: true } | { ok: false; message: string }>;
+  eraseAllData: () => Promise<{ ok: true } | { ok: false; message: string }>;
 };
 
 export type DevActions = {
   loadDemoData: () => void;
-  eraseAll: () => void;
   simulateCorruption: () => Promise<void>;
 };
 
@@ -62,9 +72,10 @@ export type AppStoreState = {
   data: AppData;
   hydrated: boolean;
   status: 'loading' | 'ready' | 'recovery';
-  recoveryReason: 'corrupt' | 'newer-version' | null;
+  recoveryReason: 'corrupt' | 'newer-version' | 'read-error' | null;
   storageError: string | null;
   lastError: string | null;
+  undoImport: { savedAt: ISODate } | null;
   actions: AppActions;
   devActions?: DevActions;
 };
@@ -74,6 +85,7 @@ export type StoreDependencies = {
   today: () => ISODate;
   reload?: () => void;
   isDev?: boolean;
+  removeLockSettings?: () => Promise<void>;
 };
 
 export function createAppStore(
@@ -81,7 +93,7 @@ export function createAppStore(
   deps: StoreDependencies,
 ): UseBoundStore<StoreApi<AppStoreState>> {
   let useStore: UseBoundStore<StoreApi<AppStoreState>> | undefined;
-  let corruptionReason: 'corrupt' | 'newer-version' | null = null;
+  let corruptionReason: 'corrupt' | 'newer-version' | 'read-error' | null = null;
   let suppressNextWrite = false;
   const safeStorage = createSafeStorage(
     storage,
@@ -198,6 +210,9 @@ export function createAppStore(
         deleteHolding(id) {
           applyDataAction((data) => deleteHolding(data, id));
         },
+        confirmHoldingValue(id) {
+          applyDataAction((data) => confirmHoldingValue(data, id, deps.today()));
+        },
         addEfEntry(input, options) {
           applyDataAction((data) => addEfEntry(data, input, { ...options, newId: deps.newId }));
         },
@@ -217,15 +232,21 @@ export function createAppStore(
         },
         resolveRecovery(action) {
           if (action !== 'start-fresh') return;
-          if (get().recoveryReason === 'newer-version') {
+          const reason = get().recoveryReason;
+          if (reason === 'newer-version' || reason === 'read-error') {
             suppressNextWrite = true;
             try {
-              set({ storageError: 'This data was saved by a newer version of the app. Update the app to open it.' });
+              set({
+                storageError: reason === 'newer-version'
+                  ? 'This data was saved by a newer version of the app. Update the app to open it.'
+                  : "Your saved data couldn't be read right now. It has not been changed.",
+              });
             } finally {
               suppressNextWrite = false;
             }
             return;
           }
+          if (reason !== 'corrupt') return;
           corruptionReason = null;
           set({
             data: emptyAppData(deps.today()),
@@ -235,6 +256,91 @@ export function createAppStore(
             lastError: null,
           });
         },
+        retryHydration() {
+          corruptionReason = null;
+          suppressNextWrite = true;
+          try {
+            set({ status: 'loading', recoveryReason: null, storageError: null });
+          } finally {
+            suppressNextWrite = false;
+          }
+          void store.persist.rehydrate();
+        },
+        async getCorruptBackup() {
+          return await storage.getItem(`${PERSIST_NAME}.corrupt.latest`);
+        },
+        async replaceAllData(importedData) {
+          if (get().status !== 'ready') {
+            return { ok: false, message: 'Data can only be replaced after the app has loaded.' };
+          }
+          const validated = validateImportData(importedData);
+          if (!validated.ok) {
+            return { ok: false, message: 'This data cannot be imported safely.' };
+          }
+          const today = deps.today();
+          try {
+            await storage.setItem(PREIMPORT_KEY, JSON.stringify({ savedAt: today, data: get().data }));
+          } catch {
+            return { ok: false, message: 'Your current data could not be saved for undo. Nothing was replaced.' };
+          }
+          const expenseBaseline = monthlyBaseline(validated.data.transactions, 'expense', today);
+          const data = validated.data.goals.some((goal) => goal.auto === 'ef')
+            ? validated.data
+            : {
+              ...validated.data,
+              goals: ensureEfGoal(validated.data.goals, { expenseBaseline, asOf: today }),
+            };
+          set({ data, undoImport: { savedAt: today }, lastError: null });
+          return { ok: true };
+        },
+        async undoImport() {
+          let raw: string | null;
+          try {
+            raw = await storage.getItem(PREIMPORT_KEY);
+          } catch {
+            return { ok: false, message: 'The saved undo copy could not be read.' };
+          }
+          if (raw === null) return { ok: false, message: 'There is no saved import to undo.' };
+          let snapshot: unknown;
+          try {
+            snapshot = JSON.parse(raw);
+          } catch {
+            return { ok: false, message: 'The saved undo copy is unreadable.' };
+          }
+          if (typeof snapshot !== 'object' || snapshot === null || !('data' in snapshot)) {
+            return { ok: false, message: 'The saved undo copy is invalid.' };
+          }
+          const validated = validateImportData(snapshot.data);
+          if (!validated.ok) return { ok: false, message: 'The saved undo copy is invalid and cannot be restored.' };
+          set({ data: validated.data, undoImport: null, lastError: null });
+          try {
+            await storage.removeItem(PREIMPORT_KEY);
+          } catch {
+            return { ok: false, message: 'The previous data was restored, but the undo copy could not be removed.' };
+          }
+          return { ok: true };
+        },
+        async eraseAllData() {
+          try {
+            await storage.removeItem(PERSIST_NAME);
+            await storage.removeItem(PREIMPORT_KEY);
+            await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
+            await storage.removeItem(`${PERSIST_NAME}.corrupt.previous`);
+            await storage.removeItem(META_KEY);
+            await deps.removeLockSettings?.();
+          } catch {
+            return { ok: false, message: 'Some saved data could not be erased. Please try again.' };
+          }
+          set({
+            data: emptyAppData(deps.today()),
+            status: 'ready',
+            recoveryReason: null,
+            storageError: null,
+            lastError: null,
+            undoImport: null,
+          });
+          return { ok: true };
+        },
       };
       const state: AppStoreState = {
         data: emptyAppData(deps.today()),
@@ -243,6 +349,7 @@ export function createAppStore(
         recoveryReason: null,
         storageError: null,
         lastError: null,
+        undoImport: null,
         actions,
         ...(deps.isDev ?? (typeof __DEV__ !== 'undefined' && __DEV__) ? {
           devActions: {
@@ -253,14 +360,6 @@ export function createAppStore(
                   ...mockAppData,
                   goals: ensureEfGoal(mockAppData.goals, { expenseBaseline, asOf: deps.today() }),
                 },
-              });
-            },
-            eraseAll() {
-              set({
-                data: emptyAppData(deps.today()),
-                status: 'ready',
-                recoveryReason: null,
-                storageError: null,
               });
             },
             async simulateCorruption() {
@@ -274,19 +373,19 @@ export function createAppStore(
       return state;
     },
     {
-      name: 'wealthwise.app.v1',
+      name: PERSIST_NAME,
       version: SCHEMA_VERSION,
       storage: jsonStorage!,
       partialize: (state) => ({ data: state.data }),
       migrate: migratePersisted,
-      onRehydrateStorage: () => (state, error) => {
+      onRehydrateStorage: () => async (state, error) => {
         const storeApi = useStore!;
         if (error) {
-          corruptionReason ??= 'corrupt';
+          corruptionReason = 'read-error';
           storeApi.setState({
             status: 'recovery',
-            recoveryReason: corruptionReason,
-            storageError: 'Saved data could not be read. A backup has been kept on this device.',
+            recoveryReason: 'read-error',
+            storageError: "Your saved data couldn't be read right now. It has not been changed.",
             hydrated: true,
           });
           return;
@@ -308,7 +407,27 @@ export function createAppStore(
             goals: ensureEfGoal(data.goals, { expenseBaseline, asOf: deps.today() }),
           };
         }
-        storeApi.setState({ data, hydrated: true, status: 'ready' });
+        let undoImport: { savedAt: ISODate } | null = null;
+        try {
+          const rawSnapshot = await storage.getItem(PREIMPORT_KEY);
+          if (rawSnapshot !== null) {
+            const snapshot: unknown = JSON.parse(rawSnapshot);
+            if (
+              typeof snapshot === 'object' && snapshot !== null && 'savedAt' in snapshot &&
+              typeof snapshot.savedAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(snapshot.savedAt)
+            ) {
+              undoImport = { savedAt: snapshot.savedAt };
+            }
+          }
+        } catch {
+          undoImport = null;
+        }
+        suppressNextWrite = true;
+        try {
+          storeApi.setState({ data, undoImport, hydrated: true, status: 'ready' });
+        } finally {
+          suppressNextWrite = false;
+        }
       },
     },
   ));
