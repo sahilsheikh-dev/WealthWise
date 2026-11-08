@@ -97,7 +97,7 @@ match the recorded values.
 | File | Git blob ID | Rule |
 |---|---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
-| `app/(tabs)/budget.tsx` | `4a83b6e484bff0d211de188d0f13c6897829d184` | P20-N-R1 authorized a per-section Pace graph; preserve user-authored Cash flow labels, removed controls and all other owner UI edits. |
+| `app/(tabs)/budget.tsx` | `589ce9d73c80971cc78ac2a7011faa96186944fb` | P20-N-R2 authorized restoring the aggregate Pace graph; preserve Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |
