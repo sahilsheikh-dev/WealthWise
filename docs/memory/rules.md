@@ -4,13 +4,13 @@
 
 ## Invariants
 
-- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
-  before other work. If files are dirty, run `git diff --stat` and inspect
-  their complete diff, then commit exactly those named files with a
-  Conventional Commit subject that states what changed. Use one commit per
-  unrelated area. The subject must not use a legacy placeholder; never bypass
-  the commit hook. Preserve owner edits and never revert them.
-- Enable commit-message enforcement in each clone with
+- **COMMON RULES apply to every prompt**, even if not repeated in a prompt.
+  R1 requires a dirty-file preflight with `git diff --stat` and the complete
+  diff; before each commit show its subject and staged diff-stat, commit only
+  named files, and use a descriptive Conventional Commit subject. Allowed
+  types are `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `perf`,
+  `style`, `build`, `ci`, and `revert`; optional scopes are allowed. The
+  hook rejects prohibited placeholder subjects. Never bypass it; enable it with
   `git config core.hooksPath .githooks`.
 - **R2 — Phase and revision IDs:** align each task with existing work. A fix
   or change to a completed subtask stays in its original phase and is logged
@@ -18,13 +18,29 @@
   `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
   new areas.
 - **R3 — History and release approval:** never push, amend or rewrite history
-  unless the owner explicitly asks. Release publication and tag creation,
-  movement or deletion require explicit owner approval.
+  unless the owner explicitly authorizes a push; never force-push. Release
+  publication and tag creation, movement or deletion require explicit owner
+  approval.
 - **R4 — Documentation scope:** routine documentation committed to Git is
-  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-  including release drafts. Other documentation files may be changed only
-  when explicitly named in the owner's task. Reports and generated output
-  belong in chat or `/tmp`; release content must never be placed there.
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`,
+  `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
+  files may be changed only when explicitly named. Reports and generated
+  output belong in chat or `/tmp`; release content must remain in Git.
+- Branching: `main` is stable released code; `develop` is integration and
+  must pass all six gates; phase branches use `phase/NN-slug`, task branches
+  use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
+  use `hotfix/vX.Y.Z`, and external contributors use `contrib/ISSUE-slug`
+  with PRs into `develop`. The branching adoption baseline can contain legacy
+  unreleased history; the stable-main rule applies prospectively. Merge tasks
+  into phases and phases into `develop` with `--no-ff`; release/hotfix to
+  `main` also uses `--no-ff`; contributor PRs are squash-merged with a
+  Conventional Commit title. Agents do not push unless asked, do not commit
+  directly to `main`/`develop` except an authorized bootstrap, delete merged
+  task branches, and keep phase branches.
+- The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
+  `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
+  and `npx expo export --platform ios`. Expo exports are allowed; EAS and
+  Gradle builds are not unless explicitly authorized.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -78,7 +94,7 @@ match the recorded values.
 | File | Git blob ID | Rule |
 |---|---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
-| `app/(tabs)/budget.tsx` | `7beea9dd1ee7a3f46d95b8dbc13009b90b184dec` | Preserve user-authored cash-flow labels and removed controls. |
+| `app/(tabs)/budget.tsx` | `4a83b6e484bff0d211de188d0f13c6897829d184` | P20-N-R1 authorized a per-section Pace graph; preserve user-authored Cash flow labels, removed controls and all other owner UI edits. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |
