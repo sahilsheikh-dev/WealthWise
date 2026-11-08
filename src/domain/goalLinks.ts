@@ -1,5 +1,5 @@
 import { addDays, addMonths, parseISO } from './dates';
-import { holdingContributions, holdingValue } from './portfolio';
+import { holdingInvested, holdingValue } from './portfolio';
 import { planValue, PERIODS_PER_YEAR } from './sip';
 import type { AppData, Goal, GoalLink, ISODate, PlanHolding, Policy } from './types';
 
@@ -39,7 +39,7 @@ function linkedValue(data: AppData, instrumentId: string, asOf: ISODate): number
 
 function linkedInvested(data: AppData, instrumentId: string): number | undefined {
   const holding = data.holdings.find((item) => item.id === instrumentId);
-  if (holding) return holdingContributions(holding);
+  if (holding) return holdingInvested(holding);
   const policy = data.policies.find((item) => item.id === instrumentId && isSavingsPolicy(item));
   return policy ? policyInvested(policy) : undefined;
 }
@@ -55,7 +55,7 @@ export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstr
     name: holding.name,
     kind: holding.kind,
     value: holdingValue(holding, asOf),
-    invested: holdingContributions(holding),
+    invested: holdingInvested(holding),
   }));
   const policies = data.policies.filter(isSavingsPolicy).map((policy): LinkableInstrument => ({
     id: policy.id,

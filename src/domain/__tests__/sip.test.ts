@@ -63,7 +63,7 @@ describe('SIP domain calculations', () => {
     expect(result.totalContributions).toBe(bruteContributions);
   });
 
-  it('calculates scheduled deposits with calendar dates and a bounded search', () => {
+  it('calculates due installments with calendar dates and a bounded search', () => {
     const monthEndPlan = makePlan({ startDate: '2026-01-31', tenureYears: 2 });
     expect(scheduledDate(monthEndPlan, 1)).toBe('2026-02-28');
     expect(installmentsDue(monthEndPlan, '2026-03-01')).toBe(2);
@@ -108,11 +108,11 @@ describe('SIP domain calculations', () => {
     expect(loggedTotal(plan)).toBe(125);
     expect(loggedCount(plan)).toBe(2);
     expect(loggedTrackedCount(plan)).toBe(1);
-    expect(planInvested(plan)).toBe(0);
+    expect(planInvested(plan)).toBe(225);
     expect(planValue(plan, '2026-02-20')).toBe(0);
   });
 
-  it('tracks only scheduled deposits on or after trackFrom', () => {
+  it('tracks only scheduled installments on or after trackFrom', () => {
     const plan = makePlan({ startDate: '2026-01-01', trackFrom: '2026-03-01' });
     expect(installmentsTracked(plan, '2026-04-01')).toBe(2);
     expect(installmentsTracked({ ...plan, trackFrom: '2025-12-01' }, '2026-04-01')).toBe(4);
@@ -166,7 +166,7 @@ describe('SIP domain calculations', () => {
     expect(planValue(plan, '2026-10-10')).toBe(8_500);
   });
 
-  it('steps the recurring deposit amount on calendar anniversaries', () => {
+  it('steps the installment amount on calendar anniversaries', () => {
     const plan = makePlan({ amount: 1_000, stepUpPct: 10, tenureYears: 3, startDate: '2024-06-15' });
     expect(currentInstallmentAmount(plan, '2024-06-14')).toBe(1_000);
     expect(currentInstallmentAmount(plan, '2025-06-14')).toBe(1_000);

@@ -507,7 +507,7 @@ describe('makeTransactionFormSchema', () => {
       if (!tooFar.success) expect(tooFar.error.issues.some((issue) => issue.message === 'Start date is too far ahead')).toBe(true);
       const beforeLog = schema.safeParse({ ...planValues, startDate: '2026-10-11' });
       expect(beforeLog.success).toBe(false);
-      if (!beforeLog.success) expect(beforeLog.error.issues.some((issue) => issue.message === 'A logged deposit is dated before this start date')).toBe(true);
+      if (!beforeLog.success) expect(beforeLog.error.issues.some((issue) => issue.message === 'A logged installment is dated before this start date')).toBe(true);
       expect(schema.safeParse({ ...planValues, trackFrom: '2026-10-09' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, trackFrom: 'bad-date' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, opening: '10000000000' }).success).toBe(true);

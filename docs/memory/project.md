@@ -7,8 +7,7 @@ runtime data is stored locally; the repository describes no cloud account or
 runtime synchronization.
 
 - Stack: Expo SDK 57, React Native 0.86.3, TypeScript, Expo Router, Zustand,
-  Expo SQLite (native AppData), AsyncStorage (web, metadata and legacy native
-  migration), Zod, React Hook Form and Jest.
+  AsyncStorage, Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
 - Schema version: v18 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
@@ -19,16 +18,12 @@ runtime synchronization.
 - Tabs: Home, Transactions, Goals and Budget.
 - Budget scope choices apply on selection; Close, backdrop and Android back
   dismiss the popup without applying a change.
-- Manual and recurring holdings share Deposit, Withdraw and Entries actions
-  where capabilities allow. Opening amounts are derived as the first Entries
-  row, recurring plans are shown inside Entries, and Invested is net of
-  withdrawals without a schema change.
 - Routes are in `app/`. Domain rules/schemas are in `src/domain/`; persistence
   and stores in `src/data/`; shared UI/form components in `src/components/`;
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 90 suites, 1140 tests in the latest verified P29-O1 coverage
+- Test counts: 89 suites, 1125 tests in the latest verified P29-Q coverage
   run. See [status.md](status.md) and the [progress
   ledger](../PROGRESS.md) for exact gate results and coverage.
 

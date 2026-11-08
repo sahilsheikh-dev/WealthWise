@@ -3542,7 +3542,7 @@ describe('route render smoke audit', () => {
     try {
       renderer = renderScreen(React.createElement(AssetsScreen));
       expect(renderer.root.findByProps({
-        accessibilityLabel: `Invested, ${formatAmount(2_700, 'exact', 1)}`,
+        accessibilityLabel: `Invested, ${formatAmount(2_800, 'exact', 1)}`,
       })).toBeDefined();
       expect(renderer.root.findByProps({
         accessibilityLabel: `Gain, ${formatAmount(-100, 'exact', 1)}`,
@@ -3551,7 +3551,7 @@ describe('route render smoke audit', () => {
       const fixedCard = renderer.root.findByProps({ testID: 'asset-card-manual-Fixed deposit' });
       expect(fixedCard.findAllByProps({ label: 'Deposit' })).toHaveLength(0);
       expect(fixedCard.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
-      expect(fixedCard.findAllByProps({ label: 'Entries' })).toHaveLength(1);
+      expect(fixedCard.findAllByProps({ label: 'Entries (1)' })).toHaveLength(1);
       expect(fixedCard.findAllByType('text')
         .some((node) => node.children.join('').includes(
           'Entries dated before the last valuation are assumed included in it.',
@@ -3560,22 +3560,21 @@ describe('route render smoke audit', () => {
         .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
 
       for (const [testID, expectedLabel] of [
-        ['asset-card-manual-Cash reserve', 'Invested'],
-        ['asset-card-manual-Bank reserve', 'Invested'],
+        ['asset-card-manual-Cash reserve', 'Deposited'],
+        ['asset-card-manual-Bank reserve', 'Withdrawn'],
       ]) {
         const card = renderer.root.findByProps({ testID });
         const content = card.findAllByType('text').map((node) => node.children.join('')).join(' ');
         expect(content).toContain(expectedLabel);
         expect(content).not.toMatch(/No return yet|absolute|XIRR|CAGR|% of your assets/);
-        expect(content).not.toContain('Deposited');
-        expect(content).not.toContain('Withdrawn');
+        expect(content).not.toContain('Invested');
         expect(content).not.toContain('Gain');
       }
 
       const cashCard = renderer.root.findByProps({ testID: 'asset-card-manual-Cash reserve' });
       expect(cashCard.findByProps({ accessibilityLabel: 'Cash' })).toBeDefined();
       expect(cashCard.findByProps({
-        accessibilityLabel: `Invested ${formatAmount(600, 'exact', 1)}`,
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}. Withdrawn ${formatAmount(0, 'exact', 1)}`,
       })).toBeDefined();
 
       act(() => renderer?.unmount());
@@ -3595,8 +3594,14 @@ describe('route render smoke audit', () => {
         accessibilityLabel: `Balance ${formatAmount(500, 'exact', 1)}`,
       })).toBeDefined();
       expect(renderer.root.findByProps({
-        accessibilityLabel: `Invested ${formatAmount(600, 'exact', 1)}`,
+        accessibilityLabel: `Deposited ${formatAmount(100, 'exact', 1)}`,
       })).toBeDefined();
+      expect(renderer.root.findByProps({
+        accessibilityLabel: `Withdrawn ${formatAmount(0, 'exact', 1)}`,
+      })).toBeDefined();
+      expect(renderer.root.findAllByProps({
+        accessibilityLabel: `Invested ${formatAmount(600, 'exact', 1)}`,
+      })).toHaveLength(0);
     } finally {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
@@ -3751,7 +3756,7 @@ describe('route render smoke audit', () => {
     expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
   });
 
-  it('explains the first scheduled deposit and deposit tracking dates', () => {
+  it('explains the first SIP installment and installment tracking dates', () => {
     const renderer = renderScreen(React.createElement(InvestmentFormScreen));
     const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
     expect(dates[0]?.props).toMatchObject({
@@ -3759,12 +3764,12 @@ describe('route render smoke audit', () => {
       accessibilityHint: 'The first date on your recurring investment schedule.',
     });
     expect(dates[1]?.props).toMatchObject({
-      accessibilityLabel: 'Scheduled deposit tracking start date',
-      accessibilityHint: 'Only deposits due on or after this date count toward missed contributions.',
+      accessibilityLabel: 'Installment tracking start date',
+      accessibilityHint: 'Only installments due on or after this date count toward missed contributions.',
     });
     const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
     expect(helperText).toContain('The plan schedule starts on this date.');
-    expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected deposits.');
+    expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
   });
 
   it('keeps one-time and manual holding forms free of plan-only value fields', () => {
@@ -3806,160 +3811,6 @@ describe('route render smoke audit', () => {
       if (editRenderer) act(() => editRenderer?.unmount());
       storeState.data.holdings = previousHoldings;
       routeParams.mockReturnValue({});
-    }
-  });
-
-  it.each([1.3, 2])('keeps manual and recurring holdings on the same card, entries and form flow at font scale %s', (fontScale) => {
-    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
-    const previousRouteData = { ...routeData };
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const previousFontScale = mockFontScale;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousParams = routeParams();
-    const today = todayISO();
-    const ledgerEntries = [
-      { id: 'scale-deposit-1', date: today, amount: 1_000, kind: 'Deposit' as const, note: '' },
-      { id: 'scale-deposit-2', date: today, amount: 1_000, kind: 'Deposit' as const, note: '' },
-      { id: 'scale-deposit-3', date: today, amount: 1_000, kind: 'Deposit' as const, note: '' },
-      { id: 'scale-deposit-4', date: today, amount: 1_000, kind: 'Deposit' as const, note: '' },
-      { id: 'scale-deposit-5', date: today, amount: 1_000, kind: 'Deposit' as const, note: '' },
-      { id: 'scale-withdrawal', date: today, amount: 2_000, kind: 'Withdrawal' as const, note: '' },
-    ];
-    const holdings: (ManualHolding | PlanHolding)[] = [
-      {
-        id: 'scale-manual',
-        kind: 'manual',
-        name: 'Manual gold',
-        type: 'Gold',
-        invested: 10_000,
-        value: 10_000,
-        valueAsOf: today,
-        logs: ledgerEntries,
-      },
-      {
-        id: 'scale-plan',
-        kind: 'plan',
-        name: 'Recurring RD',
-        type: 'Recurring deposit',
-        frequency: 'monthly',
-        amount: 1_000,
-        ratePct: 5,
-        stepUpPct: 0,
-        tenureYears: 2,
-        startDate: today,
-        trackFrom: today,
-        opening: 10_000,
-        actualValue: null,
-        actualValueDate: null,
-        logs: ledgerEntries,
-      },
-    ];
-    const data: AppData = { ...emptyAppData(today), holdings };
-    Object.assign(routeData, data);
-    store.data = data;
-    mockFontScale = fontScale;
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-
-    try {
-      renderer = renderScreen(React.createElement(AssetsScreen));
-      for (const name of ['Manual gold', 'Recurring RD']) {
-        const card = renderer.root.findByProps({ testID: `asset-card-${name === 'Manual gold' ? 'manual' : 'plan'}-${name}` });
-        expect(card.findAllByProps({ label: 'Deposit' })).toHaveLength(1);
-        expect(card.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
-        expect(card.findAllByProps({ label: 'Entries' })).toHaveLength(1);
-        expect(card.findAllByProps({ label: 'Schedule' })).toHaveLength(0);
-        expect(card.findAllByType('text').map((node) => node.children.join('')).join(' '))
-          .toContain(formatAmount(13_000, 'exact', 1));
-      }
-
-      act(() => renderer?.unmount());
-      renderer = undefined;
-      for (const holding of holdings) {
-        routeParams.mockReturnValue({ id: holding.id });
-        renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
-        expect(renderer.root.findAllByProps({ label: 'Deposit' })).toHaveLength(1);
-        expect(renderer.root.findAllByProps({ label: 'Withdraw' })).toHaveLength(1);
-        expect(renderer.root.findAllByProps({ label: 'Entries' })).toHaveLength(1);
-        const list = renderer.root.find((node) => String(node.type) === 'flatlist');
-        expect(list.props.data).toHaveLength(7);
-        const openingRow = list.props.data[0];
-        expect(openingRow).toMatchObject({ rowKind: 'opening' });
-        const openingRenderer = renderScreen(list.props.renderItem({ item: openingRow, index: 0 }));
-        const openingAmount = formatAmount(holding.kind === 'plan' ? holding.opening : holding.invested, 'exact', 1);
-        expect(openingRenderer.root.findByProps({
-          accessibilityLabel: `Opening ${openingAmount}`,
-        })).toBeDefined();
-        act(() => openingRenderer.unmount());
-        expect(renderer.root.findByProps({
-          accessibilityLabel: `Invested ${formatAmount(13_000, 'exact', 1)}`,
-        })).toBeDefined();
-        if (holding.kind === 'plan') {
-          expect(renderer.root.findAll((node) =>
-            typeof node.props.accessibilityLabel === 'string'
-            && node.props.accessibilityLabel.startsWith('Recurring plan monthly'),
-          )).not.toHaveLength(0);
-          expect(renderer.root.findAllByProps({ label: 'Edit recurring plan' })).toHaveLength(1);
-        }
-        act(() => renderer?.unmount());
-        renderer = undefined;
-
-        const formParams = { id: holding.id };
-        routeParams.mockReturnValue(formParams);
-        renderer = renderScreen(React.createElement(InvestmentFormScreen));
-        expect(renderer.root.findAllByProps({ label: 'Save' })).toHaveLength(1);
-        if (holding.kind === 'plan') {
-          expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
-        } else {
-          expect(renderer.root.findAllByType(ChoiceField).some((field) => field.props.label === 'Type')).toBe(true);
-        }
-        act(() => renderer?.unmount());
-        renderer = undefined;
-      }
-    } finally {
-      act(() => renderer?.unmount());
-      Object.assign(routeData, previousRouteData);
-      store.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
-      mockFontScale = previousFontScale;
-    }
-  });
-
-  it('uses scheduled-deposit wording in the recurring holding due cleanup', () => {
-    const store = useAppStore((state) => state);
-    const previousStoreData = store.data;
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const previousParams = routeParams();
-    const today = todayISO();
-    const startDate = addDays(today, -32);
-    const plan: PlanHolding = {
-      id: 'due-cleanup-plan',
-      kind: 'plan',
-      name: 'Recurring RD',
-      type: 'Recurring deposit',
-      frequency: 'monthly',
-      amount: 1_000,
-      ratePct: 0,
-      stepUpPct: 0,
-      tenureYears: 1,
-      startDate,
-      trackFrom: startDate,
-      opening: 0,
-      actualValue: null,
-      actualValueDate: null,
-      logs: [],
-    };
-    store.data = { ...emptyAppData(today), holdings: [plan] };
-    routeParams.mockReturnValue({ kind: 'plan', id: plan.id });
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    try {
-      renderer = renderScreen(React.createElement(ClearDuesScreen));
-      const text = renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' ');
-      expect(text).toContain('scheduled deposits');
-    } finally {
-      act(() => renderer?.unmount());
-      store.data = previousStoreData;
-      routeParams.mockReturnValue(previousParams);
     }
   });
 

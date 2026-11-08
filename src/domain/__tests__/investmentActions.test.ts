@@ -78,7 +78,7 @@ describe('investment ledger actions and valuation', () => {
     expect(data.transactions[1]).toMatchObject({
       type: 'income', category: 'Withdrawal', note: 'Gold withdrawal', amount: 2_000,
     });
-    expect(holdingInvested(data.holdings[0]!)).toBe(13_000);
+    expect(holdingInvested(data.holdings[0]!)).toBe(15_000);
     expect(holdingValue(data.holdings[0]!, '2026-10-10')).toBe(13_000);
     expect(validateIntegrity(data)).toEqual([]);
 
@@ -164,12 +164,12 @@ describe('investment ledger actions and valuation', () => {
     const rows = syncHoldingTransactions([
       { id: 'a', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Old deposit', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'deposit' } },
       { id: 'b', type: 'income', amount: 1, date: withdrawal.date, category: 'Withdrawal', note: 'Custom note', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'withdrawal' } },
-      { id: 'c', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Orphan deposit', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'missing' } },
+      { id: 'c', type: 'invest', amount: 1, date: entry.date, category: 'Other', note: 'Old installment', source: { kind: 'holding-entry', parentId: 'manual', entryId: 'missing' } },
       { id: 'd', type: 'income', amount: 1, date: entry.date, category: 'Other', note: 'Other source' },
     ], holding, updated);
     expect(rows[0]).toMatchObject({ note: 'New deposit', category: 'Gold / Silver' });
     expect(rows[1]).toMatchObject({ note: 'Custom note', category: 'Withdrawal' });
-    expect(rows[2]).toMatchObject({ note: 'Orphan deposit', category: 'Other' });
+    expect(rows[2]).toMatchObject({ note: 'Old installment', category: 'Other' });
     expect(rows[3]).toMatchObject({ note: 'Other source', category: 'Other' });
   });
 
@@ -184,7 +184,7 @@ describe('investment ledger actions and valuation', () => {
       ],
     };
     expect(planValue(plan, '2026-10-10')).toBe(1_500);
-    expect(planInvested(plan)).toBe(1_500);
+    expect(planInvested(plan)).toBe(2_000);
   });
 
   it('includes manual entries only after a value snapshot and preserves no-entry valuation', () => {

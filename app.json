@@ -60,8 +60,7 @@
         {
           "faceIDPermission": "Unlock Wealth Wise"
         }
-      ],
-      "expo-sqlite"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

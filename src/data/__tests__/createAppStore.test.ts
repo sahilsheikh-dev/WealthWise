@@ -2480,89 +2480,21 @@ describe('createAppStore persistence', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('loads a complete 50-year stress fixture through replace-all and restores the previous data with Undo', async () => {
+  it('replaces transactions with 20,000 stress entries using one persisted write', async () => {
     const storage = new MemoryStorage();
     let id = 0;
     const store = makeStore(storage, { isDev: true, newId: () => `stress-${++id}` });
     await waitForHydration(store);
     const actions = store.getState().devActions;
     if (!actions) throw new Error('Developer stress action is unavailable.');
-    const original = store.getState().data;
+    const existingGoals = store.getState().data.goals;
     const writesBefore = storage.setItemCalls;
 
-    const result = await actions.loadStressData(50);
+    actions.loadStressData();
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) throw new Error(result.message);
-    expect(result.loadMs).toBeGreaterThanOrEqual(0);
-    expect(store.getState().data.transactions).toHaveLength(15_000);
-    expect(store.getState().data.holdings).toHaveLength(12);
-    expect(store.getState().data.monthBudgets).toHaveLength(600);
-    expect(store.getState().undoImport).toEqual({ savedAt: '2026-10-10' });
-    expect(storage.setItemCalls - writesBefore).toBe(2);
-    await expect(store.getState().actions.undoImport()).resolves.toEqual({ ok: true });
-    expect(store.getState().data).toEqual(original);
-  });
-
-  it('includes the persisted AppData write in stress-load timing', async () => {
-    class DelayedStorage extends MemoryStorage {
-      override async setItem(name: string, value: string): Promise<void> {
-        await new Promise((resolve) => setTimeout(resolve, 25));
-        super.setItem(name, value);
-      }
-    }
-
-    const storage = new DelayedStorage();
-    let id = 0;
-    const store = makeStore(storage, { isDev: true, newId: () => `timed-stress-${++id}` });
-    await waitForHydration(store);
-    const actions = store.getState().devActions;
-    if (!actions) throw new Error('Developer stress action is unavailable.');
-
-    const startedAt = Date.now();
-    const result = await actions.loadStressData(50);
-    const elapsed = Date.now() - startedAt;
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) throw new Error(result.message);
-    expect(result.loadMs).toBeGreaterThanOrEqual(20);
-    expect(elapsed).toBeGreaterThanOrEqual(20);
-  });
-
-  it('refuses to load an invalid generated stress fixture without replacing data', async () => {
-    const storage = new MemoryStorage();
-    const store = makeStore(storage, { isDev: true, newId: () => '' });
-    await waitForHydration(store);
-    const original = store.getState().data;
-    const writesBefore = storage.setItemCalls;
-    const actions = store.getState().devActions;
-    if (!actions) throw new Error('Developer stress action is unavailable.');
-
-    await expect(actions.loadStressData(50)).resolves.toMatchObject({
-      ok: false,
-      message: expect.stringContaining('Stress fixture validation failed'),
-    });
-
-    expect(store.getState().data).toBe(original);
-    expect(storage.setItemCalls).toBe(writesBefore);
-  });
-
-  it('refuses stress fixtures with broken cross-entity links', async () => {
-    const storage = new MemoryStorage();
-    const store = makeStore(storage, { isDev: true, newId: () => 'duplicate-id' });
-    await waitForHydration(store);
-    const original = store.getState().data;
-    const writesBefore = storage.setItemCalls;
-    const actions = store.getState().devActions;
-    if (!actions) throw new Error('Developer stress action is unavailable.');
-
-    await expect(actions.loadStressData(50)).resolves.toMatchObject({
-      ok: false,
-      message: expect.stringContaining('Stress fixture integrity failed'),
-    });
-
-    expect(store.getState().data).toBe(original);
-    expect(storage.setItemCalls).toBe(writesBefore);
+    expect(store.getState().data.transactions).toHaveLength(20_000);
+    expect(store.getState().data.goals).toBe(existingGoals);
+    expect(storage.setItemCalls - writesBefore).toBe(1);
   });
 
   it('reports an unavailable reload when simulating corruption without a reload dependency', async () => {
@@ -2627,7 +2559,7 @@ describe('createAppStore persistence', () => {
     expect(store.getState().lastError).toBe('invalid settings patch');
   });
 
-  it('runs the scheduled-deposit integration scenario with one write per action and rehydrates links', async () => {
+  it('runs the plan installment integration scenario with one write per action and rehydrates links', async () => {
     const storage = new MemoryStorage();
     let id = 0;
     const store = makeStore(storage, { newId: () => `id-${++id}` });

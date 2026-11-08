@@ -256,7 +256,7 @@ describe('four-month demo data', () => {
     )).toBe(true);
   });
 
-  it('includes an overdue SIP, upcoming EMI, future-month due, later payment, and planned budget rows', () => {
+  it('includes an overdue SIP, upcoming EMI, future-month due, later installment, and planned budget rows', () => {
     const currentMonth = monthKey(today);
     const futureMonth = shiftMonth(currentMonth, 1);
     const pending = [

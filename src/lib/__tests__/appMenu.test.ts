@@ -7,7 +7,7 @@ describe('buildAppMenu', () => {
     const devItems = buildAppMenu({ isDev: true, themeLabel: 'System' });
     expect(devItems.map(({ label }) => label)).toEqual([
       'Backup and restore', 'Reminders', 'Security', 'Profile', 'Theme',
-      'Load demo data (4 months)', 'Load stress data (50y/100y/200y)', 'Simulate corrupt storage', 'Erase all data',
+      'Load demo data (4 months)', 'Generate stress-test data', 'Simulate corrupt storage', 'Erase all data',
     ]);
     expect(devItems.some(({ label }) => label === 'Budget')).toBe(false);
     expect(devItems.at(-1)).toMatchObject({ label: 'Erase all data', destructive: true });

@@ -66,7 +66,7 @@ const goalSchema = z.object({
   })).default([]),
 });
 
-export const manualHoldingSchema = z.object({
+const manualHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('manual'),
   name: z.string(),
@@ -77,7 +77,7 @@ export const manualHoldingSchema = z.object({
   logs: z.array(investmentEntrySchema),
 });
 
-export const planHoldingSchema = z.object({
+const planHoldingSchema = z.object({
   id: idSchema,
   kind: z.literal('plan'),
   name: z.string(),
@@ -718,7 +718,7 @@ export function makePlanFormSchema(
       }
     }
     if (ctx.earliestLogDate && value.startDate > ctx.earliestLogDate) {
-      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged deposit is dated before this start date' });
+      context.addIssue({ code: 'custom', path: ['startDate'], message: 'A logged installment is dated before this start date' });
     }
   });
 }

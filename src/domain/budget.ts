@@ -29,58 +29,6 @@ import type {
 export { BUDGET_CATEGORIES };
 const BUILT_IN_BUDGET_CATEGORY_SET = new Set<string>(BUDGET_CATEGORIES);
 
-type BudgetScheduleCache = {
-  plans: Map<string, ReturnType<typeof planSchedule>>;
-  liabilities: Map<string, ReturnType<typeof liabilitySchedule>>;
-  policies: Map<string, ReturnType<typeof policySchedule>>;
-};
-
-function createBudgetScheduleCache(): BudgetScheduleCache {
-  return { plans: new Map(), liabilities: new Map(), policies: new Map() };
-}
-
-function cachedPlanSchedule(
-  plan: Extract<AppData['holdings'][number], { kind: 'plan' }>,
-  asOf: ISODate,
-  cache?: BudgetScheduleCache,
-): ReturnType<typeof planSchedule> {
-  if (!cache) return planSchedule(plan, asOf);
-  const key = `${plan.id}:${asOf}`;
-  const existing = cache.plans.get(key);
-  if (existing) return existing;
-  const schedule = planSchedule(plan, asOf);
-  cache.plans.set(key, schedule);
-  return schedule;
-}
-
-function cachedLiabilitySchedule(
-  liability: AppData['liabilities'][number],
-  asOf: ISODate,
-  cache?: BudgetScheduleCache,
-): ReturnType<typeof liabilitySchedule> {
-  if (!cache) return liabilitySchedule(liability, asOf);
-  const key = `${liability.id}:${asOf}`;
-  const existing = cache.liabilities.get(key);
-  if (existing) return existing;
-  const schedule = liabilitySchedule(liability, asOf);
-  cache.liabilities.set(key, schedule);
-  return schedule;
-}
-
-function cachedPolicySchedule(
-  policy: AppData['policies'][number],
-  asOf: ISODate,
-  cache?: BudgetScheduleCache,
-): ReturnType<typeof policySchedule> {
-  if (!cache) return policySchedule(policy, asOf);
-  const key = `${policy.id}:${asOf}`;
-  const existing = cache.policies.get(key);
-  if (existing) return existing;
-  const schedule = policySchedule(policy, asOf);
-  cache.policies.set(key, schedule);
-  return schedule;
-}
-
 export type BudgetCommitment = {
   kind: 'plan' | 'liability' | 'policy';
   id: string;
@@ -245,17 +193,13 @@ function orderedRows<T extends { dueDate: ISODate }>(rows: T[]): T[] {
   return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
 
-export function monthlyCommitments(
-  data: AppData,
-  month: string,
-  cache?: BudgetScheduleCache,
-): BudgetCommitment[] {
+export function monthlyCommitments(data: AppData, month: string): BudgetCommitment[] {
   monthOf(month);
   const asOf = monthEndDate(month);
   const rows: BudgetCommitment[] = [];
   for (const holding of data.holdings) {
     if (holding.kind !== 'plan') continue;
-    for (const row of cachedPlanSchedule(holding, asOf, cache).rows) {
+    for (const row of planSchedule(holding, asOf).rows) {
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
         kind: 'plan', id: holding.id, name: holding.name,
@@ -267,7 +211,7 @@ export function monthlyCommitments(
   }
   for (const liability of data.liabilities) {
     if (liability.kind === 'one-time' && liability.dueDate === null) continue;
-    for (const row of cachedLiabilitySchedule(liability, asOf, cache).rows) {
+    for (const row of liabilitySchedule(liability, asOf).rows) {
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
         kind: 'liability', id: liability.id, name: liability.name, category: 'EMI',
@@ -280,7 +224,7 @@ export function monthlyCommitments(
     }
   }
   for (const policy of data.policies) {
-    for (const row of cachedPolicySchedule(policy, asOf, cache).rows) {
+    for (const row of policySchedule(policy, asOf).rows) {
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
         kind: 'policy', id: policy.id, name: policy.name,
@@ -316,30 +260,25 @@ function linkedRowsFor(
     }]);
 }
 
-export function linkedRecurringForMonth(
-  data: AppData,
-  month: string,
-  asOf: ISODate,
-  cache?: BudgetScheduleCache,
-): LinkedRecurringRow[] {
+export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISODate): LinkedRecurringRow[] {
   const key = monthOf(month);
   const rows: LinkedRecurringRow[] = [];
   for (const holding of data.holdings) {
     if (holding.kind !== 'plan') continue;
     rows.push(...linkedRowsFor(
-      'plan', holding.id, holding.name, investCategoryFor(holding.type), key, cachedPlanSchedule(holding, asOf, cache).rows,
+      'plan', holding.id, holding.name, investCategoryFor(holding.type), key, planSchedule(holding, asOf).rows,
     ));
   }
   for (const liability of data.liabilities) {
     if (liability.kind === 'one-time' && liability.dueDate === null) continue;
     rows.push(...linkedRowsFor(
-      'liability', liability.id, liability.name, 'EMI', key, cachedLiabilitySchedule(liability, asOf, cache).rows,
+      'liability', liability.id, liability.name, 'EMI', key, liabilitySchedule(liability, asOf).rows,
     ));
   }
   for (const policy of data.policies) {
     rows.push(...linkedRowsFor(
       'policy', policy.id, policy.name, policyPremiumCategory(policy.kind), key,
-      cachedPolicySchedule(policy, asOf, cache).rows,
+      policySchedule(policy, asOf).rows,
     ));
   }
   return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
@@ -1222,16 +1161,12 @@ export function ensureCurrentMonthBudget(data: AppData, today: ISODate, newId: (
 
 export type OutstandingSummary = { count: number; amount: number };
 
-export function outstandingAt(
-  data: AppData,
-  asOf: ISODate,
-  cache?: BudgetScheduleCache,
-): OutstandingSummary {
+export function outstandingAt(data: AppData, asOf: ISODate): OutstandingSummary {
   const unpaid = [
     ...data.holdings.filter((holding) => holding.kind === 'plan')
-      .flatMap((holding) => cachedPlanSchedule(holding, asOf, cache).rows),
-    ...data.liabilities.flatMap((liability) => cachedLiabilitySchedule(liability, asOf, cache).rows),
-    ...data.policies.flatMap((policy) => cachedPolicySchedule(policy, asOf, cache).rows),
+      .flatMap((holding) => planSchedule(holding, asOf).rows),
+    ...data.liabilities.flatMap((liability) => liabilitySchedule(liability, asOf).rows),
+    ...data.policies.flatMap((policy) => policySchedule(policy, asOf).rows),
   ].filter((row) => row.dueDate < asOf && row.status === 'overdue');
   return {
     count: unpaid.length,
@@ -1243,9 +1178,9 @@ export function budgetLineActual(
   data: AppData,
   month: string,
   category: string,
-  options: { excludePolicyPayments?: boolean; customCategories?: ReadonlySet<string> } = {},
+  options: { excludePolicyPayments?: boolean } = {},
 ): number {
-  const customCategories = options.customCategories ?? customBudgetCategories(data);
+  const customCategories = customBudgetCategories(data);
   const linkedHoldingIds = new Set(
     [
       ...(data.budgetPlan?.items ?? []),
@@ -1294,18 +1229,12 @@ export type BudgetMonthView = {
   outstanding: OutstandingSummary;
 };
 
-export function budgetMonthView(
-  data: AppData,
-  month: string,
-  today: ISODate = `${month}-01`,
-  cache?: BudgetScheduleCache,
-): BudgetMonthView {
+export function budgetMonthView(data: AppData, month: string, today: ISODate = `${month}-01`): BudgetMonthView {
   const key = monthOf(month);
-  const scheduleCache = cache ?? createBudgetScheduleCache();
   const { budget, virtual } = effectiveMonthBudget(data, key, today);
-  const commitments = monthlyCommitments(data, key, scheduleCache);
+  const commitments = monthlyCommitments(data, key);
   const includeLinked = budget?.linkedIncluded === true;
-  const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key), scheduleCache) : [];
+  const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
   const plannedLines = budget
     ? resolveBudgetPlan(
       { incomes: budget.incomes, sections: budget.sections, items: budget.items },
@@ -1459,7 +1388,7 @@ export function budgetMonthView(
     },
     unallocated: plannedIncome === null
       ? null : plannedIncome - plannedSpend - plannedSave,
-    unbudgeted, outstanding: outstandingAt(data, monthEndDate(key), scheduleCache),
+    unbudgeted, outstanding: outstandingAt(data, monthEndDate(key)),
   };
 }
 
@@ -1467,20 +1396,18 @@ export function projectedCashFlow(
   data: AppData,
   monthInput: string,
   today: ISODate,
-  cache?: BudgetScheduleCache,
 ): { opening: number; closing: number; projected: boolean } {
   const month = monthOf(monthInput);
-  const scheduleCache = cache ?? createBudgetScheduleCache();
   const currentMonth = monthKey(today);
   if (month <= currentMonth) {
     const position = monthPositionAt(data.transactions, month);
     return { opening: position.opening, closing: position.closing, projected: false };
   }
-  const prior = projectedCashFlow(data, shiftMonth(month, -1), today, scheduleCache);
+  const prior = projectedCashFlow(data, shiftMonth(month, -1), today);
   const opening = prior.closing;
   const { budget } = effectiveMonthBudget(data, month, today);
   if (!budget) return { opening, closing: opening, projected: true };
-  const view = budgetMonthView(data, month, today, scheduleCache);
+  const view = budgetMonthView(data, month, today);
   const monthDistance = (Number(month.slice(0, 4)) - Number(currentMonth.slice(0, 4))) * 12
     + Number(month.slice(5, 7)) - Number(currentMonth.slice(5, 7));
   if (monthDistance > 1) {
@@ -1579,8 +1506,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   const month = monthOf(monthInput);
   const currentMonth = monthKey(today);
   const mode = month < currentMonth ? 'past' : month === currentMonth ? 'current' : 'future';
-  const scheduleCache = createBudgetScheduleCache();
-  const cashFlow = projectedCashFlow(data, month, today, scheduleCache);
+  const cashFlow = projectedCashFlow(data, month, today);
   const { budget } = effectiveMonthBudget(data, month, today);
   const emptyStacked = {
     income: { planned: 0, actual: 0 },
@@ -1603,8 +1529,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     };
   }
 
-  const customCategories = customBudgetCategories(data);
-  const view = budgetMonthView(data, month, today, scheduleCache);
+  const view = budgetMonthView(data, month, today);
   const actualTransactions = monthActualTransactions(data, month, today);
   const overviewDefinitions = budget.sections.map((section) => ({ ...section }));
   const incomeSectionId = budget.sections.find((section) => section.system === 'income')?.id ?? 'income';
@@ -1707,14 +1632,14 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
   const actualByCategory = new Map<string, number>();
   for (const transaction of actualTransactions) {
     if (transaction.type !== 'expense' && transaction.type !== 'invest') continue;
-    const category = budgetCategoryForTransaction(transaction, customCategories);
+    const category = budgetCategoryForTransaction(transaction, customBudgetCategories(data));
     actualByCategory.set(
       category,
       normalizeMoney((actualByCategory.get(category) ?? 0) + transaction.amount),
     );
   }
 
-  const linkedRows = linkedRecurringForMonth(data, month, monthEndDate(month), scheduleCache);
+  const linkedRows = linkedRecurringForMonth(data, month, monthEndDate(month));
   const matchedEntryIds = new Set<string>();
   const linkedPlannedByCategory = new Map<string, number>();
   const linkedActualByCategory = new Map<string, number>();
@@ -1770,7 +1695,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     for (const transaction of linkedActualTransactions) {
       const actualCategory = budgetCategoryForTransaction(
         transaction,
-        customCategories,
+        customBudgetCategories(data),
       );
       linkedActualByCategory.set(
         actualCategory,
@@ -1824,7 +1749,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
         source: { kind, parentId: source.parentId },
       });
     }
-    const actualCategory = budgetCategoryForTransaction(transaction, customCategories);
+    const actualCategory = budgetCategoryForTransaction(transaction, customBudgetCategories(data));
     linkedActualByCategory.set(
       actualCategory,
       normalizeMoney((linkedActualByCategory.get(actualCategory) ?? 0) + transaction.amount),

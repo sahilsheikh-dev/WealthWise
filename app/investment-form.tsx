@@ -146,7 +146,7 @@ function PlanEditor({
   const startDate = useWatch({ control, name: 'startDate' });
   const planType = useWatch({ control, name: 'type' });
   const opening = useWatch({ control, name: 'opening' });
-  const [pastDepositsMode, setPastDepositsMode] = useState<PastDuesMode | 'show'>('settle');
+  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
   const previewValues: [number, number, number, number] = [
     Number(amount), Number(ratePct), Number(stepUpPct || '0'), Number(tenureYears),
   ];
@@ -186,15 +186,15 @@ function PlanEditor({
     submitting.current = true;
     try {
       if (plan) actions.updatePlan(plan.id, values);
-      else if (previewPastDues?.count && pastDepositsMode !== 'show') {
-        const confirmed = pastDepositsMode !== 'record' || await confirmAsync({
-          title: 'Record past deposits?',
-          message: `This will record ${previewPastDues.count} deposits totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
-          confirmLabel: `Record ${previewPastDues.count} deposits`,
+      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
+        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
+          title: 'Record past installments?',
+          message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
+          confirmLabel: `Record ${previewPastDues.count} installments`,
           cancelLabel: 'Cancel',
         });
         if (!confirmed) return;
-        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastDepositsMode, true);
+        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);
       } else if (previewPastDues?.count) {
         actions.addPlan({ ...values, trackFrom: startDate });
       } else actions.addPlan(values);
@@ -244,19 +244,19 @@ function PlanEditor({
       />
       {!plan && startDate < today ? (
         <View style={{ gap: 8 }}>
-          <AppText weight="semibold">Past deposits</AppText>
+          <AppText weight="semibold">Past installments</AppText>
           <SegmentedControl
-            value={pastDepositsMode}
+            value={pastInstallmentsMode}
             options={[
               { label: 'Already paid', value: 'settle' },
               { label: 'Show as due', value: 'show' },
               { label: 'Record as paid', value: 'record' },
             ]}
-            onChange={setPastDepositsMode}
+            onChange={setPastInstallmentsMode}
           />
           {previewPastDues ? (
             <HelperText>
-              {previewPastDues.count} past deposits · {formatAmount(previewPastDues.amount, 'exact', 1)}
+              {previewPastDues.count} past installments · {formatAmount(previewPastDues.amount, 'exact', 1)}
             </HelperText>
           ) : null}
         </View>
@@ -390,15 +390,15 @@ function PlanFields({
         />} />
         <HelperText>The plan schedule starts on this date.</HelperText>
         <Controller control={control} name="trackFrom" render={({ field }) => <DateField
-          label="Count scheduled deposits from"
-          accessibilityLabel="Scheduled deposit tracking start date"
-          accessibilityHint="Only deposits due on or after this date count toward missed contributions."
+          label="Count installments from"
+          accessibilityLabel="Installment tracking start date"
+          accessibilityHint="Only installments due on or after this date count toward missed contributions."
           value={field.value || today}
           onChange={field.onChange}
           maximumDate={maximumDate}
           error={errors.trackFrom?.message}
         />} />
-        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected deposits.</HelperText>
+        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected installments.</HelperText>
       </FormSection>
       <FormSection title="Opening and value">
         <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />

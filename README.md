@@ -42,9 +42,6 @@ no cloud or network requests at runtime.
   setup after unlock; system permission is requested only after choosing
   Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
-- Developer-only stress fixtures for 50, 100 and 200 years, plus a 200-year
-  daily-SIP tier, loaded through replace-all with Undo for persistence and
-  rendering checks.
 
 ## Screenshots
 
@@ -119,52 +116,33 @@ validate persisted and imported data.
 
 ### Investment return calculations
 
-The holding ledger includes the opening amount and dated deposit and withdrawal
-entries. Zero entries are ignored. Displayed Invested is net of withdrawals and
-floored at zero:
+Invested is the opening amount plus all deposit entries. Withdrawals are shown
+separately and do not reduce Invested. Zero entries are ignored; same-day
+entries are summed. Current value uses a recorded valuation when one exists:
+add deposits and subtract withdrawals dated after that valuation, through the
+requested as-of date. Entries dated on or before the valuation are treated as
+already included. Without a recorded valuation, current value is opening plus
+posted deposits minus posted withdrawals through the as-of date. Values never
+fall below zero. The app does not estimate interest; current value changes
+only when entries are recorded or a valuation is entered.
 
-`raw invested = opening amount + deposits - withdrawals`
+The absolute gain and return are:
 
-`Invested = max(0, raw invested)`
+`gain = current value + withdrawals - Invested`
 
-When raw invested is negative, the holding shows a "Cost recovered" note.
-Entries on the same date remain separate ledger entries; return cash flows for
-that date are combined for calculation. Current value uses a recorded
-valuation when one exists: add deposits and subtract withdrawals dated after
-that valuation, through the requested as-of date. Entries dated on or before
-the valuation are treated as already included. Without a recorded valuation,
-current value is opening plus posted deposits minus posted withdrawals through
-the as-of date. Values never fall below zero. The app does not estimate
-interest; current value changes only when entries are recorded or a valuation
-is entered.
+`absolute return % = gain / Invested × 100`
 
-Return calculations use gross contributions (opening amount plus deposits),
-not displayed net Invested:
-
-`gain = current value + withdrawals - contributions`
-
-`absolute return % = gain / contributions × 100`
-
-When contributions are zero, the return is `null` and the card says "No return
-yet".
+When Invested is zero, the return is `null` and the card says "No return yet".
 XIRR solves
 `sum(cash flow / (1 + rate)^(days from first flow / 365)) = 0`, using deposits
 as negative cash flows, withdrawals as positive cash flows, and current value
 as positive on the valuation date. Multiple entries use the XIRR label; one
-lump sum uses CAGR: `(current value / contributions)^(365 / span days) - 1`.
+lump sum uses CAGR: `(current value / Invested)^(365 / span days) - 1`.
 Annualised XIRR/CAGR appears only when the first cash flow to valuation date
 span is at least 365 days. Under 365 days the card shows only the labelled
-absolute return. Cash and Savings accounts show balance and net Invested, but
+absolute return. Cash and Bank holdings show Balance, Deposited and Withdrawn,
 never a return percentage, XIRR or CAGR. If entries predate a recorded
 valuation, the card explains that they are assumed included in the valuation.
-
-Every holding uses the same Deposit, Withdraw and Entries actions when its
-capabilities allow them; Fixed deposits retain their maturity-withdrawal-only
-rule. The opening amount is shown as the first, derived "Opening" row in
-Entries and is edited in the holding form. Recurring holdings show their
-frequency, amount and next due date inside the holding's Recurring plan
-section. These presentation and invested-display changes use the existing
-schema version 18.
 
 ### Recurring liability balances
 
@@ -177,21 +155,10 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-On iOS and Android, Zustand persists the AppData blob with Expo SQLite's
-`SQLiteStorage`; existing native AsyncStorage data is retained as a fallback
-and copied into SQLite on the next write. Web continues to use AsyncStorage.
-UI metadata and preferences remain in AsyncStorage. Persisted AppData schema
-version 18 is current; P29-Q changes only the storage backend, not the schema.
-The migration chain upgrades supported data from schema versions 1 through 17.
-Backup import verifies file integrity and validates imported data, applying
-supported migrations where required.
-
-The development menu's stress loader replaces all AppData with a deterministic
-long-history fixture and uses the existing Undo snapshot. It reports build,
-validation, save/replace and first-render timings. The Node benchmark and
-measured device checks are recorded in [docs/PROGRESS.md](docs/PROGRESS.md).
-The 50-year fixture measures 2.67 MB, above the requested 1.5 MB target.
-Node timings do not substitute for physical-device verification.
+Zustand persists app data through AsyncStorage. Persisted schema version 18 is
+the current version. The migration chain upgrades supported data from schema
+versions 1 through 17. Backup import verifies the file integrity and validates
+the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
 liabilities, investments, insurance, forms, backup and settings live directly
