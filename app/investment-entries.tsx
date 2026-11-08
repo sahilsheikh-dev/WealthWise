@@ -5,7 +5,6 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import {
   AppText,
-  Button,
   Card,
   Chip,
   ChipRow,
@@ -15,6 +14,7 @@ import {
   StatusBadge,
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
+import { IconButton } from '../src/components/IconButton';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { holdingInvested, holdingValue } from '../src/domain/portfolio';
@@ -160,9 +160,6 @@ export default function InvestmentEntriesScreen() {
               return <Chip key={item} label={`${item} (${count})`} selected={filter === item} onPress={() => setFilter(item)} />;
             })}
           </ChipRow>
-          <View style={styles.addAction}>
-            <Button label="Add entry" variant="primary" onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href)} />
-          </View>
         </>
       ) : (
         <>
@@ -173,9 +170,6 @@ export default function InvestmentEntriesScreen() {
             <AppText style={styles.summaryLine}>Total deposits {formatINR(holding.logs.filter((entry) => entry.kind === 'Deposit').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
             <AppText style={styles.summaryLine}>Total withdrawals {formatINR(holding.logs.filter((entry) => entry.kind === 'Withdrawal').reduce((sum, entry) => sum + entry.amount, 0))}</AppText>
           </Card>
-          <View style={styles.addAction}>
-            <Button label="Add entry" variant="primary" onPress={() => router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holding.id)}` as Href)} />
-          </View>
         </>
       )}
     </View>
@@ -219,7 +213,7 @@ export default function InvestmentEntriesScreen() {
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
               <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
-              <Button label="Edit entry" onPress={() => routeEntryForm(item)} />
+              <IconButton icon="edit-2" label="Edit investment entry" onPress={() => routeEntryForm(item)} />
             </View>
           );
         }}
@@ -233,7 +227,6 @@ export default function InvestmentEntriesScreen() {
 const styles = StyleSheet.create({
   segment: { paddingHorizontal: 20, marginTop: 6 },
   summaryLine: { marginTop: 7, fontSize: 12 },
-  addAction: { paddingHorizontal: 20, marginTop: 12 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },

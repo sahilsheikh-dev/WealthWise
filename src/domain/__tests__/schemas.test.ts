@@ -45,7 +45,7 @@ describe('appDataSchema', () => {
       expect(schema.safeParse({ name: 'x'.repeat(41), monthlySalary: '' }).error?.issues[0]?.message)
         .toBe('Keep your name under 40 characters');
       expect(schema.safeParse({ name: 'Asha', monthlySalary: '1000000001' }).error?.issues[0]?.message)
-        .toBe('Salary must be 1,000,000,000 or less');
+        .toBe('Monthly income must be 1,000,000,000 or less');
       expect(schema.safeParse({ name: 'Asha', monthlySalary: 'not money' }).success).toBe(false);
     });
   });
@@ -302,6 +302,18 @@ describe('makeTransactionFormSchema', () => {
       });
       expect(editingPastGoalSchema.safeParse({ ...goal, year: '2020' }).success).toBe(true);
       expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(false);
+      const minimumTargetSchema = makeGoalFormSchema('2026-10-10', {
+        otherNames: [], locked: true, minTarget: 60_000,
+      });
+      const belowMinimum = minimumTargetSchema.safeParse({
+        ...goal, target: '59999', year: '2026',
+      });
+      expect(belowMinimum.success).toBe(false);
+      if (!belowMinimum.success) {
+        expect(belowMinimum.error.issues.find((issue) => issue.path[0] === 'target')?.message)
+          .toBe('Emergency fund target must be at least 3 months of expenses (₹60,000)');
+      }
+      expect(minimumTargetSchema.safeParse({ ...goal, target: '60000', year: '2026' }).success).toBe(true);
 
       const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
       const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };

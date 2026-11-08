@@ -314,19 +314,6 @@ export function Button({
   );
 }
 
-export function Fab({ label, onPress }: { label: string; onPress?: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={[styles.fab, { backgroundColor: colors.primary }]}>
-      <Feather name="plus" size={22} color={colors.surface} />
-    </Pressable>
-  );
-}
-
 export function WarningBanner({ children }: PropsWithChildren) {
   const { colors } = useTheme();
   return (
@@ -352,6 +339,7 @@ export type ActionItem = {
   onPress?: () => void;
   variant?: 'primary' | 'soft' | 'danger-text';
   disabled?: boolean;
+  icon?: keyof typeof Feather.glyphMap;
 };
 
 export function ActionRow({ actions }: { actions: ActionItem[] }) {
@@ -365,6 +353,7 @@ export function ActionRow({ actions }: { actions: ActionItem[] }) {
           onPress={action.onPress}
           variant={action.variant ?? 'soft'}
           disabled={action.disabled}
+          icon={action.icon}
           style={styles.actionButton}
         />
       ))}
@@ -451,7 +440,6 @@ const styles = StyleSheet.create({
   button: { minHeight: 44, paddingHorizontal: 11, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.76 },
-  fab: { position: 'absolute', right: 20, bottom: 24, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', elevation: 5 },
   warning: { marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   warningText: { flex: 1, lineHeight: 17 },
   empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 6 },

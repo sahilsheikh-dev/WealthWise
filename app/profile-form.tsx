@@ -71,6 +71,7 @@ export default function ProfileFormScreen() {
           ) : null}
           <Button
             label="Save"
+            icon="save"
             variant="primary"
             accessibilityLabel="Save profile"
             disabled={isSubmitting}

@@ -2,6 +2,7 @@ import {
   addTransaction, completeOnboarding, deleteTransaction, emptyAppData, NotFoundError, updateSettings, updateTransaction,
 } from '../actions';
 import { confirmHoldingValue } from '../holdingActions';
+import { GoalTargetBelowMinimumError, updateGoal } from '../goalActions';
 import type { AppData, Transaction } from '../types';
 
 const input: Omit<Transaction, 'id'> = {
@@ -94,5 +95,23 @@ describe('immutable app actions', () => {
     ]);
     expect(data.holdings).toEqual([holding]);
     expect(() => confirmHoldingValue(data, 'missing', '2026-10-10')).toThrow(NotFoundError);
+  });
+
+  it('rejects below-minimum emergency targets without changing data and leaves regular goals unaffected', () => {
+    const data = {
+      ...base(),
+      goals: [
+        { id: 'ef', name: 'Emergency fund', target: 300_000, saved: 0, year: 2028, auto: 'ef' as const },
+        { id: 'trip', name: 'Trip', target: 10_000, saved: 0, year: 2028 },
+      ],
+    };
+    const before = data;
+    expect(() => updateGoal(data, 'ef', { target: 59_999 }, { expenseBaseline: 20_000 }))
+      .toThrow(new GoalTargetBelowMinimumError(60_000));
+    expect(data).toBe(before);
+    expect(updateGoal(data, 'ef', { target: 60_000 }, { expenseBaseline: 20_000 }).goals[0])
+      .toMatchObject({ target: 60_000 });
+    expect(updateGoal(data, 'trip', { target: 1 }, { expenseBaseline: 20_000 }).goals[1])
+      .toMatchObject({ target: 1 });
   });
 });

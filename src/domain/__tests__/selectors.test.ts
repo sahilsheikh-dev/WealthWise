@@ -1,6 +1,8 @@
 import {
   buildPortfolioRows,
   defaultEfTarget,
+  effectiveEmergencyTarget,
+  emergencyMinimumTarget,
   efBalance,
   efPassbook,
   ensureEfGoal,
@@ -9,6 +11,7 @@ import {
   goalProgressPct,
   goalSaved,
   goalTotals,
+  goalView,
   groupByDate,
   holdingInvested,
   holdingValue,
@@ -159,8 +162,33 @@ describe('emergency-fund goal helpers', () => {
     expect(goalProgressPct(linked, 15_000)).toBe(100);
     expect(goalProgressPct(linked, -1)).toBe(0);
     expect(goalProgressPct({ ...linked, target: 0 }, 10)).toBe(0);
-    expect(goalTotals([linked, otherGoal], 12_000)).toEqual({ target: 30_000, saved: 16_000, pct: 160 / 3 });
-    expect(goalTotals([], 0)).toEqual({ target: 0, saved: 0, pct: 0 });
+    expect(goalTotals([linked, otherGoal], 12_000, 0)).toEqual({ target: 30_000, saved: 16_000, pct: 160 / 3 });
+    expect(goalTotals([], 0, 0)).toEqual({ target: 0, saved: 0, pct: 0 });
+  });
+
+  it('raises automatic targets at display time without mutating their stored value', () => {
+    const emergency: Goal = { id: 'ef', name: 'Emergency fund', target: 80_000, saved: 0, year: 2027, auto: 'ef' };
+    expect(emergencyMinimumTarget(0)).toBe(0);
+    expect(emergencyMinimumTarget(20_000)).toBe(60_000);
+    expect(emergencyMinimumTarget(20_000.01)).toBe(60_001);
+    expect(effectiveEmergencyTarget(emergency, 30_000)).toEqual({
+      target: 90_000, minimum: 90_000, raised: true,
+    });
+    expect(effectiveEmergencyTarget(emergency, 20_000)).toEqual({
+      target: 80_000, minimum: 60_000, raised: false,
+    });
+    expect(goalView(emergency, { emergencyBalance: 45_000, expenseBaseline: 30_000 })).toEqual({
+      target: 90_000, minimum: 90_000, raised: true, saved: 45_000, pct: 50,
+    });
+    expect(goalView(otherGoal, { emergencyBalance: 45_000, expenseBaseline: 30_000 })).toEqual({
+      target: otherGoal.target, saved: otherGoal.saved, pct: 20,
+    });
+    expect(emergency.target).toBe(80_000);
+    expect(goalTotals([emergency, otherGoal], 45_000, 30_000)).toEqual({
+      target: 110_000,
+      saved: 49_000,
+      pct: 49 / 110 * 100,
+    });
   });
 });
 
@@ -353,7 +381,12 @@ describe('summary selectors', () => {
     });
     const summary = homeSummary(data, '2026-10-01');
     expect(summary.emergencyMonths).toBe(155_000 / 22_000);
-    expect(summary.goals[0]).toMatchObject({ goal: { id: 'goal-emergency', auto: 'ef' }, saved: 155_000 });
+    expect(summary.goals[0]).toMatchObject({
+      goal: { id: 'goal-emergency', auto: 'ef' },
+      target: 132_000,
+      saved: 155_000,
+      raised: false,
+    });
   });
 
   it('summarizes active loan commitments, payoff date, cleared and never cases', () => {

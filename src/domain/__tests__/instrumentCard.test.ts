@@ -25,7 +25,8 @@ describe('buildInstrumentCardModel', () => {
       progressCaption: expect.stringMatching(/% of your assets/),
       description: expect.stringMatching(/months of expenses covered/),
     });
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'edit']);
+    expect(model.headerAction).toEqual({ id: 'edit', label: 'Edit' });
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
 
   it('uses no-baseline copy and disables withdrawals when the emergency fund has no value', () => {
@@ -53,7 +54,8 @@ describe('buildInstrumentCardModel', () => {
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
     expect(model.valueCaption).toContain('Value not updated in');
     expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'confirm', 'edit']);
+    expect(model.headerAction.id).toBe('edit');
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'confirm']);
   });
 
   it('uses fresh manual value dates without stale actions', () => {
@@ -66,7 +68,7 @@ describe('buildInstrumentCardModel', () => {
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
     expect(model.valueCaption).toBe('Updated 1 Oct 2026');
     expect(model.statuses).toEqual([]);
-    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'edit']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
 
   it('shows unknown value dates and disables withdrawal for a zero-value manual holding', () => {
@@ -93,7 +95,8 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.nextLine).toMatch(/^Next:/);
     expect(overdue.behindLine).toMatch(/\d+ behind/);
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
-    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'schedule', 'edit']);
+    expect(overdue.headerAction.id).toBe('edit');
+    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'schedule']);
 
     const completedData = {
       ...mockAppData,

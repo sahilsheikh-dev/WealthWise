@@ -10,13 +10,16 @@ import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { TextField } from '../src/components/form/TextField';
-import { Button, EmptyState } from '../src/components/ui';
+import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
-import { efBalance } from '../src/domain/ef';
+import { efBalance, monthlyBaseline } from '../src/domain/ef';
+import { emergencyMinimumTarget, effectiveEmergencyTarget } from '../src/domain/goals';
 import { makeGoalFormSchema, type GoalFormInput, type GoalFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { formatINR } from '../src/lib/format';
+import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -27,13 +30,20 @@ export default function GoalFormScreen() {
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
+  const { colors } = useTheme();
   const goal = goalId ? data.goals.find((item) => item.id === goalId) : undefined;
+  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', today);
+  const minimumTarget = emergencyMinimumTarget(expenseBaseline);
+  const effectiveTarget = goal?.auto === 'ef'
+    ? effectiveEmergencyTarget(goal, expenseBaseline).target
+    : goal?.target;
   const locked = goal?.auto === 'ef';
   const schema = useMemo(() => makeGoalFormSchema(today, {
     otherNames: data.goals.filter((item) => item.id !== goalId).map((item) => item.name),
     locked: Boolean(locked),
     existingYear: goal?.year,
-  }), [data.goals, goalId, goal?.year, locked, today]);
+    minTarget: minimumTarget,
+  }), [data.goals, goalId, goal?.year, locked, minimumTarget, today]);
   const submitting = useRef(false);
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<GoalFormInput, undefined, GoalFormOutput>({
@@ -41,7 +51,7 @@ export default function GoalFormScreen() {
       mode: 'onTouched',
       reValidateMode: 'onChange',
       defaultValues: goal
-        ? { name: goal.name, target: String(goal.target), saved: String(goal.saved), year: String(goal.year) }
+        ? { name: goal.name, target: String(effectiveTarget ?? goal.target), saved: String(goal.saved), year: String(goal.year) }
         : { name: '', target: '', saved: '0', year: String(Number(today.slice(0, 4)) + 1) },
     });
 
@@ -87,10 +97,11 @@ export default function GoalFormScreen() {
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title={goal ? 'Edit Goal' : 'New Goal'} onClose={close} footer={(
+    <FormScreen title="Goal" onClose={close}
+      headerAction={goal && !locked ? { label: 'Delete goal', onPress: remove } : undefined}
+      footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        {goal && !locked ? <Button label="Delete" variant="danger-text" onPress={remove} /> : null}
-        <Button label="Save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
+        <Button label="Save" icon="save" variant="primary" style={{flex: 1}} disabled={isSubmitting || errorsVisible} onPress={() => {
           if (!submitting.current) void handleSubmit(save)();
         }} />
       </View>
@@ -107,7 +118,16 @@ export default function GoalFormScreen() {
         )} />
       )}
       <Controller control={control} name="target" render={({ field }) => (
-        <MoneyField label="Target amount" accessibilityLabel="Goal target" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.target?.message} />
+        <View style={{ gap: 6 }}>
+          <MoneyField label="Target amount" accessibilityLabel="Goal target" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.target?.message} />
+          {locked ? (
+            <AppText style={{ color: colors.text3 }}>
+              {minimumTarget > 0
+                ? `Minimum: ${formatINR(minimumTarget)} (3 months of your average expenses)`
+                : 'Add expenses to calculate your 3-month minimum'}
+            </AppText>
+          ) : null}
+        </View>
       )} />
       {!locked ? (
         <Controller control={control} name="saved" render={({ field }) => (

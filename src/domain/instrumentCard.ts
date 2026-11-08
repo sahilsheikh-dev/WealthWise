@@ -30,6 +30,7 @@ export type InstrumentCardModel = {
   nextLine?: string;
   behindLine?: string;
   statuses: InstrumentCardStatus[];
+  headerAction: InstrumentCardAction;
   actions: InstrumentCardAction[];
 };
 
@@ -58,11 +59,11 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         ? `${covered.toFixed(1)} months of expenses covered`
         : 'Log expenses to see months covered',
       statuses: [],
+      headerAction: { id: 'edit', label: 'Edit' },
       actions: [
         { id: 'deposit', label: 'Deposit' },
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
         { id: 'entries', label: `Entries (${ctx.emergencyEntryCount})` },
-        { id: 'edit', label: 'Edit' },
       ],
     };
   }
@@ -102,11 +103,11 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       } : {}),
       ...(overdue > 0 && schedule.summary.nextDue ? { behindLine: `${overdue} behind` } : {}),
       statuses,
+      headerAction: { id: 'edit', label: 'Edit' },
       actions: [
         { id: 'deposit', label: 'Log installment' },
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
         { id: 'schedule', label: `Schedule (${holding.logs.length})` },
-        { id: 'edit', label: 'Edit' },
       ],
     };
   }
@@ -127,12 +128,12 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     progressCaption: `${sharePct.toFixed(1)}% of your assets`,
     description: `${row.gain >= 0 ? 'Gain' : 'Loss'} ${formatINR(Math.abs(row.gain))}${row.gainPct === null ? '' : ` (${row.gainPct.toFixed(1)}%)`}`,
     statuses: stale.stale ? [{ label: 'Stale value', tone: 'neutral' }] : [],
+    headerAction: { id: 'edit', label: 'Edit' },
     actions: [
       { id: 'deposit', label: 'Deposit' },
       { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
       { id: 'entries', label: `Entries (${holding.logs.length})` },
       ...(stale.stale ? [{ id: 'confirm' as const, label: 'Confirm' }] : []),
-      { id: 'edit', label: 'Edit' },
     ],
   };
 }

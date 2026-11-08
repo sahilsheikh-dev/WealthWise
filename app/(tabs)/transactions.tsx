@@ -8,7 +8,6 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  Fab,
   ListItem,
   Screen,
   SearchField,
@@ -55,7 +54,10 @@ export default function TransactionsScreen() {
   return (
     <Screen scroll={false}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <AppHeader title="Transactions" />
+        <AppHeader
+          title="Transactions"
+          rightActions={[{ icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') }]}
+        />
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -156,7 +158,6 @@ export default function TransactionsScreen() {
           ))}
         </View>
       </ScrollView>
-      <Fab label="Add Transaction" onPress={() => router.push('/transaction-form')} />
     </Screen>
   );
 }

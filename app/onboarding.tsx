@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Feather } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
@@ -89,14 +90,17 @@ export default function OnboardingScreen() {
         {submitCount > 0 && Object.keys(errors).length > 0 ? (
           <AppText accessibilityRole="alert" style={{ color: colors.err }}>Please check the highlighted fields.</AppText>
         ) : null}
-        <Button label="Continue" variant="primary" disabled={isSubmitting} onPress={handleSubmit(finish)} />
+        <Button label="Continue" icon="arrow-right" variant="primary" disabled={isSubmitting} onPress={handleSubmit(finish)} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Skip for now"
           onPress={() => actions.completeOnboarding({ name: '', monthlySalary: null })}
           style={styles.skip}
         >
-          <AppText style={[typography.meta, { color: colors.primary }]}>Skip for now</AppText>
+          <View style={styles.skipContent}>
+            <Feather name="skip-forward" size={14} color={colors.primary} />
+            <AppText style={[typography.meta, { color: colors.primary }]}>Skip for now</AppText>
+          </View>
         </Pressable>
       </View>
     </Screen>
@@ -109,4 +113,5 @@ const styles = StyleSheet.create({
   form: { gap: 18, marginVertical: 10 },
   salary: { gap: 7 },
   skip: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  skipContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

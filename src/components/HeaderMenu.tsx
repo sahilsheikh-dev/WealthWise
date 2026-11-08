@@ -4,11 +4,11 @@ import { BackHandler, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from './ui';
-import type { HomeMenuItem } from '../lib/homeMenu';
+import type { AppMenuItem } from '../lib/appMenu';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
-export type HeaderMenuItem = HomeMenuItem & { onPress: () => void };
+export type HeaderMenuItem = AppMenuItem & { onPress: () => void };
 
 export function HeaderMenu({
   visible,
