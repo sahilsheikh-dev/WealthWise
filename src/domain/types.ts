@@ -24,6 +24,7 @@ export type Transaction = {
   source?:
     | { kind: 'holding-entry'; parentId: string; entryId: string }
     | { kind: 'liability-payment'; parentId: string; entryId: string }
+    | { kind: 'liability-closure-charge'; parentId: string; entryId: string }
     | { kind: 'policy-payment'; parentId: string; entryId: string }
     | { kind: 'liability-origin'; parentId: string; entryId: string };
 };
@@ -50,6 +51,7 @@ export type InvestmentEntry = {
   note: string;
   kind: 'Deposit' | 'Withdrawal';
   snapshotAdjustment?: number;
+  price?: number;
 };
 
 export type LiabilityPayment = {
@@ -89,6 +91,18 @@ export const HOLDING_TYPES = [
 
 export type HoldingType = (typeof HOLDING_TYPES)[number];
 
+export type ValuationMethod = 'balance' | 'balanceInterest' | 'accrual' | 'manual' | 'unitsPrice';
+export type Compounding = 'monthly' | 'quarterly' | 'halfYearly' | 'yearly' | 'simple';
+
+type HoldingValuation = {
+  valuationMethod?: ValuationMethod;
+  ratePct?: number;
+  compounding?: Compounding;
+  maturityDate?: ISODate;
+  latestPrice?: number;
+  priceAsOf?: ISODate;
+};
+
 export type ManualHolding = {
   id: string;
   kind: 'manual';
@@ -98,7 +112,7 @@ export type ManualHolding = {
   value: number;
   valueAsOf?: ISODate;
   logs: InvestmentEntry[];
-};
+} & HoldingValuation;
 
 export type PlanHolding = {
   id: string;
@@ -115,8 +129,9 @@ export type PlanHolding = {
   opening: number;
   actualValue: number | null;
   actualValueDate: ISODate | null;
+  stopDate?: ISODate;
   logs: InvestmentEntry[];
-};
+} & HoldingValuation;
 
 export type Holding = ManualHolding | PlanHolding;
 
@@ -135,11 +150,19 @@ export type LiabilitySettlement = {
   balance: number;
 };
 
+export type LiabilityClosure = {
+  date: ISODate;
+  paymentId: string;
+  note?: string;
+  chargeTransactionId?: string;
+};
+
 export type RecurringLiability = LiabilityBase & {
   kind: 'recurring';
   tenureMonths: number;
   emi: number;
   settlement: LiabilitySettlement | null;
+  closure?: LiabilityClosure;
 };
 
 export type OneTimeLiability = LiabilityBase & {
@@ -203,6 +226,8 @@ export type BudgetIncomeItem = {
   category: EarnedIncomeCategory;
   amount: number;
   day?: number;
+  frequency?: BudgetItemFrequency;
+  firstDueMonth?: string;
 };
 
 export type BudgetOtherIncomeItem = {

@@ -2,11 +2,19 @@ import type { StateStorage } from 'zustand/middleware';
 
 import { canonicalJson, createBackup, parseBackup } from '../../domain/backup';
 import { decryptBackup, encryptBackup } from '../../domain/backupCrypto';
-import { validateIntegrity } from '../../domain/links';
+import { describeSource, validateIntegrity } from '../../domain/links';
 import { loanState } from '../../domain/liability';
+import { deleteLiability as deleteLiabilityData } from '../../domain/liabilityActions';
 import { monthPositionAt } from '../../domain/cashFlow';
-import { budgetLineActual, budgetMonthView, defaultBudgetSections, linkedRecurringForMonth } from '../../domain/budget';
-import { netWorth } from '../../domain/summary';
+import {
+  budgetLineActual,
+  budgetMonthView,
+  budgetOverview,
+  defaultBudgetSections,
+  linkedRecurringForMonth,
+  plannedIncomeOf,
+} from '../../domain/budget';
+import { liabilitiesOverview, netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
 import { holdingValue } from '../../domain/portfolio';
@@ -14,7 +22,7 @@ import { pendingItems } from '../../domain/pending';
 import { policySchedule } from '../../domain/policySchedule';
 import { policySummary } from '../../domain/policySummary';
 import { planReminders } from '../../domain/reminders';
-import { upcomingDue } from '../../domain/schedule';
+import { liabilitySchedule, upcomingDue } from '../../domain/schedule';
 import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
 import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
@@ -25,7 +33,7 @@ import { makeV10Fixture } from '../testFixtures/v10';
 import { makeV11Fixture } from '../testFixtures/v11';
 import { makeV12Fixture } from '../testFixtures/v12';
 import { emptyAppData } from '../../domain/actions';
-import type { ISODate } from '../../domain/types';
+import type { AppData, ISODate } from '../../domain/types';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 
 class MemoryStorage implements StateStorage {
@@ -1040,10 +1048,10 @@ describe('createAppStore persistence', () => {
     });
     await waitForHydration(first);
     expect(first.getState().data.budgetPlan?.incomes).toEqual([
-      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1 },
+      { id: 'migrated-1', name: 'Salary', category: 'Salary', amount: 12_000, day: 1, frequency: 'monthly' },
     ]);
     expect(first.getState().data.monthBudgets?.[0]?.incomes).toEqual([
-      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000 },
+      { id: 'migrated-2', name: 'Income', category: 'Salary', amount: 10_000, frequency: 'monthly' },
     ]);
     expect(storage.values.get(`${key}.premigration.v8`)).toBe(raw);
     const archiveWrites = storage.calls.filter((call) => call === `set:${key}.premigration.v8`).length;
@@ -1167,7 +1175,7 @@ describe('createAppStore persistence', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
         lines: [{ category: 'Food', mode: 'amount' as const, value: 1_000 }],
         repeatMonthly: true,
         repeatFrom: '2026-03',
@@ -1186,7 +1194,7 @@ describe('createAppStore persistence', () => {
     expect(firstStore.getState().data.monthBudgets).toEqual([{
       month: '2026-03',
       source: 'plan',
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1 }],
+      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000, day: 1, frequency: 'monthly' }],
       sections: defaultBudgetSections(),
       items: [{
         id: 'unused', sectionId: 'survival', name: 'Food', mode: 'amount', value: 1_000, frequency: 'monthly',
@@ -1306,6 +1314,110 @@ describe('createAppStore persistence', () => {
       beforeSectionDelete.monthBudgets?.find((budget) => budget.month === month) ?? null,
     ));
     expect(store.getState().data).toEqual(beforeSectionDelete);
+  });
+
+  it('reproduces recurrence through exact income-form store payloads and hydration', async () => {
+    const storage = new MemoryStorage();
+    const today = '2026-02-15';
+    const month = '2026-02';
+    let incomeId = 0;
+    const store = makeStore(storage, {
+      newId: () => `income-${++incomeId}`,
+      today: () => today,
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    const assertPersisted = () => {
+      const persisted = JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}') as {
+        state?: { data?: AppData };
+      };
+      expect(persisted.state?.data).toEqual(store.getState().data);
+    };
+    const plan = budgetPlanFromLines([], {
+      incomes: [],
+      repeatMonthly: true,
+      repeatFrom: month,
+    });
+    actions.saveBudgetPlan(plan);
+    assertPersisted();
+    actions.applyBudgetPlan(month);
+    assertPersisted();
+
+    const quarterlyPayload = {
+      name: 'Quarterly contract',
+      amount: 12_000,
+      category: 'Freelance' as const,
+      day: 5,
+      frequency: 'quarterly' as const,
+      firstDueMonth: '2026-03',
+    };
+    actions.addBudgetIncome(month, quarterlyPayload, 'following', today);
+    assertPersisted();
+
+    const halfYearlyEditPayload = {
+      ...quarterlyPayload,
+      amount: 13_000,
+      frequency: 'half-yearly' as const,
+      firstDueMonth: '2026-04',
+    };
+    const frozenMonthSnapshot = store.getState().data.monthBudgets?.[0];
+    actions.editBudgetIncome(month, 'income-1', halfYearlyEditPayload, 'following', today);
+    assertPersisted();
+    expect(store.getState().data.monthBudgets?.[0]).toEqual(frozenMonthSnapshot);
+    expect(store.getState().data.budgetPlan?.incomes).toContainEqual(expect.objectContaining({
+      id: 'income-1',
+      amount: 13_000,
+      frequency: 'half-yearly',
+      firstDueMonth: '2026-04',
+    }));
+
+    const yearlyPayload = {
+      name: 'Annual contract',
+      amount: 24_000,
+      category: 'Other' as const,
+      day: 5,
+      frequency: 'yearly' as const,
+      firstDueMonth: '2026-05',
+    };
+    actions.addBudgetIncome(month, yearlyPayload, 'month', today);
+    assertPersisted();
+    const monthOnlyEditPayload = {
+      ...yearlyPayload,
+      amount: 25_000,
+      frequency: 'quarterly' as const,
+      firstDueMonth: '2026-06',
+    };
+    actions.editBudgetIncome(month, 'income-2', monthOnlyEditPayload, 'month', today);
+    assertPersisted();
+    expect(store.getState().data.budgetPlan?.incomes).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'income-2' })]),
+    );
+    expect(store.getState().data.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining({
+      id: 'income-2',
+      amount: 25_000,
+      frequency: 'quarterly',
+      firstDueMonth: '2026-06',
+    }));
+
+    const afterEdits = store.getState().data;
+    assertPersisted();
+    const freshStore = makeStore(storage, { today: () => today, isDev: false });
+    await waitForHydration(freshStore);
+    expect(freshStore.getState().data).toEqual(afterEdits);
+    const months = [
+      '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08',
+      '2026-09', '2026-10', '2026-11', '2026-12', '2027-01', '2027-02',
+    ];
+    const table = months.map((monthName) => ({
+      month: monthName,
+      planIncome: plannedIncomeOf({ incomes: afterEdits.budgetPlan?.incomes ?? [] }, monthName),
+      budgetOverviewIncome: budgetOverview(afterEdits, monthName, today).stacked.income.planned,
+    }));
+    console.log('P29-AB-R1 store-form-payload after-fix table', JSON.stringify(table, null, 2));
+    expect(table.map((row) => row.budgetOverviewIncome)).toEqual(
+      table.map((row) => row.planIncome),
+    );
   });
 
   it('records a shortfall allocation atomically with one persisted write', async () => {
@@ -1464,6 +1576,50 @@ describe('createAppStore persistence', () => {
     const relaunchedStore = makeStore(storage);
     await waitForHydration(relaunchedStore);
     expect(relaunchedStore.getState().data.efAllocation).toEqual(resolvedAllocation);
+  });
+
+  it('P29-AA store reproduction: EF links use existing holdings and plan deletion leaves no dangling bucket link', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: (() => {
+      let sequence = 0;
+      return () => `p29-aa-${++sequence}`;
+    })(), today: () => '2026-11-06' });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+
+    actions.addHolding({ name: 'Manual Cash', type: 'Cash', invested: 1_000, value: 1_000 });
+    actions.addHolding({ name: 'Manual Savings', type: 'Savings account', invested: 2_000, value: 2_000 });
+    actions.addHolding({ name: 'Manual Fixed', type: 'Fixed deposit', invested: 3_000, value: 3_000 });
+    actions.addPlan({
+      name: 'Recurring plan',
+      type: 'Recurring deposit',
+      frequency: 'monthly',
+      amount: 500,
+      ratePct: 0,
+      stepUpPct: 0,
+      tenureYears: 1,
+      startDate: '2026-01-01',
+      trackFrom: '2026-01-01',
+      opening: 500,
+      actualValue: null,
+      actualValueDate: null,
+    });
+
+    const report: string[] = [];
+    for (const holding of store.getState().data.holdings) {
+      actions.setEfBucketLinks('cash', [holding.id]);
+      report.push(`${holding.kind}:${holding.type}:${holding.name}:${store.getState().lastError ?? 'linked'}`);
+      actions.setEfBucketLinks('cash', []);
+    }
+
+    const plan = store.getState().data.holdings.find((holding) => holding.kind === 'plan');
+    if (!plan) throw new Error('Expected the recurring plan reproduction holding.');
+    actions.setEfBucketLinks('bank', [plan.id]);
+    expect(store.getState().lastError).toBeNull();
+    actions.deletePlan(plan.id, { linkedTransactions: 'delete' });
+
+    // Replaced assertion target: dangling plan links must be removed in the same delete write.
+    expect(store.getState().data.efBucketLinks.bank ?? []).toEqual([]);
   });
 
   it('saves custom buckets, percentages, and investment links in one persisted write', async () => {
@@ -1918,6 +2074,53 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions.find((tx) => tx.source?.entryId === deposit.id)?.note).toBe('Renamed manual deposit');
     performOnce(() => actions.deleteInvestmentEntry(holding.id, deposit.id));
     expect(store.getState().data.transactions.some((tx) => tx.source?.entryId === deposit.id)).toBe(false);
+  });
+
+  it('updates configured value and price snapshots in one persisted store action', async () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `valuation-${++id}`,
+      today: () => '2025-04-01',
+    });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addHolding({
+      name: 'Priced gold',
+      type: 'Gold',
+      invested: 0,
+      value: 0,
+      valuationMethod: 'unitsPrice',
+      latestPrice: 50,
+      priceAsOf: '2025-01-01',
+    });
+    const holding = store.getState().data.holdings.at(-1);
+    if (!holding) throw new Error('Configured holding was not created.');
+    const performOnce = (action: () => void) => {
+      const before = storage.setItemCalls;
+      action();
+      expect(storage.setItemCalls - before).toBe(1);
+      expect(store.getState().lastError).toBeNull();
+    };
+    performOnce(() => actions.addInvestmentEntry(holding.id, {
+      date: '2025-01-01',
+      amount: 5_000,
+      kind: 'Deposit',
+      note: '',
+      price: 50,
+    }));
+    expect(store.getState().data.holdings.find((item) => item.id === holding.id)?.logs[0]?.price).toBe(50);
+    performOnce(() => actions.updateHoldingPrice(holding.id, 53.2, '2025-04-01'));
+    expect(holdingValue(store.getState().data.holdings.find((item) => item.id === holding.id)!, '2025-04-01'))
+      .toBe(5_320);
+    performOnce(() => actions.updateHoldingValue(holding.id, 5_400, '2025-04-01', 'manual'));
+    const updated = store.getState().data.holdings.find((item) => item.id === holding.id);
+    if (updated?.kind !== 'manual') throw new Error('Updated holding is missing.');
+    expect(updated).toMatchObject({
+      value: 5_400,
+      valueAsOf: '2025-04-01',
+      valuationMethod: 'manual',
+    });
   });
 
   it('creates and undoes a linked manual investment deposit in one persisted write each', async () => {
@@ -2835,6 +3038,226 @@ describe('createAppStore persistence', () => {
     expect(store.getState().data.transactions).toEqual([]);
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
+
+  it('closes a recurring liability with one write and one Undo, removing all later dues', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `foreclosure-${++id}` });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Foreclosure loan',
+      principal: 100_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 10_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Foreclosure loan was not created.');
+    actions.addLiabilityPayment(loanId, {
+      date: '2026-02-10',
+      amount: 10_000,
+      kind: 'EMI',
+      note: '',
+    });
+    const before = store.getState().data;
+    const loan = before.liabilities.find((entry) => entry.id === loanId);
+    if (!loan || loan.kind !== 'recurring') throw new Error('Expected a recurring liability.');
+    const outstanding = loanState(loan, '2026-03-10').balance;
+    const writes = storage.setItemCalls;
+
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding + 250,
+      note: 'Closed at lender',
+      writeOffConfirmed: false,
+    });
+
+    expect(store.getState().lastError).toBeNull();
+    expect(storage.setItemCalls - writes).toBe(1);
+    const closedData = store.getState().data;
+    const closed = closedData.liabilities.find((entry) => entry.id === loanId);
+    if (!closed || closed.kind !== 'recurring' || !closed.closure) {
+      throw new Error('Foreclosure did not set the closed state.');
+    }
+    expect(closed.closure).toMatchObject({ date: '2026-03-10', note: 'Closed at lender' });
+    expect(closed.settlement).toEqual({ asOf: '2026-03-10', balance: 0 });
+    expect(closed.payments).toHaveLength(2);
+    expect(closed.payments.at(-1)).toMatchObject({ amount: outstanding, kind: 'Prepayment' });
+    expect(closedData.transactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'expense',
+        amount: outstanding,
+        date: '2026-03-10',
+        source: { kind: 'liability-payment', parentId: loanId, entryId: closed.closure.paymentId },
+      }),
+      expect.objectContaining({
+        type: 'expense',
+        amount: 250,
+        date: '2026-03-10',
+        category: 'Other',
+        note: 'Loan closure charges',
+        source: { kind: 'liability-closure-charge', parentId: loanId, entryId: closed.closure.chargeTransactionId },
+      }),
+    ]));
+    const charge = closedData.transactions.find((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge');
+    if (!charge?.source) throw new Error('Expected the closure charge source.');
+    expect(describeSource(closedData, charge.source)).toEqual({
+      label: 'Foreclosure loan',
+      route: '/liability-payments',
+      params: { id: loanId },
+    });
+    expect(describeSource(closedData, {
+      kind: 'liability-closure-charge',
+      parentId: loanId,
+      entryId: 'missing-charge',
+    })).toBeNull();
+    expect(validateIntegrity({
+      ...closedData,
+      transactions: closedData.transactions.map((transaction) =>
+        transaction.id === charge.id ? { ...transaction, category: 'Food' } : transaction),
+    }).some((issue) => issue.code === 'linked-drift')).toBe(true);
+    const deletedKeepingTransactions = deleteLiabilityData(closedData, loanId, { linkedTransactions: 'keep' });
+    expect(deletedKeepingTransactions.liabilities.some((entry) => entry.id === loanId)).toBe(false);
+    expect(deletedKeepingTransactions.transactions
+      .filter((transaction) => transaction.source?.parentId === loanId)).toHaveLength(0);
+    const deletedEverything = deleteLiabilityData(closedData, loanId, { linkedTransactions: 'delete' });
+    expect(deletedEverything.transactions.some((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge')).toBe(false);
+    expect(liabilitySchedule(closed, '2026-10-10').rows.every((row) => row.dueDate <= '2026-03-10')).toBe(true);
+    expect(netWorth(closedData, '2026-10-10').liabilities).toBe(0);
+    expect(liabilitiesOverview(closedData, '2026-10-10', 0).totalOutstanding).toBe(0);
+    expect(pendingItems(closedData, '2026-10', '2026-10-10')
+      .some((item) => item.source.kind === 'liability' && item.source.parentId === loanId)).toBe(false);
+    expect(linkedRecurringForMonth(closedData, '2026-04', '2026-10-10')
+      .some((row) => row.kind === 'liability' && row.parentId === loanId)).toBe(false);
+    expect(planReminders(closedData, {
+      enabled: true,
+      localTime: '09:00',
+      dayBefore: true,
+      sameDay: true,
+      showAmounts: true,
+      hidePreviews: false,
+    }, new Date('2026-04-01T00:00:00'), 100)
+      .some((reminder) => reminder.dueItemId.startsWith(`due:liability:${loanId}:`))).toBe(false);
+    expect(validateIntegrity(closedData)).toEqual([]);
+    expect(useUIStore.getState().actionToast?.message).toBe('Loan closed early.');
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Foreclosure Undo was not set.');
+    undo();
+    expect(store.getState().data).toEqual(before);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    useUIStore.getState().setActionToast(null);
+  });
+
+  it('requires explicit write-off confirmation for an underpaid closure', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `writeoff-${++id}` });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Write-off loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 10,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Write-off loan was not created.');
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+    const outstanding = loanState(before.liabilities[0]!, '2026-03-10').balance;
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding - 100,
+      note: '',
+      writeOffConfirmed: false,
+    });
+    expect(store.getState().lastError).toContain('Confirm that the lender closed the loan for less');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+
+    actions.closeLiabilityEarly(loanId, {
+      date: '2026-03-10',
+      amountPaid: outstanding - 100,
+      note: '',
+      writeOffConfirmed: true,
+    });
+    expect(store.getState().lastError).toBeNull();
+    expect(storage.setItemCalls - writes).toBe(1);
+    const closed = store.getState().data.liabilities[0];
+    if (!closed || closed.kind !== 'recurring') throw new Error('Expected a closed recurring liability.');
+    expect(closed.closure).toMatchObject({
+      date: '2026-03-10',
+      note: 'Lender closed the loan for less',
+    });
+    expect(closed.payments.at(-1)?.amount).toBe(outstanding - 100);
+    expect(store.getState().data.transactions.some((transaction) =>
+      transaction.source?.kind === 'liability-closure-charge')).toBe(false);
+    expect(validateIntegrity(store.getState().data)).toEqual([]);
+    const closedLiability = store.getState().data.liabilities[0];
+    if (!closedLiability || closedLiability.kind !== 'recurring') throw new Error('Expected the closed loan.');
+    const closedPayment = closedLiability.payments.at(-1);
+    if (!closedPayment) throw new Error('Expected the closing payment.');
+    actions.addLiabilityPayment(loanId, {
+      date: '2026-03-10', amount: 1, kind: 'Prepayment', note: '',
+    });
+    expect(store.getState().lastError).toContain('cannot be added to a closed liability');
+    actions.updateLiabilityPayment(loanId, closedPayment.id, { amount: closedPayment.amount + 1 });
+    expect(store.getState().lastError).toContain('cannot be edited on a closed liability');
+    actions.deleteLiabilityPayment(loanId, closedPayment.id);
+    expect(store.getState().lastError).toContain('cannot be deleted from a closed liability');
+    actions.updateLiability(loanId, { closureNote: 'Updated closure note' });
+    expect(store.getState().data.liabilities[0]).toMatchObject({
+      closure: { note: 'Updated closure note' },
+    });
+    const closedData = store.getState().data;
+    actions.updateLiability(loanId, { name: 'Must not change' });
+    expect(store.getState().lastError).toContain('Only the closure note can be edited');
+    expect(store.getState().data).toEqual(closedData);
+  });
+
+  it('rejects closure dates before the first payment and in the future without writing', async () => {
+    let id = 0;
+    const storage = new MemoryStorage();
+    const store = makeStore(storage, { newId: () => `datecheck${++id}`, today: () => '2026-03-01' });
+    await waitForHydration(store);
+    const actions = store.getState().actions;
+    actions.addLiability({
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Date check loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 10,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    });
+    const loanId = store.getState().data.liabilities[0]?.id;
+    if (!loanId) throw new Error('Date check loan was not created.');
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+    const input = { amountPaid: 50_000, note: '', writeOffConfirmed: false };
+    actions.closeLiabilityEarly(loanId, { ...input, date: '2026-02-09' });
+    expect(store.getState().lastError).toContain('before the first payment');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+
+    actions.closeLiabilityEarly(loanId, { ...input, date: '2026-03-02' });
+    expect(store.getState().lastError).toContain('cannot be in the future');
+    expect(store.getState().data).toEqual(before);
+    expect(storage.setItemCalls).toBe(writes);
+  });
 });
 
 it('erases all supported storage keys and hydrates to empty data', async () => {
@@ -2853,6 +3276,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
   storage.values.set('wealthwise.app.v1.premigration.v15', 'original-v15-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v16', 'original-v16-bytes');
   storage.values.set('wealthwise.app.v1.premigration.v17', 'original-v17-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v18', 'original-v18-bytes');
+  storage.values.set('wealthwise.app.v1.premigration.v19', 'original-v19-bytes');
   storage.values.set('wealthwise.app.v1.prerepair-efallocation', 'original-allocation-bytes');
   const reminderCalls: string[] = [];
   const store = makeStore(storage, {
@@ -2887,6 +3312,8 @@ it('erases all supported storage keys and hydrates to empty data', async () => {
     'wealthwise.app.v1.premigration.v15',
     'wealthwise.app.v1.premigration.v16',
     'wealthwise.app.v1.premigration.v17',
+    'wealthwise.app.v1.premigration.v18',
+    'wealthwise.app.v1.premigration.v19',
     'wealthwise.app.v1.prerepair-efallocation',
     'wealthwise.app.v1.corrupt.latest',
     'wealthwise.app.v1.corrupt.previous',

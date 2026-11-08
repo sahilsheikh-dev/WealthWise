@@ -813,6 +813,42 @@ export function migrateV17ToV18(persisted: unknown, options: Pick<V6ToV7Options,
   return { ...persisted, policies };
 }
 
+export function migrateV18ToV19(persisted: unknown): unknown {
+  return persisted;
+}
+
+export function migrateV19ToV20(persisted: unknown): unknown {
+  return persisted;
+}
+
+export function migrateV20ToV21(persisted: unknown): unknown {
+  return persisted;
+}
+
+export function migrateV21ToV22(persisted: unknown): unknown {
+  if (!isRecord(persisted)) return persisted;
+  const migrateBudget = (budget: unknown): unknown => {
+    if (!isRecord(budget) || !Array.isArray(budget.incomes)) return budget;
+    return {
+      ...budget,
+      incomes: budget.incomes.map((income) =>
+        isRecord(income)
+          ? { ...income, frequency: 'monthly' }
+          : income,
+      ),
+    };
+  };
+  return {
+    ...persisted,
+    ...(persisted.budgetPlan === null || persisted.budgetPlan === undefined
+      ? {}
+      : { budgetPlan: migrateBudget(persisted.budgetPlan) }),
+    ...(Array.isArray(persisted.monthBudgets)
+      ? { monthBudgets: persisted.monthBudgets.map(migrateBudget) }
+      : {}),
+  };
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -857,6 +893,10 @@ export function migratePersisted(
       if (!options) throw new PersistedVersionError(17, 'unknown-version');
       result = migrateV17ToV18(result, options);
     }
+    if (fromVersion <= 18) result = migrateV18ToV19(result);
+    if (fromVersion <= 19) result = migrateV19ToV20(result);
+    if (fromVersion <= 20) result = migrateV20ToV21(result);
+    if (fromVersion <= 21) result = migrateV21ToV22(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

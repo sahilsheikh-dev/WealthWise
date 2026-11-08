@@ -3,6 +3,7 @@ import { holdingCapabilities } from './holdingCapabilities';
 import { behindBy, installmentsTracked, loggedTrackedCount, planProgressPct, projection } from './sip';
 import { planSchedule } from './schedule';
 import { isCashOrBankHoldingType } from './portfolio';
+import { suggestedValuationMethod } from './valuation';
 import type { ISODate } from './types';
 import type { PortfolioRow } from './portfolio';
 import { formatDate } from '../lib/format';
@@ -10,7 +11,7 @@ import { formatDate } from '../lib/format';
 export type InstrumentCardTextSegment = { text: string } | { amount: number };
 
 export type InstrumentCardAction = {
-  id: 'deposit' | 'withdraw' | 'entries' | 'edit' | 'confirm';
+  id: 'deposit' | 'withdraw' | 'entries' | 'edit' | 'update' | 'stop';
   label: string;
   disabled?: boolean;
   accessibilityHint?: string;
@@ -55,6 +56,11 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
 
   if (holding.kind === 'plan') {
     const capabilities = holdingCapabilities(holding.type);
+    const method = holding.valuationMethod ?? suggestedValuationMethod(
+      holding.type,
+      holding.logs.some((entry) => entry.price !== undefined),
+      holding.ratePct,
+    );
     const schedule = planSchedule(holding, ctx.asOf);
     const projectionData = projection(holding);
     const overdue = behindBy(holding, ctx.asOf);
@@ -62,12 +68,18 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     const progressPct = planProgressPct(holding);
     const summary = row.returnSummary;
     const returnText = formatReturnText(summary);
-    const snapshotDate = holding.actualValueDate;
-    const hasBackdatedEntries = snapshotDate !== null
-      && holding.logs.some((entry) => entry.date < snapshotDate);
+    const valueDate = method === 'unitsPrice'
+      ? holding.priceAsOf
+      : holding.actualValueDate;
+    const stale = valueStaleness(valueDate ?? undefined, ctx.asOf);
+    const hasBackdatedEntries = Boolean(holding.actualValueDate)
+      && holding.logs.some((entry) => entry.date < (holding.actualValueDate ?? ''));
     const statuses: InstrumentCardStatus[] = [];
     if (overdue > 0 && schedule.summary.nextDue) {
       statuses.push({ label: `${schedule.summary.overdue} overdue`, tone: 'err' });
+    }
+    if ((method === 'manual' || method === 'unitsPrice') && stale.stale) {
+      statuses.push({ label: 'Stale value', tone: 'neutral' });
     }
     if (!schedule.summary.nextDue) statuses.push({ label: 'Completed', tone: 'ok' });
     const helperLines = [
@@ -83,11 +95,11 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { text: `, ${holding.stepUpPct}% step-up, ${holding.tenureYears} yrs, ${holding.ratePct}% p.a.` },
       ],
       value: row.value,
-      valueCaption: holding.actualValue === null
-        ? 'Current value'
-        : holding.actualValueDate
-          ? `Actual value as of ${formatDate(holding.actualValueDate)}`
-          : 'Actual value',
+      valueCaption: holding.valuationMethod === 'accrual'
+        ? `Estimated${holding.maturityDate ? ` to ${formatDate(holding.maturityDate)}` : ''}`
+        : valueDate
+          ? `Updated ${stale.days ?? 0} days ago`
+          : 'Value not updated',
       progressPct,
       progressCaption: '',
       description: [
@@ -113,17 +125,29 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
         { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
         { id: 'entries', label: 'Entries' },
+        {
+          id: 'stop' as const,
+          label: holding.stopDate ? 'Resume investment' : 'Stop investment',
+          accessibilityHint: holding.stopDate ? 'Resume this investment plan' : 'Stop future recurring dues',
+        },
+        { id: 'update', label: method === 'unitsPrice' ? 'Update price' : 'Update value' },
       ],
     };
   }
 
   const capabilities = holdingCapabilities(holding.type);
-  const stale = valueStaleness(holding.valueAsOf, ctx.asOf);
-  const valueCaption = !holding.valueAsOf
+  const method = holding.valuationMethod ?? suggestedValuationMethod(
+    holding.type,
+    holding.logs.some((entry) => entry.price !== undefined),
+    holding.ratePct,
+  );
+  const date = method === 'unitsPrice' ? holding.priceAsOf : holding.valueAsOf;
+  const updateAge = valueStaleness(date, ctx.asOf);
+  const valueCaption = holding.valuationMethod === 'accrual'
+    ? 'Estimated'
+    : !date
     ? 'Value date unknown'
-    : stale.stale
-      ? `Value not updated in ${stale.days ?? 0} days`
-      : `Updated ${formatDate(holding.valueAsOf)}`;
+    : `Updated ${updateAge.days ?? 0} days ago`;
   const summary = row.returnSummary;
   const returnText = formatReturnText(summary);
   const cashOrBank = isCashOrBankHoldingType(holding.type);
@@ -155,13 +179,15 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { text: returnText },
       ],
     ...(helperLines.length > 0 ? { helperLine: helperLines.join(' ') } : {}),
-    statuses: stale.stale ? [{ label: 'Stale value', tone: 'neutral' }] : [],
+    statuses: (method === 'manual' || method === 'unitsPrice') && updateAge.stale
+      ? [{ label: 'Stale value', tone: 'neutral' }]
+      : [],
     headerAction: { id: 'edit', label: 'Edit' },
     actions: [
       ...(capabilities.entries ? [{ id: 'deposit' as const, label: 'Deposit' }] : []),
       { id: 'withdraw', label: 'Withdraw', disabled: !canWithdraw, accessibilityHint: canWithdraw ? undefined : 'Nothing to withdraw' },
       { id: 'entries', label: 'Entries' },
-      ...(stale.stale ? [{ id: 'confirm' as const, label: 'Confirm' }] : []),
+      { id: 'update', label: method === 'unitsPrice' ? 'Update price' : 'Update value' },
     ],
   };
 }

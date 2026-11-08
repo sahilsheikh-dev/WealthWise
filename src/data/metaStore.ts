@@ -17,6 +17,7 @@ const reminderPreferencesSchema = z.strictObject({
   dayBefore: z.boolean(),
   sameDay: z.boolean(),
   showAmounts: z.boolean(),
+  updateValues: z.boolean().optional(),
 });
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
@@ -36,6 +37,7 @@ export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   dayBefore: true,
   sameDay: true,
   showAmounts: false,
+  updateValues: false,
 };
 
 export function createMetaStore(storage: StateStorage) {
