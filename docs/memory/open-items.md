@@ -2,32 +2,43 @@
 
 # Open items
 
+## Recently resolved
+
+- **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
+  the new hook requires supported Conventional Commit types and rejects
+  placeholders. The reason is to keep scope explicit and unrelated changes
+  separate; proposed subjects and staged diff-stats are shown before commit.
+  The hook and docs tests pass.
+
 ## Unresolved
 
+- **Branching baseline exception:** the initial `develop` baseline
+  `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
+  which contains legacy unreleased Release 2 work. Branch protection and
+  release-only main merges apply prospectively; no history rewrite was made.
 - **v1.0.0 GitHub release body (owner action):** the canonical body is
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
   No release edit was made in P28-C-R3.
-- **v1.0.0 device report details:** the owner-entered
-  [`device-test-checklist.md`](../releases/device-test-checklist.md) marks all
-  43 checks Pass, including N39. Device model, Android version, tester and
-  date are not recorded. The owner separately reports previously identified
-  Release 2 bugs remain, but no failing checklist IDs, reproduction steps,
-  expected/actual behavior, or screenshots were supplied. Request those
-  details before drafting a scoped fix prompt; do not infer checklist failures.
+- **Release 2 device re-test:** the owner confirms the income recurrence and
+  edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
+  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
+  tester and date remain blank. Physical-device re-test is pending.
 - **Local checklist commit is not pushed:** its subject was corrected at the
   owner's request, and the report commit was replayed unchanged. See the
   old-to-new hash mapping and tree verification in
   [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **Release 2 known bug follow-ups:** retain P29-AB-R1, the Phase 30
-  stale-values work, and P20-N-R1 as tracked follow-ups. The current device
-  report does not establish which of these reproduce or their exact symptoms.
-
-- **P29-AB income recurrence physical-device check:** owner marked checklist
-  item N39 Pass, covering quarterly/yearly first-due months, planned income,
-  Received dues, due/non-due projected cash flow and backup restore. Font
-  scales 1.3/2.0, virtual future months, and native v21-to-v22
-  migration/restart are not documented by N39 and remain unverified.
+- **v1.1.0 release preparation:** pending because the per-section Pace graph is
+  a visible feature. This task made no version change and performed no release
+  preparation, build, export or push.
+- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
+  quarterly/yearly income appears every month; device re-test of due/non-due
+  months, Received dues, projected cash flow and backup restore remains open.
+- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
+  not refresh immediately. Verify the repaired persistence path and immediate
+  screen updates across relevant flows on device.
+- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
+  Pace graph, per-section controls, contrast and scalable layout on device.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund

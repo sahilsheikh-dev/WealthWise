@@ -69,10 +69,10 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
-      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-D',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V',       'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
       'P29-AA', 'P29-AB', 'P29-AB-R1', 'P30-A', 'P30-B', 'P30-C',
       'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96',
@@ -96,10 +96,10 @@ describe('permanent progress ledger', () => {
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
-      'P19-A', 'P19-B', 'P20-A', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
-      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-D',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T',       'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
       'P29-AA', 'P29-AB', 'P29-AB-R1', 'P30-A', 'P30-B', 'P30-C',
     ];
@@ -178,7 +178,7 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 28]) {
+    for (const phase of [20, 21, 22, 23, 25, 28, 30]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       expect(count?.done).toBe(count?.total);
@@ -261,7 +261,9 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |')))
+      .toContain('Done; Revised by P20-N-R1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N-R1 |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-O |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-P |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Q |'))).toContain('| Done |');
@@ -344,13 +346,17 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB |'))).toContain('Revised by P29-AB-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done;');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('Revised by P20-N-R1');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P20-N-R1 |'))).toContain('| current request |');
     expect(ledger).toContain('Revised by P28-A-R1');
     expect(ledger).toContain('Revised by P28-C-R3 and earlier revisions');
     expect(dashboard).toContain('Revised by P28-B');
     expect(ledger).toContain('Phase 30 — Release 2 stabilization');
-    expect(ledger).toContain('P30-A — [placeholder]');
-    expect(ledger).toContain('P30-B — [placeholder]');
-    expect(ledger).toContain('P30-C — [placeholder]');
+    const release2Roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    expect(release2Roadmap).toContain('P30-A — Failing persistence/restart tests');
+    expect(release2Roadmap).toContain('P30-B — Verified fallback authority markers');
+    expect(release2Roadmap).toContain('P30-C — Memo-input/cache source guard');
+    expect(release2Roadmap).not.toContain('[placeholder]');
     for (const id of [
       'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
     ]) {
