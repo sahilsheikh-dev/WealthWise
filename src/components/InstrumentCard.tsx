@@ -1,11 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
-import type { InstrumentCardAction, InstrumentCardModel } from '../domain/instrumentCard';
-import { formatINR } from '../lib/format';
+import type { InstrumentCardAction, InstrumentCardModel, InstrumentCardTextSegment } from '../domain/instrumentCard';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import type { DueTarget } from '../domain/dues';
+import { formatAmount } from '../lib/amountDisplay';
 import { CardHeaderRow } from './CardHeaderRow';
+import { AmountText } from './AmountText';
 import { DueActions } from './DueActions';
 import { AppText, Button, Card, ProgressBar, StatusBadge } from './ui';
 
@@ -32,8 +33,14 @@ export function InstrumentCard({
     <Card style={styles.card}>
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{model.name}</AppText>}
-        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.subtitle}</AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(model.value)}</AppText>}
+        subtitle={(
+          <AppText
+            accessibilityLabel={describeAmountSegments(model.subtitle)}
+            style={[typography.meta, { color: colors.text3 }]}>
+            {renderAmountSegments(model.subtitle)}
+          </AppText>
+        )}
+        value={<AmountText value={model.value} tier="tile" weight="bold" style={typography.amount} />}
         valueCaption={<AppText style={[typography.meta, { color: colors.text3 }]}>{model.valueCaption}</AppText>}
         editLabel={`Edit ${model.name}`}
         onEdit={() => onAction(model.headerAction.id)}
@@ -47,7 +54,13 @@ export function InstrumentCard({
       {model.progressCaption ? (
         <AppText style={[typography.meta, styles.progressCaption, { color: colors.text3 }]}>{model.progressCaption}</AppText>
       ) : null}
-      {model.nextLine ? <AppText style={[typography.meta, styles.nextLine, { color: colors.text2 }]}>{model.nextLine}</AppText> : null}
+      {model.nextLine ? (
+        <AppText
+          accessibilityLabel={describeAmountSegments(model.nextLine)}
+          style={[typography.meta, styles.nextLine, { color: colors.text2 }]}>
+          {renderAmountSegments(model.nextLine)}
+        </AppText>
+      ) : null}
       {model.behindLine ? <AppText style={[typography.meta, styles.nextLine, { color: colors.err }]}>{model.behindLine}</AppText> : null}
       {dueTarget && model.pendingDueCount !== undefined && model.pendingDueCount > 0 ? (
         <DueActions
@@ -56,7 +69,11 @@ export function InstrumentCard({
           nextAmount={model.pendingDueAmount ?? 0}
         />
       ) : null}
-      <AppText style={[typography.meta, styles.description, { color: colors.text2 }]}>{model.description}</AppText>
+      <AppText
+        accessibilityLabel={describeAmountSegments(model.description)}
+        style={[typography.meta, styles.description, { color: colors.text2 }]}>
+        {renderAmountSegments(model.description)}
+      </AppText>
       {model.statuses.length ? (
         <View style={styles.statuses}>
           {model.statuses.map((status) => <StatusBadge key={status.label} label={status.label} tone={status.tone} />)}
@@ -80,6 +97,20 @@ export function InstrumentCard({
         })}
       </View>
     </Card>
+  );
+}
+
+function describeAmountSegments(segments: InstrumentCardTextSegment[]): string {
+  return segments.map((segment) =>
+    'text' in segment ? segment.text : formatAmount(segment.amount, 'exact', 1),
+  ).join('');
+}
+
+function renderAmountSegments(segments: InstrumentCardTextSegment[]) {
+  return segments.map((segment, index) =>
+    'text' in segment
+      ? segment.text
+      : <AmountText key={index} value={segment.amount} tier="row" />,
   );
 }
 

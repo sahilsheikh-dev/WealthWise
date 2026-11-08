@@ -54,7 +54,8 @@ function pendingRowsFor(data: AppData, target: DueTarget, asOf: string): Schedul
   }
   if (target.kind === 'liability') {
     const liability = data.liabilities.find((item) => item.id === target.id);
-    if (!liability || liability.kind !== 'recurring') throw new NotFoundError('Recurring liability', target.id);
+    if (!liability) throw new NotFoundError('Liability', target.id);
+    if (liability.kind === 'one-time' && liability.dueDate === null) return [];
     return liabilitySchedule(liability, asOf).rows.filter((row) =>
       row.dueDate <= asOf && (row.status === 'overdue' || row.status === 'ongoing'));
   }
@@ -151,16 +152,16 @@ export function clearDue(
   }
   if (target.kind === 'liability') {
     const liability = data.liabilities.find((item) => item.id === target.id);
-    if (!liability || liability.kind !== 'recurring') throw new NotFoundError('Recurring liability', target.id);
+    if (!liability) throw new NotFoundError('Liability', target.id);
     const balance = loanState(liability, options.date).balance;
-    const amount = Math.min(row.amount, Math.ceil(balance));
+    const amount = liability.kind === 'one-time' ? balance : Math.min(row.amount, Math.ceil(balance));
     if (amount <= 0) throw new NothingToClearError();
     const before = liability.payments.map((payment) => payment.id);
     const result = addLiabilityPayment(data, target.id, {
       date: options.date,
       amount,
       note: '',
-      kind: 'EMI',
+      kind: liability.kind === 'recurring' ? 'EMI' : 'Payment',
     }, options);
     const updated = result.liabilities.find((item) => item.id === target.id);
     const entry = updated?.payments.find((payment) => !before.includes(payment.id));

@@ -102,14 +102,17 @@ export function StatPill({
   tone = 'primary',
   onPress,
   accessibilityHint,
+  accessibilityLabel,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: Tone;
   onPress?: () => void;
   accessibilityHint?: string;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
+  const spokenLabel = accessibilityLabel ?? `${label}${typeof value === 'string' ? `, ${value}` : ''}`;
   const content = (
     <>
       <View style={styles.statPillText}>
@@ -125,7 +128,7 @@ export function StatPill({
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label}, ${value}`}
+        accessibilityLabel={spokenLabel}
         accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
         onPress={onPress}
         style={[styles.statPill, styles.statPillPressable, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
@@ -134,7 +137,10 @@ export function StatPill({
     );
   }
   return (
-    <View style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+    <View
+      accessible
+      accessibilityLabel={spokenLabel}
+      style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
       {content}
     </View>
   );
@@ -222,16 +228,19 @@ export function ListItem({
   tone = 'neutral',
   icon,
   onPress,
+  accessibilityLabel,
 }: {
   title: string;
   subtitle?: string;
-  amount?: string;
-  amountSub?: string;
+  amount?: ReactNode;
+  amountSub?: ReactNode;
   tone?: Tone;
   icon?: keyof typeof Feather.glyphMap;
   onPress?: () => void;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
+  const readableAmount = typeof amount === 'string' ? amount : '';
   const contents = (
     <>
       {icon ? (
@@ -245,7 +254,14 @@ export function ListItem({
       </View>
       {amount || amountSub ? (
         <View style={styles.amountColumn}>
-          {amount ? <AppText weight="bold" style={[typography.amount, { color: toneColor(colors, tone) }]}>{amount}</AppText> : null}
+          {amount ? (
+            <AppText
+              accessibilityLabel={accessibilityLabel ?? (readableAmount || undefined)}
+              weight="bold"
+              style={[typography.amount, { color: toneColor(colors, tone) }]}>
+              {amount}
+            </AppText>
+          ) : null}
           {amountSub ? <AppText style={[typography.meta, { color: colors.text3 }, styles.rightText]}>{amountSub}</AppText> : null}
         </View>
       ) : null}
@@ -256,7 +272,7 @@ export function ListItem({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}${amount ? `, ${amount}` : ''}`}
+      accessibilityLabel={accessibilityLabel ?? `${title}${subtitle ? `, ${subtitle}` : ''}${readableAmount ? `, ${readableAmount}` : ''}`}
       onPress={onPress}
       style={[styles.listItem, { borderBottomColor: colors.border }]}>
       {contents}

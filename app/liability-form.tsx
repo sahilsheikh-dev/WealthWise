@@ -23,7 +23,7 @@ import { makeLiabilityFormSchema, type LiabilityFormInput, type LiabilityFormOut
 import { LIABILITY_TYPES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
-import { formatINR } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 
 const kindOptions = [
   { label: 'Recurring (EMI)', value: 'recurring' },
@@ -128,16 +128,6 @@ export default function LiabilityFormScreen() {
     }, today)
     : null;
 
-  const close = () => {
-    if (!isDirty) return router.back();
-    void confirmAsync({
-      title: 'Discard changes?',
-      message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard',
-      cancelLabel: 'Keep editing',
-      destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = async (values: LiabilityFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
@@ -158,7 +148,7 @@ export default function LiabilityFormScreen() {
       else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
         const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
           title: 'Record past installments?',
-          message: `This will record ${previewPastDues.count} installments totalling ${formatINR(previewPastDues.amount)} on their due dates.`,
+          message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
           confirmLabel: `Record ${previewPastDues.count} installments`,
           cancelLabel: 'Review',
         });
@@ -199,13 +189,13 @@ export default function LiabilityFormScreen() {
     });
   };
   if (liabilityId && !liability) return (
-    <FormScreen title="Liability" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Liability" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Liability not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title="Liability" onClose={close}
+    <FormScreen title="Liability" onClose={() => router.back()} isDirty={isDirty}
       headerAction={liability ? { label: 'Delete liability', onPress: remove } : undefined}
       footer={<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Button label="Save" icon="save" variant="primary" style={{ flex: 1 }} disabled={isSubmitting || errorsVisible} onPress={() => {
@@ -265,7 +255,7 @@ export default function LiabilityFormScreen() {
             <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
           )} />
           {calculated !== null ? <View style={{ gap: 6 }}>
-            <HelperText>Calculated EMI: {formatINR(calculated)}</HelperText>
+            <HelperText>Calculated EMI: {formatAmount(calculated, 'exact', 1)}</HelperText>
             <Button label="Use calculated EMI" icon="check" onPress={() => setValue('emi', String(calculated), { shouldDirty: true, shouldValidate: true })} />
           </View> : null}
           {underTenure ? <HelperText tone="warning">This EMI won&apos;t repay the liability within the tenure</HelperText> : null}
@@ -296,7 +286,7 @@ export default function LiabilityFormScreen() {
           />
           {previewPastDues ? (
             <HelperText>
-              {previewPastDues.count} past installments · {formatINR(previewPastDues.amount)}
+              {previewPastDues.count} past installments · {formatAmount(previewPastDues.amount, 'exact', 1)}
             </HelperText>
           ) : null}
           {pastInstallmentsMode === 'settle' ? (

@@ -16,6 +16,7 @@ export function buildAppMenu({
   themeLabel: string;
 }): AppMenuItem[] {
   const items: AppMenuItem[] = [
+    { label: 'Budget history', icon: 'calendar' },
     { label: 'Backup and restore', icon: 'download' },
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },

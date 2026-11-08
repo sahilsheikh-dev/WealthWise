@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
-import { router, type Href } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { routeKindForPath } from '../lib/routeKinds';
 import { HeaderMenu, type HeaderMenuItem } from './HeaderMenu';
 import { AppText } from './ui';
 import { useAppMenu } from './useAppMenu';
@@ -39,8 +40,12 @@ export function AppHeader({
   showDefaultMenu?: boolean;
 }) {
   const { colors } = useTheme();
+  const pathname = usePathname();
+  const routeKind = routeKindForPath(pathname);
   const globalMenu = useAppMenu();
   const [menuVisible, setMenuVisible] = useState(false);
+  const showBackControl = showBack || routeKind === 'stack';
+  const showCloseControl = routeKind === 'form';
   const hasExplicitRightContent = rightActions.length > 0 || menu !== undefined;
   const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false ? globalMenu : undefined;
   const visibleMenu = menu ?? defaultMenu;
@@ -51,29 +56,29 @@ export function AppHeader({
 
   function goBack() {
     if (router.canGoBack()) router.back();
-    else router.replace(fallbackHref as Href);
+    else router.replace(fallbackHref);
   }
 
   useEffect(() => {
-    if (!showBack) return undefined;
+    if (!showBackControl && !showCloseControl) return undefined;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (router.canGoBack()) router.back();
-      else router.replace(fallbackHref as Href);
+      else router.replace(fallbackHref);
       return true;
     });
     return () => subscription.remove();
-  }, [fallbackHref, showBack]);
+  }, [fallbackHref, showBackControl, showCloseControl]);
 
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        {showBack ? (
+        {showBackControl || showCloseControl ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={backLabel}
+            accessibilityLabel={showCloseControl ? 'Close' : backLabel}
             onPress={goBack}
             style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Feather name="chevron-left" size={24} color={colors.text1} />
+            <Feather name={showCloseControl ? 'x' : 'chevron-left'} size={showCloseControl ? 20 : 24} color={colors.text1} />
           </Pressable>
         ) : null}
         <View style={styles.titleBlock}>

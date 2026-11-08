@@ -58,13 +58,6 @@ export default function EfEntryFormScreen() {
         }
         : { kind: requestedKind ?? 'Deposit', amount: '', date: today, note: '' },
     });
-  const close = () => {
-    if (!isDirty) return router.back();
-    void confirmAsync({
-      title: 'Discard changes?', message: 'Your changes have not been saved.',
-      confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true,
-    }).then((discard) => { if (discard) router.back(); });
-  };
   const save = (values: EfEntryFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
@@ -92,13 +85,13 @@ export default function EfEntryFormScreen() {
   };
 
   if (entryId && !entry) return (
-    <FormScreen title="Emergency fund Entry" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+    <FormScreen title="Emergency fund Entry" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
       <EmptyState title="Entry not found" />
     </FormScreen>
   );
   const errorsVisible = submitCount > 0 && Object.keys(errors).length > 0;
   return (
-    <FormScreen title="Emergency fund entry" onClose={close}
+    <FormScreen title="Emergency fund entry" onClose={() => router.back()} isDirty={isDirty}
       headerAction={entry ? { label: 'Delete emergency fund entry', onPress: remove } : undefined}
       footer={(
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

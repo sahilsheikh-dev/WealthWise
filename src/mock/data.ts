@@ -16,6 +16,9 @@ export const transactions: Transaction[] = [
   { id: 'tx-rd', type: 'invest', amount: 2_000, category: 'Investment', note: 'ICICI RD', date: '2026-10-08' },
   { id: 'tx-emi', type: 'expense', amount: 6_281, category: 'EMI', note: 'Bank EMI', date: '2026-10-08' },
   { id: 'tx-friend-payment', type: 'expense', amount: 5_000, category: 'Other', note: 'Borrowed from friend payment', date: '2026-10-02', source: { kind: 'liability-payment', parentId: 'liability-friend', entryId: 'friend-payment' } },
+  { id: 'tx-festival', type: 'expense', amount: 1_500, category: 'Festival', note: 'Festival celebration', date: '2026-10-09' },
+  { id: 'tx-donation', type: 'expense', amount: 500, category: 'Donation', note: 'Community donation', date: '2026-10-10' },
+  { id: 'tx-gifts', type: 'expense', amount: 1_000, category: 'Gifts', note: 'Birthday gifts', date: '2026-10-11' },
 ];
 
 export const goals: Goal[] = [

@@ -2,6 +2,10 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
+import { AppHeader } from '../src/components/AppHeader';
+import { InstrumentCard } from '../src/components/InstrumentCard';
+import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -14,23 +18,20 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { AppHeader } from '../src/components/AppHeader';
-import { InstrumentCard } from '../src/components/InstrumentCard';
-import { SortChip } from '../src/components/SortChip';
-import { useSort } from '../src/data/useSort';
 import { useAppActions, useAppData } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
-import { planSchedule } from '../src/domain/schedule';
 import {
   buildPortfolioRows,
   filterRows,
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { formatINR, formatINRShort } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -108,27 +109,43 @@ export default function AssetsScreen() {
       />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
-        <AppText weight="bold" style={[typography.big, styles.total]}>{formatINR(totals.value)}</AppText>
-        <AppText style={[typography.meta, { color: gainTone }]}>
-          {totals.gain > 0 ? '+' : ''}{formatINR(totals.gain)}
+        <AmountText value={totals.value} tier="hero" weight="bold" style={[typography.big, styles.total]} />
+        <AppText
+          style={[typography.meta, { color: gainTone }]}
+          accessibilityLabel={`Gain ${formatAmount(totals.gain, 'exact', 1)}${totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}`}>
+          {totals.gain > 0 ? '+' : ''}<AmountText value={totals.gain} tier="row" />
           {totals.gainPct === null ? '' : ` (${totals.gainPct.toFixed(1)}% overall)`}
         </AppText>
         <StatPillRow>
-          <StatPill label="Invested" value={formatINRShort(totals.invested)} />
-          <StatPill label="Gain" value={formatINRShort(totals.gain)} tone={totals.gain >= 0 ? 'ok' : 'err'} />
-          <StatPill label="Monthly SIP/RD" value={formatINRShort(monthlyCommitment(data.holdings))} tone="primary" />
+          <StatPill
+            label="Invested"
+            value={<AmountText value={totals.invested} tier="tile" />}
+            accessibilityLabel={`Invested, ${formatAmount(totals.invested, 'exact', 1)}`}
+          />
+          <StatPill
+            label="Gain"
+            value={<AmountText value={totals.gain} tier="tile" />}
+            accessibilityLabel={`Gain, ${formatAmount(totals.gain, 'exact', 1)}`}
+            tone={totals.gain >= 0 ? 'ok' : 'err'}
+          />
+          <StatPill
+            label="Monthly SIP/RD"
+            value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
+            accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
+            tone="primary"
+          />
         </StatPillRow>
       </Card>
 
       <ChipRow>
+        <SortChip
+            options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+            spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
+            onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
+          />
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}
-        <SortChip
-          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />
       </ChipRow>
 
       <View style={styles.holdingList}>

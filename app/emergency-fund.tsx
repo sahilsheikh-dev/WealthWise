@@ -1,6 +1,7 @@
 import { router, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
@@ -9,26 +10,27 @@ import {
   AppText,
   Button,
   Card,
+  ChipRow,
   DetailTabBar,
   ProgressBar,
   Screen,
-  SectionTitle,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import {
+  EF_BUCKETS,
+  EF_BUCKET_META,
   allocateAmounts,
   allocationWarnings,
   effectiveAllocation,
-  EF_BUCKETS,
-  EF_BUCKET_META,
 } from '../src/domain/efAllocation';
-import { efBalance, efPassbook, milestones, monthlyBaseline, monthsCovered } from '../src/domain/ef';
 import { ensureEfGoal, goalView } from '../src/domain/goals';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { formatDate, formatINR } from '../src/lib/format';
+import { formatDate } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -66,7 +68,7 @@ export default function EmergencyFundScreen() {
         />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Current balance</AppText>
-          <AppText weight="bold" style={[typography.big, styles.balance]}>{formatINR(balance)}</AppText>
+          <AmountText value={balance} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.balance]} />
           {baseline > 0 && covered !== null ? (
             <AppText style={[typography.meta, { color: colors.primary }]}>
               {covered.toFixed(1)} months of expenses covered
@@ -87,8 +89,10 @@ export default function EmergencyFundScreen() {
             })}
           </StatPillRow>
           {baseline > 0 ? (
-            <AppText style={[typography.meta, styles.basedOn, { color: colors.text3 }]}>
-              Based on an average of {formatINR(baseline)} monthly expenses.
+            <AppText
+              style={[typography.meta, styles.basedOn, { color: colors.text3 }]}
+              accessibilityLabel={`Based on an average of ${formatAmount(baseline, 'exact', 1)} monthly expenses.`}>
+              Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses.
             </AppText>
           ) : null}
         </Card>
@@ -111,7 +115,7 @@ export default function EmergencyFundScreen() {
             <View key={id} style={[styles.allocationRow, { borderBottomColor: colors.border }]}>
               <AppText style={[typography.meta, styles.allocationLabel]}>{EF_BUCKET_META[id].label}</AppText>
               <AppText style={typography.meta}>{allocation[id]}%</AppText>
-              <AppText style={[typography.meta, styles.allocationAmount]}>{formatINR(allocationAmounts[id])}</AppText>
+              <AmountText value={allocationAmounts[id]} tier="row" style={[typography.meta, styles.allocationAmount]} />
             </View>
           ))}
           {allocationAlerts.map((warning) => (
@@ -125,25 +129,33 @@ export default function EmergencyFundScreen() {
           <Card>
             <CardHeaderRow
               title={<AppText style={[typography.label, { color: colors.text3 }]}>Emergency fund target</AppText>}
-              value={<AppText weight="bold" style={[typography.big, styles.targetAmount]}>{formatINR(emergencyGoalView.target)}</AppText>}
+              value={<AmountText value={emergencyGoalView.target} tier="hero" tone="primary" weight="bold" style={[typography.big, styles.targetAmount]} />}
               editLabel="Edit emergency fund target"
               onEdit={() => router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } })}
             />
-            <AppText style={[typography.meta, { color: colors.text3 }]}>
-              Minimum (3 months of expenses): {formatINR(emergencyGoalView.minimum ?? 0)}
+            <AppText
+              style={[typography.meta, { color: colors.text3 }]}
+              accessibilityLabel={`Minimum (3 months of expenses): ${formatAmount(emergencyGoalView.minimum ?? 0, 'exact', 1)}`}>
+              Minimum (3 months of expenses): <AmountText value={emergencyGoalView.minimum ?? 0} tier="row" />
             </AppText>
             {baseline > 0 ? (
-              <AppText style={[typography.meta, { color: colors.text3 }]}>
-                Based on an average of {formatINR(baseline)} monthly expenses
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={`Based on an average of ${formatAmount(baseline, 'exact', 1)} monthly expenses`}>
+                Based on an average of <AmountText value={baseline} tier="row" /> monthly expenses
               </AppText>
             ) : (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>
             )}
             <ProgressBar percent={emergencyGoalView.pct} />
-            <AppText style={[typography.meta, { color: colors.text2, marginTop: 5 }]}>
+            <AppText
+              style={[typography.meta, { color: colors.text2, marginTop: 5 }]}
+              accessibilityLabel={balance >= emergencyGoalView.target
+                ? 'Target reached'
+                : `${formatAmount(Math.max(0, emergencyGoalView.target - balance), 'exact', 1)} to go`}>
               {balance >= emergencyGoalView.target
                 ? 'Target reached'
-                : `${formatINR(Math.max(0, emergencyGoalView.target - balance))} to go`}
+                : <><AmountText value={Math.max(0, emergencyGoalView.target - balance)} tier="row" /> to go</>}
             </AppText>
             {emergencyGoalView.raised ? (
               <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
@@ -151,30 +163,35 @@ export default function EmergencyFundScreen() {
           </Card>
         ) : null}
 
-        <SectionTitle>Passbook</SectionTitle>
-        <View style={styles.sortRow}>
+        <ChipRow>
           <SortChip options={SORT_OPTIONS.emergencyFund} spec={sorting.spec} onChange={sorting.setSpec} />
-        </View>
+        </ChipRow>
+
         <View style={styles.passbook}>
           {entries.map((entry) => (
+            <Card>
             <SharedListRow
               key={entry.id}
               style={[styles.passbookRow, { borderBottomColor: colors.border }]}
               onPress={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
               onEdit={() => router.push({ pathname: '/ef-entry-form', params: { id: entry.id } })}
               editLabel={`Edit emergency fund entry from ${formatDate(entry.date)}`}
-              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatINR(Math.abs(entry.amount))} from ${formatDate(entry.date)}`}
+              accessibilityLabel={`Edit ${entry.amount < 0 ? 'withdrawal' : 'deposit'} ${formatAmount(Math.abs(entry.amount), 'exact', 1)} from ${formatDate(entry.date)}`}
             >
               <View style={styles.passbookContents}>
                 <View style={styles.entryDetails}>
-                  <AppText weight="bold" style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}>
-                    {entry.amount < 0 ? '-' : '+'}{formatINR(Math.abs(entry.amount))}
+                  <AppText
+                    weight="bold"
+                    style={[typography.amount, { color: entry.amount < 0 ? colors.err : colors.ok }]}
+                    accessibilityLabel={`${entry.amount < 0 ? 'Withdrawal' : 'Deposit'} ${formatAmount(Math.abs(entry.amount), 'exact', 1)}`}>
+                    {entry.amount < 0 ? '-' : '+'}<AmountText value={Math.abs(entry.amount)} tier="row" />
                   </AppText>
                   <AppText style={[typography.meta, { color: colors.text3 }]}>{formatDate(entry.date)} · {entry.note}</AppText>
                 </View>
-                <AppText weight="bold" style={typography.amount}>{formatINR(entry.balance)}</AppText>
+                <AmountText value={entry.balance} tier="row" weight="bold" style={typography.amount} />
               </View>
             </SharedListRow>
+            </Card>
           ))}
         </View>
       </Screen>
@@ -193,7 +210,7 @@ const styles = StyleSheet.create({
   allocationAmount: { minWidth: 100, textAlign: 'right' },
   basedOn: { marginTop: 8 },
   sortRow: { marginHorizontal: 20, marginTop: 8 },
-  passbook: { marginHorizontal: 20 },
+  passbook: {  },
   passbookRow: { minHeight: 66, borderBottomWidth: StyleSheet.hairlineWidth },
   passbookContents: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   entryDetails: { flex: 1, minWidth: 0, gap: 3 },

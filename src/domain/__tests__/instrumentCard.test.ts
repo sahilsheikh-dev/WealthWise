@@ -16,15 +16,21 @@ function rowFor(data: AppData, id: string) {
   return row;
 }
 
+function textContent(segments: ({ text: string } | { amount: number })[]) {
+  return segments.map((segment) =>
+    'text' in segment ? segment.text : `amount:${segment.amount}`,
+  ).join('');
+}
+
 describe('buildInstrumentCardModel', () => {
   it('builds an emergency fund model with percentage, coverage and the required actions', () => {
     const model = buildInstrumentCardModel(rowFor(mockAppData, 'auto-ef'), context);
     expect(model).toMatchObject({
       kind: 'auto-ef',
-      subtitle: 'Emergency fund, auto-synced',
+      subtitle: [{ text: 'Emergency fund, auto-synced' }],
       progressCaption: expect.stringMatching(/% of your assets/),
-      description: expect.stringMatching(/months of expenses covered/),
     });
+    expect(textContent(model.description)).toMatch(/months of expenses covered/);
     expect(model.headerAction).toEqual({ id: 'edit', label: 'Edit' });
     expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
@@ -36,7 +42,7 @@ describe('buildInstrumentCardModel', () => {
       totalAssets: 0,
       monthlyExpenseBaseline: 0,
     });
-    expect(model.description).toBe('Log expenses to see months covered');
+    expect(model.description).toEqual([{ text: 'Log expenses to see months covered' }]);
     expect(model.progressPct).toBe(0);
     expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({
       disabled: true,
@@ -92,7 +98,9 @@ describe('buildInstrumentCardModel', () => {
     };
     const overdueRow = rowFor(overdueData, 'holding-sip');
     const overdue = buildInstrumentCardModel(overdueRow, { ...context, asOf: '2026-06-15' });
-    expect(overdue.nextLine).toMatch(/^Next:/);
+    expect(overdue.nextLine).toBeDefined();
+    expect(textContent(overdue.nextLine ?? [])).toMatch(/^Next:/);
+    expect(overdue.nextLine?.some((segment) => 'amount' in segment)).toBe(true);
     expect(overdue.behindLine).toMatch(/\d+ behind/);
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');

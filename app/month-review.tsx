@@ -29,7 +29,8 @@ import {
   type MonthAllocationFormOutput,
 } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
-import { formatINR, formatMonth } from '../src/lib/format';
+import { formatMonth } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -43,7 +44,7 @@ export default function MonthReviewScreen() {
   const selected = reviews.find((item) => item.month === paramMonth) ?? reviews[0];
   if (!selected) {
     return (
-      <FormScreen title="Month review" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Month review" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="No month needs review" subtitle="Closed months with a logged cash balance will appear here." />
       </FormScreen>
     );
@@ -85,7 +86,7 @@ function MonthReview({ month }: { month: string }) {
     maximumAmount: remaining,
   }), [instruments, investable, liabilities, liabilitiesWithoutOrigin, mode, remaining]);
   const defaultKind = mode === 'shortfall' ? 'borrowed' : 'invest';
-  const { control, handleSubmit, resetField, setValue, formState: { errors, isSubmitting, submitCount } } =
+  const { control, handleSubmit, resetField, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<MonthAllocationFormInput, undefined, MonthAllocationFormOutput>({
       resolver: zodResolver(schema),
       mode: 'onTouched',
@@ -161,8 +162,8 @@ function MonthReview({ month }: { month: string }) {
       ? instruments.map((item) => item.id)
       : allocationKind === 'invest' ? investable.map((item) => item.id) : [];
   const targetLabels = Object.fromEntries([
-    ...liabilities.map((item) => [item.id, `${item.name} · ${formatINR(loanState(item, dueDate).balance)}`]),
-    ...instruments.map((item) => [item.id, `${item.name} · ${formatINR(item.valueNow)}`]),
+    ...liabilities.map((item) => [item.id, `${item.name} · ${formatAmount(loanState(item, dueDate).balance, 'exact', 1)}`]),
+    ...instruments.map((item) => [item.id, `${item.name} · ${formatAmount(item.valueNow, 'exact', 1)}`]),
     ...investable.map((item) => [item.id, item.name]),
   ]);
   const items = mode === 'shortfall' ? shortfallAllocations : surplusAllocations;
@@ -172,6 +173,7 @@ function MonthReview({ month }: { month: string }) {
     <FormScreen
       title="Month review"
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={<View style={{ gap: 8 }}>
         <Button
           label={mode === 'shortfall' ? 'Record funding' : 'Save allocations'}
@@ -185,26 +187,26 @@ function MonthReview({ month }: { month: string }) {
       <FormErrorBanner message={lastError} />
       <AppText weight="bold">{formatMonth(month)}</AppText>
       <Card style={{ gap: 8 }}>
-        <AppText>Opening balance · {formatINR(position.opening)}</AppText>
-        <AppText>Earned income · {formatINR(position.earnedIncome)}</AppText>
-        <AppText>Withdrawals · {formatINR(position.withdrawals)}</AppText>
-        <AppText>Borrowed · {formatINR(position.borrowed)}</AppText>
-        <AppText>Loan proceeds · {formatINR(position.loanProceeds)}</AppText>
-        <AppText>Own funds · {formatINR(position.ownFunds)}</AppText>
-        <AppText>Expenses · {formatINR(position.expense)}</AppText>
-        <AppText>Investments · {formatINR(position.invest)}</AppText>
-        <AppText weight="bold">Closing balance · {formatINR(position.closing)}</AppText>
+        <AppText>Opening balance · {formatAmount(position.opening, 'exact', 1)}</AppText>
+        <AppText>Earned income · {formatAmount(position.earnedIncome, 'exact', 1)}</AppText>
+        <AppText>Withdrawals · {formatAmount(position.withdrawals, 'exact', 1)}</AppText>
+        <AppText>Borrowed · {formatAmount(position.borrowed, 'exact', 1)}</AppText>
+        <AppText>Loan proceeds · {formatAmount(position.loanProceeds, 'exact', 1)}</AppText>
+        <AppText>Own funds · {formatAmount(position.ownFunds, 'exact', 1)}</AppText>
+        <AppText>Expenses · {formatAmount(position.expense, 'exact', 1)}</AppText>
+        <AppText>Investments · {formatAmount(position.invest, 'exact', 1)}</AppText>
+        <AppText weight="bold">Closing balance · {formatAmount(position.closing, 'exact', 1)}</AppText>
       </Card>
       <AppText style={{ color: colors.text2 }}>
         This balance only reflects what you have logged. If you had money before you started, add it as Own funds.
       </AppText>
       <AppText weight="semibold">
-        {mode === 'shortfall' ? `Shortfall ${formatINR(available)}` : `Surplus ${formatINR(available)}`}
+        {mode === 'shortfall' ? `Shortfall ${formatAmount(available, 'exact', 1)}` : `Surplus ${formatAmount(available, 'exact', 1)}`}
       </AppText>
-      {mode === 'shortfall' ? <AppText>Still to explain {formatINR(remaining)}</AppText> : null}
+      {mode === 'shortfall' ? <AppText>Still to explain {formatAmount(remaining, 'exact', 1)}</AppText> : null}
       {items.map((item, index) => (
         <View key={`${item.kind}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <AppText style={{ flex: 1 }}>{allocationName(item.kind)} · {formatINR(item.amount)}</AppText>
+          <AppText style={{ flex: 1 }}>{allocationName(item.kind)} · {formatAmount(item.amount, 'exact', 1)}</AppText>
           <Button
             label="Remove"
             variant="danger-text"

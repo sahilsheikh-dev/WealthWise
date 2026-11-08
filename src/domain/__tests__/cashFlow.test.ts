@@ -1,6 +1,7 @@
 import { deleteTransaction, emptyAppData, updateTransaction } from '../actions';
 import {
   allocateSurplus,
+  availableBalance,
   fundShortfall,
   monthPositions,
   recordMoneyMovement,
@@ -53,6 +54,91 @@ describe('cash flow positions', () => {
         loanProceeds: 70, ownFunds: 80, expense: 50, invest: 0, closing: 700,
       },
     ]);
+  });
+
+  it('carries the prior close into the current available balance and excludes future-dated transactions', () => {
+    const transactions = [
+      tx('prior-income', '2026-01-10', 'income', 1000, 'Salary'),
+      tx('prior-expense', '2026-01-11', 'expense', 200, 'Food'),
+      tx('current-income', '2026-02-01', 'income', 500, 'Salary'),
+      tx('current-other-income', '2026-02-02', 'income', 100, 'Borrowed'),
+      tx('current-expense', '2026-02-03', 'expense', 250, 'Food'),
+      tx('current-invest', '2026-02-04', 'invest', 50, 'Stocks / ETF'),
+      tx('future-income', '2026-02-20', 'income', 900, 'Salary'),
+      tx('future-expense', '2026-02-21', 'expense', 800, 'Food'),
+    ];
+    expect(availableBalance(transactions, '2026-02', '2026-02-10')).toEqual({
+      label: 'Available balance',
+      amount: 1100,
+      broughtForward: 800,
+      income: 500,
+      otherMoneyIn: 100,
+      spent: 250,
+      invested: 50,
+    });
+  });
+
+  it('counts current-month entries through today, carries across an empty month, and leaves past closes unchanged', () => {
+    const transactions = [
+      tx('jan-income', '2026-01-10', 'income', 1_000, 'Salary'),
+      tx('jan-expense', '2026-01-11', 'expense', 250, 'Food'),
+      tx('mar-income', '2026-03-01', 'income', 300, 'Salary'),
+      tx('mar-today-expense', '2026-03-10', 'expense', 100, 'Food'),
+      tx('mar-today-invest', '2026-03-10', 'invest', 50, 'Stocks / ETF'),
+      tx('mar-future-income', '2026-03-11', 'income', 900, 'Salary'),
+      tx('mar-future-expense', '2026-03-12', 'expense', 800, 'Food'),
+      tx('mar-future-invest', '2026-03-13', 'invest', 700, 'Stocks / ETF'),
+    ];
+
+    expect(availableBalance(transactions, '2026-03', '2026-03-10')).toEqual({
+      label: 'Available balance',
+      amount: 900,
+      broughtForward: 750,
+      income: 300,
+      otherMoneyIn: 0,
+      spent: 100,
+      invested: 50,
+    });
+    expect(availableBalance(transactions, '2026-01', '2026-03-10')).toEqual({
+      label: 'Closing balance',
+      amount: 750,
+      broughtForward: 0,
+      income: 1_000,
+      otherMoneyIn: 0,
+      spent: 250,
+      invested: 0,
+    });
+  });
+
+  it('returns zero without prior transactions and preserves a negative current balance', () => {
+    expect(availableBalance([], '2026-03', '2026-03-10')).toEqual({
+      label: 'Available balance',
+      amount: 0,
+      broughtForward: 0,
+      income: 0,
+      otherMoneyIn: 0,
+      spent: 0,
+      invested: 0,
+    });
+    expect(availableBalance([
+      tx('overspent', '2026-03-01', 'expense', 100, 'Food'),
+    ], '2026-03', '2026-03-10').amount).toBe(-100);
+  });
+
+  it('reports shortfalls numerically, handles missing history, and matches closed positions', () => {
+    const transactions = [
+      tx('income', '2026-01-01', 'income', 200, 'Salary'),
+      tx('expense', '2026-01-02', 'expense', 300, 'Food'),
+    ];
+    expect(availableBalance(transactions, '2026-01', '2026-01-31')).toMatchObject({
+      amount: -100,
+      label: 'Available balance',
+    });
+    expect(availableBalance([], '2026-01', '2026-01-31').amount).toBe(0);
+    expect(availableBalance(transactions, '2026-01', '2026-02-01')).toMatchObject({
+      amount: monthPositions(transactions)[0]?.closing,
+      label: 'Closing balance',
+    });
   });
 
   it('preserves conservation and edit locality across 500 seeded transaction edits', () => {

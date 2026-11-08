@@ -11,6 +11,7 @@ import {
 import { mockAppData } from '../../mock/data';
 import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture } from '../../data/testFixtures/v1';
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
+import { SCHEMA_VERSION } from '../schemas';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -73,6 +74,48 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(raw, { digest })).resolves.toMatchObject({ ok: true, data });
   });
 
+  it('imports schema-v5 backups containing the new expense categories', async () => {
+    const categories = ['Festival', 'Donation', 'Gifts'] as const;
+    const data = {
+      ...mockAppData,
+      transactions: [
+        ...mockAppData.transactions,
+        ...categories.map((category, index) => ({
+          id: `backup-${category.toLowerCase()}`,
+          type: 'expense' as const,
+          amount: 100 + index,
+          category,
+          note: category,
+          date: '2026-10-12',
+        })),
+      ],
+      budgetTemplates: [{
+        id: 'new-categories',
+        name: 'New categories',
+        plannedIncome: 10_000,
+        lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
+      }],
+      monthBudgets: [{
+        month: '2026-10',
+        templateId: 'new-categories',
+        templateName: 'New categories',
+        customized: false,
+        plannedIncome: 10_000,
+        lines: categories.map((category) => ({ category, planned: 100 })),
+      }],
+    };
+    expect(SCHEMA_VERSION).toBe(5);
+    const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
+    await expect(parseBackup(raw, { digest })).resolves.toMatchObject({
+      ok: true,
+      data: {
+        transactions: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))),
+        budgetTemplates: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
+        monthBudgets: [{ lines: expect.arrayContaining(categories.map((category) => expect.objectContaining({ category }))) }],
+      },
+    });
+  });
+
   it('validates v5 policy, settlement, due-date and budget import constraints', () => {
     const policy = mockAppData.policies[0];
     const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
@@ -110,6 +153,52 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson(undefined)).toBe('null');
   });
 
+  it('validates budget templates and month snapshots on backup import', () => {
+    const budgetData = {
+      ...mockAppData,
+      budgetTemplates: [{
+        id: 'monthly', name: 'Monthly', plannedIncome: 10_000,
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 25 }],
+      }],
+      defaultBudgetTemplateId: 'monthly',
+      monthBudgets: [{
+        month: '2026-10', templateId: 'monthly', templateName: 'Monthly',
+        customized: false, plannedIncome: 10_000,
+        lines: [{ category: 'Food', planned: 2_500 }],
+      }],
+    };
+    expect(validateImportData(budgetData)).toMatchObject({ ok: true });
+
+    const invalidData = [
+      {
+        ...budgetData,
+        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Food', mode: 'percent' as const, value: 101 }] }],
+      },
+      {
+        ...budgetData,
+        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [{ category: 'Unknown', mode: 'amount' as const, value: 1 }] }],
+      },
+      {
+        ...budgetData,
+        budgetTemplates: [{ ...budgetData.budgetTemplates[0], lines: [
+          { category: 'Food', mode: 'amount' as const, value: 1 },
+          { category: 'Food', mode: 'amount' as const, value: 2 },
+        ] }],
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [{ category: 'Unknown', planned: 1 }] }],
+      },
+      {
+        ...budgetData,
+        monthBudgets: [{ ...budgetData.monthBudgets[0], lines: [
+          { category: 'Food', planned: 1 }, { category: 'Food', planned: 2 },
+        ] }],
+      },
+    ];
+    for (const invalid of invalidData) expect(validateImportData(invalid)).toMatchObject({ ok: false, reason: 'invalid-data' });
+  });
+
   it('reports malformed and untrusted files with distinct reasons', async () => {
     await expect(parseBackup('{', { digest })).resolves.toMatchObject({ ok: false, reason: 'not-json' });
     await expect(parseBackup('{"app":"elsewhere"}', { digest })).resolves.toMatchObject({ ok: false, reason: 'not-a-backup' });
@@ -127,6 +216,16 @@ describe('backup validation and serialization', () => {
     await expect(parseBackup(oldSchema, { digest })).resolves.toMatchObject({ ok: false, reason: 'unsupported-version' });
     const oldFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = 0; });
     await expect(parseBackup(oldFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'unsupported-version' });
+    const invalidMigrated = {
+      app: 'wealthwise',
+      formatVersion: BACKUP_FORMAT_VERSION,
+      schemaVersion: 1,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(null)) },
+      data: null,
+    };
+    await expect(parseBackup(JSON.stringify(invalidMigrated), { digest }))
+      .resolves.toMatchObject({ ok: false, reason: 'unsupported-version' });
     await expect(parseBackup(raw.replace('2026-10-10T10:00:00.000Z', '2026-10-10T10:00:00.000+01:00'), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'not-a-backup' });
     expect(() => backupFileName('not a date')).toThrow('Invalid export date');

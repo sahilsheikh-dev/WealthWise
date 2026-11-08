@@ -20,6 +20,16 @@ export type MonthPosition = {
   closing: number;
 };
 
+export type AvailableBalance = {
+  label: 'Available balance' | 'Closing balance';
+  amount: number;
+  broughtForward: number;
+  income: number;
+  otherMoneyIn: number;
+  spent: number;
+  invested: number;
+};
+
 export function monthEndDate(month: string): ISODate {
   const nextMonth = shiftMonth(month, 1);
   const year = Number(nextMonth.slice(0, 4));
@@ -73,6 +83,27 @@ export function monthPositionAt(transactions: Transaction[], month: string): Mon
   return {
     month, opening, earnedIncome: 0, withdrawals: 0, borrowed: 0, loanProceeds: 0,
     ownFunds: 0, expense: 0, invest: 0, closing: opening,
+  };
+}
+
+export function availableBalance(
+  transactions: Transaction[],
+  month: string,
+  today: ISODate,
+): AvailableBalance {
+  const currentMonth = monthKey(today);
+  const monthTransactions = month < currentMonth
+    ? transactions
+    : transactions.filter((transaction) => monthKey(transaction.date) !== month || transaction.date <= today);
+  const position = monthPositionAt(monthTransactions, month);
+  return {
+    label: month === currentMonth ? 'Available balance' : 'Closing balance',
+    amount: position.closing,
+    broughtForward: position.opening,
+    income: position.earnedIncome,
+    otherMoneyIn: position.withdrawals + position.borrowed + position.loanProceeds + position.ownFunds,
+    spent: position.expense,
+    invested: position.invest,
   };
 }
 

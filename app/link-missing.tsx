@@ -2,16 +2,18 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
+import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { SortChip } from '../src/components/SortChip';
-import { AppText, Button, EmptyState, ListItem, Screen } from '../src/components/ui';
+import { AppText, Button, ChipRow, EmptyState, ListItem, Screen } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
 import { findUnlinkedEntries } from '../src/domain/instruments';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatDate, formatINR } from '../src/lib/format';
+import { formatDate } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -57,17 +59,19 @@ export default function LinkMissingScreen() {
           <EmptyState title="All entries are linked" subtitle="There are no missing transactions to create." />
         ) : (
           <>
-            <AppText style={[typography.meta, { color: colors.text2 }]}>
+            <View style={{marginHorizontal: 20, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between'}}>
+              <AppText style={[typography.meta, { color: colors.text2 }]}>
               This tool creates transactions for existing entries that do not have one yet.
               These entries are dated in the past and will change past income, invest and expense totals.
             </AppText>
+            </View>
             <View style={styles.total}>
               <AppText style={[typography.meta, { color: colors.text3 }]}>Total transaction amount</AppText>
-              <AppText weight="bold">{formatINR(total)}</AppText>
+              <AmountText value={total} tier="hero" weight="bold" />
             </View>
-            <View style={styles.sortRow}>
+            <ChipRow>
               <SortChip options={SORT_OPTIONS.linkMissing} spec={sorting.spec} onChange={sorting.setSpec} />
-            </View>
+            </ChipRow>
             <View style={styles.list}>
               {entries.map((item) => {
                 const name = item.kind === 'ef'
@@ -83,7 +87,8 @@ export default function LinkMissingScreen() {
                     key={`${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`}
                     title={name}
                     subtitle={`${formatDate(item.entry.date)} · ${kind}`}
-                    amount={formatINR(Math.abs(item.entry.amount))}
+                    amount={<AmountText value={Math.abs(item.entry.amount)} tier="row" />}
+                    accessibilityLabel={`${name}, ${formatDate(item.entry.date)}, ${kind}, ${formatAmount(Math.abs(item.entry.amount), 'exact', 1)}`}
                   />
                 );
               })}

@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
+import { HelperText } from '../src/components/form/HelperText';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
@@ -43,7 +44,7 @@ export default function EfAllocationFormScreen() {
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const [formError, setFormError] = useState<string | undefined>();
-  const { control, handleSubmit, setValue, formState: { isSubmitting } } = useForm<AllocationFormValues>({
+  const { control, handleSubmit, setValue, formState: { isDirty, isSubmitting } } = useForm<AllocationFormValues>({
     defaultValues: toFormValues(effectiveAllocation(allocation)),
   });
 
@@ -70,6 +71,7 @@ export default function EfAllocationFormScreen() {
     <FormScreen
       title="Emergency fund allocation"
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={(
         <View>
           <Button label="Save allocation" variant="primary" disabled={isSubmitting} onPress={save} />
@@ -105,6 +107,7 @@ export default function EfAllocationFormScreen() {
           EF_BUCKETS.forEach((id) => setValue(id, String(SUGGESTED_EF_ALLOCATION[id])));
         }}
       />
+      <HelperText>Use suggested mix: saves the suggested percentages as your own, so they stay fixed.</HelperText>
       <Button
         label="Reset to suggested allocation"
         onPress={() => {
@@ -112,6 +115,7 @@ export default function EfAllocationFormScreen() {
           if (!useAppStore.getState().lastError) router.back();
         }}
       />
+      <HelperText>Reset to suggested: clears your custom mix and goes back to the app&apos;s suggestion.</HelperText>
     </FormScreen>
   );
 }

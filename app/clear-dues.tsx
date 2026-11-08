@@ -14,7 +14,8 @@ import { pendingDues, type DueTarget } from '../src/domain/dues';
 import type { PlanHolding, RecurringLiability } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { formatINR, formatMonth } from '../src/lib/format';
+import { formatMonth } from '../src/lib/format';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { typography } from '../src/theme/tokens';
 
 type Mode = 'settle' | 'record';
@@ -49,6 +50,9 @@ export default function ClearDuesScreen() {
   const [addSkippedToOpening, setAddSkippedToOpening] = useState(true);
   const [balance, setBalance] = useState(initialBalance === null ? '' : String(initialBalance));
   const [busy, setBusy] = useState(false);
+  const isDirty = mode !== defaultMode
+    || !addSkippedToOpening
+    || balance !== (initialBalance === null ? '' : String(initialBalance));
 
   const save = async () => {
     if (!target || !pending || pending.count === 0 || busy) return;
@@ -65,7 +69,7 @@ export default function ClearDuesScreen() {
       : ' No transactions will be added.';
     const confirmed = await confirmAsync({
       title: mode === 'settle' ? 'Mark past dues as already paid?' : 'Record past payments?',
-      message: `This will handle ${pending.count} dues totalling ${formatINR(pending.amount)}.${recordWarning}`,
+      message: `This will handle ${pending.count} dues totalling ${formatAmount(pending.amount, 'exact', 1)}.${recordWarning}`,
       confirmLabel: 'Confirm',
       cancelLabel: 'Review',
     });
@@ -83,7 +87,7 @@ export default function ClearDuesScreen() {
         return;
       }
       useUIStore.getState().setActionToast({
-        message: `Cleared ${summary.count} past dues · ${formatINR(summary.amount)}`,
+        message: `Cleared ${summary.count} past dues · ${formatAmount(summary.amount, 'exact', 1)}`,
       });
       router.back();
     } finally {
@@ -93,14 +97,14 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
   }
   if (pending.count === 0) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} footer={<Button label="Done" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Done" onPress={() => router.back()} />}>
         <EmptyState title="No past dues" subtitle="There are no unpaid installments up to today." />
       </FormScreen>
     );
@@ -113,16 +117,17 @@ export default function ClearDuesScreen() {
     <FormScreen
       title="Clear past dues"
       onClose={() => router.back()}
+      isDirty={isDirty}
       footer={<Button label="Confirm" icon="check" variant="primary" disabled={busy} onPress={() => void save()} />}>
       <Card>
         <AppText weight="semibold">{item.name}</AppText>
         <AppText style={[typography.meta, { marginTop: 6 }]}>
-          {pending.count} installments, {formatINR(pending.amount)} total
+          {pending.count} installments, {formatAmount(pending.amount, 'exact', 1)} total
         </AppText>
         <AppText style={[typography.meta, { marginTop: 8 }]}>Affected months</AppText>
         {pending.months.map((month) => (
           <AppText key={month.month} style={typography.meta}>
-            {formatMonth(month.month)} · {formatINR(month.amount)}
+            {formatMonth(month.month)} · {formatAmount(month.amount, 'exact', 1)}
           </AppText>
         ))}
       </Card>
@@ -154,7 +159,7 @@ export default function ClearDuesScreen() {
             value={balance}
             onChangeText={setBalance}
           />
-          <AppText style={typography.meta}>Suggested balance: {formatINR(initialBalance ?? 0)}</AppText>
+          <AppText style={typography.meta}>Suggested balance: {formatAmount(initialBalance ?? 0, 'exact', 1)}</AppText>
           {recordedPayments > 0 ? (
             <WarningBanner>
               {recordedPayments} recorded payments are treated as already included in this balance.

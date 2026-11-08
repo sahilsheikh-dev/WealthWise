@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { DueActions } from '../src/components/DueActions';
@@ -11,6 +12,7 @@ import {
   AppText,
   Button,
   Card,
+  ChipRow,
   DetailTabBar,
   EmptyState,
   ProgressBar,
@@ -25,8 +27,9 @@ import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { formatDate, formatINR, formatMonth } from '../src/lib/format';
+import { formatDate, formatMonth } from '../src/lib/format';
 import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -73,7 +76,7 @@ export default function LiabilitiesScreen() {
         />
         <Card>
           <AppText style={[typography.label, { color: colors.text3 }]}>Total outstanding</AppText>
-          <AppText weight="bold" style={[typography.big, styles.total]}>{formatINR(overview.totalOutstanding)}</AppText>
+          <AmountText value={overview.totalOutstanding} tier="hero" weight="bold" style={[typography.big, styles.total]} />
           <AppText style={[typography.meta, { color: colors.err }]}>
             {overview.debtFreeBy === null
               ? 'No active recurring liabilities'
@@ -82,7 +85,12 @@ export default function LiabilitiesScreen() {
                 : `Debt-free by ${formatMonth(overview.debtFreeBy.slice(0, 7))}`}
           </AppText>
           <StatPillRow>
-            <StatPill label="Monthly EMI" value={formatINR(overview.monthlyEmi)} tone="err" />
+            <StatPill
+              label="Monthly EMI"
+              value={<AmountText value={overview.monthlyEmi} tier="tile" />}
+              accessibilityLabel={`Monthly EMI, ${formatAmount(overview.monthlyEmi, 'exact', 1)}`}
+              tone="err"
+            />
             <StatPill label="Of income" value={overview.emiPctOfIncome === null ? '—' : `${overview.emiPctOfIncome.toFixed(1)}%`} />
           </StatPillRow>
           {overview.incomeSource === 'salary' ? (
@@ -115,9 +123,8 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        <View style={styles.sortRow}>
-          <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
-        </View>
+        <ChipRow><SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} /></ChipRow>
+
         {sortedLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
@@ -149,19 +156,35 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.ratePct}% p.a. · {liability.tenureMonths} months · Since {formatDate(liability.startDate)}
         </AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
-        valueCaption={<AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>}
+        value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
+        valueCaption={(
+          <AppText
+            accessibilityLabel={`${formatAmount(liability.emi, 'exact', 1)} per month`}
+            style={[typography.meta, { color: colors.err }]}>
+            <AmountText value={liability.emi} tier="row" />/mo
+          </AppText>
+        )}
         editLabel={`Edit ${liability.name}`}
         onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
       />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
-        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
-          Next: {formatDate(schedule.summary.nextDue.dueDate)}, {formatINR(schedule.summary.nextDue.amount)}
+        <AppText
+          accessibilityLabel={`Next: ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
+          style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {formatDate(schedule.summary.nextDue.dueDate)}, <AmountText value={schedule.summary.nextDue.amount} tier="row" />
         </AppText>
       ) : null}
-      <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
-        Paid {formatINR(summary.paidTotal)}. Interest accrued {formatINR(summary.interestAccrued)}.
+      <AppText
+        accessibilityLabel={`Paid ${formatAmount(summary.paidTotal, 'exact', 1)}. Interest accrued ${formatAmount(summary.interestAccrued, 'exact', 1)}.${
+          summary.cleared
+            ? ' Cleared'
+            : summary.monthsLeft === null
+              ? ' EMI is too low to clear this liability'
+              : ` ${summary.monthsLeft} months left · Payoff ${formatMonth(payoffDate(summary.monthsLeft, asOf).slice(0, 7))}.`
+        }`}
+        style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
+        Paid <AmountText value={summary.paidTotal} tier="row" />. Interest accrued <AmountText value={summary.interestAccrued} tier="row" />.
         {'\n'}{summary.cleared
           ? 'Cleared'
           : summary.monthsLeft === null
@@ -212,18 +235,22 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
         </AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
+        value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
         editLabel={`Edit ${liability.name}`}
         onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
       />
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
-        <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
-          Next: {liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, {formatINR(schedule.summary.nextDue.amount)}
+        <AppText
+          accessibilityLabel={`Next: ${liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`}
+          style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
+          Next: {liability.dueDate ? formatDate(schedule.summary.nextDue.dueDate) : 'No due date'}, <AmountText value={schedule.summary.nextDue.amount} tier="row" />
         </AppText>
       ) : null}
-      <AppText style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
-        Due {liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid {formatINR(summary.paidTotal)}
+      <AppText
+        accessibilityLabel={`Due ${liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid ${formatAmount(summary.paidTotal, 'exact', 1)}${overdue ? ` Overdue by ${summary.overdueDays} days` : ''}`}
+        style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
+        Due {liability.dueDate ? formatDate(liability.dueDate) : 'No due date'} · Paid <AmountText value={summary.paidTotal} tier="row" />
         {overdue ? `\nOverdue by ${summary.overdueDays} days` : ''}
       </AppText>
       {!summary.cleared && schedule.summary.overdue > 0

@@ -48,17 +48,35 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
 
 export function filterTransactions(
   txs: Transaction[],
-  options: { month: string; type: 'all' | Transaction['type']; query: string },
+  options: { month: string; type: 'all' | Transaction['type']; query: string; category?: string },
 ): Transaction[] {
   const query = options.query.trim().toLowerCase();
   return txs
     .filter((transaction) => transaction.date.startsWith(options.month))
     .filter((transaction) => options.type === 'all' || transaction.type === options.type)
+    .filter((transaction) => !options.category || transaction.category === options.category
+      || (options.category === 'Other investments' && transaction.type === 'invest' && transaction.category === 'Other'))
     .filter((transaction) => !query || `${transaction.note} ${transaction.category}`.toLowerCase().includes(query))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }
 
 export type DateGroup = { date: ISODate; items: Transaction[] };
+
+export type ExpenseCategoryTotal = { category: string; amount: number };
+
+export function expenseCategoryBreakdown(
+  transactions: Transaction[],
+  month: string,
+): ExpenseCategoryTotal[] {
+  const totals = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (transaction.type !== 'expense' || !transaction.date.startsWith(month)) continue;
+    totals.set(transaction.category, (totals.get(transaction.category) ?? 0) + transaction.amount);
+  }
+  return [...totals]
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category));
+}
 
 export function groupByDate(rows: Transaction[]): DateGroup[] {
   const groups = new Map<ISODate, Transaction[]>();

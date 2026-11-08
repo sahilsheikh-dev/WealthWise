@@ -4,7 +4,9 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { AppText } from '../ui';
 import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { formatINRCompact } from '../../lib/format';
 import { FieldError } from './FieldError';
+import { HelperText } from './HelperText';
 
 function cleanMoney(value: string): string {
   const cleaned = value.replace(/[^\d.]/g, '');
@@ -36,6 +38,7 @@ export function MoneyField({
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
+  const amount = Number(value);
   return (
     <View style={styles.field}>
       <AppText style={[typography.meta, { color: colors.text2 }]}>{label}</AppText>
@@ -58,6 +61,9 @@ export function MoneyField({
           style={[styles.input, { color: colors.text1 }]}
         />
       </View>
+      {Number.isFinite(amount) && amount >= 100_000
+        ? <HelperText>= {formatINRCompact(amount)}</HelperText>
+        : null}
       <FieldError message={error} />
     </View>
   );
