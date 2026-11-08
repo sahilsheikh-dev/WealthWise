@@ -96,11 +96,16 @@ describe('immutable app actions', () => {
       id: 'fd-1', kind: 'manual' as const, logs: [], name: 'FD', type: 'Fixed deposit' as const,
       invested: 100_000, value: 105_000, valueAsOf: '2026-01-01',
     };
-    const data = { ...base(), holdings: [holding] };
+    const otherHolding = {
+      id: 'cash-1', kind: 'manual' as const, logs: [], name: 'Cash', type: 'Cash' as const,
+      invested: 1_000, value: 1_000,
+    };
+    const data = { ...base(), holdings: [holding, otherHolding] };
     expect(confirmHoldingValue(data, holding.id, '2026-10-10').holdings).toEqual([
       { ...holding, valueAsOf: '2026-10-10' },
+      otherHolding,
     ]);
-    expect(data.holdings).toEqual([holding]);
+    expect(data.holdings).toEqual([holding, otherHolding]);
     expect(() => confirmHoldingValue(data, 'missing', '2026-10-10')).toThrow(NotFoundError);
   });
 

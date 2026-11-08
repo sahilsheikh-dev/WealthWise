@@ -14,12 +14,16 @@ import { makeV1Fixture, makeV2Fixture, makeV3Fixture, makeV4Fixture, makeV5Fixtu
 import { SUGGESTED_EF_ALLOCATION } from '../efAllocation';
 import { SCHEMA_VERSION } from '../schemas';
 import { addInvestmentEntry } from '../investmentActions';
+import { addLiability, closeRecurringLiability } from '../liabilityActions';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { makeV9Fixture } from '../../data/testFixtures/v9';
 import { makeV10Fixture } from '../../data/testFixtures/v10';
 import { makeV11Fixture } from '../../data/testFixtures/v11';
 import { makeV12Fixture } from '../../data/testFixtures/v12';
 import { decryptBackup, encryptBackup } from '../backupCrypto';
+import { goalSavedFor } from '../goalLinks';
+import { holdingValue } from '../portfolio';
+import { netWorth } from '../summary';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -45,7 +49,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 18 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 22 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -54,6 +58,50 @@ describe('backup validation and serialization', () => {
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
     expect(encryptedBackupFileName('2026-10-10T10:05:00.000Z'))
       .toBe('wealthwise-backup-20261010-1005Z-encrypted.json');
+  });
+
+  it('accepts historical backup dates from 1900 and rejects dates before that floor', () => {
+    const transaction = mockAppData.transactions[0];
+    if (!transaction) throw new Error('Expected transaction fixture.');
+    expect(validateImportData({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1900-01-01' }],
+    }).ok).toBe(true);
+    expect(validateImportData({
+      ...mockAppData,
+      transactions: [{ ...transaction, date: '1899-12-31' }],
+    })).toMatchObject({ ok: false, reason: 'invalid-data' });
+  });
+
+  it('refuses exports that import would normalize or that have an invalid timestamp', async () => {
+    const withoutEmergencyGoal = {
+      ...mockAppData,
+      goals: mockAppData.goals.filter((goal) => goal.auto !== 'ef'),
+    };
+    await expect(createBackup(withoutEmergencyGoal, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    })).rejects.toThrow('would change when imported; export was cancelled before writing a file');
+    await expect(createBackup(mockAppData, { exportedAt: 'not-a-date', digest }))
+      .rejects.toThrow('export timestamp is invalid; no file was written');
+  });
+
+  it('refuses an oversized export before a backup string can be returned', async () => {
+    const transaction = mockAppData.transactions[0];
+    if (!transaction) throw new Error('Expected transaction fixture.');
+    const data = {
+      ...mockAppData,
+      transactions: Array.from({ length: 35_000 }, (_, index) => ({
+        ...transaction,
+        id: `large-${index}`,
+        note: 'x'.repeat(150),
+      })),
+    };
+
+    await expect(createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    })).rejects.toThrow('import limit is 5,000,000 characters. No file was written.');
   });
 
   it('round-trips typed insurance premium categories through current backups', async () => {
@@ -351,7 +399,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(18);
+    expect(SCHEMA_VERSION).toBe(22);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -389,7 +437,7 @@ describe('backup validation and serialization', () => {
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
   });
 
-  it('round trips custom emergency-fund options and refuses schema version eighteen', async () => {
+  it('round trips custom emergency-fund options and refuses schema version twenty', async () => {
     const emergencyGoal = mockAppData.goals.find((goal) => goal.auto === 'ef');
     const linkedHoldingId = emergencyGoal?.links[0]?.instrumentId;
     if (!linkedHoldingId) throw new Error('Expected a linked emergency-fund asset.');
@@ -413,7 +461,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 19;
+    future.schemaVersion = 23;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -532,7 +580,7 @@ describe('backup validation and serialization', () => {
     ]);
   });
 
-  it('round-trips an encrypted v18 backup with a settled policy slot and linked investment item', async () => {
+  it('round-trips an encrypted v20 backup with a settled policy slot and linked investment item', async () => {
     const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
     if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
     const plan = budgetPlanFromLines(
@@ -541,9 +589,31 @@ describe('backup validation and serialization', () => {
     );
     const item = plan.items[0];
     if (!item) throw new Error('Expected an investment item in the linked backup.');
+    const loanData = addLiability(mockAppData, {
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Encrypted closure loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    }, () => 'encrypted-closure-loan');
+    const closedData = closeRecurringLiability(loanData, 'encrypted-closure-loan', {
+      date: '2026-10-10',
+      amountPaid: 50_000,
+      note: 'Encrypted backup closure',
+      writeOffConfirmed: false,
+    }, {
+      today: '2026-10-13',
+      newId: (() => {
+        let next = 0;
+        return () => `closure-record-${++next}`;
+      })(),
+    });
     const data = {
-      ...mockAppData,
-      policies: mockAppData.policies.map((policy) => ({
+      ...closedData,
+      policies: closedData.policies.map((policy) => ({
         ...policy,
         payments: [{
           id: 'settled-premium',
@@ -556,13 +626,14 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 18 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 22 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
       nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
       kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
     });
+
     const decrypted = await decryptBackup(encrypted, passphrase);
     const imported = await parseBackup(decrypted, { digest });
     if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
@@ -572,6 +643,63 @@ describe('backup validation and serialization', () => {
     expect(imported.data.policies[0]?.payments).toEqual([
       expect.objectContaining({ id: 'settled-premium', dueDate: '2026-11-07' }),
     ]);
+    expect(imported.data.liabilities.find((liability) => liability.id === 'encrypted-closure-loan'))
+      .toMatchObject({
+        closure: { date: '2026-10-10', note: 'Encrypted backup closure' },
+        settlement: { asOf: '2026-10-10', balance: 0 },
+      });
+  });
+
+  it('rejects imported closure metadata without a matching zero settlement', () => {
+    const loanData = addLiability(mockAppData, {
+      kind: 'recurring',
+      type: 'Other',
+      name: 'Invalid closure loan',
+      principal: 50_000,
+      ratePct: 0,
+      tenureMonths: 12,
+      emi: 5_000,
+      startDate: '2026-01-10',
+    }, () => 'invalid-closure-loan');
+    const closedData = closeRecurringLiability(loanData, 'invalid-closure-loan', {
+      date: '2026-10-10',
+      amountPaid: 50_000,
+      writeOffConfirmed: false,
+    }, { today: '2026-10-13', newId: (() => {
+      let next = 0;
+      return () => `invalid-closure-record-${++next}`;
+    })() });
+    const imported = validateImportData({
+      ...closedData,
+      liabilities: closedData.liabilities.map((liability) =>
+        liability.id === 'invalid-closure-loan' && liability.kind === 'recurring'
+          ? { ...liability, settlement: { asOf: '2026-10-10', balance: 1 } }
+          : liability),
+    });
+    expect(imported).toMatchObject({ ok: false, reason: 'invalid-data' });
+  });
+
+  it('imports an encrypted legacy v18 backup without changing its holdings', async () => {
+    const raw = await createBackup(mockAppData, {
+      exportedAt: '2026-10-13T10:00:00.000Z',
+      digest,
+    });
+    const envelope = JSON.parse(raw) as { schemaVersion: number };
+    envelope.schemaVersion = 18;
+    const passphrase = 'a sufficiently long backup passphrase';
+    const encrypted = await encryptBackup(JSON.stringify(envelope), passphrase, {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const importedText = await decryptBackup(encrypted, passphrase);
+    const imported = await parseBackup(importedText, {
+      digest,
+      today: '2026-11-05',
+      newId: () => 'unused',
+    });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
+    expect(imported.data.holdings).toEqual(mockAppData.holdings);
   });
 
   it('rejects hand-broken custom bucket links and allocation keys as integrity failures', () => {
@@ -636,7 +764,14 @@ describe('backup validation and serialization', () => {
     const budgetData = {
       ...mockAppData,
       budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 25, dueDay: 31 }], {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+        incomes: [{
+          id: 'salary',
+          name: 'Salary',
+          category: 'Salary',
+          amount: 10_000,
+          frequency: 'quarterly',
+          firstDueMonth: '2026-10',
+        }],
       }),
       monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 2_500, dueDay: 31 }], {
         source: 'plan',
@@ -685,6 +820,18 @@ describe('backup validation and serialization', () => {
           { ...budgetData.monthBudgets[0]!.items[0]!, id: 'duplicate-id' },
         ] }],
       },
+      {
+        ...budgetData,
+        budgetPlan: { ...budgetData.budgetPlan, incomes: [
+          { ...budgetData.budgetPlan.incomes[0]!, frequency: 'weekly' },
+        ] },
+      },
+      {
+        ...budgetData,
+        budgetPlan: { ...budgetData.budgetPlan, incomes: [
+          { ...budgetData.budgetPlan.incomes[0]!, frequency: 'quarterly', firstDueMonth: '2026-13' },
+        ] },
+      },
     ];
     for (const invalid of invalidData) expect(validateImportData(invalid)).toMatchObject({ ok: false, reason: 'invalid-data' });
   });
@@ -696,7 +843,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 19;
+    newer.schemaVersion = 23;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
@@ -775,6 +922,127 @@ describe('backup validation and serialization', () => {
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
     await expect(parseBackup(JSON.stringify(corrupted), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('preserves independent net-worth, goal and Emergency Fund values when importing a v13 backup', async () => {
+    const asOf = '2026-10-10';
+    const sourceV13Data = {
+      settings: { name: 'Fixture', theme: 'system', monthlySalary: null, onboarded: true },
+      transactions: [],
+      goals: [
+        { id: 'goal-trip', name: 'Trip', target: 10_000, saved: 2_500, year: 2027, links: [] },
+        { id: 'goal-house', name: 'House', target: 100_000, saved: 0, year: 2030, links: [{ instrumentId: 'house-savings' }] },
+        {
+          id: 'goal-emergency',
+          name: 'Emergency fund',
+          target: 30_000,
+          saved: 0,
+          year: 2028,
+          auto: 'ef',
+          links: [{ instrumentId: 'ef-cash' }, { instrumentId: 'ef-bank' }],
+        },
+      ],
+      holdings: [
+        {
+          id: 'ef-cash',
+          kind: 'manual',
+          name: 'Emergency cash',
+          type: 'Cash',
+          invested: 12_500,
+          value: 12_500,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+        {
+          id: 'ef-bank',
+          kind: 'manual',
+          name: 'Emergency savings',
+          type: 'Savings account',
+          invested: 20_000,
+          value: 20_000,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+        {
+          id: 'house-savings',
+          kind: 'manual',
+          name: 'House savings',
+          type: 'Savings account',
+          invested: 33_000,
+          value: 33_000,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+      ],
+      liabilities: [],
+      policies: [],
+      budget: null,
+      budgetPlan: null,
+      monthBudgets: [],
+      efAllocation: { cash: 50, bank: 50 },
+      efCustomBuckets: [],
+      efBucketLinks: { cash: ['ef-cash'], bank: ['ef-bank'] },
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+      ],
+    };
+    const sourceValues = new Map(sourceV13Data.holdings.map(({ id, value }) => [id, value]));
+    const expectedNetWorth = sourceV13Data.holdings.reduce((total, holding) => total + holding.value, 0);
+    const expectedGoalSavings = sourceV13Data.goals.map((goal) => goal.links.length === 0
+      ? goal.auto === 'ef' ? 0 : goal.saved
+      : goal.links.reduce((total, link) => total + (sourceValues.get(link.instrumentId) ?? 0), 0));
+    const sourceEmergencyGoal = sourceV13Data.goals.find((goal) => goal.auto === 'ef');
+    if (!sourceEmergencyGoal) throw new Error('Expected the synthetic Emergency Fund goal.');
+    const expectedEfAvailableByBucket = Object.fromEntries(
+      Object.entries(sourceV13Data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds
+          .filter((id) => sourceEmergencyGoal.links.some((link) => link.instrumentId === id))
+          .reduce((total, id) => total + (sourceValues.get(id) ?? 0), 0),
+      ]),
+    );
+    const expectedEfAvailable = Object.values(expectedEfAvailableByBucket)
+      .reduce((total, value) => total + value, 0);
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: 1,
+      schemaVersion: 13,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(sourceV13Data)) },
+      data: sourceV13Data,
+    };
+
+    const imported = await parseBackup(JSON.stringify(envelope), {
+      digest,
+      today: asOf,
+      newId: () => 'synthetic-v13-migration',
+    });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+
+    expect(netWorth(imported.data, asOf)).toEqual({
+      assets: expectedNetWorth,
+      liabilities: 0,
+      netWorth: expectedNetWorth,
+    });
+    expect(imported.data.goals.map((goal) => goalSavedFor(goal, imported.data, asOf)))
+      .toEqual(expectedGoalSavings);
+    const importedEmergencyGoal = imported.data.goals.find((goal) => goal.auto === 'ef');
+    if (!importedEmergencyGoal) throw new Error('Expected the imported Emergency Fund goal.');
+    const importedEfAvailableByBucket = Object.fromEntries(
+      Object.entries(imported.data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds
+          .filter((id) => importedEmergencyGoal.links.some((link) => link.instrumentId === id))
+          .reduce((total, id) => {
+            const holding = imported.data.holdings.find((item) => item.id === id);
+            return total + (holding ? holdingValue(holding, asOf) : 0);
+          }, 0),
+      ]),
+    );
+    expect(importedEfAvailableByBucket).toEqual(expectedEfAvailableByBucket);
+    expect(Object.values(importedEfAvailableByBucket).reduce((total, value) => total + value, 0))
+      .toBe(expectedEfAvailable);
   });
 
   it.each([

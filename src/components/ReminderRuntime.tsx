@@ -100,10 +100,13 @@ export function NotificationResponseHandler() {
     handledResponseId.current = response.identifier;
     const target = reminderTarget(response.data);
     if (target) {
-      router.push({
-        pathname: '/payment-confirm',
-        params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
-      });
+      if (target.dueItemId === 'update-values') router.push('/assets');
+      else {
+        router.push({
+          pathname: '/payment-confirm',
+          params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
+        });
+      }
     }
     void reminderNotificationAdapter.clearLastResponse().catch((error: unknown) => {
       Alert.alert(

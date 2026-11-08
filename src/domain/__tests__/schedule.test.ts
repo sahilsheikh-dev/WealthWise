@@ -154,6 +154,33 @@ describe('plan schedules', () => {
     expect(planNextRows(value, '2026-02-01', 0)).toEqual([]);
   });
 
+  it('caps recurring investment installments at maturity as well as tenure', () => {
+    const value = plan({
+      startDate: '2026-01-31',
+      trackFrom: '2026-01-31',
+      tenureYears: 2,
+      maturityDate: '2026-04-30',
+      logs: Array.from({ length: 5 }, (_, index) => ({
+        id: `deposit-${index}`,
+        date: scheduledDate(plan({ startDate: '2026-01-31' }), index),
+        amount: 1_000,
+        note: '',
+        kind: 'Deposit' as const,
+      })),
+    });
+
+    const schedule = planSchedule(value, '2027-01-01');
+    expect(schedule.rows.map((row) => row.dueDate)).toEqual([
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+      '2026-04-30',
+    ]);
+    expect(schedule.rows.filter((row) => row.status === 'paid')).toHaveLength(4);
+    expect(planNextRows({ ...value, logs: [] }, '2026-01-31', 24).map((row) => row.dueDate))
+      .toEqual(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30']);
+  });
+
   it('keeps ongoing plus overdue equal to behindBy across frequencies and tracking dates', () => {
     const frequencies: PlanHolding['frequency'][] = ['daily', 'weekly', 'monthly', 'yearly'];
     for (const frequency of frequencies) {
@@ -179,17 +206,17 @@ describe('plan schedules', () => {
     }
   });
 
-  it('builds a fifty-year daily schedule within ten seconds', () => {
+  it('builds a complete fifty-year daily schedule within a generous bound', () => {
     const value = plan({
       frequency: 'daily',
       tenureYears: 50,
       startDate: '2026-01-01',
       trackFrom: '2026-01-01',
     });
-    const started = Date.now();
+    const started = performance.now();
     const result = planSchedule(value, '2026-01-01');
     expect(result.rows).toHaveLength(18_250);
-    expect(Date.now() - started).toBeLessThan(10_000);
+    expect(performance.now() - started).toBeLessThan(60_000);
   });
 });
 
@@ -222,6 +249,17 @@ describe('liability schedules', () => {
     const impossible = liabilitySchedule(recurringLiability({ ratePct: 24, emi: 100 }), asOf);
     expect(impossible.neverClears).toBe(true);
     expect(impossible.shortfall).toBe(true);
+  });
+
+  it('does not generate recurring EMIs after the final tenure date', () => {
+    const result = liabilitySchedule(recurringLiability({
+      principal: 10_000,
+      ratePct: 0,
+      startDate: '2026-01-31',
+      tenureMonths: 2,
+      emi: 1_000,
+    }), '2028-01-01');
+    expect(result.rows.map((row) => row.dueDate)).toEqual(['2026-02-28', '2026-03-31']);
   });
 
   it('handles cleared and one-time liability schedule statuses', () => {

@@ -37,9 +37,11 @@ import {
   MissingPlannedIncomeError,
   monthlyCommitments,
   isItemDueInMonth,
+  isIncomeDueInMonth,
   nextDueMonth,
   outstandingAt,
   plannedForMonth,
+  plannedIncomeOf,
   projectedCashFlow,
   renameSection,
   resolveBudgetPlan,
@@ -95,6 +97,31 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
+  it('applies shared income recurrence rules to due and non-due months', () => {
+    const quarterly = {
+      id: 'quarterly-income',
+      name: 'Quarterly',
+      category: 'Freelance' as const,
+      amount: 3000,
+      frequency: 'quarterly' as const,
+      firstDueMonth: '2026-01',
+    };
+    const yearly = {
+      id: 'yearly-income',
+      name: 'Yearly',
+      category: 'Other' as const,
+      amount: 12000,
+      frequency: 'yearly' as const,
+      firstDueMonth: '2026-04',
+    };
+    expect(isIncomeDueInMonth(quarterly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(quarterly, '2026-03')).toBe(false);
+    expect(isIncomeDueInMonth(yearly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-03')).toBe(false);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-04')).toBe(15000);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-05')).toBe(0);
+  });
   it('covers frozen start-month and repeat guards with real outcomes', () => {
     const recurringWithoutStart: BudgetItem = {
       id: 'quarterly-no-start',
@@ -1495,8 +1522,18 @@ describe('budget plans and monthly views', () => {
     });
     expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
     expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
-    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
-    expect(overview.pace?.planned.at(-1)).toBe(2_025);
+    expect(overview.pace).toMatchObject({
+      days: 31,
+      elapsedDays: 15,
+      sections: expect.arrayContaining([
+        expect.objectContaining({ id: 'income', plannedToDate: 5_322.58, actualToDate: 7_400 }),
+        expect.objectContaining({ id: 'survival', plannedToDate: 725.81, actualToDate: 900 }),
+        expect.objectContaining({ id: 'savings-investments', plannedToDate: 48.39, actualToDate: 100 }),
+        expect.objectContaining({ id: 'debt-repayments', plannedToDate: 229.84, actualToDate: 25 }),
+      ]),
+    });
+    expect(overview.pace?.sections.find(({ id }) => id === 'survival')?.actual)
+      .toEqual([0, 0, 0, 200, 200, 200, 200, 900, 900, 900, 900, 900, 900, 900, 900]);
   });
 
   it('derives future overviews from plan edits and describes negative left as over budget', () => {
@@ -1814,6 +1851,7 @@ describe('budget plans and monthly views', () => {
         category: 'Freelance',
         amount: 2_500.25,
         day: 17,
+        frequency: 'monthly',
       };
       expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
       if (scope === 'following') {

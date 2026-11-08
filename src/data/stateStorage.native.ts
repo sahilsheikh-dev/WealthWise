@@ -11,4 +11,11 @@ const legacyStorage: StateStorage = {
   removeItem: (name) => AsyncStorage.removeItem(name),
 };
 
-export const stateStorage = createMigratingSQLiteStateStorage(sqliteStorage, legacyStorage);
+export const stateStorage = createMigratingSQLiteStateStorage(
+  sqliteStorage,
+  legacyStorage,
+  undefined,
+  (diagnostic) => {
+    if (__DEV__) console.log(`[storage] ${diagnostic}`);
+  },
+);

@@ -2,7 +2,7 @@ import { NotFoundError } from './actions';
 import { daysBetween } from './dates';
 import { holdingCapabilities } from './holdingCapabilities';
 import { deleteHoldingWithTransactions, syncHoldingTransactions } from './investmentActions';
-import type { AppData, ISODate, ManualHolding } from './types';
+import type { AppData, Holding, ISODate, ManualHolding, ValuationMethod } from './types';
 
 export type AddHoldingInput = Omit<ManualHolding, 'id' | 'kind' | 'logs'>;
 export type HoldingPatch = Partial<AddHoldingInput>;
@@ -71,6 +71,49 @@ export function confirmHoldingValue(data: AppData, id: string, today: ISODate): 
         valueAsOf: today,
         logs: current.logs.map(({ snapshotAdjustment: _snapshotAdjustment, ...entry }) => entry),
       }
+      : holding),
+  };
+}
+
+export function updateHoldingValue(
+  data: AppData,
+  id: string,
+  value: number,
+  date: ISODate,
+  method?: ValuationMethod,
+): AppData {
+  const current = data.holdings.find((holding) => holding.id === id);
+  if (!current) throw new NotFoundError('Holding', id);
+  const updated: Holding = current.kind === 'manual'
+    ? {
+      ...current,
+      value,
+      valueAsOf: date,
+      valuationMethod: method ?? current.valuationMethod ?? 'manual',
+      logs: current.logs.map(({ snapshotAdjustment: _snapshotAdjustment, ...entry }) => entry),
+    }
+    : {
+      ...current,
+      actualValue: value,
+      actualValueDate: date,
+      valuationMethod: method ?? current.valuationMethod ?? 'manual',
+      logs: current.logs.map(({ snapshotAdjustment: _snapshotAdjustment, ...entry }) => entry),
+    };
+  return { ...data, holdings: data.holdings.map((holding) => holding.id === id ? updated : holding) };
+}
+
+export function updateHoldingPrice(
+  data: AppData,
+  id: string,
+  price: number,
+  date: ISODate,
+): AppData {
+  const current = data.holdings.find((holding) => holding.id === id);
+  if (!current) throw new NotFoundError('Holding', id);
+  return {
+    ...data,
+    holdings: data.holdings.map((holding) => holding.id === id
+      ? { ...current, latestPrice: price, priceAsOf: date, valuationMethod: 'unitsPrice' }
       : holding),
   };
 }

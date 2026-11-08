@@ -15,7 +15,7 @@ import type {
 export const STRESS_TRANSACTION_COUNT = 20_000;
 export const STRESS_MONTHLY_TRANSACTION_COUNT = 25;
 export const STRESS_HOLDING_COUNT = 12;
-export const STRESS_YEARS = [50, 100, 200] as const;
+export const STRESS_YEARS = [50, 100, 126] as const;
 
 export type StressYears = (typeof STRESS_YEARS)[number];
 
@@ -24,7 +24,7 @@ export type StressDataOptions = {
   years: StressYears;
   seed: number;
   newId: () => string;
-  dailySip?: boolean;
+  dense?: boolean;
 };
 
 const HOLDING_TYPES: Holding['type'][] = [
@@ -70,11 +70,15 @@ function dateInMonth(month: string, day: number, today: ISODate): ISODate {
 function makeTransactions(
   today: ISODate,
   months: string[],
+  recordMonthCount: number,
   newId: () => string,
   random: () => number,
 ): Transaction[] {
   const transactions: Transaction[] = [];
-  for (const [monthIndex, month] of months.entries()) {
+  for (let recordMonthIndex = 0; recordMonthIndex < recordMonthCount; recordMonthIndex += 1) {
+    const monthIndex = Math.floor(recordMonthIndex * months.length / recordMonthCount);
+    const month = months[monthIndex];
+    if (!month) throw new Error('Stress-data month window is incomplete.');
     for (let movement = 0; movement < STRESS_MONTHLY_TRANSACTION_COUNT; movement += 1) {
       const kind = movement % 3;
       transactions.push({
@@ -93,6 +97,7 @@ function makeTransactions(
 function makeHoldings(
   today: ISODate,
   months: string[],
+  recordMonthCount: number,
   newId: () => string,
   random: () => number,
 ): Holding[] {
@@ -104,13 +109,18 @@ function makeHoldings(
     invested: 100_000 + holdingIndex * 1_000,
     value: 100_000 + holdingIndex * 1_000,
     valueAsOf: today,
-    logs: months.map((month, monthIndex) => ({
-      id: newId(),
-      date: dateInMonth(month, 1 + ((monthIndex + holdingIndex) % 28), today),
-      amount: 100 + Math.floor(random() * 900),
-      note: 'Stress',
-      kind: monthIndex % 6 === 5 ? 'Withdrawal' : 'Deposit',
-    })),
+    logs: Array.from({ length: recordMonthCount }, (_, recordMonthIndex) => {
+      const monthIndex = Math.floor(recordMonthIndex * months.length / recordMonthCount);
+      const month = months[monthIndex];
+      if (!month) throw new Error('Stress-data month window is incomplete.');
+      return {
+        id: newId(),
+        date: dateInMonth(month, 1 + ((recordMonthIndex + holdingIndex) % 28), today),
+        amount: 100 + Math.floor(random() * 900),
+        note: 'Stress',
+        kind: recordMonthIndex % 6 === 5 ? 'Withdrawal' as const : 'Deposit' as const,
+      };
+    }),
   }));
 }
 
@@ -199,9 +209,10 @@ function makeMonthBudgets(months: string[]): MonthBudget[] {
   }));
 }
 
-function makeDailySip(today: ISODate, years: number, newId: () => string): PlanHolding {
+function makeDailySip(today: ISODate, years: number, recordYears: number, newId: () => string): PlanHolding {
   const startDate = addYears(today, -years);
   const dayCount = daysBetween(startDate, today);
+  const recordCount = recordYears * 365;
   return {
     id: newId(),
     kind: 'plan',
@@ -211,15 +222,15 @@ function makeDailySip(today: ISODate, years: number, newId: () => string): PlanH
     amount: 500,
     ratePct: 0,
     stepUpPct: 0,
-    tenureYears: years + 1,
+    tenureYears: Math.min(years + 1, 100),
     startDate,
     trackFrom: startDate,
     opening: 0,
     actualValue: null,
     actualValueDate: null,
-    logs: Array.from({ length: dayCount + 1 }, (_, index) => ({
+    logs: Array.from({ length: recordCount }, (_, index) => ({
       id: newId(),
-      date: addDays(startDate, index),
+      date: addDays(startDate, Math.floor(index * dayCount / recordCount)),
       amount: 500,
       note: 'Daily SIP',
       kind: 'Deposit',
@@ -228,16 +239,17 @@ function makeDailySip(today: ISODate, years: number, newId: () => string): PlanH
 }
 
 export function createStressData(options: StressDataOptions): AppData {
-  const { today, years, seed, newId, dailySip = false } = options;
+  const { today, years, seed, newId, dense = false } = options;
   if (!Number.isSafeInteger(seed)) throw new RangeError('Stress-data seed must be a safe integer.');
-  if (dailySip && years !== 200) throw new RangeError('The daily SIP stress tier is available only at 200 years.');
+  if (dense && years !== 126) throw new RangeError('The dense stress tier is available only at 126 years.');
 
   const random = seededRandom(seed);
   const monthCount = years * 12;
+  const recordMonthCount = (dense ? 200 : years) * 12;
   const firstMonth = shiftMonth(monthKey(today), -(monthCount - 1));
   const months = Array.from({ length: monthCount }, (_, index) => shiftMonth(firstMonth, index));
   const firstDate = `${firstMonth}-01` as ISODate;
-  const holdings = makeHoldings(today, months, newId, random);
+  const holdings = makeHoldings(today, months, recordMonthCount, newId, random);
   const goals = [
     {
       id: newId(),
@@ -269,9 +281,9 @@ export function createStressData(options: StressDataOptions): AppData {
   return {
     ...data,
     settings: { ...data.settings, name: 'Stress Test', monthlySalary: 100_000 },
-    transactions: makeTransactions(today, months, newId, random),
+    transactions: makeTransactions(today, months, recordMonthCount, newId, random),
     goals: [...data.goals, ...goals],
-    holdings: dailySip ? [...holdings, makeDailySip(today, years, newId)] : holdings,
+    holdings: dense ? [...holdings, makeDailySip(today, years, 200, newId)] : holdings,
     liabilities: makeLiabilities(today, firstDate, newId),
     policies: makePolicies(today, newId),
     budget: { plannedIncome: 100_000, lines: [{ category: 'Stress expense', planned: 25_000 }] },
