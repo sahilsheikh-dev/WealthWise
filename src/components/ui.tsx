@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import type { ComponentProps, PropsWithChildren, ReactNode } from 'react';
 import {
   Pressable,
@@ -102,7 +103,6 @@ export function StatPill({
   onPress,
   accessibilityHint,
   accessibilityLabel,
-  testID,
 }: {
   label: string;
   value: ReactNode;
@@ -110,7 +110,6 @@ export function StatPill({
   onPress?: () => void;
   accessibilityHint?: string;
   accessibilityLabel?: string;
-  testID?: string;
 }) {
   const { colors } = useTheme();
   const spokenLabel = accessibilityLabel ?? `${label}${typeof value === 'string' ? `, ${value}` : ''}`;
@@ -128,7 +127,6 @@ export function StatPill({
   if (onPress) {
     return (
       <Pressable
-        testID={testID}
         accessibilityRole="button"
         accessibilityLabel={spokenLabel}
         accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
@@ -140,7 +138,6 @@ export function StatPill({
   }
   return (
     <View
-      testID={testID}
       accessible
       accessibilityLabel={spokenLabel}
       style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
@@ -361,13 +358,7 @@ export type ActionItem = {
   icon?: keyof typeof Feather.glyphMap;
 };
 
-export function ActionRow({
-  actions,
-  stopParentPress = false,
-}: {
-  actions: ActionItem[];
-  stopParentPress?: boolean;
-}) {
+export function ActionRow({ actions }: { actions: ActionItem[] }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
@@ -375,10 +366,7 @@ export function ActionRow({
         <Button
           key={action.label}
           label={action.label}
-          onPress={(event) => {
-            if (stopParentPress) event?.stopPropagation();
-            action.onPress?.();
-          }}
+          onPress={action.onPress}
           variant={action.variant ?? 'soft'}
           disabled={action.disabled}
           icon={action.icon}
@@ -394,13 +382,11 @@ export function SearchField({
   onChangeText,
   placeholder,
   accessibilityLabel,
-  onClear,
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
   accessibilityLabel: string;
-  onClear?: () => void;
 }) {
   const { colors } = useTheme();
   return (
@@ -415,15 +401,6 @@ export function SearchField({
         style={[styles.searchInput, { color: colors.text1 }]}
         returnKeyType="search"
       />
-      {value.length > 0 && onClear ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Clear search"
-          onPress={onClear}
-          style={styles.searchClear}>
-          <Feather name="x" size={16} color={colors.text3} />
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -472,6 +449,9 @@ export function BottomTabBar({
           <AppText
             testID={`bottom-tab-label-${tab.key}`}
             allowFontScaling
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
             style={[typography.navLabel, styles.bottomTabLabel, { color }]}>
             {tab.label}
           </AppText>
@@ -479,6 +459,31 @@ export function BottomTabBar({
         );
       })}
     </View>
+  );
+}
+
+export function DetailTabBar({
+  active = 'Home',
+  placement = 'overlay',
+}: {
+  active?: 'Home' | 'Transactions' | 'Goals' | 'Budget' | 'none';
+  placement?: 'flow' | 'overlay';
+}) {
+  const activeTab = active === 'Home'
+    ? 'index'
+    : active === 'Transactions' ? 'transactions'
+      : active === 'Goals' ? 'goals'
+        : active === 'Budget' ? 'budget' : null;
+  return (
+    <BottomTabBar
+      activeTab={activeTab}
+      placement={placement}
+      onSelect={(tab) => {
+        const destination = bottomTabs.find((item) => item.key === tab);
+        if (!destination) throw new Error(`Unknown bottom tab "${tab}".`);
+        router.replace(destination.route);
+      }}
+    />
   );
 }
 
@@ -509,12 +514,11 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.76 },
   warning: { marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   warningText: { flex: 1, lineHeight: 17 },
-  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 6 },
   actionRow: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   actionButton: { flexGrow: 1 },
   searchField: { minHeight: 48, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.button },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 8, fontSize: 12, fontFamily: 'Montserrat_500Medium' },
-  searchClear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   bottomTabBar: { paddingTop: 10, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-around' },
   bottomTabBarOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bottomTab: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 3 },

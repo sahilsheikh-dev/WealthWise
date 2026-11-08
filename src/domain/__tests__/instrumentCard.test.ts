@@ -1,5 +1,4 @@
 import { buildInstrumentCardModel } from '../instrumentCard';
-import { listInstruments } from '../instruments';
 import { buildPortfolioRows } from '../portfolio';
 import type { AppData } from '../types';
 import { mockAppData } from '../../mock/data';
@@ -7,6 +6,8 @@ import { mockAppData } from '../../mock/data';
 const context = {
   asOf: '2026-10-10',
   totalAssets: 500_000,
+  monthlyExpenseBaseline: 25_000,
+  emergencyEntryCount: mockAppData.efEntries.length,
 };
 
 function rowFor(data: AppData, id: string) {
@@ -22,12 +23,34 @@ function textContent(segments: ({ text: string } | { amount: number })[]) {
 }
 
 describe('buildInstrumentCardModel', () => {
-  it('uses only real holdings as investment instruments', () => {
-    expect(listInstruments(mockAppData, context.asOf).map(({ id }) => id))
-      .toEqual(mockAppData.holdings.map(({ id }) => id));
+  it('builds an emergency fund model with percentage, coverage and the required actions', () => {
+    const model = buildInstrumentCardModel(rowFor(mockAppData, 'auto-ef'), context);
+    expect(model).toMatchObject({
+      kind: 'auto-ef',
+      subtitle: [{ text: 'Emergency fund, auto-synced' }],
+      progressCaption: expect.stringMatching(/% of your assets/),
+    });
+    expect(textContent(model.description)).toMatch(/months of expenses covered/);
+    expect(model.headerAction).toEqual({ id: 'edit', label: 'Edit' });
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
 
-  it('includes stale-value status and an update action', () => {
+  it('uses no-baseline copy and disables withdrawals when the emergency fund has no value', () => {
+    const data = { ...mockAppData, efEntries: [] };
+    const model = buildInstrumentCardModel(rowFor(data, 'auto-ef'), {
+      ...context,
+      totalAssets: 0,
+      monthlyExpenseBaseline: 0,
+    });
+    expect(model.description).toEqual([{ text: 'Log expenses to see months covered' }]);
+    expect(model.progressPct).toBe(0);
+    expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({
+      disabled: true,
+      accessibilityHint: 'Nothing to withdraw',
+    });
+  });
+
+  it('includes stale-value confirmation and exact manual actions', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
@@ -35,13 +58,13 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-    expect(model.valueCaption).toBe('Updated 282 days ago');
+    expect(model.valueCaption).toContain('Value not updated in');
     expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
     expect(model.headerAction.id).toBe('edit');
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'confirm']);
   });
 
-  it('shows days since a fresh manual value and keeps the update action', () => {
+  it('uses fresh manual value dates without stale actions', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
@@ -49,63 +72,9 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-    expect(model.valueCaption).toBe('Updated 9 days ago');
+    expect(model.valueCaption).toBe('Updated 1 Oct 2026');
     expect(model.statuses).toEqual([]);
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
-  });
-
-  it('uses configured accrual labels and suggested hand-priced methods on cards', () => {
-    const accrualData = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
-        ? { ...holding, valuationMethod: 'accrual' as const, maturityDate: '2030-01-01' }
-        : holding),
-    };
-    const accrualCard = buildInstrumentCardModel(rowFor(accrualData, 'holding-fd'), context);
-    expect(accrualCard.valueCaption).toBe('Estimated');
-
-    const pricedData = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
-        ? {
-          ...holding, type: 'Gold' as const, valuationMethod: undefined,
-          logs: [{ id: 'priced', date: '2026-10-01', amount: 1_000, price: 100, kind: 'Deposit' as const, note: '' }],
-        }
-        : holding),
-    };
-    const pricedCard = buildInstrumentCardModel(rowFor(pricedData, 'holding-cash'), context);
-    expect(pricedCard.valueCaption).toBe('Value date unknown');
-    expect(pricedCard.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
-    expect(pricedCard.actions.find(({ id }) => id === 'update')?.label).toBe('Update price');
-  });
-
-  it('flags stale manual valuations on recurring-plan cards', () => {
-    const data = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
-        ? { ...holding, actualValue: 25_000, actualValueDate: '2026-01-01', valuationMethod: 'manual' as const }
-        : holding),
-    };
-    const model = buildInstrumentCardModel(rowFor(data, 'holding-sip'), context);
-    expect(model.valueCaption).toBe('Updated 282 days ago');
-    expect(model.statuses).toContainEqual({ label: 'Stale value', tone: 'neutral' });
-  });
-
-  it('keeps legacy fixed-deposit entries visible without offering new deposits', () => {
-    const data = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-fd'
-        ? {
-          ...holding,
-          valueAsOf: '2026-10-10',
-          logs: [{ id: 'legacy', date: '2026-10-01', amount: 100, kind: 'Deposit' as const, note: '' }],
-        }
-        : holding),
-    };
-    const model = buildInstrumentCardModel(rowFor(data, 'holding-fd'), context);
-
-    expect(model.actions.map(({ id }) => id)).toEqual(['withdraw', 'entries', 'update']);
-    expect(model.helperLine).toContain('Entries from earlier are kept.');
+    expect(model.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries']);
   });
 
   it('shows unknown value dates and disables withdrawal for a zero-value manual holding', () => {
@@ -120,7 +89,7 @@ describe('buildInstrumentCardModel', () => {
     expect(model.actions.find(({ id }) => id === 'withdraw')).toMatchObject({ disabled: true });
   });
 
-  it('shows next due and the common holding actions for a plan, with overdue and completed states', () => {
+  it('shows next due and schedule actions for a plan, with overdue and completed states', () => {
     const overdueData = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
@@ -135,17 +104,7 @@ describe('buildInstrumentCardModel', () => {
     expect(overdue.behindLine).toMatch(/\d+ behind/);
     expect(overdue.statuses.some(({ label }) => label.includes('overdue'))).toBe(true);
     expect(overdue.headerAction.id).toBe('edit');
-    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'entries', 'stop', 'update']);
-    expect(overdue.actions.find(({ id }) => id === 'stop')?.label).toBe('Stop investment');
-
-    const stoppedData = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
-        ? { ...holding, stopDate: '2026-06-15' }
-        : holding),
-    };
-    const stopped = buildInstrumentCardModel(rowFor(stoppedData, 'holding-sip'), { ...context, asOf: '2026-06-15' });
-    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume investment');
+    expect(overdue.actions.map(({ id }) => id)).toEqual(['deposit', 'withdraw', 'schedule']);
 
     const completedData = {
       ...mockAppData,
@@ -170,46 +129,17 @@ describe('buildInstrumentCardModel', () => {
     expect(completed.nextLine).toBeUndefined();
   });
 
-  it('shows ledger-based plan values and rejects rows without their holding', () => {
+  it('supports estimated plan values and rejects rows without their holding', () => {
     const data = {
       ...mockAppData,
       holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
         ? { ...holding, actualValue: null, actualValueDate: null }
         : holding),
     };
-    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Value not updated');
+    expect(buildInstrumentCardModel(rowFor(data, 'holding-sip'), context).valueCaption).toBe('Estimated value');
     expect(() => buildInstrumentCardModel({
       id: 'missing', kind: 'manual', name: 'Missing', type: 'Other',
-      invested: 0, value: 0, gain: 0, costRecovered: false, gainPct: null,
+      invested: 0, value: 0, gain: 0, gainPct: null,
     }, context)).toThrow('missing its holding');
   });
-
-  it('covers untracked plan snapshots and negative manual holdings without an asset total', () => {
-    const planData = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-sip'
-        ? { ...holding, actualValue: 12_000, actualValueDate: '2026-10-01' }
-        : holding),
-    };
-    const planRow = rowFor(planData, 'holding-sip');
-    const plan = buildInstrumentCardModel({ ...planRow, value: 0 }, { ...context, totalAssets: 0 });
-    expect(plan.valueCaption).toBe('Updated 9 days ago');
-    expect(plan.actions.find(({ id }) => id === 'withdraw'))
-      .toMatchObject({ disabled: true, accessibilityHint: 'Nothing to withdraw' });
-
-    const lossData = {
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((holding) => holding.id === 'holding-cash'
-        ? { ...holding, type: 'Fixed deposit' as const, invested: 1_000, value: 500, valueAsOf: '2026-10-01',
-          logs: [{ id: 'loss-deposit', date: '2025-10-01', amount: 1_000, note: '', kind: 'Deposit' as const }] }
-        : holding),
-    };
-    const loss = buildInstrumentCardModel(
-      rowFor(lossData, 'holding-cash'),
-      { ...context, totalAssets: 0 },
-    );
-    expect(loss.progressPct).toBe(0);
-    expect(loss.description[0]).toEqual({ text: 'Loss ' });
-  });
-
 });

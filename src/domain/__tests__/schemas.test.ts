@@ -1,13 +1,9 @@
 import { mockAppData } from '../../mock/data';
-import { addMonths } from '../dates';
 import { validateImportData } from '../backup';
-import { BUDGET_GROUPS } from '../budget';
-import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
+import { efEndOfDayBalances } from '../efActions';
 import {
   appDataSchema,
-  manualHoldingSchema,
-  BUDGET_CATEGORIES,
-  INVESTMENT_FORM_CATEGORIES,
+  makeEfEntryFormSchema,
   makeGoalFormSchema,
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
@@ -15,10 +11,8 @@ import {
   makeOnboardingFormSchema,
   makeProfileFormSchema,
   makePlanFormSchema,
-  makeStopRecurringFormSchema,
   makeInvestmentEntryFormSchema,
   makeTransactionFormSchema,
-  makeBudgetItemEditSchema,
   makeMonthAllocationFormSchema,
   SCHEMA_VERSION,
   NON_EARNED_INCOME_CATEGORIES,
@@ -34,116 +28,9 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-two', () => {
+  it('accepts the typed mock app data and exports schema version six', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(22);
-    expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
-  });
-
-  it('continues loading legacy goal links with explicit shares', () => {
-    const holding = mockAppData.holdings[0];
-    if (!holding) throw new Error('Mock holding fixture missing');
-    const legacy = {
-      ...mockAppData,
-      goals: [{
-        id: 'legacy-goal',
-        name: 'Legacy goal',
-        target: 1_000,
-        saved: 0,
-        year: 2030,
-        links: [{ instrumentId: holding.id, share: 100 }],
-      }],
-    };
-
-    expect(appDataSchema.parse(legacy).goals[0]?.links).toEqual([
-      { instrumentId: holding.id, share: 100 },
-    ]);
-    const imported = validateImportData(legacy);
-    expect(imported.ok).toBe(true);
-    if (!imported.ok) throw new Error(`Legacy backup was rejected: ${imported.reason}`);
-    expect(imported.data.goals.find((goal) => goal.id === 'legacy-goal')?.links).toEqual([
-      { instrumentId: holding.id, share: 100 },
-    ]);
-  });
-
-  it('accepts supported historical transaction, entry, and goal dates from 1900', () => {
-    const transaction = mockAppData.transactions[0];
-    const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
-    const goal = mockAppData.goals.find((item) => item.auto !== 'ef');
-    if (!transaction || !holding || holding.kind !== 'manual' || !goal) {
-      throw new Error('Historical date fixture is incomplete.');
-    }
-    const historicalLog = {
-      id: 'historical-date-entry',
-      date: '1900-01-01',
-      amount: 1,
-      note: '',
-      kind: 'Deposit' as const,
-    };
-
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      transactions: [{ ...transaction, date: '1900-01-01' }],
-      holdings: mockAppData.holdings.map((item) => item.id === holding.id
-        ? { ...holding, logs: [historicalLog] }
-        : item),
-      goals: mockAppData.goals.map((item) => item.id === goal.id ? { ...goal, year: 1900 } : item),
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      transactions: [{ ...transaction, date: '1899-12-31' }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      holdings: mockAppData.holdings.map((item) => item.id === holding.id
-        ? { ...holding, logs: [{ ...historicalLog, date: '1899-12-31' }] }
-        : item),
-    }).success).toBe(false);
-  });
-
-  it('accepts additive valuation fields and rejects incomplete accrual or price snapshots', () => {
-    const manual = mockAppData.holdings.find((holding) => holding.kind === 'manual');
-    if (!manual || manual.kind !== 'manual') throw new Error('Expected a manual holding.');
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      valuationMethod: 'accrual',
-      ratePct: 7,
-      compounding: 'quarterly',
-      maturityDate: '2030-01-01',
-    }).success).toBe(true);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      valuationMethod: 'accrual',
-    }).success).toBe(false);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      latestPrice: 10,
-    }).success).toBe(false);
-    expect(manualHoldingSchema.safeParse({
-      ...manual,
-      logs: [{
-        id: 'priced-entry',
-        date: '2026-10-10',
-        amount: 100,
-        note: '',
-        kind: 'Deposit',
-        price: 0,
-      }],
-    }).success).toBe(false);
-  });
-
-  it('accepts an optional valid policy-payment due date and rejects invalid dates', () => {
-    const policy = mockAppData.policies[0];
-    if (!policy) throw new Error('Expected the policy schema fixture.');
-    const payment = { id: 'premium', date: '2026-11-04', amount: 500, note: '' };
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, payments: [{ ...payment, dueDate: '2026-11-07' }] }],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, payments: [{ ...payment, dueDate: 'not-a-date' }] }],
-    }).success).toBe(false);
+    expect(SCHEMA_VERSION).toBe(6);
   });
 
   it('validates custom-bucket bounds and case-insensitive names in app and import schemas', () => {
@@ -164,88 +51,32 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
   });
 
-  it('validates the budget plan and stored month snapshots', () => {
+  it('validates budget templates and stored month snapshots', () => {
     const budgeted = {
       ...mockAppData,
-      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 20, dueDay: 31 }], {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 50_000, day: 1 }],
-      }),
+      budgetTemplates: [{
+        id: 'template', name: 'Monthly', plannedIncome: 50_000,
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 20 }],
+      }],
+      defaultBudgetTemplateId: 'template',
       monthBudgets: [{
-        ...monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 10_000, dueDay: 31 }], {
-          source: 'plan',
-          incomes: [{ id: 'snapshot-income', name: 'Income', category: 'Salary', amount: 50_000 }],
-          linkedIncluded: true,
-        }),
-        otherIncomes: [{ id: 'loan-income', name: 'Loan proceeds', category: 'Loan proceeds', amount: 8_000 }],
+        month: '2026-10', templateId: 'template', templateName: 'Monthly', customized: false,
+        plannedIncome: 50_000, lines: [{ category: 'Food', planned: 10_000 }],
       }],
     };
     expect(appDataSchema.parse(budgeted)).toEqual(budgeted);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], value: 101 }] },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], sectionId: 'wants' }] },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{
-        ...budgeted.monthBudgets[0],
-        items: [{ ...budgeted.monthBudgets[0].items[0], sectionId: 'missing-section' }],
+      budgetTemplates: [{
+        ...budgeted.budgetTemplates[0],
+        lines: [{ category: 'Food', mode: 'percent', value: 101 }],
       }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...budgeted,
-      budgetPlan: { ...budgeted.budgetPlan, items: [{ ...budgeted.budgetPlan.items[0], mode: 'amount', value: 10, dueDay: 0 }] },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
       monthBudgets: [{
         ...budgeted.monthBudgets[0],
-        items: [{ ...budgeted.monthBudgets[0].items[0], dueDay: 32 }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{ ...budgeted.budgetPlan.items[0], frequency: 'quarterly' }],
-      },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{
-          ...budgeted.budgetPlan.items[0],
-          frequency: 'quarterly',
-          firstDueMonth: '2026-10',
-        }],
-      },
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      budgetPlan: {
-        ...budgeted.budgetPlan,
-        items: [{
-          ...budgeted.budgetPlan.items[0],
-          frequency: 'quarterly',
-          firstDueMonth: '2026-10',
-          mode: 'amount',
-          value: 500,
-        }],
-      },
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{ ...budgeted.monthBudgets[0], linkedIncluded: 'yes' }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...budgeted,
-      monthBudgets: [{
-        ...budgeted.monthBudgets[0],
-        otherIncomes: [{ id: 'invalid-income', name: 'Loan proceeds', category: 'Loan proceeds', amount: 0 }],
+        lines: [{ category: 'Not a category', planned: 10 }],
       }],
     }).success).toBe(false);
   });
@@ -267,18 +98,6 @@ describe('appDataSchema', () => {
       expect(schema.safeParse({ name: 'Asha', monthlySalary: '1000000001' }).error?.issues[0]?.message)
         .toBe('Monthly income must be 1,000,000,000 or less');
       expect(schema.safeParse({ name: 'Asha', monthlySalary: 'not money' }).success).toBe(false);
-    });
-  });
-
-  describe('P29-X stop recurring form validation', () => {
-    const schema = makeStopRecurringFormSchema('2026-05-31', [
-      { date: '2026-05-01', kind: 'Deposit' },
-    ]);
-
-    it('accepts the last paid date and rejects earlier or future dates', () => {
-      expect(schema.safeParse({ stopDate: '2026-05-01' }).success).toBe(true);
-      expect(schema.safeParse({ stopDate: '2026-04-30' }).success).toBe(false);
-      expect(schema.safeParse({ stopDate: '2026-06-01' }).success).toBe(false);
     });
   });
 
@@ -329,26 +148,11 @@ describe('appDataSchema', () => {
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      liabilities: mockAppData.liabilities.map((item) => item.id === recurring.id
-        ? {
-          ...recurring,
-          payments: [{
-            id: 'invalid-payment',
-            date: '2026-03-31',
-            amount: 100,
-            note: '',
-            kind: 'Payment',
-          }],
-        }
-        : item),
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
       policies: [{ ...policy, premium: 10_000_001 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
-      policies: [{ ...policy, kind: 'term-life', currentValue: 1 }],
+      policies: [{ ...policy, kind: 'term', currentValue: 1 }],
     }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
@@ -367,128 +171,9 @@ describe('appDataSchema', () => {
       ...mockAppData,
       liabilities: [{ ...oneTime, settlement: null }],
     }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...oneTime,
-        dueDate: '2026-03-01',
-        startDate: '2026-03-02',
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...oneTime,
-        payments: [{
-          id: 'invalid-payment',
-          date: '2026-03-31',
-          amount: 100,
-          note: '',
-          kind: 'EMI',
-        }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, policyNumber: 'P'.repeat(31) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, nominee: 'N'.repeat(41) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, note: 'N'.repeat(121) }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, sumAssured: -1 }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, sumAssured: 0 }],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, endDate: policy.startDate }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      policies: [{ ...policy, currentValue: 1, valueAsOf: null }],
-    }).success).toBe(false);
     expect(NON_EARNED_INCOME_CATEGORIES).toEqual(['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds']);
-    expect(BUDGET_CATEGORIES).toContain('Recharge');
-    expect(TRANSACTION_CATEGORIES.expense).toContain('Recharge');
     expect(TRANSACTION_CATEGORIES.expense).toContain('Insurance');
-    expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining([
-      'Insurance premium',
-      'Term life premium',
-      'Health premium',
-      'Motor premium',
-      'Home premium',
-    ]));
     expect(TRANSACTION_CATEGORIES.income).toEqual(expect.arrayContaining(['Borrowed', 'Loan proceeds', 'Own funds']));
-  });
-
-  it('validates closure dates, zero settlement anchors and the referenced closing payment', () => {
-    const recurring = mockAppData.liabilities.find((item) => item.kind === 'recurring');
-    if (!recurring || recurring.kind !== 'recurring') throw new Error('Expected a recurring liability.');
-    const startDate = '2026-01-10';
-    const firstPaymentDate = addMonths(startDate, 1);
-    const closureDate = addMonths(startDate, 2);
-    const closingPayment = {
-      id: 'schema-closure-payment',
-      date: closureDate,
-      amount: 1,
-      note: '',
-      kind: 'Prepayment' as const,
-    };
-    const closed = {
-      ...recurring,
-      startDate,
-      payments: [closingPayment],
-      settlement: { asOf: closureDate, balance: 0 },
-      closure: {
-        date: closureDate,
-        paymentId: closingPayment.id,
-      },
-    };
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [closed],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, date: firstPaymentDate },
-        settlement: { asOf: firstPaymentDate, balance: 0 },
-        payments: [{ ...closingPayment, date: firstPaymentDate }],
-      }],
-    }).success).toBe(true);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, date: startDate },
-        settlement: { asOf: startDate, balance: 0 },
-        payments: [{ ...closingPayment, date: startDate }],
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        settlement: { asOf: closureDate, balance: 1 },
-      }],
-    }).success).toBe(false);
-    expect(appDataSchema.safeParse({
-      ...mockAppData,
-      liabilities: [{
-        ...closed,
-        closure: { ...closed.closure, paymentId: 'missing-payment' },
-      }],
-    }).success).toBe(false);
   });
 
   it('validates optional metadata and every signed-money / identifier rule', () => {
@@ -498,13 +183,12 @@ describe('appDataSchema', () => {
         ...mockAppData.transactions[0],
         source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' },
       }],
+      efEntries: [{ id: 'withdrawal', date: '2026-10-01', amount: -10, note: 'Cash' }],
     }).success).toBe(true);
-    const legacyEfField = appDataSchema.safeParse({
+    expect(appDataSchema.safeParse({
       ...mockAppData,
-      efEntries: [{ id: 'removed', date: '2026-10-01', amount: 1, note: '' }],
-    });
-    expect(legacyEfField.success).toBe(true);
-    if (legacyEfField.success) expect(legacyEfField.data).not.toHaveProperty('efEntries');
+      efEntries: [{ id: 'zero', date: '2026-10-01', amount: 0, note: '' }],
+    }).success).toBe(false);
     expect(appDataSchema.safeParse({
       ...mockAppData,
       transactions: [{ ...mockAppData.transactions[0], id: '' }],
@@ -528,43 +212,10 @@ describe('makeTransactionFormSchema', () => {
     expect(schema.safeParse({ ...validInput, amount: '1.239' }).success).toBe(false);
   });
 
-  it('accepts legacy and typed insurance expense categories in the transaction form', () => {
-    for (const category of [
-      'Insurance',
-      'Recharge',
-      'Insurance premium',
-      'Term life premium',
-      'Health premium',
-      'Motor premium',
-      'Home premium',
-    ]) {
-      expect(schema.safeParse({ ...validInput, category }).success).toBe(true);
-    }
-  });
-
-  it('accepts a custom category only in the selected month budget', () => {
-    const customSchema = makeTransactionFormSchema('2026-10-10', {}, {
-      instruments: [],
-      withdrawable: {},
-      mode: 'create',
-      allowUnlinkedInvestment: true,
-      budgetCategoriesForMonth: (type, date) =>
-        type === 'expense' && date.startsWith('2026-11') ? ['Pet care'] : [],
-    });
-    const customExpense = { ...validInput, category: 'Pet care' };
-    expect(customSchema.safeParse(customExpense).success).toBe(false);
-    expect(customSchema.safeParse({ ...customExpense, date: '2026-11-01' }).success).toBe(true);
-    expect(customSchema.safeParse({
-      ...customExpense,
-      type: 'invest',
-      date: '2026-11-01',
-    }).success).toBe(false);
-  });
-
   it('requires the appropriate instrument for investment and withdrawal transaction modes', () => {
     const options = {
-      instruments: [{ id: 'holding-1' }],
-      withdrawable: { 'holding-1': 1_000 },
+      instruments: [{ id: 'ef' }, { id: 'holding-1' }],
+      withdrawable: { ef: 500, 'holding-1': 1_000 },
       mode: 'create' as const,
     };
     const instrumentSchema = makeTransactionFormSchema('2026-10-10', {}, options);
@@ -579,8 +230,8 @@ describe('makeTransactionFormSchema', () => {
     expect(pendingBudgetSchema.safeParse({ ...invest, instrumentId: 'missing' }).success).toBe(false);
     const withdrawal = { ...validInput, type: 'income' as const, category: 'Withdrawal', amount: '500' };
     expect(instrumentSchema.safeParse(withdrawal).success).toBe(false);
-    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(false);
-    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'holding-1' }).success).toBe(true);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
+    expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'ef', amount: '500.01' }).success).toBe(false);
     expect(instrumentSchema.safeParse({ ...withdrawal, instrumentId: 'holding-1', amount: '1000.01' }).success).toBe(false);
     expect(instrumentSchema.safeParse({ ...validInput, instrumentId: 'ef' }).success).toBe(false);
 
@@ -598,7 +249,7 @@ describe('makeTransactionFormSchema', () => {
     expect(linkedSchema.safeParse(invest).success).toBe(false);
     expect(linkedSchema.safeParse({ ...invest, instrumentId: 'holding-1' }).success).toBe(true);
     expect(linkedSchema.safeParse(withdrawal).success).toBe(false);
-    expect(linkedSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(false);
+    expect(linkedSchema.safeParse({ ...withdrawal, instrumentId: 'ef' }).success).toBe(true);
   });
 
   const planValues = {
@@ -624,7 +275,6 @@ describe('makeTransactionFormSchema', () => {
         name: 'Long term', amount: 10_000.25, ratePct: 12.25, stepUpPct: 0, tenureYears: 10,
         trackFrom: '2026-10-10', opening: 0, actualValue: null, actualValueDate: null,
       });
-      expect(schema.safeParse({ ...planValues, type: 'Fixed deposit' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: ' another ' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: '' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, name: 'x'.repeat(41) }).success).toBe(false);
@@ -649,7 +299,7 @@ describe('makeTransactionFormSchema', () => {
       if (!tooFar.success) expect(tooFar.error.issues.some((issue) => issue.message === 'Start date is too far ahead')).toBe(true);
       const beforeLog = schema.safeParse({ ...planValues, startDate: '2026-10-11' });
       expect(beforeLog.success).toBe(false);
-      if (!beforeLog.success) expect(beforeLog.error.issues.some((issue) => issue.message === 'A logged deposit is dated before this start date')).toBe(true);
+      if (!beforeLog.success) expect(beforeLog.error.issues.some((issue) => issue.message === 'A logged installment is dated before this start date')).toBe(true);
       expect(schema.safeParse({ ...planValues, trackFrom: '2026-10-09' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, trackFrom: 'bad-date' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, opening: '10000000000' }).success).toBe(true);
@@ -658,22 +308,6 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, actualValueDate: '2026-10-10' }).success).toBe(false);
       expect(schema.safeParse({ ...planValues, actualValue: '0', actualValueDate: '2026-10-10' }).success).toBe(true);
       expect(schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-11' }).success).toBe(false);
-      expect(schema.safeParse({
-        ...planValues, valuationMethod: 'accrual', compounding: 'quarterly',
-        maturityDate: '2030-10-10', actualValue: '0', actualValueDate: '2026-10-10',
-      })).toMatchObject({
-        success: true,
-        data: { valuationMethod: 'accrual', compounding: 'quarterly', maturityDate: '2030-10-10' },
-      });
-      const earlyMaturity = schema.safeParse({
-        ...planValues, maturityDate: '2026-10-09', actualValue: '0', actualValueDate: '2026-10-10',
-      });
-      expect(earlyMaturity.success).toBe(false);
-      if (!earlyMaturity.success) {
-        expect(earlyMaturity.error.issues.some((issue) =>
-          issue.message === 'Enter a maturity date on or after the plan start date',
-        )).toBe(true);
-      }
       const earlySnapshot = schema.safeParse({ ...planValues, actualValue: '1', actualValueDate: '2026-10-09' });
       expect(earlySnapshot.success).toBe(false);
       if (!earlySnapshot.success) expect(earlySnapshot.error.issues.some((issue) => issue.message === 'Value date is before the plan started')).toBe(true);
@@ -813,37 +447,21 @@ describe('makeTransactionFormSchema', () => {
       if (!cleared.success) expect(cleared.error.issues.some((issue) => issue.message === 'This liability is already cleared')).toBe(true);
     });
 
-    it('validates goal and holding forms', () => {
+    it('validates goal, holding and emergency-fund entry forms', () => {
       const goalSchema = makeGoalFormSchema('2026-10-10', { otherNames: ['Vacation'], locked: false });
       const goal = { name: 'House', target: '100000', saved: '0', year: '2026' };
       expect(goalSchema.parse(goal)).toMatchObject({ name: 'House', target: 100_000, saved: 0, year: 2026 });
-      expect(goalSchema.safeParse({ ...goal, saved: '100000' }).success).toBe(true);
       const duplicate = goalSchema.safeParse({ ...goal, name: ' vacation ' });
       expect(duplicate.success).toBe(false);
       if (!duplicate.success) expect(duplicate.error.issues.some((issue) => issue.message === 'A goal with this name already exists')).toBe(true);
       expect(goalSchema.safeParse({ ...goal, saved: '100001' }).success).toBe(false);
-      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(true);
+      expect(goalSchema.safeParse({ ...goal, year: '2025' }).success).toBe(false);
       expect(goalSchema.safeParse({ ...goal, year: '2086' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '1900' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '1990' }).success).toBe(true);
-      expect(goalSchema.safeParse({ ...goal, year: '2100' }).success).toBe(true);
-      const beforeMinimumYear = goalSchema.safeParse({ ...goal, year: '1899' });
-      expect(beforeMinimumYear.success).toBe(false);
-      if (!beforeMinimumYear.success) {
-        expect(beforeMinimumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1900 and 2100');
-      }
-      const afterMaximumYear = goalSchema.safeParse({ ...goal, year: '2101' });
-      expect(afterMaximumYear.success).toBe(false);
-      if (!afterMaximumYear.success) {
-        expect(afterMaximumYear.error.issues.find((issue) => issue.path[0] === 'year')?.message)
-          .toBe('Enter a year between 1900 and 2100');
-      }
       const editingPastGoalSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: false, existingYear: 2020,
       });
       expect(editingPastGoalSchema.safeParse({ ...goal, year: '2020' }).success).toBe(true);
-      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(true);
+      expect(editingPastGoalSchema.safeParse({ ...goal, year: '2019' }).success).toBe(false);
       const minimumTargetSchema = makeGoalFormSchema('2026-10-10', {
         otherNames: [], locked: true, minTarget: 60_000,
       });
@@ -853,42 +471,57 @@ describe('makeTransactionFormSchema', () => {
       expect(belowMinimum.success).toBe(false);
       if (!belowMinimum.success) {
         expect(belowMinimum.error.issues.find((issue) => issue.path[0] === 'target')?.message)
-          .toBe('Emergency fund target must be at least 3 months of cover (₹60,000)');
+          .toBe('Emergency fund target must be at least 3 months of expenses (₹60,000)');
       }
       expect(minimumTargetSchema.safeParse({ ...goal, target: '60000', year: '2026' }).success).toBe(true);
-      const lockedWithoutMinimum = makeGoalFormSchema('2026-10-10', {
-        otherNames: [], locked: true,
-      });
-      expect(lockedWithoutMinimum.parse({
-        ...goal, target: '1', saved: '100000', year: '2026',
-      })).toMatchObject({ target: 1, saved: 0 });
 
       const holdingSchema = makeHoldingFormSchema({ otherNames: ['PF'] });
       const holding = { name: 'New FD', type: 'Fixed deposit', invested: '1000', value: '900' };
-      expect(holdingSchema.parse(holding)).toMatchObject({
-        invested: 1000, value: 900, valuationMethod: 'manual', ratePct: undefined, compounding: 'yearly',
-      });
-      expect(holdingSchema.parse({
-        ...holding, valuationMethod: 'accrual', ratePct: '7',
-        compounding: 'quarterly', maturityDate: '2030-01-01',
-      })).toMatchObject({
-        valuationMethod: 'accrual', ratePct: 7, compounding: 'quarterly', maturityDate: '2030-01-01',
-      });
-      expect(holdingSchema.safeParse({
-        ...holding, valuationMethod: 'accrual', ratePct: '',
-      }).success).toBe(false);
-      expect(holdingSchema.safeParse({ ...holding, maturityDate: '2026-02-30' }).success).toBe(false);
-      const holdingWithEntriesSchema = makeHoldingFormSchema({ otherNames: [], entriesExist: true });
-      const blockedTypeChange = holdingWithEntriesSchema.safeParse({ ...holding, type: 'Fixed deposit' });
-      expect(blockedTypeChange.success).toBe(false);
-      if (!blockedTypeChange.success) {
-        expect(blockedTypeChange.error.issues.some((issue) =>
-          issue.message === 'Remove the existing entries before changing this holding to Fixed deposit.',
-        )).toBe(true);
-      }
+      expect(holdingSchema.parse(holding)).toMatchObject({ invested: 1000, value: 900 });
       expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
 
+      const efEntries = [
+        { id: 'funding', date: '2026-10-01', amount: 100, note: '' },
+        { id: 'later-spend', date: '2026-10-10', amount: -80, note: '' },
+      ];
+      const schemaFor = (existingId?: string) => makeEfEntryFormSchema('2026-10-10', {
+        firstNegativeDate: (candidate) => efEndOfDayBalances([
+          ...efEntries.filter((entry) => entry.id !== existingId),
+          { id: 'candidate', ...candidate, note: '' },
+        ]).find(({ balance }) => balance < 0)?.date ?? null,
+      });
+      const efSchema = schemaFor();
+      const deposit = { kind: 'Deposit', amount: '100000000', date: '2026-10-10', note: '' };
+      expect(efSchema.parse(deposit).amount).toBe(100_000_000);
+      expect(efSchema.safeParse({ ...deposit, amount: '100000000.01' }).success).toBe(false);
+      const backdated = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '30', date: '2026-10-05' });
+      expect(backdated.success).toBe(false);
+      if (!backdated.success) expect(backdated.error.issues.some((issue) => issue.message.includes('10 Oct 2026'))).toBe(true);
+      const fundingEditSchema = schemaFor('funding');
+      const loweredDeposit = fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '50', date: '2026-10-01' });
+      expect(loweredDeposit.success).toBe(false);
+      expect(fundingEditSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '20', date: '2026-10-05' }).success).toBe(true);
+      const exceeded = efSchema.safeParse({ ...deposit, kind: 'Withdrawal', amount: '101', date: '2026-10-01' });
+      expect(exceeded.success).toBe(false);
+      if (!exceeded.success) expect(exceeded.error.issues.some((issue) => issue.message.includes('This would make the balance negative on'))).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, kind: 'Deposit', amount: '100', date: '2026-10-01' }).success).toBe(true);
+      expect(efSchema.safeParse({ ...deposit, date: '2026-10-11' }).success).toBe(false);
+      expect(efSchema.safeParse({ ...deposit, note: 'x'.repeat(61) }).success).toBe(false);
+
+      const sameDaySchema = makeEfEntryFormSchema('2026-10-10', {
+        firstNegativeDate: (candidate) => efEndOfDayBalances([
+          { id: 'today-deposit', date: '2026-10-10', amount: 10_000, note: '' },
+          { id: 'candidate', ...candidate, note: '' },
+        ]).find(({ balance }) => balance < 0)?.date ?? null,
+      });
+      expect(sameDaySchema.safeParse({
+        kind: 'Withdrawal', amount: '5000', date: '2026-10-10', note: '',
+      }).success).toBe(true);
+      expect(sameDaySchema.safeParse({
+        kind: 'Withdrawal', amount: '10001', date: '2026-10-10', note: '',
+      }).success).toBe(false);
     });
   });
 
@@ -898,31 +531,14 @@ describe('makeTransactionFormSchema', () => {
     if (!result.success) expect(result.error.issues.some((issue) => issue.path[0] === 'amount')).toBe(true);
   });
 
-  it('accepts comma grouping, validates calendar dates and permits the 24-month planning horizon', () => {
+  it('accepts comma grouping and rejects invalid calendar/future dates with the right errors', () => {
     expect(schema.parse({ ...validInput, amount: '1,500.50', date: '2026-10-10' }).date).toBe('2026-10-10');
     const invalidDate = schema.safeParse({ ...validInput, date: '2026-02-30' });
     expect(invalidDate.success).toBe(false);
     if (!invalidDate.success) expect(invalidDate.error.issues[0]?.message).toBe('Enter a valid date');
-    expect(schema.safeParse({ ...validInput, date: '2026-10-11' }).success).toBe(true);
-    const beyondPlanningHorizon = schema.safeParse({ ...validInput, date: '2028-11-01' });
-    expect(beyondPlanningHorizon.success).toBe(false);
-    if (!beyondPlanningHorizon.success) {
-      expect(beyondPlanningHorizon.error.issues[0]?.message)
-        .toBe('Date cannot be more than 24 months ahead');
-    }
-  });
-
-  it('validates budget-item edit amount and optional due day', () => {
-    const editSchema = makeBudgetItemEditSchema();
-    expect(editSchema.parse({ amount: '0', day: '31', scope: 'month' }))
-      .toEqual({ amount: 0, day: 31, scope: 'month' });
-    expect(editSchema.parse({ amount: '500.50', day: '', scope: 'following' }))
-      .toEqual({ amount: 500.5, day: undefined, scope: 'following' });
-    for (const day of ['0', '32', '2.5', 'no']) {
-      expect(editSchema.safeParse({ amount: '1', day, scope: 'month' }).success).toBe(false);
-    }
-    expect(editSchema.safeParse({ amount: '-1', day: '', scope: 'month' }).success).toBe(false);
-    expect(editSchema.safeParse({ amount: '', day: '', scope: 'month' }).success).toBe(false);
+    const future = schema.safeParse({ ...validInput, date: '2026-10-11' });
+    expect(future.success).toBe(false);
+    if (!future.success) expect(future.error.issues[0]?.message).toBe('Date cannot be in the future');
   });
 
   it('enforces note length and the category list for the chosen type', () => {
@@ -933,29 +549,7 @@ describe('makeTransactionFormSchema', () => {
     const category = schema.safeParse({ ...validInput, category: 'Salary' });
     expect(category.success).toBe(false);
     if (!category.success) expect(category.error.issues[0]).toMatchObject({ path: ['category'], message: 'Choose a category' });
-    expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
-  });
-
-  it('keeps the emergency fund out of investment, budget, and instrument choices', () => {
-    const budgetCategories = [
-      ...BUDGET_CATEGORIES,
-      ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
-    ];
-    expect(TRANSACTION_CATEGORIES.invest).not.toContain('Emergency fund');
-    expect(INVESTMENT_FORM_CATEGORIES).not.toContain('Emergency fund');
-    expect(budgetCategories).not.toContain('Emergency fund');
-
-    const transactionSchema = makeTransactionFormSchema('2026-10-10', {}, {
-      instruments: [{ id: 'holding-1' }],
-      withdrawable: { 'holding-1': 1_000 },
-      mode: 'create',
-    });
-    expect(transactionSchema.safeParse({
-      ...validInput, type: 'invest', category: 'Emergency fund', instrumentId: 'holding-1',
-    }).success).toBe(false);
-    expect(transactionSchema.safeParse({
-      ...validInput, type: 'invest', category: 'Other investments', instrumentId: 'ef',
-    }).success).toBe(false);
+    expect(TRANSACTION_CATEGORIES.invest).toContain('Emergency fund');
   });
 });
 

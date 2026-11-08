@@ -10,7 +10,6 @@ import {
   type SlotSummary,
 } from './slots';
 import { policySchedule } from './policySchedule';
-import { holdingCapabilities } from './holdingCapabilities';
 import { PERIODS_PER_YEAR, scheduledDate, totalPeriods } from './sip';
 import type {
   AppData,
@@ -75,11 +74,9 @@ function planSlots(plan: PlanHolding, first: number, count: number) {
 function planRows(plan: PlanHolding, asOf: ISODate): ScheduleRow[] {
   const first = firstPlanIndex(plan);
   const slots = planSlots(plan, first, totalPeriods(plan));
-  const stopDate = plan.stopDate;
-  const visibleSlots = stopDate ? slots.filter((slot) => slot.dueDate <= stopDate) : slots;
   const deposits = plan.logs.filter((entry) => entry.kind === 'Deposit' && entry.date >= plan.trackFrom);
   const matches = matchEntriesFIFO(slots, deposits.filter((entry) => entry.date <= asOf));
-  return visibleSlots.map((slot) => {
+  return slots.map((slot) => {
     const payment = matches.get(slot.index);
     return payment
       ? {
@@ -103,26 +100,20 @@ function planRows(plan: PlanHolding, asOf: ISODate): ScheduleRow[] {
 }
 
 export function planSchedule(plan: PlanHolding, asOf: ISODate): PlanSchedule {
-  if (!holdingCapabilities(plan.type).recurring) {
-    const rows: ScheduleRow[] = [];
-    return { rows, summary: summarizeSlots(rows) };
-  }
   const rows = planRows(plan, asOf);
   return { rows, summary: summarizeSlots(rows) };
 }
 
 export function planNextRows(plan: PlanHolding, asOf: ISODate, count: number): ScheduleRow[] {
   const take = Math.max(0, Math.floor(count));
-  if (take === 0 || !holdingCapabilities(plan.type).recurring) return [];
+  if (take === 0) return [];
   const total = totalPeriods(plan);
   const first = firstPlanIndex(plan);
   const depositCount = plan.logs.reduce((count, entry) =>
     count + (entry.kind === 'Deposit' && entry.date >= plan.trackFrom ? 1 : 0), 0);
   const firstUnpaid = Math.min(total, first + depositCount);
   const end = Math.min(total, firstUnpaid + take);
-  const visibleSlots = planSlots(plan, firstUnpaid, end)
-    .filter((slot) => !plan.stopDate || slot.dueDate <= plan.stopDate);
-  return visibleSlots.map((slot) => ({
+  return planSlots(plan, firstUnpaid, end).map((slot) => ({
     id: slot.id,
     index: slot.index,
     dueDate: slot.dueDate,

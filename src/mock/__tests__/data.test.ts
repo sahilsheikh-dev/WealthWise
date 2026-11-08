@@ -24,7 +24,7 @@ describe('portfolio sample valuation dates', () => {
         expect.objectContaining({ title: 'Bank EMI', status: 'upcoming' }),
       ]));
       expect(mockAppData.monthBudgets?.find((row) => row.month === '2026-10'))
-        .toMatchObject({ source: 'plan' });
+        .toMatchObject({ templateId: 'template-demo-monthly', customized: false });
     });
   });
 });

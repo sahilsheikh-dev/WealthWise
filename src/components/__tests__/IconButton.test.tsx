@@ -47,7 +47,7 @@ describe('IconButton', () => {
 
   it('exports the approved text-action allow-list', () => {
     expect(TEXT_ACTIONS_ALLOWED).toEqual(expect.arrayContaining([
-      'Deposit', 'Withdraw', 'Pay EMI', 'Entries', 'Schedule', 'Payments',
+      'Deposit', 'Withdraw', 'Pay EMI', 'Log installment', 'Entries', 'Schedule', 'Payments',
       'Confirm', 'Save', 'Continue', 'Skip for now', 'Cancel', 'Try again', 'Go to Home',
       'Start fresh', 'Export', 'Import', 'Undo import', 'Share', 'Create N transactions',
       'Use calculated EMI', 'Send test notification',

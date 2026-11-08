@@ -4,10 +4,13 @@ import {
   expenseCategoryBreakdown,
   effectiveEmergencyTarget,
   emergencyMinimumTarget,
+  efBalance,
+  efPassbook,
   ensureEfGoal,
   filterRows,
   filterTransactions,
   goalProgressPct,
+  goalSaved,
   goalTotals,
   goalView,
   groupByDate,
@@ -25,15 +28,7 @@ import {
   netWorth,
   portfolioTotals,
 } from '../index';
-import type { AppData, Goal, Holding, HoldingType, ManualHolding, PlanHolding, RecurringLiability, Transaction } from '../types';
-import { goalSavedFor, linkableInstruments } from '../goalLinks';
-import { holdingContributions } from '../portfolio';
-import { pendingItems } from '../pending';
-import { planReminders } from '../reminders';
-import { holdingCapabilities } from '../holdingCapabilities';
-import { mockAppData } from '../../mock/data';
-import { buildDemoData } from '../../mock/demoData';
-import { budgetItemsFromLines, budgetPlanFromLines } from '../../testFixtures/budget';
+import type { AppData, EfEntry, Goal, Holding, HoldingType, ManualHolding, PlanHolding, RecurringLiability, Transaction } from '../types';
 
 const tx = (
   id: string,
@@ -52,7 +47,7 @@ const baseData = (changes: Partial<AppData> = {}): AppData => ({
   liabilities: [],
   policies: [],
   budget: null,
-  budgetPlan: null,
+  efEntries: [],
   efCustomBuckets: [],
   efBucketLinks: {},
   ...changes,
@@ -94,6 +89,25 @@ describe('income baseline selection', () => {
 });
 
 describe('emergency fund calculations', () => {
+  it('calculates balance and a newest-first passbook with running balances', () => {
+    const entries: EfEntry[] = [
+      { id: 'opening', date: '2026-01-01', amount: 10_000, note: 'Opening' },
+      { id: 'deposit', date: '2026-02-01', amount: 2_000, note: 'Deposit' },
+      { id: 'withdrawal', date: '2026-03-01', amount: -3_000, note: 'Withdrawal' },
+    ];
+    expect(efBalance(entries)).toBe(9_000);
+    expect(efPassbook(entries)).toEqual([
+      { ...entries[2]!, balance: 9_000 },
+      { ...entries[1]!, balance: 12_000 },
+      { ...entries[0]!, balance: 10_000 },
+    ]);
+    const sameDate: EfEntry[] = [
+      { id: 'first', date: '2026-01-01', amount: 10, note: '' },
+      { id: 'second', date: '2026-01-01', amount: 20, note: '' },
+    ];
+    expect(efPassbook(sameDate).map((entry) => entry.id)).toEqual(['second', 'first']);
+  });
+
   it('uses historical three-month baselines and handles current-only/no data', () => {
     const transactions = [
       tx('jul', 'expense', 20_000, '2026-07-15'),
@@ -150,30 +164,18 @@ describe('emergency-fund goal helpers', () => {
   });
 
   it('syncs emergency savings and calculates goal totals with clamped progress', () => {
-    const linked: Goal = {
-      id: 'ef', name: 'Emergency', target: 10_000, saved: 1, year: 2027, auto: 'ef',
-      links: [{ instrumentId: 'cash', share: 100 }],
-    };
-    const data = baseData({
-      holdings: [{ id: 'cash', kind: 'manual', name: 'Cash', type: 'Cash', invested: 12_000, value: 12_000, logs: [] }],
-    });
-    expect(goalSavedFor(linked, data, '2026-10-01')).toBe(12_000);
-    expect(goalSavedFor(otherGoal, data, '2026-10-01')).toBe(4_000);
+    const linked: Goal = { id: 'ef', name: 'Emergency', target: 10_000, saved: 1, year: 2027, auto: 'ef', links: [] };
+    expect(goalSaved(linked, 12_000)).toBe(12_000);
+    expect(goalSaved(otherGoal, 12_000)).toBe(4_000);
     expect(goalProgressPct(linked, 15_000)).toBe(100);
     expect(goalProgressPct(linked, -1)).toBe(0);
     expect(goalProgressPct({ ...linked, target: 0 }, 10)).toBe(0);
-    expect(goalTotals([linked, otherGoal], 0, data, '2026-10-01')).toEqual({ target: 30_000, saved: 16_000, pct: 160 / 3 });
-    expect(goalTotals([], 0, data, '2026-10-01')).toEqual({ target: 0, saved: 0, pct: 0 });
+    expect(goalTotals([linked, otherGoal], 12_000, 0)).toEqual({ target: 30_000, saved: 16_000, pct: 160 / 3 });
+    expect(goalTotals([], 0, 0)).toEqual({ target: 0, saved: 0, pct: 0 });
   });
 
   it('raises automatic targets at display time without mutating their stored value', () => {
-    const emergency: Goal = {
-      id: 'ef', name: 'Emergency fund', target: 80_000, saved: 0, year: 2027, auto: 'ef',
-      links: [{ instrumentId: 'cash', share: 100 }],
-    };
-    const data = baseData({
-      holdings: [{ id: 'cash', kind: 'manual', name: 'Cash', type: 'Cash', invested: 45_000, value: 45_000, logs: [] }],
-    });
+    const emergency: Goal = { id: 'ef', name: 'Emergency fund', target: 80_000, saved: 0, year: 2027, auto: 'ef', links: [] };
     expect(emergencyMinimumTarget(0)).toBe(0);
     expect(emergencyMinimumTarget(20_000)).toBe(60_000);
     expect(emergencyMinimumTarget(20_000.01)).toBe(60_001);
@@ -183,14 +185,14 @@ describe('emergency-fund goal helpers', () => {
     expect(effectiveEmergencyTarget(emergency, 20_000)).toEqual({
       target: 80_000, minimum: 60_000, raised: false,
     });
-    expect(goalView(emergency, { data, asOf: '2026-10-01', expenseBaseline: 30_000 })).toEqual({
+    expect(goalView(emergency, { emergencyBalance: 45_000, expenseBaseline: 30_000 })).toEqual({
       target: 90_000, minimum: 90_000, raised: true, saved: 45_000, pct: 50,
     });
-    expect(goalView(otherGoal, { data, asOf: '2026-10-01', expenseBaseline: 30_000 })).toEqual({
+    expect(goalView(otherGoal, { emergencyBalance: 45_000, expenseBaseline: 30_000 })).toEqual({
       target: otherGoal.target, saved: otherGoal.saved, pct: 20,
     });
     expect(emergency.target).toBe(80_000);
-    expect(goalTotals([emergency, otherGoal], 30_000, data, '2026-10-01')).toEqual({
+    expect(goalTotals([emergency, otherGoal], 45_000, 30_000)).toEqual({
       target: 110_000,
       saved: 49_000,
       pct: 49 / 110 * 100,
@@ -265,14 +267,12 @@ describe('transaction selectors', () => {
       tx('festival', 'expense', 1_500, '2026-10-01', 'Festival', 'Festival'),
       tx('donation', 'expense', 500, '2026-10-02', 'Donation', 'Donation'),
       tx('gifts', 'expense', 1_000, '2026-10-03', 'Gifts', 'Gifts'),
-      tx('health-premium', 'expense', 750, '2026-10-03', 'Health premium', 'Health premium'),
       tx('food', 'expense', 250, '2026-10-04', 'Food', 'Food'),
       tx('last-month', 'expense', 5_000, '2026-09-30', 'Festival', 'Festival'),
       tx('income', 'income', 20_000, '2026-10-05', 'Festival', 'Festival'),
     ], '2026-10')).toEqual([
       { category: 'Festival', amount: 1_500 },
       { category: 'Gifts', amount: 1_000 },
-      { category: 'Health premium', amount: 750 },
       { category: 'Donation', amount: 500 },
       { category: 'Food', amount: 250 },
     ]);
@@ -283,7 +283,6 @@ describe('transaction selectors', () => {
       tx('b', 'expense', 3, '2026-10-02', 'Rent'),
       tx('c', 'invest', 4, '2026-10-02', 'Index fund'),
       tx('other-investment', 'invest', 5, '2026-10-03', 'Other', 'Other'),
-      tx('custom-investment', 'invest', 7, '2026-10-03', 'Fund', 'Fund'),
       tx('other-expense', 'expense', 6, '2026-10-03', 'Other', 'Other'),
       tx('a', 'income', 2, '2026-10-01', 'Salary'),
       tx('z', 'expense', 1, '2026-09-30', 'Rent'),
@@ -291,19 +290,12 @@ describe('transaction selectors', () => {
     expect(filterTransactions(txs, { month: '2026-10', type: 'all', query: ' RENT ' }).map((item) => item.id)).toEqual(['b']);
     expect(filterTransactions(txs, { month: '2026-10', type: 'income', query: '' }).map((item) => item.id)).toEqual(['a']);
     expect(filterTransactions(txs, {
-      month: '2026-10',
-      type: 'invest',
-      query: '',
-      category: 'Other investments',
-      customCategories: new Set(['Fund']),
+      month: '2026-10', type: 'invest', query: '', category: 'Other investments',
     }).map((item) => item.id)).toEqual(['other-investment', 'c']);
-    expect(filterTransactions(txs, {
-      month: '2026-10', type: 'invest', query: '', category: 'Fund', customCategories: new Set(['Fund']),
-    }).map((item) => item.id)).toEqual(['custom-investment']);
     const filtered = filterTransactions(txs, { month: '2026-10', type: 'all', query: '' });
-    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'custom-investment', 'c', 'b', 'a']);
+    expect(filtered.map((item) => item.id)).toEqual(['other-investment', 'other-expense', 'c', 'b', 'a']);
     expect(groupByDate(filtered).map((group) => [group.date, group.items.map((item) => item.id)])).toEqual([
-      ['2026-10-03', ['other-investment', 'other-expense', 'custom-investment']],
+      ['2026-10-03', ['other-investment', 'other-expense']],
       ['2026-10-02', ['c', 'b']],
       ['2026-10-01', ['a']],
     ]);
@@ -340,52 +332,28 @@ describe('portfolio selectors', () => {
     logs: [{ id: 'log', date: '2026-01-01', amount: 200, note: '', kind: 'Deposit' }],
   };
 
-  it('builds holding rows and calculates totals', () => {
+  it('builds holding rows and auto-synced fund, and calculates totals', () => {
     const data = baseData({
       holdings: [manual, plan],
+      efEntries: [{ id: 'ef', date: '2026-01-01', amount: 300, note: '' }],
     });
     expect(holdingInvested(manual)).toBe(100);
     expect(holdingInvested(plan)).toBe(250);
-    expect(holdingValue(manual, '2026-01-01')).toBe(100);
+    expect(holdingValue(manual, '2026-01-01')).toBe(120);
     const rows = buildPortfolioRows(data, '2026-01-01');
-    expect(rows.map((row) => row.kind)).toEqual(['manual', 'plan']);
+    expect(rows.map((row) => row.kind)).toEqual(['manual', 'plan', 'auto-ef']);
     expect(rows[1]!.value).toBe(250);
-    expect(rows[0]!.gainPct).toBeNull();
-    expect(portfolioTotals(rows)).toEqual({ invested: 350, value: 350, gain: 0, gainPct: 0 });
+    expect(rows[2]).toMatchObject({ invested: 300, value: 300, type: 'Emergency fund' });
+    expect(rows[0]!.gainPct).toBe(20);
+    expect(portfolioTotals(rows)).toEqual({ invested: 650, value: 670, gain: 20, gainPct: 20 / 650 * 100 });
     expect(portfolioTotals([])).toEqual({ invested: 0, value: 0, gain: 0, gainPct: null });
     const zeroInvested = buildPortfolioRows(baseData({
       holdings: [{ ...manual, invested: 0 }],
     }), '2026-01-01');
     expect(zeroInvested[0]!.gainPct).toBeNull();
-    const withdrawalAfterValue = buildPortfolioRows(baseData({
-      holdings: [{
-        ...manual,
-        value: 120,
-        valueAsOf: '2025-12-01',
-        logs: [{ id: 'withdrawal', date: '2026-02-01', amount: 20, note: '', kind: 'Withdrawal' }],
-      }],
-    }), '2026-03-01');
-    expect(withdrawalAfterValue[0]!.value).toBe(100);
-    const unknownValueDate = holdingValue({
-      ...manual,
-      valueAsOf: undefined,
-      logs: [{ id: 'new-deposit', date: '2026-01-01', amount: 10, note: '', kind: 'Deposit' }],
-    }, '2026-01-01');
-    expect(unknownValueDate).toBe(110);
-    expect(portfolioTotals([{
-      id: 'plain',
-      kind: 'manual',
-      name: 'Plain',
-      type: 'Cash',
-      invested: 100,
-      value: 120,
-      gain: 20,
-      costRecovered: false,
-      gainPct: 20,
-    }])).toEqual({ invested: 100, value: 120, gain: 20, gainPct: 20 });
   });
 
-  it('filters rows by every supported type and recurring schedule', () => {
+  it('filters rows by every supported type, recurring, and emergency fund', () => {
     const holdings: Holding[] = [manual, plan];
     const types: HoldingType[] = [
       'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
@@ -397,6 +365,7 @@ describe('portfolio selectors', () => {
     for (const type of types) {
       expect(filterRows(rows, type).every((row) => row.type === type)).toBe(true);
     }
+    expect(filterRows(rows, 'Emergency fund').map((row) => row.kind)).toEqual(['auto-ef']);
     expect(monthlyCommitment(holdings)).toBe(1_000);
     expect(monthlyCommitment([{
       ...plan,
@@ -423,7 +392,6 @@ describe('summary selectors', () => {
 
   it('calculates net worth by summing assets and subtracting loan balances', () => {
     const data = baseData({
-      liabilities: [loan],
       holdings: [
         { id: 'manual', kind: 'manual', name: 'Manual', type: 'Cash', invested: 10_000, value: 12_000, logs: [] },
         {
@@ -432,12 +400,12 @@ describe('summary selectors', () => {
           trackFrom: '2026-01-01', opening: 0, actualValue: 2_000, actualValueDate: '2026-01-01',
           logs: [{ id: 'log', date: '2026-01-01', amount: 1_000, note: '', kind: 'Deposit' }],
         },
-        { id: 'migrated-cash', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
       ],
+      liabilities: [loan],
+      efEntries: [{ id: 'ef', date: '2026-01-01', amount: 500, note: '' }],
     });
-    // Undated manual values use their opening balance; dated snapshots remain authoritative.
-    // Assets: 10,000 + 2,000 + 500 = 12,500. Liability balance: 3,000 - 1,000 = 2,000.
-    expect(netWorth(data, '2026-01-01')).toEqual({ assets: 12_500, liabilities: 2_000, netWorth: 10_500 });
+    // Assets: 12,000 + 2,000 + 500 = 14,500. Liability balance: 3,000 - 1,000 = 2,000.
+    expect(netWorth(data, '2026-01-01')).toEqual({ assets: 14_500, liabilities: 2_000, netWorth: 12_500 });
   });
 
   it('returns the pinned EF goal and the expense-baseline coverage on Home', () => {
@@ -447,126 +415,16 @@ describe('summary selectors', () => {
         tx('aug', 'expense', 24_000, '2026-08-01'),
         tx('sep', 'expense', 22_000, '2026-09-01'),
       ],
-      holdings: [{ id: 'cash', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 155_000, value: 155_000, logs: [] }],
-      goals: [
-        { id: 'goal', name: 'Trip', target: 10_000, saved: 2_000, year: 2027, links: [] },
-        { id: 'emergency', name: 'Emergency fund', target: 300_000, saved: 0, year: 2028, auto: 'ef', links: [{ instrumentId: 'cash', share: 100 }] },
-      ],
+      efEntries: [{ id: 'ef', date: '2026-09-01', amount: 155_000, note: '' }],
+      goals: [{ id: 'goal', name: 'Trip', target: 10_000, saved: 2_000, year: 2027, links: [] }],
     });
     const summary = homeSummary(data, '2026-10-01');
     expect(summary.emergencyMonths).toBe(155_000 / 22_000);
     expect(summary.goals[0]).toMatchObject({
-      goal: { id: 'emergency', auto: 'ef' },
-      target: 300_000,
+      goal: { id: 'goal-emergency', auto: 'ef' },
+      target: 132_000,
       saved: 155_000,
       raised: false,
-    });
-  });
-
-  describe('holding downstream selector preservation', () => {
-    const asOf = '2026-11-04';
-
-    function snapshot(data: AppData) {
-      const linkedBudgetItems = (data.budgetPlan?.items ?? []).filter((item) => item.holdingId);
-      const dues = pendingItems(data, asOf.slice(0, 7), asOf);
-      const reminders = planReminders(
-        data,
-        { enabled: true, localTime: '09:00', dayBefore: true, sameDay: true, showAmounts: false, hidePreviews: false },
-        new Date(2026, 10, 4, 8),
-        10_000,
-      );
-      const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
-      const emergencyLinkedIds = new Set(emergencyGoal?.links.map((link) => link.instrumentId) ?? []);
-      const efAvailable = Object.fromEntries(Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
-        bucketId,
-        holdingIds
-          .filter((id) => emergencyLinkedIds.has(id))
-          .reduce((sum, id) => {
-            const holding = data.holdings.find((item) => item.id === id);
-            return sum + (holding ? holdingValue(holding, asOf) : 0);
-          }, 0),
-      ]));
-      const worth = netWorth(data, asOf);
-      return {
-        budgetLinks: {
-          count: linkedBudgetItems.length,
-          amount: linkedBudgetItems.reduce((sum, item) => sum + item.value, 0),
-        },
-        pending: { count: dues.length, amount: dues.reduce((sum, item) => sum + item.amount, 0) },
-        reminders: { count: reminders.length },
-        goals: { count: data.goals.length, saved: data.goals.reduce((sum, goal) => sum + goalSavedFor(goal, data, asOf), 0) },
-        efAvailable: {
-          buckets: efAvailable,
-          total: Object.values(efAvailable).reduce((sum, amount) => sum + amount, 0),
-        },
-        netWorth: worth,
-      };
-    }
-
-    it('preserves linked outputs and legacy linked-invested values for mock and demo data', () => {
-      const datasets = [
-        { name: 'mock', data: mockAppData },
-        { name: 'demo', data: buildDemoData(asOf) },
-      ];
-      for (const { name, data } of datasets) {
-        const plan = data.holdings.find((holding): holding is PlanHolding =>
-          holding.kind === 'plan' && holdingCapabilities(holding.type).recurring,
-        );
-        if (!plan) throw new Error(`${name} fixture is missing a recurring holding.`);
-        const baseBudgetPlan = data.budgetPlan ?? budgetPlanFromLines([], {
-          incomes: [],
-          repeatMonthly: true,
-          repeatFrom: asOf.slice(0, 7),
-        });
-        const linkedItem = budgetItemsFromLines([
-          { category: plan.type, planned: plan.amount, dueDay: 15 },
-        ], baseBudgetPlan.sections)[0];
-        if (!linkedItem) throw new Error(`${name} fixture budget row is missing.`);
-        const linkedData = {
-          ...data,
-          budgetPlan: {
-            ...baseBudgetPlan,
-            items: [
-              ...baseBudgetPlan.items.filter((item) => item.holdingId !== plan.id),
-              { ...linkedItem, holdingId: plan.id },
-            ],
-          },
-        };
-        const current = snapshot(linkedData);
-        const previousLinkedInvested = data.holdings.map((holding) => {
-          const opening = holding.kind === 'plan' ? holding.opening : holding.invested;
-          const deposits = holding.logs
-            .filter((entry) => entry.kind === 'Deposit')
-            .reduce((sum, entry) => sum + entry.amount, 0);
-          const legacyValue = opening + deposits;
-          expect(holdingContributions(holding)).toBe(legacyValue);
-          return { id: holding.id, invested: legacyValue };
-        });
-        const holdingIds = new Set(data.holdings.map((holding) => holding.id));
-        expect(linkableInstruments(data, asOf)
-          .filter(({ id }) => holdingIds.has(id))
-          .map(({ id, invested }) => ({ id, invested })))
-          .toEqual(previousLinkedInvested);
-        if (name === 'mock') {
-          expect(current).toEqual({
-            budgetLinks: { count: 1, amount: 21_200 },
-            pending: { count: 2, amount: 30_101.32 },
-            reminders: { count: 910 },
-            goals: { count: 4, saved: 490_956 },
-            efAvailable: { buckets: {}, total: 0 },
-            netWorth: { assets: 505_441, liabilities: 327_903.9418739316, netWorth: 177_537.05812606838 },
-          });
-        } else {
-          expect(current).toEqual({
-            budgetLinks: { count: 1, amount: 2_000 },
-            pending: { count: 34, amount: 38_900 },
-            reminders: { count: 869 },
-            goals: { count: 5, saved: 487_300 },
-            efAvailable: { buckets: { cash: 25_000, bank: 92_000, 'fd-rd': 70_000 }, total: 187_000 },
-            netWorth: { assets: 524_000, liabilities: 389_107.9299748545, netWorth: 134_892.07002514548 },
-          });
-        }
-      }
     });
   });
 

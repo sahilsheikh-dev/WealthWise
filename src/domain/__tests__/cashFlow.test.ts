@@ -4,8 +4,8 @@ import {
   availableBalance,
   fundShortfall,
   monthPositions,
-  normalizeMoney,
   recordMoneyMovement,
+  reviewableMonths,
   shortfallForMonth,
   surplusForMonth,
 } from '../cashFlow';
@@ -27,27 +27,6 @@ const tx = (
   amount: number,
   category: string,
 ): Transaction => ({ id, date, type, amount, category, note: category });
-
-describe('money normalization', () => {
-  it.each([
-    [-0, 0],
-    [-0.001, 0],
-    [0, 0],
-    [0.004, 0],
-    [1500, 1500],
-    [-1500, -1500],
-  ])('normalizes %s to %s', (input, expected) => {
-    const result = normalizeMoney(input);
-    expect(result).toBe(expected);
-    if (expected === 0) expect(Object.is(result, -0)).toBe(false);
-  });
-
-  it('rounds finite values to paise and rejects non-finite amounts', () => {
-    expect(normalizeMoney(12.345)).toBe(12.35);
-    expect(normalizeMoney(-12.345)).toBe(-12.35);
-    expect(() => normalizeMoney(Number.NaN)).toThrow('Money amount must be finite.');
-  });
-});
 
 describe('cash flow positions', () => {
   it('carries closing cash across empty months without double-counting opening as income', () => {
@@ -244,7 +223,18 @@ describe('cash flow positions', () => {
     }
   });
 
-  it('keeps empty month cash-flow helpers at zero after removing the review list', () => {
+  it('lists closed nonzero months newest first and excludes current and one-rupee-zero rows', () => {
+    const data = {
+      ...seedData(),
+      transactions: [
+        tx('old', '2026-01-01', 'income', 10, 'Salary'),
+        tx('break-even', '2026-02-01', 'expense', 10, 'Food'),
+        tx('new', '2026-03-01', 'expense', 20, 'Food'),
+        tx('one', '2026-04-01', 'income', 1, 'Salary'),
+      ],
+    };
+    expect(reviewableMonths(data, '2026-04-15').map(({ month }) => month)).toEqual(['2026-03', '2026-01']);
+    expect(reviewableMonths(seedData(), '2026-04-15')).toEqual([]);
     expect(monthPositions([])).toEqual([]);
     expect(shortfallForMonth(seedData(), '2026-04')).toBe(0);
     expect(surplusForMonth(seedData(), '2026-04')).toBe(0);
@@ -315,19 +305,21 @@ describe('cash-flow allocations and movements', () => {
     expect(data.holdings[0]?.logs).toEqual([]);
   });
 
-  it('allocates surplus into a holding and a liability with linked records', () => {
+  it('allocates surplus into a holding, the emergency fund and a liability with linked records', () => {
     const result = allocateSurplus(surplusData(), {
       date: '2026-02-28',
       allocations: [
         { kind: 'invest', instrumentId: 'asset', amount: 100 },
+        { kind: 'ef', amount: 100 },
         { kind: 'liability', liabilityId: 'existing-loan', amount: 100 },
       ],
     }, ids(), '2026-02-28');
     expect(result.holdings[0]?.logs[0]).toMatchObject({ kind: 'Deposit', amount: 100 });
+    expect(result.efEntries[0]).toMatchObject({ amount: 100, date: '2026-02-28' });
     expect(result.liabilities[0]?.payments[0]).toMatchObject({ kind: 'Prepayment', amount: 100 });
     expect(validateIntegrity(result)).toEqual([]);
     expect(() => allocateSurplus(surplusData(), {
-      date: '2026-03-01', allocations: [{ kind: 'invest', instrumentId: 'asset', amount: 1 }],
+      date: '2026-03-01', allocations: [{ kind: 'ef', amount: 1 }],
     }, ids(), '2026-02-28')).toThrow('Date cannot be in the future');
   });
 
@@ -340,12 +332,16 @@ describe('cash-flow allocations and movements', () => {
         liability: { kind: 'one-time' as const, name: 'New loan', type: 'Borrowed money' as const,
           principal: 300, ratePct: 2, startDate: '2026-01-01', dueDate: null },
       },
-      { kind: 'loan-received' as const, amount: 100, date: '2026-02-03', liabilityId: 'existing-loan'       },
+      { kind: 'loan-received' as const, amount: 100, date: '2026-02-03', liabilityId: 'existing-loan' },
       { kind: 'repay' as const, liabilityId: 'existing-loan', amount: 25, date: '2026-02-04' },
       { kind: 'withdraw' as const, instrumentId: 'asset', amount: 20, date: '2026-02-05' },
+      { kind: 'withdraw' as const, instrumentId: 'ef', amount: 20, date: '2026-02-06' },
       { kind: 'own-funds' as const, amount: 40, date: '2026-02-07', note: 'Already saved cash' },
     ];
-    let data: AppData = { ...start, holdings: [manualHolding], liabilities: [recurringLiability] };
+    let data: AppData = {
+      ...start, holdings: [manualHolding], liabilities: [recurringLiability],
+      efEntries: [{ id: 'ef-seed', date: '2026-01-01', amount: 100, note: 'Seed' }],
+    };
     const newId = ids();
     for (const movement of movements) {
       data = recordMoneyMovement(data, movement, newId, '2026-02-28');
@@ -353,7 +349,7 @@ describe('cash-flow allocations and movements', () => {
     }
     expect(data.transactions.filter((item) => item.category === 'Borrowed')).toHaveLength(1);
     expect(data.transactions.filter((item) => item.category === 'Loan proceeds')).toHaveLength(2);
-    expect(data.transactions.filter((item) => item.category === 'Withdrawal')).toHaveLength(1);
+    expect(data.transactions.filter((item) => item.category === 'Withdrawal')).toHaveLength(2);
     expect(data.liabilities.find((item) => item.id === 'existing-loan')?.payments).toHaveLength(1);
   });
 
@@ -460,13 +456,12 @@ describe('cash-flow allocations and movements', () => {
     }, ids())).toThrow('cannot predate');
     const withdrawal = fundShortfall({
       ...base,
-      holdings: [manualHolding],
+      efEntries: [{ id: 'ef-seed', date: '2026-01-01', amount: 1000, note: 'Seed' }],
     }, {
-      month: '2026-02', allocations: [{ kind: 'withdrawal', instrumentId: 'asset', amount: 20 }],
+      month: '2026-02', allocations: [{ kind: 'withdrawal', instrumentId: 'ef', amount: 100 }],
     }, ids());
-    expect(withdrawal.holdings[0]?.logs).toMatchObject([
-      { kind: 'Withdrawal', amount: 20, date: '2026-02-28' },
-    ]);
+    expect(withdrawal.efEntries.find(({ amount }) => amount === -100))
+      .toMatchObject({ amount: -100, date: '2026-02-28' });
   });
 
   it('rejects surplus allocations without targets or above the outstanding balance', () => {

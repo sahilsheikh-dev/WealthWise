@@ -1,7 +1,8 @@
 import { emptyAppData } from '../actions';
-import { goalSavedFor } from '../goalLinks';
+import { goalSaved } from '../goals';
 import { GoalLockedError, addGoal, deleteGoal, updateGoal } from '../goalActions';
 import { addHolding, deleteHolding, updateHolding, valueStaleness } from '../holdingActions';
+import { EfBalanceError, EfLinkError, addEfEntry, deleteEfEntry, efBalanceOn, efEndOfDayBalances, updateEfEntry } from '../efActions';
 import { describeSource, validateIntegrity } from '../links';
 import { updateLiability } from '../liabilityActions';
 import { addPlan, updatePlan } from '../planActions';
@@ -41,12 +42,12 @@ describe('Phase 5 domain actions', () => {
         ] }
         : holding),
       transactions: [
-        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP deposit', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' } },
+        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP installment', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' } },
         { id: 'edited', type: 'invest', amount: 40, date: '2026-03-02', category: 'Mutual fund / SIP', note: 'User note', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'edited-log' } },
       ],
     };
     data = updatePlan(data, 'plan', { name: 'New SIP', type: 'Gold' });
-    expect(data.transactions[0]).toMatchObject({ note: 'New SIP deposit', category: 'Gold / Silver' });
+    expect(data.transactions[0]).toMatchObject({ note: 'New SIP installment', category: 'Gold / Silver' });
     expect(data.transactions[1]).toMatchObject({ note: 'User note', category: 'Gold / Silver' });
     expect(validateIntegrity(data)).toEqual([]);
 
@@ -87,13 +88,7 @@ describe('Phase 5 domain actions', () => {
     expect(() => deleteGoal(data, efGoal.id)).toThrow(GoalLockedError);
     expect(() => updateGoal(data, 'missing', { name: 'Missing' }, { expenseBaseline: 0 })).toThrow('not found');
     expect(() => deleteGoal(data, 'missing')).toThrow('not found');
-    const linked = addHolding(data, {
-      name: 'Emergency savings', type: 'Savings account', invested: 500, value: 500,
-    }, () => 'asset');
-    const updated = updateGoal(linked, efGoal.id, {
-      links: [{ instrumentId: 'asset', share: 100 }],
-    }, { expenseBaseline: 0 });
-    expect(goalSavedFor(updated.goals[0]!, updated, '2026-10-10')).toBe(500);
+    expect(goalSaved(efGoal, 500)).toBe(500);
   });
 
   it('adds and edits manual holdings while retaining the caller-provided valuation date', () => {
@@ -119,8 +114,70 @@ describe('Phase 5 domain actions', () => {
     expect(valueStaleness(undefined, '2026-10-10')).toEqual({ stale: true, days: null });
   });
 
+  it('maintains non-negative end-of-day balances and keeps deposit links synchronized', () => {
+    expect(efEndOfDayBalances([
+      { id: 'same-day-a', date: '2026-01-01', amount: 5, note: '' },
+      { id: 'same-day-b', date: '2026-01-01', amount: 7, note: '' },
+    ])).toEqual([{ date: '2026-01-01', balance: 12 }]);
+    let data = initial();
+    data = addEfEntry(data, { date: '2026-01-01', amount: 50_000, note: 'Deposit' }, { newId: (() => { let i = 0; return () => `deposit-${++i}`; })() });
+    data = addEfEntry(data, { date: '2026-01-02', amount: -20_000, note: 'Withdrawal' }, { newId: (() => { let i = 0; return () => `withdrawal-${++i}`; })() });
+    const before = data;
+    expect(() => addEfEntry(data, { date: '2026-01-03', amount: -40_000, note: '' }, { newId: () => 'too-much' })).toThrow(EfBalanceError);
+    expect(data).toBe(before);
+    expect(() => deleteEfEntry(data, 'deposit-1')).toThrow('This would make the balance negative on 2026-01-02');
+    expect(() => updateEfEntry(data, 'withdrawal-1', { date: '2025-12-31' })).toThrow(EfBalanceError);
+    expect(() => updateEfEntry(data, 'withdrawal-1', { amount: 20_000 })).toThrow(EfLinkError);
+    data = updateEfEntry(data, 'deposit-1', { amount: 70_000 });
+    expect(data.transactions[0]).toMatchObject({ amount: 70_000, date: '2026-01-01' });
+    expect(efEndOfDayBalances(data.efEntries).at(-1)?.balance).toBe(50_000);
+    expect(validateIntegrity(data)).toEqual([]);
+    expect(() => updateEfEntry(data, 'withdrawal-1', { amount: 0 })).toThrow(EfLinkError);
+    data = addEfEntry(data, { date: '2026-01-04', amount: -1, note: '' }, { newId: (() => { let i = 0; return () => `withdraw-${++i}`; })() });
+    expect(data.transactions.at(-1)).toMatchObject({
+      type: 'income', amount: 1, category: 'Withdrawal', note: 'Emergency fund withdrawal',
+    });
+    expect(() => updateEfEntry(data, 'missing', { note: 'Missing' })).toThrow('not found');
+    expect(() => deleteEfEntry(data, 'missing')).toThrow('not found');
+
+    const withoutGoal = { ...initial(), goals: [] };
+    expect(() => addEfEntry(withoutGoal, { date: '2026-01-01', amount: 1, note: '' }, {
+      newId: () => 'no-goal',
+    })).toThrow('not found');
+
+    const unlinked = {
+      ...initial(),
+      efEntries: [{ id: 'legacy-unlinked', date: '2026-01-01', amount: 10, note: '' }],
+    };
+    const edited = updateEfEntry(unlinked, 'legacy-unlinked', { date: '2026-01-02', amount: 5 });
+    expect(edited.efEntries[0]).toMatchObject({ date: '2026-01-02', amount: 5 });
+    expect(edited.transactions).toEqual([]);
+    expect(efBalanceOn(edited.efEntries, '2026-01-01')).toBe(0);
+    expect(efBalanceOn(edited.efEntries, '2026-01-02')).toBe(5);
+    expect(deleteEfEntry(edited, 'legacy-unlinked').efEntries).toEqual([]);
+
+    const depositOnly = addEfEntry(initial(), { date: '2026-01-01', amount: 50, note: '' }, {
+      newId: (() => { let id = 0; return () => `linked-${++id}`; })(),
+    });
+    const withUnrelatedTransaction = {
+      ...depositOnly,
+      transactions: [...depositOnly.transactions, {
+        id: 'unrelated', type: 'income' as const, amount: 1, date: '2026-01-01',
+        category: 'Salary', note: 'Unrelated',
+      }],
+    };
+    expect(updateEfEntry(withUnrelatedTransaction, depositOnly.efEntries[0]!.id, { date: '2026-01-03' }).transactions[1])
+      .toMatchObject({ id: 'unrelated', date: '2026-01-01' });
+  });
+
   it('describes valid transaction sources and omits orphan sources', () => {
-    const data: AppData = initial();
+    const source = { kind: 'ef-entry' as const, parentId: 'goal-emergency', entryId: 'entry' };
+    const data: AppData = {
+      ...initial(),
+      efEntries: [{ id: 'entry', date: '2026-01-01', amount: 1, note: '' }],
+    };
+    expect(describeSource(data, source)).toEqual({ label: 'Emergency fund', route: '/emergency-fund', params: {} });
+    expect(describeSource(data, { ...source, entryId: 'missing' })).toBeNull();
 
     const plan: PlanHolding = {
       ...planInput, id: 'plan', kind: 'plan', name: 'Travel SIP',
@@ -143,21 +200,25 @@ describe('Phase 5 domain actions', () => {
     expect(describeSource(withParents, { kind: 'liability-payment', parentId: 'wrong', entryId: 'liability-payment' })).toBeNull();
   });
 
-  it('checks linked liability transactions and reports duplicate linked payments', () => {
+  it('checks linked loan and emergency transactions and reports duplicate linked payments', () => {
     const loan: Liability = {
       id: 'loan', kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
       emi: 100, startDate: '2026-01-01',
       payments: [{ id: 'payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
       settlement: null,
     };
+    const efGoal = initial().goals[0]!;
     const base = {
       ...initial(),
       liabilities: [loan],
+      efEntries: [{ id: 'ef-entry', date: '2026-01-02', amount: 20, note: '' }],
     };
     const transactions = [
       { id: 'loan-one', type: 'income' as const, amount: 11, date: '2026-01-03', category: '', note: '', source: { kind: 'liability-payment' as const, parentId: 'loan', entryId: 'payment' } },
       { id: 'loan-two', type: 'expense' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'liability-payment' as const, parentId: 'loan', entryId: 'payment' } },
+      { id: 'ef-tx', type: 'expense' as const, amount: 20, date: '2026-01-02', category: '', note: '', source: { kind: 'ef-entry' as const, parentId: efGoal.id, entryId: 'ef-entry' } },
       { id: 'orphan-plan', type: 'invest' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'holding-entry' as const, parentId: 'missing-plan', entryId: 'missing-log' } },
+      { id: 'orphan-ef', type: 'invest' as const, amount: 10, date: '2026-01-01', category: '', note: '', source: { kind: 'ef-entry' as const, parentId: 'wrong-goal', entryId: 'missing-ef' } },
     ];
     const issues = validateIntegrity({ ...base, transactions });
     expect(issues.map(({ code }) => code)).toEqual(expect.arrayContaining([

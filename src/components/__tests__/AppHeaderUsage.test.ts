@@ -2,11 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const appRoot = join(process.cwd(), 'app');
-const noDefaultMenuScreens = new Set([
-  'app/erase-data.tsx',
-  'app/(tabs)/budget.tsx',
-  'app/emergency-fund.tsx',
-]);
+const noDefaultMenuScreens = new Set(['app/erase-data.tsx', 'app/(tabs)/budget.tsx']);
 
 function routeFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -35,11 +31,5 @@ describe('AppHeader menu usage', () => {
     }
     expect(usages.map(({ file }) => file)).toContain('app/(tabs)/transactions.tsx');
     expect(usages.map(({ file }) => file)).toContain('app/(tabs)/goals.tsx');
-    const budget = usages.find(({ file }) => file === 'app/(tabs)/budget.tsx');
-    expect(budget?.props).toContain('showDefaultMenu={false}');
-    const emergencyFund = usages.find(({ file }) => file === 'app/emergency-fund.tsx');
-    expect(emergencyFund?.props).toContain('showDefaultMenu={false}');
-    expect(emergencyFund?.props).toContain("label: 'Edit allocation'");
-    expect(emergencyFund?.props).toContain("icon: 'edit-2'");
   });
 });

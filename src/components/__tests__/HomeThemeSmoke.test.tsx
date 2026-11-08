@@ -1,45 +1,26 @@
-import { router } from 'expo-router';
 import React from 'react';
-import { Pressable } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
+import { Pressable } from 'react-native';
+import { router } from 'expo-router';
 
 import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import { useUIStore } from '../../data/uiStore';
 import { emptyAppData } from '../../domain/actions';
-import { createDefaultBudgetPlan } from '../../domain/budget';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
-import { budgetPlanFromLines } from '../../testFixtures/budget';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
-const mockActions = {
-  clearDue: jest.fn(),
-  clearDuesThrough: jest.fn(),
-  undoClearDue: jest.fn(),
-  undoClearDuesThrough: jest.fn(),
-  saveAndApplyBudgetPlan: jest.fn(),
-  restoreBudgetPlanAndMonth: jest.fn(),
-};
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
 }));
-jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-}));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
-jest.mock('../../data/useAppData', () => ({
-  useAppData: () => mockData,
-  useAppActions: () => mockActions,
-}));
+jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
 jest.mock('../../data/store', () => ({
-  useAppStore: Object.assign(
-    (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
-    { getState: () => ({ lastError: null }) },
-  ),
+  useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
   metaStore: {
     getMeta: async () => ({}),
     updateSortSpec: async () => ({}),
@@ -78,10 +59,8 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
-    EmptyState: node('empty'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
-    SearchField: node('searchfield'),
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
@@ -101,13 +80,9 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
+    StyleSheet: { create: (styles: object) => styles },
     Text: node('text'),
     View: node('view'),
-    TextInput: node('text-input'),
-    ScrollView: node('scroll-view'),
-    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
-    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });
@@ -151,54 +126,24 @@ describe('Home screen theme smoke', () => {
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    const emergencyFundPill = renderer.root.findAllByProps({ label: 'Emergency fund' })[0];
-    if (!emergencyFundPill) throw new Error('Emergency fund pill did not render.');
+    const emergencyFundPill = renderer.root.findByProps({ label: 'Emergency Fund' });
     act(() => emergencyFundPill.props.onPress());
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/emergency-fund');
     act(() => renderer?.unmount());
   });
 
-  it('creates a default budget without a plan and routes plan application through Budget', async () => {
+  it('opens the Budget tab from the Home budget card', async () => {
     jest.clearAllMocks();
-    const previous = { budgetPlan: mockData.budgetPlan, monthBudgets: mockData.monthBudgets };
-    mockData.budgetPlan = null;
-    mockData.monthBudgets = [];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(<HomeScreen />);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    const create = renderer.root.findByProps({ accessibilityLabel: 'Create budget' });
-    act(() => create.props.onPress());
-    expect(mockActions.saveAndApplyBudgetPlan).toHaveBeenCalledTimes(1);
-    expect(mockActions.saveAndApplyBudgetPlan).toHaveBeenCalledWith(
-      createDefaultBudgetPlan('2026-10'),
-      '2026-10',
-    );
-    expect(router.push).not.toHaveBeenCalled();
+    act(() => renderer?.root.findByProps({ label: 'Open budget' }).props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/(tabs)/budget');
     await act(async () => renderer?.unmount());
-
-    mockData.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 1_000 }], {
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-    });
-    mockData.monthBudgets = [];
-    jest.mocked(router.push).mockClear();
-    await act(async () => {
-      renderer = TestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Home did not render.');
-    const apply = renderer.root.findByProps({ accessibilityLabel: 'Apply budget' });
-    act(() => apply.props.onPress());
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(tabs)/budget',
-      params: { month: '2026-10', apply: '1' },
-    });
-    await act(async () => renderer?.unmount());
-    mockData.budgetPlan = previous.budgetPlan;
-    mockData.monthBudgets = previous.monthBudgets;
   });
 
   it('shows Festival, Donation and Gifts in the current-month Home spending breakdown', async () => {
@@ -217,12 +162,12 @@ describe('Home screen theme smoke', () => {
         await Promise.resolve();
       });
       if (!renderer) throw new Error('Home did not render.');
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityState)
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
         .toEqual({ expanded: false });
-      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.onPress());
+      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityLabel)
-        .toBe('Hide spending by category');
+      expect(renderer.root.findAll((node) => String(node.type) === 'section')
+        .map((node) => node.children.join(' '))).toContain('Spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);
       expect(visibleText).not.toContain('Salary');
@@ -258,7 +203,7 @@ describe('Home screen theme smoke', () => {
     });
     if (!renderer) throw new Error('Home did not render.');
     expect(renderer.root.findAllByType('text').map((node) => node.children.join(' '))).toContain('Net Worth');
-    expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(3);
+    expect(new Set(HOME_QUICK_ACTIONS.map((item) => item.icon)).size).toBe(4);
     assertNoVerbText(renderer.root, { screen: 'home' });
     await act(async () => renderer?.unmount());
   });
@@ -272,16 +217,17 @@ describe('Home screen theme smoke', () => {
     if (!renderer) throw new Error(`Home did not render at font scale ${fontScale}.`);
     const quickActionButtons = renderer.root.findAllByType(Pressable).filter((node) =>
       node.props.accessibilityRole === 'button'
-      && ['New Transaction', 'New Investment', 'New Liability'].includes(
+      && ['Add Transaction', 'New Investment', 'New Liability', 'Log Emergency Fund'].includes(
         node.props.accessibilityLabel,
       ),
     );
-    expect(quickActionButtons).toHaveLength(3);
-    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(3);
+    expect(quickActionButtons).toHaveLength(4);
+    expect(new Set(HOME_QUICK_ACTIONS.map((action) => action.icon)).size).toBe(4);
     expect(HOME_QUICK_ACTIONS.map((action) => action.label)).toEqual([
-      'New Transaction',
+      'Add Transaction',
       'New Investment',
       'New Liability',
+      'Log Emergency Fund',
     ]);
     assertNoVerbText(renderer.root, { screen: 'home' });
     act(() => renderer?.unmount());

@@ -1,4 +1,4 @@
-{
+  {
   "expo": {
     "name": "WealthWise",
     "slug": "WealthWise",
@@ -8,6 +8,7 @@
     "scheme": "wealthwise",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.begawo.WealthWise"
     },
     "android": {
@@ -53,15 +54,13 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-sharing",
-      "expo-notifications",
       "expo-secure-store",
       [
         "expo-local-authentication",
         {
           "faceIDPermission": "Unlock Wealth Wise"
         }
-      ],
-      "expo-sqlite"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

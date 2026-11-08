@@ -65,11 +65,6 @@ pnpm-debug.log*
 .nyc_output/
 .eslintcache
 
-# Reports and generated local documentation
-docs/*-report.md
-docs/RELEASE-CHECKLIST.md
-docs/*.local.md
-
 
 example
 
@@ -87,5 +82,3 @@ android/local.properties
 # Local backup and exported financial data
 *.backup.json
 wealthwise-backup-*.json
-
-.claude

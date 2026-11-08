@@ -1,5 +1,23 @@
 import { monthKey } from './dates';
-import type { ISODate, Transaction } from './types';
+import type { EfEntry, ISODate, Transaction } from './types';
+
+export function efBalance(entries: EfEntry[]): number {
+  return entries.reduce((balance, entry) => balance + entry.amount, 0);
+}
+
+export type PassbookRow = EfEntry & { balance: number };
+
+export function efPassbook(entries: EfEntry[]): PassbookRow[] {
+  let balance = 0;
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.index - b.index)
+    .map(({ entry }) => {
+      balance += entry.amount;
+      return { ...entry, balance };
+    })
+    .reverse();
+}
 
 export function monthlyBaseline(
   transactions: Transaction[],
@@ -23,19 +41,6 @@ export function monthlyBaseline(
     : allMonths.filter((key) => key === currentMonth).slice(0, 1);
   if (includedMonths.length === 0) return 0;
   return includedMonths.reduce((sum, month) => sum + monthlyTotals.get(month)!, 0) / includedMonths.length;
-}
-
-export type EmergencyFundBaseline = { amount: number; source: 'expenses' | 'salary' | null };
-
-export function emergencyFundBaseline(
-  transactions: Transaction[],
-  monthlySalary: number | null,
-  asOf: ISODate,
-): EmergencyFundBaseline {
-  const expenses = monthlyBaseline(transactions, 'expense', asOf);
-  if (expenses > 0) return { amount: expenses, source: 'expenses' };
-  if (monthlySalary !== null && monthlySalary > 0) return { amount: monthlySalary, source: 'salary' };
-  return { amount: 0, source: null };
 }
 
 export function monthsCovered(balance: number, baseline: number): number | null {

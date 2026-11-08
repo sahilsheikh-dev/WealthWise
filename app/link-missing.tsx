@@ -29,7 +29,7 @@ export default function LinkMissingScreen() {
   const sort = sorting.sort;
   const entries = useMemo(() => sort(findUnlinkedEntries(data).map((item) => ({
     ...item,
-    id: `${item.kind}:${item.kind === 'holding' ? item.holdingId : item.liabilityId}:${item.entry.id}`,
+    id: `${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`,
     date: item.entry.date,
     amount: Math.abs(item.entry.amount),
   }))), [data, sort]);
@@ -74,7 +74,9 @@ export default function LinkMissingScreen() {
             </ChipRow>
             <View style={styles.list}>
               {entries.map((item) => {
-                const name = item.kind === 'holding' ? item.holdingName : item.liabilityName;
+                const name = item.kind === 'ef'
+                  ? 'Emergency fund'
+                  : item.kind === 'holding' ? item.holdingName : item.liabilityName;
                 const kind = item.kind === 'liability'
                   ? item.entry.kind
                   : item.entry.amount < 0 || item.kind === 'holding' && item.entry.kind === 'Withdrawal'
@@ -82,7 +84,7 @@ export default function LinkMissingScreen() {
                     : 'Deposit';
                 return (
                   <ListItem
-                    key={`${item.kind}:${item.kind === 'holding' ? item.holdingId : item.liabilityId}:${item.entry.id}`}
+                    key={`${item.kind}:${item.kind === 'holding' ? item.holdingId : item.kind === 'liability' ? item.liabilityId : 'ef'}:${item.entry.id}`}
                     title={name}
                     subtitle={`${formatDate(item.entry.date)} · ${kind}`}
                     amount={<AmountText value={Math.abs(item.entry.amount)} tier="row" />}

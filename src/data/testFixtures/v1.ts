@@ -147,12 +147,3 @@ export function makeV5Fixture() {
     budget: null,
   };
 }
-
-export function makeV6Fixture() {
-  const v5 = makeV5Fixture();
-  return {
-    ...v5,
-    efCustomBuckets: [],
-    efBucketLinks: {},
-  };
-}
