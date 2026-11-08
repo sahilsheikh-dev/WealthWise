@@ -49,7 +49,7 @@ import { addDays, monthKey, shiftMonth } from '../../domain/dates';
 import { addIncomeItem, applyBudgetPlanToMonth } from '../../domain/budget';
 import { pendingItems } from '../../domain/pending';
 import { duesThroughPreview } from '../../domain/dues';
-import { planSchedule } from '../../domain/schedule';
+import { liabilitySchedule, planSchedule } from '../../domain/schedule';
 import { emptyAppData } from '../../domain/actions';
 import { createBackup } from '../../domain/backup';
 import { encryptBackup, isEncryptedBackup } from '../../domain/backupCrypto';
@@ -4265,9 +4265,19 @@ describe('route render smoke audit', () => {
         rowKind?: string;
         id: string;
         note?: string;
+        dueDate?: string;
       }[];
       const pendingEmiRows = liabilityRows.filter((row) => row.rowKind === 'pending-emi');
       expect(pendingEmiRows).toHaveLength(1);
+      const lastEmiDate = `${shiftMonth(liabilityStartMonth, liability.tenureMonths)}-01`;
+      expect(pendingEmiRows.map((row) => row.dueDate)).toEqual(
+        liabilitySchedule(liability, today).rows
+          .filter((row) => row.status !== 'paid')
+          .map((row) => row.dueDate),
+      );
+      expect(pendingEmiRows.every((row) => row.dueDate !== undefined && row.dueDate <= lastEmiDate)).toBe(true);
+      expect(pendingEmiRows.map((row) => row.dueDate))
+        .not.toContain(`${shiftMonth(liabilityStartMonth, 4)}-01`);
       const pendingEmiRow = pendingEmiRows[0];
       if (!pendingEmiRow) throw new Error('Pending EMI row is missing.');
       const pendingEmiView = renderScreen(liabilityList.props.renderItem({
