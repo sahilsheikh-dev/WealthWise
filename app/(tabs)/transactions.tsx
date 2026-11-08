@@ -24,7 +24,7 @@ import { availableBalance, reviewableMonths } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
-import { filterTransactions, groupByDate, monthSummary } from '../../src/domain/transactions';
+import { filterTransactions, groupByDate, monthSummary, transactionCategoryLabel } from '../../src/domain/transactions';
 import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
@@ -265,7 +265,7 @@ export default function TransactionsScreen() {
               ))}
               {categoryFilter ? (
                 <Chip
-                  label={`Category: ${categoryFilter} ×`}
+                  label={`Category: ${transactionCategoryLabel(categoryFilter)} ×`}
                   selected
                   onPress={() => setCategoryOverride('')}
                 />
@@ -292,13 +292,14 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
+                const categoryLabel = transactionCategoryLabel(item.category, item.type);
                 return (
                   <ListItem
                     key={item.id}
-                    title={item.note || item.category}
-                    subtitle={linked ? `${item.category}\n→ ${linked.label}` : item.category}
+                    title={item.note || categoryLabel}
+                    subtitle={linked ? `${categoryLabel}\n→ ${linked.label}` : categoryLabel}
                     amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
-                    accessibilityLabel={`${item.note || item.category}, ${item.category}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
+                    accessibilityLabel={`${item.note || categoryLabel}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}

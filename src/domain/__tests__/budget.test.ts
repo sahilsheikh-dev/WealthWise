@@ -1,10 +1,17 @@
 import { emptyAppData } from '../actions';
-import { filterTransactions } from '../transactions';
-import { appDataSchema, TRANSACTION_CATEGORIES } from '../schemas';
+import { filterTransactions, monthSummary, transactionCategoryLabel } from '../transactions';
 import {
-  BUDGET_WANT_WEIGHTS,
+  appDataSchema,
+  BUDGET_CATEGORIES,
+  TRANSACTION_CATEGORIES,
+} from '../schemas';
+import { mockAppData } from '../../mock/data';
+import {
+  BUDGET_CATEGORY_WEIGHTS,
+  BUDGET_GROUPS,
   applyTemplateToMonth,
   budgetHistory,
+  budgetGroupFor,
   budgetMonthView,
   clearMonthBudget,
   createBudgetTemplate,
@@ -21,7 +28,7 @@ import {
   suggestTemplate,
   updateBudgetTemplate,
 } from '../budget';
-import type { Liability, PlanHolding, Policy } from '../types';
+import type { Liability, PlanHolding, Policy, Transaction } from '../types';
 
 const plan: PlanHolding = {
   id: 'plan', kind: 'plan', name: 'Monthly fund', type: 'Mutual fund / SIP',
@@ -52,6 +59,31 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget templates and monthly views', () => {
+  it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
+    expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
+      ['Survival (Needs)', 50, ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
+      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments']],
+      ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion']],
+      ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
+      ['Unexpected Extras', 10, ['Unexpected']],
+    ]);
+    const groupedCategories = BUDGET_GROUPS.flatMap(({ categories }) => categories);
+    expect([...groupedCategories].sort()).toEqual([...BUDGET_CATEGORIES].sort());
+    expect(new Set(groupedCategories).size).toBe(BUDGET_CATEGORIES.length);
+    for (const category of BUDGET_CATEGORIES) {
+      expect(BUDGET_GROUPS.filter((group) => group.categories.includes(category))).toHaveLength(1);
+      expect(budgetGroupFor(category)?.categories).toContain(category);
+    }
+    expect(BUDGET_GROUPS.reduce((total, group) => total + group.weight, 0)).toBe(100);
+    expect(appDataSchema.safeParse(mockAppData).success).toBe(true);
+    const demoBudget = mockAppData.budget;
+    if (!demoBudget) throw new Error('Mock data must include a demo budget.');
+    const demoGroups = new Set(demoBudget.lines.map(({ category }) =>
+      budgetGroupFor(category)?.id,
+    ));
+    expect(demoGroups).toEqual(new Set(BUDGET_GROUPS.map(({ id }) => id)));
+  });
+
   it('resolves amount and percentage lines and requires income for percentages', () => {
     expect(resolveTemplate({
       plannedIncome: 12_345,
@@ -66,25 +98,32 @@ describe('budget templates and monthly views', () => {
     })).toThrow(MissingPlannedIncomeError);
   });
 
-  it('suggests rounded 50/30/20 allocations and warns when commitments exceed a bucket', () => {
+  it('suggests rounded five-group allocations, respects commitments, and warns on group overages', () => {
     const ordinary = suggestTemplate({ plannedIncome: 10_000, commitments: [] });
-    expect(ordinary.lines).toHaveLength(18);
-    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_500);
-    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(1_100);
-    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(800);
-    expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(500);
-    expect(ordinary.lines.find((line) => line.category === 'Donation')?.planned).toBe(300);
-    expect(ordinary.lines.find((line) => line.category === 'Gifts')?.planned).toBe(500);
-    expect(ordinary.lines.find((line) => line.category === 'Emergency fund')?.planned).toBe(1_000);
-    expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(400);
+    expect(ordinary.lines).toHaveLength(BUDGET_CATEGORIES.length);
+    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_300);
+    expect(ordinary.lines.find((line) => line.category === 'Food')?.planned).toBe(1_000);
+    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(500);
+    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(300);
+    expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(200);
+    expect(ordinary.lines.find((line) => line.category === 'Unexpected')?.planned).toBe(1_000);
+    expect(ordinary.lines.find((line) => line.category === 'Emergency fund')?.planned).toBe(700);
+    expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(500);
     expect(ordinary.warnings).toEqual([]);
+    const committed = suggestTemplate({
+      plannedIncome: 10_000,
+      commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
+        dueDate: '2026-03-20', plannedAmount: 1_000, status: 'upcoming', paidAmount: 0 }],
+    });
+    expect(committed.lines.find((line) => line.category === 'EMI')?.planned).toBe(1_400);
+    expect(committed.lines.find((line) => line.category === 'Food')?.planned).toBe(800);
     const overspent = suggestTemplate({
       plannedIncome: 10_000,
       commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
         dueDate: '2026-03-20', plannedAmount: 6_000, status: 'overdue', paidAmount: 0 }],
     });
     expect(overspent.lines.find((line) => line.category === 'EMI')?.planned).toBe(6_000);
-    expect(overspent.warnings).toHaveLength(1);
+    expect(overspent.warnings).toEqual(['Survival (Needs) commitments exceed its 50% allocation.']);
     expect(overspent.lines.every((line) => line.planned >= 0)).toBe(true);
     const savingsOver = suggestTemplate({
       plannedIncome: 10_000,
@@ -93,22 +132,23 @@ describe('budget templates and monthly views', () => {
     });
     expect(savingsOver.warnings).toHaveLength(1);
     expect(savingsOver.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(3_000);
+    expect(savingsOver.lines.every((line) => line.planned >= 0)).toBe(true);
   });
 
-  it('keeps the wants weights at 100% and rounds each category to the nearest hundred', () => {
-    expect(Object.values(BUDGET_WANT_WEIGHTS).reduce((total, weight) => total + weight, 0)).toBe(100);
+  it('keeps fixed within-group weights at 100% and rounds each category to the nearest hundred', () => {
+    for (const group of BUDGET_GROUPS) {
+      const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
+      if (!weights) throw new Error(`Missing weights for ${group.id}`);
+      expect(Object.values(weights).reduce((total, weight) => total + weight, 0)).toBe(100);
+    }
     const { lines } = suggestTemplate({ plannedIncome: 10_001, commitments: [] });
-    expect(lines.filter(({ category }) => category in BUDGET_WANT_WEIGHTS)).toEqual([
-      { category: 'Shopping', planned: 1_100 },
-      { category: 'Other', planned: 800 },
-      { category: 'Festival', planned: 500 },
-      { category: 'Donation', planned: 300 },
-      { category: 'Gifts', planned: 500 },
-    ]);
+    expect(lines.find(({ category }) => category === 'Living')?.planned).toBe(1_300);
+    expect(lines.find(({ category }) => category === 'Eating out')?.planned).toBe(200);
+    expect(lines.every(({ planned }) => planned >= 0 && planned % 100 === 0)).toBe(true);
   });
 
-  it('accepts Festival, Donation and Gifts in transactions and budget actuals', () => {
-    const categories = ['Festival', 'Donation', 'Gifts'] as const;
+  it('accepts the new expense categories in transactions, filters and budget schemas', () => {
+    const categories = ['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const;
     const transactions = categories.map((category, index) => ({
       id: `expense-${index}`,
       date: '2026-03-10',
@@ -138,9 +178,9 @@ describe('budget templates and monthly views', () => {
     expect(appDataSchema.safeParse(data).success).toBe(true);
     expect(TRANSACTION_CATEGORIES.expense).toEqual(expect.arrayContaining(categories));
     const view = budgetMonthView(data, '2026-03');
-    expect(view.lines.map(({ category, actual }) => [category, actual])).toEqual([
-      ['Festival', 25], ['Donation', 26], ['Gifts', 27],
-    ]);
+    expect(view.lines.map(({ category, actual }) => [category, actual])).toEqual(
+      categories.map((category, index) => [category, 25 + index]),
+    );
     for (const category of categories) {
       expect(filterTransactions(transactions, {
         month: '2026-03', type: 'all', query: '', category,
@@ -276,11 +316,129 @@ describe('budget templates and monthly views', () => {
     expect(view.actualSpend).toBe(410);
     expect(view.actualSave).toBe(100);
     expect(view.unbudgeted).toBe(10);
+    expect(view.income).toEqual({
+      planned: 3_000,
+      actual: 2_000,
+      bySource: [{ category: 'Salary', amount: 2_000 }],
+      extra: 0,
+    });
+    expect(view.otherMoneyIn).toBe(100);
+    expect(view.unbudgetedByGroup.find(({ groupId }) => groupId === 'wants')?.amount).toBe(10);
     expect(view.debt.prepaymentsActual).toBe(25);
     expect(view.debt.emiActual).toBe(25);
     expect(view.debt.emiPlanned).toBe(475);
     expect(view.lines.find((row) => row.category === 'Food')?.status).toBe('near');
     expect(budgetMonthView(emptyAppData('2026-03-01'), '2026-03').unallocated).toBeNull();
+  });
+
+  it('reconciles every earned income source separately from non-earned money in', () => {
+    const categories = [
+      ['Salary', 1_000],
+      ['Freelance', 200],
+      ['Rental', 300],
+      ['Business', 400],
+      ['Other', 500],
+      ['Withdrawal', 50],
+      ['Borrowed', 60],
+      ['Loan proceeds', 70],
+      ['Own funds', 80],
+    ] as const;
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      monthBudgets: [{
+        month: '2026-03', templateId: null, templateName: null, customized: false,
+        plannedIncome: 2_000, lines: [],
+      }],
+      transactions: categories.map(([category, amount], index) => ({
+        id: `income-${index}`, type: 'income' as const, amount, category, note: '', date: '2026-03-10',
+      })),
+    };
+    expect(appDataSchema.safeParse(data).success).toBe(true);
+    const view = budgetMonthView(data, '2026-03');
+    expect(view.income).toEqual({
+      planned: 2_000,
+      actual: 2_400,
+      bySource: [
+        { category: 'Business', amount: 400 },
+        { category: 'Freelance', amount: 200 },
+        { category: 'Other', amount: 500 },
+        { category: 'Rental', amount: 300 },
+        { category: 'Salary', amount: 1_000 },
+      ],
+      extra: 400,
+    });
+    expect(view.otherMoneyIn).toBe(260);
+    const unplanned = budgetMonthView({
+      ...data,
+      monthBudgets: data.monthBudgets.map((monthBudget) => ({ ...monthBudget, plannedIncome: null })),
+    }, '2026-03');
+    expect(unplanned.income.extra).toBe(0);
+  });
+
+  it('reconciles every transaction in 500 seeded budget-month cases (seed 19052026)', () => {
+    const seed = 19_052_026;
+    console.info(`budget reconciliation property seed: ${seed}`);
+    let state = seed;
+    const next = () => {
+      state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+      return state;
+    };
+    const incomeCategories = TRANSACTION_CATEGORIES.income;
+    const expenseCategories = TRANSACTION_CATEGORIES.expense;
+    const investCategories = TRANSACTION_CATEGORIES.invest;
+
+    for (let caseIndex = 0; caseIndex < 500; caseIndex += 1) {
+      const transactions: Transaction[] = [];
+      const transactionCount = 1 + next() % 24;
+      for (let transactionIndex = 0; transactionIndex < transactionCount; transactionIndex += 1) {
+        const transactionType = next() % 3;
+        const type = transactionType === 0 ? 'income' : transactionType === 1 ? 'expense' : 'invest';
+        const categories = type === 'income' ? incomeCategories
+          : type === 'expense' ? expenseCategories : investCategories;
+        transactions.push({
+          id: `case-${caseIndex}-transaction-${transactionIndex}`,
+          type,
+          amount: 1 + next() % 20_000,
+          category: categories[next() % categories.length] ?? categories[0],
+          note: '',
+          date: `2026-03-${String(1 + next() % 28).padStart(2, '0')}`,
+        });
+      }
+
+      const plannedCategories = new Set<string>();
+      const lines = BUDGET_CATEGORIES.filter(() => next() % 3 === 0)
+        .filter((category) => {
+          if (plannedCategories.has(category)) return false;
+          plannedCategories.add(category);
+          return true;
+        })
+        .map((category) => ({ category, planned: next() % 20_000 }));
+      const data = {
+        ...emptyAppData('2026-03-01'),
+        transactions,
+        monthBudgets: [{
+          month: '2026-03',
+          templateId: null,
+          templateName: null,
+          customized: false,
+          plannedIncome: next() % 100_000,
+          lines,
+        }],
+      };
+      const view = budgetMonthView(data, '2026-03');
+      const summary = monthSummary(transactions, '2026-03');
+      expect(view.lines.reduce((sum, line) => sum + line.actual, 0) + view.unbudgeted)
+        .toBe(summary.expense + summary.invest);
+      expect(view.unbudgetedByGroup.reduce((sum, group) => sum + group.amount, 0))
+        .toBe(view.unbudgeted);
+      expect(view.income.bySource.reduce((sum, source) => sum + source.amount, 0))
+        .toBe(summary.earnedIncome);
+      expect(view.income.actual).toBe(summary.earnedIncome);
+      expect(view.position.earnedIncome).toBe(summary.earnedIncome);
+      expect(view.position.expense).toBe(summary.expense);
+      expect(view.position.invest).toBe(summary.invest);
+      expect(view.position.flow).toBe(summary.net);
+    }
   });
 
   it.each([
@@ -315,14 +473,19 @@ describe('budget templates and monthly views', () => {
         { id: 'prior', type: 'income' as const, amount: 50, category: 'Salary', note: '', date: '2026-02-01' },
         { id: 'food', type: 'expense' as const, amount: 1, category: 'Food', note: '', date: '2026-03-02' },
         { id: 'investment', type: 'invest' as const, amount: 5, category: 'Other', note: '', date: '2026-03-03' },
+        { id: 'legacy-investment', type: 'invest' as const, amount: 7, category: 'Fund', note: '', date: '2026-03-04' },
       ],
     };
     const view = budgetMonthView(data, '2026-03');
     expect(view.position.opening).toBe(50);
     expect(view.position.previousClosing).toBe(50);
-    expect(view.position.flow).toBe(-6);
+    expect(view.position.flow).toBe(-13);
     expect(view.lines.find((row) => row.category === 'Food')).toMatchObject({ usedPct: null, status: 'over' });
-    expect(view.lines.find((row) => row.category === 'Other investments')).toMatchObject({ actual: 5 });
+    expect(view.lines.find((row) => row.category === 'Other investments')).toMatchObject({ actual: 12 });
+    expect(filterTransactions(data.transactions, {
+      month: '2026-03', type: 'invest', query: '', category: 'Other investments',
+    })).toHaveLength(2);
+    expect(transactionCategoryLabel('Fund', 'invest')).toBe('Other investments');
     expect(view.unallocated).toBeNull();
     expect(outstandingAt(emptyAppData('2026-03-01'), '2026-03-31')).toEqual({ count: 0, amount: 0 });
   });

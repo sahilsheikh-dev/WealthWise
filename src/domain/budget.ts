@@ -5,13 +5,16 @@ import { policySchedule } from './policySchedule';
 import { investCategoryFor } from './links';
 import { monthEndDate, monthPositionAt } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
+import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import type {
   AppData,
   BudgetLine,
   BudgetTemplate,
   ISODate,
   MonthBudget,
+  Transaction,
 } from './types';
+export { BUDGET_CATEGORIES };
 
 export type BudgetCommitment = {
   kind: 'plan' | 'liability' | 'policy';
@@ -24,18 +27,78 @@ export type BudgetCommitment = {
   paidAmount: number;
 };
 
-const NEED_WEIGHTS: Record<string, number> = {
-  Living: 30, Food: 20, Transport: 10, Family: 10, Health: 10, Bills: 10, Education: 10,
+export type BudgetGroup = {
+  id: 'survival' | 'savings-investments' | 'wants' | 'festival-donations-culture' | 'unexpected-extras';
+  name: string;
+  hint: string;
+  weight: number;
+  categories: readonly string[];
 };
-export const BUDGET_WANT_WEIGHTS: Record<string, number> = {
-  Shopping: 35, Other: 25, Festival: 15, Donation: 10, Gifts: 15,
+
+export const BUDGET_GROUPS: readonly BudgetGroup[] = [
+  {
+    id: 'survival',
+    name: 'Survival (Needs)',
+    hint: 'Essentials: living, food, transport, family, health, bills, education, EMI and insurance.',
+    weight: 50,
+    categories: ['Living', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance'],
+  },
+  {
+    id: 'savings-investments',
+    name: 'Savings and Investments',
+    hint: 'Savings and every investment category, including Emergency fund.',
+    weight: 20,
+    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'],
+  },
+  {
+    id: 'wants',
+    name: 'Wants',
+    hint: 'Non-essential or lifestyle spending: eating out, online shopping, entertainment and fashion.',
+    weight: 15,
+    categories: ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion'],
+  },
+  {
+    id: 'festival-donations-culture',
+    name: 'Festival, Donations, Culture',
+    hint: 'Festival, donation, gifts and culture-related spending.',
+    weight: 5,
+    categories: ['Festival', 'Donation', 'Gifts', 'Culture'],
+  },
+  {
+    id: 'unexpected-extras',
+    name: 'Unexpected Extras',
+    hint: 'Surprises and emergencies: medical bills, home or vehicle repairs, or sudden gifts.',
+    weight: 10,
+    categories: ['Unexpected'],
+  },
+];
+
+export const BUDGET_CATEGORY_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+  survival: { Living: 25, Food: 20, Transport: 10, Family: 10, Health: 5, Bills: 10, Education: 5, EMI: 10, Insurance: 5 },
+  'savings-investments': {
+    'Emergency fund': 35, 'Mutual fund / SIP': 25, 'Stocks / ETF': 15,
+    'Fixed deposit / RD': 10, 'Gold / Silver': 10, 'Other investments': 5,
+  },
+  wants: { Shopping: 35, Other: 20, 'Eating out': 15, Entertainment: 15, Fashion: 15 },
+  'festival-donations-culture': { Festival: 30, Donation: 20, Gifts: 20, Culture: 30 },
+  'unexpected-extras': { Unexpected: 100 },
 };
-const WANT_WEIGHTS = BUDGET_WANT_WEIGHTS;
-const SAVING_WEIGHTS: Record<string, number> = {
-  'Emergency fund': 50, 'Mutual fund / SIP': 20, 'Stocks / ETF': 10,
-  'Fixed deposit / RD': 10, 'Gold / Silver': 5, 'Other investments': 5,
-};
-const SAVING_CATEGORIES = new Set(Object.keys(SAVING_WEIGHTS));
+
+const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
+
+export function budgetGroupFor(category: string): BudgetGroup | undefined {
+  return BUDGET_GROUPS.find((group) => group.categories.includes(category));
+}
+
+function isInvestmentCategory(category: string): boolean {
+  return INVESTMENT_CATEGORIES.has(category);
+}
+
+function budgetCategoryForTransaction(transaction: Transaction): string {
+  return transaction.type === 'invest' && !INVESTMENT_CATEGORIES.has(transaction.category)
+    ? 'Other investments'
+    : transaction.category;
+}
 
 function monthOf(month: string): string {
   if (!/^\d{4}-\d{2}$/.test(month) || Number(month.slice(5, 7)) < 1 || Number(month.slice(5, 7)) > 12) {
@@ -58,7 +121,7 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
       if (monthKey(row.dueDate) !== month) continue;
       rows.push({
         kind: 'plan', id: holding.id, name: holding.name,
-        category: investCategoryFor(holding.type) === 'Other' ? 'Other investments' : investCategoryFor(holding.type),
+        category: investCategoryFor(holding.type),
         dueDate: row.dueDate, plannedAmount: row.amount, status: row.status,
         paidAmount: row.paidAmount ?? 0,
       });
@@ -116,38 +179,29 @@ export function suggestTemplate(input: {
   plannedIncome: number;
   commitments: BudgetCommitment[];
 }): { lines: BudgetLine[]; warnings: string[] } {
-  const buckets = [
-    { target: input.plannedIncome * 0.5, weights: NEED_WEIGHTS, categories: new Set(['EMI', 'Insurance']) },
-    { target: input.plannedIncome * 0.3, weights: WANT_WEIGHTS, categories: new Set<string>() },
-    { target: input.plannedIncome * 0.2, weights: SAVING_WEIGHTS, categories: new Set<string>() },
-  ];
   const lines: BudgetLine[] = [];
   const warnings: string[] = [];
-  for (const bucket of buckets) {
-    const commitments = input.commitments.filter((item) => bucket.categories.has(item.category)
-      || (bucket.weights === SAVING_WEIGHTS && SAVING_CATEGORIES.has(item.category)));
+  for (const group of BUDGET_GROUPS) {
+    const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
+    if (!weights) throw new Error(`Missing category weights for ${group.id}.`);
+    const commitments = input.commitments.filter((item) => group.categories.includes(item.category));
     const committed = commitments.reduce((sum, item) => sum + item.plannedAmount, 0);
-    const remaining = Math.max(0, bucket.target - committed);
-    if (committed > bucket.target) {
-      const categories = [...new Set(commitments.map((item) => item.category))].join(', ');
-      warnings.push(`${categories} exceed their 50/30/20 allocation.`);
+    const target = input.plannedIncome * group.weight / 100;
+    const remaining = Math.max(0, target - committed);
+    if (committed > target) {
+      warnings.push(`${group.name} commitments exceed its ${group.weight}% allocation.`);
     }
-    const totalWeight = Object.values(bucket.weights).reduce((sum, weight) => sum + weight, 0);
-    for (const [category, weight] of Object.entries(bucket.weights)) {
+    const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+    for (const category of group.categories) {
+      const weight = weights[category];
+      if (weight === undefined) throw new Error(`Missing budget weight for ${category}.`);
       const amount = Math.max(0, Math.round(remaining * weight / totalWeight / 100) * 100);
       const categoryCommitment = commitments.filter((item) => item.category === category)
         .reduce((sum, item) => sum + item.plannedAmount, 0);
       lines.push({ category, planned: amount + categoryCommitment });
     }
-    for (const item of commitments) {
-      if (item.category === 'EMI' || item.category === 'Insurance') {
-        lines.push({ category: item.category, planned: item.plannedAmount });
-      }
-    }
   }
-  const merged = new Map<string, number>();
-  for (const line of lines) merged.set(line.category, (merged.get(line.category) ?? 0) + line.planned);
-  return { lines: [...merged].map(([category, planned]) => ({ category, planned })), warnings };
+  return { lines, warnings };
 }
 
 function templateRows(data: AppData): BudgetTemplate[] {
@@ -302,17 +356,27 @@ export function outstandingAt(data: AppData, asOf: ISODate): OutstandingSummary 
 function lineActual(data: AppData, month: string, category: string): number {
   return data.transactions.filter((row) =>
     monthKey(row.date) === month
-    && (row.category === category || (category === 'Other investments' && row.type === 'invest' && row.category === 'Other'))
+    && budgetCategoryForTransaction(row) === category
     && (row.type === 'expense' || row.type === 'invest'),
   ).reduce((sum, row) => sum + row.amount, 0);
 }
+
+export type BudgetIncomeSource = { category: string; amount: number };
 
 export type BudgetMonthView = {
   budget: MonthBudget | null;
   position: ReturnType<typeof monthPositionAt> & { previousClosing: number; flow: number };
   plannedIncome: number | null;
   actualEarned: number;
+  income: {
+    planned: number | null;
+    actual: number;
+    bySource: BudgetIncomeSource[];
+    extra: number;
+  };
+  otherMoneyIn: number;
   lines: { category: string; planned: number; actual: number; remaining: number; usedPct: number | null; status: 'ok' | 'near' | 'over' }[];
+  unbudgetedByGroup: { groupId: BudgetGroup['id']; groupName: string; amount: number }[];
   commitments: BudgetCommitment[];
   plannedSpend: number;
   actualSpend: number;
@@ -334,7 +398,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
       .reduce((sum, item) => sum + item.plannedAmount, 0);
     if (amount > 0) planned.set(category, amount);
   }
-  for (const category of SAVING_CATEGORIES) {
+  for (const category of INVESTMENT_CATEGORIES) {
     const amount = commitments.filter((item) => item.category === category)
       .reduce((sum, item) => sum + item.plannedAmount, 0);
     if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
@@ -353,15 +417,26 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
   const actualSave = data.transactions.filter((row) =>
     monthKey(row.date) === key && row.type === 'invest',
   ).reduce((sum, row) => sum + row.amount, 0);
-  const plannedSpend = lines.filter((line) => !SAVING_CATEGORIES.has(line.category))
+  const plannedSpend = lines.filter((line) => !isInvestmentCategory(line.category))
     .reduce((sum, line) => sum + line.planned, 0);
-  const plannedSave = lines.filter((line) => SAVING_CATEGORIES.has(line.category))
+  const plannedSave = lines.filter((line) => isInvestmentCategory(line.category))
     .reduce((sum, line) => sum + line.planned, 0);
   const budgetCategories = new Set(lines.map((line) => line.category));
-  const unbudgeted = data.transactions.filter((row) =>
-    monthKey(row.date) === key && (row.type === 'expense' || row.type === 'invest')
-      && !budgetCategories.has(row.type === 'invest' && row.category === 'Other' ? 'Other investments' : row.category),
-  ).reduce((sum, row) => sum + row.amount, 0);
+  const unbudgetedAmounts = new Map<BudgetGroup['id'], number>();
+  for (const row of data.transactions) {
+    if (monthKey(row.date) !== key || (row.type !== 'expense' && row.type !== 'invest')) continue;
+    const category = budgetCategoryForTransaction(row);
+    if (budgetCategories.has(category)) continue;
+    const group = budgetGroupFor(category);
+    if (!group) throw new Error(`No budget group is defined for transaction category "${category}".`);
+    unbudgetedAmounts.set(group.id, (unbudgetedAmounts.get(group.id) ?? 0) + row.amount);
+  }
+  const unbudgetedByGroup = BUDGET_GROUPS.map((group) => ({
+    groupId: group.id,
+    groupName: group.name,
+    amount: unbudgetedAmounts.get(group.id) ?? 0,
+  }));
+  const unbudgeted = unbudgetedByGroup.reduce((sum, row) => sum + row.amount, 0);
   const currentPosition = monthPositionAt(data.transactions, key);
   const previousClosing = monthPositionAt(data.transactions, shiftMonth(key, -1)).closing;
   const position = {
@@ -375,9 +450,30 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
       ? payment.kind === 'EMI'
       : payment.kind === 'Payment',
   }))).filter(({ payment }) => monthKey(payment.date) === key);
+  const monthIncome = data.transactions.filter((row) => monthKey(row.date) === key && row.type === 'income');
+  const earnedSources = new Map<string, number>();
+  for (const row of monthIncome) {
+    if ((NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category)) continue;
+    earnedSources.set(row.category, (earnedSources.get(row.category) ?? 0) + row.amount);
+  }
+  const otherMoneyIn = monthIncome
+    .filter((row) => (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category))
+    .reduce((sum, row) => sum + row.amount, 0);
+  const actualEarned = position.earnedIncome;
+  const plannedIncome = budget?.plannedIncome ?? null;
   return {
-    budget, position, plannedIncome: budget?.plannedIncome ?? null,
-    actualEarned: position.earnedIncome, lines, commitments, plannedSpend, actualSpend, plannedSave, actualSave,
+    budget, position, plannedIncome,
+    actualEarned,
+    income: {
+      planned: plannedIncome,
+      actual: actualEarned,
+      bySource: [...earnedSources]
+        .map(([category, amount]) => ({ category, amount }))
+        .sort((a, b) => a.category.localeCompare(b.category)),
+      extra: plannedIncome === null ? 0 : Math.max(0, actualEarned - plannedIncome),
+    },
+    otherMoneyIn,
+    lines, unbudgetedByGroup, commitments, plannedSpend, actualSpend, plannedSave, actualSave,
     debt: {
       emiPlanned: commitments.filter((item) => item.kind === 'liability').reduce((sum, item) => sum + item.plannedAmount, 0),
       emiActual: monthPayments.filter((row) => row.isEmi).reduce((sum, row) => sum + row.payment.amount, 0),

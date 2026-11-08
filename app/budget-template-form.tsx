@@ -4,19 +4,22 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { BudgetCategorySections } from '../src/components/form/BudgetCategorySections';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
+import { PercentField } from '../src/components/form/PercentField';
+import { RecurringItemsSummary } from '../src/components/form/RecurringItemsSummary';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { monthlyCommitments, suggestTemplate } from '../src/domain/budget';
-import { BUDGET_CATEGORIES } from '../src/domain/schemas';
+import { BUDGET_CATEGORIES, BUDGET_GROUPS, monthlyCommitments, suggestTemplate } from '../src/domain/budget';
 import type { BudgetTemplateLine } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { incomeBaselineFor } from '../src/domain/summary';
+import { transactionCategoryLabel } from '../src/domain/transactions';
 import { formatAmount } from '../src/lib/amountDisplay';
 
 type TemplateForm = {
@@ -40,6 +43,9 @@ export default function BudgetTemplateFormScreen() {
   const template = data.budgetTemplates?.find((item) => item.id === templateId);
   const storedMonth = data.monthBudgets?.find((row) => row.month === month);
   const incomeBaseline = incomeBaselineFor(data, today)?.amount ?? null;
+  const commitments = useMemo(() =>
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? monthlyCommitments(data, month) : [],
+  [data, month]);
   const defaults = useMemo<TemplateForm>(() => {
     const savedLines = template?.lines ?? (storedMonth?.lines ?? []).map((line) => ({
       category: line.category, mode: 'amount' as const, value: line.planned,
@@ -63,13 +69,13 @@ export default function BudgetTemplateFormScreen() {
   const watched = useWatch({ control });
   const percentTotal = watched.lines?.reduce((sum, line) =>
     sum + (line?.mode === 'percent' ? Number(line.value) || 0 : 0), 0) ?? 0;
-  const [suggestMode, setSuggestMode] = useState<'503020' | 'blank'>('503020');
+  const [suggestMode, setSuggestMode] = useState<'five-group' | 'blank'>('five-group');
   const [warnings, setWarnings] = useState<string[]>([]);
   const submitting = useRef(false);
   const setUpSuggested = () => {
     const plannedIncome = Number(watched.plannedIncome);
     if (!Number.isFinite(plannedIncome) || plannedIncome <= 0) {
-      Alert.alert('Add monthly income', 'Enter planned income before generating a 50/30/20 suggestion.');
+      Alert.alert('Add monthly income', 'Enter planned income before generating a five-group suggestion.');
       return;
     }
     if (suggestMode === 'blank') {
@@ -77,7 +83,7 @@ export default function BudgetTemplateFormScreen() {
       setWarnings([]);
       return;
     }
-    const suggestion = suggestTemplate({ plannedIncome, commitments: monthlyCommitments(data, month) });
+    const suggestion = suggestTemplate({ plannedIncome, commitments });
     setValue('lines', BUDGET_CATEGORIES.map((category) => ({
       category,
       mode: 'amount',
@@ -148,7 +154,7 @@ export default function BudgetTemplateFormScreen() {
       )} />
       <Controller control={control} name="plannedIncome" render={({ field }) => (
         <MoneyField label="Planned monthly income" accessibilityLabel="Planned monthly income"
-          value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+          value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} size="compact" />
       )} />
       {isWizard && !template ? (
         <>
@@ -159,9 +165,10 @@ export default function BudgetTemplateFormScreen() {
             label="Starting point"
             value={suggestMode}
             options={[
-              { label: '50/30/20', value: '503020' },
-              { label: 'Blank', value: 'blank' },
+              { label: 'Five-group plan (recommended)', value: 'five-group' },
+              { label: 'Start blank', value: 'blank' },
             ]}
+            size="compact"
             onChange={setSuggestMode}
           />
           <Button label="Review suggested lines" onPress={setUpSuggested} />
@@ -176,31 +183,51 @@ export default function BudgetTemplateFormScreen() {
       {saveAsTemplate ? <AppText>Saving preserves this month’s planned amounts as a reusable template.</AppText> : null}
       <View style={{ gap: 12 }}>
         <AppText>Total: {percentTotal.toFixed(1)}% of income</AppText>
-        {BUDGET_CATEGORIES.map((category, index) => (
-          <View key={category} style={{ gap: 8 }}>
-            <AppText weight="semibold">{category}</AppText>
-            <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
-              <SegmentedControl
-                label="Line type"
-                value={field.value}
-                options={[
-                  { label: 'Amount', value: 'amount' },
-                  { label: '% income', value: 'percent' },
-                ]}
-                onChange={field.onChange}
-              />
-            )} />
-            <Controller control={control} name={`lines.${index}.value`} render={({ field }) => (
-              watched.lines?.[index]?.mode === 'percent' ? (
-                <TextField label="Percent of income" accessibilityLabel={`${category} percent of income`}
-                  value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
-              ) : (
-                <MoneyField label="Planned amount" accessibilityLabel={`${category} planned amount`}
-                  value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
-              )
-            )} />
-          </View>
-        ))}
+        <AppText weight="semibold">Set up your budget inputs</AppText>
+        <RecurringItemsSummary items={commitments} />
+        <BudgetCategorySections
+          groups={BUDGET_GROUPS}
+          summarizeGroup={(group) => {
+            const plannedIncome = Number(watched.plannedIncome);
+            const amount = group.categories.reduce((total, category) => {
+              const index = BUDGET_CATEGORIES.findIndex((item) => item === category);
+              const line = watched.lines?.[index];
+              const value = Number(line?.value) || 0;
+              return total + (line?.mode === 'percent' ? value * (Number.isFinite(plannedIncome) ? plannedIncome : 0) / 100 : value);
+            }, 0);
+            return { amount, percent: plannedIncome > 0 ? amount / plannedIncome * 100 : 0 };
+          }}
+          renderCategory={(category) => {
+            const index = BUDGET_CATEGORIES.findIndex((item) => item === category);
+            const displayCategory = transactionCategoryLabel(category);
+            return (
+              <View key={category} style={{ gap: 8 }}>
+                <AppText weight="semibold">{displayCategory}</AppText>
+                <Controller control={control} name={`lines.${index}.mode`} render={({ field }) => (
+                  <SegmentedControl
+                    label="Enter as"
+                    value={field.value}
+                    options={[
+                      { label: 'Amount (₹)', value: 'amount' },
+                      { label: '% of income', value: 'percent' },
+                    ]}
+                    size="compact"
+                    onChange={field.onChange}
+                  />
+                )} />
+                <Controller control={control} name={`lines.${index}.value`} render={({ field }) => (
+                  watched.lines?.[index]?.mode === 'percent' ? (
+                    <PercentField label="Percent of income" accessibilityLabel={`${displayCategory} percent of income`}
+                      value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} size="compact" />
+                  ) : (
+                    <MoneyField label="Planned amount" accessibilityLabel={`${displayCategory} planned amount`}
+                      value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} size="compact" />
+                  )
+                )} />
+              </View>
+            );
+          }}
+        />
       </View>
     </FormScreen>
   );

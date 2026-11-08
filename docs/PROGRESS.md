@@ -42,11 +42,12 @@ verified. `Planned` means later roadmap work. Hashes are repository evidence;
 user claims that cannot be proven are called out as such.
 
 Progress bars use the percentage rounded to the nearest whole number and a
-10-character bar with `round(10 × done / total)` filled blocks. A part is done
-only when its status starts with `Done`; Phases 1–14 count as one part each.
+10-character bar with `round(10 × closed / total)` filled blocks. A part is
+closed when its status starts with `Done` or `Superseded`; Phases 1–14 count as
+one part each.
 
 ```text
-Overall progress ███████░░░ 70% (31/44)
+Overall progress ███████░░░ 71% (34/48)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -64,14 +65,17 @@ Phase 14         ██████████ 100% (1/1)
 Phase 15         ██████████ 100% (4/4)
 Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
-Phase 18         ████████░░ 78% (7/9)
-Phase 19         ░░░░░░░░░░ 0% (0/5)
-Phase 20         ░░░░░░░░░░ 0% (0/1)
-Phase 21         ░░░░░░░░░░ 0% (0/1)
-Phase 22         ░░░░░░░░░░ 0% (0/1)
+Phase 18         ██████████ 100% (9/9)
+Phase 19         █████░░░░░ 50% (1/2)
+Phase 20         ░░░░░░░░░░ 0% (0/3)
+Phase 21         ░░░░░░░░░░ 0% (0/2)
+Phase 22         ░░░░░░░░░░ 0% (0/2)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
+Phase 26         ░░░░░░░░░░ 0% (0/1)
+Phase 27         ░░░░░░░░░░ 0% (0/1)
+Phase 28         ░░░░░░░░░░ 0% (0/1)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -109,17 +113,21 @@ Phase 25         ░░░░░░░░░░ 0% (0/1)
 | P18-R6 | P15-FIX-R6 | Done | `367361c`; baseline audit and complete automated gates. | 2026-10-15 |
 | P18-LEDGER | P15-LEDGER | Done | `d11af45`, `b92e145`, `2e5d594`; merged session/checkpoint history and ledger tests. | 2026-10-15 |
 | P18-R7 | — | Done | `0304acd`; tab-label regression tests and all R7 ledger/gate checks pass. | 2026-10-15 |
-| P19-A | — | Planned | Budget groups and compact setup UI (CR-5). | 2026-10-15 |
-| P19-B | — | Planned | Pending recurring items and budget lines in Transactions; Pay and Clear due (CR-6). | 2026-10-15 |
-| P19-C | — | Planned | Home upcoming/due actions update Transactions (CR-7). | 2026-10-15 |
-| P19-D | — | Planned | Emergency-fund goal asset links; remove EF from Assets (CR-8). | 2026-10-15 |
-| P19-E | P15-SEED | Planned | Optional spreadsheet seed importer; prior prompt/scope remains unknown. | 2026-10-15 |
-| P20-A | P15-F | Planned | Insurance management. | 2026-10-15 |
-| P21-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
-| P22-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
-| P23-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
-| P24-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, README, robust schedule benchmark. | 2026-10-15 |
-| P25-A | — | Planned | QA and release. | 2026-10-15 |
+| P19-A | — | Done | Five-group model and category mapping; five-group suggestions; grouped setup/month editors with compact controls, subtotals and recurring-items summary; v6 schema compatibility and demo data. See this commit and the Phase 19 gate record. | 2026-10-15 |
+| P19-B | — | Planned | Invest category and earned-income sync into the budget review; add the Templates action beside History and Month review; remove Budget header menu (CR-9, CR-16). | 2026-10-15 |
+| P20-A | — | Planned | Pending applied-budget and recurring items in Transactions with Pay and Clear due (CR-6; formerly P19-B). | 2026-10-15 |
+| P20-B | — | Planned | Home due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-15 |
+| P20-C | — | Planned | Restrict bottom tabs to Home, Transactions, Goals and Budget (CR-11). | 2026-10-15 |
+| P21-A | — | Planned | Emergency-fund goal links and entries/net-worth model; schema v7 (CR-8, CR-13; former P19-D split). | 2026-10-15 |
+| P21-B | — | Planned | Months-of-cover, salary fallback, minimal allocation editing and linked-assets table (CR-14, CR-15). | 2026-10-15 |
+| P22-A | — | Planned | Four months of linked demo data and DEC-DEMO (CR-12). | 2026-10-15 |
+| P22-B | P15-SEED | Planned | Optional spreadsheet seed importer (formerly P19-E / P15-SEED). | 2026-10-15 |
+| P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
+| P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
+| P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
+| P26-A | P15-M | Planned | Accessibility, performance and final gates. | 2026-10-15 |
+| P27-A | — | Planned | Cleanup, dead-code/dependency review, bundle audit, README, robust schedule benchmark. | 2026-10-15 |
+| P28-A | — | Planned | QA and release. | 2026-10-15 |
 
 ### Unchanged fix, change, and request IDs
 
@@ -148,18 +156,26 @@ Phase 25         ░░░░░░░░░░ 0% (0/1)
 | CH-2 | Done | `e8b1d26`; Budget owns History and Month review. | 2026-10-14 |
 | CH-3 | Done | `cac7cc0`; link-missing action and conditional count notice route to the existing screen. | 2026-10-14 |
 | CH-4 | Done | `1321e29`; removed Transactions movement sheet/route, preserving liability-origin logic. | 2026-10-14 |
-| CR-1 | Open | Deferred to P21-A; notification design, permission behavior, and tests remain outstanding. | 2026-10-13 |
+| CR-1 | Open | Deferred to P24-A; notification design, permission behavior, and tests remain outstanding. | 2026-10-13 |
 | CR-2 | Done | Session/checkpoint backfill and prompt archive removal; source limitations remain in Section 8. | 2026-10-14 |
 | CR-3 | Open | Save narrows with validation summaries in `profile-form.tsx` and `transaction-form.tsx`. | 2026-10-14 |
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
-| CR-5 | Planned | Budget divided into five groups, compact setup inputs, and replacement of the Line type label. | 2026-10-15 |
-| CR-6 | Planned | Applied budgets and recurring assets/liabilities appear as pending Transactions, with Pay and Clear due. | 2026-10-15 |
-| CR-7 | Planned | Home upcoming/due rows offer Pay and Clear due and update Transactions. | 2026-10-15 |
-| CR-8 | Planned | Emergency fund goals link assets like other goals; EF is not listed as an asset. | 2026-10-15 |
+| CR-5 | Done | Five-group categories, suggestions, compact inputs, subtotals and recurring-items summary; P19-A gates pass. | P19-A |
+| CR-6 | Planned | Applied budgets and all recurring assets/liabilities, past and future, appear as pending Transactions with Pay and Clear due. | P20-A |
+| CR-7 | Planned | Home upcoming/due rows offer Pay and Clear due and update Transactions. | P20-B |
+| CR-8 | Planned | Emergency fund goals link assets like other goals; EF is not listed as an asset. | P21-A |
+| CR-9 | Planned | Budget category/income sync: investments retain their category, and Freelance/Rental/Business/Other earned income appears in review. | P19-B |
+| CR-10 | Planned | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
+| CR-11 | Planned | Bottom tabs appear only on Home, Transactions, Goals and Budget. | P20-C |
+| CR-12 | Planned | Four months of demo data linked throughout; feature changes extend demo data and tests. | P22-A |
+| CR-13 | Planned | Emergency-fund entries are removed; EF is not added to net worth; schema v7. | P21-A |
+| CR-14 | Planned | Emergency-fund months of cover with salary fallback. | P21-B |
+| CR-15 | Planned | Minimal emergency-fund allocation editing and allocation table with linked assets. | P21-B |
+| CR-16 | Planned | Templates joins History and Month review; Budget has no header menu. | P19-B |
 
 ### Resume point
 
-CH-1 is implemented as the sole schema v6 bump (`c831fe6`). Custom EF options support metadata-driven allocation/warnings, holding links, link integrity and holding-delete cleanup; saving the allocation plan persists the complete plan in one store write. The v5 migration adds only the two empty custom fields and safe storage archives the original v5 bytes once. `solveLoan` covers all recurring solve directions; received-funds defaults on for new liabilities and records origin inflows through one action. Both complete gate passes are green: 64 suites/656 tests, TypeScript, lint, Android/iOS exports and Expo Doctor. Per-directory coverage clears all floors. No real-device verification. FX-L1 `ef7c5b0` and FX-L2 `2bc35f0` are recorded. Assumed mismatch tolerance: `max(₹1, 1% of calculated EMI)`; partial one-time `loan-received` calls retain their prior Loan proceeds category. P15-LEDGER closes CR-2 in this commit; CR-3 remains open for the two Save-width cases in Section 8.
+P19-A passed its gates and is complete; P19-B remains planned for its remaining category/income reconciliation and review coverage. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. Schema remains v6 for P19-A/B; Phase 21's CR-13 explicitly calls for schema v7.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -336,6 +352,19 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
   output remains exact. `formatINRShort` retains its existing behavior.
 - Theme IDs are `system`, `light`, `dark`, `sky`, `mint`, `blush`, and
   `midnight`. Tabs are Home, Transactions, Goals, Budget.
+- DEC-DEMO: every part that adds or changes a feature also extends demo data
+  and adds tests. Until Phase 22's four-month dataset, extend current mock data
+  minimally; do not change unrelated existing test expectations.
+- **Assumed:** fixed weights inside the five budget groups are Survival (Living
+  25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
+  10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
+  SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other
+  investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment
+  15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20,
+  Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's
+  weights sum to 100.
+- DEC-TABS: the bottom tab bar appears only on Home, Transactions, Goals and
+  Budget; this supersedes P18-R5 detail-tab-bar behavior, effective P20-C.
 - Route kinds enumerate every route; form routes have close/discard handling,
   and stack routes have back/fallback behavior. Shared UI follows Section 3's
   text-versus-icon rules.
@@ -357,6 +386,7 @@ change in P15-FIX-R4; do not change the version without an explicit migration.
 | Global-menu placement for Link missing transactions, Budget history, and Month review | CH-3 and CH-2 placed those actions on their relevant screens; routes remain. |
 | Standalone Record money movement UI/route | CH-4 removed the UI/route; the shared pure logic remains only where still used by liability receipt flows. |
 | Earlier short tab label “Txns” | Superseded on 2026-10-15: the tab must read “Transactions”; tab order is Home, Transactions, Goals, Budget. |
+| P18-R5 detail-tab-bar behavior | Superseded by DEC-TABS; tabs appear only on the four main screens, effective P20-C. |
 
 ## 5. Phase history
 
@@ -463,35 +493,51 @@ A–G close-out: UI, v4 EF allocation, storage guard, reminders, encrypted backu
 | P18-LEDGER | P15-LEDGER | Merged histories/checkpoints, verified forms, removed prompt archive and closed CR-2. |
 | P18-R7 | — | Restore Transactions label, restructure progress ledger, record confirmations/CRs, and label old commits locally. |
 
-### Phase 19 — Budget groups, pending items and emergency fund goal links
+### Phase 19 — Budget model and sync
 
-Planned parts P19-A–D implement CR-5–CR-8; P19-E is the optional spreadsheet
-seed importer [P15-SEED].
+P19-A (CR-5) is Done; its earlier grouped-form delivery remains historical
+and does not substitute for the expanded scope verified here. P19-B covers
+the remaining CR-9 and CR-16 reconciliation and review behavior.
 
-### Phase 20 — Insurance management
+### Phase 20 — Pending items, Home and navigation
 
-Planned [P15-F].
+Planned: P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10], and
+P20-C [CR-11].
 
-### Phase 21 — Reminders and notifications
+### Phase 21 — Emergency fund as a goal-linked model
 
-Planned, including CR-1 [P15-K].
+Planned: P21-A [former P19-D, split; CR-8, CR-13] and P21-B [CR-14, CR-15].
 
-### Phase 22 — Encrypted backups
+### Phase 22 — Demo data and seed importer
 
-Planned [P15-L].
+Planned: P22-A (four months of linked demo data; CR-12) and P22-B (optional
+spreadsheet importer, formerly P19-E / P15-SEED).
 
-### Phase 23 — Accessibility, performance and final gates
+### Phase 23 — Insurance
 
-Planned [P15-M].
+Planned P23-A [P15-F].
 
-### Phase 24 — Cleanup
+### Phase 24 — Reminders and notifications
 
-Planned: dead-code/dependency review, bundle audit, README and a robust
-schedule benchmark.
+Planned P24-A, including CR-1 [P15-K].
 
-### Phase 25 — QA and release
+### Phase 25 — Encrypted backups
 
-Planned: property tests, QA checklist, release engineering and local
+Planned P25-A [P15-L].
+
+### Phase 26 — Accessibility, performance and final gates
+
+Planned P26-A [P15-M].
+
+### Phase 27 — Cleanup
+
+Planned P27-A: dead-code/dependency review (including whether
+`SectionHeaderRow` and `fitsInline` remain used after the ChipRow redesign),
+bundle audit, README and a robust schedule benchmark.
+
+### Phase 28 — QA and release
+
+Planned P28-A: property tests, QA checklist, release engineering and local
 diagnostics.
 
 **Assumed:** historical commits are assigned to the new part whose delivery
@@ -502,10 +548,10 @@ ledger label.
 
 | Hash | Original subject (`git log --format=%s`) | New label |
 |---|---|---|
-| `5de5a44` | Minor UI Changes | P18-R0 Minor UI Changes |
-| `d1a30d8` | Soft Button UI Fix | P18-R0 Soft Button UI Fix |
-| `d8b40da` | Minor UI Changes | P18-R0 Minor UI Changes |
-| `d64d298` | chore: update gitignore and remove generated files | P18-R0 chore: update gitignore and remove generated files |
+| `5de5a44` | Minor UI Changes | Pre-Phase-15 manual commit: Minor UI Changes |
+| `d1a30d8` | Soft Button UI Fix | Pre-Phase-15 manual commit: Soft Button UI Fix |
+| `d8b40da` | Minor UI Changes | Pre-Phase-15 manual commit: Minor UI Changes |
+| `d64d298` | chore: update gitignore and remove generated files | Pre-Phase-15 manual commit: chore: update gitignore and remove generated files |
 | `a89fa2a` | Phase 15 Part A | P15-A Phase 15 Part A |
 | `d8dc666` | Phase 15 Part A | P15-A Phase 15 Part A |
 | `3a29ea3` | Phase 15 Part A property range fix | P15-A Phase 15 Part A property range fix |
@@ -624,7 +670,7 @@ evidence present in exports/checkpoints.
 | P15-C | Phase 15 | — | 2 | 2026-10-12 | SIP date clarity and goal-card behavior. | Done. | `e155bcd` | Exact review unavailable. | reconstructed |
 | P16-A | Phase 16 | P15-D | 2 | 2026-10-12 | Schema v5 and related data features. | Done. | `394d338` | One-time origin transaction ID interpretation was an assumption; approval unknown. | reconstructed |
 | P16-B | Phase 16 | P15-E | 2 | 2026-10-12 | Shared schedules and due-clearing behavior. | Done. | `f28657c` | Exact prompt unavailable. | reconstructed |
-| P20-A | Phase 20 | P15-F | 2 | unknown | Insurance management. | Planned; no delivery claimed. | none identified | Prompt details unknown. | unknown |
+| P23-A | Phase 23 | P15-F | 2 | unknown | Insurance management. | Planned; no delivery claimed. | none identified | Prompt details unknown. | unknown |
 | P16-C | Phase 16 | P15-G | 2 | 2026-10-12 | Goal asset links and projection. | Done. | `9399e23` | Exact review unavailable. | reconstructed |
 | P17-A | Phase 17 | P15-H | 2 | 2026-10-12 | Cash-flow history and money movement. | Done. | `68d9cd4` | CH-4 removed movement UI/route but retained shared logic required by liability receipt. | reconstructed |
 | P17-B | Phase 17 | P15-I | 2 | 2026-10-12 | Monthly budget tracker. | Done. | `19afe88` | Earlier test-count report was corrected. | reconstructed |
@@ -635,32 +681,44 @@ evidence present in exports/checkpoints.
 | P18-R4 | Phase 18 | P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
 | P18-R5 | Phase 18 | P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Delivered in `9859d73`; R6 verified the full gates and corrected superseded layout expectations. Real-device checks remain outstanding. | `9859d73`; verification close-out in R6 | No SortChip appearance, options, logic, or placement changes. Visible/accessibility label is Transactions. | verbatim prior request |
 | P18-R6 | Phase 18 | P15-FIX-R6 | 2 | 2026-10-15 | Close out R5: green baseline, SortChip/header history audit, Expo SDK patch alignment and complete gates. | Baseline 64 suites/659 tests, current 65 suites/669 tests, source coverage above floors, Doctor 21/21, both exports, TypeScript and lint pass; device checks remain unverified. | `798e8ef`, `367361c` | Updated superseded layout assertions; SortChip and sorting logic untouched. No WIP commit because the tree was clean. | verbatim current request |
-| P19-E | Phase 19 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer. | Planned; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
+| P22-B | Phase 22 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer (formerly P19-E). | Planned; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
 | P18-LEDGER | Phase 18 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | Earlier ledger task had already removed archive; form audit opened CR-3. | `d11af45`, `b92e145`, `2e5d594` | No application code changed in the ledger close-out. | verbatim in current request |
 | P18-R0 | Phase 18 | P15-fix-0 | 2 | 2026-10-13 | Initial fix-round ledger/baseline. | Done. | `db967bf` | Progress-ledger test passed. | reconstructed |
 | P18-R7 | Phase 18 | — | 2 | 2026-10-15 | Restore Transactions label, restructure phase tree/progress bars, record confirmation and CR-4–CR-8, and label old commits locally. | Focused tests and all required gates pass; device checks remain outstanding. | `e7d8173`, `0304acd`; this ledger commit | No history rewrite or push. | verbatim current request |
-| P19-A | Phase 19 | — | — | planned | Budget groups and compact setup UI (CR-5). | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P19-B | Phase 19 | — | — | planned | Pending budget/recurring items in Transactions with Pay and Clear due (CR-6). | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P19-C | Phase 19 | — | — | planned | Home upcoming/due actions update Transactions (CR-7). | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P19-D | Phase 19 | — | — | planned | Emergency-fund goal asset links and remove EF from Assets (CR-8). | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P21-A | Phase 21 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
-| P22-A | Phase 22 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
-| P23-A | Phase 23 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
-| P24-A | Phase 24 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
-| P25-A | Phase 25 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df` plus this commit | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
+| P19-B | Phase 19 | — | — | planned | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Planned; final reconciliation coverage and ledger close-out remain. | none | Current request. | planned |
+| P20-A | Phase 20 | — | — | planned | Pending applied-budget lines and recurring assets/liabilities in Transactions with Pay and Clear due (CR-6; formerly P19-B). | Planned; no implementation claimed. | none | Renumbered roadmap item. | planned |
+| P20-B | Phase 20 | — | — | planned | Home upcoming/due actions and collapsed category spending with Apply budget (CR-7, CR-10; formerly P19-C). | Planned; no implementation claimed. | none | Renumbered roadmap item. | planned |
+| P20-C | Phase 20 | — | — | planned | Bottom tabs only on Home, Transactions, Goals and Budget (CR-11). | Planned; no implementation claimed. | none | DEC-TABS supersedes P18-R5 detail-bar behavior. | planned |
+| P21-A | Phase 21 | — | — | planned | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
+| P21-B | Phase 21 | — | — | planned | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15; split from P19-D). | Planned; no implementation claimed. | none | Renumbered/split roadmap item. | planned |
+| P22-A | Phase 22 | — | — | planned | Four months of demo data linked throughout and DEC-DEMO (CR-12). | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
+| P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
+| P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
+| P27-A | Phase 27 | — | — | planned | Cleanup: dead code, dependencies, bundle, README and schedule benchmark. | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P28-A | Phase 28 | — | — | planned | QA and release. | Planned; no implementation claimed. | none | New roadmap item. | planned |
 
 ## 7. Change-request register
 
 | ID | Request | Status | Owner / evidence |
 |---|---|---|---|
-| CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Held for P15-K; notification design, permission behavior, and tests remain outstanding. |
+| CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Open | Held for P24-A; notification design, permission behavior, and tests remain outstanding. |
 | CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
 | CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
-| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Planned | P19-A. |
-| CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Planned | P19-B. |
-| CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Planned | P19-C. |
-| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Planned | P19-D. |
+| CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | In progress | P19-A. Earlier grouped-form work is historical and does not complete the expanded requirements. |
+| CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Planned | P20-A (formerly P19-B). |
+| CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Planned | P20-B (formerly P19-C). |
+| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Planned | P21-A (formerly P19-D; now split across P21-A/B). |
+| CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Planned | P19-B. |
+| CR-10 | Home spending by category is collapsed, with Apply budget. | Planned | P20-B. |
+| CR-11 | Bottom tabs appear only on Home, Transactions, Goals and Budget. | Planned | P20-C; DEC-TABS. |
+| CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Planned | P22-A; DEC-DEMO. |
+| CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Planned | P21-A. |
+| CR-14 | Emergency-fund months of cover use salary fallback. | Planned | P21-B. |
+| CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Planned | P21-B. |
+| CR-16 | Templates joins History and Month review; remove Budget header menu. | Planned | P19-B. |
 
 ## 8. Known issues and risks
 
@@ -684,6 +742,10 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - No real iOS or Android device/development-build verification has been done
   for this fix round.
 - **P18-R7 device checks not verified:** actual system font scaling at 1.0/1.3/2.0 and rendered no-clipping behavior, native tab spacing/safe areas, and touch-target behavior on physical iOS/Android devices. Tests inspect the scaling props/style contract only.
+- **P19-A device checks not verified:** category-header wrapping and form scrolling on physical iOS/Android at large system font scales, native dynamic type and VoiceOver/TalkBack interaction; simulated tests assert the 44-point minimum header style/accessibility state, not rendered clipping or touch behavior on a device.
+- **P19-B device checks not verified:** real-device wrapping and clipping of the History/Month review/Templates action row at large system font scales, native menu behavior, and accessibility interaction on iOS/Android.
+- **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
+- **P19-A final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
   656/656 tests each run; TypeScript; Expo lint; Android and iOS exports; and
   Expo Doctor (21/21 checks). Simulated font-scale tests are not device
@@ -818,23 +880,28 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 
 ## 9. Upcoming roadmap
 
-1. **Phase 19 — Budget groups, pending items and emergency fund goal links**
-   (Planned): P19-A compact budget setup and five groups (CR-5); P19-B pending
-   applied budget and recurring items in Transactions with Pay/Clear due
-   (CR-6); P19-C Home upcoming/due actions update Transactions (CR-7); P19-D
-   emergency-fund goal asset links and remove the EF asset row (CR-8); P19-E
-   optional spreadsheet seed importer [P15-SEED].
-2. **Phase 20 — Insurance management** (Planned) [P15-F].
-3. **Phase 21 — Reminders and notifications** (Planned), including CR-1
+1. **Phase 19 — Budget model and sync** (In progress): P19-A five-group setup
+   (CR-5), then P19-B investment/income reconciliation and Budget actions
+   (CR-9, CR-16).
+2. **Phase 20 — Pending items, Home and navigation** (Planned): P20-A pending
+   Transactions with Pay/Clear due (CR-6); P20-B Home due actions and collapsed
+   spending plan (CR-7, CR-10); P20-C main-screen-only tabs (CR-11).
+3. **Phase 21 — Emergency fund as a goal-linked model** (Planned): P21-A links,
+   entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
+   allocation editing and linked-asset table (CR-14, CR-15).
+4. **Phase 22 — Demo data and seed importer** (Planned): P22-A four months of
+   linked demo data (CR-12); P22-B optional spreadsheet importer [P15-SEED].
+5. **Phase 23 — Insurance** (Planned) [P15-F].
+6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
-4. **Phase 22 — Encrypted backups** (Planned) [P15-L].
-5. **Phase 23 — Accessibility, performance and final gates** (Planned)
+7. **Phase 25 — Encrypted backups** (Planned) [P15-L].
+8. **Phase 26 — Accessibility, performance and final gates** (Planned)
    [P15-M].
-6. **Phase 24 — Cleanup** (Planned): dead-code audit (including whether
+9. **Phase 27 — Cleanup** (Planned): dead-code audit (including whether
    `SectionHeaderRow` and `fitsInline` remain used after the ChipRow redesign),
    unused dependencies, bundle audit, README, and a more robust schedule
    benchmark.
-7. **Phase 25 — QA and release** (Planned).
+10. **Phase 28 — QA and release** (Planned).
 
 ## 10. Verification matrix
 
@@ -852,6 +919,14 @@ evidence for the fixes.
 | STEP 4 — Confirmations and CRs | Done | `docs/PROGRESS.md` | Dated user-confirmation line; CR-4 Done and CR-5–CR-8 Planned, mapped to P19-A–D. |
 | STEP 5 — Local commit labels | Done | `docs/PROGRESS.md`; local `refs/notes/phases` and annotated tags | Commit-subject map cross-checked against Git; notes and tags created locally, without history rewrite or push. |
 | STEP 6 — Gates and ledger | Done | `docs/PROGRESS.md`; `src/lib/__tests__/progressLedger.test.ts`; tab tests | Focused tests, coverage, TypeScript, lint, Doctor, Android/iOS exports, and line/branch coverage aggregation are recorded in the close-out. |
+
+### Phase 19 — budget model and sync
+
+| Part | Status | Files / source evidence | Test / verification evidence |
+|---|---|---|---|
+| P19-A — expanded five-group budget setup | Done | `src/domain/budget.ts`, `src/domain/schemas.ts`, budget forms, grouped/compact form components, recurring-items summary, mock data | Focused 11 suites/235 tests; full 68 suites/702 tests; tsc, lint, Doctor 21/21, Android/iOS exports all exit 0. Domain 98.48% lines/93.59% branches; data excluding hooks 92.45%/90.87%; pure lib 100%/100%. |
+| P19-A — earlier grouped-form delivery | Historical baseline only | `src/domain/schemas.ts`; `src/components/form/BudgetCategorySections.tsx`; `app/budget-template-form.tsx`; `app/budget-month-form.tsx`; `src/mock/data.ts`; `src/domain/__tests__/budget.test.ts`; `src/components/__tests__/RouteRenderSmoke.test.tsx` | Prior gates were reported green for the older scope; they do not verify current P19-A requirements. Schema v6 remained unchanged. |
+| P19-B — budget category/income sync and actions | Planned | `src/domain/budget.ts`, investment/category mapping, `app/(tabs)/budget.tsx`, `app/month-review.tsx` | Follow-up: close out P19-B with end-to-end category/income reconciliation evidence; device checks remain listed in Section 8. |
 
 ### Phase 14 items
 
@@ -874,14 +949,23 @@ evidence for the fixes.
 | P15-C SIP date clarity | Done | `app/investment-form.tsx`, `app/(tabs)/index.tsx` | `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/__tests__/HomeThemeSmoke.test.tsx` |
 | P16-A schema v5 | Done | `src/domain/schemas.ts`, `src/domain/types.ts`, `src/data/migrate.ts`, `src/domain/backup.ts` | `src/data/__tests__/migrateV4.test.ts`, `src/domain/__tests__/backup.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/domain/__tests__/v5Integrity.test.ts` |
 | P16-B clearing dues | Done | `src/domain/dues.ts`, `src/domain/schedule.ts`, `src/data/createAppStore.ts`, `app/clear-dues.tsx` | `src/domain/__tests__/dues.test.ts`, `src/domain/__tests__/schedule.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
-| P20-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |
+| P20-A pending Transactions | Planned | Pending budget/recurring projection and actions not implemented | Pay/Clear due tests pending |
+| P20-B Home actions and spending plan | Planned | Home due rows/category collapse/Apply budget not implemented | Home interaction tests pending |
+| P20-C main-screen tab visibility | Planned | Detail-route bottom-tab gating not implemented | Route/tab visibility tests pending |
+| P21-A emergency-fund linked model [schema v7] | Planned | No EF entry removal/link migration implementation | Migration/net-worth tests pending |
+| P21-B emergency-fund cover/allocation | Planned | No months-of-cover, fallback or allocation edit UI | Domain/UI tests pending |
+| P22-A four-month linked demo | Planned | Existing mock dataset not extended to four linked months | Demo consistency tests pending |
+| P22-B spreadsheet importer [P15-SEED] | Planned | No importer implementation | Importer tests pending |
+| P23-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |
 | P16-C goal links | Done | `src/domain/goalLinks.ts`, `src/domain/goals.ts`, `app/goal-form.tsx` | `src/domain/__tests__/goalLinks.test.ts`, store and route smoke suites |
 | P17-A cash flow/movements | Done | `src/domain/cashFlow.ts`, `app/month-review.tsx`, `app/money-movement-form.tsx` | `src/domain/__tests__/cashFlow.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
 | P17-B budgets | Done | `src/domain/budget.ts`, `app/budget.tsx`, `app/budget-template-form.tsx`, `app/budget-history.tsx` | `src/domain/__tests__/budget.test.ts`, `src/data/__tests__/createAppStore.test.ts`, route and Transactions screen suites |
 | P17-C sorting | Done | `src/lib/sorting.ts`, `src/data/useSort.ts`, `src/components/SortChip.tsx`, sortable `app/` lists | `src/lib/__tests__/sorting.test.ts`, `src/data/__tests__/metaStore.test.ts`, screen and route smoke suites |
-| P21-A reminders / CR-1 [P15-K] | Planned | No verified planner, prefs, notification adapter or screen | No reminder tests |
-| P22-A encrypted backup [P15-L] | Planned | `src/domain/backup.ts` is unencrypted | No encryption tests |
-| P23-A accessibility/performance [P15-M] | Planned | No final audit artifact | No comprehensive device/accessibility suite |
+| P24-A reminders / CR-1 [P15-K] | Planned | No verified planner, prefs, notification adapter or screen | No reminder tests |
+| P25-A encrypted backup [P15-L] | Planned | `src/domain/backup.ts` is unencrypted | No encryption tests |
+| P26-A accessibility/performance [P15-M] | Planned | No final audit artifact | No comprehensive device/accessibility suite |
+| P27-A cleanup | Planned | Dead-code/dependency, bundle, README and schedule benchmark audit pending | Cleanup gates pending |
+| P28-A QA and release | Planned | QA and release work not started | Release checklist pending |
 
 ### Fix round
 

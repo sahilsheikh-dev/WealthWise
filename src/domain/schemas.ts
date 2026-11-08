@@ -184,7 +184,8 @@ const policySchema = z.object({
 
 const expenseBudgetCategories = [
   'Living', 'Food', 'Transport', 'Family', 'Shopping', 'Health', 'Bills', 'Education',
-  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other',
+  'EMI', 'Insurance', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+  'Entertainment', 'Fashion', 'Culture', 'Unexpected',
 ] as const;
 const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
@@ -339,11 +340,15 @@ export type AppDataSchemaMatchesAppData = Assert<SchemaMatchesAppData>;
 export const TRANSACTION_CATEGORIES = {
   expense: [
     'Living', 'Food', 'Transport', 'Family', 'EMI', 'Insurance', 'Shopping', 'Health',
-    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other',
+    'Bills', 'Education', 'Festival', 'Donation', 'Gifts', 'Other', 'Eating out',
+    'Entertainment', 'Fashion', 'Culture', 'Unexpected',
   ],
-  income: ['Salary', 'Freelance', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
-  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other'],
+  income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
+  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Emergency fund', 'Other investments', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
+
+export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
+  .filter((category) => category !== 'Other');
 
 export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 
