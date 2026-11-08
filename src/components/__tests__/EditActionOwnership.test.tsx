@@ -7,6 +7,8 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { CardHeaderRow } from '../CardHeaderRow';
 import { IconButton } from '../IconButton';
 import { ListRow } from '../ListRow';
+import { ActionRow, Button } from '../ui';
+import { ActionToast } from '../ActionToast';
 
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('../../theme/useTheme', () => ({
@@ -62,6 +64,15 @@ describe('edit action ownership', () => {
     expect(iconFiles.some(({ source }) => /icon\s*[:=]\s*['"]edit-2['"]/.test(source))).toBe(true);
   });
 
+  it('does not give asset or liability cards a separate edit action', () => {
+    const root = process.cwd();
+    const assetCard = readFileSync(join(root, 'src/components/InstrumentCard.tsx'), 'utf8');
+    const liabilities = readFileSync(join(root, 'app/liabilities.tsx'), 'utf8');
+
+    expect(assetCard).not.toContain('editLabel=');
+    expect(liabilities).not.toContain('editLabel=');
+  });
+
   it('renders edit actions as the final, accessible action in both shared row types', () => {
     const onEdit = jest.fn();
     let header: TestRenderer.ReactTestRenderer | undefined;
@@ -83,5 +94,50 @@ describe('edit action ownership', () => {
     act(() => headerButton?.props.onPress());
     act(() => listButton?.props.onPress());
     expect(onEdit).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops liability action presses from bubbling to the card edit target', () => {
+    const action = jest.fn();
+    const event = { stopPropagation: jest.fn() };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <ActionRow
+          stopParentPress
+          actions={[{ label: 'Payments', onPress: action }]}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Action row did not render.');
+
+    const button = renderer.root.findByType(Button);
+    act(() => button.props.onPress(event));
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(action).toHaveBeenCalledTimes(1);
+    act(() => renderer?.unmount());
+  });
+
+  it('stops the due Undo toast action from bubbling to the card edit target', () => {
+    const action = jest.fn();
+    const event = { stopPropagation: jest.fn() };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <ActionToast
+          message="Marked as paid"
+          actionLabel="Undo"
+          onAction={action}
+          onDismiss={jest.fn()}
+          stopParentPress
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Due Undo toast did not render.');
+
+    const undo = renderer.root.findByProps({ accessibilityLabel: 'Undo' });
+    act(() => undo.props.onPress(event));
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(action).toHaveBeenCalledTimes(1);
+    act(() => renderer?.unmount());
   });
 });
