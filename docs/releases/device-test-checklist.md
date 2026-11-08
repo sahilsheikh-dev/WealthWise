@@ -60,6 +60,15 @@ below is initially **Not run**.
 | M38 | Verify dark theme, font scales 1.3 and 2.0, Android back, and lock screen. | Pass | |
 | N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. This is a known Release 2 bug area: record failures; do not fix them in this release check. | Pass | |
 
+## Owner follow-up
+
+The owner-entered results mark all 43 checks Pass, including N39. The owner
+also reports that previously identified Release 2 bugs remain, but no failed
+check ID, reproduction steps, expected/actual behavior, or screenshots were
+provided with this report. Do not infer a failed checklist item from that
+separate report. The device model, Android version, tester, and test date
+fields remain blank because those details were not supplied.
+
 ## How to run
 
 1. Download the APK using the README Download link and verify its SHA-256
