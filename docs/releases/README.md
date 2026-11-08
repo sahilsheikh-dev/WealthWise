@@ -82,9 +82,10 @@ and `Content-Length: 112133413` for both latest and versioned download links,
 confirmed the APK SHA-256, and matched it to EAS build
 `7addde9a-34df-4f00-a54a-b695c1578859` (profile `preview`, app version
 1.0.0, `versionCode` 1, source commit
-`cac6fedc6242b495558f11cc6d7fe8551fd354ea`). Tag alignment and the owner's
-GitHub release-body edit remain pending. The production AAB has not been
-verified. Record build evidence in
+`cac6fedc6242b495558f11cc6d7fe8551fd354ea`). The tag now points to that
+source commit and is an ancestor of `origin/main`; the owner's GitHub
+release-body edit remains pending. The production AAB has not been verified.
+Record build evidence in
 [`release-history.md`](./release-history.md); see
 [`build-config.md`](./build-config.md).
 

@@ -4,28 +4,18 @@
 
 ## Unresolved
 
-- **Published v1.0.0 tag after main history rewrite:** the tag remains
-  unchanged at `1c1426d03fadccc51278ed9af5426cacd4c9d7af` and therefore points
-  into the original commit history. The 2026-11-08 `git ls-remote --tags
-  origin` check found `v1.0.0`; `git merge-base --is-ancestor v1.0.0
-  origin/main` exited 1. Owner decision is pending; do not move or delete the
-  tag without explicit owner approval.
-- **P28-C v1.0.0 release completion:** the GitHub release contains
-  `WealthWise-android.apk` (112,133,413 bytes; SHA-256
-  `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3`).
-  EAS build ID, Android `versionCode`, source commit and profile remain owner
-  to supply. The repository is private, so unauthenticated `curl -I` and
-  `curl -I -L` checks returned HTTP 404 for both latest and versioned links.
-  The owner must decide public access and edit the GitHub release body with
-  the Download block; no release-body edit was made. The `v1.0.0` tag decision
-  remains pending. The production AAB and iOS build are not verified. Before
-  further builds, rerun the six gates, export and restore a backup, pass
-  physical-device checks on iOS and Android, and confirm owner approval. The
-  dependency audit has 7 production advisories (4 moderate, 3 high); no Expo
-  SDK 57-compatible patch fix is available, and no major upgrade or force fix
-  is approved.
-- **iOS download URL:** the owner will supply a TestFlight or App Store link.
-  Keep the README text as “Not available yet” until then; do not invent a URL.
+- **v1.0.0 GitHub release body (owner action):** the canonical body is
+  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). The owner can apply
+  it with `gh release edit v1.0.0 --notes-file
+  docs/releases/published/v1.0.0.md`; no release edit was made in P28-C-R3.
+- **v1.0.0 physical-device checklist (owner action):** run every item in
+  [`device-test-checklist.md`](../releases/device-test-checklist.md) on an
+  Android device and report any failure. All results remain Not run.
+- **Release 2 known bug follow-ups:** track P29-AB-R1, the Phase 30 stale-values
+  work, and P20-N-R1. Record failures; do not fix these as part of P28-C-R3.
+- **v1.0.0 tag alignment:** resolved 2026-11-08 with explicit owner approval.
+  The remote tag now points to the verified EAS source commit and is an
+  ancestor of `origin/main`; see [`release-history.md`](../releases/release-history.md).
 
 - **P29-AB income recurrence physical-device check:** verify frequency and
   first-due-month controls at font scales 1.3 and 2.0, due/non-due Budget

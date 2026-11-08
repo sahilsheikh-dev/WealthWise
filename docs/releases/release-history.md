@@ -16,12 +16,19 @@ Only successfully published GitHub Releases should be recorded here.
 
 - Release notes: [v1.0.0.md](./published/v1.0.0.md)
 - GitHub Release: [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
-- Tag: `v1.0.0` (verified at `1c1426d03fadccc51278ed9af5426cacd4c9d7af`)
-- Target commit: `1c1426d03fadccc51278ed9af5426cacd4c9d7af`
-- 2026-11-08 verification: `git ls-remote --tags origin` returned
-  `v1.0.0`; `git merge-base --is-ancestor v1.0.0 origin/main` exited 1.
-  The tag is not an ancestor of the current `origin/main` and was not moved
-  or deleted.
+- Tag: `v1.0.0` points to
+  `cac6fedc6242b495558f11cc6d7fe8551fd354ea`.
+- Target commit: `cac6fedc6242b495558f11cc6d7fe8551fd354ea` (the EAS source
+  commit and an ancestor of `origin/main`).
+- 2026-11-08 approved alignment: moved the tag from
+  `1c1426d03fadccc51278ed9af5426cacd4c9d7af` to the verified build source.
+  The runtime-path diff between source and target is empty because both
+  commits are identical. `git ls-remote --tags origin` resolves the annotated
+  tag to `cac6fedc6242b495558f11cc6d7fe8551fd354ea`;
+  `git merge-base --is-ancestor v1.0.0 origin/main` exited 0.
+- `gh release view v1.0.0` still confirms the APK asset name, size and digest.
+  Its stored `targetCommitish` field still reports the old target; no GitHub
+  release edit was made.
 
 ## 3. Builds
 

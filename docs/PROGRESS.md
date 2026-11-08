@@ -9221,3 +9221,10 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, completed 2026-11-07 14:52 UTC.
   Its artifact has the same 112,133,413-byte size and SHA-256 as the GitHub
   APK; all requested build fields are recorded in `release-history.md`.
+- Step 5: with explicit approval for this single tag move, moved remote
+  `v1.0.0` from `1c1426d03fadccc51278ed9af5426cacd4c9d7af` to
+  `cac6fedc6242b495558f11cc6d7fe8551fd354ea`. The build commit is an ancestor
+  of `origin/main`; runtime diff is empty. Remote peeled tag verification
+  matches the new target and `git merge-base --is-ancestor` exited 0.
+  `gh release view` still confirms the APK asset; its stored `targetCommitish`
+  remains the old target. No GitHub release edit or branch push was made.
