@@ -58,6 +58,7 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
+  const [recurringIncomeExpanded, setRecurringIncomeExpanded] = useState(false);
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -394,6 +395,11 @@ export default function BudgetScreen() {
                   const canAddIncome = !isPast && definition?.system === 'income';
                   const canAddInsurance = !isPast && definition?.system === 'insurance';
                   const sectionActions = canManageSection || canAddIncome || canAddInsurance;
+                  const recurringIncomeItems = section.items.filter((item) =>
+                    item.kind === 'income' && item.nextDueMonth !== undefined,
+                  );
+                  const recurringIncomeIds = new Set(recurringIncomeItems.map((item) => item.id));
+                  const visibleItems = section.items.filter((item) => !recurringIncomeIds.has(item.id));
                   return (
                     <View key={section.id} testID={`budget-section-${section.id}`}>
                     <Card style={styles.sectionCard}>
@@ -489,9 +495,9 @@ export default function BudgetScreen() {
                         style={[typography.meta, { color: colors.text2 }]}>
                         <AmountText value={section.actual} tier="tile" /> spent of <AmountText value={section.planned} tier="tile" />
                       </AppText>
-                      {section.items.length > 0 ? (
+                      {visibleItems.length > 0 || recurringIncomeItems.length > 0 ? (
                         <View style={styles.sectionItems}>
-                          {section.items.map((item, index) => {
+                          {visibleItems.map((item, index) => {
                             const rowStyle = [
                               styles.overviewRow,
                               stackMetrics && styles.overviewRowStacked,
@@ -551,6 +557,58 @@ export default function BudgetScreen() {
                               </View>
                             );
                           })}
+                          {recurringIncomeItems.length > 0 ? (
+                            <>
+                              <Pressable
+                                testID="budget-recurring-income-toggle"
+                                accessibilityRole="button"
+                                accessibilityLabel={`Recurring income, ${recurringIncomeItems.length} items`}
+                                accessibilityState={{ expanded: recurringIncomeExpanded }}
+                                onPress={() => setRecurringIncomeExpanded((expanded) => !expanded)}
+                                style={[styles.overviewRow, styles.rowDivider, { borderBottomColor: colors.border }]}>
+                                <AppText weight="semibold" style={typography.meta}>Recurring income</AppText>
+                                <Feather
+                                  name={recurringIncomeExpanded ? 'chevron-up' : 'chevron-down'}
+                                  size={18}
+                                  color={colors.primary}
+                                />
+                              </Pressable>
+                              {recurringIncomeExpanded ? recurringIncomeItems.map((item, index) => {
+                                const nextDueMonth = item.nextDueMonth;
+                                if (!nextDueMonth) return null;
+                                const notDueLabel = `Not due this month, next due ${formatMonth(nextDueMonth)}`;
+                                return (
+                                  <View
+                                    key={item.id}
+                                    testID={`budget-recurring-income-row:${item.source.kind === 'income' ? item.source.incomeId : item.id}`}
+                                    style={[
+                                      styles.overviewRow,
+                                      stackMetrics && styles.overviewRowStacked,
+                                      index < recurringIncomeItems.length - 1
+                                        ? [styles.rowDivider, { borderBottomColor: colors.border }]
+                                        : undefined,
+                                    ]}>
+                                    <View style={styles.rowTitleContainer}>
+                                      <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                                      <AppText
+                                        accessibilityLabel={notDueLabel}
+                                        style={[typography.meta, { color: colors.text3 }]}>
+                                        {notDueLabel}
+                                      </AppText>
+                                    </View>
+                                    <Pressable
+                                      accessibilityRole="button"
+                                      accessibilityLabel={`Edit ${item.title}`}
+                                      accessibilityHint={`Edit ${item.title}`}
+                                      onPress={() => openBudgetItem(item, section.id)}
+                                      style={styles.editButton}>
+                                      <Feather name="edit-2" size={16} color={colors.primary} />
+                                    </Pressable>
+                                  </View>
+                                );
+                              }) : null}
+                            </>
+                          ) : null}
                         </View>
                       ) : section.id === 'other-not-in-budget' ? null : (
                         <AppText style={[typography.meta, { color: colors.text3 }]}>No items yet.</AppText>
