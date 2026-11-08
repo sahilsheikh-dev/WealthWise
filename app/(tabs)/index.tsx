@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { router, useIsFocused, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
@@ -5,10 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { BudgetSummaryToggle } from '../../src/components/BudgetSummaryToggle';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
-import { PaidAmountDialog } from '../../src/components/PaidAmountDialog';
 import {
   AppText,
   Button,
@@ -23,16 +22,16 @@ import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
-import { budgetMonthView, createDefaultBudgetPlan } from '../../src/domain/budget';
+import { budgetMonthView } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
 import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
-import { policySummary } from '../../src/domain/policySummary';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
+import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -57,7 +56,6 @@ export default function HomeScreen() {
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
-  const insuranceSummary = policySummary(data, today);
   const monthBudget = budgetMonthView(data, month, today);
   const spendingByCategory = expenseCategoryBreakdown(data.transactions, month);
   const dueItems = pendingItems(data, month, today)
@@ -69,7 +67,6 @@ export default function HomeScreen() {
   }
   const spendingExpanded = spendingState.expanded;
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
-  const [homePayment, setHomePayment] = useState<PendingItem | null>(null);
   const persistedBytes = useUIStore((state) => state.persistedBytes);
   const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
@@ -87,22 +84,8 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
-  const createBudget = () => {
-    const previousMonth = data.monthBudgets?.find((budget) => budget.month === month) ?? null;
-    actions.saveAndApplyBudgetPlan(createDefaultBudgetPlan(month), month);
-    const error = useAppStore.getState().lastError;
-    if (error) {
-      Alert.alert('Could not create budget', error);
-      return;
-    }
-    setActionToast({
-      message: 'Budget created',
-      actionLabel: 'Undo',
-      onAction: () => actions.restoreBudgetPlanAndMonth(null, month, previousMonth),
-    });
-  };
   const handleDuePress = async (item: PendingItem) => {
-    if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
     if (!item.dueDate) {
       Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
       return;
@@ -115,34 +98,76 @@ export default function HomeScreen() {
       Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
       return;
     }
-    setHomePayment(item);
-  };
-  const saveHomePayment = (actualAmount: number) => {
-    const item = homePayment;
-    if (!item || !item.dueDate) return;
-    const source = item.source;
-    if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
-    const target: DueTarget = { kind: source.kind, id: source.parentId };
-    if (!item.actionable) {
-      const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
+    const clearThrough = preview !== null && preview.count > 1;
+    const extra = clearThrough && preview
+      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
+      : '';
+    const confirmed = await confirmAsync({
+      title: 'Was this paid?',
+      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
+      confirmLabel: 'Paid',
+      cancelLabel: 'Not paid',
+    });
+    if (!confirmed) return;
+
+    if (clearThrough && preview) {
+      const entryIds = actions.clearDuesThrough(target, item.dueDate);
       if (!entryIds || useAppStore.getState().lastError) {
         Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
         return;
       }
-      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
-        actions.undoClearDuesThrough(target, entryIds);
-      } });
-    } else {
-      const entryId = actions.clearDue(target, source.slotId, actualAmount);
-      if (!entryId || useAppStore.getState().lastError) {
-        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
+        transaction.source?.kind === (target.kind === 'plan' ? 'holding-entry' : 'liability-payment')
+        && transaction.source.parentId === target.id
+        && transaction.source.entryId === entryId,
+      ));
+      if (transactions.some((transaction) => transaction === undefined)) {
+        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
         return;
       }
-      setActionToast({ message: `${formatAmount(actualAmount, 'exact', 1)} marked as paid`, actionLabel: 'Undo', onAction: () => {
-        actions.undoClearDue(target, entryId);
-      } });
+      let total = 0;
+      for (const transaction of transactions) {
+        if (!transaction) {
+          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+          return;
+        }
+        total += transaction.amount;
+      }
+      setActionToast({
+        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
+        actionLabel: 'Undo',
+        onAction: () => {
+          actions.undoClearDuesThrough(target, entryIds);
+          const error = useAppStore.getState().lastError;
+          if (error) Alert.alert('Unable to undo', error);
+        },
+      });
+      return;
     }
-    setHomePayment(null);
+
+    const entryId = actions.clearDue(target, item.source.slotId);
+    if (!entryId || useAppStore.getState().lastError) {
+      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      return;
+    }
+    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
+      (candidate.source?.kind === 'holding-entry' || candidate.source?.kind === 'liability-payment')
+      && candidate.source.parentId === target.id
+      && candidate.source.entryId === entryId,
+    );
+    if (!transaction) {
+      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
+      return;
+    }
+    setActionToast({
+      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
+      actionLabel: 'Undo',
+      onAction: () => {
+        actions.undoClearDue(target, entryId);
+        const error = useAppStore.getState().lastError;
+        if (error) Alert.alert('Unable to undo', error);
+      },
+    });
   };
   return (
     <Screen>
@@ -165,8 +190,6 @@ export default function HomeScreen() {
             tone="err"
             onPress={() => router.push('/liabilities')}
           />
-        </StatPillRow>
-        <StatPillRow>
           <StatPill
             label="Emergency fund"
             value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
@@ -177,18 +200,6 @@ export default function HomeScreen() {
             }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
-          />
-          <StatPill
-            label="Insurance"
-            value={data.policies.length === 0
-              ? 'No policies yet'
-              : <AmountText value={insuranceSummary.totalCover} tier="tile" />}
-            accessibilityLabel={data.policies.length === 0
-              ? 'Insurance, No policies yet'
-              : `Insurance, total cover ${formatAmount(insuranceSummary.totalCover, 'exact', 1)}`}
-            tone="primary"
-            onPress={() => router.push(data.policies.length === 0 ? '/policy-form' : '/insurance')}
-            testID="home-insurance-card"
           />
         </StatPillRow>
       </Card>
@@ -222,15 +233,20 @@ export default function HomeScreen() {
       </View>
 
       <Card style={styles.categoryBreakdown}>
-        <BudgetSummaryToggle
-          label="This month:"
-          spent={monthBudget.actualSpend}
-          planned={monthBudget.plannedSpend}
-          expanded={spendingExpanded}
-          accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+        <Pressable
           testID="home-spending-toggle"
-          topBorder
-          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}>
+          accessibilityRole="button"
+          accessibilityLabel={spendingExpanded ? 'Hide spending by category' : 'Show spending by category'}
+          accessibilityState={{ expanded: spendingExpanded }}
+          onPress={() => setSpendingState((current) => ({ ...current, expanded: !current.expanded }))}
+          style={[styles.spendingToggle, { borderTopColor: colors.border }]}>
+          <AppText
+            weight="semibold"
+            accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
+            This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
+          </AppText>
+          <Feather name={spendingExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+        </Pressable>
         {spendingExpanded ? spendingByCategory.length > 0 ? (
           <View testID="home-spending-details" style={styles.categoryRows}>
             {spendingByCategory.map(({ category, amount }) => (
@@ -243,15 +259,14 @@ export default function HomeScreen() {
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
         {!monthBudget.budget ? (
           <Button
-            label={data.budgetPlan ? 'Apply budget' : 'Create budget'}
-            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Create budget'}
+            label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
             onPress={() => {
-              if (!data.budgetPlan) createBudget();
+              if (!data.budgetPlan) router.push('/budget-setup');
               else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
             }}
           />
         ) : null}
-        </BudgetSummaryToggle>
       </Card>
 
       {nudge.show ? (
@@ -320,7 +335,7 @@ export default function HomeScreen() {
                   testID={`home-due-actions-${item.id}`}
                   style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
                   <Button
-                    label={'Paid'}
+                    label="Paid"
                     accessibilityHint="Confirms whether this scheduled item was paid."
                     style={styles.markPaidButton}
                     onPress={() => { void handleDuePress(item); }}
@@ -434,14 +449,6 @@ export default function HomeScreen() {
           })}
         </Card>
       </View>
-      <PaidAmountDialog
-        visible={homePayment !== null}
-        title={homePayment?.title ?? ''}
-        dueAmount={homePayment?.amount ?? 0}
-        dueDate={homePayment?.dueDate}
-        onPaid={saveHomePayment}
-        onNotPaid={() => setHomePayment(null)}
-      />
     </Screen>
   );
 }
@@ -450,14 +457,9 @@ const styles = StyleSheet.create({
   homeHeader: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
   netWorth: { marginTop: 5 },
   categoryBreakdown: { gap: 10 },
-  insuranceCard: { gap: 10 },
-  insuranceRow: { minHeight: 42, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
-  insuranceRowContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  insuranceRowStacked: { alignItems: 'flex-start', flexDirection: 'column' },
-  insuranceRenewalRow: { paddingVertical: 6 },
-  insuranceRenewalDetails: { flex: 1, minWidth: 0, gap: 2 },
   categoryRows: { gap: 4 },
   spendingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  spendingToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
@@ -469,7 +471,7 @@ const styles = StyleSheet.create({
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
   dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dueActionsStacked: { justifyContent: 'flex-end' },
-  markPaidButton: { minHeight: 44, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
+  markPaidButton: { minHeight: 36, paddingHorizontal: 8, backgroundColor: 'transparent', borderWidth: 1 },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goalsCard: { paddingVertical: 4 },
   goalRow: { paddingVertical: 14 },

@@ -1,6 +1,4 @@
 import React from 'react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import TestRenderer, { act } from 'react-test-renderer';
 import type { ReactTestInstance } from 'react-test-renderer';
 
@@ -8,8 +6,7 @@ import HomeScreen from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import { emptyAppData } from '../../domain/actions';
-import { homeSummary } from '../../domain/summary';
-import { THEME_IDS, type AppData, type Policy, type ThemeId } from '../../domain/types';
+import { THEME_IDS, type AppData, type ThemeId } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockData: { current: AppData } = { current: emptyAppData('2026-10-11') };
@@ -71,21 +68,7 @@ jest.mock('../../components/ui', () => {
     ProgressBar: node('progress'),
     Screen: node('screen'),
     SectionTitle: node('section'),
-    StatPill: ({ label, value, onPress, accessibilityLabel, accessibilityRole, testID }: {
-      label: string;
-      value: React.ReactNode;
-      onPress?: () => void;
-      accessibilityLabel?: string;
-      accessibilityRole?: string;
-      testID?: string;
-    }) => ReactModule.createElement('pill', {
-      label,
-      value,
-      onPress,
-      accessibilityLabel,
-      accessibilityRole: accessibilityRole ?? 'button',
-      testID,
-    }),
+    StatPill: node('pill'),
     StatPillRow: node('pillrow'),
     StatusBadge: node('badge'),
   };
@@ -100,13 +83,9 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
+    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),
     View: node('view'),
-    TextInput: node('text-input'),
-    ScrollView: node('scroll-view'),
-    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
-    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: mockFontScale.current }),
   };
 });
@@ -184,20 +163,10 @@ describe('three-month emergency target screens', () => {
     });
     if (!home) throw new Error('Home did not render.');
 
-    const summaryCard = home.root.findAll((node) => String(node.type) === 'card')
-      .find((card) => renderedText(card).includes('Net Worth'));
-    if (!summaryCard) throw new Error('Home summary card is missing.');
-    expect(summaryCard.findAll((node) => String(node.type) === 'pillrow').map((row) =>
-      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
-    )).toEqual([
-      ['Assets', 'Liabilities'],
-      ['Emergency fund', 'Insurance'],
-    ]);
-
     const pills = home.root.findAll((node) =>
-      ['Assets', 'Emergency fund', 'Liabilities', 'Insurance'].includes(node.props.label));
+      ['Assets', 'Emergency fund', 'Liabilities'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])
-      .toEqual(['Assets', 'Liabilities', 'Emergency fund', 'Insurance']);
+      .toEqual(['Assets', 'Liabilities', 'Emergency fund']);
     expect(pills.some((pill) => pill.props.accessibilityLabel === 'Assets, ₹2,00,000')).toBe(true);
     expect(pills.some((pill) =>
       pill.props.accessibilityLabel === 'Emergency fund, ₹2,00,000, 2.6 months of cover')).toBe(true);
@@ -416,186 +385,5 @@ describe('three-month emergency target screens', () => {
         emergency?.unmount();
       });
     }
-  });
-
-  it.each([1.3, 2])('renders Assets/Liabilities then Emergency fund/Insurance in Home row 2 at font scale %s', async (fontScale) => {
-    const empty = emptyAppData('2026-10-11');
-    const policy: Policy = {
-      id: 'home-term-life',
-      name: 'Term cover',
-      insurer: 'Example insurer',
-      kind: 'term-life',
-      premium: 1_000,
-      frequency: 'yearly',
-      startDate: '2026-01-01',
-      status: 'active',
-      premiumYears: 20,
-      trackFrom: '2026-01-01',
-      currentValue: null,
-      valueAsOf: null,
-      sumAssured: 2_000_000,
-      payments: [],
-    };
-    const data: AppData = {
-      ...empty,
-      policies: [policy],
-      liabilities: [{
-        id: 'upcoming-friend-payment',
-        kind: 'one-time',
-        name: 'Friend',
-        type: 'Borrowed money',
-        principal: 20_000,
-        ratePct: 0,
-        startDate: '2026-01-01',
-        dueDate: '2026-10-20',
-        payments: [],
-      }],
-      transactions: [{
-        id: 'recent-salary',
-        type: 'income',
-        amount: 50_000,
-        category: 'Salary',
-        note: '',
-        date: '2026-09-10',
-      }],
-    };
-    mockData.current = data;
-    mockFontScale.current = fontScale;
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Home did not render.');
-
-    const cards = renderer.root.findAll((node) => String(node.type) === 'card');
-    expect(cards.length).toBeGreaterThanOrEqual(2);
-    const netWorthCard = cards.at(0);
-    if (!netWorthCard) throw new Error('Home summary card is missing.');
-    expect(renderedText(netWorthCard)).toContain('Net Worth');
-    const summaryRows = netWorthCard.findAll((node) => String(node.type) === 'pillrow');
-    expect(summaryRows).toHaveLength(2);
-    expect(summaryRows.map((row) =>
-      row.findAll((node) => String(node.type) === 'pill').map((pill) => pill.props.label),
-    )).toEqual([
-      ['Assets', 'Liabilities'],
-      ['Emergency fund', 'Insurance'],
-    ]);
-    expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
-    const insurancePressable = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(insurancePressable.props.accessibilityLabel).toContain('Insurance');
-    expect(insurancePressable.parent).toBeDefined();
-    expect(netWorthCard.findByProps({ label: 'Assets' })).toBeDefined();
-    expect(netWorthCard.findByProps({ label: 'Liabilities' })).toBeDefined();
-    expect(netWorthCard.findByProps({ label: 'Emergency fund' })).toBeDefined();
-    expect(netWorthCard.findByProps({ label: 'Insurance' })).toBeDefined();
-    expect(insurancePressable.props.accessibilityLabel).toBe(
-      'Insurance, total cover ₹20,00,000',
-    );
-    expect(renderer.root.findAll((node) =>
-      String(node.type) === 'section' && renderedText(node).toLowerCase().includes('insurance'),
-    )).toHaveLength(0);
-
-    const beforeSummary = homeSummary({ ...data, policies: [] }, '2026-10-11');
-    const afterSummary = homeSummary(data, '2026-10-11');
-    expect(afterSummary.netWorth).toBe(beforeSummary.netWorth);
-    expect(afterSummary.goals.map(({ goal, saved }) => [goal.id, saved]))
-      .toEqual(beforeSummary.goals.map(({ goal, saved }) => [goal.id, saved]));
-
-    act(() => insurancePressable.props.onPress());
-    expect(mockPush).toHaveBeenLastCalledWith('/insurance');
-    await act(async () => renderer?.unmount());
-  });
-
-  it('hides the term-life bar without a known target and routes the empty-state Add policy action', async () => {
-    const empty = emptyAppData('2026-10-11');
-    const policy: Policy = {
-      id: 'home-term-life',
-      name: 'Term cover',
-      insurer: 'Example insurer',
-      kind: 'term-life',
-      premium: 1_000,
-      frequency: 'yearly',
-      startDate: '2026-01-01',
-      status: 'active',
-      premiumYears: 20,
-      trackFrom: '2026-01-01',
-      currentValue: null,
-      valueAsOf: null,
-      sumAssured: 2_000_000,
-      payments: [],
-    };
-    mockData.current = {
-      ...empty,
-      policies: [policy],
-      budgetPlan: null,
-      monthBudgets: [],
-      transactions: [],
-    };
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Home did not render.');
-    const card = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(card.props.label).toBe('Insurance');
-    expect(card.props.accessibilityLabel).toContain('Insurance');
-    await act(async () => renderer?.unmount());
-
-    mockData.current = { ...empty, policies: [] };
-    await act(async () => {
-      renderer = TestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Empty Home did not render.');
-    const emptyCard = renderer.root.findByProps({ testID: 'home-insurance-card' });
-    expect(emptyCard.props.value).toBe('No policies yet');
-    expect(emptyCard.findAllByProps({ testID: 'home-insurance-row-total-cover' })).toHaveLength(0);
-    expect(emptyCard.findAllByProps({ testID: 'home-insurance-term-progress' })).toHaveLength(0);
-    act(() => emptyCard.props.onPress());
-    expect(mockPush).toHaveBeenLastCalledWith('/policy-form');
-    expect(mockPush).toHaveBeenLastCalledWith('/policy-form');
-    await act(async () => renderer?.unmount());
-  });
-
-  it('removes all Insurance content and the old compact cover row from Goals and Home', () => {
-    const empty = emptyAppData('2026-10-11');
-    mockData.current = {
-      ...empty,
-      policies: [{
-        id: 'home-term-life',
-        name: 'Term cover',
-        insurer: 'Example insurer',
-        kind: 'term-life',
-        premium: 1_000,
-        frequency: 'yearly',
-        startDate: '2026-01-01',
-        status: 'active',
-        premiumYears: 20,
-        trackFrom: '2026-01-01',
-        currentValue: null,
-        valueAsOf: null,
-        sumAssured: 2_000_000,
-        payments: [],
-      }],
-    };
-    let goals: TestRenderer.ReactTestRenderer | undefined;
-    let home: TestRenderer.ReactTestRenderer | undefined;
-    act(() => {
-      goals = TestRenderer.create(<GoalsScreen />);
-      home = TestRenderer.create(<HomeScreen />);
-    });
-    if (!goals || !home) throw new Error('Goal screens did not render.');
-    expect(renderedText(goals.root).toLowerCase()).not.toContain('insurance');
-    expect(goals.root.findAll((node) => node.props.accessibilityLabel === 'Insurance cover')).toHaveLength(0);
-    expect(home.root.findAllByProps({ testID: 'home-insurance-cover-link' })).toHaveLength(0);
-    expect(readFileSync(join(process.cwd(), 'app/(tabs)/goals.tsx'), 'utf8')).not.toMatch(/insurance/i);
-    expect(readFileSync(join(process.cwd(), 'app/(tabs)/index.tsx'), 'utf8'))
-      .not.toMatch(/home-insurance-cover-link|coverGaps|coverLink/);
-    act(() => {
-      goals?.unmount();
-      home?.unmount();
-    });
   });
 });

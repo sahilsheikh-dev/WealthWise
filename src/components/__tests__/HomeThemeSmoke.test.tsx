@@ -7,21 +7,12 @@ import HomeScreen, { HOME_QUICK_ACTIONS } from '../../../app/(tabs)';
 import GoalsScreen from '../../../app/(tabs)/goals';
 import { useUIStore } from '../../data/uiStore';
 import { emptyAppData } from '../../domain/actions';
-import { createDefaultBudgetPlan } from '../../domain/budget';
 import { THEME_IDS, type ThemeId } from '../../domain/types';
-import { budgetPlanFromLines } from '../../testFixtures/budget';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
-const mockActions = {
-  clearDue: jest.fn(),
-  clearDuesThrough: jest.fn(),
-  undoClearDue: jest.fn(),
-  undoClearDuesThrough: jest.fn(),
-  saveAndApplyBudgetPlan: jest.fn(),
-  restoreBudgetPlanAndMonth: jest.fn(),
-};
+const mockActions = { clearDue: jest.fn(), clearDuesThrough: jest.fn(), undoClearDue: jest.fn(), undoClearDuesThrough: jest.fn() };
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
@@ -36,10 +27,7 @@ jest.mock('../../data/useAppData', () => ({
   useAppActions: () => mockActions,
 }));
 jest.mock('../../data/store', () => ({
-  useAppStore: Object.assign(
-    (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
-    { getState: () => ({ lastError: null }) },
-  ),
+  useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
   metaStore: {
     getMeta: async () => ({}),
     updateSortSpec: async () => ({}),
@@ -78,7 +66,6 @@ jest.mock('../../components/ui', () => {
     AppText: node('text'),
     Button: node('button'),
     Card: node('card'),
-    EmptyState: node('empty'),
     Chip: node('chip'),
     ChipRow: node('chiprow'),
     SearchField: node('searchfield'),
@@ -101,13 +88,9 @@ jest.mock('react-native', () => {
     Modal: node('modal'),
     Pressable: node('pressable'),
     Platform: { OS: 'ios' },
-    StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1, absoluteFill: {} },
+    StyleSheet: { create: (styles: object) => styles },
     Text: node('text'),
     View: node('view'),
-    TextInput: node('text-input'),
-    ScrollView: node('scroll-view'),
-    Keyboard: { addListener: () => ({ remove: jest.fn() }) },
-    KeyboardAvoidingView: node('keyboard-avoiding-view'),
     useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });
@@ -159,30 +142,26 @@ describe('Home screen theme smoke', () => {
     act(() => renderer?.unmount());
   });
 
-  it('creates a default budget without a plan and routes plan application through Budget', async () => {
+  it('offers setup without a plan and routes plan application through Budget', async () => {
     jest.clearAllMocks();
     const previous = { budgetPlan: mockData.budgetPlan, monthBudgets: mockData.monthBudgets };
-    mockData.budgetPlan = null;
-    mockData.monthBudgets = [];
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(<HomeScreen />);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    const create = renderer.root.findByProps({ accessibilityLabel: 'Create budget' });
-    act(() => create.props.onPress());
-    expect(mockActions.saveAndApplyBudgetPlan).toHaveBeenCalledTimes(1);
-    expect(mockActions.saveAndApplyBudgetPlan).toHaveBeenCalledWith(
-      createDefaultBudgetPlan('2026-10'),
-      '2026-10',
-    );
-    expect(router.push).not.toHaveBeenCalled();
+    const setup = renderer.root.findByProps({ accessibilityLabel: 'Set up budget' });
+    act(() => setup.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-setup');
     await act(async () => renderer?.unmount());
 
-    mockData.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 1_000 }], {
+    mockData.budgetPlan = {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
-    });
+      lines: [{ category: 'Food', mode: 'amount', value: 1_000 }],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
     mockData.monthBudgets = [];
     jest.mocked(router.push).mockClear();
     await act(async () => {
@@ -217,11 +196,11 @@ describe('Home screen theme smoke', () => {
         await Promise.resolve();
       });
       if (!renderer) throw new Error('Home did not render.');
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityState)
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityState)
         .toEqual({ expanded: false });
-      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.onPress());
+      act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(renderer.root.findByProps({ testID: 'home-spending-toggle', accessibilityRole: 'button' }).props.accessibilityLabel)
+      expect(renderer.root.findByProps({ testID: 'home-spending-toggle' }).props.accessibilityLabel)
         .toBe('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);

@@ -1,4 +1,4 @@
-import { addDays, isValidISO } from './dates';
+import { addDays } from './dates';
 import { NotFoundError } from './actions';
 import { addLiability, addLiabilityPayment, deleteLiabilityPayment } from './liabilityActions';
 import { addInvestmentEntry, deleteInvestmentEntry } from './investmentActions';
@@ -6,7 +6,6 @@ import { addPlan, type AddPlanInput } from './planActions';
 import { amortizedBalanceAfter, loanState } from './liability';
 import { liabilitySchedule, planSchedule, type ScheduleRow } from './schedule';
 import { policySchedule } from './policySchedule';
-import { policyPremiumCategory } from './policyCategories';
 import type {
   AppData,
   Liability,
@@ -147,8 +146,8 @@ function createPolicyPayment(
     id: newId(),
     type: 'expense',
     amount: payment.amount,
-    category: policyPremiumCategory(policy.kind),
-    note: payment.note || `${policy.name} premium`,
+    category: 'Insurance',
+    note: `${policy.name} premium`,
     date: payment.date,
     source: { kind: 'policy-payment', parentId: policy.id, entryId },
   };
@@ -164,38 +163,18 @@ function createPolicyPayment(
   };
 }
 
-export function addPolicyPayment(
-  data: AppData,
-  input: { policyId: string; payment: Omit<PolicyPayment, 'id'> },
-  newId: () => string,
-): { data: AppData; entryId: string } {
-  const policy = data.policies.find((item) => item.id === input.policyId);
-  if (!policy) throw new NotFoundError('Policy', input.policyId);
-  if (!Number.isFinite(input.payment.amount) || input.payment.amount <= 0) {
-    throw new RangeError('Policy payment amount must be greater than zero.');
-  }
-  if (!isValidISO(input.payment.date)) {
-    throw new RangeError('Policy payment date must be a valid ISO date.');
-  }
-  return createPolicyPayment(data, policy, input.payment, newId);
-}
-
 export function clearDue(
   data: AppData,
   target: DueTarget,
-  options: { date: string; newId: () => string; rowId?: string; actualAmount?: number },
+  options: { date: string; newId: () => string; rowId?: string },
 ): { data: AppData; entryId: string } {
   const [row] = pendingRowsFor(data, target, options.date, options.rowId);
   if (!row) throw new NothingToClearError();
-  const actualAmount = options.actualAmount ?? row.amount;
-  if (!Number.isFinite(actualAmount) || actualAmount <= 0 || actualAmount > 100_000_000_000) {
-    throw new RangeError('Paid amount must be greater than zero and within the supported range.');
-  }
   if (target.kind === 'plan') {
     let entryId: string | undefined;
     const result = addInvestmentEntry(data, target.id, {
       date: options.date,
-      amount: actualAmount,
+      amount: row.amount,
       note: '',
       kind: 'Deposit',
     }, () => {
@@ -213,10 +192,7 @@ export function clearDue(
     const liability = data.liabilities.find((item) => item.id === target.id);
     if (!liability) throw new NotFoundError('Liability', target.id);
     const balance = loanState(liability, options.date).balance;
-    const amount = liability.kind === 'one-time' ? actualAmount : actualAmount;
-    if (actualAmount > balance && liability.kind === 'one-time') {
-      throw new RangeError('Paid amount exceeds the outstanding liability balance.');
-    }
+    const amount = liability.kind === 'one-time' ? balance : Math.min(row.amount, Math.ceil(balance));
     if (amount <= 0) throw new NothingToClearError();
     const before = liability.payments.map((payment) => payment.id);
     const result = addLiabilityPayment(data, target.id, {
@@ -234,9 +210,8 @@ export function clearDue(
   if (!policy) throw new NotFoundError('Policy', target.id);
   return createPolicyPayment(data, policy, {
     date: options.date,
-    amount: actualAmount,
+    amount: row.amount,
     note: '',
-    dueDate: row.dueDate,
   }, options.newId);
 }
 
@@ -244,7 +219,7 @@ export function clearDuesThrough(
   data: AppData,
   target: DueTarget,
   dueDate: string,
-  options: { date: string; newId: () => string; actualAmount?: number },
+  options: { date: string; newId: () => string },
 ): { data: AppData; entryIds: string[] } {
   const scheduled = unpaidRows(data, target, options.date);
   if (!scheduled.some((row) => row.dueDate === dueDate)) throw new NothingToClearError();
@@ -257,7 +232,6 @@ export function clearDuesThrough(
     const cleared = clearDue(result, target, {
       ...options,
       rowId: row.id,
-      actualAmount: row.dueDate === dueDate ? options.actualAmount : undefined,
     });
     result = cleared.data;
     entryIds.push(cleared.entryId);
@@ -337,7 +311,6 @@ function recordPastDues(
       date: row.dueDate,
       amount: row.amount,
       note: '',
-      dueDate: row.dueDate,
     }, newId).data;
   }
   return result;

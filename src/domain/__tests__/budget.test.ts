@@ -7,25 +7,12 @@ import {
   TRANSACTION_CATEGORIES,
 } from '../schemas';
 import { mockAppData } from '../../mock/data';
-import { validateIntegrity } from '../links';
-import { INSURANCE_BUDGET_CATEGORIES } from '../policyCategories';
 import { buildDemoData } from '../../mock/demoData';
 import {
+  BUDGET_CATEGORY_WEIGHTS,
   BUDGET_GROUPS,
-  addIncomeItem,
-  addItem,
-  addSection,
-  customBudgetCategories,
   budgetOverview,
-  createDefaultBudgetPlan,
-  type BudgetItemScope,
   applyBudgetPlanToMonth,
-  BudgetMutationError,
-  changeSectionType,
-  deleteItem,
-  deleteSection,
-  editBudgetIncome,
-  editItem as editBudgetStructureItem,
   editBudgetItem,
   budgetGroupFor,
   budgetMonthView,
@@ -36,14 +23,8 @@ import {
   linkedRecurringForMonth,
   MissingPlannedIncomeError,
   monthlyCommitments,
-  isItemDueInMonth,
-  isIncomeDueInMonth,
-  nextDueMonth,
   outstandingAt,
-  plannedForMonth,
-  plannedIncomeOf,
   projectedCashFlow,
-  renameSection,
   resolveBudgetPlan,
   restoreBudgetPlanAndMonth,
   restoreMonthBudget,
@@ -51,19 +32,10 @@ import {
   saveAndApplyBudgetPlan,
   setBudgetPlan,
   setBudgetRepeat,
+  suggestBudgetSplit,
 } from '../budget';
 import { validateImportData } from '../backup';
-import type {
-  AppData,
-  BudgetIncomeItem,
-  BudgetItem,
-  BudgetSection,
-  Liability,
-  PlanHolding,
-  Policy,
-  Transaction,
-} from '../types';
-import { budgetPlanFromLines, monthBudgetFromLines, monthBudgetLines } from '../../testFixtures/budget';
+import type { BudgetIncomeItem, Liability, PlanHolding, Policy, Transaction } from '../types';
 
 const incomes = (amount: number): BudgetIncomeItem[] => amount <= 0
   ? []
@@ -82,8 +54,9 @@ const liability: Liability = {
 };
 const policy: Policy = {
   id: 'policy', name: 'Health cover', insurer: '', kind: 'health', premium: 60,
-  frequency: 'monthly', startDate: '2026-03-05', status: 'active', premiumYears: 1,
-  trackFrom: '2026-03-05', currentValue: null, valueAsOf: null, payments: [],
+  frequency: 'monthly', startDate: '2026-03-05', premiumYears: 1,
+  trackFrom: '2026-03-05', coverAmount: null, currentValue: null, valueAsOf: null,
+  maturityDate: null, payments: [],
 };
 const recurringLiability: Liability = {
   id: 'recurring', kind: 'recurring', name: 'Monthly loan', type: 'Personal loan',
@@ -97,212 +70,22 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
-  it('applies shared income recurrence rules to due and non-due months', () => {
-    const quarterly = {
-      id: 'quarterly-income',
-      name: 'Quarterly',
-      category: 'Freelance' as const,
-      amount: 3000,
-      frequency: 'quarterly' as const,
-      firstDueMonth: '2026-01',
-    };
-    const yearly = {
-      id: 'yearly-income',
-      name: 'Yearly',
-      category: 'Other' as const,
-      amount: 12000,
-      frequency: 'yearly' as const,
-      firstDueMonth: '2026-04',
-    };
-    expect(isIncomeDueInMonth(quarterly, '2026-04')).toBe(true);
-    expect(isIncomeDueInMonth(quarterly, '2026-03')).toBe(false);
-    expect(isIncomeDueInMonth(yearly, '2026-04')).toBe(true);
-    expect(isIncomeDueInMonth(yearly, '2027-04')).toBe(true);
-    expect(isIncomeDueInMonth(yearly, '2027-03')).toBe(false);
-    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-04')).toBe(15000);
-    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-05')).toBe(0);
-  });
-  it('covers frozen start-month and repeat guards with real outcomes', () => {
-    const recurringWithoutStart: BudgetItem = {
-      id: 'quarterly-no-start',
-      sectionId: 'survival',
-      name: 'Quarterly no start',
-      mode: 'amount',
-      value: 300,
-      frequency: 'quarterly',
-    };
-    expect(() => isItemDueInMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-    expect(() => nextDueMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-    expect(() => plannedForMonth(recurringWithoutStart, '2026-04'))
-      .toThrow('Choose the first due month for a recurring item.');
-
-    const data = emptyAppData('2026-10-10');
-    expect(clearMonthBudget(data, '2026-03')).toEqual(data);
-    expect(setBudgetRepeat(data, false, null)).toEqual(data);
-    expect(ensureCurrentMonthBudget(data, '2026-10-10', () => 'new-id')).toEqual(data);
-
-    const planWithRepeat = {
-      ...createDefaultBudgetPlan('2026-10'),
-      repeatMonthly: true,
-      repeatFrom: '2027-01',
-    };
-    const repeated = { ...data, budgetPlan: planWithRepeat };
-    expect(ensureCurrentMonthBudget(repeated, '2026-10-10', () => 'new-id')).toEqual(repeated);
-
-    const monthBudget = createDefaultBudgetPlan('2026-10');
-    expect(budgetOverview({
-      ...data,
-      budgetPlan: {
-        ...monthBudget,
-        incomes: [],
-        items: [],
-      },
-    }, '2026-03', '2026-10-10').summary.stacked).toBeDefined();
-
-    const snapshot = monthBudgetFromLines('2026-10', [], { incomes: [] });
-    const stored = {
-      ...data,
-      monthBudgets: [snapshot],
-    };
-    expect(clearMonthBudget(stored, '2026-10').monthBudgets).toHaveLength(0);
-    expect(restoreBudgetPlanAndMonth(data, null, '2026-10', null)).toEqual(data);
-    expect(() => restoreBudgetPlanAndMonth(data, null, '2026-10', {
-      ...snapshot,
-      month: '2026-11',
-    })).toThrow('Cannot restore a budget to a different month.');
-
-    expect(effectiveMonthBudget(stored, '2026-10', '2026-10-10').virtual).toBe(false);
-    const percentItem: BudgetItem = {
-      id: 'pct',
-      sectionId: 'survival',
-      name: 'Percent',
-      value: 10,
-      mode: 'percent',
-      frequency: 'monthly',
-    };
-    const percentPlan = {
-      ...createDefaultBudgetPlan('2026-10'),
-      repeatMonthly: true,
-      repeatFrom: '2026-10',
-      incomes: [],
-      items: [percentItem],
-    };
-    const percentData = { ...data, budgetPlan: percentPlan };
-    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').budget).toBeNull();
-    expect(effectiveMonthBudget(percentData, '2025-12', '2026-10-10').budget).toBeNull();
-    expect(effectiveMonthBudget(percentData, '2026-11', '2026-10-10').virtual).toBe(false);
-    expect(setBudgetRepeat({
-      ...data,
-      budgetPlan: { ...createDefaultBudgetPlan('2026-10'), repeatMonthly: false, repeatFrom: '2026-10' },
-    }, true, '2026-11').budgetPlan?.repeatFrom).toBe('2026-11');
-  });
-
-  it('schedules all recurring frequencies across year boundaries and reports the next due month', () => {
-    const item = (frequency: BudgetItem['frequency'], firstDueMonth?: string): BudgetItem => ({
-      id: `${frequency}-item`,
-      sectionId: 'survival',
-      name: `${frequency} item`,
-      mode: 'amount',
-      value: 500,
-      ...(frequency ? { frequency } : {}),
-      ...(firstDueMonth ? { firstDueMonth } : {}),
-    });
-
-    expect(isItemDueInMonth(item('monthly'), '2026-12')).toBe(true);
-    expect(isItemDueInMonth(item('monthly'), '2027-01')).toBe(true);
-    expect(isItemDueInMonth(item('quarterly', '2026-11'), '2026-11')).toBe(true);
-    expect(isItemDueInMonth(item('quarterly', '2026-11'), '2027-01')).toBe(false);
-    expect(isItemDueInMonth(item('quarterly', '2026-11'), '2027-02')).toBe(true);
-    expect(isItemDueInMonth(item('half-yearly', '2026-08'), '2027-02')).toBe(true);
-    expect(isItemDueInMonth(item('half-yearly', '2026-08'), '2027-03')).toBe(false);
-    expect(isItemDueInMonth(item('yearly', '2026-12'), '2027-12')).toBe(true);
-    expect(isItemDueInMonth(item('yearly', '2026-12'), '2028-11')).toBe(false);
-
-    const quarterly = item('quarterly', '2026-11');
-    expect(isItemDueInMonth(quarterly, '2026-10')).toBe(false);
-    expect(plannedForMonth(quarterly, '2026-10')).toBe(0);
-    expect(plannedForMonth(quarterly, '2026-11')).toBe(500);
-    expect(nextDueMonth(quarterly, '2026-10')).toBe('2026-11');
-    expect(nextDueMonth(quarterly, '2026-11')).toBe('2027-02');
-    expect(nextDueMonth(quarterly, '2026-12')).toBe('2027-02');
-    expect(nextDueMonth(item('half-yearly', '2026-08'), '2027-02')).toBe('2027-08');
-    expect(nextDueMonth(item('yearly', '2026-12'), '2027-12')).toBe('2028-12');
-  });
-
-  it('uses recurring planned amounts for future totals and projections while retaining frozen snapshots', () => {
-    const budgetPlan = budgetPlanFromLines([
-      { category: 'Food', mode: 'amount', value: 200 },
-      { category: 'Streaming', mode: 'amount', value: 1_500 },
-      { category: 'Maintenance', mode: 'amount', value: 3_000 },
-      { category: 'Domain renewal', mode: 'amount', value: 2_400 },
-    ], {
-      incomes: incomes(10_000),
-      repeatMonthly: true,
-      repeatFrom: '2026-04',
-    });
-    budgetPlan.items = budgetPlan.items.map((item) => {
-      if (item.name === 'Streaming') return { ...item, frequency: 'quarterly', firstDueMonth: '2026-04' };
-      if (item.name === 'Maintenance') return { ...item, frequency: 'half-yearly', firstDueMonth: '2026-04' };
-      if (item.name === 'Domain renewal') return { ...item, frequency: 'yearly', firstDueMonth: '2026-12' };
-      return item;
-    });
-    const data = { ...emptyAppData('2026-03-15'), budgetPlan };
-
-    expect(budgetMonthView(data, '2026-04', '2026-03-15')).toMatchObject({
-      plannedSpend: 4_700,
-      lines: expect.arrayContaining([
-        expect.objectContaining({ category: 'Streaming', planned: 1_500 }),
-        expect.objectContaining({ category: 'Maintenance', planned: 3_000 }),
-      ]),
-    });
-    expect(budgetMonthView(data, '2026-05', '2026-03-15')).toMatchObject({
-      plannedSpend: 200,
-      lines: expect.arrayContaining([
-        expect.objectContaining({ category: 'Streaming', planned: 0 }),
-        expect.objectContaining({ category: 'Maintenance', planned: 0 }),
-        expect.objectContaining({ category: 'Domain renewal', planned: 0 }),
-      ]),
-    });
-    const overview = budgetOverview(data, '2026-05', '2026-03-15');
-    const overviewRows = overview.sections.flatMap((section) => section.items);
-    expect(overviewRows).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        title: 'Streaming', planned: 0, frequency: 'quarterly', nextDueMonth: '2026-07',
-      }),
-      expect.objectContaining({
-        title: 'Maintenance', planned: 0, frequency: 'half-yearly', nextDueMonth: '2026-10',
-      }),
-      expect.objectContaining({
-        title: 'Domain renewal', planned: 0, frequency: 'yearly', nextDueMonth: '2026-12',
-      }),
-    ]));
-    expect(projectedCashFlow(data, '2026-04', '2026-03-15')).toEqual({
-      opening: 0, closing: 5_300, projected: true,
-    });
-    expect(projectedCashFlow(data, '2026-05', '2026-03-15')).toEqual({
-      opening: 5_300, closing: 15_100, projected: true,
-    });
-
-    const frozen = monthBudgetFromLines('2026-05', [{
-      category: 'Streaming', planned: 777, frequency: 'quarterly', firstDueMonth: '2026-04',
-    }], { incomes: incomes(10_000), source: 'custom' });
-    const snapshotData = { ...data, monthBudgets: [frozen] };
-    expect(budgetMonthView(snapshotData, '2026-05', '2026-03-15').lines)
-      .toContainEqual(expect.objectContaining({ category: 'Streaming', planned: 777 }));
-  });
-
   it('uses frozen snapshots before deriving future months from the current plan', () => {
     const data = emptyAppData('2026-01-15');
-    data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 200 }], {
-      incomes: incomes(1_000), repeatMonthly: true, repeatFrom: '2026-02',
-    });
-    data.monthBudgets = [monthBudgetFromLines('2026-02', [{ category: 'Food', planned: 100 }], {
+    data.budgetPlan = {
+      incomes: incomes(1_000),
+      lines: [{ category: 'Food', mode: 'amount', value: 200 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-02',
+    };
+    data.monthBudgets = [{
+      month: '2026-02',
+      source: 'custom',
       incomes: incomes(800),
-    })];
+      lines: [{ category: 'Food', planned: 100 }],
+    }];
     data.budgetPlan.incomes = incomes(2_000);
-    data.budgetPlan.items = [{ ...data.budgetPlan.items[0]!, value: 500 }];
+    data.budgetPlan.lines = [{ category: 'Food', mode: 'amount', value: 500 }];
     expect(effectiveMonthBudget(data, '2026-02', '2026-01-15')).toEqual({
       budget: data.monthBudgets[0],
       virtual: false,
@@ -311,7 +94,7 @@ describe('budget plans and monthly views', () => {
       budget: {
         source: 'plan',
         incomes: incomes(2_000),
-        items: [expect.objectContaining({ name: 'Food', value: 500 })],
+        lines: [{ category: 'Food', planned: 500 }],
       },
       virtual: true,
     });
@@ -323,204 +106,16 @@ describe('budget plans and monthly views', () => {
   it('does not derive percentage budgets when the plan has no income', () => {
     const data = {
       ...emptyAppData('2026-01-15'),
-      budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 10 }], {
-        incomes: [], repeatMonthly: true, repeatFrom: '2026-02',
-      }),
+      budgetPlan: {
+        incomes: [],
+        lines: [{ category: 'Food', mode: 'percent' as const, value: 10 }],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+      },
     };
     expect(effectiveMonthBudget(data, '2026-02', '2026-01-15')).toEqual({
       budget: null,
       virtual: false,
-    });
-  });
-
-  describe('budget linked and unlinked investment mix', () => {
-    it('never counts linked plans twice across linked and unlinked item mixes', () => {
-      for (let seed = 0; seed < 200; seed += 1) {
-        const linkedCount = seed % 4;
-        const holdingId = seed % 2 === 0 ? 'plan' : 'manual';
-        const items: BudgetItem[] = Array.from({ length: 5 }, (_, index) => ({
-          id: `item-${index}`,
-          sectionId: 'invest',
-          name: `Investment ${index}`,
-          mode: 'amount',
-          value: index < linkedCount ? 100 : 200,
-          frequency: 'monthly',
-          firstDueMonth: '2026-03',
-          ...(index < linkedCount ? { holdingId } : {}),
-        }));
-        const data: AppData = {
-          ...emptyAppData('2026-03-01'),
-          budgetPlan: {
-            sections: [{ id: 'invest', name: 'Investments', type: 'invest' }],
-            incomes: [{ id: 'income', name: 'Salary', category: 'Salary', amount: 10_000 }],
-            repeatMonthly: true,
-            repeatFrom: '2026-03',
-            items,
-          },
-          holdings: [{
-            id: 'plan', kind: 'plan', name: 'SIP', type: 'Mutual fund / SIP',
-            frequency: 'monthly', amount: 100, ratePct: 0, stepUpPct: 0, tenureYears: 1,
-            startDate: '2026-03-01', trackFrom: '2026-03-01', opening: 0,
-            actualValue: null, actualValueDate: null, logs: [],
-          }],
-        };
-        const view = budgetMonthView(data, '2026-03', '2026-03-01');
-        const linkedRows = view.lines.filter((line) => line.category.startsWith('Investment'));
-        expect(linkedRows.reduce((sum, line) => sum + line.actual, 0)).toBeGreaterThanOrEqual(0);
-        expect(Number.isFinite(view.plannedSpend)).toBe(true);
-      }
-    });
-
-    it('covers recurring edge branches for starts, percentages, invalid months, and frozen views', () => {
-      const percent = {
-        id: 'percent', sectionId: 'invest', name: 'Percent contribution', mode: 'percent' as const,
-        value: 12, frequency: 'monthly' as const, firstDueMonth: '2027-01',
-      };
-      expect(isItemDueInMonth(percent, '2026-12')).toBe(false);
-      expect(isItemDueInMonth(percent, '2027-01')).toBe(true);
-      expect(plannedForMonth(percent, '2026-12')).toBe(0);
-      expect(nextDueMonth(percent, '2026-12')).toBe('2027-01');
-
-      const monthly = {
-        id: 'monthly', sectionId: 'daily', name: 'Monthly', mode: 'amount' as const,
-        value: 400, frequency: 'monthly' as const,
-      };
-      expect(isItemDueInMonth(monthly, '2026-03')).toBe(true);
-      expect(nextDueMonth(monthly, '2025-12')).toBe('2026-01');
-      expect(nextDueMonth(monthly, '2027-01')).toBe('2027-02');
-
-      expect(() => isItemDueInMonth(monthly, '2026-13')).toThrow(RangeError);
-      expect(() => plannedForMonth(monthly, '2026-13')).toThrow(RangeError);
-      expect(() => nextDueMonth(monthly, '2026-13')).toThrow(RangeError);
-
-      const data = emptyAppData('2026-03-15');
-      data.budgetPlan = {
-        sections: [{ id: 'daily', name: 'Daily', type: 'spend' }],
-        incomes: incomes(1_000),
-        repeatMonthly: true,
-        repeatFrom: '2026-03',
-        items: [monthly],
-      };
-      data.monthBudgets = [monthBudgetFromLines('2026-04', [{
-        category: 'Monthly', planned: 777, frequency: 'monthly',
-      }], { incomes: incomes(1_000), source: 'custom' })];
-      expect(budgetMonthView(data, '2026-04', '2026-03-15').plannedSpend).toBe(777);
-      expect(projectedCashFlow(data, '2026-04', '2026-03-15')).toEqual({
-        opening: 0, closing: 223, projected: true,
-      });
-    });
-
-    it('validates investment holding links and rejects invalid, missing, and duplicate links', () => {
-      const manual = {
-        id: 'manual', kind: 'manual' as const, name: 'Cash', type: 'Cash' as const,
-        invested: 1_000, value: 1_000, valueAsOf: '2026-03-01', logs: [],
-      };
-      const data: AppData = {
-        ...emptyAppData('2026-03-15'),
-        holdings: [manual],
-        budgetPlan: {
-          sections: [
-            { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'spend' },
-          ],
-          incomes: [],
-          repeatMonthly: true,
-          repeatFrom: '2026-03',
-          items: [{
-            id: 'existing', sectionId: 'invest', name: 'Existing fund',
-            mode: 'amount', value: 100, frequency: 'monthly',
-            firstDueMonth: '2026-03', holdingId: 'manual',
-          }],
-        },
-        monthBudgets: [{
-          month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
-          sections: [
-            { id: 'invest', name: 'Investments', type: 'invest' },
-            { id: 'expense', name: 'Expenses', type: 'spend' },
-          ],
-          items: [{
-            id: 'existing', sectionId: 'invest', name: 'Existing fund',
-            mode: 'amount', value: 100, frequency: 'monthly',
-            firstDueMonth: '2026-03', holdingId: 'manual',
-          }],
-        }],
-      };
-      const baseInput = {
-        id: 'new', sectionId: 'invest', name: 'New fund', mode: 'amount' as const,
-        value: 100, frequency: 'monthly' as const, firstDueMonth: '2026-03',
-        holdingId: undefined as string | undefined,
-      };
-      const validData = {
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [] },
-        monthBudgets: [{ ...data.monthBudgets![0], items: [] }],
-      };
-      expect(addItem(validData, '2026-03', { ...baseInput, holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toBeDefined();
-      expect(() => addItem(data, '2026-03', { ...baseInput, sectionId: 'expense', holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toThrow('A holding can only be linked');
-      expect(() => addItem(data, '2026-03', { ...baseInput, holdingId: 'missing' }, 'month', '2026-03-15'))
-        .toThrow('Linked asset does not exist');
-      expect(() => addItem({
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [data.budgetPlan!.items[0]!] },
-      }, '2026-03', { ...baseInput, name: 'Duplicate linked fund', holdingId: 'manual' }, 'month', '2026-03-15'))
-        .toThrow('This holding is already linked');
-      expect(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'existing',
-        patch: { holdingId: 'missing' },
-      }, 'month', '2026-03-15')).toThrow('Linked asset does not exist');
-      expect(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'missing',
-        patch: { holdingId: 'manual' },
-      }, 'month', '2026-03-15')).toThrow('The budget item no longer exists');
-    });
-
-    it('rejects new and edited Budget links to fixed deposits', () => {
-      const section = { id: 'invest', name: 'Investments', type: 'invest' as const };
-      const item = {
-        id: 'item',
-        sectionId: 'invest',
-        name: 'Fixed deposit',
-        mode: 'amount' as const,
-        value: 100,
-        frequency: 'monthly' as const,
-        firstDueMonth: '2026-03',
-      };
-      const data: AppData = {
-        ...emptyAppData('2026-03-15'),
-        holdings: [{
-          id: 'fd', kind: 'manual', name: 'FD', type: 'Fixed deposit',
-          invested: 100, value: 100, valueAsOf: '2026-03-01', logs: [],
-        }],
-        budgetPlan: {
-          sections: [section],
-          incomes: [],
-          repeatMonthly: true,
-          repeatFrom: '2026-03',
-          items: [],
-        },
-        monthBudgets: [{
-          month: '2026-03', source: 'custom', linkedIncluded: true, incomes: [],
-          sections: [section], items: [],
-        }],
-      };
-
-      expect(() => addItem(data, '2026-03', { ...item, holdingId: 'fd' }, 'month', '2026-03-15'))
-        .toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
-
-      const withUnlinkedItem: AppData = {
-        ...data,
-        budgetPlan: { ...data.budgetPlan!, items: [item] },
-        monthBudgets: [{
-          ...data.monthBudgets![0]!,
-          items: [item],
-        }],
-      };
-      expect(() => editBudgetStructureItem(withUnlinkedItem, '2026-03', {
-        itemId: 'item',
-        patch: { holdingId: 'fd' },
-      }, 'month', '2026-03-15')).toThrow('Fixed deposits cannot be linked to recurring Budget schedules.');
     });
   });
 
@@ -530,10 +125,15 @@ describe('budget plans and monthly views', () => {
       { id: 'salary', type: 'income', amount: 1_000, category: 'Salary', note: '', date: '2026-01-01' },
       { id: 'food', type: 'expense', amount: 400, category: 'Food', note: '', date: '2026-01-02' },
     ];
-    data.budgetPlan = budgetPlanFromLines([
+    data.budgetPlan = {
+      incomes: incomes(1_000),
+      lines: [
         { category: 'Food', mode: 'amount', value: 500 },
         { category: 'Mutual fund / SIP', mode: 'amount', value: 100 },
-      ], { incomes: incomes(1_000), repeatMonthly: true, repeatFrom: '2026-02' });
+      ],
+      repeatMonthly: true,
+      repeatFrom: '2026-02',
+    };
     const before = JSON.stringify(data);
     expect(projectedCashFlow(data, '2026-01', '2026-01-15')).toEqual({
       opening: 0, closing: 600, projected: false,
@@ -552,26 +152,18 @@ describe('budget plans and monthly views', () => {
   });
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
-      ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Recharge', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI']],
+      ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI', 'Insurance']],
       ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
       ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],
     ]);
-    const groupedCategories = [
-      ...BUDGET_GROUPS.flatMap(({ categories }) => categories),
-      ...INSURANCE_BUDGET_CATEGORIES,
-    ];
+    const groupedCategories = BUDGET_GROUPS.flatMap(({ categories }) => categories);
     expect([...groupedCategories].sort()).toEqual([...BUDGET_CATEGORIES].sort());
     expect(new Set(groupedCategories).size).toBe(BUDGET_CATEGORIES.length);
     for (const category of BUDGET_CATEGORIES) {
-      expect(BUDGET_GROUPS.filter((group) => group.categories.includes(category))).toHaveLength(
-        INSURANCE_BUDGET_CATEGORIES.includes(category as typeof INSURANCE_BUDGET_CATEGORIES[number]) ? 0 : 1,
-      );
+      expect(BUDGET_GROUPS.filter((group) => group.categories.includes(category))).toHaveLength(1);
       expect(budgetGroupFor(category)?.categories).toContain(category);
-      if (INSURANCE_BUDGET_CATEGORIES.includes(category as typeof INSURANCE_BUDGET_CATEGORIES[number])) {
-        expect(budgetGroupFor(category)?.id).toBe('insurance');
-      }
     }
     expect(BUDGET_GROUPS.reduce((total, group) => total + group.weight, 0)).toBe(100);
     expect(appDataSchema.safeParse(mockAppData).success).toBe(true);
@@ -584,32 +176,66 @@ describe('budget plans and monthly views', () => {
   });
 
   it('resolves amount and percentage lines and requires income for percentages', () => {
-    const amountPlan = budgetPlanFromLines([
+    expect(resolveBudgetPlan({
+      incomes: incomes(12_345),
+      lines: [
         { category: 'Food', mode: 'amount', value: 500 },
         { category: 'Bills', mode: 'percent', value: 12.5 },
-      ], { incomes: incomes(12_345) });
-    expect(resolveBudgetPlan(amountPlan, '2026-10')).toEqual([
-      { category: 'Food', planned: 500 },
-      { category: 'Bills', planned: 1543 },
-    ]);
-    expect(() => resolveBudgetPlan(budgetPlanFromLines([
-      { category: 'Bills', mode: 'percent', value: 10 },
-    ], { incomes: [] }), '2026-10')).toThrow(MissingPlannedIncomeError);
+      ],
+    })).toEqual([{ category: 'Food', planned: 500 }, { category: 'Bills', planned: 1543 }]);
+    expect(() => resolveBudgetPlan({
+      incomes: [],
+      lines: [{ category: 'Bills', mode: 'percent', value: 10 }],
+    })).toThrow(MissingPlannedIncomeError);
   });
 
-  it('creates a default plan for the current month without incomes or items', () => {
-    expect(createDefaultBudgetPlan('2026-10')).toEqual({
-      incomes: [],
-      sections: expect.arrayContaining([
-        expect.objectContaining({ id: 'survival', type: 'spend' }),
-        expect.objectContaining({ id: 'savings-investments', type: 'invest' }),
-        expect.objectContaining({ id: 'income', system: 'income' }),
-      ]),
-      items: [],
-      repeatMonthly: true,
-      repeatFrom: '2026-10',
+  it('suggests rounded five-group allocations, respects commitments, and warns on group overages', () => {
+    const ordinary = suggestBudgetSplit({ plannedIncome: 10_000, commitments: [] });
+    expect(ordinary.lines).toHaveLength(BUDGET_CATEGORIES.length);
+    expect(ordinary.lines.find((line) => line.category === 'Living')?.planned).toBe(1_000);
+    expect(ordinary.lines.find((line) => line.category === 'Food')?.planned).toBe(1_000);
+    expect(ordinary.lines.find((line) => line.category === 'Shopping')?.planned).toBe(400);
+    expect(ordinary.lines.find((line) => line.category === 'Other')?.planned).toBe(200);
+    expect(ordinary.lines.find((line) => line.category === 'Festival')?.planned).toBe(200);
+    expect(ordinary.lines.find((line) => line.category === 'Unexpected')?.planned).toBe(1_000);
+    expect(ordinary.lines.find((line) => line.category === 'Other investments')?.planned).toBe(800);
+    expect(ordinary.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(500);
+    expect(ordinary.warnings).toEqual([]);
+    const committed = suggestBudgetSplit({
+      plannedIncome: 10_000,
+      commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
+        dueDate: '2026-03-20', plannedAmount: 1_000, status: 'upcoming', paidAmount: 0 }],
     });
-    expect(() => createDefaultBudgetPlan('2026-13')).toThrow('Invalid month key');
+    expect(committed.lines.find((line) => line.category === 'EMI')?.planned).toBe(1_200);
+    expect(committed.lines.find((line) => line.category === 'Food')?.planned).toBe(800);
+    const overspent = suggestBudgetSplit({
+      plannedIncome: 10_000,
+      commitments: [{ kind: 'liability', id: 'd', name: 'Debt', category: 'EMI',
+        dueDate: '2026-03-20', plannedAmount: 6_000, status: 'overdue', paidAmount: 0 }],
+    });
+    expect(overspent.lines.find((line) => line.category === 'EMI')?.planned).toBe(6_000);
+    expect(overspent.warnings).toEqual(['Survival (Needs) commitments exceed its 50% allocation.']);
+    expect(overspent.lines.every((line) => line.planned >= 0)).toBe(true);
+    const savingsOver = suggestBudgetSplit({
+      plannedIncome: 10_000,
+      commitments: [{ kind: 'plan', id: 'p', name: 'Plan', category: 'Mutual fund / SIP',
+        dueDate: '2026-03-05', plannedAmount: 3_000, status: 'overdue', paidAmount: 0 }],
+    });
+    expect(savingsOver.warnings).toHaveLength(1);
+    expect(savingsOver.lines.find((line) => line.category === 'Mutual fund / SIP')?.planned).toBe(3_000);
+    expect(savingsOver.lines.every((line) => line.planned >= 0)).toBe(true);
+  });
+
+  it('keeps fixed within-group weights at 100% and rounds each category to the nearest hundred', () => {
+    for (const group of BUDGET_GROUPS) {
+      const weights = BUDGET_CATEGORY_WEIGHTS[group.id];
+      if (!weights) throw new Error(`Missing weights for ${group.id}`);
+      expect(Object.values(weights).reduce((total, weight) => total + weight, 0)).toBe(100);
+    }
+    const { lines } = suggestBudgetSplit({ plannedIncome: 10_001, commitments: [] });
+    expect(lines.find(({ category }) => category === 'Living')?.planned).toBe(1_000);
+    expect(lines.find(({ category }) => category === 'Eating out')?.planned).toBe(200);
+    expect(lines.every(({ planned }) => planned >= 0 && planned % 100 === 0)).toBe(true);
   });
 
   it('accepts the new expense categories in transactions, filters and budget schemas', () => {
@@ -628,12 +254,18 @@ describe('budget plans and monthly views', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       transactions,
-      monthBudgets: [monthBudgetFromLines('2026-03', categories.map((category) => ({ category, planned: 100 })), {
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
         incomes: incomes(1_000),
-      })],
-      budgetPlan: budgetPlanFromLines(categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })), {
+        lines: categories.map((category) => ({ category, planned: 100 })),
+      }],
+      budgetPlan: {
         incomes: incomes(1_000),
-      }),
+        lines: categories.map((category) => ({ category, mode: 'amount' as const, value: 100 })),
+        repeatMonthly: false,
+        repeatFrom: null,
+      },
     };
     expect(appDataSchema.safeParse(data).success).toBe(true);
     expect(validateImportData(data).ok).toBe(true);
@@ -663,84 +295,71 @@ describe('budget plans and monthly views', () => {
       note: 'recorded',
       date: '2026-03-02',
     }];
-    const plan = budgetPlanFromLines([
+    const plan = {
+      incomes: incomes(10_000),
+      lines: [
         { category: 'Food', mode: 'percent' as const, value: 20 },
         { category: 'Bills', mode: 'amount' as const, value: 500, dueDay: 31 },
-      ], { incomes: incomes(10_000) });
+      ],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
     const saved = setBudgetPlan({ ...initial, transactions }, plan);
     const applied = applyBudgetPlanToMonth(saved, '2026-03', { newId: () => 'unused', today: '2026-03-10' });
-    expect(applied.monthBudgets?.[0]).toEqual(monthBudgetFromLines('2026-03', [
-      { category: 'Food', planned: 2_000 },
-      { category: 'Bills', planned: 500, dueDay: 31 },
-    ], { incomes: incomes(10_000), source: 'plan', linkedIncluded: true }));
+    expect(applied.monthBudgets?.[0]).toEqual({
+      month: '2026-03',
+      source: 'plan',
+      incomes: incomes(10_000),
+      lines: [
+        { category: 'Food', planned: 2_000 },
+        { category: 'Bills', planned: 500, dueDay: 31 },
+      ],
+      linkedIncluded: true,
+    });
     expect(applied.transactions).toEqual(transactions);
     expect(applied.budgetPlan).toEqual(plan);
   });
 
   it('customizes one month and restores its exact previous snapshot', () => {
     const data = emptyAppData('2026-03-01');
-    const original = monthBudgetFromLines('2026-03', [{ category: 'Food', planned: 500, dueDay: 5 }], {
-      incomes: incomes(10_000), source: 'plan', linkedIncluded: true,
-    });
+    const original = {
+      month: '2026-03',
+      source: 'plan' as const,
+      incomes: incomes(10_000),
+      lines: [{ category: 'Food', planned: 500, dueDay: 5 }],
+      linkedIncluded: true,
+    };
     const withSnapshot = { ...data, monthBudgets: [original] };
     const customized = customizeMonthBudget(withSnapshot, '2026-03', {
       incomes: incomes(12_000),
       lines: [{ category: 'Food', planned: 1_000 }],
-    }, '2026-03-15');
+    });
     expect(customized.monthBudgets?.[0]).toMatchObject({
       month: '2026-03',
       source: 'custom' as const,
       incomes: incomes(12_000),
-      items: [expect.objectContaining({ name: 'Food', value: 1_000 })],
+      lines: [{ category: 'Food', planned: 1_000 }],
     });
     expect(restoreMonthBudget(customized, '2026-03', original)).toEqual(withSnapshot);
     expect(clearMonthBudget(withSnapshot, '2026-03').monthBudgets).toEqual([]);
     expect(clearMonthBudget(withSnapshot, '2026-02')).toBe(withSnapshot);
-    expect(() => customizeMonthBudget(data, 'not-a-month', { incomes: [] }, '2026-03-15')).toThrow(RangeError);
-  });
-
-  it('materializes an upcoming derived month with its custom sections and retained items', () => {
-    const plan = budgetPlanFromLines([
-      { category: 'Food', value: 500 },
-      { category: 'Pet care', value: 250 },
-    ], {
-      incomes: incomes(10_000),
-      repeatMonthly: true,
-      repeatFrom: '2026-04',
-    });
-    plan.sections = [{ id: 'pets', name: 'Pets', type: 'spend' }, ...plan.sections];
-    plan.items = plan.items.map((item) =>
-      item.name === 'Pet care' ? { ...item, sectionId: 'pets' } : item,
-    );
-    const data = { ...emptyAppData('2026-03-01'), budgetPlan: plan };
-    const customized = customizeMonthBudget(data, '2026-04', {
-      incomes: incomes(12_000),
-      lines: [{ category: 'Food', planned: 800 }],
-    }, '2026-03-15');
-    expect(customized.monthBudgets?.[0]).toMatchObject({
-      month: '2026-04',
-      source: 'custom',
-      sections: plan.sections,
-      items: expect.arrayContaining([
-        expect.objectContaining({ name: 'Food', value: 800 }),
-        expect.objectContaining({ name: 'Pet care', sectionId: 'pets', value: 250 }),
-      ]),
-    });
+    expect(() => customizeMonthBudget(data, 'not-a-month', { incomes: [] })).toThrow(RangeError);
   });
 
   describe('budget item edits', () => {
     const today = '2026-03-15';
-    const planWithItems = budgetPlanFromLines([
-        { category: 'Food', mode: 'amount' as const, value: 1_000, dueDay: 5 },
-        { category: 'Travel', mode: 'percent' as const, value: 10 },
-      ], {
-        incomes: [
+    const planWithItems = {
+      incomes: [
         { id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000, day: 1 },
         { id: 'freelance', name: 'Freelance', category: 'Freelance' as const, amount: 2_000, day: 15 },
       ],
+      lines: [
+        { category: 'Food', mode: 'amount' as const, value: 1_000, dueDay: 5 },
+        { category: 'Travel', mode: 'percent' as const, value: 10 },
+      ],
       repeatMonthly: true,
       repeatFrom: '2026-04',
-    });
+    };
 
     function withPlanAndMonth() {
       const data = setBudgetPlan(emptyAppData(today), planWithItems);
@@ -755,7 +374,7 @@ describe('budget plans and monthly views', () => {
       expect(edited.budgetPlan).toEqual(before.budgetPlan);
       const editedSnapshot = edited.monthBudgets?.find((row) => row.month === '2026-03');
       expect(editedSnapshot?.source).toBe('custom');
-      expect(monthBudgetLines(editedSnapshot)).toContainEqual({ category: 'Food', planned: 1_500 });
+      expect(editedSnapshot?.lines).toContainEqual({ category: 'Food', planned: 1_500 });
     });
 
     it('updates the current snapshot and plan together for following months', () => {
@@ -763,13 +382,11 @@ describe('budget plans and monthly views', () => {
       const edited = editBudgetItem(before, '2026-03', { kind: 'line', category: 'Food' }, {
         amount: 2_500, dueDay: 12,
       }, 'following', today);
-      expect(edited.budgetPlan?.items.map(({ name, mode, value, dueDay }) => ({
-        category: name, mode, value, ...(dueDay === undefined ? {} : { dueDay }),
-      }))).toEqual([
+      expect(edited.budgetPlan?.lines).toEqual([
         { category: 'Food', mode: 'amount', value: 2_500, dueDay: 12 },
         { category: 'Travel', mode: 'percent', value: 10 },
       ]);
-      expect(monthBudgetLines(edited.monthBudgets?.find((row) => row.month === '2026-03')))
+      expect(edited.monthBudgets?.find((row) => row.month === '2026-03')?.lines)
         .toContainEqual({ category: 'Food', planned: 2_500, dueDay: 12 });
       expect(edited.monthBudgets?.find((row) => row.month === '2026-03')?.source).toBe('plan');
     });
@@ -784,7 +401,7 @@ describe('budget plans and monthly views', () => {
       expect(edited.budgetPlan).toEqual(before.budgetPlan);
       expect(edited.monthBudgets?.find((row) => row.month === '2026-04')).toMatchObject({
         source: 'custom',
-        items: expect.arrayContaining([expect.objectContaining({ name: 'Food', value: 3_000, dueDay: 31 })]),
+        lines: expect.arrayContaining([{ category: 'Food', planned: 3_000, dueDay: 31 }]),
         incomes: planWithItems.incomes,
         linkedIncluded: true,
       });
@@ -793,54 +410,61 @@ describe('budget plans and monthly views', () => {
 
     it('updates the plan for an upcoming derived month and preserves later custom snapshots', () => {
       const before = withPlanAndMonth();
-      const customLater = monthBudgetFromLines('2026-05', [{ category: 'Food', planned: 777 }], {
-        incomes: planWithItems.incomes, linkedIncluded: true,
-      });
+      const customLater = {
+        month: '2026-05',
+        source: 'custom' as const,
+        incomes: planWithItems.incomes,
+        lines: [{ category: 'Food', planned: 777 }],
+        linkedIncluded: true,
+      };
       const data = { ...before, monthBudgets: [...(before.monthBudgets ?? []), customLater] };
       const edited = editBudgetItem(data, '2026-04', { kind: 'line', category: 'Food' }, {
         amount: 2_000,
       }, 'following', today);
-      expect(edited.budgetPlan?.items[0]).toMatchObject({
-        name: 'Food', mode: 'amount', value: 2_000,
+      expect(edited.budgetPlan?.lines[0]).toEqual({
+        category: 'Food', mode: 'amount', value: 2_000,
       });
       expect(edited.monthBudgets?.find((row) => row.month === '2026-04')).toBeUndefined();
       expect(edited.monthBudgets?.find((row) => row.month === '2026-05')).toEqual(customLater);
-      expect(monthBudgetLines(effectiveMonthBudget(edited, '2026-04', today).budget))
+      expect(effectiveMonthBudget(edited, '2026-04', today).budget?.lines)
         .toContainEqual({ category: 'Food', planned: 2_000 });
     });
 
     it('adds absent lines to both scopes and leaves other stored months unchanged', () => {
       const data = {
         ...emptyAppData(today),
-        budgetPlan: { ...planWithItems, items: [] },
+        budgetPlan: { ...planWithItems, lines: [] },
         monthBudgets: [
-          monthBudgetFromLines('2026-03', [], { incomes: [] }),
-          monthBudgetFromLines('2026-04', [], { incomes: [] }),
+          { month: '2026-03', source: 'custom' as const, incomes: [], lines: [] },
+          { month: '2026-04', source: 'custom' as const, incomes: [], lines: [] },
         ],
       };
       const monthOnly = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
         amount: 250,
       }, 'month', today);
-      expect(monthBudgetLines(monthOnly.monthBudgets?.[0])).toEqual([{ category: 'Food', planned: 250 }]);
+      expect(monthOnly.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 250 }]);
       expect(monthOnly.budgetPlan).toEqual(data.budgetPlan);
 
       const following = editBudgetItem(data, '2026-03', { kind: 'line', category: 'Food' }, {
         amount: 350,
       }, 'following', today);
-      expect(following.budgetPlan?.items.map(({ name, mode, value }) => ({ category: name, mode, value }))).toEqual([
+      expect(following.budgetPlan?.lines).toEqual([
         { category: 'Food', mode: 'amount', value: 350 },
       ]);
-      expect(monthBudgetLines(following.monthBudgets?.[0])).toEqual([{ category: 'Food', planned: 350 }]);
+      expect(following.monthBudgets?.[0]?.lines).toEqual([{ category: 'Food', planned: 350 }]);
       expect(following.monthBudgets?.[1]).toEqual(data.monthBudgets[1]);
     });
 
     it('uses the viewed snapshot as the base when a following-scope income is absent from the plan', () => {
       const data = {
         ...emptyAppData(today),
-        budgetPlan: { ...planWithItems, incomes: [], items: [] },
-        monthBudgets: [monthBudgetFromLines('2026-03', [], {
+        budgetPlan: { ...planWithItems, incomes: [], lines: [] },
+        monthBudgets: [{
+          month: '2026-03',
+          source: 'custom' as const,
           incomes: [{ id: 'legacy-income', name: 'Legacy', category: 'Salary' as const, amount: 500 }],
-        })],
+          lines: [],
+        }],
       };
       const edited = editBudgetItem(data, '2026-03', {
         kind: 'income', incomeId: 'legacy-income', category: 'Salary',
@@ -892,7 +516,7 @@ describe('budget plans and monthly views', () => {
       const removedLine = removeBudgetItem(before, '2026-03', {
         kind: 'line', category: 'Food',
       }, 'month', today);
-      expect(monthBudgetLines(removedLine.monthBudgets?.[0]).map((line) => line.category)).not.toContain('Food');
+      expect(removedLine.monthBudgets?.[0]?.lines.map((line) => line.category)).not.toContain('Food');
       expect(removedLine.budgetPlan).toEqual(before.budgetPlan);
     });
 
@@ -914,29 +538,39 @@ describe('budget plans and monthly views', () => {
   });
 
   it('undoes applying a changed plan and month snapshot to a deep-equal state', () => {
-    const previousPlan = budgetPlanFromLines(
-      [{ category: 'Food', mode: 'amount', value: 2_000 }],
-      { incomes: incomes(10_000) },
-    );
-    const previousMonth = monthBudgetFromLines('2026-03', [{ category: 'Bills', planned: 500 }], {
+    const previousPlan = {
+      incomes: incomes(10_000),
+      lines: [{ category: 'Food', mode: 'amount' as const, value: 2_000 }],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+    const previousMonth = {
+      month: '2026-03',
+      source: 'custom' as const,
       incomes: incomes(9_000),
-    });
+      lines: [{ category: 'Bills', planned: 500 }],
+    };
     const before = {
       ...emptyAppData('2026-03-01'),
       budgetPlan: previousPlan,
       monthBudgets: [previousMonth],
     };
-    const applied = saveAndApplyBudgetPlan(before, budgetPlanFromLines(
-      [{ category: 'Food', mode: 'percent', value: 25 }],
-      { incomes: incomes(12_000), repeatMonthly: true, repeatFrom: '2026-04' },
-    ), '2026-03', { newId: () => 'unused', today: '2026-03-10' });
+    const applied = saveAndApplyBudgetPlan(before, {
+      incomes: incomes(12_000),
+      lines: [{ category: 'Food', mode: 'percent', value: 25 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-04',
+    }, '2026-03', { newId: () => 'unused', today: '2026-03-10' });
     expect(restoreBudgetPlanAndMonth(applied, previousPlan, '2026-03', previousMonth)).toEqual(before);
   });
 
   it('repeats only from the configured month, applies current month once and never backfills', () => {
-    const plan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
-      incomes: incomes(1_000), repeatMonthly: true, repeatFrom: '2026-03',
-    });
+    const plan = {
+      incomes: incomes(1_000),
+      lines: [{ category: 'Food', mode: 'amount' as const, value: 100 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    };
     const data = setBudgetPlan(emptyAppData('2026-03-01'), plan);
     expect(ensureCurrentMonthBudget(data, '2026-02-12', () => 'unused')).toBe(data);
     const ensured = ensureCurrentMonthBudget(data, '2026-03-12', () => 'unused');
@@ -951,11 +585,14 @@ describe('budget plans and monthly views', () => {
 
     const incomeData = emptyAppData('2026-03-01');
     incomeData.settings.monthlySalary = 1_000;
-    const percentPlan = setBudgetPlan(incomeData, budgetPlanFromLines([
-      { category: 'Bills', mode: 'percent', value: 25 },
-    ], { incomes: incomes(1_000), repeatMonthly: true, repeatFrom: '2026-03' }));
+    const percentPlan = setBudgetPlan(incomeData, {
+      incomes: incomes(1_000),
+      lines: [{ category: 'Bills', mode: 'percent', value: 25 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
     const percentApplied = ensureCurrentMonthBudget(percentPlan, '2026-03-12', () => 'unused');
-    expect(monthBudgetLines(percentApplied.monthBudgets?.[0])).toEqual([{ category: 'Bills', planned: 250 }]);
+    expect(percentApplied.monthBudgets?.[0]?.lines).toEqual([{ category: 'Bills', planned: 250 }]);
   });
 
   it('lists scheduled commitments for plans, one-time liabilities, and premiums', () => {
@@ -973,36 +610,14 @@ describe('budget plans and monthly views', () => {
     expect(commitments.map(({ kind, category }) => `${kind}:${category}`)).toEqual([
       'plan:Mutual fund / SIP',
       'liability:EMI',
-      'policy:Health premium',
-      'policy:Health premium',
+      'policy:Insurance',
+      'policy:Insurance',
       'liability:EMI',
     ]);
     expect(commitments[1]?.status).toBe('paid');
     expect(commitments[1]?.paidAmount).toBe(100);
     expect(commitments[4]?.paidAmount).toBe(25);
     expect(() => monthlyCommitments(data, '2026-13')).toThrow(RangeError);
-  });
-
-  it('shows a policy premium on its selected next due date in the Insurance section', () => {
-    const duePolicy = {
-      ...policy,
-      startDate: '2026-01-01',
-      trackFrom: '2026-03-08',
-      endDate: '2026-04-30',
-      payments: [],
-    };
-    const rows = linkedRecurringForMonth({
-      ...emptyAppData('2026-03-01'),
-      policies: [duePolicy],
-    }, '2026-03', '2026-03-01').filter((row) => row.kind === 'policy');
-    expect(rows).toEqual([
-      expect.objectContaining({
-        category: 'Health premium',
-        dueDate: '2026-03-08',
-        status: 'upcoming',
-        amount: 60,
-      }),
-    ]);
   });
 
   it('projects paid and unpaid recurring schedule rows by month and category', () => {
@@ -1030,10 +645,10 @@ describe('budget plans and monthly views', () => {
     const rows = linkedRecurringForMonth(data, '2026-03', '2026-03-31');
 
     expect(rows.map(({ kind, category, dueDate, status }) => [kind, category, dueDate, status])).toEqual([
-      ['policy', 'Health premium', '2026-03-05', 'paid'],
+      ['policy', 'Insurance', '2026-03-05', 'paid'],
       ['plan', 'Mutual fund / SIP', '2026-03-05', 'paid'],
       ['liability', 'EMI', '2026-03-05', 'paid'],
-      ['policy', 'Health premium', '2026-03-05', 'ongoing'],
+      ['policy', 'Insurance', '2026-03-05', 'ongoing'],
       ['liability', 'EMI', '2026-03-20', 'overdue'],
     ]);
     expect(rows.map((row) => row.id)).toEqual(expect.arrayContaining([
@@ -1045,18 +660,6 @@ describe('budget plans and monthly views', () => {
     expect(linkedRecurringForMonth(data, '2026-03', '2026-03-04')
       .find((row) => row.kind === 'plan')?.status).toBe('upcoming');
     expect(() => linkedRecurringForMonth(data, '2026-13', '2026-03-31')).toThrow(RangeError);
-  });
-
-  it('derives scheduled premium categories from policy kind', () => {
-    const empty = emptyAppData('2026-03-01');
-    const data = {
-      ...empty,
-      policies: [policy],
-    };
-    expect(monthlyCommitments(data, '2026-03').find((item) => item.kind === 'policy')?.category)
-      .toBe('Health premium');
-    expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')
-      .find((item) => item.kind === 'policy')?.category).toBe('Health premium');
   });
 
   it('matches calendar months, including leap February and demo schedule rows', () => {
@@ -1078,7 +681,7 @@ describe('budget plans and monthly views', () => {
     expect(demoRows.length).toBeGreaterThan(0);
     expect(demoRows.every((row) => row.dueDate.startsWith('2026-10-'))).toBe(true);
     expect(demoRows.map((row) => row.category)).toEqual(expect.arrayContaining([
-      'EMI', 'Health premium', 'Fixed deposit / RD',
+      'EMI', 'Insurance', 'Fixed deposit / RD',
     ]));
     expect(linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-03', '2026-03-01')).toEqual([]);
     expect(() => linkedRecurringForMonth(emptyAppData('2026-03-01'), '2026-13', '2026-03-01'))
@@ -1090,11 +693,15 @@ describe('budget plans and monthly views', () => {
       ...emptyAppData('2026-03-01'),
       holdings: [plan],
       liabilities: [recurringLiability],
-      monthBudgets: [monthBudgetFromLines('2026-03', [
+      monthBudgets: [{
+        month: '2026-03', source: 'custom' as const,
+        incomes: incomes(1_000),
+        lines: [
           { category: 'Bills', planned: 50, dueDay: 5 },
           { category: 'EMI', planned: 10 },
           { category: 'Mutual fund / SIP', planned: 20 },
-        ], { incomes: incomes(1_000) })],
+        ],
+      }],
       transactions: [
         { id: 'bill-actual', type: 'expense' as const, amount: 20, category: 'Bills', note: '', date: '2026-03-06' },
         { id: 'emi-actual', type: 'expense' as const, amount: 40, category: 'EMI', note: '', date: '2026-03-06' },
@@ -1126,8 +733,8 @@ describe('budget plans and monthly views', () => {
       ['Mutual fund / SIP', 120],
     ]);
     expect(includedView.linkedByCategory?.map(({ category, rows }) => [category, rows.length])).toEqual([
-      ['Mutual fund / SIP', 1],
       ['EMI', 1],
+      ['Mutual fund / SIP', 1],
     ]);
     expect(includedView.linkedByCategory?.find(({ category }) => category === 'EMI')?.rows[0]?.status)
       .toBe('paid');
@@ -1137,8 +744,6 @@ describe('budget plans and monthly views', () => {
       { groupId: 'wants', groupName: 'Wants', planned: 0 },
       { groupId: 'festival-donations-culture', groupName: 'Festival, Donations, Culture', planned: 0 },
       { groupId: 'unexpected-extras', groupName: 'Unexpected Extras', planned: 0 },
-      { groupId: 'debt-repayments', groupName: 'Debt repayments', planned: 110 },
-      { groupId: 'insurance', groupName: 'Insurance', planned: 0 },
     ]);
     expect(includedView.actualSpend).toBe(60);
     expect(includedView.actualSave).toBe(30);
@@ -1168,10 +773,10 @@ describe('budget plans and monthly views', () => {
         },
       ],
       policies: [policy],
-      monthBudgets: [monthBudgetFromLines('2026-03', [
-        { category: 'Food', planned: 500 },
-        { category: 'Mutual fund / SIP', planned: 50 },
-      ], { incomes: incomes(3_000) })],
+      monthBudgets: [{
+        month: '2026-03', source: 'custom' as const,
+        incomes: incomes(3_000), lines: [{ category: 'Food', planned: 500 }, { category: 'Mutual fund / SIP', planned: 50 }],
+      }],
       transactions: [
         { id: 'salary', type: 'income' as const, amount: 2_000, category: 'Salary', note: '', date: '2026-03-01' },
         { id: 'borrowed', type: 'income' as const, amount: 100, category: 'Borrowed', note: '', date: '2026-03-02' },
@@ -1219,7 +824,10 @@ describe('budget plans and monthly views', () => {
     ] as const;
     const data = {
       ...emptyAppData('2026-03-01'),
-      monthBudgets: [monthBudgetFromLines('2026-03', [], { incomes: incomes(2_000) })],
+      monthBudgets: [{
+        month: '2026-03', source: 'custom' as const,
+        incomes: incomes(2_000), lines: [],
+      }],
       transactions: categories.map(([category, amount], index) => ({
         id: `income-${index}`, type: 'income' as const, amount, category, note: '', date: '2026-03-10',
       })),
@@ -1244,39 +852,6 @@ describe('budget plans and monthly views', () => {
       monthBudgets: data.monthBudgets.map((monthBudget) => ({ ...monthBudget, incomes: [] })),
     }, '2026-03');
     expect(unplanned.income.extra).toBe(0);
-  });
-
-  it('shows planned and actual amounts for every non-earned income category', () => {
-    const snapshot = monthBudgetFromLines('2026-03', [], {
-      incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_200 }],
-    });
-    snapshot.otherIncomes = [
-      { id: 'loan', name: 'Loan proceeds', category: 'Loan proceeds', amount: 300 },
-      { id: 'borrowed', name: 'Borrowed', category: 'Borrowed', amount: 100 },
-      { id: 'withdrawal', name: 'Withdrawal', category: 'Withdrawal', amount: 50 },
-      { id: 'custom-inflow', name: 'Refund', category: 'Refund', amount: 25 },
-    ];
-    const data = {
-      ...emptyAppData('2026-03-01'),
-      monthBudgets: [snapshot],
-      transactions: [
-        { id: 'salary-transaction', type: 'income' as const, amount: 1_200, category: 'Salary', note: '', date: '2026-03-01' },
-        { id: 'loan-transaction', type: 'income' as const, amount: 300, category: 'Loan proceeds', note: '', date: '2026-03-02' },
-        { id: 'borrowed-transaction', type: 'income' as const, amount: 100, category: 'Borrowed', note: '', date: '2026-03-03' },
-        { id: 'withdrawal-transaction', type: 'income' as const, amount: 50, category: 'Withdrawal', note: '', date: '2026-03-04' },
-        { id: 'refund-transaction', type: 'income' as const, amount: 25, category: 'Refund', note: '', date: '2026-03-05' },
-      ],
-    };
-
-    const overview = budgetOverview(data, '2026-03', '2026-03-15');
-    const income = overview.sections.find((section) => section.id === 'income');
-    expect(overview.stacked.income).toEqual({ planned: 1_675, actual: 1_675 });
-    expect(income?.items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ title: 'Loan proceeds', planned: 300, actual: 300, editable: false }),
-      expect.objectContaining({ title: 'Borrowed', planned: 100, actual: 100, editable: false }),
-      expect.objectContaining({ title: 'Withdrawal', planned: 50, actual: 50, editable: false }),
-      expect.objectContaining({ title: 'Refund', planned: 25, actual: 25, editable: false }),
-    ]));
   });
 
   it('reconciles every transaction in 500 seeded budget-month cases (seed 19052026)', () => {
@@ -1320,7 +895,12 @@ describe('budget plans and monthly views', () => {
       const data = {
         ...emptyAppData('2026-03-01'),
         transactions,
-        monthBudgets: [monthBudgetFromLines('2026-03', lines, { incomes: incomes(next() % 100_000) })],
+        monthBudgets: [{
+          month: '2026-03',
+          source: 'custom' as const,
+          incomes: incomes(next() % 100_000),
+          lines,
+        }],
       };
       const view = budgetMonthView(data, '2026-03');
       const summary = monthSummary(transactions, '2026-03');
@@ -1346,9 +926,10 @@ describe('budget plans and monthly views', () => {
   ] as const)('classifies budget usage at %s%%', (usedPct, status) => {
     const data = {
       ...emptyAppData('2026-03-01'),
-      monthBudgets: [monthBudgetFromLines('2026-03', [{ category: 'Food', planned: 1_000 }], {
-        incomes: incomes(1_000),
-      })],
+      monthBudgets: [{
+        month: '2026-03', source: 'custom' as const,
+        incomes: incomes(1_000), lines: [{ category: 'Food', planned: 1_000 }],
+      }],
       transactions: [{
         id: 'food', type: 'expense' as const, amount: usedPct * 10,
         category: 'Food', note: '', date: '2026-03-10',
@@ -1360,9 +941,11 @@ describe('budget plans and monthly views', () => {
   it('uses the previous closing balance and maps Other investment actuals to their budget line', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
-      monthBudgets: [monthBudgetFromLines('2026-03', [
-        { category: 'Food', planned: 0 }, { category: 'Other investments', planned: 10 },
-      ], { incomes: [] })],
+      monthBudgets: [{
+        month: '2026-03', source: 'custom' as const,
+        incomes: [],
+        lines: [{ category: 'Food', planned: 0 }, { category: 'Other investments', planned: 10 }],
+      }],
       transactions: [
         { id: 'prior', type: 'income' as const, amount: 50, category: 'Salary', note: '', date: '2026-02-01' },
         { id: 'food', type: 'expense' as const, amount: 1, category: 'Food', note: '', date: '2026-03-02' },
@@ -1375,60 +958,13 @@ describe('budget plans and monthly views', () => {
     expect(view.position.previousClosing).toBe(50);
     expect(view.position.flow).toBe(-13);
     expect(view.lines.find((row) => row.category === 'Food')).toMatchObject({ usedPct: null, status: 'over' });
-    expect(view.lines.find((row) => row.category === 'Other investments')).toMatchObject({ actual: 5 });
-    expect(view.unbudgetedByGroup.find((row) => row.groupId === 'other-not-in-budget'))
-      .toMatchObject({ amount: 7 });
+    expect(view.lines.find((row) => row.category === 'Other investments')).toMatchObject({ actual: 12 });
     expect(filterTransactions(data.transactions, {
-      month: '2026-03',
-      type: 'invest',
-      query: '',
-      category: 'Other investments',
-      customCategories: customBudgetCategories(data),
-    })).toHaveLength(1);
-    expect(transactionCategoryLabel('Fund', 'invest', customBudgetCategories(data))).toBe('Fund');
+      month: '2026-03', type: 'invest', query: '', category: 'Other investments',
+    })).toHaveLength(2);
+    expect(transactionCategoryLabel('Fund', 'invest')).toBe('Other investments');
     expect(view.unallocated).toBeNull();
     expect(outstandingAt(emptyAppData('2026-03-01'), '2026-03-31')).toEqual({ count: 0, amount: 0 });
-  });
-
-  it('keeps deleted custom categories on their section or the unbudgeted system row', () => {
-    const plan = budgetPlanFromLines([{ category: 'Pet care', value: 100 }], { incomes: [] });
-    plan.sections = [{ id: 'pets', name: 'Pets', type: 'spend' }, ...plan.sections];
-    plan.items = plan.items.map((item) => ({ ...item, sectionId: 'pets' }));
-    const snapshot = monthBudgetFromLines('2026-03', [{ category: 'Pet care', planned: 100 }], {
-      incomes: [],
-      source: 'plan',
-    });
-    snapshot.sections = plan.sections.map((section) => ({ ...section }));
-    snapshot.items = plan.items.map((item) => ({ ...item }));
-    const data = {
-      ...emptyAppData('2026-03-01'),
-      budgetPlan: plan,
-      monthBudgets: [snapshot],
-      transactions: [{
-        id: 'pet-expense',
-        type: 'expense' as const,
-        amount: 20,
-        category: 'Pet care',
-        note: '',
-        date: '2026-03-10',
-      }],
-    };
-    const monthOnly = deleteItem(data, '2026-03', {
-      itemId: 'fixture-item-1',
-    }, 'month', '2026-03-15');
-    expect(monthOnly.transactions).toEqual(data.transactions);
-    expect(budgetMonthView(monthOnly, '2026-03', '2026-03-15').unbudgetedByGroup
-      .find((row) => row.groupId === 'pets')).toMatchObject({ amount: 20 });
-    expect(budgetOverview(monthOnly, '2026-03', '2026-03-15').sections
-      .find((section) => section.id === 'pets')?.items)
-      .toContainEqual(expect.objectContaining({ title: 'Pet care', actual: 20 }));
-
-    const following = deleteItem(data, '2026-03', {
-      itemId: 'fixture-item-1',
-    }, 'following', '2026-03-15');
-    expect(following.transactions).toEqual(data.transactions);
-    expect(budgetMonthView(following, '2026-03', '2026-03-15').unbudgetedByGroup
-      .find((row) => row.groupId === 'other-not-in-budget')).toMatchObject({ amount: 20 });
   });
 
   it('returns an empty overview when no effective budget exists', () => {
@@ -1456,19 +992,22 @@ describe('budget plans and monthly views', () => {
       ...emptyAppData('2026-03-01'),
       holdings: [linkedPlan],
       liabilities: [liability],
-      monthBudgets: [monthBudgetFromLines('2026-03', [
-        { category: 'Food', planned: 1_000 },
-        { category: 'Rent', planned: 500 },
-        { category: 'Mutual fund / SIP', planned: 0 },
-        { category: 'Unexpected', planned: 50 },
-      ], {
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
         linkedIncluded: true,
         incomes: [
           { id: 'salary-one', name: 'Primary salary', category: 'Salary' as const, amount: 6_000 },
           { id: 'salary-two', name: 'Second salary', category: 'Salary' as const, amount: 4_000 },
           { id: 'freelance', name: 'Freelance', category: 'Freelance' as const, amount: 1_000 },
         ],
-      })],
+        lines: [
+          { category: 'Food', planned: 1_000 },
+          { category: 'Rent', planned: 500 },
+          { category: 'Mutual fund / SIP', planned: 0 },
+          { category: 'Unexpected', planned: 50 },
+        ],
+      }],
       transactions: [
         { id: 'salary', type: 'income' as const, amount: 7_000, category: 'Salary', note: '', date: '2026-03-02' },
         { id: 'freelance-earned', type: 'income' as const, amount: 400, category: 'Freelance', note: '', date: '2026-03-03' },
@@ -1522,33 +1061,24 @@ describe('budget plans and monthly views', () => {
     });
     expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
     expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
-    expect(overview.pace).toMatchObject({
-      days: 31,
-      elapsedDays: 15,
-      sections: expect.arrayContaining([
-        expect.objectContaining({ id: 'income', plannedToDate: 5_322.58, actualToDate: 7_400 }),
-        expect.objectContaining({ id: 'survival', plannedToDate: 725.81, actualToDate: 900 }),
-        expect.objectContaining({ id: 'savings-investments', plannedToDate: 48.39, actualToDate: 100 }),
-        expect.objectContaining({ id: 'debt-repayments', plannedToDate: 229.84, actualToDate: 25 }),
-      ]),
-    });
-    expect(overview.pace?.sections.find(({ id }) => id === 'survival')?.actual)
-      .toEqual([0, 0, 0, 200, 200, 200, 200, 900, 900, 900, 900, 900, 900, 900, 900]);
+    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
+    expect(overview.pace?.planned.at(-1)).toBe(2_025);
   });
 
   it('derives future overviews from plan edits and describes negative left as over budget', () => {
     const data = emptyAppData('2026-03-01');
-    data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 700 }], {
-      incomes: incomes(500), repeatMonthly: true, repeatFrom: '2026-04',
-    });
+    data.budgetPlan = {
+      incomes: incomes(500),
+      lines: [{ category: 'Food', mode: 'amount', value: 700 }],
+      repeatMonthly: true,
+      repeatFrom: '2026-04',
+    };
     const before = budgetOverview(data, '2026-04', '2026-03-15');
     expect(before.mode).toBe('future');
     expect(before.pace).toBeNull();
     expect(before.stacked.left.planned).toBe(-200);
     expect(before.summary.stacked).toContain('Planned over by ₹200');
-    data.budgetPlan = budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 400 }], {
-      incomes: incomes(500), repeatMonthly: true, repeatFrom: '2026-04',
-    });
+    data.budgetPlan.lines = [{ category: 'Food', mode: 'amount', value: 400 }];
     const after = budgetOverview(data, '2026-04', '2026-03-15');
     expect(after.sections.find(({ id }) => id === 'survival')?.planned).toBe(400);
     expect(after.stacked.left.planned).toBe(100);
@@ -1558,9 +1088,12 @@ describe('budget plans and monthly views', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       policies: [policy],
-      monthBudgets: [monthBudgetFromLines('2026-03', [{ category: 'Food', planned: 50 }], {
+      monthBudgets: [{
+        month: '2026-03',
+        source: 'custom' as const,
         incomes: incomes(100),
-      })],
+        lines: [{ category: 'Food', planned: 50 }],
+      }],
       transactions: [
         { id: 'salary', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-03-02' },
         { id: 'rental', type: 'income' as const, amount: 30, category: 'Rental', note: '', date: '2026-03-03' },
@@ -1584,8 +1117,7 @@ describe('budget plans and monthly views', () => {
     );
     expect(overview.sections.find(({ id }) => id === 'insurance')?.items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: 'Health premium', planned: 60, actual: 0, kind: 'linked' }),
-        expect.objectContaining({ title: 'Insurance', planned: 0, actual: 20, kind: 'linked' }),
+        expect.objectContaining({ title: 'Health cover', planned: 0, actual: 20, kind: 'linked' }),
       ]),
     );
     expect(overview.stacked.left.actual).toBe(-40);
@@ -1597,7 +1129,10 @@ describe('budget plans and monthly views', () => {
     const data = {
       ...emptyAppData('2026-03-01'),
       holdings: [olderPlan], liabilities: [liability], policies: [policy],
-      monthBudgets: [monthBudgetFromLines('2026-01', [], { incomes: [] })],
+      monthBudgets: [{
+        month: '2026-01', source: 'custom' as const,
+        incomes: [], lines: [],
+      }],
       transactions: [
         { id: 'expense', type: 'expense' as const, amount: 10, category: 'Food', note: '', date: '2026-02-01' },
         { id: 'salary', type: 'income' as const, amount: 100, category: 'Salary', note: '', date: '2026-02-02' },
@@ -1605,719 +1140,5 @@ describe('budget plans and monthly views', () => {
     };
     expect(outstandingAt(data, '2026-03-31').count).toBeGreaterThan(0);
     expect(budgetMonthView(data, '2026-01').budget?.source).toBe('custom');
-  });
-
-  describe('managed sections and items', () => {
-    const today = '2026-03-15';
-    const contexts: { label: string; month: string; scope: BudgetItemScope }[] = [
-      { label: 'current month only', month: '2026-03', scope: 'month' },
-      { label: 'current month and following', month: '2026-03', scope: 'following' },
-      { label: 'upcoming derived month only', month: '2026-04', scope: 'month' },
-      { label: 'upcoming derived month and following', month: '2026-04', scope: 'following' },
-    ];
-    const operations: {
-      label: string;
-      build: (data: AppData, month: string, scope: BudgetItemScope) => AppData;
-      check: (sections: BudgetSection[], items: BudgetItem[]) => void;
-    }[] = [
-      {
-        label: 'add section',
-        build: (data: AppData, month: string, scope: BudgetItemScope) =>
-          addSection(data, month, { id: 'new-section', name: 'Travel extras', type: 'spend' }, scope, today),
-        check: (sections, items) => {
-          expect(sections).toContainEqual(expect.objectContaining({ id: 'new-section', name: 'Travel extras' }));
-          void items;
-        },
-      },
-      {
-        label: 'rename section',
-        build: (data: AppData, month: string, scope: BudgetItemScope) =>
-          renameSection(data, month, { sectionId: 'pets', name: 'Animals' }, scope, today),
-        check: (sections) =>
-          expect(sections).toContainEqual(expect.objectContaining({ id: 'pets', name: 'Animals' })),
-      },
-      {
-        label: 'change section type',
-        build: (data: AppData, month: string, scope: BudgetItemScope) =>
-          changeSectionType(data, month, { sectionId: 'pets', type: 'invest' }, scope, today),
-        check: (sections) =>
-          expect(sections).toContainEqual(expect.objectContaining({ id: 'pets', type: 'invest' })),
-      },
-      {
-        label: 'delete section and cascade its items',
-        build: (data: AppData, month: string, scope: BudgetItemScope) =>
-          deleteSection(data, month, { sectionId: 'pets' }, scope, today),
-        check: (sections, items) => {
-          expect(sections.some((section) => section.id === 'pets')).toBe(false);
-          expect(items.some((item) => item.sectionId === 'pets')).toBe(false);
-        },
-      },
-      {
-        label: 'add item',
-        build: (data: AppData, month: string, scope: BudgetItemScope) =>
-          addItem(data, month, {
-            id: 'new-item', sectionId: 'pets', name: 'Pet sitting', mode: 'amount', value: 400,
-            frequency: 'quarterly', firstDueMonth: month,
-          }, scope, today),
-        check: (_sections, items) =>
-          expect(items).toContainEqual(expect.objectContaining({
-            name: 'Pet sitting', value: 400, frequency: 'quarterly',
-            firstDueMonth: expect.stringMatching(/^2026-(03|04)$/),
-          })),
-      },
-      {
-        label: 'edit item across distinct snapshot and plan IDs',
-        build: (data: AppData, month: string, scope: BudgetItemScope) => {
-          const id = month === '2026-03' ? 'snapshot-pet' : 'plan-pet';
-          return editBudgetStructureItem(data, month, {
-            itemId: id,
-            patch: {
-              name: 'Pet sitting', value: 400, dueDay: 12,
-              frequency: 'quarterly', firstDueMonth: '2026-03',
-            },
-          }, scope, today);
-        },
-        check: (_sections, items) =>
-          expect(items).toContainEqual(expect.objectContaining({
-            name: 'Pet sitting', value: 400, dueDay: 12,
-            frequency: 'quarterly', firstDueMonth: '2026-03',
-          })),
-      },
-      {
-        label: 'delete item across distinct snapshot and plan IDs',
-        build: (data: AppData, month: string, scope: BudgetItemScope) => {
-          const id = month === '2026-03' ? 'snapshot-pet' : 'plan-pet';
-          return deleteItem(data, month, { itemId: id }, scope, today);
-        },
-        check: (_sections, items) =>
-          expect(items.some((item) => item.name === 'Pet care')).toBe(false),
-      },
-    ];
-
-    function fixture(month: string, withPetItem: boolean): AppData {
-      const data: AppData = {
-        ...emptyAppData(today),
-        budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'amount', value: 100 }], {
-          incomes: incomes(1_000),
-          repeatMonthly: true,
-          repeatFrom: '2026-04',
-        }),
-        transactions: [{
-          id: 'unchanged-transaction',
-          type: 'expense',
-          amount: 25,
-          category: 'Food',
-          note: '',
-          date: '2026-03-05',
-        }],
-      };
-      const plan = data.budgetPlan;
-      if (!plan) throw new Error('Budget plan fixture missing.');
-      plan.sections = [...plan.sections, { id: 'pets', name: 'Pets', type: 'spend' }];
-      if (withPetItem) {
-        plan.items.push({
-          id: 'plan-pet', sectionId: 'pets', name: 'Pet care', mode: 'amount', value: 500,
-        });
-      }
-      const snapshot = monthBudgetFromLines(month, [{ category: 'Food', planned: 100 }], {
-        source: 'plan',
-        incomes: incomes(1_000),
-      });
-      snapshot.sections = plan.sections.map((section) => ({ ...section }));
-      snapshot.items = plan.items.map((item) => ({
-        ...item,
-        id: item.name === 'Pet care' ? 'snapshot-pet' : 'snapshot-food',
-      }));
-      data.monthBudgets = month === '2026-03' ? [snapshot] : [];
-      data.monthBudgets.push(monthBudgetFromLines('2026-06', [{ category: 'Food', planned: 80 }], {
-        source: 'custom',
-        incomes: incomes(900),
-      }));
-      return data;
-    }
-
-    it('requires first due months and rejects percent items on non-monthly schedules', () => {
-      const data = fixture('2026-03', false);
-      const assertError = (operation: () => unknown, code: string) => {
-        try {
-          operation();
-          throw new Error('Expected the budget mutation to fail.');
-        } catch (error) {
-          expect(error).toBeInstanceOf(BudgetMutationError);
-          expect(error).toMatchObject({ code });
-        }
-      };
-      assertError(() => addItem(data, '2026-03', {
-        id: 'missing-anchor', sectionId: 'pets', name: 'Missing anchor',
-        mode: 'amount', value: 100, frequency: 'quarterly',
-      }, 'month', today), 'invalid-frequency');
-      assertError(() => addItem(data, '2026-03', {
-        id: 'percent-quarterly', sectionId: 'pets', name: 'Quarterly percent',
-        mode: 'percent', value: 10, frequency: 'quarterly', firstDueMonth: '2026-03',
-      }, 'month', today), 'percent-only-monthly');
-      const scheduledData = fixture('2026-04', true);
-      const scheduledPlan = scheduledData.budgetPlan;
-      const scheduledItem = scheduledPlan?.items.find((item) => item.name === 'Pet care');
-      if (!scheduledItem) throw new Error('Scheduled budget item fixture missing.');
-      if (!scheduledPlan) throw new Error('Scheduled budget plan fixture missing.');
-      scheduledPlan.items.splice(
-        scheduledPlan.items.indexOf(scheduledItem),
-        1,
-        { ...scheduledItem, frequency: 'yearly', firstDueMonth: '2026-04' },
-      );
-      assertError(() => editBudgetStructureItem(scheduledData, '2026-04', {
-        itemId: scheduledItem.id, patch: { mode: 'percent', value: 50 },
-      }, 'following', today), 'percent-only-monthly');
-    });
-
-    it.each(operations)('$label follows both scopes for current and upcoming derived months', ({
-      build, check, label,
-    }) => {
-      for (const { month, scope } of contexts) {
-        const before = fixture(month, label.includes('item') && !label.startsWith('add item')
-          || label.startsWith('delete section'));
-        const untouchedSnapshot = before.monthBudgets?.find((budget) => budget.month === '2026-06');
-        const transactions = before.transactions;
-        const after = build(before, month, scope);
-        const changedSnapshot = after.monthBudgets?.find((budget) => budget.month === month);
-        const shouldUpdatePlan = scope === 'following';
-        if (shouldUpdatePlan) expect(after.budgetPlan).not.toEqual(before.budgetPlan);
-        else expect(after.budgetPlan).toEqual(before.budgetPlan);
-        if (month === '2026-03' || scope === 'month') {
-          expect(changedSnapshot).toBeDefined();
-          expect(changedSnapshot?.source).toBe(scope === 'month' ? 'custom' : 'plan');
-          const sections = shouldUpdatePlan && month === '2026-03'
-            ? changedSnapshot?.sections ?? []
-            : changedSnapshot?.sections ?? [];
-          const items = changedSnapshot?.items ?? [];
-          check(sections, items);
-        } else if (scope === 'following') {
-          const sections = after.budgetPlan?.sections ?? [];
-          const items = after.budgetPlan?.items ?? [];
-          check(sections, items);
-        } else {
-          const sections = changedSnapshot?.sections ?? [];
-          const items = changedSnapshot?.items ?? [];
-          check(sections, items);
-        }
-        expect(after.monthBudgets?.find((budget) => budget.month === '2026-06')).toEqual(untouchedSnapshot);
-        expect(after.transactions).toEqual(transactions);
-      }
-    });
-
-    it.each(contexts)('adds income with $label scope semantics', ({ month, scope }) => {
-      const before = fixture(month, false);
-      const laterCustom = before.monthBudgets?.find((budget) => budget.month === '2026-06');
-      const transactions = before.transactions;
-      const after = addIncomeItem(before, month, {
-        id: 'added-income',
-        name: '  Freelance  ',
-        category: 'Freelance',
-        amount: 1_250.125,
-        day: 20,
-      }, scope, today);
-      const effective = effectiveMonthBudget(after, month, today).budget;
-      expect(effective?.incomes).toContainEqual(expect.objectContaining({
-        id: 'added-income',
-        name: 'Freelance',
-        amount: 1_250.13,
-        day: 20,
-      }));
-      if (scope === 'following') {
-        expect(after.budgetPlan?.incomes).toContainEqual(expect.objectContaining({ id: 'added-income' }));
-      } else {
-        expect(after.budgetPlan).toEqual(before.budgetPlan);
-      }
-      if (scope === 'month') {
-        expect(after.monthBudgets?.find((budget) => budget.month === month)?.source).toBe('custom');
-      } else if (month === '2026-03') {
-        expect(after.monthBudgets?.find((budget) => budget.month === month)?.source).toBe('plan');
-      }
-      expect(after.monthBudgets?.find((budget) => budget.month === '2026-06')).toEqual(laterCustom);
-      expect(after.transactions).toEqual(transactions);
-    });
-
-    it.each<BudgetItemScope>(['month', 'following'])('edits income details and category for %s scope', (scope) => {
-      const before = fixture('2026-03', false);
-      const original = before.monthBudgets?.[0]?.incomes[0];
-      if (!original) throw new Error('Income edit fixture missing.');
-      const updated = editBudgetIncome(before, '2026-03', {
-        incomeId: original.id,
-        values: { name: 'Contract work', category: 'Freelance', amount: 2_500.25, day: 17 },
-      }, scope, today);
-      const expected = {
-        id: original.id,
-        name: 'Contract work',
-        category: 'Freelance',
-        amount: 2_500.25,
-        day: 17,
-        frequency: 'monthly',
-      };
-      expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
-      if (scope === 'following') {
-        expect(updated.budgetPlan?.incomes).toContainEqual(expected);
-      } else {
-        expect(updated.budgetPlan).toEqual(before.budgetPlan);
-      }
-      expect(updated.transactions).toEqual(before.transactions);
-    });
-
-    it('validates income edits and handles a virtual or snapshot-only income', () => {
-      const before = fixture('2026-03', false);
-      const original = before.monthBudgets?.[0]?.incomes[0];
-      if (!original) throw new Error('Income edit fixture missing.');
-      const values = { name: 'Contract work', category: 'Freelance' as const, amount: 2_500 };
-      const expectError = (callback: () => unknown, code: string) => {
-        try {
-          callback();
-          throw new Error('Expected an income edit to fail.');
-        } catch (error) {
-          expect(error).toBeInstanceOf(BudgetMutationError);
-          expect(error).toMatchObject({ code });
-        }
-      };
-      expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: original.id, values: { ...values, name: ' ' },
-      }, 'month', today), 'invalid-name');
-      expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: original.id, values: { ...values, name: 'x'.repeat(41) },
-      }, 'month', today), 'invalid-name');
-      expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: original.id, values: { ...values, category: 'Invalid' as never },
-      }, 'month', today), 'invalid-item');
-      for (const amount of [Number.POSITIVE_INFINITY, 0, 0.001, 1_000_000_001]) {
-        expectError(() => editBudgetIncome(before, '2026-03', {
-          incomeId: original.id, values: { ...values, amount },
-        }, 'month', today), 'invalid-item');
-      }
-      expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: original.id, values: { ...values, day: 1.5 },
-      }, 'month', today), 'invalid-item');
-      expectError(() => editBudgetIncome(emptyAppData(today), '2026-03', {
-        incomeId: original.id, values,
-      }, 'following', today), 'invalid-item');
-      expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: 'missing-income', values,
-      }, 'month', today), 'item-not-found');
-
-      const virtualEdit = editBudgetIncome(before, '2026-04', {
-        incomeId: original.id, values,
-      }, 'following', today);
-      expect(virtualEdit.monthBudgets).toEqual(before.monthBudgets);
-      expect(virtualEdit.budgetPlan?.incomes).toContainEqual(expect.objectContaining(values));
-
-      const snapshotOnly = fixture('2026-03', false);
-      if (!snapshotOnly.budgetPlan) throw new Error('Budget plan fixture missing.');
-      snapshotOnly.budgetPlan.incomes = [];
-      const snapshotEdit = editBudgetIncome(snapshotOnly, '2026-03', {
-        incomeId: original.id, values,
-      }, 'following', today);
-      expect(snapshotEdit.budgetPlan?.incomes).toContainEqual(expect.objectContaining({
-        ...values, id: original.id,
-      }));
-      expect(snapshotEdit.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining(values));
-    });
-
-    it('returns typed validation failures for names, reserved categories, limits, and invalid values', () => {
-      const data = fixture('2026-03', true);
-      const expectMutationError = (callback: () => unknown, code: string) => {
-        try {
-          callback();
-          throw new Error('Expected the budget mutation to fail.');
-        } catch (error) {
-          expect(error).toBeInstanceOf(BudgetMutationError);
-          expect(error).toMatchObject({ code });
-        }
-      };
-      expectMutationError(() => addSection(data, '2026-03', {
-        id: 'duplicate-section', name: 'pets', type: 'spend',
-      }, 'month', today), 'duplicate-name');
-      expectMutationError(() => addSection(data, '2026-03', {
-        id: 'bad-section', name: ' Pets ', type: 'spend',
-      }, 'month', today), 'invalid-name');
-      expectMutationError(() => renameSection(data, '2026-03', {
-        sectionId: 'income', name: 'Earnings',
-      }, 'month', today), 'system-section');
-      expectMutationError(() => renameSection(data, '2026-03', {
-        sectionId: 'missing-section', name: 'Earnings',
-      }, 'month', today), 'section-not-found');
-      expectMutationError(() => changeSectionType(data, '2026-03', {
-        sectionId: 'pets', type: 'invest',
-      }, 'month', today), 'section-not-empty');
-      expectMutationError(() => changeSectionType(data, '2026-03', {
-        sectionId: 'missing-section', type: 'invest',
-      }, 'month', today), 'section-not-found');
-      expectMutationError(() => deleteSection(data, '2026-03', {
-        sectionId: 'income',
-      }, 'month', today), 'system-section');
-      expectMutationError(() => deleteSection(data, '2026-03', {
-        sectionId: 'missing-section',
-      }, 'month', today), 'section-not-found');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'duplicate-item', sectionId: 'pets', name: 'food', mode: 'amount', value: 1,
-      }, 'month', today), 'duplicate-name');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'snapshot-pet', sectionId: 'pets', name: 'Different item', mode: 'amount', value: 1,
-      }, 'month', today), 'duplicate-name');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'system-item', sectionId: 'income', name: 'Extra income', mode: 'amount', value: 1,
-      }, 'month', today), 'system-section');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'reserved-item', sectionId: 'pets', name: 'Rent', mode: 'amount', value: 1,
-      }, 'month', today), 'reserved-category');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'invalid-item', sectionId: 'pets', name: 'Invalid', mode: 'percent', value: 101,
-      }, 'month', today), 'invalid-item');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'missing-section-item', sectionId: 'missing', name: 'Invalid section', mode: 'amount', value: 1,
-      }, 'month', today), 'section-not-found');
-      expectMutationError(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'snapshot-pet', patch: { dueDay: 32 },
-      }, 'month', today), 'invalid-item');
-      expectMutationError(() => editBudgetStructureItem(data, '2026-03', {
-        itemId: 'snapshot-pet', patch: { name: 'Rent' },
-      }, 'month', today), 'reserved-category');
-      expectMutationError(() => deleteItem(data, '2026-03', {
-        itemId: 'missing-item',
-      }, 'month', today), 'item-not-found');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'invalid-due-day', sectionId: 'pets', name: 'Due day', mode: 'amount', value: 1, dueDay: 1.5,
-      }, 'month', today), 'invalid-item');
-      expectMutationError(() => addItem(data, '2026-03', {
-        id: 'invalid-amount', sectionId: 'pets', name: 'Too much', mode: 'amount', value: 1_000_000_001,
-      }, 'month', today), 'invalid-item');
-      expectMutationError(() => addIncomeItem(data, '2026-03', {
-        id: 'invalid-income', name: '  ', category: 'Salary', amount: 1,
-      }, 'month', today), 'invalid-name');
-      expectMutationError(() => addIncomeItem(data, '2026-03', {
-        id: 'invalid-income-amount', name: 'Consulting', category: 'Freelance', amount: 0,
-      }, 'month', today), 'invalid-item');
-      expectMutationError(() => addIncomeItem(data, '2026-03', {
-        id: 'rounds-to-zero-income', name: 'Consulting', category: 'Freelance', amount: 0.001,
-      }, 'month', today), 'invalid-item');
-
-      const tooManySections = fixture('2026-03', false);
-      if (!tooManySections.budgetPlan) throw new Error('Budget plan fixture missing.');
-      tooManySections.budgetPlan.sections = Array.from({ length: 12 }, (_, index) => ({
-        id: `section-${index}`, name: `Section ${index}`, type: 'spend' as const,
-      }));
-      expectMutationError(() => addSection(tooManySections, '2026-03', {
-        id: 'section-over-limit', name: 'Extra', type: 'spend',
-      }, 'following', today), 'section-limit');
-
-      const tooManyItems = fixture('2026-03', false);
-      if (!tooManyItems.budgetPlan) throw new Error('Budget plan fixture missing.');
-      tooManyItems.budgetPlan.items = Array.from({ length: 40 }, (_, index) => ({
-        id: `item-${index}`, sectionId: 'pets', name: `Pet ${index}`, mode: 'amount' as const, value: index,
-      }));
-      expectMutationError(() => addItem(tooManyItems, '2026-03', {
-        id: 'item-over-limit', sectionId: 'pets', name: 'Pet extra', mode: 'amount', value: 1,
-      }, 'following', today), 'item-limit');
-
-      const tooManyTotalItems = fixture('2026-03', false);
-      if (!tooManyTotalItems.budgetPlan) throw new Error('Budget plan fixture missing.');
-      tooManyTotalItems.budgetPlan.sections = [
-        { id: 'pets', name: 'Pets', type: 'spend' },
-        { id: 'cats', name: 'Cats', type: 'spend' },
-        { id: 'dogs', name: 'Dogs', type: 'spend' },
-      ];
-      tooManyTotalItems.budgetPlan.items = Array.from({ length: 100 }, (_, index) => ({
-        id: `total-item-${index}`,
-        sectionId: index < 34 ? 'pets' : index < 67 ? 'cats' : 'dogs',
-        name: `Pet item ${index}`,
-        mode: 'amount' as const,
-        value: index,
-      }));
-      expectMutationError(() => addItem(tooManyTotalItems, '2026-03', {
-        id: 'item-101', sectionId: 'pets', name: 'Pet item 101', mode: 'amount', value: 1,
-      }, 'following', today), 'item-limit');
-      expectMutationError(() => addItem(emptyAppData(today), '2026-03', {
-        id: 'no-budget-item', sectionId: 'pets', name: 'No budget', mode: 'amount', value: 1,
-      }, 'month', today), 'invalid-item');
-    });
-
-    it('allows only manual Insurance items while keeping the system section protected', () => {
-      const before = fixture('2026-03', false);
-      const insuranceItem = {
-        id: 'manual-insurance',
-        sectionId: 'insurance',
-        name: 'Insurance',
-        mode: 'amount' as const,
-        value: 400,
-        dueDay: 20,
-        frequency: 'monthly' as const,
-      };
-      const added = addItem(before, '2026-03', insuranceItem, 'following', today);
-      expect(appDataSchema.safeParse(added).success).toBe(true);
-      expect(validateImportData(added).ok).toBe(true);
-      expect(added.budgetPlan?.items).toContainEqual(insuranceItem);
-      expect(added.monthBudgets?.[0]?.items).toContainEqual(insuranceItem);
-
-      const customInsurance = addItem(before, '2026-03', {
-        ...insuranceItem,
-        id: 'manual-custom-insurance',
-        name: 'Dental cover',
-      }, 'month', today);
-      expect(appDataSchema.safeParse(customInsurance).success).toBe(true);
-      expect(validateImportData(customInsurance).ok).toBe(true);
-      expect(customInsurance.monthBudgets?.[0]?.items)
-        .toContainEqual(expect.objectContaining({ name: 'Dental cover', sectionId: 'insurance' }));
-
-      const edited = editBudgetStructureItem(added, '2026-03', {
-        itemId: insuranceItem.id,
-        patch: { value: 500 },
-      }, 'month', today);
-      expect(edited.monthBudgets?.[0]?.items).toContainEqual({ ...insuranceItem, value: 500 });
-
-      const deleted = deleteItem(edited, '2026-03', { itemId: insuranceItem.id }, 'month', today);
-      expect(deleted.monthBudgets?.[0]?.items).not.toContainEqual(expect.objectContaining({ id: insuranceItem.id }));
-      expect(deleted.budgetPlan?.items).toContainEqual(insuranceItem);
-
-      const expectMutationError = (callback: () => unknown, code: string) => {
-        try {
-          callback();
-          throw new Error('Expected the budget mutation to fail.');
-        } catch (error) {
-          expect(error).toBeInstanceOf(BudgetMutationError);
-          expect(error).toMatchObject({ code });
-        }
-      };
-      expectMutationError(() => addItem(before, '2026-03', {
-        ...insuranceItem, id: 'invalid-insurance', name: 'Rent',
-      }, 'month', today), 'reserved-category');
-      const customEdited = editBudgetStructureItem(added, '2026-03', {
-        itemId: insuranceItem.id, patch: { name: 'Manual premium' },
-      }, 'month', today);
-      expect(customEdited.monthBudgets?.[0]?.items)
-        .toContainEqual(expect.objectContaining({ name: 'Manual premium', sectionId: 'insurance' }));
-      expectMutationError(() => renameSection(added, '2026-03', {
-        sectionId: 'insurance', name: 'Cover',
-      }, 'month', today), 'system-section');
-      expectMutationError(() => deleteSection(added, '2026-03', {
-        sectionId: 'insurance',
-      }, 'month', today), 'system-section');
-
-      const misplacedBuiltin = {
-        ...added,
-        budgetPlan: added.budgetPlan && {
-          ...added.budgetPlan,
-          items: added.budgetPlan.items.map((item) =>
-            item.id === insuranceItem.id ? { ...item, name: 'Rent' } : item),
-        },
-      };
-      expect(appDataSchema.safeParse(misplacedBuiltin).success).toBe(false);
-      expect(validateImportData(misplacedBuiltin).ok).toBe(false);
-    });
-
-    it('keeps manual Insurance actuals separate from linked policy rows and budget dues', () => {
-      const insuranceItem = {
-        id: 'manual-insurance',
-        sectionId: 'insurance',
-        name: 'Insurance',
-        mode: 'amount' as const,
-        value: 400,
-        dueDay: 20,
-      };
-      const data = {
-        ...emptyAppData(today),
-        budgetPlan: {
-          ...createDefaultBudgetPlan('2026-03'),
-          incomes: incomes(1_000),
-          repeatMonthly: true,
-          repeatFrom: '2026-03',
-          items: [insuranceItem],
-        },
-        policies: [{
-          ...policy,
-          payments: [{
-            id: 'premium-march',
-            date: '2026-03-05',
-            amount: 60,
-            note: '',
-          }],
-        }],
-        transactions: [
-          {
-            id: 'manual-insurance-payment',
-            type: 'expense' as const,
-            amount: 35,
-            category: 'Insurance',
-            note: '',
-            date: '2026-03-10',
-          },
-          {
-            id: 'linked-insurance-payment',
-            type: 'expense' as const,
-            amount: 60,
-            category: 'Insurance',
-            note: '',
-            date: '2026-03-05',
-            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'premium-march' },
-          },
-        ],
-      };
-      const withMonth = applyBudgetPlanToMonth(data, '2026-03', { newId: () => 'unused', today });
-      expect(appDataSchema.safeParse(withMonth).success).toBe(true);
-
-      const line = budgetMonthView(withMonth, '2026-03', today).lines
-        .find(({ category }) => category === 'Insurance');
-      expect(line).toMatchObject({ planned: 400, actual: 95 });
-
-      const overviewItems = budgetOverview(withMonth, '2026-03', today)
-        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
-      expect(overviewItems).toEqual(expect.arrayContaining([
-        expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
-        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
-      ]));
-      expect(overviewItems.reduce((total, item) => total + item.planned, 0)).toBe(460);
-      expect(overviewItems.reduce((total, item) => total + item.actual, 0)).toBe(95);
-
-      const insuranceDues = pendingItems(withMonth, '2026-03', today)
-        .filter((item) => item.kind === 'budget' && item.category === 'Insurance');
-      expect(insuranceDues).toEqual([expect.objectContaining({
-        title: 'Insurance',
-        amount: 365,
-        source: { kind: 'budget', category: 'Insurance', type: 'expense' },
-      })]);
-    });
-
-    it('reconciles legacy and typed insurance categories without duplicating linked premiums', () => {
-      const data = {
-        ...emptyAppData(today),
-        policies: [{
-          ...policy,
-          payments: [{ id: 'typed-premium', date: '2026-03-05', amount: 60, note: '' }],
-        }],
-        monthBudgets: [monthBudgetFromLines('2026-03', [
-          { category: 'Insurance', planned: 400 },
-          { category: 'Health premium', planned: 25 },
-        ], {
-          incomes: incomes(1_000),
-          linkedIncluded: true,
-        })],
-        transactions: [
-          {
-            id: 'legacy-premium',
-            type: 'expense' as const,
-            amount: 35,
-            category: 'Insurance',
-            note: '',
-            date: '2026-03-10',
-          },
-          {
-            id: 'typed-manual-premium',
-            type: 'expense' as const,
-            amount: 20,
-            category: 'Health premium',
-            note: '',
-            date: '2026-03-12',
-          },
-          {
-            id: 'typed-linked-premium',
-            type: 'expense' as const,
-            amount: 60,
-            category: 'Health premium',
-            note: '',
-            date: '2026-03-05',
-            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'typed-premium' },
-          },
-        ],
-      };
-      expect(appDataSchema.safeParse(data).success).toBe(true);
-      expect(validateIntegrity(data)).toEqual([]);
-
-      const view = budgetMonthView(data, '2026-03', today);
-      expect(view.lines).toEqual(expect.arrayContaining([
-        expect.objectContaining({ category: 'Insurance', planned: 400, actual: 35 }),
-        expect.objectContaining({ category: 'Health premium', planned: 85, actual: 80 }),
-      ]));
-      expect(view.actualSpend).toBe(115);
-      expect(view.plannedSpend).toBe(485);
-
-      const overviewItems = budgetOverview(data, '2026-03', today)
-        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
-      expect(overviewItems).toEqual(expect.arrayContaining([
-        expect.objectContaining({ title: 'Insurance', kind: 'line', planned: 400, actual: 35 }),
-        expect.objectContaining({ title: 'Health premium', kind: 'line', planned: 25, actual: 20 }),
-        expect.objectContaining({ title: 'Health premium', kind: 'linked', planned: 60, actual: 60 }),
-      ]));
-      expect(overviewItems.reduce((sum, item) => sum + item.planned, 0)).toBe(485);
-      expect(overviewItems.reduce((sum, item) => sum + item.actual, 0)).toBe(115);
-    });
-
-    it('shows one read-only Insurance row per cover type when multiple policies are active', () => {
-      const secondPolicy: Policy = {
-        ...policy,
-        id: 'health-policy-two',
-        name: 'Second health cover',
-        premium: 90,
-        payments: [{ id: 'health-payment-two', date: '2026-03-05', amount: 90, note: '' }],
-      };
-      const data = {
-        ...emptyAppData(today),
-        policies: [
-          { ...policy, payments: [{ id: 'health-payment-one', date: '2026-03-05', amount: 60, note: '' }] },
-          secondPolicy,
-        ],
-        transactions: [
-          {
-            id: 'health-transaction-one',
-            type: 'expense' as const,
-            amount: 60,
-            category: 'Health premium',
-            note: '',
-            date: '2026-03-05',
-            source: { kind: 'policy-payment' as const, parentId: policy.id, entryId: 'health-payment-one' },
-          },
-          {
-            id: 'health-transaction-two',
-            type: 'expense' as const,
-            amount: 90,
-            category: 'Health premium',
-            note: '',
-            date: '2026-03-05',
-            source: { kind: 'policy-payment' as const, parentId: secondPolicy.id, entryId: 'health-payment-two' },
-          },
-        ],
-        monthBudgets: [monthBudgetFromLines('2026-03', [], {
-          incomes: incomes(1_000),
-          linkedIncluded: true,
-        })],
-      };
-      const items = budgetOverview(data, '2026-03', today)
-        .sections.find(({ id }) => id === 'insurance')?.items ?? [];
-      const policyRows = items.filter((item) => item.source.kind === 'policy');
-      expect(policyRows).toEqual([expect.objectContaining({
-        title: 'Health premium',
-        planned: 150,
-        actual: 150,
-        editable: false,
-      })]);
-    });
-
-    it('keeps inactive policy history but excludes it from linked dues and budget commitments', () => {
-      const data = {
-        ...emptyAppData(today),
-        policies: [{
-          ...policy,
-          status: 'lapsed' as const,
-          payments: [{ id: 'historic-premium', date: '2026-02-05', amount: 60, note: '' }],
-        }],
-        monthBudgets: [monthBudgetFromLines('2026-03', [{
-          category: 'Insurance', planned: 400,
-        }], {
-          incomes: incomes(1_000),
-          linkedIncluded: true,
-        })],
-      };
-      expect(data.policies[0]?.payments).toHaveLength(1);
-      expect(linkedRecurringForMonth(data, '2026-03', '2026-03-31')).toEqual([]);
-      expect(monthlyCommitments(data, '2026-03')).toEqual([]);
-      expect(budgetMonthView(data, '2026-03', today).lines)
-        .toEqual([expect.objectContaining({ category: 'Insurance', planned: 400, actual: 0 })]);
-      expect(budgetOverview(data, '2026-03', today).sections
-        .find((section) => section.id === 'insurance')?.items)
-        .not.toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'linked' })]));
-    });
   });
 });

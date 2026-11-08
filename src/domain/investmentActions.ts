@@ -1,33 +1,18 @@
 import { NotFoundError } from './actions';
-import { holdingCapabilities } from './holdingCapabilities';
 import { findLinkedTransaction, investCategoryFor } from './links';
 import { holdingValue } from './portfolio';
 import { formatINR } from '../lib/format';
 import type { AppData, Holding, InvestmentEntry, ISODate, Transaction } from './types';
 
-export type InvestmentEntryInput = Pick<InvestmentEntry, 'date' | 'amount' | 'kind' | 'note'> & Pick<InvestmentEntry, 'price'>;
-export type InvestmentEntryPatch = Partial<Pick<InvestmentEntry, 'date' | 'amount' | 'note' | 'price'>>;
+export type InvestmentEntryInput = Pick<InvestmentEntry, 'date' | 'amount' | 'kind' | 'note'>;
+export type InvestmentEntryPatch = Partial<Pick<InvestmentEntry, 'date' | 'amount' | 'note'>>;
 
 export function snapshotAdjustmentForEntry(
   holding: Holding,
   entry: Pick<InvestmentEntry, 'date' | 'amount' | 'kind'>,
 ): number | undefined {
-  const valueAsOf = holding.kind === 'manual' ? holding.valueAsOf : holding.actualValueDate ?? undefined;
-  if (!valueAsOf || entry.date > valueAsOf) return undefined;
+  if (holding.kind !== 'manual' || holding.valueAsOf !== entry.date) return undefined;
   return entry.kind === 'Deposit' ? entry.amount : -entry.amount;
-}
-
-export function applySnapshotAdjustment(holding: Holding, adjustment: number | undefined): Holding {
-  if (adjustment === undefined || adjustment === 0) return holding;
-  if (holding.kind === 'manual') {
-    return { ...holding, value: holding.value + adjustment };
-  }
-  if (holding.actualValue === null) return holding;
-  return { ...holding, actualValue: holding.actualValue + adjustment };
-}
-
-function priorSnapshotAdjustment(holding: Holding, entry: InvestmentEntry): number | undefined {
-  return entry.snapshotAdjustment ?? snapshotAdjustmentForEntry(holding, entry);
 }
 
 function getHolding(data: AppData, id: string): Holding {
@@ -38,7 +23,7 @@ function getHolding(data: AppData, id: string): Holding {
 
 function entryNote(holding: Holding, kind: InvestmentEntry['kind']): string {
   if (kind === 'Withdrawal') return `${holding.name} withdrawal`;
-  return `${holding.name} deposit`;
+  return holding.kind === 'plan' ? `${holding.name} installment` : `${holding.name} deposit`;
 }
 
 function linkedTransaction(holding: Holding, entry: InvestmentEntry, id: string): Transaction {
@@ -61,9 +46,6 @@ export function addInvestmentEntry(
   today: ISODate,
 ): AppData {
   const holding = getHolding(data, holdingId);
-  if (input.kind === 'Deposit' && !holdingCapabilities(holding.type).entries) {
-    throw new Error('Fixed deposit does not allow deposits or investment entries. Use a withdrawal for maturity payout.');
-  }
   const adjustment = snapshotAdjustmentForEntry(holding, input);
   const entry: InvestmentEntry = {
     ...input,
@@ -84,7 +66,13 @@ export function addInvestmentEntry(
   return {
     ...data,
     holdings: data.holdings.map((item) => item.id === holdingId
-      ? { ...applySnapshotAdjustment(item, entry.snapshotAdjustment), logs: [...item.logs, entry] }
+      ? {
+        ...item,
+        ...(item.kind === 'manual' && entry.snapshotAdjustment !== undefined
+          ? { value: item.value + entry.snapshotAdjustment }
+          : {}),
+        logs: [...item.logs, entry],
+      }
       : item),
     transactions: [...data.transactions, transaction],
   };
@@ -107,10 +95,12 @@ export function updateInvestmentEntry(
     ...updatedEntryBase,
     ...(adjustment === undefined ? {} : { snapshotAdjustment: adjustment }),
   };
-  const previousAdjustment = priorSnapshotAdjustment(holding, entry);
   if (updatedEntry.kind === 'Withdrawal') {
     const currentValue = holdingValue({
-      ...applySnapshotAdjustment(holding, previousAdjustment === undefined ? undefined : -previousAdjustment),
+      ...holding,
+      ...(holding.kind === 'manual' && entry.snapshotAdjustment !== undefined
+        ? { value: holding.value - entry.snapshotAdjustment }
+        : {}),
       logs: holding.logs.filter((item) => item.id !== entryId),
     }, today);
     if (updatedEntry.date > today) throw new Error('Date cannot be in the future');
@@ -135,7 +125,10 @@ export function updateInvestmentEntry(
     ...data,
     holdings: data.holdings.map((item) => item.id === holdingId
       ? {
-        ...applySnapshotAdjustment(item, (adjustment ?? 0) - (previousAdjustment ?? 0)),
+        ...item,
+        ...(item.kind === 'manual' && (entry.snapshotAdjustment !== undefined || adjustment !== undefined)
+          ? { value: item.value - (entry.snapshotAdjustment ?? 0) + (adjustment ?? 0) }
+          : {}),
         logs: item.logs.map((row) => row.id === entryId ? updatedEntry : row),
       }
       : item),
@@ -145,14 +138,16 @@ export function updateInvestmentEntry(
 
 export function deleteInvestmentEntry(data: AppData, holdingId: string, entryId: string): AppData {
   const holding = getHolding(data, holdingId);
-  const removedEntry = holding.logs.find((item) => item.id === entryId);
-  if (!removedEntry) throw new NotFoundError('Investment entry', entryId);
-  const adjustment = priorSnapshotAdjustment(holding, removedEntry);
+  if (!holding.logs.some((item) => item.id === entryId)) throw new NotFoundError('Investment entry', entryId);
+  const removedEntry = holding.logs.find((item) => item.id === entryId)!;
   return {
     ...data,
     holdings: data.holdings.map((item) => item.id === holdingId
       ? {
-        ...applySnapshotAdjustment(item, adjustment === undefined ? undefined : -adjustment),
+        ...item,
+        ...(item.kind === 'manual' && removedEntry.snapshotAdjustment !== undefined
+          ? { value: item.value - removedEntry.snapshotAdjustment }
+          : {}),
         logs: item.logs.filter((entry) => entry.id !== entryId),
       }
       : item),
@@ -178,22 +173,6 @@ export function deleteHoldingWithTransactions(
     ...data,
     holdings: data.holdings.filter((item) => item.id !== holdingId),
     transactions,
-    ...(data.budgetPlan ? {
-      budgetPlan: {
-        ...data.budgetPlan,
-        items: data.budgetPlan.items.map((item) => item.holdingId === holdingId
-          ? { ...item, holdingId: undefined }
-          : item),
-      },
-    } : {}),
-    ...(data.monthBudgets ? {
-      monthBudgets: data.monthBudgets.map((budget) => ({
-        ...budget,
-        items: budget.items.map((item) => item.holdingId === holdingId
-          ? { ...item, holdingId: undefined }
-          : item),
-      })),
-    } : {}),
   };
 }
 

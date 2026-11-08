@@ -21,20 +21,11 @@ const themeLabels = {
 
 const destinations: Record<string, string> = {
   'Backup and restore': '/backup',
-  Reminders: '/reminders',
   Security: '/security',
   Profile: '/profile-form',
   Theme: '/theme',
   'Erase all data': '/erase-data',
 };
-
-function waitForRender(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
-}
 
 export function useAppMenu(): HeaderMenuItem[] {
   const devActions = useAppStore((state) => state.devActions);
@@ -92,54 +83,12 @@ export function useAppMenu(): HeaderMenuItem[] {
             Alert.alert('Could not load demo data', error instanceof Error ? error.message : 'An unexpected error occurred.');
           });
         });
-      } else if (item.label === 'Load stress data (50y/100y/126y/dense)' && devActions) {
+      } else if (item.label === 'Generate stress-test data' && devActions) {
         void choiceAsync({
-          title: 'Load stress data?',
-          message: 'Replace all local app data with a deterministic long-history fixture. The previous data can be restored with Undo.',
-          choices: [
-            { id: '50', label: '50 years', destructive: true },
-            { id: '100', label: '100 years', destructive: true },
-            { id: '126', label: '126 years', destructive: true },
-            { id: 'dense', label: 'Dense (200-year record count + daily SIP)', destructive: true },
-          ],
-        }).then((choice) => {
-          if (choice !== '50' && choice !== '100' && choice !== '126' && choice !== 'dense') return;
-          const years = choice === '50' ? 50 : choice === '100' ? 100 : 126;
-          const dense = choice === 'dense';
-          void devActions.loadStressData(years, dense).then(async (result) => {
-            if (!result.ok) {
-              Alert.alert('Could not load stress data', result.message);
-              return;
-            }
-            const renderStartedAt = Date.now();
-            await waitForRender();
-            const renderMs = Date.now() - renderStartedAt;
-            Alert.alert(
-              'Stress data loaded',
-              `${dense ? 'Dense 200-year record count within 126 years, including daily SIP' : `${years} years`}. Build, validate, save and replace: ${result.loadMs} ms. First render after replace: ${renderMs} ms.`,
-              [
-                {
-                  text: 'Undo',
-                  style: 'cancel',
-                  onPress: () => {
-                    void undoImport().then((undoResult) => {
-                      if (undoResult.ok) {
-                        setActionToast({ message: 'Stress data removed' });
-                        return;
-                      }
-                      Alert.alert('Could not undo stress data', undoResult.message);
-                    }).catch((error: unknown) => {
-                      Alert.alert('Could not undo stress data', error instanceof Error ? error.message : 'An unexpected error occurred.');
-                    });
-                  },
-                },
-                { text: 'OK' },
-              ],
-            );
-          }).catch((error: unknown) => {
-            Alert.alert('Could not load stress data', error instanceof Error ? error.message : 'An unexpected error occurred.');
-          });
-        });
+          title: 'Generate stress-test data?',
+          message: 'Replace your transactions with 20,000 local test entries to check storage limits and list performance.',
+          choices: [{ id: 'generate', label: 'Generate data', destructive: true }],
+        }).then((choice) => { if (choice === 'generate') devActions.loadStressData(); });
       } else if (item.label === 'Simulate corrupt storage' && devActions) {
         void choiceAsync({
           title: 'Simulate Corrupt Storage?',

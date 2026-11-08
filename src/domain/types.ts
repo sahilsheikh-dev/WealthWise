@@ -8,8 +8,6 @@ export const EARNED_INCOME_CATEGORIES = [
   'Other',
 ] as const;
 export type EarnedIncomeCategory = (typeof EARNED_INCOME_CATEGORIES)[number];
-export const NON_EARNED_INCOME_CATEGORIES = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
-export type NonEarnedIncomeCategory = (typeof NON_EARNED_INCOME_CATEGORIES)[number];
 
 export const THEME_IDS = ['system', 'light', 'dark', 'sky', 'mint', 'blush', 'midnight'] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
@@ -24,7 +22,6 @@ export type Transaction = {
   source?:
     | { kind: 'holding-entry'; parentId: string; entryId: string }
     | { kind: 'liability-payment'; parentId: string; entryId: string }
-    | { kind: 'liability-closure-charge'; parentId: string; entryId: string }
     | { kind: 'policy-payment'; parentId: string; entryId: string }
     | { kind: 'liability-origin'; parentId: string; entryId: string };
 };
@@ -51,7 +48,6 @@ export type InvestmentEntry = {
   note: string;
   kind: 'Deposit' | 'Withdrawal';
   snapshotAdjustment?: number;
-  price?: number;
 };
 
 export type LiabilityPayment = {
@@ -76,32 +72,17 @@ export const LIABILITY_TYPES = [
 
 export type LiabilityType = (typeof LIABILITY_TYPES)[number];
 
-export const HOLDING_TYPES = [
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-] as const;
-
-export type HoldingType = (typeof HOLDING_TYPES)[number];
-
-export type ValuationMethod = 'balance' | 'balanceInterest' | 'accrual' | 'manual' | 'unitsPrice';
-export type Compounding = 'monthly' | 'quarterly' | 'halfYearly' | 'yearly' | 'simple';
-
-type HoldingValuation = {
-  valuationMethod?: ValuationMethod;
-  ratePct?: number;
-  compounding?: Compounding;
-  maturityDate?: ISODate;
-  latestPrice?: number;
-  priceAsOf?: ISODate;
-};
+export type HoldingType =
+  | 'Mutual fund / SIP'
+  | 'Stocks / ETF'
+  | 'Fixed deposit'
+  | 'Recurring deposit'
+  | 'EPFO / PF'
+  | 'Savings account'
+  | 'Cash'
+  | 'Gold'
+  | 'Silver'
+  | 'Other';
 
 export type ManualHolding = {
   id: string;
@@ -112,7 +93,7 @@ export type ManualHolding = {
   value: number;
   valueAsOf?: ISODate;
   logs: InvestmentEntry[];
-} & HoldingValuation;
+};
 
 export type PlanHolding = {
   id: string;
@@ -129,9 +110,8 @@ export type PlanHolding = {
   opening: number;
   actualValue: number | null;
   actualValueDate: ISODate | null;
-  stopDate?: ISODate;
   logs: InvestmentEntry[];
-} & HoldingValuation;
+};
 
 export type Holding = ManualHolding | PlanHolding;
 
@@ -150,19 +130,11 @@ export type LiabilitySettlement = {
   balance: number;
 };
 
-export type LiabilityClosure = {
-  date: ISODate;
-  paymentId: string;
-  note?: string;
-  chargeTransactionId?: string;
-};
-
 export type RecurringLiability = LiabilityBase & {
   kind: 'recurring';
   tenureMonths: number;
   emi: number;
   settlement: LiabilitySettlement | null;
-  closure?: LiabilityClosure;
 };
 
 export type OneTimeLiability = LiabilityBase & {
@@ -173,23 +145,21 @@ export type OneTimeLiability = LiabilityBase & {
 export type Liability = RecurringLiability | OneTimeLiability;
 
 export type PolicyKind =
-  | 'term-life'
+  | 'term'
   | 'health'
   | 'life-savings'
   | 'ulip'
-  | 'motor'
+  | 'vehicle'
   | 'home'
   | 'other';
 
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'custom';
-export type PolicyStatus = 'active' | 'lapsed' | 'matured' | 'cancelled';
+export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'single';
 
 export type PolicyPayment = {
   id: string;
   date: ISODate;
   amount: number;
   note: string;
-  dueDate?: ISODate;
 };
 
 export type Policy = {
@@ -199,18 +169,13 @@ export type Policy = {
   kind: PolicyKind;
   premium: number;
   frequency: PolicyFrequency;
-  customIntervalMonths?: number;
   startDate: ISODate;
-  status: PolicyStatus;
-  policyNumber?: string;
-  sumAssured?: number;
-  endDate?: ISODate;
-  nominee?: string;
-  note?: string;
-  premiumYears: number;
+  premiumYears: number | null;
   trackFrom: ISODate;
+  coverAmount: number | null;
   currentValue: number | null;
   valueAsOf: ISODate | null;
+  maturityDate: ISODate | null;
   payments: PolicyPayment[];
 };
 
@@ -226,16 +191,6 @@ export type BudgetIncomeItem = {
   category: EarnedIncomeCategory;
   amount: number;
   day?: number;
-  frequency?: BudgetItemFrequency;
-  firstDueMonth?: string;
-};
-
-export type BudgetOtherIncomeItem = {
-  id: string;
-  name: string;
-  category: string;
-  amount: number;
-  day?: number;
 };
 
 export type Budget = {
@@ -243,31 +198,16 @@ export type Budget = {
   lines: BudgetLine[];
 };
 
-export type BudgetSection = {
-  id: string;
-  name: string;
-  type: 'spend' | 'invest';
-  system?: 'income' | 'debt' | 'insurance';
-};
-
-export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
-
-export type BudgetItem = {
-  id: string;
-  sectionId: string;
-  name: string;
+export type BudgetPlanLine = {
+  category: string;
   mode: 'amount' | 'percent';
   value: number;
   dueDay?: number;
-  frequency?: BudgetItemFrequency;
-  firstDueMonth?: string;
-  holdingId?: string;
 };
 
 export type BudgetPlan = {
   incomes: BudgetIncomeItem[];
-  sections: BudgetSection[];
-  items: BudgetItem[];
+  lines: BudgetPlanLine[];
   repeatMonthly: boolean;
   repeatFrom: string | null;
 };
@@ -276,9 +216,7 @@ export type MonthBudget = {
   month: string;
   source: 'plan' | 'custom';
   incomes: BudgetIncomeItem[];
-  otherIncomes?: BudgetOtherIncomeItem[];
-  sections: BudgetSection[];
-  items: BudgetItem[];
+  lines: BudgetLine[];
   linkedIncluded?: boolean;
 };
 

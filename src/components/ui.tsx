@@ -102,7 +102,6 @@ export function StatPill({
   onPress,
   accessibilityHint,
   accessibilityLabel,
-  testID,
 }: {
   label: string;
   value: ReactNode;
@@ -110,7 +109,6 @@ export function StatPill({
   onPress?: () => void;
   accessibilityHint?: string;
   accessibilityLabel?: string;
-  testID?: string;
 }) {
   const { colors } = useTheme();
   const spokenLabel = accessibilityLabel ?? `${label}${typeof value === 'string' ? `, ${value}` : ''}`;
@@ -128,7 +126,6 @@ export function StatPill({
   if (onPress) {
     return (
       <Pressable
-        testID={testID}
         accessibilityRole="button"
         accessibilityLabel={spokenLabel}
         accessibilityHint={accessibilityHint ?? `Opens ${label} details`}
@@ -140,7 +137,6 @@ export function StatPill({
   }
   return (
     <View
-      testID={testID}
       accessible
       accessibilityLabel={spokenLabel}
       style={[styles.statPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
@@ -472,6 +468,9 @@ export function BottomTabBar({
           <AppText
             testID={`bottom-tab-label-${tab.key}`}
             allowFontScaling
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
             style={[typography.navLabel, styles.bottomTabLabel, { color }]}>
             {tab.label}
           </AppText>
@@ -509,12 +508,12 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.76 },
   warning: { marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   warningText: { flex: 1, lineHeight: 17 },
-  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 6 },
   actionRow: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   actionButton: { flexGrow: 1 },
   searchField: { minHeight: 48, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.button },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 8, fontSize: 12, fontFamily: 'Montserrat_500Medium' },
-  searchClear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  searchClear: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   bottomTabBar: { paddingTop: 10, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-around' },
   bottomTabBarOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bottomTab: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 3 },

@@ -1,12 +1,4 @@
-import { PERIODS_PER_YEAR, planValue } from './sip';
-import {
-  investmentLedgerSummary,
-  investmentReturnSummary,
-  type InvestmentLedgerSummary,
-  type InvestmentReturnSummary,
-} from './investmentReturns';
-import { holdingCapabilities } from './holdingCapabilities';
-import { configuredHoldingValue } from './valuation';
+import { PERIODS_PER_YEAR, planInvested, planValue } from './sip';
 import type { AppData, Holding, HoldingType, ISODate } from './types';
 
 export type PortfolioRow = {
@@ -17,68 +9,23 @@ export type PortfolioRow = {
   invested: number;
   value: number;
   gain: number;
-  costRecovered: boolean;
   gainPct: number | null;
   holding?: Holding;
-  returnSummary?: InvestmentReturnSummary;
 };
 
-export function isCashOrBankHoldingType(type: HoldingType): boolean {
-  return !holdingCapabilities(type).returns;
-}
-
 export function holdingInvested(holding: Holding): number {
-  return holdingLedgerSummary(holding).invested;
-}
-
-export function holdingLedgerSummary(holding: Holding): InvestmentLedgerSummary {
-  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
-  return investmentLedgerSummary(holding.logs, openingAmount);
-}
-
-export function holdingContributions(holding: Holding): number {
-  return holdingLedgerSummary(holding).contributions;
+  if (holding.kind === 'plan') return planInvested(holding);
+  return Math.max(0, holding.invested + holding.logs.reduce((total, entry) =>
+    total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0));
 }
 
 export function holdingValue(holding: Holding, asOf: ISODate): number {
-  const legacyValue = holding.kind === 'plan' ? planValue(holding, asOf) : manualHoldingValue(holding, asOf);
-  return configuredHoldingValue(holding, asOf, legacyValue);
-}
-
-function manualHoldingValue(holding: Extract<Holding, { kind: 'manual' }>, asOf: ISODate): number {
-  const valuationDate = holding.valueAsOf;
-  const baseValue = valuationDate ? holding.value : holding.invested;
-  const applicableEntries = holding.logs
-    .filter((entry) => entry.date <= asOf && (!valuationDate || entry.date > valuationDate))
+  if (holding.kind === 'plan') return planValue(holding, asOf);
+  const valueAsOf = holding.valueAsOf;
+  const entriesAfterValue = holding.logs
+    .filter((entry) => !valueAsOf || entry.date > valueAsOf)
     .reduce((total, entry) => total + (entry.kind === 'Deposit' ? entry.amount : -entry.amount), 0);
-  return Math.max(0, baseValue + applicableEntries);
-}
-
-export function holdingFinancialSummary(holding: Holding, asOf: ISODate): {
-  ledger: InvestmentLedgerSummary;
-  invested: number;
-  value: number;
-  gain: number;
-  returnSummary: InvestmentReturnSummary;
-} {
-  const ledger = holdingLedgerSummary(holding);
-  const value = holdingValue(holding, asOf);
-  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
-  const openingDate = holding.kind === 'plan' ? holding.startDate : asOf;
-  const returnSummary = investmentReturnSummary(
-    holding.logs,
-    value,
-    asOf,
-    openingAmount,
-    openingDate,
-  );
-  return {
-    ledger,
-    invested: ledger.invested,
-    value,
-    gain: returnSummary.gain,
-    returnSummary,
-  };
+  return Math.max(0, holding.value + entriesAfterValue);
 }
 
 function row(
@@ -89,7 +36,6 @@ function row(
   invested: number,
   value: number,
   holding?: Holding,
-  financial?: ReturnType<typeof holdingFinancialSummary>,
 ): PortfolioRow {
   return {
     id,
@@ -98,28 +44,25 @@ function row(
     type,
     invested,
     value,
-    gain: financial?.gain ?? 0,
-    costRecovered: financial?.ledger.costRecovered ?? false,
-    gainPct: holding && isCashOrBankHoldingType(type) ? null : financial?.returnSummary.absoluteReturnPct ?? null,
-    returnSummary: financial?.returnSummary,
+    gain: value - invested,
+    gainPct: invested === 0 ? null : (value - invested) / invested * 100,
     ...(holding ? { holding } : {}),
   };
 }
 
 export function buildPortfolioRows(data: AppData, asOf: ISODate): PortfolioRow[] {
-  return data.holdings.map((holding) => {
-    const financial = holdingFinancialSummary(holding, asOf);
-    return row(
+  const holdings = data.holdings.map((holding) =>
+    row(
       holding.id,
       holding.kind,
       holding.name,
       holding.type,
-      financial.invested,
-      financial.value,
+      holdingInvested(holding),
+      holdingValue(holding, asOf),
       holding,
-      financial,
-    );
-  });
+    ),
+  );
+  return holdings;
 }
 
 export function filterRows(
@@ -139,15 +82,12 @@ export function portfolioTotals(rows: PortfolioRow[]): {
 } {
   const invested = rows.reduce((sum, item) => sum + item.invested, 0);
   const value = rows.reduce((sum, item) => sum + item.value, 0);
-  const gain = rows.reduce((sum, item) => sum + (item.returnSummary?.gain ?? item.gain), 0);
-  const contributions = rows.reduce((sum, item) =>
-    sum + (item.returnSummary?.contributions ?? item.invested), 0);
-  return { invested, value, gain, gainPct: contributions === 0 ? null : gain / contributions * 100 };
+  const gain = value - invested;
+  return { invested, value, gain, gainPct: invested === 0 ? null : gain / invested * 100 };
 }
 
 export function monthlyCommitment(holdings: Holding[]): number {
   return holdings.reduce((sum, holding) => holding.kind === 'plan'
-    && holdingCapabilities(holding.type).recurring
     ? sum + holding.amount * PERIODS_PER_YEAR[holding.frequency] / 12
     : sum, 0);
 }

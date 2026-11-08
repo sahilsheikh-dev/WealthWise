@@ -11,7 +11,6 @@ const manifest = JSON.parse(
 const auditedComponents = [
   'ChoiceField.tsx',
   'DateField.tsx',
-  'FormScreen.tsx',
   'IntegerField.tsx',
   'MoneyField.tsx',
   'PercentField.tsx',

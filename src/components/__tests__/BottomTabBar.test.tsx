@@ -88,9 +88,9 @@ describe('shared bottom tab bar', () => {
     expect(barStyles.every((style) => !('height' in style))).toBe(true);
     expect(itemStyles).toEqual(expect.objectContaining({ minHeight: 44 }));
     expect(label.props.allowFontScaling).toBe(true);
-    expect(label.props.adjustsFontSizeToFit).toBeUndefined();
-    expect(label.props.minimumFontScale).toBeUndefined();
-    expect(label.props.numberOfLines).toBeUndefined();
+    expect(label.props.adjustsFontSizeToFit).toBe(true);
+    expect(label.props.minimumFontScale).toBe(0.75);
+    expect(label.props.numberOfLines).toBe(1);
     expect(label.props.style).toEqual(expect.arrayContaining([
       expect.objectContaining({ textAlign: 'center', flexShrink: 1 }),
     ]));
@@ -106,9 +106,9 @@ describe('shared bottom tab bar', () => {
         testID: `bottom-tab-label-${String(tab.props.testID).replace('bottom-tab-', '')}`,
       });
       expect(label.props.allowFontScaling).toBe(true);
-      expect(label.props.adjustsFontSizeToFit).toBeUndefined();
-      expect(label.props.minimumFontScale).toBeUndefined();
-      expect(label.props.numberOfLines).toBeUndefined();
+      expect(label.props.adjustsFontSizeToFit).toBe(true);
+      expect(label.props.minimumFontScale).toBe(0.75);
+      expect(label.props.numberOfLines).toBe(1);
       expect(label.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ lineHeight: undefined }),
       ]));

@@ -6,7 +6,6 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
-import { useAppActions, useAppData } from '../src/data/useAppData';
 import {
   AppText,
   Button,
@@ -14,13 +13,13 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  Screen,
   SearchField,
+  Screen,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
   buildPortfolioRows,
@@ -29,19 +28,27 @@ import {
   portfolioTotals,
 } from '../src/domain/portfolio';
 import { planSchedule } from '../src/domain/schedule';
-import { HOLDING_TYPES } from '../src/domain/types';
+import type { HoldingType } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { choiceAsync } from '../src/lib/confirm';
 import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const filters = [
+const filters: ('All' | 'Recurring' | HoldingType)[] = [
   'All',
   'Recurring',
-  ...HOLDING_TYPES,
-] as const;
+  'Mutual fund / SIP',
+  'Stocks / ETF',
+  'Fixed deposit',
+  'Recurring deposit',
+  'EPFO / PF',
+  'Savings account',
+  'Cash',
+  'Gold',
+  'Silver',
+  'Other',
+];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -56,11 +63,7 @@ export default function AssetsScreen() {
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
-    if (
-      row.kind !== 'plan' ||
-      row.holding?.kind !== 'plan' ||
-      !holdingCapabilities(row.holding.type).recurring
-    ) {
+    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
       return { ...row, nextDue: null, progress: null, status: null };
     }
     const schedule = planSchedule(row.holding, asOf);
@@ -163,7 +166,7 @@ export default function AssetsScreen() {
             tone={totals.gain >= 0 ? 'ok' : 'err'}
           />
           <StatPill
-            label="Monthly Invt."
+            label="Monthly SIP/RD"
             value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
             accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
             tone="primary"
@@ -188,29 +191,14 @@ export default function AssetsScreen() {
                   router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
                 } else if (action === 'withdraw') {
                   router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
+                } else if (action === 'schedule') {
+                  router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'entries') {
                   router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
                   router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'update') {
-                  router.push(`/holding-valuation-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'stop') {
-                  const holding = data.holdings.find((item) => item.id === holdingId);
-                  if (!holding || holding.kind !== 'plan') return;
-                  if (holding.stopDate) {
-                    void choiceAsync({
-                      title: 'Resume investment?',
-                      message: 'This restores the plan schedule from the next due after today.',
-                      choices: [
-                        { id: 'cancel', label: 'Cancel' },
-                        { id: 'resume', label: 'Resume' },
-                      ],
-                    }).then((choice) => {
-                      if (choice === 'resume') actions.resumePlan(holdingId);
-                    });
-                  } else {
-                    router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holdingId)}` as Href);
-                  }
+                } else if (action === 'confirm' && row.kind === 'manual') {
+                  actions.confirmHoldingValue(row.id);
                 }
               }}
             />

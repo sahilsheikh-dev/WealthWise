@@ -6,6 +6,7 @@ import {
   monthPositions,
   normalizeMoney,
   recordMoneyMovement,
+  reviewableMonths,
   shortfallForMonth,
   surplusForMonth,
 } from '../cashFlow';
@@ -244,7 +245,18 @@ describe('cash flow positions', () => {
     }
   });
 
-  it('keeps empty month cash-flow helpers at zero after removing the review list', () => {
+  it('lists closed nonzero months newest first and excludes current and one-rupee-zero rows', () => {
+    const data = {
+      ...seedData(),
+      transactions: [
+        tx('old', '2026-01-01', 'income', 10, 'Salary'),
+        tx('break-even', '2026-02-01', 'expense', 10, 'Food'),
+        tx('new', '2026-03-01', 'expense', 20, 'Food'),
+        tx('one', '2026-04-01', 'income', 1, 'Salary'),
+      ],
+    };
+    expect(reviewableMonths(data, '2026-04-15').map(({ month }) => month)).toEqual(['2026-03', '2026-01']);
+    expect(reviewableMonths(seedData(), '2026-04-15')).toEqual([]);
     expect(monthPositions([])).toEqual([]);
     expect(shortfallForMonth(seedData(), '2026-04')).toBe(0);
     expect(surplusForMonth(seedData(), '2026-04')).toBe(0);

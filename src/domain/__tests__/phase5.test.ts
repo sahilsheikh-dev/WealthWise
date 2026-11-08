@@ -41,12 +41,12 @@ describe('Phase 5 domain actions', () => {
         ] }
         : holding),
       transactions: [
-        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP deposit', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' } },
+        { id: 'linked', type: 'invest', amount: 50, date: '2026-03-01', category: 'Mutual fund / SIP', note: 'Old SIP installment', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'log' } },
         { id: 'edited', type: 'invest', amount: 40, date: '2026-03-02', category: 'Mutual fund / SIP', note: 'User note', source: { kind: 'holding-entry', parentId: 'plan', entryId: 'edited-log' } },
       ],
     };
     data = updatePlan(data, 'plan', { name: 'New SIP', type: 'Gold' });
-    expect(data.transactions[0]).toMatchObject({ note: 'New SIP deposit', category: 'Gold / Silver' });
+    expect(data.transactions[0]).toMatchObject({ note: 'New SIP installment', category: 'Gold / Silver' });
     expect(data.transactions[1]).toMatchObject({ note: 'User note', category: 'Gold / Silver' });
     expect(validateIntegrity(data)).toEqual([]);
 
