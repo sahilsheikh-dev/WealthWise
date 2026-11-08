@@ -32,7 +32,9 @@
   `WealthWise-android-latest-v1.1.0.apk`; the README, published note, release
   history and GitHub release body match. Latest and versioned v1.1.0 routes
   return HTTP 200 at 112,147,677 bytes. The old v1.0.0 filename has no
-  `latest` marker and returns HTTP 200 at 112,133,413 bytes.
+  `latest` marker and returns HTTP 200 at 112,133,413 bytes. PRs #21-#25
+  merged task -> Phase 28 -> develop -> release -> main -> develop. The four
+  remote trees match; the v1.1.0 tag was not changed.
 - **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
@@ -67,10 +69,17 @@
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and
   release-only main merges apply prospectively; no history rewrite was made.
-- **P28-F-R3-R2/R3 Git integration:** the local release-policy, ledger and
-  test commits are not pushed. After explicit push authorization, raise the
-  task PR into `phase/28-qa-and-release` and follow the chronological phase
-  -> develop -> release -> main -> develop PR flow.
+- **Local-only branch audit:** the release-policy commits are integrated
+  through PRs #21-#25; their merged task branch was deleted as required.
+  Other local task branches whose commits are already in `main` remain local
+  only because merged task branches are deleted by policy. P28-E's final
+  verification commit `72fb325` is preserved and its stale status text is
+  reconciled on the P28-E-R2 task branch for chronological PR integration.
+  `codex-changes` is not safe to publish as-is: it is based on schema v2
+  rather than current v22, includes generated coverage files, and review
+  found a persisted-data migration bug, a failing migration assertion, and
+  merge conflicts with current `main`. It remains local pending a decision
+  to port any still-needed changes.
 - **v1.1.0 release integrity:** the owner explicitly approved the `preview`
   profile and reused versionCode 1 for this release. For future releases,
   restore the configured `android-apk` profile and increment versionCode.
