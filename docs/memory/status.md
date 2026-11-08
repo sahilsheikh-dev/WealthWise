@@ -15,9 +15,9 @@
   to develop (#7). The contributor-credit correction and owner-reported
   N39-N43 results are on main and develop; the audit records are carried
   through the same release/back-merge path.
-- GitHub branch audit found 35 remote heads: main, develop, the read-only
-  `history/by-phase` archive, all 30 phase branches, `release/v1.1.0`, and the
-  current audit task branch.
+- GitHub branch audit found 34 remote heads: main, develop, the read-only
+  `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
+  The merged audit task branch was deleted after integration.
   Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
   and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
 - Latest six ordered gates on the Release 2 audit worktree all exit 0. Gate 1
