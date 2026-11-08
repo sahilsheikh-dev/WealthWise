@@ -16,6 +16,10 @@
 - **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
   contributor credits in v1.0.0, and the template requires release-specific,
   verified contributors. This correction is included in PRs #1-#3.
+- **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
+  merged Phase 28 into develop; PR #6 carries the release branch to main and
+  PR #7 is the main-to-develop back-merge. The full sequence preserves
+  task -> phase -> develop -> release -> main -> develop.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -51,14 +55,13 @@
 - **v1.1.0 draft correction:** contributor credits and template guidance are
   corrected and integrated. No publication or tag action has been taken;
   wait for owner APK build and approval before tagging or publishing.
-- **Branch publication audit:** GitHub currently exposes main, develop,
-  `history/by-phase`, all 30 phase branches and `release/v1.1.0`. PRs #1-#3
-  merged the current Release 2 follow-ups in parent-branch order; `main` and
-  `develop` remote trees match. `codex-changes`, `phase/25-release-and-backups`
-  and `task/P28-E-phase-history` remain outside that PR chain and were not
-  merged because they are historical or unrelated to the authorized follow-up.
-  `history/by-phase` remains a read-only archive. The v1.1.0 tag is absent
-  pending owner build/approval.
+- **Branch publication audit:** GitHub currently exposes 34 heads: main,
+  develop, `history/by-phase`, all 30 phase branches and `release/v1.1.0`.
+  Merged task branches are deleted. PRs #1-#7 form the chronological Release 2
+  follow-up and audit path. `codex-changes`,
+  `phase/25-release-and-backups` and `task/P28-E-phase-history` remain outside
+  this PR chain; `history/by-phase` remains a read-only archive. The v1.1.0
+  tag is absent pending owner build/approval.
 - **Stale phase tags (owner decision):** `phase-28-complete` and
   `phase-29-complete` target commits behind their current phase branch tips.
   No tag was moved. Decide whether to retain or update them in a separately
