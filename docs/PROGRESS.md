@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (131/132)
+Overall progress ██████████ 99% (132/133)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (10/10)
+Phase 28         ██████████ 100% (11/11)
 Phase 29         ██████████ 97% (37/38)
 Phase 30         ██████████ 100% (3/3)
 ```
@@ -182,7 +182,8 @@ Phase 30         ██████████ 100% (3/3)
 | P28-C-R3 | — | Done | Finalized release rules, Download parity and its derived Jest regression; verified both public APK links and SHA-256, matched the EAS build, aligned the approved v1.0.0 tag, and added the owner-run device checklist. No app behavior changed; GitHub release-body edit and physical-device tests remain owner actions. | 2026-11-08 |
 | P28-C-R4 | — | Done | Reorganized README user/developer/documentation sections; removed public APK digest and commit identifiers; aligned release notes, history, release rules and verification tests. GitHub release body was not edited per instruction. | 2026-11-08 |
 | P28-D | — | Done | Established shared branching, commit and gate rules; added contributor/security guidance and GitHub templates. `develop` bootstrapped at `a258579c4b580d6f3a157b8d13de53334aa8d34d`; rule applies prospectively to legacy unreleased history. All six gates pass; Gate 1: 98 suites, 1,230 passed, 1 skipped. | 2026-11-08 |
-| P28-E | — | Done | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the read-only 131-commit archive. 512 original commits are mapped exactly once; final archive tree equals main. | 2026-11-08 |
+| P28-E | — | Done; Revised by P28-E-R1 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the read-only 131-commit archive. 512 original commits are mapped exactly once; final archive tree equals main. | 2026-11-08 |
+| P28-E-R1 | — | Done | Close out the phase-history evidence and record final integrated Release 2 gates, branch integrations, and remaining device/release follow-ups. | 2026-11-08 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -2841,10 +2842,10 @@ approval. The GitHub release-body edit remains an owner action.
 they most directly evidence; round/ledger close-out commits use that round or
 ledger label.
 
-P28-E is organizing the historical commit map and phase refs. Phases 7, 9 and
-10 have no distinct phase-specific commit in the available evidence and use
-the nearest preceding evidenced anchor; these inferred anchors are identified
-in Section 12.
+P28-E completed the historical commit map and phase refs. Phases 7, 9 and 10
+have no distinct phase-specific commit in the available evidence and use the
+nearest preceding evidenced anchor; these inferred anchors are identified in
+Section 12.
 
 ### Commit label map
 
@@ -2953,8 +2954,9 @@ evidence present in exports/checkpoints.
 |---|---|---|---:|---|---|---|---|---|---|
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
 | P28-D | Phase 28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | `b314113` (`docs: add branching strategy and contributor guide`). | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
-| P28-C-R4 | Phase 28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. All six gates exit 0: Gate 1 98 suites, 1,231 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 TypeScript, lint, Doctor 21/21, Android export 5.5 MB, iOS export 5.2 MB. | Task branch commit hash to be recorded after commit. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
-| P28-E | Phase 28 | — | current | 2026-11-08 | Map repository history to phase/subtask IDs and create historical phase branches, completion tags and an archival `history/by-phase` branch. | In progress; 485 source commits were found across reachable refs and ledger/phase-note references. Phase anchors and index are established; synthetic archive construction, uniqueness and final-tree checks remain pending. | P28-E task branch; commit to be recorded after archive verification. | The baseline hash in P28-D evidence is not treated as P28-D's implementation commit. Phases 7, 9 and 10 use nearest preceding evidenced anchors because no dedicated original commit was found. | current request |
+| P28-C-R4 | Phase 28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. The final integrated six-gate run passed: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 all exit 0, Doctor 21/21, Android and iOS exports succeeded. | Task `89739755081f9c5ed32a6067f4b85bdfcbe39edc` (`P28-C-R4: Restructure README and align release documents with the no-public-digest policy`); phase integration `fd0360ab4affd805fda6fa778e5f06d20b6acc8d`. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
+| P28-E | Phase 28 | — | current | 2026-11-08 | Map repository history to phase/subtask IDs and create historical phase branches, completion tags and an archival `history/by-phase` branch. | Done; Revised by P28-E-R1. 30 phase branches/tags and a read-only 131-commit archive are verified. The snapshot contains 512 original commits: 337 directly mapped and 175 date-fallback mapped, with zero unmapped. Each original hash appears once; the archive tree equals main. | Task `73d07f22237fb8db9d039618ffb1709a9d75ca45` (`docs: map phase history and record Release 2 revisions`); Phase 28 integration `c841cf412ea84abf35429a9a23e033f0546abda6`; develop integration `e629ae76cb572a933148664ec6c3cb67e6434a21`. | The baseline hash in P28-D evidence is not treated as P28-D's implementation commit. Phases 7, 9 and 10 use nearest preceding evidenced anchors because no dedicated original commit was found. | current request |
+| P28-E-R1 | Phase 28 | P28-E | current | 2026-11-08 | Close out P28-E evidence and record final integrated gates and remaining follow-ups. | Done; final integrated `develop` run: all six gates exit 0. Gate 1: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%. The archived 512-commit source snapshot predates follow-up commits and remains unchanged. | Task `a9407d002a527ffa9a1edd8a4d01870cce0eb7d2` (`docs: close P28-E history and record final gates`); Phase 28 integrated with `--no-ff`, then merged to `develop` with `--no-ff`. | Old: P28-E was described as in progress with a preliminary 485-source estimate and pending archive checks. New: final evidence records 512 mapped hashes (337 direct, 175 date fallback, zero unmapped), the 131-commit archive, and successful final gates. Reason: replace provisional estimates with verified results without rewriting the read-only historical snapshot. Device checks and v1.1.0 release preparation remain pending. | current request |
 | P20-N-R1 | Phase 20 | — | current | 2026-11-08 | Replace Budget's stacked allocation bar with per-section actual-versus-planned Pace. | Red route test before production edits: expected zero stacked bars, received two at font scales 1.0, 1.3 and 2.0. After the change, chart/domain/route/demo suites pass (4 suites, 247 tests). The full Gate 1 passed 97 suites, 1,227 tests passed, 1 skipped; Gates 2-4 passed. Exports were skipped under the no-build instruction. | `f904769` (`feat: add section-based Budget Pace chart`). | Old: stacked-bar proportion assertions and global spending-pace assertions. New: section timelines, dashed/solid pairs, toggles, axes, accessibility, and contrast; route asserts no stacked bar. Reason: the chart now compares actual and planned pace by section. | current request |
 | P30-A | Phase 30 | — | current | 2026-11-08 | Diagnose edited values that appear stale after actions or restart. | Three restart tests fail: failed SQLite write, SQLite read-back mismatch and temporary legacy fallback all restore old SQLite bytes. Real store action JSON/fresh hydration match; all eight mounted screen refresh checks and previous-state immutability checks pass. | Diagnosis commit: `a251c3a60a0d0ef8b101d9721246c05f8559d41f` (`test: reproduce persisted value loss after restart`). | Confirmed stale SQLite preference. Not confirmed: UI memoization/React Compiler, module-level caches (none found), in-place mutation, broad/missing subscriptions, or route-param object caching. | current request |
 | P30-B | Phase 30 | — | current | 2026-11-08 | Fix confirmed persisted-value loss and expose failed writes. | All three restart reproductions now pass; deletion tombstones also prevent stale SQLite values returning. A mounted StorageErrorBanner test confirms an unpersistable update is announced. | Implementation commit: `ec019effd1b1f29190885c4effb5235be50898cd` (`fix: prefer verified fallback data after restart`). | The old adapter selected SQLite first after process restart despite a newer legacy fallback. A durable, read-back-verified authority marker now resolves source precedence; old failed-write assertions were replaced by restart-passing assertions because the newest verified value must win. | current request |
@@ -9022,6 +9024,20 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 | Original commit mapping and archive trailers | Pass | 512 original commits mapped; all appear exactly once in unique archive trailers; none unmapped. |
 | Archive final tree | Pass | `history/by-phase` tip `867347b068725c57c05765d84c02640d8cd57405` has the same tree as `main`. |
 
+### Final integrated `develop` gates (2026-11-08)
+
+| Gate | Exit | Result |
+|---|---:|---|
+| `npm test -- --coverage` | 0 | 98 suites passed; 1,242 passed, 1 skipped, 1,243 total. Coverage: overall 95.96/92.01/98.01/97.62%; `src/data` 91.03/87.39/94.46/94.17%; `src/domain` 96.95/92.85/98.80/98.32%; `src/lib` 100% in all four measures (statements/branches/functions/lines). |
+| `npx tsc --noEmit` | 0 | Passed. |
+| `npx expo lint` | 0 | Passed. |
+| `npx expo-doctor` | 0 | 21/21 checks passed. |
+| `npx expo export --platform android` | 0 | Exported to `dist`. |
+| `npx expo export --platform ios` | 0 | Exported to `dist`. |
+
+These are simulated/export checks, not physical-device verification. No EAS or
+Gradle build, version bump, or release preparation was performed.
+
 ## 11. Session and release log
 
 ### Historical commit-subject corrections (superseded by CM-1 enforcement; 2026-11-07)
@@ -9590,10 +9606,11 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 ### P28-E phase-history mapping (2026-11-08)
 
 - Added 30 `phase/NN-slug` branches and annotated `phase-NN-complete` tags;
-  the existing `v1.0.0` tag is unchanged. The source set contains 512 commits:
-  487 reachable from selected main/codex/task/phase branches and tags, plus
-  25 additional commit objects explicitly referenced in the ledger. Current
-  `develop` integration merges were excluded from the historical source set.
+  the existing `v1.0.0` tag is unchanged. At the archive snapshot, the source
+  set contained 512 commits: 487 reachable from selected main/codex/task/phase
+  branches and tags, plus 25 additional commit objects explicitly referenced
+  in the ledger. Integration and follow-up commits created after that snapshot
+  are intentionally outside the read-only archive.
 - The final map assigns 337 commits directly from task subjects, prompt commit
   cells, phase notes, labels, task refs and phase tags; 175 remaining commits
   use the nearest preceding subtask date within the closest evidenced phase.
@@ -9603,8 +9620,9 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
   and reuse the preceding archive tree rather than inventing a source.
 - The preliminary 485 / 354-direct / 158-date-fallback / 18-empty estimate is
   superseded by the reconciled source set and phase-aware mapping above. The
-  source set now includes five recorded phase integration commits and the
-  codex branch head, and excludes the new `develop` merge commits.
+  snapshot includes five recorded phase integration commits and the codex
+  branch head. The later P29-AB-R2-R1 and P28-E-R1 commits and their integration
+  merges are follow-ups, not original hashes; the archive remains unchanged.
 - Rows without an original source commit are P07, P09, P10, P28-E, P29-B,
   P29-C, P29-D, P29-E, P29-F2, P29-N, P29-M2, P29-S, P29-U, P29-V, P29-W
   and P29-Y; these reuse the preceding archive tree and do not represent
@@ -9654,6 +9672,6 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `fd0360ab4affd805fda6fa778e5f06d20b6acc8d` | 10 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `a9407d002a527ffa9a1edd8a4d01870cce0eb7d2` | 11 |
 | 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 38 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
