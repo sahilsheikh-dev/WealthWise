@@ -9,11 +9,14 @@
   placeholders. The reason is to keep scope explicit and unrelated changes
   separate; proposed subjects and staged diff-stats are shown before commit.
   The hook and docs tests pass.
-- **P28-C-R4 release documentation:** completed locally; the README and latest
+- **P28-C-R4 release documentation:** completed; the README and latest
   published Download blocks match, public digest/commit identifiers are
-  absent, and the task is integrated into `develop`. The release body remains
-  intentionally unchanged. Plain pushes authorized for this task and remote
-  verification remain pending.
+  absent, and the task is integrated into `develop`. The authorized refs were
+  pushed and verified. The release body remains intentionally unchanged.
+- **P28-E remote history:** all 30 phase branches, `history/by-phase`, and 30
+  annotated phase completion tags were pushed and verified. `main`, `develop`,
+  and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
+  was used.
 
 ## Unresolved
 
