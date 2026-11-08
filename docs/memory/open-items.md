@@ -39,6 +39,14 @@
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
   task -> phase -> develop -> release -> main -> develop.
+- **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
+  holding workflow and the explicit P29-S cancellation of the separate
+  ledger-only migration. No app implementation remains in scope; Phase 29 is
+  41/41. The P29-O1 physical-device checks below remain open.
+- **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
+  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
+  with checked-in coverage output and an unsafe migration; current schema-v22
+  loan/liability behavior supersedes its source changes. Nothing was ported.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -166,7 +174,7 @@
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
   removed. The cancelled storage design does not affect the current schema
-  v20; P29-O1's unified holding actions remain supported. Historical
+  v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
