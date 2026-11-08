@@ -17,7 +17,7 @@ auto-increment advances the platform build numbers for subsequent builds.
 
 ## Version identifiers
 
-- The user-facing app version (`expo.version`) is `1.0.0` in `app.json`; it is
+- The user-facing app version (`expo.version`) is `1.1.0` in `app.json`; it is
   aligned with the `package.json` and `package-lock.json` root versions.
 - The iOS `buildNumber` is a platform-specific build identifier. EAS manages
   its value remotely under the configured remote app-version source.

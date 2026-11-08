@@ -68,12 +68,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Current published version: v1.0.0
-- Release date: 2026-11-07
+- Current published version: v1.1.0
+- Release date: 2026-11-08
 - GitHub release:
-  [WealthWise v1.0.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.0.0)
+  [WealthWise v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0)
 - APK artifact verification: both URLs returned HTTP 200 with a content
-  length of 112,133,413 bytes. The digest was verified privately and is not
+  length of 112,147,677 bytes. The digest was verified privately and is not
   published.
 - Production AAB: not verified.
 
