@@ -17,7 +17,8 @@
   through the same release/back-merge path.
 - GitHub branch audit found 34 remote heads: main, develop, the read-only
   `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
-  The merged audit task branch was deleted after integration.
+  Publication PRs #11-#15 are merged in order; their task branch was deleted
+  and `phase/28-qa-and-release` was retained.
   Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
   and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
 - Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
@@ -68,7 +69,10 @@
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> Phase 28 -> develop -> release -> main -> develop.
-  P28-F-R3 later published v1.1.0 after the owner uploaded the verified APK.
+  P28-F-R3 published v1.1.0 after the owner uploaded the verified APK; PRs
+  #11-#15 complete task -> Phase 28 -> develop -> release -> main -> develop.
+  The remote trees for main, develop, release/v1.1.0 and Phase 28 are
+  identical; the tag remains at the verified build source.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,
