@@ -1,18 +1,17 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useIsFocused, type Href } from 'expo-router';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
-import { PendingItemRow } from '../../src/components/PendingItemRow';
 import {
   AppText,
   Button,
   Card,
-  ProgressBar,
   Screen,
   SectionTitle,
   StatPill,
@@ -51,6 +50,7 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const isFocused = useIsFocused();
   const data = useAppData();
   const actions = useAppActions();
@@ -322,11 +322,32 @@ export default function HomeScreen() {
           <SectionTitle>Upcoming and due</SectionTitle>
           <Card style={styles.upcomingCard}>
             {dueItems.map((item) => (
-              <PendingItemRow
+              <View
                 key={item.id}
-                item={item}
-                onPress={() => { void handleDuePress(item); }}
-              />
+                testID={`home-due-row-${item.id}`}
+                style={[
+                  styles.dueRow,
+                  fontScale >= 1.3 && styles.dueRowStacked,
+                  { borderBottomColor: colors.border },
+                ]}>
+                <View style={styles.dueTitle}>
+                  <AppText weight="semibold" style={typography.name}>{item.title}</AppText>
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    {item.dueDate ? formatDate(item.dueDate) : 'Date unavailable'}
+                  </AppText>
+                </View>
+                <View
+                  testID={`home-due-actions-${item.id}`}
+                  style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
+                  <AmountText value={item.amount} tier="row" weight="semibold" />
+                  <IconButton
+                    icon="check"
+                    label="Mark as paid"
+                    hint="Confirms whether this scheduled item was paid."
+                    onPress={() => { void handleDuePress(item); }}
+                  />
+                </View>
+              </View>
             ))}
           </Card>
         </>
@@ -363,7 +384,7 @@ export default function HomeScreen() {
               </View>
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
-            <ProgressBar percent={pct} />
+            <GoalProgressRow percent={pct} projection={projection} />
             <View style={styles.goalAmounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -376,15 +397,10 @@ export default function HomeScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' ? (
+            {goal.auto !== 'ef' && projection.projectedDate
+              && projection.projectedDate !== 'Already reached' ? (
               <AppText style={[typography.meta, { color: colors.text2 }]}>
-                {projection.projectedDate === 'Already reached'
-                  ? 'Already reached'
-                  : projection.projectedDate
-                    ? `Projected ${formatDate(projection.projectedDate)} · ${projection.status === 'ahead'
-                      ? 'Ahead'
-                      : projection.status === 'on-track' ? 'On track' : 'Behind'}`
-                    : 'Not reachable with current contributions'}
+                Projected {formatDate(projection.projectedDate)}
               </AppText>
             ) : null}
             {goal.auto === 'ef' ? (
@@ -449,8 +465,10 @@ const styles = StyleSheet.create({
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   upcomingCard: { gap: 7 },
   dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  dueRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
-  dueRight: { alignItems: 'flex-end', gap: 4 },
+  dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dueActionsStacked: { justifyContent: 'flex-end' },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
