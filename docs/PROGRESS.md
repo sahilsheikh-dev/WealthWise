@@ -48,7 +48,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 80% (39/49)
+Overall progress █████████░ 89% (49/55)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -68,9 +68,9 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (3/3)
-Phase 21         ░░░░░░░░░░ 0% (0/2)
-Phase 22         ░░░░░░░░░░ 0% (0/2)
+Phase 20         ██████████ 100% (9/9)
+Phase 21         ██████████ 100% (3/3)
+Phase 22         ██████████ 100% (1/1)
 Phase 23         ░░░░░░░░░░ 0% (0/1)
 Phase 24         ░░░░░░░░░░ 0% (0/1)
 Phase 25         ░░░░░░░░░░ 0% (0/1)
@@ -120,10 +120,16 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | P20-A | — | Done | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
-| P21-A | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
-| P21-B | — | Pending | Implementation and feature tests complete; not closed because Expo Doctor reports an app.json schema error. | 2026-10-16 |
-| P22-A | — | Planned | Four months of linked demo data and DEC-DEMO (CR-12). | 2026-10-15 |
-| P22-B | P15-SEED | Planned | Optional spreadsheet seed importer (formerly P19-E / P15-SEED). | 2026-10-15 |
+| P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
+| P20-E | — | Done | CR-27, CR-28 and CR-31 delivered; 70 suites / 772 tests and all final gates pass. | 2026-10-17 |
+| P20-F | — | Done | F1–F5 budget groundwork; final 70-suite/777-test coverage gate and all required gates pass. CR-29 remains in progress for later one-plan/apply behavior. | 2026-10-17 |
+| P20-G | — | Done | Schema-v8 single budget plan, current-month apply/repeat, linked rows, setup screen and CR-30 no-menu behavior. | 2026-10-17 |
+| P20-H | — | Done | CR-32–CR-34; cash flow and plan summary, single grouped cards, paid/partial/linked rows, Month review screen/route removal and Transactions Review-to-Budget navigation. | 2026-10-17 |
+| P20-I | — | Done | `e396059`; CR-35–CR-36, Home's separate tick confirmation, one status beside each Home/Goals progress bar, demo later due and responsive-style tests. | 2026-10-17 |
+| P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
+| P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
+| P21-C | `d43be28` | Done | CR-37 normal-mode allocation display and responsive status; CR-38 editable allocation items, default buckets and menu opt-out. | 2026-10-17 |
+| P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P23-A | P15-F | Planned | Insurance management. | 2026-10-15 |
 | P24-A | P15-K | Planned | Reminders and notifications, including CR-1. | 2026-10-15 |
 | P25-A | P15-L | Planned | Encrypted backups. | 2026-10-15 |
@@ -163,25 +169,54 @@ Phase 28         ░░░░░░░░░░ 0% (0/1)
 | CR-3 | Open | Save narrows with validation summaries in `profile-form.tsx` and `transaction-form.tsx`. | 2026-10-14 |
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
 | CR-5 | Done | Five-group categories, suggestions, compact inputs, subtotals and recurring-items summary; P19-A gates pass. | P19-A |
-| CR-6 | Done | Applied budgets and all recurring assets/liabilities, past and future, appear as pending Transactions with Pay and Clear due. | P20-A |
+| CR-6 | Done | Applied budgets and recurring assets/liabilities, past and future, appear under Transactions' Due payments with Pay and Clear due. | P20-A |
 | CR-7 | Done | Home upcoming/due rows offer Pay and Clear due and update Transactions. | P20-B |
-| CR-8 | Pending | Implementation complete; P21-A remains open until the Expo Doctor gate is green. | P21-A |
+| CR-8 | Done | Linked emergency-fund goal and asset links; final Expo Doctor and all required gates pass. | P21-A |
 | CR-9 | Done | Investment categories remain distinct; every earned-income source appears in budget review and month review, with non-earned inflows separated. | P19-B |
-| CR-10 | Done | Home spending by category is collapsed initially and offers Apply budget. | P20-B |
+| CR-10 | Done | Home spending by category is collapsed initially; user-owned spending-card actions remain absent. | P20-B |
 | CR-11 | Done | Bottom tabs appear only on Home, Transactions, Goals and Budget. | P20-C |
-| CR-12 | Planned | Four months of demo data linked throughout; feature changes extend demo data and tests. | P22-A |
-| CR-13 | Pending | Implementation complete; v6→v7 migration and linked-asset conversion preserve net worth; P21-A awaits green Doctor gate. | P21-A |
-| CR-14 | Pending | Implementation complete; expense/salary fallback and truncated one-decimal cover tested; P21-B awaits green Doctor gate. | P21-B |
-| CR-15 | Pending | Implementation complete; compact editor and linked-assets table tested; P21-B awaits green Doctor gate. | P21-B |
+| CR-12 | Done | Four-month deterministic demo, linked records, validation, loader Undo and route smoke tests pass; all required gates are green. | P22-A |
+| CR-13 | Done | v6→v7 migration and linked-asset conversion preserve net worth; final required gates pass. | P21-A |
+| CR-14 | Done | Expense/salary fallback and truncated one-decimal cover are tested; final required gates pass. | P21-B |
+| CR-15 | Done | Compact editor and linked-assets table are tested; final required gates pass. | P21-B |
 | CR-16 | Superseded by CR-17 | Former Budget body action row, replaced by header icons. | P19-C |
-| CR-17 | Done | Budget History/Month review/Templates header icons, ordered actions, labels, indicator and navigation. | P19-C |
-| CR-18 | Done | Compact expandable Available balance card with four metrics and optional pending/review details. | P19-C |
+| CR-17 | Superseded by CR-24 | P19-C header icons were replaced by the ordered three-dot menu. | P19-C, P20-D |
+| CR-18 | Superseded by CR-22 | The expandable four-metric card was replaced by the user's reduced always-visible balance card. | P19-C, P20-D |
 | CR-19 | Done | User-owned input components restored/current, frozen by SHA-256 guard. | P19-C |
-| CR-20 | Pending | Implementation complete; ledger/category/instrument removed and screen is visualization-only; P21 awaits green Doctor gate. | P21-A/B |
+| CR-20 | Done | Emergency fund remains a linked-goal visualization; ledger/category/instrument removed; all required gates pass. | P21-A/B |
 
 ### Resume point
 
-P19-A/B/C and P20-A/B/C passed their gates and are complete. P21-A/B implementation is present, but the parts remain Pending because Expo Doctor reports an app.json schema error; do not resume at P22-A until it is resolved and the gates rerun. The previously planned P19-B, P19-C and P19-D became P20-A, P20-B and P21-A/P21-B, respectively; P19-E became P22-B. **Assumed:** category assignment follows the five groups specified in this request, and the starter split is Survival 50%, Savings and Investments 20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income. **Assumed:** within-group template weights are Survival (Living 25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks / ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants (Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15); Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture 30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100. **Superseded by CR-20:** remove Emergency fund as a category and combine its former 35% with Other investments for 40%. **Assumed:** “no header menu on Budget” means removing the entire Budget header menu. **Assumed:** Home's existing five-item due preview cap remains unchanged. Schema stayed v6 through P20 and changed from v6 to v7 in P21-A.
+P19-A/B/C and P20-A/B/C/D passed their required gates and are complete.
+P20-E/F/G/H/I, P21-A/B/C and P22-A are Done. The optional importer has been removed
+from active scope. Phase 23 is next. CR-29's single-plan replacement and
+apply-from-next-month behavior are delivered in P20-G. The earlier
+Doctor failure was resolved by CR-26. P20-H removes Month review UI while
+keeping the Transactions Review link to Budget. The previously planned P19-B, P19-C and
+P19-D became P20-A, P20-B and P21-A/P21-B, respectively. **Assumed:**
+category assignment follows the five groups specified in
+this request, and the starter split is Survival 50%, Savings and Investments
+20%, Wants 15%, Festival 5%, and Unexpected Extras 10% of income.
+**Assumed:** within-group template weights are Survival (Living 25, Food 20,
+Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI 10, Insurance
+5); Savings and Investments (Emergency fund 35, Mutual fund / SIP 25, Stocks /
+ETF 15, Fixed deposit / RD 10, Gold / Silver 10, Other investments 5); Wants
+(Shopping 35, Other 20, Eating out 15, Entertainment 15, Fashion 15);
+Festival, Donations, Culture (Festival 30, Donation 20, Gifts 20, Culture
+30); Unexpected Extras (Unexpected 100). Each group's weights sum to 100.
+**Assumed:** CR-27 uses the native alert's default dismissal behavior, and the
+existing five-second ActionToast is the requested brief demo-undo notification.
+**Superseded by CR-20:** remove Emergency fund as a category and combine its
+former 35% with Other investments, now 40%. **Assumed:** CR-16's “no header
+menu on Budget” removed the whole menu at first; CR-17 later replaced its
+body row with three icons, and CR-24 supersedes those icons with one menu.
+**Assumed:** Home's existing five-item due preview cap remains unchanged.
+**Assumed:** P20-I uses the existing native Paid / Not paid confirmation and
+Undo behavior, and labels a goal with projection status `none` as “Not
+reachable with current contributions.”
+Schema was v7 at checkpoint `51842bb`; P20-G advanced it to v8, and P20-H/I
+made no further schema changes. The earlier “keep schema version 6” phrase
+conflicted with the persisted v7 state, so no downgrade was made.
 
 **FX-BASE root cause and audit:** the withdrawal-only screen mock lacked
 `useWindowDimensions`; the selector already returned `rates: null` for zero
@@ -193,14 +228,11 @@ only check the “Other money in” label. Round 3 restored both visible message
 and no rendered `NaN`. StatPill accepts text, so monetary call sites retain
 compact display while passing an exact accessibility label.
 
-**FX-E2 evidence:** “Use suggested mix” sets the seven React Hook Form values
-to `SUGGESTED_EF_ALLOCATION`; it does not write to the store until “Save
-allocation” calls `setEfAllocation(nextAllocation)`, which stores the explicit
-percentages. “Reset to suggested allocation” immediately calls
-`resetEfAllocation`, whose pure action writes `efAllocation: null`. These
-produce different persisted states, so both controls remain with their
-respective explanatory hints. The store test asserts reset performs exactly
-one persisted write.
+**FX-E2 evidence (superseded by P21-C):** the former explicit suggestion
+control populated the React Hook Form values and saved only through the
+“Save allocation” action; the retained reset control immediately calls
+`resetEfAllocation`, whose pure action writes `efAllocation: null`. Only the
+reset path remains. Its store test still asserts exactly one persisted write.
 
 **Part 0 baseline evidence (2026-10-13, before fix implementation):**
 
@@ -303,10 +335,11 @@ Premigration bytes are copied once and removed by erase-all.
 | v4 | Emergency-fund allocation across seven fixed buckets. | Reconstructed; later migration/audit commits verify current implementation, not all original acceptance |
 | v5 | Liability settlement snapshots, goal asset links, policies, budget templates/month snapshots, and added transaction source/category types. | P15-D commit `394d338` |
 | v6 | Custom emergency-fund buckets and holding links, with v5→v6 migration. | CH-1 commit `c831fe6`; close-out `17f4748` |
-| v7 | Emergency fund becomes a goal funded by linked assets; legacy ledger/category removed with v6→v7 migration. | P21-A implementation; gate status remains Pending below |
+| v7 | Emergency fund becomes a goal funded by linked assets; legacy ledger/category removed with v6→v7 migration. | P21-A implementation and migration tests; final gates pass |
+| v8 | A single budget plan replaces templates; month snapshots record source and linked-item inclusion, with v7→v8 migration. | P20-G migration, strict backup and current-month apply tests; P20-H/I leave schema unchanged |
 
-Current schema is `SCHEMA_VERSION = 7`. P21-A is the explicit v6→v7 migration;
-P21-B does not change the schema.
+Current schema is `SCHEMA_VERSION = 8`. P21-A is the explicit v6→v7 migration;
+P20-G advances to v8, and subsequent phases leave it unchanged.
 
 ### Financial and UI rules
 
@@ -360,8 +393,428 @@ P21-B does not change the schema.
 - Theme IDs are `system`, `light`, `dark`, `sky`, `mint`, `blush`, and
   `midnight`. Tabs are Home, Transactions, Goals, Budget.
 - DEC-DEMO: every part that adds or changes a feature also extends demo data
-  and adds tests. Until Phase 22's four-month dataset, extend current mock data
-  minimally; do not change unrelated existing test expectations.
+  and adds tests. P22-A adds `buildDemoData(today)` in `src/mock/demoData.ts`:
+  deterministic IDs and amounts, explicit injected date, and four complete
+  months ending with the current month. Keep `src/mock/data.ts` and its
+  established fixtures stable. The data covers all current budget/investment
+  categories, linked instrument/payment transactions, an overdue SIP, upcoming
+  EMI, future-month due, later installment and planned-budget rows, a
+  recorded shortfall funding and surplus allocations, goals, linked emergency
+  assets, allocation, policies and stored month budgets. P20-G extends the
+  current snapshot from one repeatable plan with all five groups, a Bills due
+  day, `linkedIncluded: true`, and linked rows from recurring holdings,
+  liabilities and policies; no templates are present. It also includes a
+  one-time borrowed-money liability and partial payment. Load demo data only
+  from the confirmed development-menu action through `replaceAllData`,
+  preserving its existing backup/Undo path; never load it automatically. The
+  P20-H current-month snapshot deliberately has a fully paid Festival row, an
+  overdue Bills row, a partially paid Food row and a linked SIP row so the
+  grouped Budget screen demonstrates Paid, Overdue, partial and Auto states.
+  The strict backup/import entry
+  schema accepts `snapshotAdjustment`, matching the app schema so valid
+  manual-holding entries can be replaced and restored without losing metadata.
+- DEC-BUDGET-PLAN: the target budget design has one budget plan replacing
+  templates. Its own lines may have a due day; when present, a line due row is
+  dated on that day clamped to the month's final day. Without a due day, the
+  existing undated planned-row behavior remains. The plan may repeat monthly
+  from next month, and auto-apply creates only the current month. EMI,
+  Insurance and recurring investments are linked automatically from their
+  schedules; they are computed, never stored on the plan, and never emitted as
+  extra due rows. Month views may include linked rows in planned category and
+  group totals, while actuals remain transaction-derived. Budget actuals use
+  expense transactions for expense categories and investment transactions for
+  investment categories (with non-investment investment transactions grouped
+  as Other investments); linked EMI, Insurance and plan schedule amounts affect
+  planned totals, not actuals. `pendingItems` creates plan and liability due
+  rows from schedules, suppresses duplicate EMI/Insurance/instrument budget
+  rows, and creates a budget due row only for an otherwise-unrepresented
+  category.
+  Assumed: a one-time liability with no due date is omitted from linked
+  calendar rows, matching existing `monthlyCommitments` and `pendingItems`
+  behavior; the schedule's internal start-date fallback is not treated as a
+  user-scheduled due.
+  Assumed: `budgetMonthView` evaluates linked schedule statuses as of the
+  month's final day, matching the existing `monthlyCommitments` projection;
+  direct callers of `linkedRecurringForMonth` provide their own `asOf`.
+  Assumed: absent or false `linkedIncluded` keeps all derived budget-view
+  values unchanged and keeps all existing snapshots valid; the `budget` field
+  continues to echo its stored input. Additive linked-total behavior is opt-in.
+- DEC-P20G: schema v8 replaces all budget-template state with one nullable
+  `budgetPlan`; applied month snapshots use `source: 'plan'`, hand-edited
+  month snapshots use `source: 'custom'`, and v7 snapshots retain their lines
+  while migrating to `source: 'custom'` with `linkedIncluded: false`. Migration
+  selects the default template, otherwise the most-used template (ties by
+  latest snapshot month, then original list order), otherwise the first
+  template; EMI and Insurance lines are removed from the selected plan and
+  the remaining templates are dropped. Migrated plans do not repeat.
+  Assumed: template list order is the stable final tie-breaker where usage and
+  latest month are equal. Repetition begins next month; hydration may apply
+  only the current month when its repeat start has arrived and no snapshot
+  exists, never backfills past months, and is idempotent. Applying a plan
+  changes only that month's snapshot and never edits recorded transactions.
+  The setup screen's Apply Undo restores both the previous plan and previous
+  month snapshot with one data action; Budget-tab Apply Undo restores only the
+  month snapshot it replaced. `applyBudgetPlanToMonth` keeps the required
+  injected `newId` option for action consistency, although month snapshots
+  have no ID field to consume it. CR-30 supersedes CR-24: the Budget header has
+  no menu and month navigation remains. CR-34 later removes the Budget Review
+  control. Home applies an existing plan for the selected current month or
+  opens setup when none exists.
+- DEC-BUDGET-SCREEN: before P20-H, Budget showed a header/month switcher; a
+  cash-flow card with opening, flow and closing; a plan/no-budget summary
+  (planned income, spending, savings, left to allocate, edit/setup/apply and
+  month adjustment); an earned-income/source and other-money-in breakdown;
+  Bills and dues count/list/actions; reminders; a sort control; five group
+  cards with planned/actual subtotals, progress bars, category links and Auto
+  rows; separate Debt repayments and Insurance cards; and outstanding at
+  month-end. Month review showed opening, earned income/source details, other
+  money in, withdrawals, borrowed/loan proceeds/own funds, expenses,
+  investments, closing, shortfall/surplus and remaining amount. Its actions
+  were Record funding, Save allocations, Keep as cash, Add allocation, Remove
+  an allocation, and How was it funded? with Borrowed, Loan proceeds,
+  Savings or investments, Own funds, Invest and Repay a liability choices;
+  choice-specific inputs included amount, target, lender and note. No
+  persisted reviewed/dismissed flag existed: eligible months were derived
+  from transactions and committed allocations were transactions.
+  P20-H final screen has the existing header, one Edit budget action and
+  month switcher; a Cash flow card with only Opening balance and Closing
+  balance; a same-style plan summary with the existing plan figures and actual
+  income where available; then one card per group in the order Survival
+  (Needs), Savings and Investments, Wants, Festival/Donations/Culture,
+  Unexpected Extras, Debt repayments, Insurance. Each row appears once in
+  its group with name, optional due date, actual/planned amounts, text status,
+  and action; linked rows retain Auto. Paid rows remain visible without an
+  action. No progress bars, nested cards, separate Bills and dues section,
+  source-breakdown card, reminders, sort control, outstanding card, or Review
+  control is absent. The amount figures appear only in cash flow, the plan
+  summary, the relevant group header and its rows; no duplicated due block or
+  repeated linked row remains. Transactions' user-kept Review {Mon} action
+  opens Budget for the eligible month. Decisions: KEEP opening/closing once in
+  Cash flow, planned income/spending/saving/left-to-allocate and actual income
+  once in Plan summary, and month switching. MERGE linked schedules and budget
+  rows into their category groups; each group has one card, each obligation
+  one row, and paid status remains visible. REMOVE the separate Bills and dues
+  block, progress bars, nested group cards, the earned-income/source card,
+  reminders, sorting, month-end outstanding card, and Budget Review action.
+  The Review-reference audit found: `app/month-review.tsx` was the removed
+  screen; its route-kind registration is removed; `app/(tabs)/budget.tsx` no
+  longer has a Review action; `app/(tabs)/transactions.tsx` retains the one
+  “Review {Mon}” action and routes it to Budget with the month; no Month review
+  entry remains in `src/lib/appMenu.ts` or the rendered menu. The corresponding
+  references in `src/lib/routeKinds.ts` are removed; tests in
+  `src/components/__tests__/RouteRenderSmoke.test.tsx`,
+  `src/components/__tests__/TransactionsScreen.test.tsx`,
+  `src/components/__tests__/useAppMenu.test.tsx`, and
+  `src/lib/__tests__/routeKinds.test.ts` now test removal or the retained
+  Budget navigation. `src/domain/cashFlow.ts` and its tests retain
+  `reviewableMonths`, used to choose the Transactions link's eligible month.
+  `src/lib/sorting.ts` still contains its `monthReview` sort metadata, left
+  unchanged as protected legacy metadata for P27-A. The demo test's old
+  “Month-review-funded” title was renamed to avoid implying the removed screen.
+  Generic confirmation cancel labels in `app/clear-dues.tsx`,
+  `app/investment-form.tsx` and `app/liability-form.tsx` changed from “Review”
+  to “Cancel”; their negative/cancel outcomes and form data remain unchanged.
+  Other `Preview`/`preview` strings in security settings, import/form previews,
+  and `duesThroughPreview` refer to distinct behavior and remain unchanged.
+- DEC-P20H-retired: P20-H removed the Month review screen/action surface.
+  Retired
+  controls are the empty-state Back and screen close/back navigation, Record
+  funding, Save allocations, Keep as cash, Add allocation, Remove,
+  How was it funded?, and the source choices Borrowed, Loan proceeds, Savings
+  or investments, Own funds, Invest and Repay a liability. Pure
+  `reviewableMonths`, `shortfallForMonth`, `surplusForMonth`, `fundShortfall`,
+  and `allocateSurplus`, their allocation types/schema, store actions and
+  persisted transaction records remain unchanged as P27-A cleanup candidates.
+  `reviewableMonths` is not dead code because Transactions still uses it to
+  determine the month in its retained link; only shortfall/surplus allocation
+  UI and store-action call sites are no longer reachable from a screen.
+  There was no separate persisted review flag or review data to delete.
+  CR-34 removes the old Month review route and Budget's Review control, plus
+  the review menu action if present; Transactions' “Review {Mon}” is retained
+  and routes to Budget. Home had no Month review navigation reference.
+  Assumed: linked schedule row actuals use the schedule payment amount, while
+  manual budget actuals stay derived from transactions in the selected month;
+  current-month schedule rows are the usual payment-action path. Assumed:
+  rows sort by due date then name, undated last; due-date and 1.3/2.0 text
+  wrapping tests model styles and accessibility props, not native pixel   layout.
+- DEC-P21C-CR37-38: normal Emergency fund mode no longer renders linked holding
+  names/chips; each active allocation row places its text status beside a
+  flexible `flex: 1, minWidth: 0` progress-bar wrapper, stacking the status
+  right-aligned at font scale >=1.3. Emergency fund explicitly opts out of
+  AppHeader's global menu. Other menu-enabled screens are `app/assets.tsx`,
+  `app/security.tsx`, `app/investment-entries.tsx`,
+  `app/liability-payments.tsx`, `app/liabilities.tsx`,
+  `app/link-missing.tsx`, `app/(tabs)/goals.tsx`, `app/(tabs)/index.tsx`,
+  `app/(tabs)/transactions.tsx`, `app/theme.tsx`, and `app/backup.tsx`;
+  none were changed for this request. The allocation editor adds predefined
+  items from its header plus action, offers Custom, and confirms removal of
+  fixed or custom items with the exact requested copy. Removal changes only
+  the draft grouping/allocation; `saveEfPlan` persists the single plan in one
+  store write and leaves emergency-goal asset shares intact. The old direct
+  `deleteEfCustomBucket` domain/store path was removed rather than retained as
+  a second deletion behavior. Old zero-percent fixed items without links are
+  treated as deleted when opening the editor.
+  Assumed: the current seven-bucket domain has a combined `FD / RD` item, not
+  separate FD and RD items; to avoid a schema/type change, the existing
+  suggested 10/40/35/15 mix remains Cash, Bank account, FD / RD, and Mutual
+  funds / Bonds. The demo uses only those four defaults and no custom item.
+  Superseded P21-C assertions: the old EmergencyGoalScreens expectation that
+  “Savings account” linked-asset text/chips render in normal mode is replaced
+  by a no-linked-name assertion and progress/status style contracts (CR-37).
+  The old compact custom-only deletion tests that required moving a positive
+  allocation, tested move targets, and expected an empty custom link-map entry
+  are replaced by exact confirmation, 100%-total validation and a pure
+  save-plan test proving fixed/custom grouping removal preserves goal links
+  (CR-38). In `EfAllocationForm.test.tsx`, the old explicit suggestion
+  button/helper/action-save assertions and the expand-all assertion are
+  replaced by absence checks, four default-value checks, header add-choice/
+  custom flow, deletion confirmation and live-total checks; reset-to-default
+  remains.
+  The form-level “Market-linked” switch remains and now has its requested
+  helper. `FormScreen`'s existing optional header action gained optional icon
+  and variant props; its legacy trash/destructive defaults remain tested.
+  The edit-ownership scanner's former blanket rule that only the shared row
+  components may contain `edit-2` is replaced by an exact allowance/assertion
+  for Budget's required header-only “Edit budget” action (CR-33); the user's
+  `app/(tabs)/budget.tsx` source was not changed.
+  The repeated `3c644d3` audit and unchanged title are recorded in
+  DEC-USER-CHANGES. No schema change; the schema remains v8.
+  P21-C font-scale and screen-reader tests are simulated: real OS scaling,
+  rendered clipping, touch behavior, modal confirmation presentation and
+  VoiceOver/TalkBack announcements remain unverified on a physical device.
+- DEC-P20I-CR35-36: Home due rows are non-interactive containers showing only
+  title, amount, date and a compact check button; only the button opens the
+  existing native Paid / Not paid confirmation. Oldest dues clear directly,
+  later dues use the existing clear-through preview/action, and both preserve
+  the existing Undo toast and atomic store actions. Home due rows stack their
+  title/date over amount/button at font scale 1.3 and above. Each Home and
+  Goals card, including Emergency fund, puts one text projection status next
+  to a flexing progress bar; at 1.3 and above it appears right-aligned below
+  the bar. `none` is rendered as “Not reachable with current contributions”;
+  projected completion dates remain below the bar when available. Demo data
+  already supplies an unpaid later due in Home's five-row preview and now
+  asserts that clear-through coverage explicitly.
+- DEC-USER-CHANGES: preserve all changes from commits `0e965d4`, `e57fd0f`
+  and `6cb4fa0` (authored by Sahil Sheikh without a Copilot co-author
+  trailer). File
+  intent: `app/(tabs)/index.tsx` reorders the Home pills (Liabilities before
+  Emergency fund), shows only EF cover in the pill, removes the spending-card
+  action buttons, and cleans imports; `app/(tabs)/transactions.tsx` removes
+  the expandable balance metrics/captions and the review-dismiss control,
+  retains the current balance, optional brought-forward chip, divider and
+  review link, and renames the section to “Due payments” with the user's total
+  wording; `app/emergency-fund.tsx` removes the linked-assets card and changes
+  allocation “Actual” to “Available amount”; `src/components/CardHeaderRow.tsx`
+  makes the value prop optional; the follow-up `e57fd0f` only refines the
+  “Due payments” count/total wording in `app/(tabs)/transactions.tsx`.
+  Commit `6cb4fa0` changes `app/(tabs)/budget.tsx` by removing the review-dot
+  prop from the Budget menu and reordering imports; `app/(tabs)/transactions.tsx`
+  changes the Shortfall label and moves the displayed position amount into the
+  brought-forward chip while removing its prior balance amount rendering; and
+  `app/month-review.tsx` removes the “Back to transactions” button and
+  reorders imports. These edits are user-owned; keep the removed button and
+  other removed elements absent.
+  Repeated audit of `3c644d3` before P21-C: its Budget diff removes the menu
+  prop and does not restore “Back to Transactions”; it does not change
+  `app/ef-allocation-form.tsx`. The current form title remains exactly
+  “Edit allocation” (from user commit `64ffb5d`). These removals and title are
+  preserved. At final audit, the current Budget worktree diff also contains
+  import ordering and the pencil icon changing from `edit` to `edit-2`; this
+  was left intact, and P21-C made no Budget screen code changes.
+  Related stale assertions are replaced as follows: the Transactions test's
+  old expectation of an accessible red `-₹1,000` amount becomes an assertion
+  that this amount is absent while the Shortfall text remains; reason:
+  `6cb4fa0` removed the main balance amount. The Budget route test's old
+  expectation of a visible review dot becomes an assertion that no indicator
+  prop or dot renders; reason: the user's commit removed that indicator.
+  Transaction balance card final user-kept elements: balance label and amount
+  (including “Shortfall” and danger tone when negative), optional “From {Mon}
+  ₹X” chip, divider, and review link when available. There are no retained
+  metric columns or captions.
+- The requested checkpoint audit from `51842bb` through the P20-D start found
+  these user-authored commits without a Copilot co-author trailer: `0e965d4`
+  changed `app/(tabs)/index.tsx` (Home pill order/content and removed spending
+  actions), `app/(tabs)/transactions.tsx` (removed balance details/review
+  dismissal and restored the user's Due payments wording),
+  `app/emergency-fund.tsx` (removed linked-assets card and renamed the
+  allocation value), and `src/components/CardHeaderRow.tsx` (made the value
+  optional); `e57fd0f` changed only `app/(tabs)/transactions.tsx` (refined
+  Due payments count/total text). Checkpoint `51842bb` changed only this
+  ledger with prior P22-A delivery/gate evidence and has a Copilot co-author
+  trailer; it contains no user-owned application changes.
+- The P20-E start audit found one additional commit without a Copilot
+  co-author trailer: `6cb4fa0`, changing the three files and UI described
+  above. No checkpoint commit was needed because the worktree was clean.
+- Post-baseline audit (`5bd3c41..HEAD`): `6cb4fa0` has no Copilot
+  co-author trailer; the other commits in range have one. Changed-file record:
+  `6cb4fa0` — `app/(tabs)/budget.tsx`: preserves the user-edited Budget menu
+  review indicator and import ordering.
+  `6cb4fa0` — `app/(tabs)/transactions.tsx`: preserves the user's Shortfall
+  label and brought-forward balance placement.
+  `6cb4fa0` — `app/month-review.tsx`: preserves removal of the Back to
+  Transactions button and import ordering.
+- Before P20-H, explicitly inspected `git show 3c644d3 -- 'app/(tabs)/budget.tsx' app/ef-allocation-form.tsx`.
+  At that commit the Budget header had no default menu, the old menu was
+  removed, and no Back to Transactions control or removed balance section was
+  introduced. `app/ef-allocation-form.tsx` was not changed by `3c644d3` and
+  still had title `Emergency fund allocation` there; therefore the exact
+  `Edit allocation` title did not survive in that commit. The later user-owned
+  commit `64ffb5d` changes that title to `Edit allocation` and changes only
+  import ordering plus the Budget cash-flow labels/layout and plan-summary
+  grid. Preserve the current title, the no-menu/no-Back-to-Transactions
+  Budget state, and the user's other removals; P20-H's requested layout is
+  applied without restoring those removed controls. P20-I's pre-work audit
+  reconfirmed the exact `3c644d3` diff: `app/(tabs)/budget.tsx` had no menu or
+  Back to Transactions control, and `app/ef-allocation-form.tsx` was not
+  changed there; the later `64ffb5d` still supplies the current `Edit
+  allocation` title. Neither user edit was altered in P20-I.
+- DEC-TRACKER-CLEANUP: spreadsheet import is removed from active planning.
+  The old dashboard, prompt-log and part-list assertions for P22-B are replaced
+  with assertions that it is absent; reason: the importer was withdrawn from
+  scope. The old `P15-SEED` legacy-ID mapping assertion is removed and the
+  new legacy list no longer expects that row; reason: it represented only the
+  withdrawn importer part. The old phase totals (Phase 20 4/4 and Phase 22 1/2)
+  are replaced with seven Phase 20 parts and one Phase 22 part; reason: P20-E,
+  P20-F and P20-G now belong to Phase 20 and P22-A is the only Phase 22 item.
+- DEC-P20E-CR28: `normalizeMoney` in `src/domain/cashFlow.ts` rounds finite
+  amounts to paise and returns positive zero whenever the rounded value is
+  zero. Monthly closing positions are normalized at calculation time, then
+  Budget normalizes its displayed closing amount before both AmountText and
+  tone selection. Negative uses `err`, positive uses `primary`, and zero uses
+  `neutral`; AmountText's existing `formatINR` accessibility label receives
+  the normalized amount. Other screens are not altered by the tone change.
+- DEC-P20E-CR27: the Home due interaction is now a native confirmation with
+  `Paid` and `Not paid`; the Paid action uses the existing single-due clear or
+  FIFO clear-through store action, each with the existing one-step Undo toast.
+  Not paid and native dismissal leave data unchanged. The old CR-21 sheet tests
+  asserting bottom anchoring, safe-area padding, 60% max height, scrollability,
+  backdrop dismissal, and Pay/Clear due/View schedule/Close sheet actions are
+  superseded by assertions for the exact alert copy and button labels,
+  no-op cancellation, oldest/later clear actions and Undo. Reason: CR-27
+  explicitly replaces the sheet with the platform's standard confirmation.
+- DEC-P20E-CR31: successful demo loading now remains on the current route and
+  opens the native `Demo data loaded` alert with `Undo` and `OK`. Undo calls
+  the store's existing `undoImport` path and shows the existing five-second
+  action-toast treatment with `Demo data removed`; failures are shown
+  explicitly. Repository search found no prior test asserting navigation from
+  the demo loader to Backup; the superseded behavior is the old
+  `router.push('/backup')` success path, now covered by an explicit no-navigation
+  assertion and exact popup/Undo tests.
+- DEC-P20E-STATUS: the pre-closeout test temporarily distinguished implemented
+  but ungated P20-E and CR-27/28/31 as Pending. After every final gate passed,
+  those assertions were replaced with Done, and progress moved from 43/52 to
+  44/52 and Phase 20 from 4/7 to 5/7. At that P20-E close-out, P20-F/G and
+  CR-29/30 were Planned.
+  CR-21 is asserted as `Superseded by CR-27`. This replaces the old assertion
+  that all P20-E/G and CR-27/31 work remained Planned, matching the closed
+  implementation and its green gates.
+- DEC-P20F-STATUS: while P20-F was active, the ledger test's old assertion
+  that P20-F and CR-29 remain Planned was replaced with exact In progress
+  assertions; P20-G and CR-30 stayed Planned and the progress numerator stayed
+  44/52 (5/7 for Phase 20). After all P20-F gates passed, P20-F became Done
+  and its dashboard assertion was updated to Done; progress moved to 45/52
+  (6/7). CR-29 remains In progress because P20-F delivers only its budget
+  groundwork: the single-plan replacement and apply-from-next-month behavior
+  are not implemented in this phase.
+- Full-suite assertion corrections preserving user commit `6cb4fa0`: the old
+  Transactions balance test expected both `₹830` and the removed separate
+  `₹600` brought-forward amount; it now asserts only the kept `₹830` amount.
+  The old shortfall test expected the hidden `-₹130` amount when no
+  brought-forward balance existed; its fixture now includes prior-month
+  `₹100`, expects the rendered `-₹30` closing value, and still verifies
+  Shortfall plus danger tone. The old Budget-header source test expected
+  `menuIndicator={Boolean(reviewableMonth)}`; it now asserts that prop remains
+  absent, preserving the user's deliberate removal. Home theme test fixtures
+  now expose `useAppActions` after Home began using the existing store action
+  hook; no visible Home actions were restored. The old check for a `From Sep`
+  caption is replaced with an assertion that it stays absent, because the
+  user-owned balance section no longer renders that prior-month caption.
+- Hash audit of P19-C through P22-A and CR-21–CR-26 rows: every abbreviated
+  object resolves with `git cat-file -t`. Replaced the ambiguous “this commit”
+  labels with verified hashes: P19-C `d3477f2`, P20-C `4d3f117`, P21-B
+  `6dd663f`; P20-D close-out is `5bd3c41`. `1c596e0` is the Home due-sheet
+  implementation (also relevant to CR-21), while `1f2d9c8` is P22-A demo
+  delivery, not a close-out commit.
+- DEC-EXPO-ICON: top-level `expo.icon` and `ios.icon` both pointed to
+  `./assets/images/icon.png`; `ios.icon` was changed from `./assets/expo.icon`
+  to that duplicate path by user-authored commit `beb9711` on 2026-10-10.
+  Since both values were identical, P20-D removes only the redundant iOS
+  override; the shared top-level icon remains.
+- **Assumed:** user-owned Home changes in `0e965d4` remove the “Open budget”
+  and “Apply budget” actions from the spending card. The old route-smoke
+  assertions expecting “Apply budget” with no stored budget and its absence
+  with a stored budget are replaced with assertions that both buttons remain
+  absent in either case; reason: preserve the user's intentional removal.
+- CR-21 root cause: the old 90% `maxHeight` was attached to the ScrollView's
+  `contentContainerStyle`, so it did not constrain the scroll viewport; the
+  sheet also had only generic backdrop padding and no safe-area-aware bottom
+  inset. The height limit now belongs to the ScrollView style, and the sheet
+  is bottom-anchored with the inset applied to its container.
+- DEC-P20D-CR22: the Transactions balance card is always visible and retains
+  only the user-kept balance label/amount (including Shortfall and danger
+  tone), optional brought-forward chip, divider, and review link. Replaced
+  assertions for the expand/collapse control, expanded four-metric grid,
+  captions, “Pending” due caption and review-dismiss action with always-visible
+  kept-content/no-toggle/no-caption assertions; kept label switching, Shortfall
+  and no-NaN assertions. The old `renders a compact collapsed summary and
+  balanced expanded details with review actions` test is now
+  `always shows only the user-kept balance elements and keeps the review
+  action`; the old `shows Pending only when recurring items have unpaid dues`
+  assertion is now that no recurring-due caption appears in the balance card.
+- DEC-P20D-CR23: `clearDuesThrough` preflights the selected scheduled slot and
+  unpaid slots through it, refuses empty/stale selections and ranges over 400,
+  then applies all oldest-first payments as one pure result. The store commits
+  that result with one persisted write; batch Undo restores all entries and
+  linked transactions with one write. Later plan/liability rows show only
+  Clear due and require confirmation; budget rows record a plain transaction.
+  FIFO matching pays installments oldest-first, so clearing a later slot alone
+  would require per-payment installment tracking, a stored-data change outside
+  this task. Tests cover one/three/future/mixed/401 dues, plan and liability
+  payments, one-time settlement, linked transaction integrity, budget actuals,
+  and one-write/deep-equal Undo behavior.
+- DEC-P20D-CR24: Budget now has one AppHeader ellipsis menu with Budget history,
+  Month review, Budget templates, then the standard Home menu entries. When a
+  month is reviewable the Month review label adds “review pending” and the
+  ellipsis shows a dot. CR-17's three independent header icons are superseded;
+  their old icon/order/44pt/indicator assertions are replaced by one menu
+  button, ordered accessible menu labels, navigation callbacks and review-dot
+  presence/absence checks. AppHeader's former three-action support is removed;
+  it now renders at most two right-side actions, which leaves all current
+  non-Budget headers unchanged. **Assumed:** standard app-menu items remain
+  below the three Budget-specific menu items.
+- DEC-P20D-CR25: Bills and dues uses one section heading with count/total and
+  one shared Card of `PendingItemRow` rows, divided by hairlines and paired
+  with the same action component used in Home and Transactions. At font scale
+  1.3 and above, the row details stack title/date above amount/status. The
+  no-budget state is one Card with the requested helper text, full-width
+  primary Apply template action and secondary Set up budget wizard link.
+  Layout tests assert the single-card structure, divider/alignment/stacking,
+  actions, destinations and empty states. The four-month demo tests additionally
+  verify an overdue SIP, upcoming EMI, future-month liability due, a later
+  non-oldest installment and applied planned-budget rows.
+- Gate-repair assertion audit: updated stale pre-existing tests to match the
+  preserved user UI rather than restoring removed controls. In
+  `HomeThemeSmoke.test.tsx`, the old “opens the Budget tab from the Home budget
+  card”/`Open budget` expectation is replaced by asserting both “Open budget”
+  and “Apply budget” are absent; reason: those Home spending-card actions were
+  deliberately removed in `0e965d4`. Its old “Spending by category” section
+  heading expectation is replaced with the rendered “Hide spending by
+  category” control after expansion; category and amount assertions remain.
+  In `EmergencyGoalScreens.test.tsx`, the old pill order
+  Assets/Emergency fund/Liabilities becomes Assets/Liabilities/Emergency fund,
+  matching `0e965d4`; the old “Manage links” presence check becomes absence
+  because the linked-assets card was intentionally removed, while the empty
+  allocation state still verifies “Link assets.” In `AppHeaderUsage.test.ts`,
+  Budget is removed from the global-menu opt-out list; its explicit menu
+  prepends Budget entries and includes the Home entries under CR-24. Added
+  safe-area hook mocks in the Home/Emergency screen suites for the CR-21 sheet
+  import; no runtime behavior changed.
+- Coverage-driven CR-23 follow-up: the first full run exposed `dues.ts` below
+  its 90% per-file branch floor (85.98%). Removed the unreachable empty-range
+  guard after exact-slot validation and added coverage for invalid preview
+  dates, undated one-time liabilities, policy targets and missing targets.
+  `dues.ts` then measured 95.49% lines and 91.61% branches in the focused
+  Istanbul report; the final full-suite run remains the actual gate.
 - **Assumed:** fixed weights inside the five budget groups are Survival (Living
   25, Food 20, Transport 10, Family 10, Health 5, Bills 10, Education 5, EMI
   10, Insurance 5); Savings and Investments (Emergency fund 35, Mutual fund /
@@ -404,8 +857,10 @@ P21-B does not change the schema.
 | Phase 1 static-only/no-persistence boundary | Later phases added persistence, domain actions, forms, and routes. |
 | Five tabs including Invest and More | FX-B2 established Home, Transactions, Goals, Budget. |
 | P11-era three-tab navigation (exact provenance approximate) | FX-B2's four-tab Home, Transactions, Goals, Budget rule. |
+| CR-17: Budget's three independent header icons | CR-24's single three-dot menu with ordered Budget and standard app items. |
+| CR-18: expandable balance card with four metrics and captions | CR-22's always-visible user-kept balance elements, with no toggle, metric grid or captions. |
 | Loans as the feature/entity name | Schema v2 and later UI renamed the feature to Liabilities. |
-| Schema v1, then v2, v3, v4, v5, or v6 as current | Successive migrations; current schema is v7. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
+| Schema v1, then v2, v3, v4, v5, v6, or v7 as current | Successive migrations; current schema is v8. Phase 4's no-new-fields rule was amended by Phase 5's `ManualHolding.valueAsOf`, then later schemas. |
 | Saving every prompt in the repository prompt archive | P15-LEDGER: the user keeps prompt text; this file records ID, purpose, outcome, source quality, and Git evidence only. |
 | Global-menu placement for Link missing transactions, Budget history, and Month review | CH-3 and CH-2 placed those actions on their relevant screens; routes remain. |
 | Standalone Record money movement UI/route | CH-4 removed the UI/route; the shared pure logic remains only where still used by liability receipt flows. |
@@ -527,23 +982,29 @@ expanded scope verified here. Next planned work is P20-A.
 
 ### Phase 20 — Pending items, Home and navigation
 
-Complete: P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10],
-and P20-C [CR-11].
+P20-A [former P19-B; CR-6], P20-B [former P19-C; CR-7, CR-10], P20-C
+[CR-11] and P20-D [CR-21–CR-26] are complete; the final required gates pass.
+P20-E [CR-27, CR-28, CR-31] is complete after the final sequential gates;
+P20-F budget groundwork and P20-G single-plan replacement (CR-29) are complete
+after final gates. P20-G also supersedes CR-24 with CR-30's explicit no-menu
+design. P20-H closes CR-32–CR-34; Budget group cards show paid, overdue,
+partial and linked rows. Phase 20 is 9/9 complete and Phase 23 is next.
 
-### Phase 21 — Emergency fund as a goal-linked model
+### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
-Implementation delivered: P21-A [former P19-D, split; CR-8, CR-13] and P21-B
-[CR-14, CR-15, CR-20]. Schema version advanced from v6 to v7 in P21-A; P21-B
-did not change the schema. Feature tests, typecheck, lint and both exports
-pass, but the phase remains Pending because Expo Doctor reports an app.json
-schema error. Migration, linked asset integrity, backup import, salary fallback,
-allocation UI, Home/Goals summaries and device-only limitations are recorded
-below.
+Implementation delivered: P21-A [former P19-D, split; CR-8, CR-13], P21-B
+[CR-14, CR-15, CR-20] and P21-C [CR-37, CR-38]. Schema version advanced from
+v6 to v7 in P21-A; P21-B and P21-C did not change the schema. Feature tests,
+typecheck, lint and both exports pass. CR-26 repaired the initial Expo Doctor
+config issue; the final 21/21 Doctor gate and all other required gates pass.
+Migration, linked asset integrity, backup import, cover, allocation editing
+and device-only limitations are recorded below.
 
-### Phase 22 — Demo data and seed importer
+### Phase 22 — Demo data
 
-Planned: P22-A (four months of linked demo data; CR-12) and P22-B (optional
-spreadsheet importer, formerly P19-E / P15-SEED).
+P22-A (CR-12) implementation and acceptance tests are complete, and its final
+required gates are green. Spreadsheet import is out of scope and is not
+tracked as a Phase 22 part.
 
 ### Phase 23 — Insurance
 
@@ -713,19 +1174,25 @@ evidence present in exports/checkpoints.
 | P18-R4 | Phase 18 | P15-FIX-R4 | 2 | 2026-10-14 | FX-S1/S2, FX-T5, FX-I1, CH-3/2/4, FX-L1/L2, then CH-1. | Done; gates reported green twice; real-device behavior unverified. | `0df1952`, `8364053`, `03c67aa`, `172b24e`, `cac7cc0`, `e8b1d26`, `1321e29`, `ef7c5b0`, `2bc35f0`, `c831fe6`, `17f4748` | Fixed missing v6 fixture defaults, label-scan wording and unimported test error class without weakening assertions. Export date conflict resolved in favor of Git. | verbatim in git at `5aeefb9` |
 | P18-R5 | Phase 18 | P15-FIX-R5 | 2 | 2026-10-15 | Unify bottom navigation; align Budget History/Month review actions; improve Cash flow and editable plan summary while preserving Sort UI. | Delivered in `9859d73`; R6 verified the full gates and corrected superseded layout expectations. Real-device checks remain outstanding. | `9859d73`; verification close-out in R6 | No SortChip appearance, options, logic, or placement changes. Visible/accessibility label is Transactions. | verbatim prior request |
 | P18-R6 | Phase 18 | P15-FIX-R6 | 2 | 2026-10-15 | Close out R5: green baseline, SortChip/header history audit, Expo SDK patch alignment and complete gates. | Baseline 64 suites/659 tests, current 65 suites/669 tests, source coverage above floors, Doctor 21/21, both exports, TypeScript and lint pass; device checks remain unverified. | `798e8ef`, `367361c` | Updated superseded layout assertions; SortChip and sorting logic untouched. No WIP commit because the tree was clean. | verbatim current request |
-| P22-B | Phase 22 | P15-SEED | 2 | unknown | Optional user spreadsheet/seed backup importer (formerly P19-E). | Planned; no prompt, implementation or matching commit found. | none identified | Scope/outcome unknown. | unknown |
 | P18-LEDGER | Phase 18 | P15-LEDGER | 2 | 2026-10-14 | Merge exports/checkpoints, verify forms, remove prompt archive and close CR-2. | Earlier ledger task had already removed archive; form audit opened CR-3. | `d11af45`, `b92e145`, `2e5d594` | No application code changed in the ledger close-out. | verbatim in current request |
 | P18-R0 | Phase 18 | P15-fix-0 | 2 | 2026-10-13 | Initial fix-round ledger/baseline. | Done. | `db967bf` | Progress-ledger test passed. | reconstructed |
 | P18-R7 | Phase 18 | — | 2 | 2026-10-15 | Restore Transactions label, restructure phase tree/progress bars, record confirmation and CR-4–CR-8, and label old commits locally. | Focused tests and all required gates pass; device checks remain outstanding. | `e7d8173`, `0304acd`; this ledger commit | No history rewrite or push. | verbatim current request |
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
-| P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | this commit | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
+| P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | `d3477f2` | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
 | P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
-| P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | this commit | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
-| P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
-| P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Implementation and feature tests complete; Pending until Expo Doctor is green. | this commit | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
-| P22-A | Phase 22 | — | — | planned | Four months of demo data linked throughout and DEC-DEMO (CR-12). | Planned; no implementation claimed. | none | New roadmap item. | planned |
+| P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
+| P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
+| P20-E | Phase 20 | — | — | 2026-10-17 | Budget balance normalization, Home due confirmation and demo-loaded popup (CR-27, CR-28, CR-31). | Done; focused suites and 70 suites / 772 tests pass; TypeScript, lint, Doctor 21/21, Android and iOS exports all exit 0. | `033d493` (CR-28), `501dce7` (CR-27), `fe5fa1e` (CR-31), tracker/test updates `973241e`, `b0cb6ee` | Assumed: Paid / Not paid use the existing confirm helper's labels; default native-alert dismissal is not paid; the existing five-second ActionToast is the brief Undo notice. | current request |
+| P20-F | Phase 20 | — | — | 2026-10-17 | Budget groundwork: due days, linked recurring schedule projection, opt-in month-view totals and demo data (CR-29 part 1). | Done; five focused suites / 84 tests, full 70 suites / 777 tests; all six final gates exit 0. | `5d81b65` (F1 design), `e36d153` (F2 due day), `d736b11` (F3 schedules), `f41d6d4` (F4 month view), `b8fff43` (F5 demo), `18fc19d` (ledger regression) | Assumed: dueDay is preserved but not user-editable in existing budget forms; editor UX is outside P20-F. Assumed: one-time liabilities without dueDate do not become linked rows. CR-29's single-plan replacement/apply behavior remains for later work. | current request |
+| P20-G | Phase 20 | — | — | 2026-10-17 | Schema-v8 single budget plan, template migration, repeat/apply store actions, setup screen, Budget/Home routing and CR-30 no-menu behavior. | Done; 70 suites / 763 tests and all six final gates pass. | `3c644d3` | See DEC-P20G; real-device UI checks remain unverified. | current request |
+| P20-H | Phase 20 | — | — | 2026-10-17 | Budget cash flow and plan summary, one card per spending group with paid rows and compact actions; Month review UI/route removed and Transactions Review routes to Budget with its month (CR-32–CR-34). | Done; 70 suites / 765 tests pass; all six final gates pass; see P20-H close-out below. | `00d0ec0` inventory/design; `799a12c` implementation | Assumed: manual budget actuals remain selected-month transaction totals; linked schedule row actuals use schedule payment amounts. See DEC-P20H. | current request |
+| P20-I | Phase 20 | — | — | 2026-10-17 | Home due tick confirmation and responsive goal projection status placement (CR-35–CR-36). | Done; focused Home/Goals, demo and persisted-write tests plus all six final gates pass; see P20-I close-out. | `e396059` | Assumed: Home's existing five-row preview and native confirmation/Undo semantics remain; `none` projection is displayed as “Not reachable with current contributions.” | current request |
+| P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
+| P21-B | Phase 21 | — | — | 2026-10-16 | Months of cover, salary fallback, allocation edit and linked-assets table (CR-14, CR-15, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `6dd663f` | Visualization-only EF screen; only goal-link management and allocation editing remain. Device behavior unverified. | current request |
+| P21-C | Phase 21 | — | — | 2026-10-17 | Emergency fund normal-mode status layout and all-item allocation editor (CR-37, CR-38). | Done; focused tests and all six final gates pass; schema remains v8. | `d43be28` | Assumed: existing fourth default remains Mutual funds / Bonds because EF has one combined FD / RD bucket and no schema change is allowed. | current request |
+| P22-A | Phase 22 | — | — | 2026-10-16 | Deterministic four-month linked demo data, undoable development loader, and DEC-DEMO (CR-12). | Done; final acceptance tests and required gates including Expo Doctor 21/21 pass. | `1f2d9c8` | Preserved existing `mockAppData` fixtures; expanded strict import validation to preserve supported `snapshotAdjustment`. Device behavior remains unverified. | current request |
 | P24-A | Phase 24 | P15-K | 2 | unknown | Reminders and notifications, including CR-1. | Planned; no delivery claimed. | none identified | No verified planner/preferences/notification adapter or screen. | unknown |
 | P25-A | Phase 25 | P15-L | 2 | unknown | Encrypted backups. | Planned; no delivery claimed. | none identified | Current backup remains unencrypted. | unknown |
 | P26-A | Phase 26 | P15-M | 2 | unknown | Accessibility/performance and final gates. | Planned; no delivery claimed. | none identified | No comprehensive device/accessibility audit. | unknown |
@@ -741,21 +1208,39 @@ evidence present in exports/checkpoints.
 | CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
 | CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Done | P19-A; focused and full gates pass. |
-| CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as pending, with Pay and Clear due. | Done | P20-A (formerly P19-B). |
+| CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as due payments, with Pay and Clear due. | Done | P20-A (formerly P19-B). |
 | CR-7 | Home upcoming and due rows offer Pay and Clear due and update Transactions. | Done | P20-B (formerly P19-C). |
-| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Pending | P21-A implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-8 | Emergency fund goal can link assets like other goals; Emergency fund is not listed as an asset. | Done | P21-A; final Expo Doctor 21/21 and all required gates pass. |
 | CR-9 | Budget review retains every investment category and includes Freelance, Rental, Business and Other earned income by source. | Done | P19-B; category/source reconciliation tests pass. |
-| CR-10 | Home spending by category is collapsed, with Apply budget. | Done | P20-B. |
+| CR-10 | Home spending by category is collapsed; existing Home-card actions stay as user-owned. | Done | P20-B. |
 | CR-11 | Bottom tabs appear only on Home, Transactions, Goals and Budget. | Done | P20-C; DEC-TABS. |
-| CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Planned | P22-A; DEC-DEMO. |
-| CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Pending | P21-A implementation/tests complete; phase held by non-green Expo Doctor gate. |
-| CR-14 | Emergency-fund months of cover use salary fallback. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
-| CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Pending | P21-B implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-12 | Four months of linked demo data; every feature part extends demo data and tests. | Done | `buildDemoData`, integrity/budget/due/net-worth/storage tests, loader Undo and every-route smoke pass; all required gates are green. |
+| CR-13 | Remove emergency-fund entries and exclude emergency fund from net worth; schema v7. | Done | P21-A migration, backup and link tests pass; final required gates are green. |
+| CR-14 | Emergency-fund months of cover use salary fallback. | Done | P21-B expense/salary fallback and cover tests pass; final required gates are green. |
+| CR-15 | Minimal emergency-fund allocation edit UI and linked-assets allocation table. | Done | P21-B allocation tests pass; final required gates are green. |
 | CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 | P19-B's body action row was replaced by the Budget header icons in P19-C. |
-| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Done | P19-C; action labels, icon order, routing, pending dot and style contracts tested. |
-| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Done | P19-C; collapsed/expanded structure, responsive 2x2 grid, labels, review and negative-balance behavior tested. |
+| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 | P19-C icon UI was replaced by the single accessible three-dot menu and ordered menu entries. |
+| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 | P20-D preserves the user's reduced always-visible balance card and removes expansion, metrics and captions. |
 | CR-19 | Input components are user-owned; restore the user's versions and freeze them against agent edits. | Done | P19-C; current field files matched the latest user-authored version; SHA-256 manifest and guard test added. |
-| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Pending | P21-A/B implementation/tests complete; phase held by non-green Expo Doctor gate. |
+| CR-20 | Emergency fund is a goal, not an entity: remove ledger entries and the Emergency fund invest category and instrument reference; visualization-only screen. | Done | P21-A/B tests pass; final required gates are green. |
+| CR-21 | Anchor Home due popup to the bottom safe area, bound and scroll the sheet, and support backdrop dismissal. | Superseded by CR-27 | P20-D sheet was replaced by the native Paid / Not paid confirmation; its style, scroll, backdrop and action assertions are replaced by confirmation tests. |
+| CR-22 | Keep only the user's surviving Available/Closing balance elements and remove its expansion behavior. | Done | P20-D; DEC-USER-CHANGES records the final element set and replaces expansion tests with always-visible/no-toggle assertions. |
+| CR-23 | Clear later due slots by paying through them in FIFO order, with atomic records and one-step Undo. | Done | P20-D; 1/3/401, future, mixed, plan, liability and budget cases; single-write/deep-equal Undo tests pass. |
+| CR-24 | Replace Budget's three header actions with a single three-dot menu and ordered Budget/global entries. | Superseded by CR-30 | The interim menu design is replaced by an explicit no-menu Budget header; month switching and on-screen Review remain. |
+| CR-25 | Format Budget bills/dues and the no-budget card with responsive row layout and actions. | Superseded by CR-32 | The separate Bills and dues section is merged into the group cards; linked rows appear once in their group. |
+| CR-26 | Repair the redundant iOS icon override so Expo Doctor passes. | Done | `8590a4a`; top-level and iOS icon paths were identical; `npx expo-doctor` now passes 21/21. |
+| CR-27 | Home due rows open the default Paid / Not paid confirmation; paid dues update derived lists and can be undone. | Done | P20-E; oldest/later due confirmation, cancellation/dismissal no-op, clear-through preview, Undo and no-navigation tests pass. |
+| CR-28 | Normalize Budget closing balance to two decimals and use danger/primary/neutral tones with correct zero labeling. | Done | P20-E; domain and screen tests cover -0, -0.001, 0, 0.004, 1500 and -1500; all final gates pass. |
+| CR-29 | Keep one budget plan, apply from next month and link recurring items. | Done | P20-F due-day/linked groundwork plus P20-G schema-v8 migration, one plan, repeat/apply actions, setup UI, Home/Budget flows, demo and tests. |
+| CR-30 | Remove the Budget header menu. | Done | P20-G sets `showDefaultMenu={false}`; tests assert no header menu while preserving month switching. CR-34 later removes Budget's Review control. |
+| CR-31 | Show a Demo data loaded popup with Undo and OK after the development loader succeeds. | Done | P20-E; exact popup copy/button order, current-route retention, Undo restoration and brief toast tests pass; all final gates pass. |
+| CR-32 | Merge Budget dues and planned/actual data into one responsive card per group, retaining paid rows and direct clear/Undo behavior. | Done | P20-H; grouped row projection, paid/partial/overdue/linked states, one card per group and simulated 1.3/2.0 font-scale layout tests pass. |
+| CR-33 | Reorder Budget to cash flow, plan summary and group cards, with only the Edit budget header action. | Done | P20-H; screen-order, two-row cash-flow, tone, plan-summary styling, no-menu and month-switch tests pass. |
+| CR-34 | Remove Month review UI and route; route Transactions' Review {Mon} action to Budget at that month. | Done | P20-H; route-kind absence and valid/invalid month navigation tests pass; pure review allocation functions and transaction records remain. |
+| CR-35 | Home upcoming/due rows show title, amount, date and a compact tick button; Paid clears oldest/later dues with Undo, while Not paid/dismissal do nothing. | Done | P20-I; button-only confirmation, clear-through copy, Undo, no-op cancellation and one-write store tests pass; demo includes a later clearable due in Home's preview. |
+| CR-36 | Put a text status to the right of every goal progress bar, including Emergency fund; at font scale 1.3+ stack status below and right-aligned. | Done | P20-I; Home and Goals tests cover all card rows and style contracts at 1, 1.3 and 2. |
+| CR-37 | Remove linked-asset details from normal Emergency fund mode and place allocation status beside the flexible progress bar, stacking at font scale 1.3+. | Done | P21-C; normal-mode content, no-menu behavior, flex/minWidth and status layout tests pass. |
+| CR-38 | Edit allocation items from a header add menu, remove any fixed/custom item with confirmation, retain goal asset links, and default to four items. | Done | P21-C; add choices, exact removal copy, 100% validation, custom metadata, preserved goal links and one-write save tests pass. |
 
 ## 8. Known issues and risks
 
@@ -797,7 +1282,11 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 - **Expo patch alignment:** the first Doctor run found three SDK 57 patch mismatches (`@expo/ui` 57.0.24→57.0.25, `expo` 57.0.29→57.0.30, `expo-router` 57.0.27→57.0.28). `npx expo install --fix` applied the Expo-compatible versions and the final Doctor run passes 21/21. npm reported 67 audit advisories (17 moderate, 50 high) and two install-script allow-list notices; no `npm audit fix` was run.
 - **Phase 19-C device acceptance not verified:** actual title/icon fit at 360pt and OS font scale 2.0; native 44pt touch targets and VoiceOver/TalkBack announcements; rendered 130pt expanded-card height, clipping and scrolling at font scales 1.0/1.3/2.0; and route behavior on physical iOS/Android devices. Tests assert styles and simulated font-scale state only.
 - **P21-A/B device acceptance not verified:** actual screen-reader announcements and link/edit flow on physical devices; native dynamic type scaling and clipping in Emergency fund and allocation screens; allocation table wrapping/scrolling; and safe-area/sticky-total behavior on physical iOS/Android. Tests cover pure links/migrations, style contracts, and simulated font scales but no real device.
-- **P21 Expo Doctor blocker:** `npx expo doctor` is not a command supported by the installed local Expo CLI. The supported `npx expo-doctor` completed 20/21 checks and failed app-config validation: `app.json` sets `ios.icon` to `./assets/images/icon.png`, while the checker expects a `.icon` directory. `app.json` was not changed in P21; this configuration issue is outside the requested feature scope. P21-A/B and CR-8/13/14/15/20 remain Pending until the required Doctor gate is green and the gates are rerun.
+- **P21-C device acceptance not verified:** actual OS font scaling and clipping of the allocation status at 1.3/2.0, touch behavior for the header plus/remove controls, native confirm-alert copy/layout and cancellation, allocation-form scrolling/keyboard behavior, and VoiceOver/TalkBack announcement of active items/status. Tests inspect component props and simulated styles only.
+- **P21 Expo Doctor blocker, resolved by P20-D CR-26:** the original Doctor result was 20/21 because user-authored `beb9711` set `ios.icon` to the same PNG as the top-level icon. Commit `8590a4a` removes only the duplicate iOS override. The final P20-E `npx expo-doctor` result is 21/21; Android and iOS exports, tests, typecheck and lint also pass, so P21/P22 gates remain green.
+- **P22-A real-device acceptance not verified:** menu confirmation and navigation to Backup/restore, platform persistence and Undo after app restart, and usability/rendering of every screen with the generated four-month dataset have only been checked in Jest/TestRenderer and the store mock; no physical iOS/Android device was used. Final automated gates pass.
+- **P20-D CR-21 device acceptance not verified:** at the time of P20-D, bottom placement above physical iOS/Android home indicators, backdrop hit testing, scroll gestures with system font scale 2.0, and action-sheet clipping/keyboard interaction were unverified. CR-27 supersedes the sheet with a native confirmation; physical native alert button behavior remains unverified.
+- **P20-D CR-22–CR-25 and P20-E CR-27/28/31 device acceptance not verified:** actual rendered balance/card wrapping and Shortfall contrast; native confirmation button appearance/dismissal, FIFO payment, five-second Undo timing and persistence; demo-load popup behavior and Undo against real storage; divider visibility, row wrapping and no-budget card fit at system font scale 1.3/2.0; VoiceOver/TalkBack announcements and actions; and Home/Transactions/Budget due-list consistency on physical iOS/Android. Tests assert component structure, props/styles, action callbacks and store persistence, but are simulated.
 - **Earlier P19-A gate record:** the first `npx tsc --noEmit` attempt exited 2 because the initial mock-budget test did not narrow its nullable fixture; the guard fixed it for that earlier scope. That record predates the expanded P19-A task.
 - **P19-A/B final gate record (2026-10-15):** focused tests 11 suites/235 tests; full coverage 68 suites/702 tests; TypeScript, lint, Expo Doctor (21/21) and Android/iOS exports all exit 0. Istanbul aggregation: domain 2,144/2,177 lines (98.48%) and 1,999/2,136 branches (93.59%); data excluding hooks 306/331 lines (92.45%) and 219/241 branches (90.87%); pure lib 107/107 lines and 126/126 branches (100%).
 - P15-FIX-R4 final automated gates ran twice and exited 0: 64/64 suites,
@@ -925,8 +1414,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 
 | Form route | Visible field labels | Save full width |
 |---|---|---|
+| `budget-setup.tsx` | Yes | Yes; sticky footer contains Apply and Save only actions. |
 | `budget-month-form.tsx` | Yes | Yes; footer column stretches the Save button. |
-| `budget-template-form.tsx` | Yes | Yes; footer column stretches the Save button. |
 | `ef-allocation-form.tsx` | Yes | Yes; footer column stretches the Save button. |
 | `ef-entry-form.tsx` | Yes | Yes; Save flexes across its footer row. |
 | `goal-form.tsx` | Yes | Yes; Save flexes across its footer row. |
@@ -942,15 +1431,20 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 1. **Phase 19 — Budget model and sync** (Done): P19-A five-group setup (CR-5),
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
-2. **Phase 20 — Pending items, Home and navigation** (Done): P20-A pending
+2. **Phase 20 — Pending items, Home and navigation** (P20-A through P20-G
+   Done): P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
-   spending plan (CR-7, CR-10), and P20-C main-screen-only tabs (CR-11).
-3. **Phase 21 — Emergency fund as a goal-linked model** (Pending; implementation
-   delivered, Expo Doctor gate unresolved): P21-A links,
-   entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover,
-   allocation editing and linked-asset table (CR-14, CR-15).
-4. **Phase 22 — Demo data and seed importer** (Planned): P22-A four months of
-   linked demo data (CR-12); P22-B optional spreadsheet importer [P15-SEED].
+   spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
+   balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
+   CR-31), P20-F due-day and linked schedule groundwork, and P20-G schema-v8
+   single-plan setup/apply/repeat behavior (CR-29) with no Budget header menu
+   (CR-30 supersedes CR-24).
+3. **Phase 21 — Emergency fund as a goal-linked model** (Done): P21-A links,
+   entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
+   allocation table (CR-14, CR-15); P21-C normal-mode presentation and
+   allocation item editing (CR-37, CR-38), with schema v8 unchanged.
+4. **Phase 22 — Demo data** (Done): P22-A four months of linked demo data
+   (CR-12).
 5. **Phase 23 — Insurance** (Planned) [P15-F].
 6. **Phase 24 — Reminders and notifications** (Planned), including CR-1
    [P15-K].
@@ -1014,7 +1508,7 @@ evidence for the fixes.
 | P20-B Home actions and spending plan | Done | `app/(tabs)/index.tsx`, `src/components/PendingItemActionSheet.tsx`, `src/components/PendingItemActions.tsx`, `src/components/PendingItemRow.tsx` | `src/components/__tests__/HomeThemeSmoke.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/components/__tests__/PendingItemActions.test.tsx`; Home/route focused suites pass. |
 | P20-C main-screen tab visibility | Done | `app/(tabs)/_layout.tsx`, all non-tab route screens, `src/components/form/FormScreen.tsx`, `src/components/ui.tsx`, `src/lib/routeKinds.ts` | `src/lib/__tests__/routeKinds.test.ts` proves every route is registered and non-tab routes contain no bar; `src/components/__tests__/TabsLayout.test.tsx` checks one correctly active shared bar for each tab; `src/components/__tests__/RouteRenderSmoke.test.tsx` checks Budget history/Month review. The prior P18-R5 assertion expecting a Budget-selected detail bar was superseded by DEC-TABS. |
 
-#### Phase 20 final gates
+#### Earlier Phase 20 gate snapshot (P20-A/B/C)
 
 All commands ran sequentially after the Phase 20 source changes; each exited 0.
 
@@ -1034,16 +1528,18 @@ branches (93.60%); data 306/331 lines (92.45%), 221/243 branches (90.95%);
 lib 107/107 lines (100.00%), 126/126 branches (100.00%).
 ### Phase 21 — Emergency fund goal model and allocation
 
-Schema changed from v6 to v7 in P21-A; P21-B did not change the schema. Feature
-implementation and feature-specific tests are complete. P21-A/B and CR-8,
-CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
+Schema changed from v6 to v7 in P21-A; P21-B and P21-C did not change the
+schema (current v8). Feature implementation and feature-specific tests are
+complete. CR-26 repaired the Expo Doctor blocker; final required gates pass
+and P21-A/B/C with CR-8, CR-13, CR-14, CR-15, CR-20, CR-37 and CR-38 are Done.
 
 | Part | Status | Coverage evidence | Test / verification evidence |
 |---|---|---|---|
-| P21-A emergency-fund linked model [schema v7] | Pending | v6→v7 migration, backups, premigration archive, link integrity, category remap and total preservation | `src/data/__tests__/migrate.test.ts`, `migrateV4.test.ts`, `safeStorage.test.ts`, `createAppStore.test.ts`; `src/domain/__tests__/backup.test.ts`, `goalLinks.test.ts`, `schemas.test.ts` |
-| P21-B emergency-fund cover/allocation | Pending | Expense/salary fallback, truncation, minimum target, linked table and compact allocation UI | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`; `src/domain/__tests__/selectors.test.ts`, `efAllocationCustom.test.ts` |
+| P21-A emergency-fund linked model [schema v7] | Done | v6→v7 migration, backups, premigration archive, link integrity, category remap and total preservation | `src/data/__tests__/migrate.test.ts`, `migrateV4.test.ts`, `safeStorage.test.ts`, `createAppStore.test.ts`; `src/domain/__tests__/backup.test.ts`, `goalLinks.test.ts`, `schemas.test.ts` |
+| P21-B emergency-fund cover/allocation | Done | Expense/salary fallback, truncation, minimum target, linked table and compact allocation UI | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`; `src/domain/__tests__/selectors.test.ts`, `efAllocationCustom.test.ts` |
+| P21-C allocation display and editor | Done | Normal-mode linked-name removal, responsive progress/status, default items, fixed/custom deletion and retained goal links; schema v8 unchanged | `src/components/__tests__/EmergencyGoalScreens.test.tsx`, `EfAllocationForm.test.tsx`, `FormScreen.test.tsx`, `AppHeaderUsage.test.ts`; `src/domain/__tests__/efAllocation.test.ts`, `efAllocationCustom.test.ts`; `src/data/__tests__/createAppStore.test.ts`; `src/mock/__tests__/demoData.test.ts` |
 
-#### Phase 21 gates
+#### Phase 21 initial gates (historical; Doctor issue resolved in CR-26)
 
 | Gate | Result | Exit |
 |---|---|---:|
@@ -1055,8 +1551,52 @@ CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
 | `npx expo doctor` | Unsupported by the installed local Expo CLI. | 1 |
 | `npx expo-doctor` | 20/21 checks passed. App config check failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`; the checker requires a `.icon` directory. The app config was not modified because this is pre-existing and outside P21 scope. | 1 |
 
-| P22-A four-month linked demo | Planned | Existing mock dataset not extended to four linked months | Demo consistency tests pending |
-| P22-B spreadsheet importer [P15-SEED] | Planned | No importer implementation | Importer tests pending |
+The config issue above was repaired in P20-D commit `8590a4a`. Recheck:
+`npx expo-doctor` now passes 21/21; Android and iOS exports pass. Relevant
+existing tests are `hydrates v6 into v7 and archives exact raw bytes only
+once` (`src/data/__tests__/createAppStore.test.ts`),
+`round-trips custom emergency-fund options and refuses schema version eight`
+and `round-trips a manual holding snapshot adjustment through backup export
+and import` (`src/domain/__tests__/backup.test.ts`).
+
+#### P21-C final gates (2026-10-17)
+
+| Gate | Result | Exit |
+|---|---|---:|
+| Focused P21-C and ledger tests | 9 suites / 138 tests passed | 0 |
+| `npm test -- --coverage` | 70 suites / 780 tests passed; statements 96.34%, branches 93.03%, functions 97.72%, lines 97.81% | 0 |
+| `npx tsc --noEmit` | TypeScript passed | 0 |
+| `npx expo lint` | Lint passed | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported | 0 |
+| `npx expo export --platform ios` | iOS bundle exported | 0 |
+| `git diff --check` | No whitespace errors | 0 |
+
+Per-directory Istanbul aggregation, excluding tests and excluding data hooks:
+domain 2217/2253 lines (98.40%), 2061/2201 branches (93.64%); data 455/481
+lines (94.59%), 392/445 branches (88.09%); pure lib 107/107 lines and
+126/126 branches (100%). The initial full coverage attempt exposed two
+assertion mismatches: the new modal heading used an unapproved verb, and the
+edit-icon scanner rejected Budget's required CR-33 header action. Both were
+corrected; the final full coverage run passed.
+
+#### Phase 22-A initial gates (historical; Doctor issue resolved in CR-26)
+
+P22-A implementation and acceptance tests are green. Its initial Doctor issue
+was resolved in CR-26. No schema change was made; `SCHEMA_VERSION` remains 7.
+
+| Gate | Result | Exit |
+|---|---|---:|
+| Focused demo/store/menu/backup tests | 4 suites / 72 tests passed; generated-demo route smoke adds 2 suites / 105 tests across the focused route and demo run. | 0 |
+| `npm test -- --coverage --runInBand` | 70 suites / 733 tests passed. Domain: 98.37% lines, 93.73% branches; data excluding hooks: 93.36% lines, 87.72% branches; pure lib: 100% lines and branches. | 0 |
+| `npx tsc --noEmit` | Typecheck passed. | 0 |
+| `npx expo lint` | Lint passed with no warnings after cleanup. | 0 |
+| `npx expo export --platform android` | Android export passed. | 0 |
+| `npx expo export --platform ios` | iOS export passed. | 0 |
+| `npx expo doctor` | Unsupported by the installed local Expo CLI; it instructed use of `npx expo-doctor`. | 1 |
+| `npx expo-doctor` | 20/21 checks passed. Expo config validation failed because `ios.icon` in `app.json` points to `./assets/images/icon.png`, which is not the `.icon` directory required by the checker. This pre-existing config was not changed as part of P22-A. | 1 |
+
+| P22-A four-month linked demo | Done | `src/mock/demoData.ts`, development-menu loader, and strict import preservation of `snapshotAdjustment` | `src/mock/__tests__/demoData.test.ts`, `src/data/__tests__/createAppStore.test.ts`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/lib/__tests__/appMenu.test.ts`; acceptance tests and final required gates pass |
 | P23-A insurance [P15-F] | Planned | No policy CRUD action/screen set | No policy-action/UI tests |
 | P16-C goal links | Done | `src/domain/goalLinks.ts`, `src/domain/goals.ts`, `app/goal-form.tsx` | `src/domain/__tests__/goalLinks.test.ts`, store and route smoke suites |
 | P17-A cash flow/movements | Done | `src/domain/cashFlow.ts`, `app/month-review.tsx`, `app/money-movement-form.tsx` | `src/domain/__tests__/cashFlow.test.ts`, `src/data/__tests__/createAppStore.test.ts` |
@@ -1106,3 +1646,703 @@ CR-13, CR-14, CR-15 and CR-20 remain Pending because Expo Doctor did not pass.
 | P18-R6-B Sort UI history and assertions [P15-FIX-R6-B] | Done | `src/components/ui.tsx` — visible tab text restored to `Transactions`; `src/components/__tests__/BottomTabBar.test.tsx`, `SectionHeaderRow.test.tsx`, `TransactionsScreen.test.tsx` — revised assertions for the intended ChipRow layout | Focused six-suite run passed 180 tests, including `src/lib/__tests__/sorting.test.ts`; full current coverage run passed 65 suites/669 tests. `src/components/SortChip.tsx` and `src/lib/sorting.ts` are unchanged. |
 | P18-R6-C Expo SDK alignment [P15-FIX-R6-C] | Done | Existing separate `798e8ef` updates only `package.json` and `package-lock.json`; four direct Expo package ranges were bumped, while `expo-constants` was accepted unchanged | `npx expo install --check` — dependencies up to date; `npx expo-doctor` — 21/21; Android/iOS exports and full tests pass after alignment. |
 | P18-R6-D Gates and close-out [P15-FIX-R6-D] | Done (automated; device checks outstanding) | `docs/PROGRESS.md` — R5/R6 status, assumptions, historical audit, and evidence | `npm test -- --coverage` — 65/65 suites, 669/669 tests; `npx tsc --noEmit`; `npx expo lint`; `npx expo-doctor` 21/21; Android/iOS exports; per-directory line/branch coverage; `git diff --check`. Native safe-area and font-scale checks remain for real devices. |
+
+### P20-D green-gate close-out
+
+P20-D, P21-A/B, P22-A and CR-8, CR-12–15, CR-20–26 are closed after
+sequential green gates. P22-B and its former P15-SEED mapping were removed
+from active tracking. The focused P20-D verification
+passed 12 suites / 294 tests. Relevant tests include the clear-through
+one/three/401, future and mixed-due cases in
+`src/domain/__tests__/dues.test.ts`; one-write persistence and deep-equal
+Undo in `src/data/__tests__/createAppStore.test.ts`; confirmation and action
+behavior in `src/components/__tests__/PendingItemActions.test.tsx`; reduced
+balance/menu/layout assertions in `src/components/__tests__/TransactionsScreen.test.tsx`
+and `src/components/__tests__/RouteRenderSmoke.test.tsx`; and this ledger
+guard in `src/lib/__tests__/progressLedger.test.ts`.
+
+Backup/version tests re-confirmed: `hydrates v6 into v7 and archives exact
+raw bytes only once` (`src/data/__tests__/createAppStore.test.ts`),
+`round trips custom emergency-fund options and refuses schema version eight`,
+and `round-trips a manual holding snapshot adjustment through backup export
+and import` (`src/domain/__tests__/backup.test.ts`).
+
+| Gate (run sequentially) | Result | Exit |
+|---|---|---:|
+| Focused P20-D tests | 12 suites / 294 tests passed | 0 |
+| First `npm test -- --coverage` attempt | One timing assertion failed: 50-year daily schedule took 2141ms against a 2000ms ceiling; 69 other suites passed | 1 |
+| Retried `npm test -- --coverage` | 70 suites / 756 tests passed; lines 97.66%, branches 93.28% | 0 |
+| `npx tsc --noEmit` | TypeScript check passed | 0 |
+| `npx expo lint` | Lint passed | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...`; `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android export passed | 0 |
+| `npx expo export --platform ios` | iOS export passed | 0 |
+
+Per-directory Istanbul aggregation (tests excluded; data hooks excluded):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2157/2192 (98.40%) | 1984/2113 (93.89%) |
+| `src/data` excluding hooks | 414/443 (93.45%) | 336/383 (87.73%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Exact aggregation script run from the repository root:
+
+```sh
+node - <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const raw = JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8'));
+const map = createCoverageMap(raw);
+const groups = {
+  'src/domain': (file) => file.includes(`${path.sep}src${path.sep}domain${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+  'src/data excluding hooks': (file) => file.includes(`${path.sep}src${path.sep}data${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`) && !file.includes(`${path.sep}hooks${path.sep}`),
+  'pure src/lib': (file) => file.includes(`${path.sep}src${path.sep}lib${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+};
+const count = (summary, key) => `${summary[key].covered}/${summary[key].total} (${summary[key].pct.toFixed(2)}%)`;
+for (const [name, include] of Object.entries(groups)) {
+  const summaries = map.files().filter(include).map((file) => map.fileCoverageFor(file).toSummary());
+  const totals = summaries.reduce((total, summary) => {
+    for (const metric of ['lines', 'branches']) {
+      total[metric].covered += summary[metric].covered;
+      total[metric].total += summary[metric].total;
+    }
+    return total;
+  }, { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } });
+  for (const metric of ['lines', 'branches']) {
+    totals[metric].pct = totals[metric].total ? 100 * totals[metric].covered / totals[metric].total : 100;
+  }
+  console.log(`${name}: lines ${count(totals, 'lines')}; branches ${count(totals, 'branches')}`);
+}
+NODE
+```
+
+Per-file Istanbul summaries for changed source: `src/domain/dues.ts` reports
+165/165 lines (100.00%) and 142/155 branches (91.61%); `src/data/createAppStore.ts`
+reports 196/214 lines (91.58%) and 65/74 branches (87.83%). The aggregate above is
+computed from Istanbul file summaries by summing covered and total line and
+branch counts independently.
+
+Expo Doctor's original 20/21 result came from redundant `ios.icon`; CR-26
+removed it because it exactly duplicated top-level `expo.icon`. Current
+Doctor result is 21/21. `SCHEMA_VERSION` was 7 at `51842bb` and remains 7;
+the earlier v6 instruction was not applied because it would downgrade the
+persisted schema.
+
+### P20-E green-gate close-out
+
+P20-E closes CR-27, CR-28 and CR-31. Implementation commits are `033d493`
+(Budget money normalization), `501dce7` (Home Paid / Not paid confirmation and
+removal of the old action sheet), and `fe5fa1e` (demo-loaded Undo / OK popup).
+Ledger/test follow-ups include `973241e` and `b0cb6ee`. All hashes are verified
+Git objects.
+
+Focused regression run: 9 suites / 189 tests pass, including
+`normalizes %s to %s`, `rounds finite values to paise and rejects non-finite
+amounts`, `keeps Home spending collapsed and asks before changing a due`,
+`clears a confirmed Home due with Undo and previews earlier dues`,
+`uses the requested Paid and Not paid button labels and treats Not paid as
+false`, `treats dismissal of a Paid confirmation as not paid`,
+`shows the demo-loaded Undo / OK popup without navigating, then restores data
+and shows a toast`, and `matches each frozen component hash`.
+
+Replaced assertions and reasons:
+
+- CR-21: bottom sheet alignment/inset/max-height/scroll/backdrop/action-button
+  assertions are replaced by exact native confirmation copy and button
+  labels, no-op Not paid/dismissal, oldest and later due action/preview, Undo,
+  and no-inline-action assertions. Reason: CR-27 replaces the sheet entirely.
+- CR-28 adds Budget screen cases for `-0`, `-0.001`, `0`, `0.004`, `1500`,
+  and `-1500`, verifying normalized value, tone, visual text and
+  accessibility label. These are new acceptance checks, not weakened or
+  replaced assertions; the pure money helper also has direct domain tests.
+- The progress-ledger test's temporary Pending assertions for P20-E and
+  CR-27/28/31 are replaced by Done after green gates, and its totals change
+  from 43/52 and 4/7 to 44/52 and 5/7. Reason: P20-E is now closed.
+- No existing test asserted that the demo loader navigated to Backup. The old
+  `router.push('/backup')` code path is replaced by a test asserting the
+  success popup and current-route retention.
+- To preserve user-authored commit `6cb4fa0`, the stale expected Transactions
+  figure `₹600` is removed; the balance test now asserts the retained `₹830`
+  only. The `From Sep` caption expectation becomes an explicit absence check.
+  The prior no-opening-balance `-₹130` display assertion is replaced with a
+  fixture containing ₹100 brought forward and a rendered `-₹30` closing
+  balance, retaining the Shortfall and danger-tone checks. The Budget-header
+  `menuIndicator={Boolean(reviewableMonth)}` expectation is replaced by an
+  assertion that the user's removed prop remains absent. These old assertions
+  contradicted the intentional user UI changes.
+- In the prior RouteRenderSmoke assertion, the expected visible `-₹1,000`
+  Shortfall amount/color is now asserted absent when no amount is rendered by
+  the user's conditional balance UI; the separate Transactions test above
+  verifies danger tone and Shortfall in a state where the user-kept amount is
+  rendered. No hidden amount was reintroduced.
+
+The first full coverage attempt exited 1: 3 suites / 18 tests failed because
+the Home screen test mock did not expose the newly used `useAppActions` hook
+and stale Transactions/Budget-header assertions contradicted commit `6cb4fa0`.
+Those fixtures/assertions were corrected without restoring removed UI. The
+final sequential gate run is green:
+
+| Gate (run sequentially) | Result | Exit |
+|---|---|---:|
+| Focused P20-E regressions | 9 suites / 189 tests passed | 0 |
+| First `npm test -- --coverage` attempt | 3 suites failed / 18 tests failed; stale mocks/assertions corrected | 1 |
+| Final `npm test -- --coverage` | 70 suites / 772 tests passed; statements 96.25%, branches 93.29%, functions 97.12%, lines 97.66% | 0 |
+| `npx tsc --noEmit` | TypeScript check passed | 0 |
+| `npx expo lint` | Lint passed | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...`; `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android export passed | 0 |
+| `npx expo export --platform ios` | iOS export passed | 0 |
+
+Per-directory Istanbul coverage (summed independently from per-file summaries;
+tests excluded and data hooks excluded):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2160/2195 (98.41%) | 1988/2117 (93.91%) |
+| `src/data` excluding hooks | 414/443 (93.45%) | 336/383 (87.73%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Exact aggregation script used:
+
+```sh
+node <<'NODE'
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(require('./coverage/coverage-final.json'));
+for (const [name, match] of Object.entries({
+  domain: f => /\/src\/domain\//.test(f) && !/\/__tests__\//.test(f),
+  data: f => /\/src\/data\//.test(f) && !/\/__tests__\//.test(f) && !/\/hooks?\//.test(f),
+  lib: f => /\/src\/lib\//.test(f) && !/\/__tests__\//.test(f),
+})) {
+  let lc = 0, lt = 0, bc = 0, bt = 0;
+  for (const file of map.files()) if (match(file)) {
+    const s = map.fileCoverageFor(file).toSummary();
+    lc += s.lines.covered; lt += s.lines.total;
+    bc += s.branches.covered; bt += s.branches.total;
+  }
+  console.log(`${name}: lines ${lc}/${lt} (${(100 * lc / lt).toFixed(2)}%); branches ${bc}/${bt} (${(100 * bc / bt).toFixed(2)}%)`);
+}
+NODE
+```
+
+Changed pure-source per-file Istanbul summary: `src/domain/cashFlow.ts`,
+132/132 lines (100.00%) and 121/124 branches (97.58%). The configured
+coverage map does not instrument `src/components/useAppMenu.ts` or `app/`
+screen files. First invocation of the requested `npx expo-doctor` found no
+local executable and invoked npm's ephemeral `expo-doctor@1.21.5` install;
+the later final run used that cache. No project package manifest or lockfile
+changed. This was an unintended network-capable tool resolution despite the
+no-network standing instruction and is recorded as a deviation.
+
+`SCHEMA_VERSION` was 7 at the P20-F start and remained 7 at its close-out.
+SortChip, `src/lib/sorting.ts` and every frozen input component are unchanged;
+the frozen-component hash test passes. P21-A/B and P22-A remain Done with all
+final gates green. P20-F is Done; P20-G is now complete and Phase 23 is next.
+
+**P20-E device checks not verified:** real iOS/Android rendering and interaction
+for native Paid/Not paid and Demo data loaded alerts; hardware Back/outside
+dismissal; full Home/Transactions/Budget due-list refresh after actual storage
+writes; Undo against device storage; five-second toast timing; TalkBack/
+VoiceOver copy and actions; and text/tone visibility at OS font scaling. Test
+Renderer verifies callbacks and styles only; no physical device was used.
+
+### P20-F green-gate close-out
+
+F1 audited budget due rows and schedule/actual flows and recorded
+DEC-BUDGET-PLAN. The design note specifies one future budget plan replacing
+templates, optional line due days, repeat-from-next-month, current-month-only
+auto-apply, and schedule-computed linked EMI, Insurance and investments that
+are never stored or emitted as extra due rows.
+
+F2 adds optional validated `dueDay` (integer 1–31) to template, month and
+legacy budget lines and optional `linkedIncluded` to month snapshots; both app
+and strict backup schemas accept these fields while absent fields remain
+compatible and `SCHEMA_VERSION` stays 7. Budget due dates clamp at the actual
+month length, including leap February. Without `dueDay`, the line remains
+undated and `planned`, as before. The existing template and month forms
+preserve imported due-day values but do not expose due-day editing controls.
+
+F3 adds pure `linkedRecurringForMonth(data, month, asOf)` and tests for plans,
+recurring and one-time liabilities, policies, paid/unpaid/zero rows, leap
+February, empty/invalid months and `buildDemoData`. F4 makes
+`linkedIncluded: true` additive over the month’s own line amounts, provides
+linked rows grouped by category and planned totals by budget group, and leaves
+transaction actuals unchanged. Absent/false flags keep prior derived budget
+view results. Linked rows are not written into budgets and do not create
+pending due rows; the Bills budget line still creates its own row. F5 sets the
+current demo month to `linkedIncluded: true` and gives its Bills line `dueDay:
+5`, with schema, totals and one-row assertions.
+
+Focused test runs:
+
+- `npm test -- --runInBand src/domain/__tests__/pending.test.ts src/domain/__tests__/schemas.test.ts src/domain/__tests__/backup.test.ts src/domain/__tests__/budget.test.ts`: 4 suites / 72 tests pass.
+- `npm test -- --runInBand src/domain/__tests__/budget.test.ts`: 21 tests pass, including `projects paid and unpaid recurring schedule rows by month and category` and `matches calendar months, including leap February and demo schedule rows`.
+- Final focused P20-F run: 5 suites / 84 tests pass, including `clamps budget due days to the month length, including leap February`, `adds opt-in linked rows to planned category and group totals without changing actuals or dues`, and four-month demo data tests.
+- `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts`: 1 suite / 9 tests pass; the renamed test is `tracks P20-F done, keeps P20-G planned, and removes the withdrawn importer part`.
+
+Replaced assertion and reason:
+
+- The old progress-ledger assertion required both P20-F and P20-G to remain
+  Planned and required CR-29 to remain Planned. During implementation it now
+  asserts P20-F and CR-29 are In progress while P20-G and CR-30 remain
+  Planned, because work began but final gates had not yet passed. After the
+  final gates, P20-F's assertion changed to Done while CR-29 stayed In
+  progress and P20-G/CR-30 remained Planned. Progress counts remained 44/52
+  and 5/7 while in progress, then closed at 45/52 and 6/7. No product
+  behavior assertion was weakened. The paired progress-count assertions were
+  also updated from 44/52 and 5/7 to 45/52 and 6/7 after closure; the
+  intermediate focused test caught this stale expected count and passed after
+  the exact calculated totals were updated.
+
+The first full coverage run exited 1 only because of that stale tracker
+expectation (69 suites passed, 1 failed; 776 tests passed, 1 failed). The
+ledger assertion was updated as described and the full command was rerun.
+Final sequential gates:
+
+| Gate | Result | Exit |
+|---|---|---:|
+| First `npm test -- --coverage` | Stale progress-ledger status assertion failed; corrected without changing product assertions. | 1 |
+| Final `npm test -- --coverage` | 70 suites / 777 tests passed; statements 96.28%, branches 93.32%, functions 97.15%, lines 97.69%. | 0 |
+| `npx tsc --noEmit` | TypeScript check passed. | 0 |
+| `npx expo lint` | Lint passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project...` / `21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android export passed. | 0 |
+| `npx expo export --platform ios` | iOS export passed. | 0 |
+
+Per-directory Istanbul totals (tests excluded; hooks excluded from data):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2187/2222 (98.42%) | 2026/2157 (93.93%) |
+| `src/data` excluding hooks | 414/443 (93.45%) | 336/383 (87.73%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Changed pure-domain per-file Istanbul summaries:
+
+| File | Statements | Branches | Lines |
+|---|---:|---:|---:|
+| `src/domain/budget.ts` | 98.87% | 94.55% | 100.00% |
+| `src/domain/pending.ts` | 96.66% | 94.82% | 100.00% |
+| `src/domain/schemas.ts` | 92.57% | 90.22% | 92.62% |
+| `src/domain/backup.ts` | 98.65% | 97.05% | 98.54% |
+
+Exact per-directory aggregation script used:
+
+```sh
+node <<'NODE'
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(require('./coverage/coverage-final.json'));
+for (const [name, match] of Object.entries({
+  domain: f => /\/src\/domain\//.test(f) && !/\/__tests__\//.test(f),
+  data: f => /\/src\/data\//.test(f) && !/\/__tests__\//.test(f) && !/\/hooks?\//.test(f),
+  lib: f => /\/src\/lib\//.test(f) && !/\/__tests__\//.test(f),
+})) {
+  let lc = 0, lt = 0, bc = 0, bt = 0;
+  for (const file of map.files()) if (match(file)) {
+    const s = map.fileCoverageFor(file).toSummary();
+    lc += s.lines.covered; lt += s.lines.total;
+    bc += s.branches.covered; bt += s.branches.total;
+  }
+  console.log(`${name}: lines ${lc}/${lt} (${(100 * lc / lt).toFixed(2)}%); branches ${bc}/${bt} (${(100 * bc / bt).toFixed(2)}%)`);
+}
+NODE
+```
+
+P20-F implementation commits (all abbreviated hashes checked as Git commit
+objects): `5d81b65` (F1 design), `e36d153` (F2 due-day support), `d736b11`
+(F3 linked schedule projection), `f41d6d4` (F4 budget view), `b8fff43` (F5
+demo data), and `18fc19d` (tracker-test state update). No dependencies changed.
+`SCHEMA_VERSION` was 7 before and after. SortChip, `src/lib/sorting.ts`, and
+the frozen form components were not modified; `formComponentsFrozen` passes.
+Assumed: an undated one-time liability is not a linked month row, consistent
+with existing pending and monthly-commitment behavior rather than the
+schedule's internal start-date fallback. `budgetMonthView` uses month-end as
+its schedule `asOf`, matching `monthlyCommitments`; direct helper callers
+inject their own `asOf`.
+The user's manual change commit `6cb4fa0` remains intact: the touched user-owned
+files are `app/(tabs)/budget.tsx`, `app/(tabs)/transactions.tsx`, and
+`app/month-review.tsx`; specifically, the removed “Back to transactions”
+button and other removed Budget/balance UI were not restored. The final
+Transactions balance section remains the user's label and amount (including
+Shortfall/danger styling), optional “From {Mon} ₹X” chip, divider and review
+link when available, without the removed metric columns or captions.
+
+**P20-F device checks not verified:** no physical iOS/Android device or
+development build was used. Native rendering and month-form persistence of
+imported `dueDay` data, TalkBack/VoiceOver announcements, platform-specific
+date boundaries, and real-device storage/backup round trips remain unverified.
+P20-G adds due-day entry in the single-plan setup; see the P20-G device checklist
+below for the new setup and sticky-footer checks.
+
+### P20-G schema-v8 single-plan close-out
+
+P20-G replaces template persistence/routes with `budgetPlan`, migrates v7
+snapshots and archives their exact raw bytes once, and sets schema version 8.
+The chosen template and repeat defaults follow DEC-P20G. Plan apply preserves
+recorded transactions; repeat hydration only applies the current month and is
+idempotent. Save-and-Apply is one store update, and its Undo restores the
+previous plan plus month snapshot in one update. The Budget setup screen
+provides five groups, editable amount/percent lines, conditional due-day input,
+computed recurring items, suggestion confirmation, repeat switch and sticky
+Apply/Save footer. Budget's header has no menu; month switching and on-screen
+Review remain. Home applies a plan or opens setup when no plan exists.
+
+The current mock/demo data has exactly one budget plan, all five groups, a
+Bills due day, repeat enabled from next month and the current month applied
+with linked rows; legacy templates are absent from current app state and UI.
+The setup screen groups read-only linked rows by budget group with name,
+category, amount, due date and the source note. The pre-P20-G schema was 7;
+the post-migration/current schema is 8. `SortChip.tsx`, `src/lib/sorting.ts`,
+and all frozen `src/components/form` inputs are unchanged;
+`formComponentsFrozen` passes.
+
+Replaced test assertions and reason:
+
+- Old route smoke expected Budget History to open a selected month and keep
+  the old History route in the registered screens. It now tests the single
+  Budget setup route and its stack behavior; month selection remains available
+  through Budget's previous/next controls. Reason: history was explicitly
+  removed rather than retained alongside the one-plan design.
+- Old template-management tests expected a template list, template form,
+  default-template selection and template-picker behavior. They are replaced
+  by single-plan setup/apply/repeat assertions and v7 migration tests.
+  Reason: schema v8 drops all template state and routes.
+- Old Budget-menu assertions expected the CR-24 three-dot menu, ordered
+  entries, navigation and review indicator. They are replaced by an explicit
+  no-menu assertion plus previous/next month navigation and the on-screen
+  Review control. Specifically, `shows the ordered Budget menu, review dot,
+  navigation and Home menu entries`, `omits the review dot when there is no
+  reviewable month`, `keeps explicit menu items ahead of the standard Home
+  menu items`, `shows one Budget menu with ordered Budget items followed by
+  Home menu entries`, and `marks a reviewable month in the Budget header and
+  opens that month review` no longer assert Budget menu entries or a dot.
+  Reason: CR-30 supersedes CR-24.
+- The old `keeps the no-budget prompt in one card with both setup actions and
+  empty bills state` assertion expected both setup actions; it now expects one
+  primary action whose label and behavior depend on whether a plan exists.
+  The old `shows cash-flow positions and keeps plan editing separate from
+  template application` assertion now expects the single-plan setup flow and
+  separate month adjustment. Reason: schema v8 removes the template picker.
+- Old Budget History sorting tests asserted template-name/customized keys
+  and history-month tie-break ordering, and the metadata test expected saved
+  `budgetHistory` sort preferences. Those assertions were removed; active-list
+  sort persistence tests remain and `src/lib/sorting.ts` stays unchanged.
+  This includes `lists every Budget history sort key in the SortChip menu`,
+  `uses month as the id tie-breaker in both Budget history directions`,
+  `returns from Budget history to the tab with the selected month`,
+  `shows no tab bar on Budget history or Month review stack routes`, and
+  `persists Budget history sort choices and falls back to month for an invalid
+  stored key`. Reason: history snapshots and their fields are no longer a
+  screen or model surface.
+- Old AppHeader tests expected a Budget menu containing History, Month review
+  and Templates, tested its navigation/review-dot behavior and global-item
+  ordering. This covers `shows one Budget menu with ordered Budget items
+  followed by Home menu entries`, `marks a reviewable month in the Budget
+  header and opens that month review`, and `keeps explicit menu items ahead
+  of the standard Home menu items`. They are replaced by direct Budget
+  no-menu assertions; Home's standard menu tests remain. Reason: CR-30
+  removes the Budget menu entirely.
+- Old ledger assertions kept P20-G Planned, CR-29 In progress, CR-30 Planned,
+  overall 45/52 and Phase 20 6/7. They now assert Done, Done, Done, 46/52 and
+  7/7 respectively. Reason: P20-G and both change requests are complete.
+
+Focused P20-G verification:
+
+- `npm test -- --runInBand src/components/__tests__/RouteRenderSmoke.test.tsx src/components/__tests__/EditActionOwnership.test.tsx`: 2 suites / 102 tests passed, including the linked-items-by-group content, font scales 1/1.3/2, no-menu/month-review and empty-state checks.
+- `npm test -- --runInBand src/domain/__tests__/budget.test.ts src/data/__tests__/migrate.test.ts src/components/__tests__/EditActionOwnership.test.tsx src/components/__tests__/RouteRenderSmoke.test.tsx`: 4 suites / 137 tests passed, including percent-line repeat calculation, malformed-v7 rejection and empty-template migration.
+- Full verification command `npm test -- --coverage`: 70 suites / 763 tests passed.
+
+Final gate sequence (all exit code 0, run in the listed order):
+
+| Command | Result |
+| --- | --- |
+| `npm test -- --coverage` | 70 suites / 763 tests; coverage thresholds pass |
+| `npx tsc --noEmit` | Passed |
+| `npx expo lint` | Passed without warnings |
+| `npx expo-doctor` | Passed; 21/21 checks, no issues |
+| `npx expo export --platform android` | Passed; bundle exported |
+| `npx expo export --platform ios` | Passed; bundle exported |
+
+Expo Doctor output: `Running 21 checks on your project... 21/21 checks passed. No issues detected!`
+
+Directory coverage uses Istanbul line and branch percentages, aggregated with
+the script below; Jest's following per-file columns are Statements, Branches,
+Functions and Lines (in that order).
+
+| Source directory | Lines | Branches | Threshold |
+| --- | ---: | ---: | ---: |
+| `src/domain` | 98.36% | 93.58% | >=90% each |
+| `src/lib` pure modules | 100.00% | 100.00% | >=90% each |
+| `src/data` excluding hooks | 94.39% | 88.08% | >=85% each |
+
+Coverage aggregation script:
+
+```js
+const fs = require('node:fs');
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const coverage = JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8'));
+for (const directory of ['src/domain', 'src/lib', 'src/data']) {
+  const selected = Object.entries(coverage).filter(([path]) => {
+    const relative = path.replace(process.cwd() + '/', '');
+    return relative.startsWith(`${directory}/`)
+      && !relative.includes('/__tests__/')
+      && !(directory === 'src/data' && /\/(use[A-Z]|hooks?\/)/.test(relative));
+  }).map(([, file]) => file);
+  const map = createCoverageMap({});
+  selected.forEach((file) => map.addFileCoverage(file));
+  const summary = map.getCoverageSummary();
+  console.log(`${directory}: lines ${summary.lines.pct.toFixed(2)}%, branches ${summary.branches.pct.toFixed(2)}% (${selected.length} files)`);
+}
+```
+
+The Jest per-file Istanbul summary reports `src/data` at 94.39% Lines and
+88.08% Branches (`createAppStore.ts` 92.48/87.83, `metaStore.ts` 100/90.9,
+`migrate.ts` 95.14/86.17, `safeStorage.ts` 97.56/100); `src/domain` at
+98.36/93.58 and `src/lib` at 100/100. Jest also reports Statements/Functions:
+data 90.68/89.06, domain 97.27/99.39 and lib 100/100. No hooks are included in
+the `src/data` directory aggregation.
+
+Hash audit: every hash cited in the P19-C through P22-A rows and CR-21 through
+CR-31 register resolves to a commit and has a matching commit subject; no
+corrections were required. P20-G commit `3c644d3` was verified with
+`git cat-file -t` and is recorded above.
+
+Assumed: the original template list order is the final deterministic tie-break
+when usage count and latest snapshot month are both tied. `applyBudgetPlanToMonth`
+retains the required injected `newId` option although the month snapshot has no
+ID field. Saving and applying the plan does not create, delete or rewrite
+transactions; existing recorded payments remain transaction-derived.
+Assumed: due-day entry is available for either amount or percent lines after a
+value is entered; percent lines resolve to a planned amount at apply time.
+Assumed: the pre-existing non-clean worktree was unfinished P20-G implementation
+from the prior session, not a new user-only manual change set; it was preserved
+and closed as the P20-G feature rather than mislabeled as a manual checkpoint.
+
+**P20-G device checks not verified:** setup-screen scrolling with all five
+groups, keyboard interaction and due-day entry; sticky footer behavior with
+the keyboard open at narrow widths and large text; native confirmation and
+discard dialogs; month switching/review navigation on iOS and Android;
+voice-control/screen-reader behavior for automatic linked rows; and storage
+write/Undo behavior on physical devices. Layout tests assert React Native
+props and styles only; no real iOS/Android device or development build was
+used.
+
+### P20-H grouped Budget and Month review retirement close-out
+
+P20-H closes CR-32, CR-33 and CR-34; CR-25 is superseded by CR-32. The Budget
+screen now has cash flow, plan summary and one card for each group, with
+schedule and own-line rows merged, paid rows retained, and compact
+“Marked as paid”/“Received” labels. Transactions keeps “Review {Mon}” but
+routes to Budget with the selected month. Month review screen and route are
+deleted. No schema or persisted data changed: `SCHEMA_VERSION` is 8 before and
+after P20-H; month-review calculations, store actions, allocation schema/types
+and transaction records remain unchanged.
+
+P20-H test evidence:
+
+- Focused: `npm test -- --runInBand src/domain/__tests__/pending.test.ts src/components/__tests__/PendingItemActions.test.tsx src/components/__tests__/RouteRenderSmoke.test.tsx src/components/__tests__/TransactionsScreen.test.tsx src/components/__tests__/useAppMenu.test.tsx src/lib/__tests__/routeKinds.test.ts src/mock/__tests__/demoData.test.ts src/lib/__tests__/progressLedger.test.ts` — 8 suites / 162 tests passed.
+- Acceptance tests include `uses Paid wording for expense/investment rows and Received for income rows`; `projects paid, partial, overdue, and linked rows once in due-date order`; `shows the paid amount for a scheduled row cleared after its due month`; `clears a compact budget row directly as Marked as paid and offers undo`; `uses the compact paid action for later dues and confirms the exact clear-through preview`; `keeps paid, overdue, partial and linked rows inside their budget groups`; `renders grouped Auto and budget rows at font scale 1, 1.3 and 2`; `keeps one Edit budget action and the month switcher without a menu or Review control`; `shows cash flow, plan summary and grouped rows in the required order`; `normalizes Budget closing balance with matching tone and accessible label`; `selects the routed Budget month, falling back for an invalid value`; `keeps the Review action and routes its selected month to Budget`; and route-kind assertions that no Month review route is registered.
+- Demo test confirms the four-month data shows a paid row, overdue row, partial
+  row and linked schedule row in the Budget groups.
+
+Replaced assertions and reasons:
+
+- `keeps one no-budget card with a plan-dependent primary action and empty bills state` now asserts the primary action and its setup/apply behavior in Plan summary; the separate Bills and dues block is gone. Reason: CR-32 merges rows into groups and CR-33 sets the new order.
+- `shows cash-flow positions and keeps plan editing separate from template application` now checks only Opening/Closing cash-flow rows, the plan summary metrics and matching metric-row styles. Reason: CR-33 removes the extra flow metric and template application model.
+- `expands earned-income sources and labels unexpected spending clearly` is replaced by group-card, category-row and actual/planned assertions. Reason: the separate income/source card and nested category presentation are removed.
+- `shows earned income by source and separates other money in on Month review` is removed; its values/actions are not a separate screen. Opening/closing remain in Cash flow and available plan figures remain in Plan summary. Reason: CR-34 deletes Month review UI.
+- `keeps the Budget header menu removed and retains on-screen month review` now asserts no Budget Review control and retains month switching/Edit budget. Reason: CR-34 moves the remaining review link to Transactions.
+- `shows no tab bar on Budget setup or Month review stack routes` is replaced by a Budget setup stack-route check and a Month review route-kind absence check. Reason: the Month review route no longer exists.
+- The old RouteRenderSmoke MonthReview empty-state screen entry and `/month-review` route assertion are replaced by route-registry absence and valid/invalid Budget month-parameter assertions. Reason: CR-34 deletes that screen and routes Transactions Review to Budget.
+- The prior Transactions assertion that only kept the Review button visible is replaced by an assertion that its selected month is passed to `/(tabs)/budget`. Reason: the button remains, but its destination changes.
+- The prior menu assertion that included a Month review entry is replaced by no Review menu item and no Budget header menu. Reason: no Month review action remains in app menus.
+- Old single Bills/dues-row and nested/progress-card expectations are replaced by seven group cards in fixed order, each containing rows once, no nested cards/progress bars, Auto tags, paid chips, partial balances and responsive row styles. Reason: CR-32 supersedes CR-25's section design.
+- The old `Edit budget plan` accessibility-label assertion is replaced by the exact `Edit budget` label. Due-row `Clear due` label assertions are replaced by `Marked as paid` for expense/investment and `Received` for income; direct clear and Undo behavior remain. Reason: CR-32 specifies compact action copy without changing the underlying action.
+- The ledger test's P20-H Pending/CR-32–34 Planned, CR-25 Done, 46/53 and 7/8 assertions are replaced by Done, CR-25 Superseded, 47/53 and 8/8. Reason: P20-H and its CRs closed after acceptance and gates.
+
+Final sequential gates (real exit codes):
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 70 suites / 765 tests passed. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Coverage aggregates (independent Istanbul covered/total line and branch counts):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2227/2263 (98.41%) | 2069/2210 (93.62%) |
+| `src/data` excluding hooks | 455/482 (94.40%) | 392/445 (88.09%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Aggregation script:
+
+```js
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8')));
+const groups = {
+  'src/domain': (file) => file.includes(`${path.sep}src${path.sep}domain${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+  'src/data excluding hooks': (file) => file.includes(`${path.sep}src${path.sep}data${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`) && !file.includes(`${path.sep}hooks${path.sep}`),
+  'pure src/lib': (file) => file.includes(`${path.sep}src${path.sep}lib${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+};
+for (const [name, include] of Object.entries(groups)) {
+  const summaries = map.files().filter(include).map((file) => map.fileCoverageFor(file).toSummary());
+  const totals = summaries.reduce((total, summary) => {
+    for (const metric of ['lines', 'branches']) {
+      total[metric].covered += summary[metric].covered;
+      total[metric].total += summary[metric].total;
+    }
+    return total;
+  }, { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } });
+  for (const metric of ['lines', 'branches']) {
+    totals[metric].pct = totals[metric].total ? 100 * totals[metric].covered / totals[metric].total : 100;
+  }
+  console.log(`${name}: lines ${totals.lines.covered}/${totals.lines.total} (${totals.lines.pct.toFixed(2)}%); branches ${totals.branches.covered}/${totals.branches.total} (${totals.branches.pct.toFixed(2)}%)`);
+}
+```
+
+Changed-source per-file Istanbul summary for `src/domain/pending.ts`:
+Statements 98.54%, Branches 94.55%, Functions 100.00%, Lines 100.00%.
+
+Assumed: manual budget actuals remain selected-month transaction totals;
+schedule-linked row actuals use their schedule payment amounts. Assumed:
+monthly schedule rows are the usual payment-action path; row ordering is by
+due date then name with undated rows last. Layout tests inspect React Native
+styles/accessibility props only.
+
+**P20-H acceptance criteria not verified on a real device:** OS font scaling
+and actual text wrapping/clipping at 1.3/2.0; touch and navigation behavior
+for the month switcher, Edit budget and due actions; native dialog/toast
+presentation and five-second Undo timing; VoiceOver/TalkBack announcements
+for Paid, Auto and compact action labels; real-time refresh across Budget,
+Transactions and Home after a payment; and platform-specific rendering on
+iOS/Android. No physical device or development build was used.
+
+### P20-I Home due action and Goals status close-out
+
+P20-I closes CR-35 and CR-36 without changing persisted data or schema
+(`SCHEMA_VERSION` remains 8). Home's title/amount/date rows are noninteractive;
+only the accessible compact check button opens the existing native
+confirmation. Goals and Home each render one status as text alongside every
+visible progress bar, including Emergency fund. Font-scale layout assertions
+cover 1, 1.3 and 2; the demo schedule test confirms at least one of Home's
+five visible due rows is later than earlier unpaid installments.
+
+Focused tests passed: `RouteRenderSmoke.test.tsx`,
+`demoData.test.ts` and `createAppStore.test.ts` — 3 suites / 162 tests.
+Relevant acceptance test names:
+
+- `keeps Home spending collapsed and asks before changing a due`
+- `stacks Home due content and the tick action at font scale 1.3`
+- `stacks Home due content and the tick action at font scale 2`
+- `clears a confirmed Home due with Undo and previews earlier dues`
+- `places one status beside every goal progress bar at font scale 1`
+- `places one status beside every goal progress bar at font scale 1.3`
+- `places one status beside every goal progress bar at font scale 2`
+- `shows a later clearable due in Home's five-row preview`
+- `clears one due and bulk-settles dues with one persisted write per action`
+
+Replaced assertions and reasons:
+
+- P20-E's Home due test invoked the row's `onPress` and asserted that no
+  inline payment control existed. It now asserts the row itself has no
+  `onPress`, contains only title/amount/date plus the check button, and the
+  button alone opens the same native confirmation. Reason: CR-35 moves the
+  action to the explicit tick button while keeping row-body taps inert.
+- P20-E's “no Pay/Clear due/View schedule button and no action sheet” checks
+  remain; the old actionable-row trigger is replaced by `Mark as paid`
+  button-only confirmation and repeat no-op cancellation/dismissal checks.
+  Reason: CR-35 removes row tapping and preserves the retired sheet design's
+  absence.
+- Existing Home projection copy `Projected {date} · {status}` is replaced by
+  the projected date below the progress row and one status beside the bar;
+  `Already reached` and unreachable wording move into that one status.
+  Goals' separate status line moves beside its bar. Reason: CR-36 requires one
+  right-side text status per card rather than status below/away from the bar.
+- Added Home and Goals screen assertions for one status per visible card,
+  including the emergency goal, bar `flex: 1`/`minWidth: 0`, non-shrinking
+  status text, and right-aligned stacking from 1.3. No prior assertion was
+  weakened; this is new CR-36 coverage.
+
+Assumed: Home's five-item due preview remains the intended display cap;
+native dismissal resolves to the existing `false` confirmation result;
+`none` goal projections use the exact existing “Not reachable with current
+contributions” message. The direct store test asserts one persisted write for
+single-due and clear-through actions; the UI calls one such action per Paid
+confirmation. Layout tests inspect style props and rendered text only.
+
+P20-I final sequential gates (exit codes):
+
+| Command | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 70 suites / 771 tests passed; 96.29% statements, 93.02% branches, 97.53% functions, 97.79% lines overall. | 0 |
+| `npx tsc --noEmit` | TypeScript passed. | 0 |
+| `npx expo lint` | Passed with no warnings. | 0 |
+| `npx expo-doctor` | `Running 21 checks on your project... 21/21 checks passed. No issues detected!` | 0 |
+| `npx expo export --platform android` | Android bundle exported. | 0 |
+| `npx expo export --platform ios` | iOS bundle exported. | 0 |
+
+Coverage aggregates (independent Istanbul covered/total line and branch counts):
+
+| Source area | Lines | Branches |
+|---|---:|---:|
+| `src/domain` | 2227/2263 (98.41%) | 2069/2210 (93.62%) |
+| `src/data` excluding hooks | 455/482 (94.40%) | 392/445 (88.09%) |
+| Pure `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Per-file Istanbul summaries for the code paths exercised by this change:
+
+| File | Statements | Branches | Functions | Lines |
+|---|---:|---:|---:|---:|
+| `src/domain/goalLinks.ts` | 99.29% | 92.55% | 100.00% | 100.00% |
+| `src/domain/pending.ts` | 98.54% | 94.55% | 100.00% | 100.00% |
+| `src/data/createAppStore.ts` | 89.53% | 87.83% | 86.42% | 92.48% |
+
+Istanbul does not instrument `app/` or `src/components/` in this repository's
+coverage configuration; responsive screen behavior is asserted in
+`RouteRenderSmoke.test.tsx`.
+
+Aggregation script:
+
+```js
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCoverageMap } = require('istanbul-lib-coverage');
+const map = createCoverageMap(JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8')));
+const groups = {
+  'src/domain': (file) => file.includes(`${path.sep}src${path.sep}domain${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+  'src/data excluding hooks': (file) => file.includes(`${path.sep}src${path.sep}data${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`) && !file.includes(`${path.sep}hooks${path.sep}`),
+  'pure src/lib': (file) => file.includes(`${path.sep}src${path.sep}lib${path.sep}`) && !file.includes(`${path.sep}__tests__${path.sep}`),
+};
+for (const [name, include] of Object.entries(groups)) {
+  const summaries = map.files().filter(include).map((file) => map.fileCoverageFor(file).toSummary());
+  const totals = summaries.reduce((total, summary) => {
+    for (const metric of ['lines', 'branches']) {
+      total[metric].covered += summary[metric].covered;
+      total[metric].total += summary[metric].total;
+    }
+    return total;
+  }, { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } });
+  for (const metric of ['lines', 'branches']) {
+    totals[metric].pct = totals[metric].total ? 100 * totals[metric].covered / totals[metric].total : 100;
+  }
+  console.log(`${name}: lines ${totals.lines.covered}/${totals.lines.total} (${totals.lines.pct.toFixed(2)}%); branches ${totals.branches.covered}/${totals.branches.total} (${totals.branches.pct.toFixed(2)}%)`);
+}
+```
+
+`docs/PROGRESS.md` ledger assertions now require P20-I, CR-35/36, overall
+48/54, and Phase 20 9/9.
+
+**P20-I acceptance criteria not verified on a real device:** actual OS font
+scaling, text clipping and touch target rendering at 1.3/2.0; native Paid /
+Not paid dialog button ordering and dismissal on iOS/Android; check-button
+touch behavior, status placement and assistive-technology announcements; and
+the Undo toast's real five-second timing. No physical device or development
+build was used.

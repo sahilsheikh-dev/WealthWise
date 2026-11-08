@@ -24,7 +24,12 @@ jest.mock('../ui', () => {
       ReactModule.createElement('text', null, children),
   };
 });
-jest.mock('../IconButton', () => ({ IconButton: () => null }));
+jest.mock('../IconButton', () => {
+  const ReactModule = jest.requireActual('react') as typeof React;
+  return {
+    IconButton: (props: Record<string, unknown>) => ReactModule.createElement('iconbutton', props),
+  };
+});
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   const node = (type: string) => ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
@@ -75,6 +80,30 @@ describe('FormScreen close behavior', () => {
     act(() => { mockHardwareBack?.(); });
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockConfirmAsync).not.toHaveBeenCalled();
+  });
+
+  it('supports an accessible non-destructive plus action in the header', () => {
+    const onAdd = jest.fn();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <FormScreen
+          title="Details"
+          onClose={jest.fn()}
+          footer={null}
+          headerAction={{ icon: 'plus', label: 'Add allocation item', variant: 'default', onPress: onAdd }}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Form screen did not render.');
+    const action = renderer.root.findByProps({ label: 'Add allocation item' });
+    expect(action.props).toMatchObject({
+      icon: 'plus',
+      label: 'Add allocation item',
+      variant: 'default',
+    });
+    act(() => action.props.onPress());
+    expect(onAdd).toHaveBeenCalledTimes(1);
   });
 
   it('asks before discarding dirty changes and keeps the form when cancelled', async () => {

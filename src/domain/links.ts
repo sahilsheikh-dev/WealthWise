@@ -267,26 +267,19 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       seen.add(line.category);
     }
   }
-  const budgetTemplateIds = new Set((data.budgetTemplates ?? []).map(({ id }) => id));
-  if (data.defaultBudgetTemplateId && !budgetTemplateIds.has(data.defaultBudgetTemplateId)) {
-    add('missing-default-budget-template', 'Default budget template does not exist.', ['defaultBudgetTemplateId']);
-  }
-  for (const [templateIndex, template] of (data.budgetTemplates ?? []).entries()) {
+  if (data.budgetPlan) {
     const seen = new Set<string>();
-    for (const [lineIndex, line] of template.lines.entries()) {
+    for (const [lineIndex, line] of data.budgetPlan.lines.entries()) {
       if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
+        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetPlan', 'lines', lineIndex, 'category']);
       }
       if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
+        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetPlan', 'lines', lineIndex, 'category']);
       }
       seen.add(line.category);
     }
   }
   for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
-    if (budget.templateId !== null && !budgetTemplateIds.has(budget.templateId)) {
-      add('missing-budget-template', 'Month budget template does not exist.', ['monthBudgets', monthIndex, 'templateId']);
-    }
     const seen = new Set<string>();
     for (const [lineIndex, line] of budget.lines.entries()) {
       if (!allowedBudgetCategory(line.category)) {

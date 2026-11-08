@@ -1,7 +1,9 @@
-import { BUDGET_GROUPS, budgetLineActual, budgetGroupFor } from './budget';
+import { BUDGET_GROUPS, budgetLineActual, budgetGroupFor, budgetMonthView } from './budget';
+import { monthEndDate } from './cashFlow';
 import { monthKey } from './dates';
 import { investCategoryFor } from './links';
-import { liabilitySchedule, planSchedule } from './schedule';
+import { liabilitySchedule, planSchedule, type ScheduleRow } from './schedule';
+import { policySchedule } from './policySchedule';
 import type { AppData, ISODate, Transaction } from './types';
 
 export type PendingStatus = 'overdue' | 'due-today' | 'upcoming' | 'planned';
@@ -9,6 +11,7 @@ export type PendingStatus = 'overdue' | 'due-today' | 'upcoming' | 'planned';
 export type PendingSource =
   | { kind: 'plan'; parentId: string; slotId: string }
   | { kind: 'liability'; parentId: string; slotId: string; paymentKind: 'EMI' | 'Payment' }
+  | { kind: 'policy'; parentId: string; slotId: string }
   | { kind: 'budget'; category: string };
 
 export type PendingItem = {
@@ -21,6 +24,20 @@ export type PendingItem = {
   status: PendingStatus;
   source: PendingSource;
   actionable: boolean;
+};
+
+export type BudgetGroupRow = {
+  id: string;
+  title: string;
+  category: string;
+  dueDate?: ISODate;
+  status: PendingStatus | 'paid';
+  plannedAmount: number;
+  actualAmount: number;
+  amount: number;
+  source: PendingSource;
+  actionable: boolean;
+  automatic: boolean;
 };
 
 function validateMonth(month: string): void {
@@ -113,13 +130,15 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
       if (!group) throw new Error(`No budget group is defined for category "${line.category}".`);
       const remaining = Math.max(0, line.planned - budgetLineActual(data, month, line.category));
       if (remaining === 0) continue;
+      const dueDate = dueDateForLine(month, line.dueDay);
       items.push({
         id: `budget:${month}:${line.category}`,
         kind: 'budget',
         title: line.category,
         category: line.category,
         amount: remaining,
-        status: 'planned',
+        ...(dueDate === undefined ? {} : { dueDate }),
+        status: dueDate === undefined ? 'planned' : dueStatus(dueDate, month, today),
         source: { kind: 'budget', category: line.category },
         actionable: true,
       });
@@ -129,10 +148,172 @@ export function pendingItems(data: AppData, month: string, today: ISODate): Pend
   return items.sort(compareItems);
 }
 
+function transactionAmountForEntry(
+  data: AppData,
+  month: string,
+  sourceKind: 'holding-entry' | 'liability-payment' | 'policy-payment',
+  parentId: string,
+  entryId: string | undefined,
+): number {
+  if (!entryId) return 0;
+  return data.transactions.filter((transaction) =>
+    monthKey(transaction.date) === month
+    && transaction.source?.kind === sourceKind
+    && transaction.source.parentId === parentId
+    && transaction.source.entryId === entryId,
+  ).reduce((sum, transaction) => sum + transaction.amount, 0);
+}
+
+function linkedBudgetRow(
+  data: AppData,
+  month: string,
+  today: ISODate,
+  kind: 'plan' | 'liability' | 'policy',
+  parentId: string,
+  title: string,
+  category: string,
+  row: ScheduleRow,
+  firstUnpaidId: string | undefined,
+): BudgetGroupRow {
+  const source: PendingSource = kind === 'plan'
+    ? { kind, parentId, slotId: row.id }
+    : kind === 'liability'
+      ? {
+        kind,
+        parentId,
+        slotId: row.id,
+        paymentKind: data.liabilities.find((liability) => liability.id === parentId)?.kind === 'recurring'
+          ? 'EMI'
+          : 'Payment',
+      }
+      : { kind, parentId, slotId: row.id };
+  const sourceKind = kind === 'plan'
+    ? 'holding-entry'
+    : kind === 'liability'
+      ? 'liability-payment'
+      : 'policy-payment';
+  const paidThisMonth = kind === 'liability'
+    ? data.liabilities.find((liability) => liability.id === parentId)?.payments
+      .filter((payment) => payment.date.startsWith(month) && payment.kind !== 'Prepayment')
+      .reduce((sum, payment) => sum + payment.amount, 0) ?? 0
+    : transactionAmountForEntry(data, month, sourceKind, parentId, row.entryId);
+  const plannedAmount = row.amount;
+  const status = row.status === 'paid'
+    ? 'paid'
+    : dueStatus(row.dueDate, month, today);
+  const actualAmount = row.status === 'paid' ? row.paidAmount ?? paidThisMonth : paidThisMonth;
+  return {
+    id: `due:${kind}:${parentId}:${row.id}`,
+    title,
+    category,
+    dueDate: row.dueDate,
+    status,
+    plannedAmount,
+    actualAmount,
+    amount: kind === 'liability'
+      && data.liabilities.find((liability) => liability.id === parentId)?.kind === 'one-time'
+      ? row.amount
+      : Math.max(0, plannedAmount - paidThisMonth),
+    source,
+    actionable: status !== 'paid' && row.id === firstUnpaidId,
+    automatic: true,
+  };
+}
+
+function dueDateForLine(month: string, dueDay: number | undefined): ISODate | undefined {
+  if (dueDay === undefined) return undefined;
+  const lastDay = Number(monthEndDate(month).slice(8, 10));
+  return `${month}-${String(Math.min(dueDay, lastDay)).padStart(2, '0')}`;
+}
+
+function compareBudgetRows(left: BudgetGroupRow, right: BudgetGroupRow): number {
+  return (left.dueDate ?? '9999-12-31').localeCompare(right.dueDate ?? '9999-12-31')
+    || left.title.localeCompare(right.title)
+    || left.id.localeCompare(right.id);
+}
+
+export function budgetGroupRows(data: AppData, monthInput: string, today: ISODate): BudgetGroupRow[] {
+  validateMonth(monthInput);
+  const month = monthInput;
+  const rows: BudgetGroupRow[] = [];
+
+  for (const holding of data.holdings) {
+    if (holding.kind !== 'plan') continue;
+    const schedule = planSchedule(holding, today).rows;
+    const firstUnpaidId = schedule.find((row) => row.status !== 'paid')?.id;
+    const category = investCategoryFor(holding.type);
+    for (const row of schedule) {
+      if (row.amount <= 0 || monthKey(row.dueDate) !== month) continue;
+      rows.push(linkedBudgetRow(data, month, today, 'plan', holding.id, holding.name, category, row, firstUnpaidId));
+    }
+  }
+
+  for (const liability of data.liabilities) {
+    if (liability.kind === 'one-time' && liability.dueDate === null) continue;
+    const schedule = liabilitySchedule(liability, today).rows;
+    const firstUnpaidId = schedule.find((row) => row.status !== 'paid')?.id;
+    for (const row of schedule) {
+      if (row.amount <= 0 || monthKey(row.dueDate) !== month) continue;
+      rows.push(linkedBudgetRow(data, month, today, 'liability', liability.id, liability.name, 'EMI', row, firstUnpaidId));
+    }
+  }
+
+  for (const policy of data.policies) {
+    const schedule = policySchedule(policy, today).rows;
+    const firstUnpaidId = schedule.find((row) => row.status !== 'paid')?.id;
+    for (const row of schedule) {
+      if (row.amount <= 0 || monthKey(row.dueDate) !== month) continue;
+      rows.push(linkedBudgetRow(data, month, today, 'policy', policy.id, policy.name, 'Insurance', row, firstUnpaidId));
+    }
+  }
+
+  const budget = data.monthBudgets?.find((item) => item.month === month);
+  const view = budgetMonthView(data, month);
+  const plannedByCategory = new Map<string, number>();
+  const actualByCategory = new Map<string, number>();
+  for (const row of rows) {
+    plannedByCategory.set(row.category, (plannedByCategory.get(row.category) ?? 0) + row.plannedAmount);
+    actualByCategory.set(row.category, (actualByCategory.get(row.category) ?? 0) + row.actualAmount);
+  }
+  const storedLines = new Map((budget?.lines ?? []).map((line) => [line.category, line]));
+  for (const line of view.lines) {
+    if (line.category === 'EMI' || line.category === 'Insurance') continue;
+    const plannedAmount = Math.max(0, line.planned - (plannedByCategory.get(line.category) ?? 0));
+    const actualAmount = Math.max(0, line.actual - (actualByCategory.get(line.category) ?? 0));
+    if (plannedAmount === 0 && actualAmount === 0) continue;
+    const dueDate = dueDateForLine(month, storedLines.get(line.category)?.dueDay);
+    const paid = plannedAmount === 0 || actualAmount >= plannedAmount;
+    const status = paid
+      ? 'paid'
+      : dueDate
+        ? dueStatus(dueDate, month, today)
+        : 'planned';
+    rows.push({
+      id: `budget:${month}:${line.category}`,
+      title: line.category,
+      category: line.category,
+      ...(dueDate === undefined ? {} : { dueDate }),
+      status,
+      plannedAmount,
+      actualAmount,
+      amount: Math.max(0, plannedAmount - actualAmount),
+      source: { kind: 'budget', category: line.category },
+      actionable: !paid,
+      automatic: false,
+    });
+  }
+
+  return rows.sort(compareBudgetRows);
+}
+
 export function pendingTransactionType(item: PendingItem): Transaction['type'] {
   if (item.source.kind === 'plan') return 'invest';
-  if (item.source.kind === 'liability') return 'expense';
+  if (item.source.kind === 'liability' || item.source.kind === 'policy') return 'expense';
   const group = budgetGroupFor(item.category);
   if (!group) throw new Error(`No budget group is defined for category "${item.category}".`);
   return group.id === 'savings-investments' ? 'invest' : 'expense';
+}
+
+export function pendingActionLabel(type: Transaction['type']): 'Marked as paid' | 'Received' {
+  return type === 'income' ? 'Received' : 'Marked as paid';
 }

@@ -1,38 +1,38 @@
-import { router, type Href } from 'expo-router';
-import { useIsFocused } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { router, useIsFocused, type Href } from 'expo-router';
+import { Alert, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { IconButton } from '../../src/components/IconButton';
 import {
   AppText,
   Button,
   Card,
-  ProgressBar,
   Screen,
   SectionTitle,
   StatPill,
   StatPillRow,
   WarningBanner,
 } from '../../src/components/ui';
-import { PendingItemActionSheet } from '../../src/components/PendingItemActionSheet';
-import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { createMetaStore, type BackupMeta } from '../../src/data/metaStore';
+import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
-import { useAppData } from '../../src/data/useAppData';
+import { useAppActions, useAppData } from '../../src/data/useAppData';
 import { shouldNudge } from '../../src/domain/backupNudge';
 import { budgetMonthView } from '../../src/domain/budget';
 import { addDays } from '../../src/domain/dates';
+import { duesThroughPreview, type DueTarget } from '../../src/domain/dues';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { pendingItems, type PendingItem } from '../../src/domain/pending';
 import { homeSummary } from '../../src/domain/summary';
 import { expenseCategoryBreakdown, transactionCategoryLabel } from '../../src/domain/transactions';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { currentHour, todayISO } from '../../src/lib/clock';
+import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
@@ -50,8 +50,10 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/Scree
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const isFocused = useIsFocused();
   const data = useAppData();
+  const actions = useAppActions();
   const today = todayISO();
   const month = today.slice(0, 7);
   const summary = homeSummary(data, today);
@@ -65,9 +67,9 @@ export default function HomeScreen() {
     setSpendingState({ focused: isFocused, expanded: false });
   }
   const spendingExpanded = spendingState.expanded;
-  const [selectedDue, setSelectedDue] = useState<PendingItem | null>(null);
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
   const persistedBytes = useUIStore((state) => state.persistedBytes);
+  const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
@@ -83,6 +85,91 @@ export default function HomeScreen() {
   const storageStatus = persistedBytes === null ? 'ok' : storageLevel(persistedBytes);
   const showStorageWarning = persistedBytes !== null
     && shouldShowStorageWarning(persistedBytes, backupMeta.storageWarnDismissedUntil, today);
+  const handleDuePress = async (item: PendingItem) => {
+    if (item.source.kind !== 'plan' && item.source.kind !== 'liability') return;
+    if (!item.dueDate) {
+      Alert.alert('Unable to clear due', 'This item has no scheduled due date.');
+      return;
+    }
+    const target: DueTarget = { kind: item.source.kind, id: item.source.parentId };
+    const preview = item.actionable
+      ? null
+      : duesThroughPreview(data, target, item.dueDate, today);
+    if (preview && preview.count === 0) {
+      Alert.alert('Unable to clear due', 'This due is no longer outstanding.');
+      return;
+    }
+    const clearThrough = preview !== null && preview.count > 1;
+    const extra = clearThrough && preview
+      ? `\nThis also clears ${preview.count - 1} earlier dues, ${formatAmount(preview.amount, 'exact', 1)} total.`
+      : '';
+    const confirmed = await confirmAsync({
+      title: 'Was this paid?',
+      message: `${item.title}, ${formatAmount(item.amount, 'exact', 1)}, due ${formatDate(item.dueDate)}${extra}`,
+      confirmLabel: 'Paid',
+      cancelLabel: 'Not paid',
+    });
+    if (!confirmed) return;
+
+    if (clearThrough && preview) {
+      const entryIds = actions.clearDuesThrough(target, item.dueDate);
+      if (!entryIds || useAppStore.getState().lastError) {
+        Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+        return;
+      }
+      const transactions = entryIds.map((entryId) => useAppStore.getState().data.transactions.find((transaction) =>
+        transaction.source?.kind === (target.kind === 'plan' ? 'holding-entry' : 'liability-payment')
+        && transaction.source.parentId === target.id
+        && transaction.source.entryId === entryId,
+      ));
+      if (transactions.some((transaction) => transaction === undefined)) {
+        Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+        return;
+      }
+      let total = 0;
+      for (const transaction of transactions) {
+        if (!transaction) {
+          Alert.alert('Unable to clear due', 'A linked transaction could not be found.');
+          return;
+        }
+        total += transaction.amount;
+      }
+      setActionToast({
+        message: `${formatAmount(total, 'exact', 1)} marked as paid`,
+        actionLabel: 'Undo',
+        onAction: () => {
+          actions.undoClearDuesThrough(target, entryIds);
+          const error = useAppStore.getState().lastError;
+          if (error) Alert.alert('Unable to undo', error);
+        },
+      });
+      return;
+    }
+
+    const entryId = actions.clearDue(target, item.source.slotId);
+    if (!entryId || useAppStore.getState().lastError) {
+      Alert.alert('Unable to clear due', useAppStore.getState().lastError ?? 'The due could not be cleared.');
+      return;
+    }
+    const transaction = useAppStore.getState().data.transactions.find((candidate) =>
+      (candidate.source?.kind === 'holding-entry' || candidate.source?.kind === 'liability-payment')
+      && candidate.source.parentId === target.id
+      && candidate.source.entryId === entryId,
+    );
+    if (!transaction) {
+      Alert.alert('Unable to clear due', 'The linked transaction could not be found.');
+      return;
+    }
+    setActionToast({
+      message: `${formatAmount(transaction.amount, 'exact', 1)} marked as paid`,
+      actionLabel: 'Undo',
+      onAction: () => {
+        actions.undoClearDue(target, entryId);
+        const error = useAppStore.getState().lastError;
+        if (error) Alert.alert('Unable to undo', error);
+      },
+    });
+  };
   return (
     <Screen>
       <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
@@ -98,14 +185,15 @@ export default function HomeScreen() {
             onPress={() => router.push('/assets' as Href)}
           />
           <StatPill
+            label="Liabilities"
+            value={<AmountText value={summary.liabilities} tier="tile" />}
+            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
+            tone="err"
+            onPress={() => router.push('/liabilities')}
+          />
+          <StatPill
             label="Emergency fund"
-            value={(
-              <>
-                <AmountText value={summary.goals.find(({ goal }) => goal.auto === 'ef')?.saved ?? 0} tier="tile" />
-                {' · '}
-                {summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
-              </>
-            )}
+            value={summary.emergencyMonths === null ? '—' : `${Math.trunc(summary.emergencyMonths * 10) / 10} mo`}
             accessibilityLabel={`Emergency fund, ${formatAmount(summary.goals.find(({ goal }) => goal.auto === 'ef')?.saved ?? 0, 'exact', 1)}, ${
               summary.emergencyMonths === null
                 ? 'cover unavailable'
@@ -113,13 +201,6 @@ export default function HomeScreen() {
             }`}
             tone="primary"
             onPress={() => router.push('/emergency-fund')}
-          />
-          <StatPill
-            label="Liabilities"
-            value={<AmountText value={summary.liabilities} tier="tile" />}
-            accessibilityLabel={`Liabilities, ${formatAmount(summary.liabilities, 'exact', 1)}`}
-            tone="err"
-            onPress={() => router.push('/liabilities')}
           />
         </StatPillRow>
       </Card>
@@ -152,23 +233,12 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <SectionTitle>Spending by category</SectionTitle>
       <Card style={styles.categoryBreakdown}>
         <AppText
           weight="semibold"
           accessibilityLabel={`This month: ${formatAmount(monthBudget.actualSpend, 'exact', 1)} spent of ${formatAmount(monthBudget.plannedSpend, 'exact', 1)}`}>
           This month: <AmountText value={monthBudget.actualSpend} tier="tile" /> spent of <AmountText value={monthBudget.plannedSpend} tier="tile" />
         </AppText>
-        <View style={styles.spendingActions}>
-          <Button label="Open budget" icon="pie-chart" onPress={() => router.push('/(tabs)/budget')} />
-          {!monthBudget.budget ? (
-            <Button
-              label="Apply budget"
-              icon="layers"
-              onPress={() => router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } })}
-            />
-          ) : null}
-        </View>
         <Pressable
           testID="home-spending-toggle"
           accessibilityRole="button"
@@ -191,6 +261,16 @@ export default function HomeScreen() {
             ))}
           </View>
         ) : <AppText style={[typography.meta, { color: colors.text3 }]}>No spending recorded this month.</AppText> : null}
+        {!monthBudget.budget ? (
+          <Button
+            label={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            accessibilityLabel={data.budgetPlan ? 'Apply budget' : 'Set up budget'}
+            onPress={() => {
+              if (!data.budgetPlan) router.push('/budget-setup');
+              else router.push({ pathname: '/(tabs)/budget', params: { month, apply: '1' } });
+            }}
+          />
+        ) : null}
       </Card>
 
       {nudge.show ? (
@@ -242,28 +322,36 @@ export default function HomeScreen() {
           <SectionTitle>Upcoming and due</SectionTitle>
           <Card style={styles.upcomingCard}>
             {dueItems.map((item) => (
-              <PendingItemRow
+              <View
                 key={item.id}
-                item={item}
-                onPress={() => setSelectedDue(item)}
-              />
+                testID={`home-due-row-${item.id}`}
+                style={[
+                  styles.dueRow,
+                  fontScale >= 1.3 && styles.dueRowStacked,
+                  { borderBottomColor: colors.border },
+                ]}>
+                <View style={styles.dueTitle}>
+                  <AppText weight="semibold" style={typography.name}>{item.title}</AppText>
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    {item.dueDate ? formatDate(item.dueDate) : 'Date unavailable'}
+                  </AppText>
+                </View>
+                <View
+                  testID={`home-due-actions-${item.id}`}
+                  style={[styles.dueActions, fontScale >= 1.3 && styles.dueActionsStacked]}>
+                  <AmountText value={item.amount} tier="row" weight="semibold" />
+                  <IconButton
+                    icon="check"
+                    label="Mark as paid"
+                    hint="Confirms whether this scheduled item was paid."
+                    onPress={() => { void handleDuePress(item); }}
+                  />
+                </View>
+              </View>
             ))}
           </Card>
         </>
       ) : null}
-      <PendingItemActionSheet
-        item={selectedDue}
-        today={today}
-        onClose={() => setSelectedDue(null)}
-        onViewSchedule={(item) => {
-          setSelectedDue(null);
-          if (item.source.kind === 'plan') {
-            router.push(`/investment-entries?id=${encodeURIComponent(item.source.parentId)}` as Href);
-          } else if (item.source.kind === 'liability') {
-            router.push({ pathname: '/liability-payments', params: { id: item.source.parentId } });
-          }
-        }}
-      />
 
       <SectionTitle>Goal Progress</SectionTitle>
       {summary.goals.slice(0, 3).map(({ goal, target, saved, pct, minimum, raised }) => {
@@ -296,7 +384,7 @@ export default function HomeScreen() {
               </View>
               <AppText weight="bold" style={[styles.goalPercent, { color: colors.primary }]}>{pct.toFixed(1)}%</AppText>
             </View>
-            <ProgressBar percent={pct} />
+            <GoalProgressRow percent={pct} projection={projection} />
             <View style={styles.goalAmounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -309,15 +397,10 @@ export default function HomeScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' ? (
+            {goal.auto !== 'ef' && projection.projectedDate
+              && projection.projectedDate !== 'Already reached' ? (
               <AppText style={[typography.meta, { color: colors.text2 }]}>
-                {projection.projectedDate === 'Already reached'
-                  ? 'Already reached'
-                  : projection.projectedDate
-                    ? `Projected ${formatDate(projection.projectedDate)} · ${projection.status === 'ahead'
-                      ? 'Ahead'
-                      : projection.status === 'on-track' ? 'On track' : 'Behind'}`
-                    : 'Not reachable with current contributions'}
+                Projected {formatDate(projection.projectedDate)}
               </AppText>
             ) : null}
             {goal.auto === 'ef' ? (
@@ -382,8 +465,10 @@ const styles = StyleSheet.create({
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   upcomingCard: { gap: 7 },
   dueRow: { minHeight: 54, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  dueRowStacked: { alignItems: 'stretch', flexDirection: 'column' },
   dueTitle: { flex: 1, minWidth: 0, gap: 3 },
-  dueRight: { alignItems: 'flex-end', gap: 4 },
+  dueActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dueActionsStacked: { justifyContent: 'flex-end' },
   quickAction: { minHeight: 56, flex: 1, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   goal: { marginHorizontal: 20, marginBottom: 10, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   goalTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

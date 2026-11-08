@@ -1,4 +1,3 @@
-import { NotFoundError } from './actions';
 import { incomeBaselineFor } from './summary';
 import { liabilitySchedule, planSchedule } from './schedule';
 import { policySchedule } from './policySchedule';
@@ -6,10 +5,11 @@ import { investCategoryFor } from './links';
 import { monthEndDate, monthPositionAt } from './cashFlow';
 import { monthKey, shiftMonth } from './dates';
 import { BUDGET_CATEGORIES, NON_EARNED_INCOME_CATEGORIES } from './schemas';
+import type { ScheduleRow } from './schedule';
 import type {
   AppData,
   BudgetLine,
-  BudgetTemplate,
+  BudgetPlan,
   ISODate,
   MonthBudget,
   Transaction,
@@ -25,6 +25,16 @@ export type BudgetCommitment = {
   plannedAmount: number;
   status: 'paid' | 'overdue' | 'ongoing' | 'upcoming';
   paidAmount: number;
+};
+
+export type LinkedRecurringRow = {
+  kind: 'plan' | 'liability' | 'policy';
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+  dueDate: ISODate;
+  status: BudgetCommitment['status'];
 };
 
 export type BudgetGroup = {
@@ -154,6 +164,53 @@ export function monthlyCommitments(data: AppData, month: string): BudgetCommitme
   return orderedRows(rows);
 }
 
+function linkedRowsFor(
+  kind: LinkedRecurringRow['kind'],
+  parentId: string,
+  name: string,
+  category: string,
+  month: string,
+  rows: ScheduleRow[],
+): LinkedRecurringRow[] {
+  return rows.flatMap((row) => row.amount <= 0 || monthKey(row.dueDate) !== month
+    ? []
+    : [{
+      kind,
+      id: `${kind}:${parentId}:${row.id}`,
+      name,
+      category,
+      amount: row.amount,
+      dueDate: row.dueDate,
+      status: row.status,
+    }]);
+}
+
+export function linkedRecurringForMonth(data: AppData, month: string, asOf: ISODate): LinkedRecurringRow[] {
+  const key = monthOf(month);
+  const rows: LinkedRecurringRow[] = [];
+  for (const holding of data.holdings) {
+    if (holding.kind !== 'plan') continue;
+    rows.push(...linkedRowsFor(
+      'plan', holding.id, holding.name, investCategoryFor(holding.type), key, planSchedule(holding, asOf).rows,
+    ));
+  }
+  for (const liability of data.liabilities) {
+    if (liability.kind === 'one-time' && liability.dueDate === null) continue;
+    rows.push(...linkedRowsFor(
+      'liability', liability.id, liability.name, 'EMI', key, liabilitySchedule(liability, asOf).rows,
+    ));
+  }
+  for (const policy of data.policies) {
+    rows.push(...linkedRowsFor(
+      'policy', policy.id, policy.name, 'Insurance', key, policySchedule(policy, asOf).rows,
+    ));
+  }
+  return rows.sort((a, b) => a.dueDate.localeCompare(b.dueDate)
+    || a.name.localeCompare(b.name)
+    || a.kind.localeCompare(b.kind)
+    || a.id.localeCompare(b.id));
+}
+
 export class MissingPlannedIncomeError extends Error {
   constructor() {
     super('A planned income is required to resolve percentage budget lines.');
@@ -161,21 +218,28 @@ export class MissingPlannedIncomeError extends Error {
   }
 }
 
-export function resolveTemplate(
-  template: Pick<BudgetTemplate, 'plannedIncome' | 'lines'>,
-  plannedIncome = template.plannedIncome,
+export function resolveBudgetPlan(
+  plan: Pick<BudgetPlan, 'plannedIncome' | 'lines'>,
+  plannedIncome = plan.plannedIncome,
 ): BudgetLine[] {
-  return template.lines.map((line) => {
-    if (line.mode === 'amount') return { category: line.category, planned: line.value };
+  return plan.lines.map((line) => {
+    if (line.mode === 'amount') {
+      return {
+        category: line.category,
+        planned: line.value,
+        ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
+      };
+    }
     if (plannedIncome === null) throw new MissingPlannedIncomeError();
     return {
       category: line.category,
       planned: Math.round(line.value * plannedIncome / 100),
+      ...(line.dueDay === undefined ? {} : { dueDay: line.dueDay }),
     };
   });
 }
 
-export function suggestTemplate(input: {
+export function suggestBudgetSplit(input: {
   plannedIncome: number;
   commitments: BudgetCommitment[];
 }): { lines: BudgetLine[]; warnings: string[] } {
@@ -204,9 +268,6 @@ export function suggestTemplate(input: {
   return { lines, warnings };
 }
 
-function templateRows(data: AppData): BudgetTemplate[] {
-  return data.budgetTemplates ?? [];
-}
 function monthRows(data: AppData): MonthBudget[] {
   return data.monthBudgets ?? [];
 }
@@ -219,66 +280,33 @@ function replaceMonth(data: AppData, budget: MonthBudget): AppData {
   };
 }
 
-export function createBudgetTemplate(
+export function setBudgetPlan(data: AppData, plan: BudgetPlan | null): AppData {
+  return { ...data, budgetPlan: plan };
+}
+
+export function applyBudgetPlanToMonth(
   data: AppData,
-  input: Omit<BudgetTemplate, 'id'>,
-  newId: () => string,
+  monthInput: string,
+  options: { newId: () => string; today: ISODate },
 ): AppData {
-  const template = { ...input, id: newId() };
-  return { ...data, budgetTemplates: [...templateRows(data), template] };
-}
-
-export function createBudgetTemplateAndApply(
-  data: AppData,
-  input: Omit<BudgetTemplate, 'id'>,
-  month: string,
-  newId: () => string,
-): AppData {
-  const template: BudgetTemplate = { ...input, id: newId() };
-  const withTemplate = { ...data, budgetTemplates: [...templateRows(data), template] };
-  return applyTemplateToMonth(withTemplate, { month, templateId: template.id });
-}
-
-export function updateBudgetTemplate(data: AppData, id: string, patch: Partial<Omit<BudgetTemplate, 'id'>>): AppData {
-  if (!templateRows(data).some((template) => template.id === id)) throw new NotFoundError('Budget template', id);
-  return {
-    ...data,
-    budgetTemplates: templateRows(data).map((template) => template.id === id ? { ...template, ...patch } : template),
-  };
-}
-
-export function deleteBudgetTemplate(data: AppData, id: string): AppData {
-  const template = templateRows(data).find((row) => row.id === id);
-  if (!template) throw new NotFoundError('Budget template', id);
-  return {
-    ...data,
-    budgetTemplates: templateRows(data).filter((row) => row.id !== id),
-    defaultBudgetTemplateId: data.defaultBudgetTemplateId === id ? null : data.defaultBudgetTemplateId,
-    monthBudgets: monthRows(data).map((row) => row.templateId === id
-      ? { ...row, templateId: null, templateName: row.templateName ?? template.name }
-      : row),
-  };
-}
-
-export function setDefaultBudgetTemplate(data: AppData, id: string | null): AppData {
-  if (id !== null && !templateRows(data).some((template) => template.id === id)) {
-    throw new NotFoundError('Budget template', id);
-  }
-  return { ...data, defaultBudgetTemplateId: id };
-}
-
-export function applyTemplateToMonth(
-  data: AppData,
-  input: { month: string; templateId: string; plannedIncome?: number | null },
-): AppData {
-  const month = monthOf(input.month);
-  const template = templateRows(data).find((row) => row.id === input.templateId);
-  if (!template) throw new NotFoundError('Budget template', input.templateId);
-  const plannedIncome = input.plannedIncome ?? template.plannedIncome ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
+  const month = monthOf(monthInput);
+  void options.newId;
+  const plan = data.budgetPlan;
+  if (!plan) return data;
+  const plannedIncome = plan.plannedIncome ?? incomeBaselineFor(data, options.today)?.amount ?? null;
+  const lines = resolveBudgetPlan(plan, plannedIncome);
   return replaceMonth(data, {
-    month, templateId: template.id, templateName: template.name, customized: false,
-    plannedIncome, lines: resolveTemplate(template, plannedIncome),
+    month, source: 'plan', plannedIncome, lines, linkedIncluded: true,
   });
+}
+
+export function saveAndApplyBudgetPlan(
+  data: AppData,
+  plan: BudgetPlan,
+  month: string,
+  options: { newId: () => string; today: ISODate },
+): AppData {
+  return applyBudgetPlanToMonth(setBudgetPlan(data, plan), month, options);
 }
 
 export function customizeMonthBudget(
@@ -288,20 +316,27 @@ export function customizeMonthBudget(
 ): AppData {
   const month = monthOf(monthInput);
   const stored = monthRows(data).find((row) => row.month === month);
-  const defaultTemplate = templateRows(data).find((row) => row.id === data.defaultBudgetTemplateId);
-  const defaultIncome = input.plannedIncome ?? defaultTemplate?.plannedIncome
-    ?? incomeBaselineFor(data, `${month}-01`)?.amount ?? null;
-  const baseLines = stored?.lines ?? (defaultTemplate ? resolveTemplate(defaultTemplate, defaultIncome) : []);
-  const base = stored ?? (defaultTemplate ? {
-    month, templateId: defaultTemplate.id, templateName: defaultTemplate.name, customized: true,
-    plannedIncome: input.plannedIncome, lines: baseLines,
-  } : {
-    month, templateId: null, templateName: null, customized: true,
-    plannedIncome: input.plannedIncome, lines: baseLines,
-  });
+  const baseLines = stored?.lines ?? [];
+  const base = stored ?? { month, source: 'custom' as const, plannedIncome: input.plannedIncome, lines: baseLines };
   return replaceMonth(data, {
-    ...base, customized: true, plannedIncome: input.plannedIncome, lines: input.lines ?? baseLines,
+    ...base, source: 'custom', plannedIncome: input.plannedIncome, lines: input.lines ?? baseLines,
   });
+}
+
+export function restoreMonthBudget(data: AppData, monthInput: string, budget: MonthBudget | null): AppData {
+  const month = monthOf(monthInput);
+  if (budget === null) return clearMonthBudget(data, month);
+  if (budget.month !== month) throw new Error('Cannot restore a budget to a different month.');
+  return replaceMonth(data, budget);
+}
+
+export function restoreBudgetPlanAndMonth(
+  data: AppData,
+  plan: BudgetPlan | null,
+  month: string,
+  budget: MonthBudget | null,
+): AppData {
+  return restoreMonthBudget(setBudgetPlan(data, plan), month, budget);
 }
 
 export function clearMonthBudget(data: AppData, monthInput: string): AppData {
@@ -311,31 +346,22 @@ export function clearMonthBudget(data: AppData, monthInput: string): AppData {
   return { ...data, monthBudgets: remaining };
 }
 
-export function saveMonthAsTemplate(
-  data: AppData,
-  monthInput: string,
-  name: string,
-  newId: () => string,
-): AppData {
-  const budget = monthRows(data).find((row) => row.month === monthOf(monthInput));
-  if (!budget) throw new NotFoundError('Month budget', monthInput);
-  return createBudgetTemplate(data, {
-    name, plannedIncome: budget.plannedIncome,
-    lines: budget.lines.map((line) => ({ category: line.category, mode: 'amount', value: line.planned })),
-  }, newId);
+export function setBudgetRepeat(data: AppData, repeatMonthly: boolean, repeatFrom: string | null): AppData {
+  if (!data.budgetPlan) return data;
+  return {
+    ...data,
+    budgetPlan: { ...data.budgetPlan, repeatMonthly, repeatFrom: repeatMonthly ? repeatFrom : null },
+  };
 }
 
-export function ensureMonthBudget(data: AppData, month: string, today: ISODate): AppData {
-  monthOf(month);
-  if (month !== monthKey(today) || monthRows(data).some((row) => row.month === month)) return data;
-  const template = templateRows(data).find((row) => row.id === data.defaultBudgetTemplateId);
-  if (!template) return data;
-  const plannedIncome = template.plannedIncome ?? incomeBaselineFor(data, today)?.amount ?? null;
-  if (plannedIncome === null && template.lines.some((line) => line.mode === 'percent')) return data;
-  return applyTemplateToMonth(data, {
-    month, templateId: template.id,
-    plannedIncome,
-  });
+export function ensureCurrentMonthBudget(data: AppData, today: ISODate, newId: () => string): AppData {
+  const month = monthKey(today);
+  const plan = data.budgetPlan;
+  if (!plan || !plan.repeatMonthly || plan.repeatFrom === null || plan.repeatFrom > month
+    || monthRows(data).some((row) => row.month === month)) return data;
+  if (plan.plannedIncome === null && plan.lines.some((line) => line.mode === 'percent')
+    && incomeBaselineFor(data, today) === null) return data;
+  return applyBudgetPlanToMonth(data, month, { newId, today });
 }
 
 export type OutstandingSummary = { count: number; amount: number };
@@ -378,6 +404,8 @@ export type BudgetMonthView = {
   lines: { category: string; planned: number; actual: number; remaining: number; usedPct: number | null; status: 'ok' | 'near' | 'over' }[];
   unbudgetedByGroup: { groupId: BudgetGroup['id']; groupName: string; amount: number }[];
   commitments: BudgetCommitment[];
+  linkedByCategory?: { category: string; rows: LinkedRecurringRow[] }[];
+  groupTotals?: { groupId: BudgetGroup['id']; groupName: string; planned: number }[];
   plannedSpend: number;
   actualSpend: number;
   plannedSave: number;
@@ -392,16 +420,24 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
   const key = monthOf(month);
   const budget = monthRows(data).find((row) => row.month === key) ?? null;
   const commitments = monthlyCommitments(data, key);
+  const includeLinked = budget?.linkedIncluded === true;
+  const linkedRows = includeLinked ? linkedRecurringForMonth(data, key, monthEndDate(key)) : [];
   const planned = new Map((budget?.lines ?? []).map((line) => [line.category, line.planned]));
-  for (const category of ['EMI', 'Insurance']) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, amount);
-  }
-  for (const category of INVESTMENT_CATEGORIES) {
-    const amount = commitments.filter((item) => item.category === category)
-      .reduce((sum, item) => sum + item.plannedAmount, 0);
-    if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+  if (includeLinked) {
+    for (const row of linkedRows) {
+      planned.set(row.category, (planned.get(row.category) ?? 0) + row.amount);
+    }
+  } else {
+    for (const category of ['EMI', 'Insurance']) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, amount);
+    }
+    for (const category of INVESTMENT_CATEGORIES) {
+      const amount = commitments.filter((item) => item.category === category)
+        .reduce((sum, item) => sum + item.plannedAmount, 0);
+      if (amount > 0) planned.set(category, Math.max(planned.get(category) ?? 0, amount));
+    }
   }
   const lines = [...planned].map(([category, amount]) => {
     const actual = budgetLineActual(data, key, category);
@@ -421,6 +457,20 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     .reduce((sum, line) => sum + line.planned, 0);
   const plannedSave = lines.filter((line) => isInvestmentCategory(line.category))
     .reduce((sum, line) => sum + line.planned, 0);
+  const linkedByCategory = includeLinked
+    ? BUDGET_CATEGORIES.flatMap((category) => {
+      const rows = linkedRows.filter((row) => row.category === category);
+      return rows.length === 0 ? [] : [{ category, rows }];
+    })
+    : [];
+  const groupTotals = includeLinked
+    ? BUDGET_GROUPS.map((group) => ({
+      groupId: group.id,
+      groupName: group.name,
+      planned: lines.filter((line) => group.categories.includes(line.category))
+        .reduce((sum, line) => sum + line.planned, 0),
+    }))
+    : [];
   const budgetCategories = new Set(lines.map((line) => line.category));
   const unbudgetedAmounts = new Map<BudgetGroup['id'], number>();
   for (const row of data.transactions) {
@@ -474,6 +524,7 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
     },
     otherMoneyIn,
     lines, unbudgetedByGroup, commitments, plannedSpend, actualSpend, plannedSave, actualSave,
+    ...(includeLinked ? { linkedByCategory, groupTotals } : {}),
     debt: {
       emiPlanned: commitments.filter((item) => item.kind === 'liability').reduce((sum, item) => sum + item.plannedAmount, 0),
       emiActual: monthPayments.filter((row) => row.isEmi).reduce((sum, row) => sum + row.payment.amount, 0),
@@ -485,41 +536,4 @@ export function budgetMonthView(data: AppData, month: string): BudgetMonthView {
       ? null : budget.plannedIncome - plannedSpend - plannedSave,
     unbudgeted, outstanding: outstandingAt(data, monthEndDate(key)),
   };
-}
-
-export type BudgetHistoryRow = {
-  month: string;
-  templateName: string;
-  customized: boolean;
-  plannedIncome: number | null;
-  plannedSpend: number;
-  plannedSave: number;
-  actualEarned: number;
-  actualSpend: number;
-  actualInvested: number;
-  savingsRatePct: number | null;
-  closing: number;
-  outstanding: OutstandingSummary;
-};
-
-export function budgetHistory(data: AppData): BudgetHistoryRow[] {
-  const months = new Set([
-    ...(data.monthBudgets ?? []).map((row) => row.month),
-    ...data.transactions.map((row) => monthKey(row.date)),
-  ]);
-  return [...months].sort((a, b) => b.localeCompare(a)).map((month) => {
-    const view = budgetMonthView(data, month);
-    const actualInvested = data.transactions.filter((row) =>
-      monthKey(row.date) === month && row.type === 'invest',
-    ).reduce((sum, row) => sum + row.amount, 0);
-    return {
-      month, templateName: view.budget?.templateName ?? 'No budget',
-      customized: view.budget?.customized ?? false, plannedIncome: view.plannedIncome,
-      plannedSpend: view.plannedSpend, plannedSave: view.plannedSave,
-      actualEarned: view.actualEarned, actualSpend: view.actualSpend,
-      actualInvested,
-      savingsRatePct: view.actualEarned === 0 ? null : (view.actualEarned - view.actualSpend) / view.actualEarned * 100,
-      closing: view.position.closing, outstanding: view.outstanding,
-    };
-  });
 }

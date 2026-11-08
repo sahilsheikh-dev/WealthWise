@@ -88,25 +88,4 @@ describe('backup metadata storage', () => {
     )).rejects.toThrow('Sort preference is invalid.');
   });
 
-  it('persists Budget history sort choices and falls back to month for an invalid stored key', async () => {
-    const storage = new MetaStorage();
-    const meta = createMetaStore(storage);
-    const selected = { key: 'actualSpend', dir: 'asc' as const };
-    await meta.updateSortSpec('budgetHistory', selected, SORT_OPTIONS.budgetHistory);
-    expect(storage.writes).toBe(1);
-    await expect(meta.getSortSpec(
-      'budgetHistory',
-      SORT_OPTIONS.budgetHistory,
-      DEFAULT_SORTS.budgetHistory,
-    )).resolves.toEqual(selected);
-
-    storage.values.set('wealthwise.meta.v1', JSON.stringify({
-      sortSpecs: { budgetHistory: { key: 'not-registered', dir: 'asc' } },
-    }));
-    await expect(meta.getSortSpec(
-      'budgetHistory',
-      SORT_OPTIONS.budgetHistory,
-      DEFAULT_SORTS.budgetHistory,
-    )).resolves.toEqual({ key: 'month', dir: 'desc' });
-  });
 });

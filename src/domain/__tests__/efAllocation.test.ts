@@ -2,6 +2,7 @@ import { mockAppData } from '../../mock/data';
 import * as efAllocationModule from '../efAllocation';
 import {
   allocateAmounts,
+  activeEfBucketMetadata,
   allocationWarnings,
   effectiveAllocation,
   EF_BUCKETS,
@@ -90,6 +91,31 @@ describe('ef allocation', () => {
     expect(updated.efAllocation).toMatchObject({ cash: 20, bank: 30 });
     expect(resetEfAllocation(updated)).toMatchObject({ efAllocation: null });
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(InvalidAllocationError);
+  });
+
+  it('uses the four default groups and drops legacy zero groups without linked assets', () => {
+    expect(activeEfBucketMetadata(null).map(({ id }) => id)).toEqual([
+      'cash',
+      'bank',
+      'fd-rd',
+      'mutual-funds-bonds',
+    ]);
+    expect(activeEfBucketMetadata({
+      cash: 10,
+      bank: 40,
+      'fd-rd': 35,
+      'mutual-funds-bonds': 15,
+      stocks: 0,
+      insurance: 0,
+      other: 0,
+    }).map(({ id }) => id)).toEqual([
+      'cash',
+      'bank',
+      'fd-rd',
+      'mutual-funds-bonds',
+    ]);
+    expect(activeEfBucketMetadata({ cash: 100, insurance: 0 }, [], { insurance: ['policy-or-holding'] })
+      .map(({ id }) => id)).toEqual(['cash', 'insurance']);
   });
 
   it('apportions 20,000 seeded balances exactly in whole paise (seed 0x015A110C)', () => {

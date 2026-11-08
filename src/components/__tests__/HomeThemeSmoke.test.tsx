@@ -12,13 +12,20 @@ import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockThemeId: { current: ThemeId } = { current: 'system' };
 const mockData = { ...emptyAppData('2026-10-10'), settings: { ...emptyAppData('2026-10-10').settings, name: 'Demo' } };
+const mockActions = { clearDue: jest.fn(), clearDuesThrough: jest.fn(), undoClearDue: jest.fn(), undoClearDuesThrough: jest.fn() };
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
 }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
-jest.mock('../../data/useAppData', () => ({ useAppData: () => mockData }));
+jest.mock('../../data/useAppData', () => ({
+  useAppData: () => mockData,
+  useAppActions: () => mockActions,
+}));
 jest.mock('../../data/store', () => ({
   useAppStore: (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
   metaStore: {
@@ -134,17 +141,42 @@ describe('Home screen theme smoke', () => {
     act(() => renderer?.unmount());
   });
 
-  it('opens the Budget tab from the Home budget card', async () => {
+  it('offers setup without a plan and routes plan application through Budget', async () => {
     jest.clearAllMocks();
+    const previous = { budgetPlan: mockData.budgetPlan, monthBudgets: mockData.monthBudgets };
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(<HomeScreen />);
       await Promise.resolve();
     });
     if (!renderer) throw new Error('Home did not render.');
-    act(() => renderer?.root.findByProps({ label: 'Open budget' }).props.onPress());
-    expect(router.push).toHaveBeenCalledWith('/(tabs)/budget');
+    const setup = renderer.root.findByProps({ accessibilityLabel: 'Set up budget' });
+    act(() => setup.props.onPress());
+    expect(router.push).toHaveBeenCalledWith('/budget-setup');
     await act(async () => renderer?.unmount());
+
+    mockData.budgetPlan = {
+      plannedIncome: 10_000,
+      lines: [{ category: 'Food', mode: 'amount', value: 1_000 }],
+      repeatMonthly: false,
+      repeatFrom: null,
+    };
+    mockData.monthBudgets = [];
+    jest.mocked(router.push).mockClear();
+    await act(async () => {
+      renderer = TestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Home did not render.');
+    const apply = renderer.root.findByProps({ accessibilityLabel: 'Apply budget' });
+    act(() => apply.props.onPress());
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(tabs)/budget',
+      params: { month: '2026-10', apply: '1' },
+    });
+    await act(async () => renderer?.unmount());
+    mockData.budgetPlan = previous.budgetPlan;
+    mockData.monthBudgets = previous.monthBudgets;
   });
 
   it('shows Festival, Donation and Gifts in the current-month Home spending breakdown', async () => {
@@ -167,8 +199,7 @@ describe('Home screen theme smoke', () => {
         .toEqual({ expanded: false });
       act(() => renderer?.root.findByProps({ testID: 'home-spending-toggle' }).props.onPress());
       const visibleText = renderer.root.findAllByType('text').map((node) => node.children.join(' '));
-      expect(renderer.root.findAll((node) => String(node.type) === 'section')
-        .map((node) => node.children.join(' '))).toContain('Spending by category');
+      expect(visibleText).toContain('Hide spending by category');
       for (const category of ['Festival', 'Donation', 'Gifts']) expect(visibleText).toContain(category);
       for (const amount of ['₹1,500', '₹500', '₹1,000']) expect(visibleText).toContain(amount);
       expect(visibleText).not.toContain('Salary');

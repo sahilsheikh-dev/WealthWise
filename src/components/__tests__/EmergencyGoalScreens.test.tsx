@@ -10,10 +10,14 @@ import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 const mockData: { current: AppData } = { current: emptyAppData('2026-10-11') };
 const mockThemeId: { current: ThemeId } = { current: 'system' };
+const mockFontScale: { current: number } = { current: 1 };
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useIsFocused: () => true,
+}));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../data/useAppData', () => ({
@@ -37,7 +41,9 @@ jest.mock('../../theme/useTheme', () => ({
 }));
 jest.mock('../../components/AppHeader', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
-  return { AppHeader: () => ReactModule.createElement('header') };
+  return {
+    AppHeader: (props: Record<string, unknown>) => ReactModule.createElement('header', props),
+  };
 });
 jest.mock('../../components/ScreenErrorBoundary', () => ({ ScreenErrorBoundary: () => null }));
 jest.mock('../../components/ui', () => {
@@ -68,10 +74,11 @@ jest.mock('react-native', () => {
     Alert: { alert: jest.fn() },
     Modal: node('modal'),
     Pressable: node('pressable'),
+    Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
     Text: node('text'),
     View: node('view'),
-    useWindowDimensions: () => ({ fontScale: 1 }),
+    useWindowDimensions: () => ({ fontScale: mockFontScale.current }),
   };
 });
 
@@ -156,7 +163,7 @@ describe('three-month emergency target screens', () => {
     const pills = home.root.findAll((node) =>
       ['Assets', 'Emergency fund', 'Liabilities'].includes(node.props.label));
     expect([...new Set(pills.map((pill) => pill.props.label))])
-      .toEqual(['Assets', 'Emergency fund', 'Liabilities']);
+      .toEqual(['Assets', 'Liabilities', 'Emergency fund']);
     expect(pills.some((pill) => pill.props.accessibilityLabel === 'Assets, ₹2,00,000')).toBe(true);
     expect(pills.some((pill) =>
       pill.props.accessibilityLabel === 'Emergency fund, ₹2,00,000, 2.6 months of cover')).toBe(true);
@@ -224,7 +231,7 @@ describe('three-month emergency target screens', () => {
     },
   );
 
-  it('shows custom allocation rows, linked holding values, and wrap-safe styles', () => {
+  it('hides linked holdings in normal mode and places status beside a flexible progress bar', () => {
     const empty = emptyAppData('2026-10-11');
     mockData.current = {
       ...empty,
@@ -245,24 +252,57 @@ describe('three-month emergency target screens', () => {
         stocks: 0, insurance: 0, other: 0, 'custom-reserve': 10,
       },
     };
+    mockFontScale.current = 1;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
     if (!renderer) throw new Error('Emergency fund did not render.');
     const text = renderedText(renderer.root);
     expect(text).toContain('Home reserve');
-    expect(text).toContain('Savings account');
-    expect(renderer.root.findByProps({ label: 'Manage links' })).toBeDefined();
+    expect(text).not.toContain('Savings account');
+    expect(renderer.root.findAllByProps({ label: 'Manage links' })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ label: 'Link assets' })).toHaveLength(0);
     expect(text).not.toContain('Deposit');
     expect(text).not.toContain('Withdraw');
     expect(text).not.toContain('Passbook');
     expect(renderer.root.findAllByProps({ label: 'Link assets' })).toHaveLength(0);
 
-    const customRow = renderer.root.findAll((node) => flattenStyle(node.props.style).paddingVertical === 10)[0];
-    expect(customRow).toBeDefined();
-    expect(flattenStyle(customRow?.props.style)).toMatchObject({ gap: 5, paddingVertical: 10, borderBottomWidth: 1 });
-    const chip = renderer.root.findAll((node) => flattenStyle(node.props.style).borderRadius === 16)[0];
-    expect(chip).toBeDefined();
-    expect(flattenStyle(chip?.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap', minHeight: 30 });
+    expect(renderer.root.findAll((node) =>
+      String(node.type) === 'header' && node.props.showDefaultMenu === false)).toHaveLength(1);
+    const progress = renderer.root.findAll((node) => node.props.testID === 'emergency-fund-progress-bank');
+    expect(progress.length).toBeGreaterThan(0);
+    expect(flattenStyle(progress[0]?.props.style)).toMatchObject({ flex: 1, minWidth: 0 });
+    const status = renderer.root.findAll((node) => node.props.testID === 'emergency-fund-status-bank');
+    expect(status.length).toBeGreaterThan(0);
+    expect(flattenStyle(status[0]?.props.style).flexShrink).toBe(0);
+  });
+
+  it.each([1.3, 2])('stacks allocation status at font scale %s', (fontScale) => {
+    const empty = emptyAppData('2026-10-11');
+    mockData.current = {
+      ...empty,
+      holdings: [{
+        id: 'holding-cash', kind: 'manual', name: 'Savings account', type: 'Savings account',
+        invested: 2_500, value: 2_500, logs: [],
+      }],
+      goals: [{
+        id: 'ef-goal', name: 'Emergency fund', target: 100_000, saved: 0, year: 2028, auto: 'ef',
+        links: [{ instrumentId: 'holding-cash', share: 100 }],
+      }],
+      efBucketLinks: { cash: ['holding-cash'] },
+    };
+    mockFontScale.current = fontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
+    if (!renderer) throw new Error('Emergency fund did not render.');
+    const stack = renderer.root.findAll((node) => node.props.testID === 'emergency-fund-progress-status-cash');
+    expect(stack.length).toBeGreaterThan(0);
+    expect(flattenStyle(stack[0]?.props.style)).toMatchObject({ flexDirection: 'column', alignItems: 'stretch' });
+    const rightAlignedStatus = renderer.root.findAll((node) => node.props.testID === 'emergency-fund-status-cash');
+    expect(rightAlignedStatus.length).toBeGreaterThan(0);
+    expect(flattenStyle(rightAlignedStatus[0]?.props.style)).toMatchObject({
+      alignSelf: 'flex-end',
+      textAlign: 'right',
+    });
   });
 
   it('offers to link assets when the allocation table is empty', () => {

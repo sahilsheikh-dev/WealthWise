@@ -71,6 +71,38 @@ function pendingRowsFor(data: AppData, target: DueTarget, asOf: string, rowId?: 
   return unpaid(policySchedule(policy, asOf).rows);
 }
 
+function unpaidRows(data: AppData, target: DueTarget, asOf: string): ScheduleRow[] {
+  if (target.kind === 'plan') {
+    const holding = data.holdings.find((item) => item.id === target.id);
+    if (!holding || holding.kind !== 'plan') throw new NotFoundError('Plan', target.id);
+    return planSchedule(holding, asOf).rows.filter((row) => row.status !== 'paid');
+  }
+  if (target.kind === 'liability') {
+    const liability = data.liabilities.find((item) => item.id === target.id);
+    if (!liability) throw new NotFoundError('Liability', target.id);
+    if (liability.kind === 'one-time' && liability.dueDate === null) return [];
+    return liabilitySchedule(liability, asOf).rows.filter((row) => row.status !== 'paid');
+  }
+  const policy = data.policies.find((item) => item.id === target.id);
+  if (!policy) throw new NotFoundError('Policy', target.id);
+  return policySchedule(policy, asOf).rows.filter((row) => row.status !== 'paid');
+}
+
+export function duesThroughPreview(
+  data: AppData,
+  target: DueTarget,
+  dueDate: string,
+  asOf: string,
+): { count: number; amount: number } {
+  const scheduled = unpaidRows(data, target, asOf);
+  if (!scheduled.some((row) => row.dueDate === dueDate)) return { count: 0, amount: 0 };
+  const rows = scheduled.filter((row) => row.dueDate <= dueDate);
+  return {
+    count: rows.length,
+    amount: rows.reduce((sum, row) => sum + row.amount, 0),
+  };
+}
+
 function summarizePending(rows: ScheduleRow[]): PendingDues {
   const byMonth = new Map<string, number>();
   for (const row of rows) {
@@ -183,6 +215,30 @@ export function clearDue(
   }, options.newId);
 }
 
+export function clearDuesThrough(
+  data: AppData,
+  target: DueTarget,
+  dueDate: string,
+  options: { date: string; newId: () => string },
+): { data: AppData; entryIds: string[] } {
+  const scheduled = unpaidRows(data, target, options.date);
+  if (!scheduled.some((row) => row.dueDate === dueDate)) throw new NothingToClearError();
+  const rows = scheduled.filter((row) => row.dueDate <= dueDate);
+  if (rows.length > 400) throw new TooManyDuesError(rows.length);
+
+  let result = data;
+  const entryIds: string[] = [];
+  for (const row of rows) {
+    const cleared = clearDue(result, target, {
+      ...options,
+      rowId: row.id,
+    });
+    result = cleared.data;
+    entryIds.push(cleared.entryId);
+  }
+  return { data: result, entryIds };
+}
+
 export function undoClearDue(data: AppData, target: DueTarget, entryId: string): AppData {
   if (target.kind === 'plan') return deleteInvestmentEntry(data, target.id, entryId);
   if (target.kind === 'liability') return deleteLiabilityPayment(data, target.id, entryId);
@@ -200,6 +256,14 @@ export function undoClearDue(data: AppData, target: DueTarget, entryId: string):
         && transaction.source.parentId === target.id
         && transaction.source.entryId === entryId)),
   };
+}
+
+export function undoClearDuesThrough(data: AppData, target: DueTarget, entryIds: string[]): AppData {
+  let result = data;
+  for (const entryId of [...entryIds].reverse()) {
+    result = undoClearDue(result, target, entryId);
+  }
+  return result;
 }
 
 function nextTrackingDate(rows: ScheduleRow[], asOf: string): string {

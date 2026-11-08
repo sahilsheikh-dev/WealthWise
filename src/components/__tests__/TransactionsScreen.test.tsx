@@ -81,6 +81,8 @@ jest.mock('react-native', () => {
   const node = (name: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
     ReactModule.createElement(name, props, children);
   return {
+    Platform: { OS: 'ios' },
+    Alert: { alert: jest.fn() },
     PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
@@ -211,14 +213,11 @@ describe('Transactions available-balance card', () => {
     expect(text).toContain('No earned income logged this month');
     expect(text).toContain('Available balance');
     expect(text).not.toContain('NaN');
-    act(() => renderer.root.findAll((node) =>
-      typeof node.props.accessibilityLabel === 'string'
-      && node.props.accessibilityLabel.startsWith('Expand Available balance'),
-    )[0]?.props.onPress());
-    const expandedText = renderedText(renderer.root);
-    expect(expandedText).toContain('Other money in');
-    expect(expandedText).toContain('₹5.00 K');
-    expect(expandedText).not.toContain('NaN');
+    const balanceCard = renderer.root.findByProps({ testID: 'available-balance-card' });
+    expect(balanceCard.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
+    expect(renderedText(balanceCard)).not.toContain('Other money in');
+    expect(renderedText(balanceCard)).not.toContain('due');
+    expect(renderedText(balanceCard)).not.toContain('NaN');
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);
@@ -296,7 +295,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('renders a compact collapsed summary and balanced expanded details with review actions', () => {
+  it('keeps the Review action and routes its selected month to Budget', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
       { id: 'prior-income', type: 'income', amount: 1_000, category: 'Salary', note: 'Prior pay', date: '2026-09-02' },
@@ -317,122 +316,77 @@ describe('Transactions available-balance card', () => {
       });
       if (!renderer) throw new Error('Transactions renderer was not created.');
       const currentRenderer = renderer;
-      const hasReviewDot = () => renderer?.root.findAll((node) => {
-        const styles = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
-        return styles.some((style) =>
-          style && typeof style === 'object' && style.width === 6 && style.height === 6,
-        );
-      }).length ?? 0;
       const cashCard = currentRenderer.root.findByProps({ testID: 'available-balance-card' });
       const card = cashCard.findAll((node) => String(node.type) === 'card')[0];
       if (!card) throw new Error('Balance Card did not render.');
-      const collapsedStyles = flattenStyles(card.props.style);
-      expect(collapsedStyles).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 56 }),
-        expect.objectContaining({ maxHeight: 64 }),
-      ]));
-      const heading = cashCard.findByProps({ testID: 'available-balance-toggle' });
-      expect(flattenStyles(heading.props.style)).toEqual(expect.arrayContaining([
-        expect.objectContaining({ minHeight: 56 }),
-      ]));
+      const cardStyles = flattenStyles(card.props.style);
+      expect(cardStyles).toEqual(expect.arrayContaining([expect.objectContaining({ minHeight: 56 })]));
+      expect(cardStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(cashCard.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
+      expect(cashCard.findAllByProps({ testID: 'available-balance-details' })).toHaveLength(0);
       const collapsedFigures = cashCard.findAll((node) =>
         node.props.accessibilityLabel === '₹830' || node.props.accessibilityLabel === '₹600',
       ).map((node) => node.props.accessibilityLabel);
-      expect([...new Set(collapsedFigures)]).toEqual(['₹830', '₹600']);
-      expect(hasReviewDot()).toBeGreaterThan(0);
+      expect([...new Set(collapsedFigures)]).toEqual(['₹830']);
       const collapsedLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
       expect(collapsedLabels).toContain('Available balance');
-      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(true);
+      expect(collapsedLabels.some((label) => label.includes('From') && label.includes('Sep'))).toBe(false);
       expect(collapsedLabels).not.toContain('Brought forward');
-
-      act(() => currentRenderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
-      )[0]?.props.onPress());
-      const expandedStyles = flattenStyles(card.props.style);
-      expect(expandedStyles).toEqual(expect.arrayContaining([expect.objectContaining({ padding: 3 })]));
-      expect(expandedStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
-      const details = cashCard.findAllByProps({ testID: 'available-balance-details' })[0];
-      if (!details) throw new Error('Expanded balance details did not render.');
-      expect(flattenStyles(details.props.style)).toEqual(expect.arrayContaining([
-        expect.objectContaining({ gap: 3, paddingTop: 3 }),
-      ]));
+      expect(cashCard.findAll((node) =>
+        String(node.type) === 'view' && String(node.props.testID).startsWith('balance-metric-'),
+      )).toHaveLength(0);
+      expect(cashCard.findAllByProps({ testID: 'available-balance-caption' })).toHaveLength(0);
+      expect(cashCard.findAllByProps({ testID: 'balance-pending-caption' })).toHaveLength(0);
       expect(cashCard.findAll((node) =>
         flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
       )).toHaveLength(0);
-      const metricIds = ['brought-forward', 'income', 'spent', 'invested'];
-      const metrics = metricIds.map((id) => cashCard.findByProps({ testID: `balance-metric-${id}` }));
-      expect(metrics.map((metric) => metric.findAllByType('text')[0]?.children.join(' ')))
-        .toEqual(['Brought fwd', 'Income', 'Spent', 'Invested']);
-      expect(metrics.every((metric) => flattenStyles(metric.props.style).some((style) =>
-        style.flex === 1 && style.flexBasis === 0,
-      ))).toBe(true);
       expect(cashCard.findAll((node) =>
         String(node.type) === 'view' && node.props.testID === 'available-balance-divider',
       )).toHaveLength(1);
-      const captionLabels = cashCard.findAllByType('text').map((node) => node.children.join(' '));
-      expect(captionLabels).toContain('Other money in');
-      const caption = cashCard.findAllByProps({ testID: 'available-balance-caption' })[0];
-      if (!caption) throw new Error('Balance caption row did not render.');
-      expect(caption.findAllByProps({ accessibilityLabel: '₹20' }).length).toBeGreaterThan(0);
-      expect(cashCard.findAllByProps({ testID: 'balance-pending-caption' })).toHaveLength(0);
 
       const reviewLabel = `Review ${formatMonth('2026-09')}`;
       expect(currentRenderer.root.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
+      expect(currentRenderer.root.findAllByProps({ accessibilityLabel: 'Dismiss month review reminder' })).toHaveLength(0);
       const reviewButton = currentRenderer.root.findAll((node) => String(node.type) === 'pressable')
         .find((node) => node.findAllByType('text').some((text) =>
           text.children.join(' ').replace(/\s+/g, ' ').trim() === reviewLabel,
         ));
-      if (!reviewButton) throw new Error('Expanded review action was not rendered.');
+      if (!reviewButton) throw new Error('Review action was not rendered.');
       act(() => reviewButton.props.onPress());
-      expect(router.push).toHaveBeenCalledWith({ pathname: '/month-review', params: { month: '2026-09' } });
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Dismiss month review reminder' }).props.onPress());
-      expect(cashCard.findAllByType('text')
-        .map((node) => node.children.join(' '))
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim()).not.toContain(reviewLabel);
-      expect(hasReviewDot()).toBe(0);
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/(tabs)/budget', params: { month: '2026-09' } });
+      expect(cashCard.findAllByProps({ accessibilityLabel: reviewLabel }).length).toBeGreaterThan(0);
+      expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
+        .not.toContain('NaN');
     } finally {
       mockData.transactions = previousTransactions;
       routeParams.mockReturnValue({});
     }
   });
 
-  it.each([1, 1.3, 2])('uses four equal metric columns or a 2x2 grid at font scale %s', (fontScale) => {
+  it.each([1, 1.3, 2])('keeps the user-owned balance card always visible without fixed sizing at font scale %s', (fontScale) => {
     mockFontScale = fontScale;
     try {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
       act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
       if (!renderer) throw new Error('Transactions renderer was not created.');
       const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
-      act(() => cashCard.findByProps({ testID: 'available-balance-toggle' }).props.onPress());
-      const metrics = ['brought-forward', 'income', 'spent', 'invested']
-        .map((id) => cashCard.findByProps({ testID: `balance-metric-${id}` }));
-      const metricStyles = metrics.map((metric) => flattenStyles(metric.props.style));
-      expect(metricStyles.every((styles) => styles.some((style) => style.flex === 1))).toBe(true);
-      if (fontScale >= 1.3) {
-        expect(flattenStyles(cashCard.findAllByProps({ testID: 'available-balance-metrics' })[0]?.props.style))
-          .toEqual(expect.arrayContaining([expect.objectContaining({ flexWrap: 'wrap' })]));
-        expect(metricStyles.every((styles) => styles.some((style) =>
-          style.flexBasis === '50%' && style.maxWidth === '50%',
-        ))).toBe(true);
-      } else {
-        expect(metricStyles.every((styles) => styles.some((style) => style.flexBasis === 0))).toBe(true);
-        expect(new Set(metricStyles.map((styles) =>
-          styles.find((style) => style.flexBasis === 0)?.flexBasis,
-        )).size).toBe(1);
-      }
-      const caption = cashCard.findAllByProps({ testID: 'available-balance-caption' })[0];
-      expect(flattenStyles(caption.props.style)).toEqual(expect.arrayContaining([
-        expect.objectContaining({ justifyContent: 'space-between' }),
-      ]));
+      const card = cashCard.findAll((node) => String(node.type) === 'card')[0];
+      if (!card) throw new Error('Balance Card did not render.');
+      expect(flattenStyles(card.props.style).every((style) =>
+        !('height' in style) && !('maxHeight' in style),
+      )).toBe(true);
+      expect(cashCard.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
+      expect(cashCard.findAll((node) =>
+        typeof node.props.testID === 'string' && node.props.testID.startsWith('balance-metric-'),
+      )).toHaveLength(0);
+      expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
+        .not.toContain('NaN');
     } finally {
       mockFontScale = 1;
     }
   });
 
-  it('shows Pending only when recurring items have unpaid dues', () => {
+  it('does not show a recurring-due caption in the balance card', () => {
     const previousHoldings = mockData.holdings;
     const month = todayISO().slice(0, 7);
     mockData.holdings = [{
@@ -457,11 +411,9 @@ describe('Transactions available-balance card', () => {
       act(() => { renderer = TestRenderer.create(<TransactionsScreen />); });
       if (!renderer) throw new Error('Transactions renderer was not created.');
       const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
-      act(() => cashCard.findByProps({ testID: 'available-balance-toggle' }).props.onPress());
-      const pending = cashCard.findByProps({ testID: 'balance-pending-caption' });
-      expect(pending.findAllByType('text').map((node) => node.children.join(' '))).toContain('Pending');
-      expect(pending.findAllByType('text').map((node) => node.props.accessibilityLabel))
-        .toContain('₹250');
+      expect(cashCard.findAllByProps({ testID: 'balance-pending-caption' })).toHaveLength(0);
+      expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' '))
+        .not.toContain('due');
     } finally {
       mockData.holdings = previousHoldings;
     }
@@ -482,7 +434,7 @@ describe('Transactions available-balance card', () => {
     }
   });
 
-  it('keeps the expanded card naturally sized and its sections in scroll flow at font scale 2.0', () => {
+  it('keeps the always-visible card naturally sized and its sections in scroll flow at font scale 2.0', () => {
     mockFontScale = 2;
     try {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -492,13 +444,9 @@ describe('Transactions available-balance card', () => {
       const cashCard = currentRenderer.root.findByProps({ testID: 'available-balance-card' });
       const card = cashCard.findAll((node) => String(node.type) === 'card')[0];
       if (!card) throw new Error('Balance Card did not render.');
-      act(() => currentRenderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
-      )[0]?.props.onPress());
-
       const cardStyles = flattenStyles(card.props.style);
       expect(cardStyles.every((style) => !('height' in style) && !('maxHeight' in style))).toBe(true);
+      expect(currentRenderer.root.findAllByProps({ testID: 'available-balance-toggle' })).toHaveLength(0);
       expect(cashCard.findAll((node) =>
         flattenStyles(node.props.style).some((style) => style.position === 'absolute'),
       )).toHaveLength(0);
@@ -507,10 +455,7 @@ describe('Transactions available-balance card', () => {
         && typeof node.props.testID === 'string'
         && node.props.testID.startsWith('balance-metric-'),
       );
-      expect(metricRows).toHaveLength(4);
-      expect(metricRows.every((row) =>
-        flattenStyles(row.props.style).every((style) => !('height' in style) && !('maxHeight' in style)),
-      )).toBe(true);
+      expect(metricRows).toHaveLength(0);
       const contentScroll = currentRenderer.root.findByProps({ testID: 'transactions-content-scroll' });
       for (const testID of ['transactions-month-row', 'transaction-filter-row', 'transactions-list']) {
         const section = currentRenderer.root.findByProps({ testID });
@@ -525,6 +470,7 @@ describe('Transactions available-balance card', () => {
   it('marks a negative available balance as a shortfall with the danger tone', () => {
     const previousTransactions = mockData.transactions;
     mockData.transactions = [
+      { id: 'prior-income', type: 'income', amount: 100, category: 'Salary', note: 'Prior pay', date: '2026-09-01' },
       { id: 'small-income', type: 'income', amount: 20, category: 'Salary', note: 'Pay', date: '2026-10-01' },
       { id: 'large-expense', type: 'expense', amount: 150, category: 'Food', note: 'Food', date: '2026-10-02' },
     ];
@@ -534,14 +480,9 @@ describe('Transactions available-balance card', () => {
         renderer = TestRenderer.create(<TransactionsScreen />);
       });
       if (!renderer) throw new Error('Transactions renderer was not created.');
-      const balanceLabel = renderer.root.findAll((node) =>
-        typeof node.props.accessibilityLabel === 'string'
-        && node.props.accessibilityLabel.startsWith('Expand Available balance'),
-      )[0];
-      if (!balanceLabel) throw new Error('Available balance control was not rendered.');
-      expect(balanceLabel.props.accessibilityLabel).toContain('-₹130');
-      expect(balanceLabel.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
-      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹130' });
+      const cashCard = renderer.root.findByProps({ testID: 'available-balance-card' });
+      expect(cashCard.findAllByType('text').map((node) => node.children.join(' ')).join(' ')).toContain('Shortfall');
+      const amount = renderer.root.findByProps({ accessibilityLabel: '-₹30' });
       expect(amount.props.style).toEqual(expect.arrayContaining([
         expect.objectContaining({ color: expect.any(String) }),
       ]));

@@ -25,6 +25,7 @@ const name = z.string().max(40);
 const investmentEntrySchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
   kind: z.enum(['Deposit', 'Withdrawal']),
+  snapshotAdjustment: money.optional(),
 });
 const liabilityPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
@@ -154,6 +155,7 @@ const budgetSchema = z.strictObject({
   lines: z.array(z.strictObject({
     category: z.string().max(60),
     planned: z.number().finite().min(0).max(1_000_000_000),
+    dueDay: z.number().int().min(1).max(31).optional(),
   })).max(1000),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
@@ -168,22 +170,26 @@ const budgetSchema = z.strictObject({
     seen.add(line.category);
   });
 });
-const budgetTemplateSchema = z.strictObject({
-  id: idSchema,
-  name: z.string().min(1).max(40),
+const budgetPlanSchema = z.strictObject({
   plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
   lines: z.array(z.strictObject({
     category: z.string().min(1).max(60),
     mode: z.enum(['amount', 'percent']),
     value: z.number().finite().min(0).max(1_000_000_000),
+    dueDay: z.number().int().min(1).max(31).optional(),
   }).superRefine((line, context) => {
     if (line.mode === 'percent' && line.value > 100) {
       context.addIssue({ code: 'custom', path: ['value'], message: 'Percent cannot exceed 100%' });
     }
   })).max(1000),
-}).superRefine((template, context) => {
+  repeatMonthly: z.boolean(),
+  repeatFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable(),
+}).superRefine((plan, context) => {
   const seen = new Set<string>();
-  template.lines.forEach((line, index) => {
+  plan.lines.forEach((line, index) => {
+    if (line.category === 'EMI' || line.category === 'Insurance') {
+      context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Recurring liabilities and insurance are automatic budget items' });
+    }
     if (!(BUDGET_CATEGORIES as readonly string[]).includes(line.category)) {
       context.addIssue({ code: 'custom', path: ['lines', index, 'category'], message: 'Budget category is not allowed' });
     }
@@ -195,13 +201,13 @@ const budgetTemplateSchema = z.strictObject({
 });
 const monthBudgetSchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  templateId: idSchema.nullable(),
-  templateName: z.string().min(1).max(40).nullable(),
-  customized: z.boolean(),
+  source: z.enum(['plan', 'custom']),
   plannedIncome: z.number().finite().positive().max(1_000_000_000).nullable(),
+  linkedIncluded: z.boolean().optional(),
   lines: z.array(z.strictObject({
     category: z.string().min(1).max(60),
     planned: z.number().finite().min(0).max(1_000_000_000),
+    dueDay: z.number().int().min(1).max(31).optional(),
   })).max(1000),
 }).superRefine((budget, context) => {
   const seen = new Set<string>();
@@ -228,8 +234,7 @@ export const importDataSchema = z.strictObject({
   liabilities: z.array(z.discriminatedUnion('kind', [recurringLiabilitySchema, oneTimeLiabilitySchema])).max(100_000),
   policies: z.array(policySchema).max(100_000),
   budget: budgetSchema.nullable(),
-  budgetTemplates: z.array(budgetTemplateSchema).max(1000).optional(),
-  defaultBudgetTemplateId: idSchema.nullable().optional(),
+  budgetPlan: budgetPlanSchema.nullable(),
   monthBudgets: z.array(monthBudgetSchema).max(1200).optional(),
   efAllocation: importEfAllocationSchema,
   efCustomBuckets: importEfCustomBucketsSchema,

@@ -4,11 +4,14 @@ import {
   addPlanWithHistory,
   addPolicyWithHistory,
   clearDue,
+  clearDuesThrough,
   clearPastDues,
+  duesThroughPreview,
   NothingToClearError,
   pendingDues,
   TooManyDuesError,
   undoClearDue,
+  undoClearDuesThrough,
 } from '../dues';
 import { loanState, amortizedBalanceAfter } from '../liability';
 import { validateIntegrity } from '../links';
@@ -226,11 +229,16 @@ describe('one-tap dues and undo', () => {
       date: '2026-01-01',
       newId: (() => { let id = 0; return () => `new-${++id}`; })(),
     });
+
     const updated = result.data.liabilities[0];
     expect(updated?.kind).toBe('one-time');
     if (updated?.kind !== 'one-time') throw new Error('Expected one-time liability.');
     expect(updated.payments[0]).toMatchObject({ amount: 1_000, kind: 'Payment', date: '2026-01-01' });
     expect(result.data.transactions).toHaveLength(1);
+    const paidLiability = result.data.liabilities[0];
+    if (!paidLiability || paidLiability.kind !== 'one-time') throw new Error('Expected one-time liability.');
+    expect(loanState(paidLiability, '2026-01-01').balance).toBe(0);
+    expect(liabilitySchedule(paidLiability, '2026-01-01').rows[0]?.status).toBe('paid');
     expect(validateIntegrity(result.data)).toEqual([]);
   });
 
@@ -588,5 +596,165 @@ describe('bulk due handling', () => {
     expect(policyResult.data.policies).toHaveLength(1);
     expect(policyResult.data.transactions).toHaveLength(2);
     expect(validateIntegrity(policyResult.data)).toEqual([]);
+  });
+
+  it('clears one due and undoes the linked entry and transaction together', () => {
+    const original = withPlan(plan({ tenureYears: 1 }));
+    const result = clearDuesThrough(original, { kind: 'plan', id: 'plan' }, '2026-01-01', {
+      date: '2026-01-01',
+      newId: (() => { let id = 0; return () => `through-${++id}`; })(),
+    });
+    expect(result.entryIds).toEqual(['through-1']);
+    expect(result.data.holdings[0]).toMatchObject({
+      kind: 'plan',
+      logs: [{ id: 'through-1', date: '2026-01-01', amount: 100, kind: 'Deposit' }],
+    });
+    expect(result.data.transactions).toHaveLength(1);
+    expect(validateIntegrity(result.data)).toEqual([]);
+    expect(undoClearDuesThrough(result.data, { kind: 'plan', id: 'plan' }, result.entryIds)).toEqual(original);
+  });
+
+  it('clears three earlier and selected future installments oldest-first, dated today', () => {
+    const original = withPlan(plan({ tenureYears: 1 }));
+    expect(duesThroughPreview(original, { kind: 'plan', id: 'plan' }, '2026-03-01', '2026-01-01'))
+      .toEqual({ count: 3, amount: 300 });
+    const result = clearDuesThrough(original, { kind: 'plan', id: 'plan' }, '2026-03-01', {
+      date: '2026-01-01',
+      newId: (() => { let id = 0; return () => `through-${++id}`; })(),
+    });
+
+    expect(result.entryIds).toEqual(['through-1', 'through-3', 'through-5']);
+    const updatedPlan = result.data.holdings.find((holding) => holding.id === 'plan');
+    if (!updatedPlan || updatedPlan.kind !== 'plan') throw new Error('Plan missing after clearing.');
+    expect(updatedPlan.logs.map(({ id, date }) => [id, date])).toEqual([
+      ['through-1', '2026-01-01'],
+      ['through-3', '2026-01-01'],
+      ['through-5', '2026-01-01'],
+    ]);
+    expect(result.data.transactions.map((transaction) => transaction.date)).toEqual([
+      '2026-01-01', '2026-01-01', '2026-01-01',
+    ]);
+    expect(validateIntegrity(result.data)).toEqual([]);
+    expect(undoClearDuesThrough(result.data, { kind: 'plan', id: 'plan' }, result.entryIds)).toEqual(original);
+  });
+
+  it('clears recurring liability dues oldest-first and updates its balance and schedule', () => {
+    const original = withLiability(liability({
+      principal: 1_200,
+      tenureMonths: 12,
+      emi: 100,
+      startDate: '2026-08-10',
+    }));
+    const cleared = clearDuesThrough(original, { kind: 'liability', id: 'liability' }, '2026-10-10', {
+      date: '2026-10-10',
+      newId: (() => { let id = 0; return () => `liability-through-${++id}`; })(),
+    });
+    const updated = cleared.data.liabilities[0];
+    if (!updated || updated.kind !== 'recurring') throw new Error('Expected recurring liability.');
+    expect(updated.payments).toHaveLength(2);
+    expect(loanState(updated, '2026-10-10').balance).toBe(1_000);
+    expect(liabilitySchedule(updated, '2026-10-10').rows.slice(0, 2).map(({ status }) => status))
+      .toEqual(['paid', 'paid']);
+    expect(cleared.data.transactions.map(({ amount, date, type }) => ({ amount, date, type }))).toEqual([
+      { amount: 100, date: '2026-10-10', type: 'expense' },
+      { amount: 100, date: '2026-10-10', type: 'expense' },
+    ]);
+    expect(validateIntegrity(cleared.data)).toEqual([]);
+    expect(undoClearDuesThrough(cleared.data, { kind: 'liability', id: 'liability' }, cleared.entryIds))
+      .toEqual(original);
+  });
+
+  it('does not clear dues from other targets in a mixed data set', () => {
+    const other = plan({ id: 'other-plan', name: 'Other plan' });
+    const original = {
+      ...withPlan(),
+      holdings: [plan(), other],
+      liabilities: [liability()],
+    };
+    const result = clearDuesThrough(original, { kind: 'plan', id: 'plan' }, '2026-02-01', {
+      date: '2026-02-01',
+      newId: (() => { let id = 0; return () => `through-${++id}`; })(),
+    });
+    const untouchedPlan = result.data.holdings.find((holding) => holding.id === 'other-plan');
+    if (!untouchedPlan || untouchedPlan.kind !== 'plan') throw new Error('Other plan missing.');
+    expect(untouchedPlan.logs).toEqual([]);
+    expect(result.data.liabilities[0]?.payments).toEqual([]);
+    expect(result.entryIds).toHaveLength(2);
+    expect(validateIntegrity(result.data)).toEqual([]);
+  });
+
+  it('rejects more than 400 dues before generating entries or changing data', () => {
+    const longLiability = liability({
+      principal: 40_100,
+      tenureMonths: 401,
+      emi: 100,
+      startDate: '2026-01-01',
+    });
+    const original = withLiability(longLiability);
+    const lastDate = liabilitySchedule(longLiability, '2026-01-01').rows.at(-1)?.dueDate;
+    if (!lastDate) throw new Error('Expected 401 scheduled installments.');
+    const newId = jest.fn(() => 'unused');
+    expect(() => clearDuesThrough(original, { kind: 'liability', id: 'liability' }, lastDate, {
+      date: '2026-01-01',
+      newId,
+    })).toThrow(TooManyDuesError);
+    expect(newId).not.toHaveBeenCalled();
+    expect(original.liabilities[0]?.payments).toEqual([]);
+    expect(original.transactions).toEqual([]);
+  });
+
+  it('rejects a date with no unpaid dues and leaves the source unchanged', () => {
+    const original = withPlan(plan({
+      logs: [{ id: 'first', date: '2026-01-01', amount: 100, note: '', kind: 'Deposit' }],
+    }));
+    expect(() => clearDuesThrough(original, { kind: 'plan', id: 'plan' }, '2026-01-01', {
+      date: '2026-02-01',
+      newId: () => 'unused',
+    })).toThrow(NothingToClearError);
+    const unchangedPlan = original.holdings[0];
+    if (!unchangedPlan || unchangedPlan.kind !== 'plan') throw new Error('Plan missing.');
+    expect(unchangedPlan.logs).toHaveLength(1);
+  });
+
+  it('previews only exact scheduled slots and reports an undated one-time liability as empty', () => {
+    const planData = withPlan();
+    expect(duesThroughPreview(planData, { kind: 'plan', id: 'plan' }, '2026-01-15', '2026-01-01'))
+      .toEqual({ count: 0, amount: 0 });
+
+    const undatedData = { ...base(), liabilities: [oneTimeLiability({ dueDate: null })] };
+    expect(duesThroughPreview(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', '2026-01-01'))
+      .toEqual({ count: 0, amount: 0 });
+    expect(() => clearDuesThrough(undatedData, { kind: 'liability', id: 'one-time' }, '2026-01-01', {
+      date: '2026-01-01',
+      newId: () => 'unused',
+    })).toThrow(NothingToClearError);
+  });
+
+  it('clears and undoes a policy due through the selected scheduled slot', () => {
+    const original = withPolicy();
+    const result = clearDuesThrough(original, { kind: 'policy', id: 'policy' }, '2026-01-01', {
+      date: '2026-01-01',
+      newId: (() => { let id = 0; return () => `policy-through-${++id}`; })(),
+    });
+    expect(result.data.policies[0]?.payments).toHaveLength(1);
+    expect(result.data.transactions[0]).toMatchObject({
+      type: 'expense',
+      amount: 50,
+      source: { kind: 'policy-payment', parentId: 'policy', entryId: result.entryIds[0] },
+    });
+    expect(validateIntegrity(result.data)).toEqual([]);
+    expect(undoClearDuesThrough(result.data, { kind: 'policy', id: 'policy' }, result.entryIds))
+      .toEqual(original);
+  });
+
+  it('reports missing clear-through targets without creating records', () => {
+    const data = base();
+    expect(() => duesThroughPreview(data, { kind: 'plan', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(() => duesThroughPreview(data, { kind: 'liability', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(() => duesThroughPreview(data, { kind: 'policy', id: 'missing' }, '2026-01-01', '2026-01-01'))
+      .toThrow(NotFoundError);
+    expect(data.transactions).toEqual([]);
   });
 });
