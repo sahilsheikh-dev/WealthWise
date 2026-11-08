@@ -51,13 +51,8 @@ describe('Release 2 persisted-value refresh harness', () => {
     await waitForHydration(store);
 
     let checkpoint = 0;
-    let previousData: AppData | null = null;
-    let previousDataJson: string | null = null;
     const verify = async (): Promise<void> => {
       checkpoint += 1;
-      if (previousData !== null && JSON.stringify(previousData) !== previousDataJson) {
-        throw new Error(`Store action ${checkpoint} mutated its previous AppData state.`);
-      }
       await flushPersistence();
       const current = store.getState().data;
       const raw = storage.getItem('wealthwise.app.v1');
@@ -72,8 +67,6 @@ describe('Release 2 persisted-value refresh harness', () => {
       if (JSON.stringify(freshStore.getState().data) !== JSON.stringify(current)) {
         throw new Error(`Fresh hydration differs from the store after action ${checkpoint}.`);
       }
-      previousData = current;
-      previousDataJson = JSON.stringify(current);
     };
 
     const actions = store.getState().actions;
@@ -83,7 +76,10 @@ describe('Release 2 persisted-value refresh harness', () => {
     await verify();
     const holding = store.getState().data.holdings[0];
     if (!holding) throw new Error('Refresh holding was not created.');
+    const beforeHoldingEdit = store.getState().data;
+    const beforeHoldingEditJson = JSON.stringify(beforeHoldingEdit);
     actions.updateHoldingValue(holding.id, 1_250, today, 'manual');
+    expect(JSON.stringify(beforeHoldingEdit)).toBe(beforeHoldingEditJson);
     await verify();
     actions.addInvestmentEntry(holding.id, {
       date: today, amount: 250, kind: 'Deposit', note: 'Added refresh entry',

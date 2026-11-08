@@ -1522,18 +1522,8 @@ describe('budget plans and monthly views', () => {
     });
     expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
     expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
-    expect(overview.pace).toMatchObject({
-      days: 31,
-      elapsedDays: 15,
-      sections: expect.arrayContaining([
-        expect.objectContaining({ id: 'income', plannedToDate: 5_322.58, actualToDate: 7_400 }),
-        expect.objectContaining({ id: 'survival', plannedToDate: 725.81, actualToDate: 900 }),
-        expect.objectContaining({ id: 'savings-investments', plannedToDate: 48.39, actualToDate: 100 }),
-        expect.objectContaining({ id: 'debt-repayments', plannedToDate: 229.84, actualToDate: 25 }),
-      ]),
-    });
-    expect(overview.pace?.sections.find(({ id }) => id === 'survival')?.actual)
-      .toEqual([0, 0, 0, 200, 200, 200, 200, 900, 900, 900, 900, 900, 900, 900, 900]);
+    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
+    expect(overview.pace?.planned.at(-1)).toBe(2_025);
   });
 
   it('derives future overviews from plan edits and describes negative left as over budget', () => {

@@ -4,7 +4,6 @@ import {
   budgetOverview,
   isItemDueInMonth,
   nextDueMonth,
-  plannedIncomeOf,
 } from '../../domain/budget';
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
@@ -131,13 +130,6 @@ describe('four-month demo data', () => {
       expect.objectContaining({ category: 'Domestic help', type: 'expense' }),
       expect.objectContaining({ category: 'Vet visit', type: 'expense', amount: 650 }),
     ]));
-    expect(budgetOverview(data, monthKey(today), today).pace?.sections.find(({ id }) =>
-      id === 'demo-section-pets',
-    )).toMatchObject({
-      name: 'Pets',
-      plannedToDate: 1_548.39,
-      actualToDate: 2_000,
-    });
     expect(data.budgetPlan).toMatchObject({
       repeatMonthly: true,
       repeatFrom: shiftMonth(monthKey(today), 1),
@@ -151,9 +143,6 @@ describe('four-month demo data', () => {
         linkedIncluded: true,
         items: expect.arrayContaining([expect.objectContaining({ name: 'Bills', dueDay: 5 })]),
       });
-    const currentSnapshot = data.monthBudgets?.find(({ month }) => month === monthKey(today));
-    if (!currentSnapshot) throw new Error('Demo current-month budget snapshot is missing.');
-    expect(data.budget?.plannedIncome).toBe(plannedIncomeOf(currentSnapshot, monthKey(today)));
     expect(data.monthBudgets?.find(({ month }) => month === customMonth)).toMatchObject({
       source: 'custom',
       linkedIncluded: true,

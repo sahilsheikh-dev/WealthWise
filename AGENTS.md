@@ -15,78 +15,30 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
 `engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
 
-## COMMON RULES
-
-These COMMON RULES apply to every prompt and task, whether or not a prompt
-repeats or pastes them. If a task explicitly authorizes a narrower exception,
-apply only that exception and preserve all other rules.
-
-- **R1 — Preflight and commits:** before other work, list every dirty file and
-  run `git diff --stat` plus the complete diff. Before each commit, show the
-  proposed subject and staged diff-stat. Commit exactly the named files, use
-  one commit per unrelated area, and use a descriptive Conventional Commit
-  subject stating what changed. Subjects require one of `feat`, `fix`, `docs`,
-  `test`, `chore`, `refactor`, `perf`, `style`, `build`, `ci`, or `revert`;
-  optional scopes are allowed. Use a descriptive subject and never bypass
-  the hook, which rejects prohibited placeholder subjects. Preserve owner
-  edits; never use checkout, restore, stash, reset, or old-code reapplication
-  to undo them. Enable the hook with
-  `git config core.hooksPath .githooks`.
-- **R2 — Phase and revision IDs:** align work with its existing phase. A fix
-  to a completed subtask stays in that phase and uses `<ID>-R<n>`; the
-  original row must say `Revised by <ID>-R<n>`. Create a new phase only for
-  genuinely new work.
-- **R3 — History, pushes and release approval:** agents do not push unless
-  the owner explicitly authorizes it, and never force-push or rewrite history.
-  Never publish releases or create, move, or delete release tags without
-  explicit owner approval.
-- **R4 — Documentation scope:** routine Git documentation is limited to
-  `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
-  `SECURITY.md`, and `.github/**`. Change other documentation only when
-  explicitly authorized. Reports and generated output belong in chat or
-  `/tmp`; release content must remain in Git, never `/tmp`.
-
-### Branching
-
-- `main` is stable, released code; changes arrive by release or hotfix merge
-  and receive a `vX.Y.Z` tag. The initial branching adoption baseline may
-  contain legacy unreleased history; this rule applies prospectively.
-- `develop` is the integration branch and must pass all six gates.
-- Create one `phase/NN-slug` branch per phase from `develop`. A revision to a
-  completed phase reopens its existing phase branch from `develop` (R2).
-- Create `task/ID-slug` branches from their phase branch, one per subtask or
-  revision. Example: `task/P29-AB-R2-income-rows`.
-- Create `release/vX.Y.Z` from `develop` for versioning, changelog and draft
-  notes. Merge it `--no-ff` into `main`, tag it, then back-merge into
-  `develop`. Create `hotfix/vX.Y.Z` from `main`, then merge to `main`, tag,
-  and merge to `develop`.
-- External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
-  into `develop`. Contributor PRs are squash-merged with a Conventional
-  Commit title.
-- Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
-  release/hotfix to `main` with `--no-ff`. Agents never commit directly to
-  `main` or `develop`, except the explicitly authorized bootstrap. Delete
-  merged task branches and keep phase branches. Do not push unless asked;
-  report merge commands in chat.
-
-### Gates
-
-Run these six gates in order and record each real exit code:
-
-```bash
-npm test -- --coverage
-npx tsc --noEmit
-npx expo lint
-npx expo-doctor
-npx expo export --platform android
-npx expo export --platform ios
-```
-
-Expo exports are allowed when required. EAS builds and local Gradle builds
-are not authorized unless explicitly requested.
-
 ## Project rules
 
+- **R1 — Dirty-file preflight and commit subjects:** list every dirty file
+  before other work. If files are dirty, run `git diff --stat` and inspect
+  their complete diff, then commit exactly those named files with a
+  Conventional Commit subject that states what changed. Use one commit per
+  unrelated area. The subject must not use a legacy placeholder; never bypass
+  the commit hook. Preserve owner edits; never use checkout, restore, stash,
+  reset, or old-code reapplication to undo them.
+- **R2 — Phase and revision IDs:** align each task with existing work. A fix
+  or change to a completed subtask stays in its original phase and is logged
+  as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
+  `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
+  new areas.
+- **R3 — History and release approval:** never push, amend or rewrite history
+  unless the owner explicitly asks. Release publication and tag creation,
+  movement or deletion require explicit owner approval.
+- **R4 — Documentation scope:** routine documentation committed to Git is
+  limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
+  including drafts. Other documentation files may be changed only when the
+  owner explicitly names them. Reports and generated output belong in chat or
+  `/tmp`; release content must never be placed there.
+- Enable commit-message enforcement in each clone with
+  `git config core.hooksPath .githooks`.
 - If an owner edit causes a test failure, update the test to match the source
   and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and

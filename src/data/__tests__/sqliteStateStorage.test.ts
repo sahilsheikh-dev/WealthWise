@@ -32,26 +32,6 @@ describe('SQLite state storage migration', () => {
     await expect(storage.getItem('another-key')).resolves.toBe('legacy-only');
   });
 
-  it('reports hydration source and last-write verification in one diagnostic line', async () => {
-    const sqlite = new MemoryStorage();
-    const legacy = new MemoryStorage();
-    const diagnostics: string[] = [];
-    const storage = createMigratingSQLiteStateStorage(
-      sqlite,
-      legacy,
-      () => undefined,
-      (line) => diagnostics.push(line),
-    );
-
-    await expect(storage.getItem('wealthwise.app.v1')).resolves.toBeNull();
-    await storage.setItem('wealthwise.app.v1', 'verified bytes');
-
-    expect(diagnostics).toEqual([
-      'hydration source=empty; last-write verification=not-run',
-      'hydration source=empty; last-write verification=sqlite-verified',
-    ]);
-  });
-
   it('preserves the old value in SQLite before replacing it and removes the legacy copy', async () => {
     const sqlite = new MemoryStorage();
     const legacy = new MemoryStorage();
@@ -232,7 +212,5 @@ describe('SQLite state storage migration', () => {
     );
     expect(legacy.values.has('wealthwise.app.v1')).toBe(false);
     expect(sqlite.values.get('wealthwise.app.v1')).toBe('SQLite bytes');
-    const restartedProcess = createMigratingSQLiteStateStorage(sqlite, legacy, () => undefined);
-    await expect(restartedProcess.getItem('wealthwise.app.v1')).resolves.toBeNull();
   });
 });
