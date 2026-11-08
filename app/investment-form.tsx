@@ -28,7 +28,6 @@ import {
   type PlanFormInput,
   type PlanFormOutput,
 } from '../src/domain/schemas';
-import { pendingDues, type PastDuesMode } from '../src/domain/dues';
 import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
@@ -143,34 +142,10 @@ function PlanEditor({
   const stepUpPct = useWatch({ control, name: 'stepUpPct' });
   const tenureYears = useWatch({ control, name: 'tenureYears' });
   const frequency = useWatch({ control, name: 'frequency' });
-  const startDate = useWatch({ control, name: 'startDate' });
-  const planType = useWatch({ control, name: 'type' });
-  const opening = useWatch({ control, name: 'opening' });
-  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
   const previewValues: [number, number, number, number] = [
     Number(amount), Number(ratePct), Number(stepUpPct || '0'), Number(tenureYears),
   ];
   const [previewAmount, previewRatePct, previewStepUpPct, previewTenureYears] = previewValues;
-  const previewPastDues = !plan && startDate < today
-    && previewValues.every(Number.isFinite) && previewAmount > 0 && previewTenureYears > 0
-    ? pendingDues({
-      id: 'past-dues-preview',
-      kind: 'plan',
-      name: 'Preview',
-      type: planType,
-      frequency,
-      amount: previewAmount,
-      ratePct: previewRatePct,
-      stepUpPct: previewStepUpPct,
-      tenureYears: previewTenureYears,
-      startDate,
-      trackFrom: startDate,
-      opening: Number(opening) || 0,
-      actualValue: null,
-      actualValueDate: null,
-      logs: [],
-    }, today)
-    : null;
   const preview = previewValues.every(Number.isFinite) && previewAmount > 0 && previewTenureYears > 0
     ? projection({
       ...(plan ?? { id: 'preview', kind: 'plan', name: '', type: 'Mutual fund / SIP', startDate: today, trackFrom: today, opening: 0, actualValue: null, actualValueDate: null, logs: [] }),
@@ -186,23 +161,12 @@ function PlanEditor({
     void confirmAsync({ title: 'Discard changes?', message: 'Your changes have not been saved.', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
       .then((discard) => { if (discard) router.back(); });
   };
-  const save = async (values: PlanFormOutput) => {
+  const save = (values: PlanFormOutput) => {
     if (submitting.current) return;
     submitting.current = true;
     try {
       if (plan) actions.updatePlan(plan.id, values);
-      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
-        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
-          title: 'Record past installments?',
-          message: `This will record ${previewPastDues.count} installments totalling ${formatINRShort(previewPastDues.amount)} on their due dates.`,
-          confirmLabel: `Record ${previewPastDues.count} installments`,
-          cancelLabel: 'Review',
-        });
-        if (!confirmed) return;
-        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);
-      } else if (previewPastDues?.count) {
-        actions.addPlan({ ...values, trackFrom: startDate });
-      } else actions.addPlan(values);
+      else actions.addPlan(values);
       const state = useAppStore.getState();
       if (!state.lastError) {
         if (!plan && fromTransaction) {
@@ -236,25 +200,6 @@ function PlanEditor({
       {modeControl}
       {plan ? <ReadOnlyInvestmentKind label="Investment type" value="Recurring (SIP, RD...)" /> : null}
       <PlanFields control={control} errors={errors} today={today} onNameChange={onNameChange} maximumDate={plusDays(today, 366)} />
-      {!plan && startDate < today ? (
-        <View style={{ gap: 8 }}>
-          <SegmentedControl
-            label="Past installments"
-            value={pastInstallmentsMode}
-            options={[
-              { label: 'Already paid', value: 'settle' },
-              { label: 'Show as due', value: 'show' },
-              { label: 'Record as paid', value: 'record' },
-            ]}
-            onChange={setPastInstallmentsMode}
-          />
-          {previewPastDues ? (
-            <HelperText>
-              {previewPastDues.count} past installments · {formatINRShort(previewPastDues.amount)}
-            </HelperText>
-          ) : null}
-        </View>
-      ) : null}
       {preview ? <AppText style={[typography.meta, { color: colors.text2 }]}>
         Projected {formatINRShort(preview.futureValue)} from {formatINRShort(preview.totalContributions)} of contributions
       </AppText> : null}
@@ -370,26 +315,8 @@ function PlanFields({
         <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} />} />
       </FormSection>
       <FormSection title="Dates">
-        <Controller control={control} name="startDate" render={({ field }) => <DateField
-          label="First scheduled contribution"
-          accessibilityLabel="First scheduled contribution date"
-          accessibilityHint="The first date on your recurring investment schedule."
-          value={field.value}
-          onChange={field.onChange}
-          maximumDate={maximumDate}
-          error={errors.startDate?.message}
-        />} />
-        <HelperText>The plan schedule starts on this date.</HelperText>
-        <Controller control={control} name="trackFrom" render={({ field }) => <DateField
-          label="Start tracking installments from"
-          accessibilityLabel="Installment tracking start date"
-          accessibilityHint="Only installments due on or after this date count toward missed contributions."
-          value={field.value || today}
-          onChange={field.onChange}
-          maximumDate={maximumDate}
-          error={errors.trackFrom?.message}
-        />} />
-        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected installments.</HelperText>
+        <Controller control={control} name="startDate" render={({ field }) => <DateField label="Start Date" accessibilityLabel="Plan start date" value={field.value} onChange={field.onChange} maximumDate={maximumDate} error={errors.startDate?.message} />} />
+        <Controller control={control} name="trackFrom" render={({ field }) => <DateField label="Tracking Start Date" accessibilityLabel="Tracking start date" value={field.value || today} onChange={field.onChange} maximumDate={maximumDate} error={errors.trackFrom?.message} />} />
       </FormSection>
       <FormSection title="Opening and value">
         <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />

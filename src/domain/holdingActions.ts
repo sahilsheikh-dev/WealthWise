@@ -35,14 +35,7 @@ export function deleteHolding(
 ): AppData {
   const current = data.holdings.find((holding) => holding.id === id);
   if (!current || current.kind !== 'manual') throw new NotFoundError('Manual holding', id);
-  const result = deleteHoldingWithTransactions(data, id, options);
-  return {
-    ...result,
-    goals: result.goals.map((goal) => ({
-      ...goal,
-      links: goal.links.filter((link) => link.instrumentId !== id),
-    })),
-  };
+  return deleteHoldingWithTransactions(data, id, options);
 }
 
 export function confirmHoldingValue(data: AppData, id: string, today: ISODate): AppData {

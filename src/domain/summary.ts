@@ -6,7 +6,6 @@ import {
   type RecurringLiabilitySummary,
 } from './liability';
 import { holdingValue } from './portfolio';
-import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 import type { AppData, ISODate, RecurringLiability } from './types';
 
 export function netWorth(data: AppData, asOf: ISODate): {
@@ -35,7 +34,7 @@ export function homeSummary(data: AppData, asOf: ISODate, expenseBaselineInput?:
   const emergencyBalance = efBalance(data.efEntries);
   const expenseBaseline = expenseBaselineInput ?? monthlyBaseline(data.transactions, 'expense', asOf);
   const goals = ensureEfGoal(data.goals, { expenseBaseline, asOf }).map((goal) => {
-    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline, data, asOf }) };
+    return { goal, ...goalView(goal, { emergencyBalance, expenseBaseline }) };
   });
   return {
     ...worth,
@@ -88,7 +87,7 @@ export function incomeBaselineFor(
     data.transactions,
     'income',
     asOf,
-    { excludeCategories: NON_EARNED_INCOME_CATEGORIES },
+    { excludeCategories: ['Withdrawal'] },
   );
   if (earnedIncome > 0) return { amount: earnedIncome, source: 'transactions' };
   if (data.settings.monthlySalary !== null) {

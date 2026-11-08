@@ -11,13 +11,6 @@ export function storageLevel(bytes: number): 'ok' | 'warn' | 'critical' {
   return 'ok';
 }
 
-export function shouldShowStorageWarning(bytes: number, dismissedUntil: string | undefined, today: string): boolean {
-  const level = storageLevel(bytes);
-  if (level === 'ok') return false;
-  if (level === 'critical') return true;
-  return dismissedUntil === undefined || dismissedUntil <= today;
-}
-
 export function storageSummary(bytes: number): string {
   const unit = bytes < 1024 ? 'B' : bytes < 1024 * 1024 ? 'KB' : 'MB';
   const value = bytes < 1024 ? bytes : bytes < 1024 * 1024 ? bytes / 1024 : bytes / (1024 * 1024);

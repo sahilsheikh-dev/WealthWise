@@ -2,9 +2,6 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '../src/components/AppHeader';
-import { InstrumentCard } from '../src/components/InstrumentCard';
-import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
   Button,
@@ -17,8 +14,9 @@ import {
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
+import { AppHeader } from '../src/components/AppHeader';
+import { InstrumentCard } from '../src/components/InstrumentCard';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
 import { monthlyBaseline } from '../src/domain/ef';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
@@ -27,11 +25,9 @@ import {
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
-import { planSchedule } from '../src/domain/schedule';
 import type { HoldingType } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatINR, formatINRShort } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -59,32 +55,9 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
-  const assetSorting = useSort('assets');
-  const sipSorting = useSort('sips');
-  const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
-    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
-      return { ...row, nextDue: null, progress: null, status: null };
-    }
-    const schedule = planSchedule(row.holding, asOf);
-    const status = schedule.summary.overdue > 0
-      ? 'overdue'
-      : schedule.summary.ongoing > 0
-        ? 'ongoing'
-        : schedule.summary.nextDue
-          ? 'upcoming'
-          : 'complete';
-    return {
-      ...row,
-      nextDue: schedule.summary.nextDue?.dueDate ?? null,
-      progress: schedule.rows.length === 0 ? null : schedule.summary.paid / schedule.rows.length * 100,
-      status,
-    };
-  }), [data, asOf]);
+  const rows = useMemo(() => buildPortfolioRows(data, asOf), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const filteredRows = filterRows(rows, filter);
-  const visibleRows = filter === 'Recurring'
-    ? sipSorting.sort(filteredRows)
-    : assetSorting.sort(filteredRows);
+  const visibleRows = filterRows(rows, filter);
   const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
@@ -121,11 +94,6 @@ export default function AssetsScreen() {
       </Card>
 
       <ChipRow>
-        <SortChip
-          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />
         {filters.map((item) => (
           <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
         ))}
@@ -140,9 +108,6 @@ export default function AssetsScreen() {
             <InstrumentCard
               key={row.id}
               model={model}
-              goalCount={data.goals.filter((goal) =>
-                goal.links.some((link) => link.instrumentId === row.id)).length}
-              dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {
                   if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Deposit');

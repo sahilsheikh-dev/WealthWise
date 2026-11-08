@@ -19,26 +19,16 @@ type LiabilityAccountingInput = {
   ratePct: number;
   startDate: ISODate;
   payments: Pick<LiabilityPayment, 'id' | 'date' | 'amount'>[];
-  settlement?: { asOf: ISODate; balance: number } | null;
 };
 
 export function loanState(liability: LiabilityAccountingInput, asOf: ISODate): LiabilityState {
-  if (!liability.settlement && asOf < liability.startDate) {
-    return { balance: liability.principal, paidTotal: 0, interestAccrued: 0 };
-  }
-  const paidTotal = liability.payments
-    .filter((payment) => payment.date <= asOf)
-    .reduce((total, payment) => total + payment.amount, 0);
-  if (liability.settlement && asOf < liability.settlement.asOf) {
-    return { balance: liability.settlement.balance, paidTotal, interestAccrued: 0 };
-  }
-  const settled = liability.settlement ?? null;
-  let balance = settled?.balance ?? liability.principal;
-  let cursor = settled?.asOf ?? liability.startDate;
+  if (asOf < liability.startDate) return { balance: liability.principal, paidTotal: 0, interestAccrued: 0 };
+  let balance = liability.principal;
+  let cursor = liability.startDate;
+  let paidTotal = 0;
   let interestAccrued = 0;
-  if (asOf < cursor) return { balance, paidTotal, interestAccrued };
   const payments: { payment: LiabilityAccountingInput['payments'][number]; date: ISODate }[] = liability.payments
-    .filter((payment) => payment.date <= asOf && (!settled || payment.date > settled.asOf))
+    .filter((payment) => payment.date <= asOf)
     .map((payment) => ({
       payment,
       date: compareISO(payment.date, liability.startDate) < 0 ? liability.startDate : payment.date,
@@ -52,6 +42,7 @@ export function loanState(liability: LiabilityAccountingInput, asOf: ISODate): L
     interestAccrued += interest;
     if (date > cursor) cursor = date;
     balance = Math.max(0, balance - payment.amount);
+    paidTotal += payment.amount;
   }
 
   if (asOf > cursor) {
@@ -61,19 +52,6 @@ export function loanState(liability: LiabilityAccountingInput, asOf: ISODate): L
   }
 
   return { balance, paidTotal, interestAccrued };
-}
-
-export function amortizedBalanceAfter(
-  liability: Pick<RecurringLiability, 'principal' | 'ratePct' | 'startDate' | 'tenureMonths' | 'emi'>,
-  throughDate: ISODate,
-): number {
-  const payments: Pick<LiabilityPayment, 'id' | 'date' | 'amount'>[] = [];
-  for (let index = 1; index <= liability.tenureMonths; index += 1) {
-    const date = addMonths(liability.startDate, index);
-    if (date > throughDate) break;
-    payments.push({ id: `amortized:${index}`, date, amount: liability.emi });
-  }
-  return loanState({ ...liability, payments, settlement: null }, throughDate).balance;
 }
 
 export function isCleared(balance: number): boolean {

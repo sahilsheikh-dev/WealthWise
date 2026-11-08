@@ -1,10 +1,8 @@
 import type { ISODate, Transaction } from './types';
-import { NON_EARNED_INCOME_CATEGORIES } from './schemas';
 
 export type TransactionMonthSummary = {
   income: number;
   withdrawals: number;
-  nonEarnedIncome: number;
   earnedIncome: number;
   expense: number;
   invest: number;
@@ -22,16 +20,12 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
   const withdrawals = rows
     .filter((transaction) => transaction.type === 'income' && transaction.category === 'Withdrawal')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const nonEarnedIncome = rows
-    .filter((transaction) => transaction.type === 'income' && (NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(transaction.category))
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const earnedIncome = income - nonEarnedIncome;
+  const earnedIncome = income - withdrawals;
   const expense = total('expense');
   const invest = total('invest');
   return {
     income,
     withdrawals,
-    nonEarnedIncome: income - earnedIncome,
     earnedIncome,
     expense,
     invest,
@@ -48,14 +42,12 @@ export function monthSummary(txs: Transaction[], month: string): TransactionMont
 
 export function filterTransactions(
   txs: Transaction[],
-  options: { month: string; type: 'all' | Transaction['type']; query: string; category?: string },
+  options: { month: string; type: 'all' | Transaction['type']; query: string },
 ): Transaction[] {
   const query = options.query.trim().toLowerCase();
   return txs
     .filter((transaction) => transaction.date.startsWith(options.month))
     .filter((transaction) => options.type === 'all' || transaction.type === options.type)
-    .filter((transaction) => !options.category || transaction.category === options.category
-      || (options.category === 'Other investments' && transaction.type === 'invest' && transaction.category === 'Other'))
     .filter((transaction) => !query || `${transaction.note} ${transaction.category}`.toLowerCase().includes(query))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }

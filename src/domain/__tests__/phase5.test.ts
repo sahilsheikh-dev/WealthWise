@@ -51,7 +51,7 @@ describe('Phase 5 domain actions', () => {
     expect(data.transactions[1]).toMatchObject({ note: 'User note', category: 'Gold / Silver' });
     expect(validateIntegrity(data)).toEqual([]);
 
-    const loan: Liability = { id: 'loan', kind: 'recurring', name: 'Old loan', type: 'Other', principal: 1000, ratePct: 0, tenureMonths: 1, emi: 1000, startDate: '2026-01-01', payments: [{ id: 'pay', date: '2026-02-01', amount: 100, note: '', kind: 'Prepayment' }], settlement: null };
+    const loan: Liability = { id: 'loan', kind: 'recurring', name: 'Old loan', type: 'Other', principal: 1000, ratePct: 0, tenureMonths: 1, emi: 1000, startDate: '2026-01-01', payments: [{ id: 'pay', date: '2026-02-01', amount: 100, note: '', kind: 'Prepayment' }] };
     data = { ...data, liabilities: [loan], transactions: [...data.transactions, { id: 'loan-tx', type: 'expense', amount: 100, date: '2026-02-01', category: 'EMI', note: 'Old loan prepayment', source: { kind: 'liability-payment', parentId: 'loan', entryId: 'pay' } }] };
     data = updateLiability(data, 'loan', { name: 'New loan' });
     expect(data.transactions.find(({ id }) => id === 'loan-tx')?.note).toBe('New loan prepayment');
@@ -187,7 +187,6 @@ describe('Phase 5 domain actions', () => {
       id: 'loan', kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
       emi: 100, startDate: '2026-01-01',
       payments: [{ id: 'liability-payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
-      settlement: null,
     };
     const withParents = { ...data, holdings: [plan], liabilities: [loan] };
     expect(describeSource(withParents, { kind: 'holding-entry', parentId: 'plan', entryId: 'holding-entry' }))
@@ -205,7 +204,6 @@ describe('Phase 5 domain actions', () => {
       id: 'loan', kind: 'recurring', type: 'Car loan', name: 'Car loan', principal: 100, ratePct: 1, tenureMonths: 1,
       emi: 100, startDate: '2026-01-01',
       payments: [{ id: 'payment', date: '2026-01-01', amount: 10, note: '', kind: 'EMI' }],
-      settlement: null,
     };
     const efGoal = initial().goals[0]!;
     const base = {

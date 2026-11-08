@@ -13,14 +13,7 @@ export type Transaction = {
   source?:
     | { kind: 'holding-entry'; parentId: string; entryId: string }
     | { kind: 'liability-payment'; parentId: string; entryId: string }
-    | { kind: 'policy-payment'; parentId: string; entryId: string }
-    | { kind: 'liability-origin'; parentId: string; entryId: string }
     | { kind: 'ef-entry'; parentId: string; entryId: string };
-};
-
-export type GoalLink = {
-  instrumentId: string;
-  share: number;
 };
 
 export type Goal = {
@@ -30,7 +23,6 @@ export type Goal = {
   saved: number;
   year: number;
   auto?: 'ef';
-  links: GoalLink[];
 };
 
 export type InvestmentEntry = {
@@ -117,16 +109,10 @@ type LiabilityBase = {
   payments: LiabilityPayment[];
 };
 
-export type LiabilitySettlement = {
-  asOf: ISODate;
-  balance: number;
-};
-
 export type RecurringLiability = LiabilityBase & {
   kind: 'recurring';
   tenureMonths: number;
   emi: number;
-  settlement: LiabilitySettlement | null;
 };
 
 export type OneTimeLiability = LiabilityBase & {
@@ -135,73 +121,6 @@ export type OneTimeLiability = LiabilityBase & {
 };
 
 export type Liability = RecurringLiability | OneTimeLiability;
-
-export type PolicyKind =
-  | 'term'
-  | 'health'
-  | 'life-savings'
-  | 'ulip'
-  | 'vehicle'
-  | 'home'
-  | 'other';
-
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'single';
-
-export type PolicyPayment = {
-  id: string;
-  date: ISODate;
-  amount: number;
-  note: string;
-};
-
-export type Policy = {
-  id: string;
-  name: string;
-  insurer: string;
-  kind: PolicyKind;
-  premium: number;
-  frequency: PolicyFrequency;
-  startDate: ISODate;
-  premiumYears: number | null;
-  trackFrom: ISODate;
-  coverAmount: number | null;
-  currentValue: number | null;
-  valueAsOf: ISODate | null;
-  maturityDate: ISODate | null;
-  payments: PolicyPayment[];
-};
-
-export type BudgetLine = {
-  category: string;
-  planned: number;
-};
-
-export type Budget = {
-  plannedIncome: number | null;
-  lines: BudgetLine[];
-};
-
-export type BudgetTemplateLine = {
-  category: string;
-  mode: 'amount' | 'percent';
-  value: number;
-};
-
-export type BudgetTemplate = {
-  id: string;
-  name: string;
-  plannedIncome: number | null;
-  lines: BudgetTemplateLine[];
-};
-
-export type MonthBudget = {
-  month: string;
-  templateId: string | null;
-  templateName: string | null;
-  customized: boolean;
-  plannedIncome: number | null;
-  lines: BudgetLine[];
-};
 
 export type EfEntry = {
   id: string;
@@ -238,11 +157,6 @@ export type AppData = {
   goals: Goal[];
   holdings: Holding[];
   liabilities: Liability[];
-  policies: Policy[];
-  budget: Budget | null;
-  budgetTemplates?: BudgetTemplate[];
-  defaultBudgetTemplateId?: string | null;
-  monthBudgets?: MonthBudget[];
   efEntries: EfEntry[];
   efAllocation?: EfAllocation | null;
 };

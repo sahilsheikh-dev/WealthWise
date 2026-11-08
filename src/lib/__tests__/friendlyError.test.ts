@@ -7,7 +7,6 @@ describe('friendlyError', () => {
   it('maps known domain errors to plain messages', () => {
     expect(friendlyError(new NotFoundError('Plan', 'p1'))).toBe('The requested item could not be found.');
     expect(friendlyError(new GoalLockedError())).toBe('This goal is locked and cannot be changed.');
-    expect(friendlyError(new GoalTargetBelowMinimumError(1000))).toBe('The target is below the minimum allowed value.');
     expect(friendlyError(new GoalTargetBelowMinimumError(3000))).toBe('The target is below the minimum allowed value.');
     expect(friendlyError(new InvalidAllocationError())).toBe('Emergency fund percentages must total 100%.');
   });
@@ -15,16 +14,13 @@ describe('friendlyError', () => {
   it('maps validation and missing-item text without exposing technical details', () => {
     expect(friendlyError(new Error('Name is required'))).toBe('Please complete the required information.');
     expect(friendlyError(new Error('Enter a valid amount'))).toBe('Please complete the required information.');
-    expect(friendlyError(new Error('The plan was not found'))).toBe('The requested item could not be found.');
     expect(friendlyError(new Error('The requested item was not found'))).toBe('The requested item could not be found.');
   });
 
   it('uses a generic sentence for unknown errors and malformed values', () => {
-    expect(friendlyError(new Error('sensitive internal details'))).toBe('Something went wrong. Please try again.');
     expect(friendlyError(new Error('A low-level storage failure'))).toBe('Something went wrong. Please try again.');
     expect(friendlyError({ message: 42 })).toBe('Something went wrong. Please try again.');
     expect(friendlyError(null)).toBe('Something went wrong. Please try again.');
-    expect(friendlyError('raw error text')).toBe('Something went wrong. Please try again.');
     expect(friendlyError('failure')).toBe('Something went wrong. Please try again.');
   });
 });

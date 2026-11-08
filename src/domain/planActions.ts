@@ -54,10 +54,6 @@ export function deletePlan(
   return {
     ...data,
     holdings: data.holdings.filter((holding) => holding.id !== id),
-    goals: data.goals.map((goal) => ({
-      ...goal,
-      links: goal.links.filter((link) => link.instrumentId !== id),
-    })),
     transactions,
   };
 }

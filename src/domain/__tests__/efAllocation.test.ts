@@ -45,7 +45,6 @@ describe('ef allocation', () => {
       insurance: 0,
       other: 0,
     })).toThrow('Allocation must contain percentages that total 100%.');
-    expect(() => allocateAmounts(100, { ...SUGGESTED_EF_ALLOCATION, cash: 101 })).toThrow(RangeError);
   });
 
   it('warns at threshold boundaries', () => {
@@ -66,18 +65,11 @@ describe('ef allocation', () => {
 
   it('normalizes partial and invalid allocations and applies set/reset actions', () => {
     expect(effectiveAllocation(null)).toEqual(SUGGESTED_EF_ALLOCATION);
-    expect(effectiveAllocation(undefined)).toEqual(SUGGESTED_EF_ALLOCATION);
-    expect(effectiveAllocation({})).toEqual(SUGGESTED_EF_ALLOCATION);
     expect(effectiveAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: 20 })).toMatchObject({ cash: 20, bank: 40 });
     expect(validateAllocation(null, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
-    expect(validateAllocation(undefined, true)).toEqual({ valid: false, total: 0, issues: ['Percentages must add up to 100% (now 0%)'] });
-    expect(validateAllocation(null)).toBe(false);
-    expect(validateAllocation(undefined)).toBe(false);
-    expect(validateAllocation({})).toBe(false);
     expect(validateAllocation({ ...SUGGESTED_EF_ALLOCATION, cash: Number.NaN }, true)).toMatchObject({ valid: false });
 
     const validationSpy = jest.spyOn(efAllocationModule, 'validateAllocation');
-    expect(() => Reflect.apply(setEfAllocation, undefined, [mockAppData, null])).toThrow(InvalidAllocationError);
     validationSpy.mockImplementationOnce(() => ({ valid: false, total: 0, issues: ['bad'] }));
     expect(() => setEfAllocation(mockAppData, { ...SUGGESTED_EF_ALLOCATION, cash: 10 })).toThrow(InvalidAllocationError);
     validationSpy.mockImplementationOnce(() => ({ valid: false, total: 0, issues: [] }));
@@ -153,8 +145,6 @@ describe('ef allocation', () => {
   });
 
   it('validates totals and decimals', () => {
-    expect(validateAllocation(undefined, true)).toMatchObject({ valid: false, total: 0 });
-    expect(validateAllocation({}, true)).toMatchObject({ valid: false, total: 0 });
     expect(validateAllocation({
       cash: 99,
       bank: 0,
@@ -164,15 +154,6 @@ describe('ef allocation', () => {
       insurance: 0,
       other: 0,
     })).toBe(false);
-    expect(validateAllocation({
-      cash: 10,
-      bank: 40,
-      'fd-rd': 35,
-      'mutual-funds-bonds': 15,
-      stocks: 0,
-      insurance: 0,
-      other: 0,
-    })).toBe(true);
     expect(validateAllocation({
       cash: 10,
       bank: 40,

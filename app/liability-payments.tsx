@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
@@ -6,25 +6,20 @@ import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import {
   AppText,
   Card,
-  ChipRow,
   DetailTabBar,
   EmptyState,
   Screen,
   StatusBadge,
 } from '../src/components/ui';
 import { AppHeader } from '../src/components/AppHeader';
-import { ListRow as SharedListRow } from '../src/components/ListRow';
-import { SortChip } from '../src/components/SortChip';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
 import { liabilitySummary } from '../src/domain/liability';
 import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR } from '../src/lib/format';
 import { choiceAsync } from '../src/lib/confirm';
-import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -46,8 +41,6 @@ export default function LiabilityPaymentsScreen() {
   const liabilityId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
-  const scheduleSorting = useSort('schedules');
-  const paymentSorting = useSort('payments');
   const today = useMemo(() => todayISO(), []);
   const liability = data.liabilities.find((entry) => entry.id === liabilityId);
   const [tab, setTab] = useState<Tab>('Schedule');
@@ -56,16 +49,10 @@ export default function LiabilityPaymentsScreen() {
     [liability, today],
   );
   const payments = useMemo(
-    () => liability
-      ? liability.payments
-        .map((payment, sortCreatedIndex) => ({ ...payment, sortCreatedIndex }))
-        .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
-      : [],
+    () => liability ? [...liability.payments].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)) : [],
     [liability],
   );
-  const listRows: ListRow[] = tab === 'Schedule'
-    ? scheduleSorting.sort(schedule?.rows ?? [])
-    : paymentSorting.sort(payments);
+  const listRows: ListRow[] = tab === 'Schedule' ? schedule?.rows ?? [] : payments;
 
   if (!liability || !schedule) {
     return <Screen><AppHeader title="Liability schedule" showBack fallbackHref="/liabilities" /><EmptyState title="Liability not found" /></Screen>;
@@ -105,15 +92,6 @@ export default function LiabilityPaymentsScreen() {
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }]}
         menu={[
-          ...(liability.kind === 'recurring' && schedule.summary.overdue + schedule.summary.ongoing > 0
-            ? [{
-              label: 'Clear past dues',
-              icon: 'edit' as const,
-              onPress: () => router.push(
-                `/clear-dues?kind=liability&id=${encodeURIComponent(liability.id)}` as Href,
-              ),
-            }]
-            : []),
           {
             label: 'Edit',
             icon: 'edit',
@@ -151,11 +129,6 @@ export default function LiabilityPaymentsScreen() {
           onChange={setTab}
         />
       </View>
-      <ChipRow>
-        {tab === 'Schedule'
-          ? <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
-          : <SortChip options={SORT_OPTIONS.payments} spec={paymentSorting.spec} onChange={paymentSorting.setSpec} />}
-      </ChipRow>
       {tab === 'Schedule' ? (
         <>
           <Card>
@@ -232,17 +205,11 @@ export default function LiabilityPaymentsScreen() {
             );
           }
           return (
-            <SharedListRow
-              style={[styles.row, { borderColor: colors.border }]}
-              onPress={() => openPayment(item)}
-              onEdit={() => openPayment(item)}
-              editLabel="Edit liability payment"
-              accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatINR(item.amount)}`}
-            >
+            <Pressable onPress={() => openPayment(item)} style={[styles.row, { borderColor: colors.border }]}>
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
               <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
               <AppText weight="bold" style={typography.amount}>{formatINR(item.amount)}</AppText>
-            </SharedListRow>
+            </Pressable>
           );
         }}
       />

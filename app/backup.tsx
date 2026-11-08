@@ -13,7 +13,6 @@ import { useAppStore } from '../src/data/store';
 import { backupFileName, createBackup, parseBackup, type ParseBackupResult } from '../src/domain/backup';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
-import { storageSummary, utf8ByteLength } from '../src/lib/storageGuard';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -175,9 +174,6 @@ export default function BackupScreen() {
         </AppText>
         <AppText style={[typography.meta, { color: colors.text3, marginTop: 10 }]}>
           Last export: {meta.lastExportAt ? formatDate(meta.lastExportAt.slice(0, 10)) : 'never'}
-        </AppText>
-        <AppText style={[typography.meta, { color: colors.text3 }]}>
-          Approximate data size: {storageSummary(utf8ByteLength(JSON.stringify(data)))}
         </AppText>
         <Button label="Export backup" icon="download" variant="primary" disabled={busy} onPress={() => void exportBackup()} />
       </Card>

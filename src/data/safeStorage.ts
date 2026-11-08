@@ -1,7 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 
 import { appDataSchema, SCHEMA_VERSION } from '../domain/schemas';
-import { utf8ByteLength } from '../lib/storageGuard';
 
 export type CorruptionReason = 'invalid-json' | 'invalid-blob' | 'invalid-schema' | 'newer-version';
 
@@ -19,14 +18,9 @@ export type SafeStorageHooks = {
 export function createSafeStorage(
   base: StateStorage,
   hooks: SafeStorageHooks,
-  options: {
-    blockWrites: () => boolean;
-    trackedKey?: string;
-    onReadSuccess?: (bytes: number) => void;
-    onWriteSuccess?: (bytes: number) => void;
-  },
+  options: { blockWrites: () => boolean },
 ): StateStorage {
-  let premigration: { raw: string; version: 1 | 2 | 3 | 4 } | null = null;
+  let premigration: { raw: string; version: 1 | 2 | 3 } | null = null;
   return {
     async getItem(name) {
       const raw = await base.getItem(name);
@@ -42,7 +36,7 @@ export function createSafeStorage(
           if (typeof envelope.version === 'number' && envelope.version > SCHEMA_VERSION) {
             reason = 'newer-version';
           } else if (
-            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3 || envelope.version === 4) &&
+            (envelope.version === 1 || envelope.version === 2 || envelope.version === 3) &&
             typeof envelope.state === 'object' &&
             envelope.state !== null &&
             'data' in envelope.state
@@ -61,10 +55,7 @@ export function createSafeStorage(
         reason = 'invalid-json';
       }
 
-      if (reason === null) {
-        if (name === options.trackedKey) options.onReadSuccess?.(utf8ByteLength(raw));
-        return raw;
-      }
+      if (reason === null) return raw;
 
       const backupKey = `${name}.corrupt.latest`;
       if (reason !== 'newer-version') {
@@ -91,9 +82,7 @@ export function createSafeStorage(
         await base.setItem(name, value);
       } catch {
         hooks.onWriteError('Your last change could not be saved. Free up storage and try again.');
-        return;
       }
-      if (name === options.trackedKey) options.onWriteSuccess?.(utf8ByteLength(value));
     },
     async removeItem(name) {
       await base.removeItem(name);

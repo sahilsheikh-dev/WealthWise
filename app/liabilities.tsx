@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../src/components/AppHeader';
-import { CardHeaderRow } from '../src/components/CardHeaderRow';
-import { DueActions } from '../src/components/DueActions';
-import { SortChip } from '../src/components/SortChip';
+import { IconButton } from '../src/components/IconButton';
 import {
   ActionRow,
   AppText,
@@ -20,14 +18,12 @@ import {
   StatusBadge,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
 import { liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatINR, formatMonth } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -38,7 +34,6 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 export default function LiabilitiesScreen() {
   const { colors } = useTheme();
   const data = useAppData();
-  const sorting = useSort('liabilities');
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
@@ -46,21 +41,6 @@ export default function LiabilitiesScreen() {
     && Number(extraText) >= 0 && Number(extraText) <= 1_000_000;
   const extra = isValidExtra ? Number(extraText) : 0;
   const overview = liabilitiesOverview(data, asOf, extra);
-  const liabilityCreationOrder = new Map(data.liabilities.map((liability, index) => [liability.id, index]));
-  const sortedLiabilities = sorting.sort(data.liabilities.map((liability) => {
-    const summary = liabilitySummary(liability, asOf);
-    const schedule = liabilitySchedule(liability, asOf);
-    return {
-      ...liability,
-      balance: summary.balance,
-      sortEmi: liability.kind === 'recurring' ? liability.emi : null,
-      nextDue: liability.kind === 'one-time' ? liability.dueDate : schedule.summary.nextDue?.dueDate,
-      rate: liability.ratePct,
-      progress: summary.principalPaidPct,
-      status: summary.cleared ? 'cleared' : schedule.summary.overdue > 0 ? 'overdue' : 'active',
-      sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
-    };
-  }));
 
   return (
     <>
@@ -115,10 +95,7 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        <View style={styles.sortRow}>
-          <SortChip options={SORT_OPTIONS.liabilities} spec={sorting.spec} onChange={sorting.setSpec} />
-        </View>
-        {sortedLiabilities.map((liability) => liability.kind === 'recurring'
+        {data.liabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
         {data.liabilities.length === 0 ? (
@@ -144,16 +121,23 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
     : payoffDate(summary.monthsLeftWithExtra, asOf);
   return (
     <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <CardHeaderRow
-        title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
-        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
+      <View style={styles.liabilityHeader}>
+        <View style={styles.liabilityTitle}>
+          <AppText weight="semibold" style={typography.name}>{liability.name}</AppText>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.ratePct}% p.a. · {liability.tenureMonths} months · Since {formatDate(liability.startDate)}
-        </AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
-        valueCaption={<AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>}
-        editLabel={`Edit ${liability.name}`}
-        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
-      />
+          </AppText>
+        </View>
+        <View style={styles.amountBlock}>
+          <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
+          <AppText style={[typography.meta, { color: colors.err }]}>{formatINR(liability.emi)}/mo</AppText>
+        </View>
+        <IconButton
+          icon="edit-2"
+          label={`Edit ${liability.name}`}
+          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+        />
+      </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
@@ -171,13 +155,6 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       {!summary.cleared && schedule.summary.overdue > 0
         ? <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
         : null}
-      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
-        <DueActions
-          target={{ kind: 'liability', id: liability.id }}
-          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
-          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
-        />
-      ) : null}
       {!summary.cleared && extra > 0 ? (
         <AppText style={[typography.meta, styles.scenario, { color: colors.primary }]}>
           {scenarioDate === null
@@ -207,15 +184,22 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
   const overdue = summary.overdueDays !== undefined && !summary.cleared;
   return (
     <View style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <CardHeaderRow
-        title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
-        subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
+      <View style={styles.liabilityHeader}>
+        <View style={styles.liabilityTitle}>
+          <AppText weight="semibold" style={typography.name}>{liability.name}</AppText>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
             {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
-        </AppText>}
-        value={<AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>}
-        editLabel={`Edit ${liability.name}`}
-        onEdit={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
-      />
+          </AppText>
+        </View>
+        <View style={styles.amountBlock}>
+          <AppText weight="bold" style={typography.amount}>{formatINR(summary.balance)}</AppText>
+        </View>
+        <IconButton
+          icon="edit-2"
+          label={`Edit ${liability.name}`}
+          onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+        />
+      </View>
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       {!summary.cleared && schedule.summary.nextDue ? (
         <AppText style={[typography.meta, { color: colors.text2, marginTop: 7 }]}>
@@ -252,8 +236,10 @@ const styles = StyleSheet.create({
   extraInput: { minWidth: 82, paddingVertical: 6, fontSize: 13, textAlign: 'right', fontFamily: 'Montserrat_600SemiBold' },
   inputError: { marginTop: 5 },
   liabilityCard: { marginHorizontal: 20, marginTop: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
+  liabilityHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  liabilityTitle: { flex: 1, minWidth: 0, gap: 3 },
+  amountBlock: { alignItems: 'flex-end', gap: 3 },
   liabilityStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 7 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },
-  sortRow: { marginHorizontal: 20, marginTop: 8 },
 });

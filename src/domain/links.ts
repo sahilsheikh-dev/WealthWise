@@ -1,4 +1,3 @@
-import { BUDGET_CATEGORIES } from './schemas';
 import type { AppData, HoldingType, InvestmentEntry, Transaction } from './types';
 
 export type TransactionSource = NonNullable<Transaction['source']>;
@@ -38,16 +37,6 @@ export function describeSource(data: AppData, source: TransactionSource): Descri
     return liability?.payments.some((entry) => entry.id === source.entryId)
       ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } }
       : null;
-  }
-  if (source.kind === 'policy-payment') {
-    const policy = data.policies.find((entry) => entry.id === source.parentId);
-    return policy?.payments.some((entry) => entry.id === source.entryId)
-      ? { label: policy.name, route: '/policy-payments', params: { id: policy.id } }
-      : null;
-  }
-  if (source.kind === 'liability-origin') {
-    const liability = data.liabilities.find((entry) => entry.id === source.parentId && entry.id === source.entryId);
-    return liability ? { label: liability.name, route: '/liability-payments', params: { id: liability.id } } : null;
   }
   const goal = data.goals.find((entry) => entry.id === source.parentId && entry.auto === 'ef');
   return goal && data.efEntries.some((entry) => entry.id === source.entryId)
@@ -95,11 +84,9 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     { name: 'goals', ids: data.goals.map(({ id }) => id) },
     { name: 'holdings', ids: data.holdings.map(({ id }) => id) },
     { name: 'liabilities', ids: data.liabilities.map(({ id }) => id) },
-    { name: 'policies', ids: data.policies.map(({ id }) => id) },
     { name: 'efEntries', ids: data.efEntries.map(({ id }) => id) },
     { name: 'holdingEntries', ids: allHoldingEntries.map(({ id }) => id) },
     { name: 'liabilityPayments', ids: data.liabilities.flatMap((item) => item.payments.map(({ id }) => id)) },
-    { name: 'policyPayments', ids: data.policies.flatMap((item) => item.payments.map(({ id }) => id)) },
   ];
   for (const collection of collections) {
     const seen = new Set<string>();
@@ -122,31 +109,14 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
 
     let entry: { amount: number; date: string } | undefined;
     let expectedType: Transaction['type'] | undefined;
-    let expectedCategory: string | undefined;
-    let validLiabilityOrigin = true;
     if (source.kind === 'holding-entry') {
       const holding = data.holdings.find((item) => item.id === source.parentId);
       entry = holding?.logs.find((item) => item.id === source.entryId);
-      if (entry) expectedType = holding?.logs.find((item) => item.id === source.entryId)?.kind === 'Withdrawal' ? 'income' : 'invest';
+      if (entry) expectedType = (entry as InvestmentEntry).kind === 'Withdrawal' ? 'income' : 'invest';
     } else if (source.kind === 'liability-payment') {
       const liability = data.liabilities.find((item) => item.id === source.parentId);
       entry = liability?.payments.find((item) => item.id === source.entryId);
       expectedType = 'expense';
-    } else if (source.kind === 'policy-payment') {
-      const policy = data.policies.find((item) => item.id === source.parentId);
-      entry = policy?.payments.find((item) => item.id === source.entryId);
-      expectedType = 'expense';
-      expectedCategory = 'Insurance';
-    } else if (source.kind === 'liability-origin') {
-      const liability = data.liabilities.find((item) =>
-        item.id === source.parentId && item.id === source.entryId);
-      entry = liability ? { amount: transaction.amount, date: transaction.date } : undefined;
-      expectedType = 'income';
-      validLiabilityOrigin = liability !== undefined &&
-        transaction.amount <= liability.principal &&
-        (transaction.category === 'Borrowed'
-          ? transaction.amount === liability.principal && transaction.date === liability.startDate
-          : transaction.category === 'Loan proceeds' && transaction.date >= liability.startDate);
     } else {
       const efGoal = data.goals.find((goal) => goal.auto === 'ef');
       entry = efGoal?.id === source.parentId
@@ -159,9 +129,7 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     } else if (
       transaction.amount !== Math.abs(entry.amount) ||
       transaction.date !== entry.date ||
-      transaction.type !== expectedType ||
-      (expectedCategory !== undefined && transaction.category !== expectedCategory) ||
-      !validLiabilityOrigin
+      transaction.type !== expectedType
     ) {
       add('linked-drift', 'Linked transaction fields differ from the source entry.', ['transactions', index]);
     }
@@ -180,9 +148,6 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
     }
   }
   for (const liability of data.liabilities) {
-    if (liability.kind === 'recurring' && liability.settlement !== null && liability.settlement.asOf < liability.startDate) {
-      add('settlement-before-start', 'Settlement cannot predate the liability start date.', ['liabilities', liability.id, 'settlement', 'asOf']);
-    }
     for (const [index, payment] of liability.payments.entries()) {
       const count = linked.get(payment.id)?.length ?? 0;
       if (count > 1) {
@@ -190,75 +155,5 @@ export function validateIntegrity(data: AppData): IntegrityIssue[] {
       }
     }
   }
-  const savingsPolicies = new Set(data.policies
-    .filter((policy) => policy.kind === 'life-savings' || policy.kind === 'ulip')
-    .map((policy) => policy.id));
-  const allocatedShares = new Map<string, number>();
-  for (const [goalIndex, goal] of data.goals.entries()) {
-    const seen = new Set<string>();
-    for (const [linkIndex, link] of goal.links.entries()) {
-      const exists = data.holdings.some((holding) => holding.id === link.instrumentId)
-        || savingsPolicies.has(link.instrumentId);
-      if (!exists) add('missing-goal-link-target', 'Goal link does not point at an eligible asset.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
-      if (seen.has(link.instrumentId)) {
-        add('duplicate-goal-link', 'A goal cannot link the same asset more than once.', ['goals', goalIndex, 'links', linkIndex, 'instrumentId']);
-      }
-      seen.add(link.instrumentId);
-      const total = (allocatedShares.get(link.instrumentId) ?? 0) + link.share;
-      allocatedShares.set(link.instrumentId, total);
-      if (total > 100) add('goal-link-overallocated', 'Shares across goals cannot exceed 100% of an asset.', ['goals', goalIndex, 'links', linkIndex, 'share']);
-    }
-  }
-  if (data.budget) {
-    const seen = new Set<string>();
-    const allowed = new Set<string>(BUDGET_CATEGORIES);
-    for (const [index, line] of data.budget.lines.entries()) {
-      if (!allowed.has(line.category)) add('invalid-budget-category', 'Budget category is not allowed.', ['budget', 'lines', index, 'category']);
-      if (seen.has(line.category)) add('duplicate-budget-category', 'Budget categories must be unique.', ['budget', 'lines', index, 'category']);
-      seen.add(line.category);
-    }
-  }
-  const budgetTemplateIds = new Set((data.budgetTemplates ?? []).map(({ id }) => id));
-  if (data.defaultBudgetTemplateId && !budgetTemplateIds.has(data.defaultBudgetTemplateId)) {
-    add('missing-default-budget-template', 'Default budget template does not exist.', ['defaultBudgetTemplateId']);
-  }
-  for (const [templateIndex, template] of (data.budgetTemplates ?? []).entries()) {
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of template.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['budgetTemplates', templateIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
-    }
-  }
-  for (const [monthIndex, budget] of (data.monthBudgets ?? []).entries()) {
-    if (budget.templateId !== null && !budgetTemplateIds.has(budget.templateId)) {
-      add('missing-budget-template', 'Month budget template does not exist.', ['monthBudgets', monthIndex, 'templateId']);
-    }
-    const seen = new Set<string>();
-    for (const [lineIndex, line] of budget.lines.entries()) {
-      if (!allowedBudgetCategory(line.category)) {
-        add('invalid-budget-category', 'Budget category is not allowed.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      if (seen.has(line.category)) {
-        add('duplicate-budget-category', 'Budget categories must be unique.', ['monthBudgets', monthIndex, 'lines', lineIndex, 'category']);
-      }
-      seen.add(line.category);
-    }
-  }
-  for (const policy of data.policies) {
-    for (const [index, payment] of policy.payments.entries()) {
-      const count = linked.get(payment.id)?.length ?? 0;
-      if (count > 1) add('duplicate-linked-entry', 'Policy payment has more than one linked transaction.', ['policies', policy.id, 'payments', index]);
-    }
-
-  }
   return issues;
-}
-
-function allowedBudgetCategory(category: string): boolean {
-  return (BUDGET_CATEGORIES as readonly string[]).includes(category);
 }

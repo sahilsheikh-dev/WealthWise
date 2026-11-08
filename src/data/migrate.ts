@@ -84,7 +84,7 @@ export function migrateV2ToV3(data: unknown): unknown {
       || data.liabilities.length > 0
       || data.efEntries.length > 0,
   };
-  return { ...data, settings };
+  return { ...data, settings, efAllocation: null };
 }
 
 export function migrateV3ToV4(data: unknown): unknown {
@@ -101,36 +101,7 @@ export function migrateV3ToV4(data: unknown): unknown {
   }
   return {
     ...data,
-    efAllocation: data.efAllocation ?? null,
-  };
-}
-
-export function migrateV4ToV5(data: unknown): unknown {
-  if (
-    !isRecord(data) ||
-    !isRecord(data.settings) ||
-    !Array.isArray(data.transactions) ||
-    !Array.isArray(data.goals) ||
-    !Array.isArray(data.holdings) ||
-    !Array.isArray(data.liabilities) ||
-    !Array.isArray(data.efEntries)
-  ) {
-    throw new PersistedVersionError(4, 'unknown-version');
-  }
-  return {
-    ...data,
-    goals: data.goals.map((goal) => {
-      if (!isRecord(goal)) throw new PersistedVersionError(4, 'unknown-version');
-      return { ...goal, links: [] };
-    }),
-    liabilities: data.liabilities.map((liability) => {
-      if (!isRecord(liability)) throw new PersistedVersionError(4, 'unknown-version');
-      return liability.kind === 'recurring'
-        ? { ...liability, settlement: null }
-        : liability;
-    }),
-    policies: [],
-    budget: null,
+    efAllocation: null,
   };
 }
 
@@ -145,7 +116,6 @@ export function migratePersisted(persisted: unknown, fromVersion: number): unkno
     if (fromVersion === 1) result = migrateV1ToV2(result);
     if (fromVersion <= 2) result = migrateV2ToV3(result);
     if (fromVersion <= 3) result = migrateV3ToV4(result);
-    if (fromVersion <= 4) result = migrateV4ToV5(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

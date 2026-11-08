@@ -2,7 +2,6 @@ export * from './dates';
 export * from './ef';
 export * from './efAllocation';
 export * from './efAllocationActions';
-export * from './stressData';
 export * from './goals';
 export * from './goalActions';
 export * from './instruments';

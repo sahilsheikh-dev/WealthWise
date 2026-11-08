@@ -1,4 +1,4 @@
-import { shouldShowStorageWarning, storageLevel, storageSummary, utf8ByteLength } from '../storageGuard';
+import { storageLevel, storageSummary, utf8ByteLength } from '../storageGuard';
 
 describe('storageGuard', () => {
   it('reports byte lengths and level boundaries', () => {
@@ -15,13 +15,5 @@ describe('storageGuard', () => {
     expect(storageSummary(1_000_000)).toContain('KB');
     expect(storageSummary(1_048_576)).toBe('1 MB of about 2 MB');
     expect(storageSummary(1_600_000)).toContain('MB');
-  });
-
-  it('dismisses warnings for seven days but never hides a critical warning', () => {
-    expect(shouldShowStorageWarning(1_000_000, undefined, '2026-10-10')).toBe(true);
-    expect(shouldShowStorageWarning(1_000_000, '2026-10-17', '2026-10-10')).toBe(false);
-    expect(shouldShowStorageWarning(1_000_000, '2026-10-17', '2026-10-17')).toBe(true);
-    expect(shouldShowStorageWarning(1_600_000, '2026-10-30', '2026-10-10')).toBe(true);
-    expect(shouldShowStorageWarning(999_999, undefined, '2026-10-10')).toBe(false);
   });
 });

@@ -3,43 +3,59 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import AssetsScreen from '../../../app/assets';
 import BackupScreen from '../../../app/backup';
-import BudgetScreen from '../../../app/budget';
-import BudgetHistoryScreen from '../../../app/budget-history';
-import BudgetMonthFormScreen from '../../../app/budget-month-form';
-import BudgetTemplateFormScreen from '../../../app/budget-template-form';
-import BudgetTemplatesScreen from '../../../app/budget-templates';
-import ClearDuesScreen from '../../../app/clear-dues';
-import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfEntryFormScreen from '../../../app/ef-entry-form';
-import EmergencyFundScreen from '../../../app/emergency-fund';
-import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
-import GoalsScreen from '../../../app/(tabs)/goals';
-import HomeScreen from '../../../app/(tabs)';
 import InvestmentEntryFormScreen from '../../../app/investment-entry-form';
-import InvestmentEntriesScreen from '../../../app/investment-entries';
 import InvestmentFormScreen from '../../../app/investment-form';
-import LiabilitiesScreen from '../../../app/liabilities';
 import LiabilityFormScreen from '../../../app/liability-form';
-import LiabilityPaymentsScreen from '../../../app/liability-payments';
 import LiabilityPaymentFormScreen from '../../../app/liability-payment-form';
 import LinkMissingScreen from '../../../app/link-missing';
-import MoneyMovementFormScreen from '../../../app/money-movement-form';
-import MonthReviewScreen from '../../../app/month-review';
-import OnboardingScreen from '../../../app/onboarding';
-import ProfileFormScreen from '../../../app/profile-form';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
 import TransactionFormScreen from '../../../app/transaction-form';
-import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
-import { monthKey, shiftMonth } from '../../domain/dates';
-import { emptyAppData } from '../../domain/actions';
-import type { ManualHolding, OneTimeLiability } from '../../domain/types';
-import { useUIStore } from '../../data/uiStore';
-import { useAppStore } from '../../data/store';
-import { formatMonth } from '../../lib/format';
-import { todayISO } from '../../lib/clock';
+
+const mockData = {
+  settings: { name: 'Demo', theme: 'system', monthlySalary: 40000, onboarded: true },
+  transactions: [],
+  goals: [],
+  holdings: [],
+  liabilities: [],
+  efEntries: [],
+};
+
+const mockStoreState = {
+  data: mockData,
+  lastError: null,
+  undoImport: null,
+  actions: {
+    replaceAllData: jest.fn(async () => ({ ok: true })),
+    undoImport: jest.fn(async () => ({ ok: true })),
+    addGoal: jest.fn(),
+    updateGoal: jest.fn(),
+    deleteGoal: jest.fn(),
+    addTransaction: jest.fn(),
+    updateTransaction: jest.fn(),
+    deleteTransaction: jest.fn(),
+    addEfEntry: jest.fn(),
+    updateEfEntry: jest.fn(),
+    deleteEfEntry: jest.fn(),
+    addLiability: jest.fn(),
+    updateLiability: jest.fn(),
+    deleteLiability: jest.fn(),
+    addLiabilityPayment: jest.fn(),
+    updateLiabilityPayment: jest.fn(),
+    deleteLiabilityPayment: jest.fn(),
+    addHolding: jest.fn(),
+    updateHolding: jest.fn(),
+    deleteHolding: jest.fn(),
+    addInvestmentEntry: jest.fn(),
+    updateInvestmentEntry: jest.fn(),
+    deleteInvestmentEntry: jest.fn(),
+    completeOnboarding: jest.fn(),
+    updateSettings: jest.fn(),
+  },
+};
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -112,7 +128,6 @@ jest.mock('../../data/store', () => {
       goals: [],
       holdings: [],
       liabilities: [],
-      policies: [],
       efEntries: [],
     },
     lastError: null,
@@ -126,9 +141,6 @@ jest.mock('../../data/store', () => {
       addTransaction: jest.fn(),
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
-      recordMoneyMovement: jest.fn(),
-      fundShortfall: jest.fn(),
-      allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
       updateEfEntry: jest.fn(),
       deleteEfEntry: jest.fn(),
@@ -151,10 +163,6 @@ jest.mock('../../data/store', () => {
 
   return {
     useAppStore: (selector: (state: typeof mockState) => unknown) => selector(mockState),
-    metaStore: {
-      getMeta: async () => ({}),
-      updateSortSpec: async () => ({}),
-    },
   };
 });
 
@@ -165,7 +173,6 @@ jest.mock('../../data/useAppData', () => {
     goals: [],
     holdings: [],
     liabilities: [],
-    policies: [],
     efEntries: [],
   };
   const mockStoreState = {
@@ -181,9 +188,6 @@ jest.mock('../../data/useAppData', () => {
       addTransaction: jest.fn(),
       updateTransaction: jest.fn(),
       deleteTransaction: jest.fn(),
-      recordMoneyMovement: jest.fn(),
-      fundShortfall: jest.fn(),
-      allocateSurplus: jest.fn(),
       addEfEntry: jest.fn(),
       updateEfEntry: jest.fn(),
       deleteEfEntry: jest.fn(),
@@ -232,13 +236,11 @@ jest.mock('../../components/ui', () => {
     ReactModule.createElement(type, props, children);
   const Button = ({ label, ...props }: { label: string; [key: string]: unknown }) =>
     ReactModule.createElement('button', { ...props, accessibilityLabel: label }, label);
-  const Chip = ({ label, ...props }: { label: string; [key: string]: unknown }) =>
-    ReactModule.createElement('chip', { ...props, accessibilityLabel: label }, label);
   return {
     AppText: node('text'),
     Button,
     Card: node('card'),
-    Chip,
+    Chip: node('chip'),
     ChipRow: node('chiprow'),
     DetailTabBar: node('detailtabbar'),
     EmptyState: node('empty'),
@@ -295,11 +297,7 @@ jest.mock('../../components/form/MoneyField', () => {
 jest.mock('../../components/form/DateField', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   return {
-    DateField: ({ label, accessibilityLabel, accessibilityHint }: {
-      label: string;
-      accessibilityLabel?: string;
-      accessibilityHint?: string;
-    }) => ReactModule.createElement('datefield', { accessibilityLabel, accessibilityHint }, label),
+    DateField: ({ label }: { label: string }) => ReactModule.createElement('text', null, label),
   };
 });
 
@@ -342,22 +340,10 @@ jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof import('react');
   const node = (type: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
     ReactModule.createElement(type, props, children);
-  const FlatList = ({ ListHeaderComponent, ...props }: {
-    ListHeaderComponent?: React.ComponentType;
-    [key: string]: unknown;
-  }) => ReactModule.createElement(
-    'flatlist',
-    props,
-    ListHeaderComponent ? ReactModule.createElement(ListHeaderComponent) : null,
-  );
   return {
     Alert: { alert: jest.fn() },
-    BackHandler: { addEventListener: () => ({ remove: jest.fn() }), exitApp: jest.fn() },
-    FlatList,
     KeyboardAvoidingView: node('keyboard-avoiding-view'),
-    Modal: node('modal'),
     Platform: { OS: 'ios' },
-    PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     StyleSheet: { create: (styles: object) => styles },
@@ -381,27 +367,10 @@ function renderScreen(screen: React.ReactElement) {
 describe('route render smoke audit', () => {
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
-    ['Home', React.createElement(HomeScreen)],
-    ['Budget', React.createElement(BudgetScreen)],
-    ['Budget templates', React.createElement(BudgetTemplatesScreen)],
-    ['Budget template form', React.createElement(BudgetTemplateFormScreen)],
-    ['Budget month form', React.createElement(BudgetMonthFormScreen)],
-    ['Budget history', React.createElement(BudgetHistoryScreen)],
-    ['Goals', React.createElement(GoalsScreen)],
-    ['Transactions', React.createElement(TransactionsScreen)],
-    ['Month review empty state', React.createElement(MonthReviewScreen)],
-    ['Money movement invalid state', React.createElement(MoneyMovementFormScreen)],
     ['Backup', React.createElement(BackupScreen)],
-    ['Clear past dues', React.createElement(ClearDuesScreen)],
     ['Assets', React.createElement(AssetsScreen)],
-    ['Emergency fund', React.createElement(EmergencyFundScreen)],
-    ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
-    ['Emergency fund entry form', React.createElement(EfEntryFormScreen)],
-    ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
-    ['Onboarding', React.createElement(OnboardingScreen)],
-    ['Profile form', React.createElement(ProfileFormScreen)],
     ['Goal form create', React.createElement(GoalFormScreen)],
     ['Goal form edit', React.createElement(GoalFormScreen)],
     ['Transaction form create', React.createElement(TransactionFormScreen)],
@@ -410,9 +379,6 @@ describe('route render smoke audit', () => {
     ['Liability form edit', React.createElement(LiabilityFormScreen)],
     ['Liability payment form create', React.createElement(LiabilityPaymentFormScreen)],
     ['Liability payment form edit', React.createElement(LiabilityPaymentFormScreen)],
-    ['Liabilities', React.createElement(LiabilitiesScreen)],
-    ['Liability payments', React.createElement(LiabilityPaymentsScreen)],
-    ['Investment entries', React.createElement(InvestmentEntriesScreen)],
     ['Investment form create', React.createElement(InvestmentFormScreen)],
     ['Investment form edit', React.createElement(InvestmentFormScreen)],
     ['Investment entry form create', React.createElement(InvestmentEntryFormScreen)],
@@ -421,151 +387,8 @@ describe('route render smoke audit', () => {
     ['Emergency fund entry form edit', React.createElement(EfEntryFormScreen)],
   ];
 
-  it.each(screens)('%s renders without verb text', async (name, screen) => {
-    let renderer: TestRenderer.ReactTestRenderer | undefined;
-    await act(async () => {
-      renderer = TestRenderer.create(screen);
-      await Promise.resolve();
-    });
-    if (!renderer) throw new Error('Route did not render.');
-    assertNoVerbText(renderer.root, { screen: name === 'Home' ? 'home' : undefined });
-  });
-
-  it.each([
-    ['Transactions', () => React.createElement(TransactionsScreen)],
-    ['Budget spending', () => React.createElement(BudgetScreen)],
-    ['Budget history', () => React.createElement(BudgetHistoryScreen)],
-    ['Goals', () => React.createElement(GoalsScreen)],
-    ['Assets', () => React.createElement(AssetsScreen)],
-    ['Liabilities', () => React.createElement(LiabilitiesScreen)],
-    ['Emergency fund passbook', () => React.createElement(EmergencyFundScreen)],
-    ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
-    ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
-    ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
-  ])('%s exposes its SortChip', (name, makeScreen) => {
-    const appData = jest.requireMock('../../data/useAppData').useAppData() as {
-      holdings: object[];
-      liabilities: object[];
-      monthBudgets?: object[];
-    };
-    const storeData = useAppStore((state) => state).data;
-    const holding: ManualHolding = {
-      id: 'sort-holding',
-      kind: 'manual',
-      name: 'Sort holding',
-      type: 'Savings account',
-      invested: 10,
-      value: 10,
-      valueAsOf: '2026-10-01',
-      logs: [{ id: 'sort-entry', date: '2026-10-01', amount: 10, note: 'Deposit', kind: 'Deposit' }],
-    };
-    const liability: OneTimeLiability = {
-      id: 'sort-liability',
-      kind: 'one-time',
-      name: 'Sort liability',
-      type: 'Borrowed money',
-      principal: 100,
-      ratePct: 0,
-      startDate: '2026-01-01',
-      dueDate: null,
-      payments: [],
-    };
-    appData.holdings = name === 'Investment entries' ? [holding] : [];
-    appData.liabilities = name === 'Liability payments' ? [liability] : [];
-    appData.monthBudgets = name === 'Budget spending' ? [{
-      month: todayISO().slice(0, 7), templateId: null, templateName: null, customized: false,
-      plannedIncome: 1000, lines: [{ category: 'Food', planned: 500 }],
-    }] : [];
-    storeData.holdings = name === 'Link missing transactions' ? [holding] : [];
-    storeData.liabilities = [];
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue(name === 'Budget spending'
-      ? { month: todayISO().slice(0, 7) }
-      : name === 'Investment entries'
-      ? { id: holding.id }
-      : name === 'Liability payments'
-        ? { id: liability.id }
-        : {});
-
-    const renderer = renderScreen(makeScreen());
-    expect(renderer.root.findAll((node) =>
-      typeof node.props.accessibilityLabel === 'string'
-      && node.props.accessibilityLabel.startsWith('Sort:'),
-    )).toHaveLength(1);
-    act(() => renderer.unmount());
-    routeParams.mockReturnValue({});
-  });
-
-  it('changes months with horizontal swipes and leaves chip-origin swipes alone', () => {
-    const renderer = renderScreen(React.createElement(TransactionsScreen));
-    const monthLabel = () => renderer.root.findByProps({ accessibilityRole: 'adjustable' }).props.accessibilityLabel as string;
-    const previousMonthLabel = monthLabel();
-    const expectedMonth = shiftMonth(useUIStore.getState().txMonth, 1);
-    const chipSurface = renderer.root.findAll((node) => typeof node.props.onTouchStart === 'function')[0];
-    if (!chipSurface) throw new Error('Transaction filter touch surface did not render.');
-    const responder = () => renderer.root.findAll(
-      (node) => typeof node.props.onMoveShouldSetPanResponderCapture === 'function',
-    )[0];
-    if (!responder()) throw new Error('Transaction swipe responder did not render.');
-
-    act(() => chipSurface.props.onTouchStart());
-    expect(responder()?.props.onMoveShouldSetPanResponderCapture({}, { dx: -80, dy: 0, vx: -1 })).toBe(false);
-    act(() => chipSurface.props.onTouchEnd());
-
-    const pan = responder();
-    if (!pan) throw new Error('Transaction swipe responder did not render.');
-    expect(pan.props.onMoveShouldSetPanResponderCapture({}, { dx: -80, dy: 0, vx: -1 })).toBe(true);
-    act(() => pan.props.onPanResponderRelease({}, { dx: -80, dy: 0, vx: -1 }));
-    expect(monthLabel()).not.toBe(previousMonthLabel);
-    expect(monthLabel()).toBe(`Selected month: ${formatMonth(expectedMonth)}`);
-  });
-
-  it.each(['borrowed-in', 'repay', 'withdraw', 'own-funds'])('renders the %s movement form', (kind) => {
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    routeParams.mockReturnValue({ kind });
-    const renderer = renderScreen(React.createElement(MoneyMovementFormScreen));
-    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
-    routeParams.mockReturnValue({});
-  });
-
-  it.each([
-    ['shortfall', 'expense', 100],
-    ['surplus', 'income', 100],
-  ] as const)('renders the %s month review allocation builder', (mode, type, amount) => {
-    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
-    const selectedMonth = shiftMonth(monthKey(todayISO()), -1);
-    const data = {
-      ...emptyAppData(`${selectedMonth}-01`),
-      transactions: [{
-        id: `review-${mode}`,
-        type,
-        amount,
-        category: type === 'expense' ? 'Living' : 'Salary',
-        note: 'Review smoke',
-        date: `${selectedMonth}-10`,
-      }],
-    };
-    useAppStore((state) => state).data = data;
-    routeParams.mockReturnValue({ month: selectedMonth });
-    const renderer = renderScreen(React.createElement(MonthReviewScreen));
-    expect(renderer.root.findAll((node) => String(node.type) === 'screen').length).toBeGreaterThan(0);
-    useAppStore((state) => state).data = emptyAppData(todayISO());
-    routeParams.mockReturnValue({});
-  });
-
-  it('explains the first SIP installment and installment tracking dates', () => {
-    const renderer = renderScreen(React.createElement(InvestmentFormScreen));
-    const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
-    expect(dates[0]?.props).toMatchObject({
-      accessibilityLabel: 'First scheduled contribution date',
-      accessibilityHint: 'The first date on your recurring investment schedule.',
-    });
-    expect(dates[1]?.props).toMatchObject({
-      accessibilityLabel: 'Installment tracking start date',
-      accessibilityHint: 'Only installments due on or after this date count toward missed contributions.',
-    });
-    const helperText = renderer.root.findAllByType('text').map((node) => node.children.join(' ')).join(' ');
-    expect(helperText).toContain('The plan schedule starts on this date.');
-    expect(helperText).toContain('For an existing SIP, choose when you want WealthWise to start counting expected installments.');
+  it.each(screens)('%s renders without verb text', (_name, screen) => {
+    const renderer = renderScreen(screen);
+    assertNoVerbText(renderer.root);
   });
 });

@@ -30,15 +30,7 @@ describe('schema migration', () => {
     };
     expect(migrateV1ToV2(v1)).toEqual(expected);
     expect(migratePersisted({ data: v1 }, 1)).toEqual({
-      data: {
-        ...expected,
-        settings: { ...expected.settings, monthlySalary: null, onboarded: true },
-        goals: expected.goals.map((goal) => ({ ...goal, links: [] })),
-        liabilities: expected.liabilities.map((liability) => ({ ...liability, settlement: null })),
-        policies: [],
-        budget: null,
-        efAllocation: null,
-      },
+      data: { ...expected, settings: { ...expected.settings, monthlySalary: null, onboarded: true }, efAllocation: null },
     });
   });
 
@@ -47,22 +39,16 @@ describe('schema migration', () => {
     const expected = {
       ...v2,
       settings: { ...v2.settings, monthlySalary: null, onboarded: true },
-    };
-    expect(migrateV2ToV3(v2)).toEqual(expected);
-    expect(migrateV2ToV3(v2)).not.toHaveProperty('efAllocation');
-    const expectedV5 = {
-      ...expected,
-      goals: expected.goals.map((goal) => ({ ...goal, links: [] })),
-      liabilities: expected.liabilities.map((liability) => ({ ...liability, settlement: null })),
-      policies: [],
-      budget: null,
       efAllocation: null,
     };
-    expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expectedV5 });
+    expect(migrateV2ToV3(v2)).toEqual(expected);
+    expect(migratePersisted({ data: v2 }, 2)).toEqual({ data: expected });
     const before = validateImportData({
-      ...expectedV5,
+      ...v2,
+      settings: { ...v2.settings, monthlySalary: null, onboarded: true },
+      efAllocation: null,
     });
-    const after = validateImportData(migratePersisted(v2, 2));
+    const after = validateImportData(migrateV2ToV3(v2));
     if (!before.ok || !after.ok) throw new Error('Expected the v2 migration fixture to validate.');
     expect(netWorth(after.data, '2026-09-03')).toEqual(netWorth(before.data, '2026-09-03'));
     expect(efBalance(after.data.efEntries)).toBe(efBalance(before.data.efEntries));
@@ -100,14 +86,14 @@ describe('schema migration', () => {
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'unknown-version' }),
     );
     expect(() => migratePersisted({ foo: 'bar' }, 3)).toThrow(PersistedVersionError);
-    expect(() => migratePersisted({}, 6)).toThrow(
+    expect(() => migratePersisted({}, 5)).toThrow(
       expect.objectContaining({ name: 'PersistedVersionError', reason: 'future-version' }),
     );
     expect(() => migratePersisted({}, -1)).toThrow(PersistedVersionError);
   });
 
   it('passes the current persisted schema through unchanged', () => {
-    const persisted = { data: { version5: true } };
-    expect(migratePersisted(persisted, 5)).toBe(persisted);
+    const persisted = { data: { version4: true } };
+    expect(migratePersisted(persisted, 4)).toBe(persisted);
   });
 });

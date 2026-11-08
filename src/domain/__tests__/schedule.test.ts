@@ -38,7 +38,6 @@ const recurringLiability = (changes: Partial<RecurringLiability> = {}): Recurrin
   tenureMonths: 6,
   emi: 2_000,
   payments: [],
-  settlement: null,
   ...changes,
 });
 
@@ -60,8 +59,6 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
   goals: [],
   holdings,
   liabilities,
-  policies: [],
-  budget: null,
   efEntries: [],
 });
 
