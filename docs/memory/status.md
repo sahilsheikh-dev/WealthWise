@@ -20,13 +20,14 @@
   The merged audit task branch was deleted after integration.
   Historical/unrelated branches `codex-changes`, `phase/25-release-and-backups`,
   and `task/P28-E-phase-history` were not part of this Release 2 PR chain.
-- Latest six ordered gates on the Release 2 audit worktree all exit 0. Gate 1
-  has 98 suites, 1,243 passed, 1 skipped; coverage is
+- Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
+  Gate 1 has 98 suites, 1,243 passed, 1 skipped; coverage is
   95.96/92.01/98.01/97.62% overall,
   `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
   96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
-  succeed. No EAS/Gradle build, v1.1.0 tag or publication has occurred.
+  succeed. The owner-provided EAS build is verified; no local EAS or Gradle
+  build was run.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
   overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
@@ -41,9 +42,9 @@
   without the stacked bar. The owner reported N39-N43 Pass and the checklist
   records those results. Device model, Android version and tester fields remain
   blank. P28-F release preparation and integration are complete on
-  `release/v1.1.0`; version, changelog, README What's new and draft notes are
-  committed. The README Download remains v1.0.0 until publication. Owner APK
-  build, v1.1.0 tag and publication remain pending.
+  `release/v1.1.0`; v1.1.0 is published with the required README Download
+  parity, release notes and build-history record. The owner-approved
+  `preview` profile and reused versionCode 1 exceptions are documented.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
   and a final tree equal to main. The later route-diagnostic and ledger
@@ -59,15 +60,15 @@
 - Branch audit (2026-11-08): the chronological PR path carries the task
   correction through Phase 28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
-  GitHub PRs. The v1.1.0 tag and publication remain pending owner build and
-  approval. `codex-changes`, `phase/25-release-and-backups`, and
+  GitHub PRs. The v1.1.0 tag points to the verified EAS source commit and its
+  GitHub release is published. `codex-changes`, `phase/25-release-and-backups`, and
   `task/P28-E-phase-history` remain outside the merged Release 2 chain; the
   `history/by-phase` branch is a read-only archive. No unrelated branch or
   tag was changed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
-  to follow task -> Phase 28 -> develop -> release -> main -> develop. No tag
-  or release publication was made.
+  to follow task -> Phase 28 -> develop -> release -> main -> develop.
+  P28-F-R3 later published v1.1.0 after the owner uploaded the verified APK.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,

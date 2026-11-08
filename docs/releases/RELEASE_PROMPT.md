@@ -113,8 +113,8 @@ The release scope is the range between:
 For example:
 
 ```text
-Previous release: v1.0.0
-Target release:   v1.1.0
+Previous release: v1.1.0
+Target release:   v1.2.0
 Base:             Previous release tag
 Head:             Approved target commit
 ```
