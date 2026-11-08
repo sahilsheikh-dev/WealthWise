@@ -6,11 +6,8 @@ AI tool. Keep tool-specific instruction files out of the repository; update
 these shared instructions instead.
 
 Reports, audits, checklists, and generated output belong in chat responses or
-under `/tmp`, never in the repository. Routine documentation changes in Git
-are limited to `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`,
-except that only `.gitkeep` may be committed under
-`docs/releases/drafts/`. Change other documentation only when the owner
-explicitly requests those files.
+under `/tmp`, never in the repository. Documentation changes are limited to
+the shared memory files and `docs/PROGRESS.md`.
 
 WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 (`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
@@ -18,27 +15,10 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 
 ## Project rules
 
-- **R1 — Dirty-file preflight:** list every dirty file before other work. If
-  files are dirty, inspect their diff and commit exactly those named files
-  before proceeding, using a Conventional Commit subject derived from the
-  actual changes. If dirty files cover unrelated areas, make one commit per
-  area and name only the files in that area. Never use a generic checkpoint
-  subject. Preserve owner edits; never use checkout, restore, stash, reset, or
-  old-code reapplication to undo them.
-- **R2 — Phase and revision IDs:** align each task with existing work. A fix
-  or change to a completed subtask stays in its original phase and is logged
-  as `<ID>-R<n>` (for example, `P29-AB-R1`); the original row must say
-  `Revised by <ID>-R<n>`. Create a new phase with subtasks only for genuinely
-  new areas.
-- **R3 — History and release approval:** never push, amend or rewrite history
-  unless the owner explicitly asks. Release publication and tag creation,
-  movement or deletion require explicit owner approval.
-- **R4 — Documentation scope:** keep routine committed documentation within
-  `docs/memory/*`, `docs/PROGRESS.md`, and `docs/releases/**`; do not commit
-  release-draft contents (the `docs/releases/drafts/.gitkeep` exception is
-  allowed). Other documentation files may be changed only when explicitly
-  named in the owner's task. Reports and generated output belong in chat or
-  `/tmp`.
+- If files are dirty at the start of a task, list every dirty file and checkpoint
+  exactly those files with `chore: user manual changes (checkpoint)` before any
+  other work. Preserve owner edits; never use checkout, restore, stash, reset,
+  or old-code reapplication to undo them.
 - If an owner edit causes a test failure, update the test to match the source
   and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
 - Read `docs/PROGRESS.md` before changing behavior; update its decision and
@@ -64,24 +44,10 @@ WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
 - Check the installed Expo major version before using Expo APIs and consult
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
-- For every GitHub release, attach the Android APK named exactly
-  `WealthWise-android.apk`. Include a Download block with that version's
-  versioned asset link and SHA-256 in both its published Markdown and GitHub
-  release body. Update the README Download section with the latest version,
-  release date, version-labelled latest link, SHA-256, iOS availability
-  message and older-versions link. Verify both the latest and versioned links
-  with `curl -I` and `curl -I -L`, recording the observed results. Record the
-  EAS build ID, Android `versionCode`, source commit and artifact in the
-  `release-history.md` Builds table. A release remains incomplete until the
-  README, published Markdown, release history and GitHub assets agree. Old
-  published notes may receive only their own versioned Download block; do not
-  otherwise rewrite them. Follow `docs/releases/build-config.md`; production
-  Android AABs go to Google Play, APKs to GitHub, and iOS builds to
-  TestFlight/App Store.
 
 ## Schema and verification
 
-Current persisted schema version: **22**. Preserve migration and backup-import
+Current persisted schema version: **21**. Preserve migration and backup-import
 compatibility.
 
 Run the gates in this order, recording each exit code:

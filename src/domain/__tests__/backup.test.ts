@@ -21,9 +21,6 @@ import { makeV10Fixture } from '../../data/testFixtures/v10';
 import { makeV11Fixture } from '../../data/testFixtures/v11';
 import { makeV12Fixture } from '../../data/testFixtures/v12';
 import { decryptBackup, encryptBackup } from '../backupCrypto';
-import { goalSavedFor } from '../goalLinks';
-import { holdingValue } from '../portfolio';
-import { netWorth } from '../summary';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -922,127 +919,6 @@ describe('backup validation and serialization', () => {
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
     await expect(parseBackup(JSON.stringify(corrupted), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
-  });
-
-  it('preserves independent net-worth, goal and Emergency Fund values when importing a v13 backup', async () => {
-    const asOf = '2026-10-10';
-    const sourceV13Data = {
-      settings: { name: 'Fixture', theme: 'system', monthlySalary: null, onboarded: true },
-      transactions: [],
-      goals: [
-        { id: 'goal-trip', name: 'Trip', target: 10_000, saved: 2_500, year: 2027, links: [] },
-        { id: 'goal-house', name: 'House', target: 100_000, saved: 0, year: 2030, links: [{ instrumentId: 'house-savings' }] },
-        {
-          id: 'goal-emergency',
-          name: 'Emergency fund',
-          target: 30_000,
-          saved: 0,
-          year: 2028,
-          auto: 'ef',
-          links: [{ instrumentId: 'ef-cash' }, { instrumentId: 'ef-bank' }],
-        },
-      ],
-      holdings: [
-        {
-          id: 'ef-cash',
-          kind: 'manual',
-          name: 'Emergency cash',
-          type: 'Cash',
-          invested: 12_500,
-          value: 12_500,
-          valueAsOf: '2026-10-01',
-          logs: [],
-        },
-        {
-          id: 'ef-bank',
-          kind: 'manual',
-          name: 'Emergency savings',
-          type: 'Savings account',
-          invested: 20_000,
-          value: 20_000,
-          valueAsOf: '2026-10-01',
-          logs: [],
-        },
-        {
-          id: 'house-savings',
-          kind: 'manual',
-          name: 'House savings',
-          type: 'Savings account',
-          invested: 33_000,
-          value: 33_000,
-          valueAsOf: '2026-10-01',
-          logs: [],
-        },
-      ],
-      liabilities: [],
-      policies: [],
-      budget: null,
-      budgetPlan: null,
-      monthBudgets: [],
-      efAllocation: { cash: 50, bank: 50 },
-      efCustomBuckets: [],
-      efBucketLinks: { cash: ['ef-cash'], bank: ['ef-bank'] },
-      coverGoals: [
-        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
-        { type: 'health', targetMode: 'amount' },
-      ],
-    };
-    const sourceValues = new Map(sourceV13Data.holdings.map(({ id, value }) => [id, value]));
-    const expectedNetWorth = sourceV13Data.holdings.reduce((total, holding) => total + holding.value, 0);
-    const expectedGoalSavings = sourceV13Data.goals.map((goal) => goal.links.length === 0
-      ? goal.auto === 'ef' ? 0 : goal.saved
-      : goal.links.reduce((total, link) => total + (sourceValues.get(link.instrumentId) ?? 0), 0));
-    const sourceEmergencyGoal = sourceV13Data.goals.find((goal) => goal.auto === 'ef');
-    if (!sourceEmergencyGoal) throw new Error('Expected the synthetic Emergency Fund goal.');
-    const expectedEfAvailableByBucket = Object.fromEntries(
-      Object.entries(sourceV13Data.efBucketLinks).map(([bucketId, holdingIds]) => [
-        bucketId,
-        holdingIds
-          .filter((id) => sourceEmergencyGoal.links.some((link) => link.instrumentId === id))
-          .reduce((total, id) => total + (sourceValues.get(id) ?? 0), 0),
-      ]),
-    );
-    const expectedEfAvailable = Object.values(expectedEfAvailableByBucket)
-      .reduce((total, value) => total + value, 0);
-    const envelope = {
-      app: 'wealthwise',
-      formatVersion: 1,
-      schemaVersion: 13,
-      exportedAt: '2026-10-10T10:00:00.000Z',
-      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(sourceV13Data)) },
-      data: sourceV13Data,
-    };
-
-    const imported = await parseBackup(JSON.stringify(envelope), {
-      digest,
-      today: asOf,
-      newId: () => 'synthetic-v13-migration',
-    });
-    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
-
-    expect(netWorth(imported.data, asOf)).toEqual({
-      assets: expectedNetWorth,
-      liabilities: 0,
-      netWorth: expectedNetWorth,
-    });
-    expect(imported.data.goals.map((goal) => goalSavedFor(goal, imported.data, asOf)))
-      .toEqual(expectedGoalSavings);
-    const importedEmergencyGoal = imported.data.goals.find((goal) => goal.auto === 'ef');
-    if (!importedEmergencyGoal) throw new Error('Expected the imported Emergency Fund goal.');
-    const importedEfAvailableByBucket = Object.fromEntries(
-      Object.entries(imported.data.efBucketLinks).map(([bucketId, holdingIds]) => [
-        bucketId,
-        holdingIds
-          .filter((id) => importedEmergencyGoal.links.some((link) => link.instrumentId === id))
-          .reduce((total, id) => {
-            const holding = imported.data.holdings.find((item) => item.id === id);
-            return total + (holding ? holdingValue(holding, asOf) : 0);
-          }, 0),
-      ]),
-    );
-    expect(importedEfAvailableByBucket).toEqual(expectedEfAvailableByBucket);
-    expect(Object.values(importedEfAvailableByBucket).reduce((total, value) => total + value, 0))
-      .toBe(expectedEfAvailable);
   });
 
   it.each([

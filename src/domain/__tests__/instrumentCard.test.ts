@@ -145,7 +145,7 @@ describe('buildInstrumentCardModel', () => {
         : holding),
     };
     const stopped = buildInstrumentCardModel(rowFor(stoppedData, 'holding-sip'), { ...context, asOf: '2026-06-15' });
-    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume investment');
+    expect(stopped.actions.find(({ id }) => id === 'stop')?.label).toBe('Resume recurring');
 
     const completedData = {
       ...mockAppData,

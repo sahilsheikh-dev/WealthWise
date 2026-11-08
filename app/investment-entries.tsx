@@ -160,12 +160,12 @@ export default function InvestmentEntriesScreen() {
         {holding.kind === 'plan' && capabilities?.recurring ? (
           <Button
             style={styles.action}
-            label={holding.stopDate ? 'Resume investment' : 'Stop investment'}
+            label={holding.stopDate ? 'Resume recurring' : 'Stop investment'}
             icon={holding.stopDate ? 'play' : 'pause'}
             onPress={() => {
               if (holding.stopDate) {
                 void choiceAsync({
-                  title: 'Resume investment?',
+                  title: 'Resume recurring?',
                   message: 'This restores the plan schedule from the next due after today.',
                   choices: [
                     { id: 'cancel', label: 'Cancel' },

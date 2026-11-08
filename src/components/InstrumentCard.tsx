@@ -104,7 +104,7 @@ export function InstrumentCard({
               }}
               disabled={action.disabled}
               accessibilityHint={action.accessibilityHint}
-              icon={action.id === 'stop' && action.label === 'Resume investment' ? 'play' : actionIcons[action.id]}
+              icon={action.id === 'stop' && action.label === 'Resume recurring' ? 'play' : actionIcons[action.id]}
               variant={action.id === 'deposit' ? 'primary' : 'soft'}
               style={styles.action}
             />

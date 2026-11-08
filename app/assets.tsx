@@ -199,7 +199,7 @@ export default function AssetsScreen() {
                   if (!holding || holding.kind !== 'plan') return;
                   if (holding.stopDate) {
                     void choiceAsync({
-                      title: 'Resume investment?',
+                      title: 'Resume recurring?',
                       message: 'This restores the plan schedule from the next due after today.',
                       choices: [
                         { id: 'cancel', label: 'Cancel' },
