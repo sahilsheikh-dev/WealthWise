@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.76 },
   warning: { marginHorizontal: 20, marginTop: 12, padding: 12, borderRadius: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   warningText: { flex: 1, lineHeight: 17 },
-  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  empty: { minHeight: 90, marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: radii.item, alignItems: 'center', justifyContent: 'center', gap: 6 },
   actionRow: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   actionButton: { flexGrow: 1 },
   searchField: { minHeight: 48, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: radii.button },
