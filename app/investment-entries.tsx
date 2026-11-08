@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Feather } from '@expo/vector-icons';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
@@ -20,7 +21,7 @@ import { useSort } from '../src/data/useSort';
 import { valueStaleness } from '../src/domain/holdingActions';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
-import { planSchedule } from '../src/domain/schedule';
+import { planSchedule, type ScheduleRow } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { suggestedValuationMethod } from '../src/domain/valuation';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -32,7 +33,9 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 type OpeningRow = { rowKind: 'opening'; id: string; amount: number };
-type ListRow = OpeningRow | InvestmentEntry;
+type PendingPlanRow = Pick<ScheduleRow, 'id' | 'dueDate' | 'amount'> & { rowKind: 'pending-plan' };
+type PaidInvestmentsHeaderRow = { rowKind: 'paid-investments-header'; id: string; count: number };
+type ListRow = OpeningRow | PendingPlanRow | PaidInvestmentsHeaderRow | InvestmentEntry;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -42,6 +45,7 @@ export default function InvestmentEntriesScreen() {
   const holdingId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
+  const [paidInvestmentsExpanded, setPaidInvestmentsExpanded] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const capabilities = holding ? holdingCapabilities(holding.type) : null;
@@ -58,6 +62,15 @@ export default function InvestmentEntriesScreen() {
   const recurringPlan = useMemo(
     () => holding?.kind === 'plan' && capabilities?.recurring ? planSchedule(holding, today) : null,
     [capabilities?.recurring, holding, today],
+  );
+  const scheduledPaidEntryIds = new Set(
+    recurringPlan?.rows.flatMap((row) => row.entryId ? [row.entryId] : []) ?? [],
+  );
+  const paidInvestmentEntries = holding?.kind === 'plan' && recurringPlan
+    ? entrySorting.sort(entries.filter((entry) => scheduledPaidEntryIds.has(entry.id)))
+    : [];
+  const otherEntries = entrySorting.sort(
+    entries.filter((entry) => !scheduledPaidEntryIds.has(entry.id)),
   );
 
   if (!holding) {
@@ -76,9 +89,18 @@ export default function InvestmentEntriesScreen() {
     : holding.kind === 'plan' ? holding.actualValueDate : holding.valueAsOf;
   const staleness = valueStaleness(valuationDate ?? undefined, today);
   const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
+  const pendingPlanRows: PendingPlanRow[] = recurringPlan?.rows
+    .filter((row) => row.status !== 'paid')
+    .map(({ id, dueDate, amount }) => ({ rowKind: 'pending-plan', id, dueDate, amount })) ?? [];
+  const paidInvestmentsHeader: PaidInvestmentsHeaderRow | null = paidInvestmentEntries.length > 0
+    ? { rowKind: 'paid-investments-header', id: `paid-investments-${holding.id}`, count: paidInvestmentEntries.length }
+    : null;
   const listRows: ListRow[] = [
     { rowKind: 'opening', id: `opening-${holding.id}`, amount: openingAmount },
-    ...entrySorting.sort(entries),
+    ...pendingPlanRows,
+    ...otherEntries,
+    ...(paidInvestmentsHeader ? [paidInvestmentsHeader] : []),
+    ...(paidInvestmentsExpanded ? paidInvestmentEntries : []),
   ];
 
   const routeEntryForm = (row: ListRow) => {
@@ -199,6 +221,14 @@ export default function InvestmentEntriesScreen() {
             <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>
               Next due {recurringPlan?.summary.nextDue ? formatDate(recurringPlan.summary.nextDue.dueDate) : 'None'}
             </AppText>
+            <View style={styles.monthCounts}>
+              <AppText testID="completed-investment-months" style={[typography.meta, { color: colors.text2 }]}>
+                Completed {recurringPlan?.summary.paid ?? 0} months
+              </AppText>
+              <AppText testID="pending-investment-months" style={[typography.meta, { color: colors.text2 }]}>
+                Pending {pendingPlanRows.length} months
+              </AppText>
+            </View>
             {holding.stopDate ? (
               <AppText style={[typography.meta, styles.summaryLine, { color: colors.text2 }]}>Recurring stopped on {formatDate(holding.stopDate)}</AppText>
             ) : null}
@@ -260,7 +290,7 @@ export default function InvestmentEntriesScreen() {
         maxToRenderPerBatch={16}
         windowSize={9}
         renderItem={({ item }) => {
-          if ('rowKind' in item) {
+          if ('rowKind' in item && item.rowKind === 'opening') {
             return (
               <SharedListRow
                 style={[styles.row, { borderColor: colors.border }]}
@@ -274,6 +304,36 @@ export default function InvestmentEntriesScreen() {
                 </AppText>
                 <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
               </SharedListRow>
+            );
+          }
+          if ('rowKind' in item && item.rowKind === 'pending-plan') {
+            return (
+              <SharedListRow
+                style={[styles.row, { borderColor: colors.border }]}
+                accessibilityLabel={`Pending investment ${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}`}
+              >
+                <AppText weight="semibold">{formatDate(item.dueDate)} · Pending investment</AppText>
+                <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+              </SharedListRow>
+            );
+          }
+          if ('rowKind' in item && item.rowKind === 'paid-investments-header') {
+            return (
+              <Pressable
+                testID="paid-investments-toggle"
+                accessibilityRole="button"
+                accessibilityLabel={`Paid investments, ${item.count} entries`}
+                accessibilityState={{ expanded: paidInvestmentsExpanded }}
+                onPress={() => setPaidInvestmentsExpanded((expanded) => !expanded)}
+                style={[styles.paidInvestmentsToggle, { borderColor: colors.border }]}
+              >
+                <AppText weight="semibold">Paid investments ({item.count})</AppText>
+                <Feather
+                  name={paidInvestmentsExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={colors.primary}
+                />
+              </Pressable>
             );
           }
           return (
@@ -307,6 +367,8 @@ function formatReturn(summary: ReturnType<typeof holdingFinancialSummary>['retur
 
 const styles = StyleSheet.create({
   summaryLine: { marginTop: 7, fontSize: 12 },
+  monthCounts: { marginTop: 7, flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
+  paidInvestmentsToggle: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
   summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
