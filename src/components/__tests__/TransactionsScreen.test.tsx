@@ -2,6 +2,7 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionsScreen from '../../../app/(tabs)/transactions';
+import { monthSummary } from '../../domain/transactions';
 import { THEME_IDS, type ThemeId, type Transaction } from '../../domain/types';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
@@ -75,8 +76,10 @@ jest.mock('react-native', () => {
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     View: node('view'),
-    Modal: node('modal'),
+    Modal: ({ visible, children, ...props }: { visible: boolean; children?: React.ReactNode; [key: string]: unknown }) =>
+      visible ? ReactModule.createElement('modal', props, children) : null,
     StyleSheet: { create: (styles: object) => styles, hairlineWidth: 1 },
+    useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });
 jest.mock('../ui', () => {
@@ -108,8 +111,16 @@ describe('Transactions screen withdrawals-only month', () => {
     const renderer = rendererRef.current;
     if (!renderer) throw new Error('Transactions renderer was not created.');
     const text = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
-    expect(text).toContain('No earned income logged this month');
-    expect(text).toContain('Includes ₹5,000 from withdrawals, borrowing, loan proceeds and own funds');
+    expect(monthSummary(mockData.transactions, '2026-10')).toMatchObject({
+      earnedIncome: 0,
+      rates: null,
+    });
+    expect(text).toContain('Available balance');
+    expect(text).not.toContain('NaN');
+    expect(text).not.toContain('What happened?');
+    act(() => renderer.root.findByProps({ accessibilityLabel: 'Expand Available balance' }).props.onPress());
+    const expandedText = renderer.root.findAllByType('text').map((element) => element.children.join('')).join(' ');
+    expect(expandedText).toContain('Other money in');
     expect(renderer.root.findByProps({ accessibilityLabel: 'Add transaction' })).toBeDefined();
     expect(renderer.root.findAll((node) => String(node.type) === 'fab')).toHaveLength(0);
     assertNoVerbText(renderer.root);

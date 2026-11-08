@@ -79,6 +79,7 @@ jest.mock('react-native', () => {
     StyleSheet: { create: (styles: object) => styles },
     Text: node('text'),
     View: node('view'),
+    useWindowDimensions: () => ({ fontScale: 1 }),
   };
 });
 
