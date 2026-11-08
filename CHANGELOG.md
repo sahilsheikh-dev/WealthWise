@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.1.0] - TBD
+
+- Budget plans recurring income only in its due months. Other recurring
+  schedules remain editable in a collapsed Recurring income group.
+- Restored the aggregate actual-versus-planned Budget Pace graph.
+- Paid recurring investment and liability dues now update their linked
+  records together and can be reversed with Undo.
+- Entries show completed and pending schedule counts, keep paid history
+  collapsed, and stop scheduled rows at maturity or the final EMI date.
+- Edited financial values are verified when saved and remain current after
+  restarting the app.
+
 ## [1.0.0] - 2026-11-07
 
 - WealthWise 1.0 provides an offline-first overview of net worth, accounts,
