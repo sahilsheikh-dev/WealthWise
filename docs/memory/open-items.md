@@ -16,6 +16,14 @@
 - **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
   contributor credits in v1.0.0, and the template requires release-specific,
   verified contributors. This correction is included in PRs #1-#3.
+- **P28-F-R3 v1.1.0 publication:** the owner-approved release is published
+  with the required `WealthWise-android.apk` asset. The tag points to the
+  verified EAS source commit; the uploaded artifact matched the EAS build,
+  and latest/versioned links returned HTTP 200 at 112,147,677 bytes. The
+  owner-approved `preview` profile and reused versionCode 1 exceptions are
+  recorded in the release history. PRs #11-#15 merged task -> Phase 28 ->
+  develop -> release -> main -> develop; all four remote trees match and the
+  v1.1.0 tag remains unchanged.
 - **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
@@ -37,6 +45,12 @@
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
+- **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
+  Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
+  merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
+  main (`b0aeef9`), and #15 back-merged main into develop (`6f5df18`). The
+  publication task branch was deleted; the phase branch remains at its
+  recorded tip. Main, develop, release and Phase 28 have identical trees.
 
 ## Unresolved
 
@@ -48,20 +62,9 @@
   [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
   `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
   No release edit was made in P28-C-R3.
-- **v1.1.0 owner steps:** P28-F release preparation and integration are
-  complete; `release/v1.1.0` was merged/pushed to main and back-merged/pushed
-  to develop. The Android APK build, v1.1.0 tag and publication remain pending
-  owner action. No EAS/Gradle build or GitHub release edit was performed.
-- **v1.1.0 draft correction:** contributor credits and template guidance are
-  corrected and integrated. No publication or tag action has been taken;
-  wait for owner APK build and approval before tagging or publishing.
-- **Branch publication audit:** GitHub currently exposes 34 heads: main,
-  develop, `history/by-phase`, all 30 phase branches and `release/v1.1.0`.
-  Merged task branches are deleted. PRs #1-#7 form the chronological Release 2
-  follow-up and audit path. `codex-changes`,
-  `phase/25-release-and-backups` and `task/P28-E-phase-history` remain outside
-  this PR chain; `history/by-phase` remains a read-only archive. The v1.1.0
-  tag is absent pending owner build/approval.
+- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
+  profile and reused versionCode 1 for this release. For future releases,
+  restore the configured `android-apk` profile and increment versionCode.
 - **Stale phase tags (owner decision):** `phase-28-complete` and
   `phase-29-complete` target commits behind their current phase branch tips.
   No tag was moved. Decide whether to retain or update them in a separately
