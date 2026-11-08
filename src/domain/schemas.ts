@@ -7,6 +7,7 @@ import { solveLoan } from './liability';
 import { budgetGroupFor } from './budgetGroups';
 import {
   EARNED_INCOME_CATEGORIES,
+  NON_EARNED_INCOME_CATEGORIES,
   COVER_POLICY_TYPES,
   THEME_IDS,
   type AppData,
@@ -228,11 +229,17 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
-const nonEarnedIncomeCategories = ['Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds'] as const;
 const budgetIncomeSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
   category: z.enum(earnedIncomeCategories),
+  amount: moneySchema.positive().max(1_000_000_000),
+  day: z.number().int().min(1).max(31).optional(),
+});
+const budgetOtherIncomeSchema = z.strictObject({
+  id: idSchema,
+  name: z.string().min(1).max(40),
+  category: z.string().min(1).max(60),
   amount: moneySchema.positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
 });
@@ -333,6 +340,7 @@ const monthBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   source: z.enum(['plan', 'custom']),
   incomes: z.array(budgetIncomeSchema).max(1000),
+  otherIncomes: z.array(budgetOtherIncomeSchema).max(1000).optional(),
   sections: z.array(budgetSectionSchema).max(12),
   items: z.array(budgetItemSchema).max(100),
   linkedIncluded: z.boolean().optional(),
@@ -473,7 +481,7 @@ export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
   .filter((category) => category !== 'Other');
 
 export { EARNED_INCOME_CATEGORIES };
-export const NON_EARNED_INCOME_CATEGORIES = nonEarnedIncomeCategories;
+export { NON_EARNED_INCOME_CATEGORIES };
 
 type MoneyOptions = {
   minimum?: number;

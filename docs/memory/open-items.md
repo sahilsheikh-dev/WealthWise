@@ -1,9 +1,28 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-10-31 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Unresolved
 
+- **Spreadsheet backup scope:** supplied monthly income and expense items,
+  historical loan payments, and the provided emergency-fund activity are
+  represented in the local schema-v13 backup. Non-earned inflows remain
+  separate from earned income; unmatched source movements and expense
+  differences are labeled rather than inferred. Monthly cash-flow totals were
+  rebalanced with month-end withdrawals/extra expenses and verified against
+  the trackers. Emergency-fund records are mapped to linked holdings and
+  transactions, but arbitrary workbook comments and every source-level tracker
+  detail have no dedicated schema fields. The local backup is a supported
+  snapshot, not a complete workbook migration. Do not retain the user's
+  financial values in repository memory.
+- **Local app/backup mismatch:** the note-edited backup has a valid recalculated
+  checksum and imports, but it does not contain the separate transaction
+  deletion/addition described for current app data. Historical custom budget
+  snapshots were added through October 2026 using the transactions in this
+  backup, including distinct planned/actual historical income rows for
+  non-earned inflows; those snapshots do not resolve the missing app
+  transaction edit. Export a fresh backup from the app if that edit should be
+  included.
 - **CR-1:** reminders/notifications, permission behavior and tests remain held
   for Phase 24.
 - **CR-3:** the full-width Save behavior with a visible validation summary is
@@ -37,6 +56,9 @@
   report, not automated test evidence or an independently observed device run.
 - Automated layout tests still simulate component props and font scales; do
   not present them as physical-device evidence.
+- P25-F did not repeat physical-device checks. Its screen-reader label and
+  month-routing assertions run in TestRenderer and do not establish native
+  announcements or rendering behavior.
 
 ## Documented assumptions and constraints
 

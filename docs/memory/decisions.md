@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-01 | Updates: owner and AI agents -->
 
 # Decisions
 
@@ -6,8 +6,12 @@ Each entry links to the architecture/decision section in the complete
 [progress ledger](../PROGRESS.md); that section, not this index, contains the
 authoritative rationale and history.
 
+- [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
+- [DEC-TRANSACTIONS-CLOSING-BALANCE](../PROGRESS.md#dec-transactions-closing-balance-2026-11-01)
 - [DEC-BUDGET-DIRECTION](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-PLAN](../PROGRESS.md#4-architecture-and-decisions)
+- [DEC-BUDGET-HISTORICAL-ACTUALS](../PROGRESS.md#2026-11-01-historical-actual-based-budgets-cr-94)
+- [DEC-BUDGET-HISTORICAL-INCOME](../PROGRESS.md#2026-11-01-complete-historical-budget-income-reconciliation-cr-95)
 - [DEC-BUDGET-SCREEN](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-SPEC](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-BUDGET-V10](../PROGRESS.md#4-architecture-and-decisions)
