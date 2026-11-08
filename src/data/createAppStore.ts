@@ -670,6 +670,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v14`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v15`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v16`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v17`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);

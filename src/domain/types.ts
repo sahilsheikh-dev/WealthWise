@@ -166,6 +166,7 @@ export type PolicyPayment = {
   date: ISODate;
   amount: number;
   note: string;
+  dueDate?: ISODate;
 };
 
 export type Policy = {

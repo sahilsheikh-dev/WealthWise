@@ -34,6 +34,7 @@ const liabilityPaymentSchema = z.strictObject({
 });
 const policyPaymentSchema = z.strictObject({
   id: idSchema, date: dateSchema, amount: positiveMoney, note,
+  dueDate: dateSchema.optional(),
 });
 const transactionSchema = z.strictObject({
   id: idSchema,

@@ -57,6 +57,20 @@
   dropping only cover goals and policy cover-goal assignments while preserving
   older backup imports, hidden legacy policy fields and savings-policy goal
   links. Home remains unchanged.
+- P29-N removes Transactions' Review-month section while retaining its normal
+  month navigation and Budget's independent month routing. A one-time,
+  unlock-gated Payment reminders prompt can enable local reminders using the
+  existing defaults; dismissing it is stored in UI metadata, cleared by
+  erase-all, and never invokes the system permission prompt unless the user
+  chooses Turn on reminders.
+- P29-M2 replaces the blocked P29-M: policy payments store the exact due date
+  settled, and all premium-due surfaces share the same schedule derivation.
+  Schema v18 migrates v17 FIFO matches without changing existing schedule
+  output; payment and linked transaction remain one-write and one-Undo actions.
+- P29-O Step 1 inventories the current split manual/plan holding models,
+  calculation and schedule behavior, and connected UI/domain/test surfaces.
+  The report-only inventory is committed before the approved schema-v19
+  unified-ledger implementation.
 
 ### Investments and goals
 

@@ -50,7 +50,7 @@ statuses count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 96% (91/95)
+Overall progress ██████████ 96% (94/98)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -79,7 +79,7 @@ Phase 25         ██████████ 100% (6/6)
 Phase 26         ░░░░░░░░░░ 0% (0/1)
 Phase 27         ░░░░░░░░░░ 0% (0/1)
 Phase 28         ░░░░░░░░░░ 0% (0/1)
-Phase 29         █████████░ 94% (15/16)
+Phase 29         █████████░ 95% (18/19)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -183,7 +183,10 @@ Phase 29         █████████░ 94% (15/16)
 | P29-J | — | Done | Read-only liability balance audit and characterization test; no calculation bug proven, method-switch proposal pending owner evidence/approval; 84 suites/1061 tests and all six gates pass. | 2026-11-03 |
 | P29-K | — | Done | Immediate Budget scope application, Close/backdrop/back dismissal, counted delete copy and Undo tests; six gates pass. | 2026-11-03 |
 | P29-L | — | Done | Simple editable Insurance tracker, Term/Life placeholders, custom premium schedules, v16-to-v17 migration, backup compatibility and Home unchanged; tests and six gates pass. | 2026-11-03 |
-| P29-M | — | Blocked | Store-level reproduction confirms early premium payments are persisted but remain unmatched to the due slot. Correct slot association is ambiguous for v16 payment history without a persisted slot identifier; implementing it requires a schema change, explicitly out of scope. See the P29-M findings below. | 2026-11-04 |
+| P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
+| P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
+| P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
+| P29-O | — | Inventory committed; implementation pending | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; owner approved schema v19 and the unified asset ledger/valuation design. | 2026-11-04 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Unchanged fix, change, and request IDs
@@ -2810,7 +2813,10 @@ evidence present in exports/checkpoints.
 | P29-J | Phase 29 | — | — | 2026-11-03 | Audit recurring-liability outstanding balance and compare daily actual/365 with monthly amortization; no behavior change absent proof of a bug. | Done as a report-only audit; actual bank match is undetermined because statement balance/date, principal, tenure and app payment rows are missing. Generic convention comparison and conditional proposal recorded below. | Step 1 `237d5a7`; Step 2 `337fcc5`; final audit commit verified with `git cat-file -t`. | Assumed: synthetic principal 250,000 and on-time monthly dates are illustrative only. No schema or Home-source change; standard monthly amortization and a separate statement-balance anchor require owner evidence/approval. | current request |
 | P29-K | Phase 29 | — | — | 2026-11-03 | Change the shared Budget scope popup to apply immediately on either choice and dismiss without applying via Close, backdrop or Android back. | Done; component and route tests cover both scopes, double-taps, dismissals, counted category-delete copy, Undo, and simulated large fonts. Six final gates exit 0. `npm test -- --coverage`: 86 suites/1086 tests; fresh coverage and assertion audit below. | Implementation `5a2572e` verified with `git cat-file -t`; documentation/verification commit follows. | DEC-P29K-SCOPE-IMMEDIATE records the frozen interaction. Assumed: P29-K is new Phase 29 work; schema, domain behavior and the user-owned Home screen remain unchanged. No assertion was weakened. | current request |
 | P29-L | Phase 29 | — | — | 2026-11-03 | Simplify Insurance into an editable policy tracker with recurring premium dues and preserve linked savings-policy use. | Done; inventory, implementation, migration, tests, documentation and all six gates are complete. Home imports only `policySummary`; no Home edit was required. | Inventory `8255857`; implementation and closeout commit hashes verified with `git cat-file -t` and reported with the task. | DEC-P29L-SIMPLE-INSURANCE removes cover-goal management and policy lifecycle controls. Assumed: Term placeholder maps to `term-life`; Life placeholder maps to `life-savings`. Existing savings-policy values and goal links remain; schema v17 follows v16. | current request |
-| P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Blocked after reproducing the early-payment defect at the real store. The payment and linked transaction persist in one write, but the schedule still reports the original slot as unpaid. A correct fix requires persisted slot identity so early payments can be distinguished from legacy payments preceding `trackFrom`; this changes schema and is forbidden by this task. No behavior changes made. | Temporary store-level reproduction run: `npx jest src/data/__tests__/createAppStore.test.ts --runInBand -t "reproduces an early premium payment"`; write-count, PolicyPayment and linked-transaction assertions passed before the selector assertion failed. Temporary test was removed; repository tests are not left failing. | Assumed: P29-M is the next Phase 29 task. Schema v17 and the no-schema-change constraint remain in force; implementation stops pending explicit schema authorization. | current request |
+| P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Superseded by P29-M2 after the owner authorized schema v18 and froze the dueDate migration rule. The original store reproduction and blocker remain recorded below. | Initial reproduction from P29-M; supersession and implementation evidence recorded in P29-M2. | Assumed: P29-M's no-schema-change constraint was superseded only by the explicit P29-M2 authorization. | current request |
+| P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
+| P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
+| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
 
 ### P29-L STEP 1 — Insurance inventory (report only)
 
@@ -7045,3 +7051,347 @@ Ledger assertion replacement: old `Overall progress 97% (91/94)` and Phase 29
 `100% (15/15)`; new `96% (91/95)` and `94% (15/16)`; reason: P29-M is now
 recorded as a blocked task, adding one item to the denominator without
 increasing completed work. The P29-M ledger test asserts `Blocked`, not `Done`.
+
+### DEC-P29N — Reminders prompt (2026-11-04)
+
+- **Assumed:** P29-N is new Phase 29 work. Schema remains v17; no AppData
+  migration is needed. The existing `wealthwise.meta.v1` store owns the
+  one-time `remindersPromptHandled` flag, and erase-all clears it through
+  `metaStore.clearMeta`.
+- The prompt is mounted in the root layout inside `LockGate`, so it cannot
+  render while the lock screen is active. It is eligible only on the Home
+  route, after a 400 ms settling delay; `/payment-confirm` and other routes
+  cannot show it. The system notification permission is requested only after
+  the explicit Turn on reminders action.
+- Turn on uses the same `enableReminderPreferences` implementation as the
+  Reminders screen, with defaults day-before/on-due-date enabled, local time
+  09:00 and amounts hidden. Granted permission enables defaults and routes to
+  Reminders. Denied/blocked results route there with the existing actionable
+  message. Permission and storage failures are reported through an alert.
+- Dismissal by Not now, Close, backdrop or Android back is persisted before
+  display, so it remains handled after restart. If permission is already
+  granted and reminders are enabled, no prompt is displayed. The prompt uses
+  a centered scrollable dialog with a 44 by 44 pt Close action.
+- The Transactions Review-month section/link, its UI strings and
+  `reviewableMonths` were removed. Budget still consumes `month` for its own
+  month state and editor routes; Home continues to use `month` with
+  `apply=1`. `monthPositions`, `monthPositionAt`, `shortfallForMonth` and
+  `surplusForMonth` remain in use for cash-flow, budget and allocation
+  calculations; they are not Review-only helpers.
+- Replaced assertions/decisions:
+  - Old Transactions assertion: `keeps the Review action and routes its selected month to Budget`, including a visible `Review {Mon YYYY}` label and route call. New: `keeps the balance card without the removed month review action`, asserts the Review label and Review-only route are absent, while retaining the balance-card assertions. Reason: the feature is removed; independent month navigation remains.
+  - Old route-smoke assertion: Review link is visible. New: no Review label is rendered. Reason: same UI removal.
+  - Old `reviewableMonths` domain assertions: prior-month results and empty results. New: the helper and its now-orphaned tests are deleted. Reason: no production caller remains after removing the link.
+  - Old P24-A product decision, “no prompt until reminders are switched on.” New: show the one-time in-app prompt after unlock; the operating-system permission prompt still appears only after Turn on reminders. Reason: explicit P29-N supersession without changing permission timing.
+- P27-A follow-up: `monthPositions` remains used by cash-flow summaries and shortfall/surplus derivation; `monthPositionAt` remains used by Budget snapshots and store/pending tests; `shortfallForMonth` remains used by allocation and demo-data calculations; `surplusForMonth` remains used by surplus-allocation validation. `reviewableMonths` has no remaining caller and is deleted.
+- Acceptance tests:
+  - `Transactions available-balance card › keeps the balance card without the removed month review action`
+  - `route render smoke audit › filters due payments and always shows only the user-kept balance elements` asserts that no Review label is rendered.
+  - `cash flow positions › keeps empty month cash-flow helpers at zero after removing the review list` preserves the non-Review empty-month behavior.
+  - `FirstLaunchReminderPrompt › shows once and persists Not now across a remount`
+  - `FirstLaunchReminderPrompt › Close dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › backdrop dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › Android back dismisses without requesting permission and remains dismissed`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for granted permission`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for denied permission`
+  - `FirstLaunchReminderPrompt › runs the Turn on flow for blocked permission`
+  - `FirstLaunchReminderPrompt › skips the prompt when reminders are already enabled and permission is granted`
+  - `FirstLaunchReminderPrompt › does not show over payment confirmation or another route`
+  - `FirstLaunchReminderPrompt › keeps content scrollable and buttons full width at font scale 1.3` and the same test at scale 2.
+  - `LockGate › does not mount its children until the lock is passed`
+  - `route render smoke audit › shows the existing denied permission fix message after prompt setup` and `route render smoke audit › shows the existing blocked permission fix message after prompt setup`.
+  - `backup metadata storage › stores reminder preferences in UI metadata and publishes updates and erase` covers clearing the handled flag with metadata; `createAppStore persistence › erases all supported storage keys and hydrates to empty data` verifies erase-all removes `wealthwise.meta.v1`.
+  - `enableReminderPreferences › uses the granted permission and saves enabled preferences`; `does not save when permission is denied`; `does not save when permission is blocked`; `requests permission after a denied status and saves only when granted`.
+- No assertion was weakened. Assertion count changes and exact gate exit codes
+  are recorded in the P29-N close-out below after final validation.
+
+#### P29-N final verification (2026-11-04)
+
+The six required gates ran in order after deleting the previous
+`coverage/coverage-final.json`; all completed with exit code 0.
+
+| Gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 89 suites / 1104 tests passed; overall lines 97.79%, branches 92.38% | 0 |
+| `npx tsc --noEmit` | TypeScript check passed | 0 |
+| `npx expo lint` | Lint passed with no warnings | 0 |
+| `npx expo-doctor` | 21/21 checks passed | 0 |
+| `npx expo export --platform android` | Android export passed | 0 |
+| `npx expo export --platform ios` | iOS export passed | 0 |
+
+Fresh coverage was read from the regenerated `coverage/coverage-final.json`
+with `istanbul-lib-coverage` `createCoverageMap`; test files were not included
+in the `src/` groups, and files were grouped by immediate `src/` directory.
+Line coverage counts executable lines; branch coverage counts branch arms.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 660/699 (94.42%) | 700/795 (88.05%) |
+| `src/domain` | 3182/3232 (98.45%) | 3130/3361 (93.13%) |
+| `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Per-file branch coverage remains above configured thresholds: `src/domain/budget.ts`
+770/849 (90.69%; threshold 90%) and `src/data/createAppStore.ts` 73/84
+(86.90%; threshold 85%).
+
+Assertion-count audit compares previous commit `194ecb14260f22f3671da070b3d807ab07655ec7`
+with the P29-N final commit. Counts use occurrences of `expect(`; added/removed
+count changed expectation lines, while net is the current minus prior count.
+
+| Test file | Previous | HEAD | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `FirstLaunchReminderPrompt.test.tsx` | 0 | 22 | 22 | 0 | +22 |
+| `LockGate.test.tsx` | 0 | 3 | 3 | 0 | +3 |
+| `RouteRenderSmoke.test.tsx` | 439 | 440 | 2 | 1 | +1 |
+| `TransactionsScreen.test.tsx` | 84 | 82 | 2 | 4 | -2 |
+| `createAppStore.test.ts` | 407 | 407 | 0 | 0 | 0 |
+| `metaStore.test.ts` | 20 | 20 | 0 | 0 | 0 |
+| `cashFlow.test.ts` | 75 | 73 | 0 | 2 | -2 |
+| `progressLedger.test.ts` | 161 | 161 | 2 | 2 | 0 |
+| `reminderPreferences.test.ts` | 0 | 9 | 9 | 0 | +9 |
+
+Removed expectation lines are the prior positive assertions for the now-deleted
+Review link/route and `reviewableMonths` results, plus the old progress
+dashboard counts. Their replacements assert the Review label and Review-only
+route are absent, retain the unrelated balance/cash-flow checks, and assert the
+new progress counts/status. No behavior assertion was weakened.
+
+Physical-device checks remain unverified: native dialog/backdrop and Android
+back behavior; permission grant/denial/blocking; erase-all followed by a fresh
+first-launch presentation; and font scales 1.3 and 2.0. See
+`docs/memory/open-items.md`.
+
+### DEC-P29M2-POLICY-DUE-IDENTITY — Exact policy payment slot identity (2026-11-04)
+
+- The owner authorized schema v18, superseding P29-M's no-schema-change
+  constraint. `PolicyPayment.dueDate` is optional and stores the ISO due date
+  of the exact slot settled, independent of payment date.
+- Explicit due dates match only an identical current schedule slot. An
+  unmatched explicit due date remains history. Undated legacy payments retain
+  the old rule: dates before `trackFrom` are ignored, then remaining payments
+  match FIFO. The v17-to-v18 migration annotates only the payments matched by
+  that old rule and preserves schedule output.
+- `policySchedule` is the shared source for due rows, policy summaries, budget
+  planned rows, Home Upcoming, Transactions and reminders. Clearing a due
+  writes its slot date on the payment and writes the linked transaction
+  atomically; Undo restores both in one write.
+- **Assumed:** the paid slot's action is removed, while the Insurance card's
+  generic Paid action remains available for the next unpaid slot. Hiding that
+  generic action after payment would prevent the required early payment of the
+  next slot through the Insurance card. This is the closest behavior to the
+  frozen card rule without blocking the specified early-payment flow.
+- No Home or Budget screen source was edited. Schema v18 retains support for
+  v1-v17 data and backups, archives original v17 bytes once at
+  `.premigration.v17`, refuses v19, and erase-all removes the archive.
+
+Acceptance evidence (test names are exact):
+
+| Frozen behavior | Test evidence |
+|---|---|
+| Explicit due date identifies the slot regardless of payment date | `src/domain/__tests__/dues.test.ts` — `matches dated payments to only their exact slot regardless of payment timing`; `does not let duplicate or future-dated explicit payments settle another slot` |
+| Legacy undated payments retain the tracking-date/FIFO rule | `src/domain/__tests__/dues.test.ts` — `starts policy tracking at the selected date and FIFO-matches existing payments` |
+| Early payment is one write; linked transaction and Undo are atomic | `src/data/__tests__/createAppStore.test.ts` — `records an early premium against its selected due date in one write and undoes both records` |
+| Monthly, quarterly, yearly and custom-2-month dues advance on early, on-time and late payment | `src/data/__tests__/createAppStore.test.ts` — `settles the exact %s slot and advances to %s for early, on-time and late payments` |
+| Consecutive slots, schedule edits, and Undo | `src/data/__tests__/createAppStore.test.ts` — `settles consecutive policy slots separately, supports schedule edits and undoes both payments` |
+| Month-boundary dates and actual paid amounts | `src/data/__tests__/createAppStore.test.ts` — `settles a premium dated across the following month boundary`; `settles the exact %s slot and advances to %s for early, on-time and late payments` |
+| Insurance, Transactions, Budget, Home and reminders share updated due state | `src/data/__tests__/createAppStore.test.ts` — `updates Insurance, Transactions, Budget, Home and reminder due selectors together` |
+| Slot selection from every payment entry point | `src/data/__tests__/createAppStore.test.ts` — `settles the due selected by Insurance, Home, Transactions, payment-confirm and reminder entry points` |
+| Optional due-date schema validation and v17 migration preserve old schedule output | `src/domain/__tests__/schemas.test.ts` — `accepts an optional valid policy-payment due date and rejects invalid dates`; `src/data/__tests__/migrate.test.ts` — `adds dueDate only to payments matched by the v17 FIFO schedule`; `src/data/__tests__/createAppStore.test.ts` — `migrates v17 policy payments without changing the existing FIFO schedule and archives bytes once` |
+| Older backups, encrypted v18 round trip, archive-once, erase and future-version refusal | `src/domain/__tests__/backup.test.ts` — `imports a v17 backup and pins its existing premium to the FIFO-matched due date`; `round-trips an encrypted v18 backup with a settled policy slot and linked investment item`; `src/data/__tests__/migrate.test.ts` — `rejects invalid input and unknown or future versions`; the v17 store-migration test above |
+
+#### P29-M2 final verification (2026-11-04)
+
+All six gates ran in the required order against the final code and test set.
+Each command exited 0.
+
+| Gate | Result | Exit |
+|---|---|---:|
+| `npm test -- --coverage` | 89 suites / 1120 tests passed | 0 |
+| `npx tsc --noEmit` | TypeScript check passed | 0 |
+| `npx expo lint` | Lint passed | 0 |
+| `npx expo-doctor` | 21/21 checks passed | 0 |
+| `npx expo export --platform android` | Android export passed | 0 |
+| `npx expo export --platform ios` | iOS export passed | 0 |
+
+Fresh coverage was read from the regenerated `coverage/coverage-final.json`
+using `istanbul-lib-coverage` `createCoverageMap`; test files were excluded
+from the `src/` groups, files were grouped by immediate `src/` directory, line
+coverage counts executable lines, and branch coverage counts branch arms.
+
+| Source directory | Lines | Branches |
+|---|---:|---:|
+| `src/data` | 680/721 (94.31%) | 722/821 (87.94%) |
+| `src/domain` | 3195/3245 (98.46%) | 3137/3369 (93.11%) |
+| `src/lib` | 107/107 (100.00%) | 126/126 (100.00%) |
+
+Required per-file branch coverage: `src/domain/budget.ts` 770/849 (90.69%;
+threshold 90%) and `src/data/createAppStore.ts` 73/84 (86.90%; threshold 85%).
+
+Assertion-count audit compares previous commit `bc5eadcd799352210c3f12617fcfa0dfe9c31abb`
+with final task HEAD. Counts are occurrences of `expect(`; Added and Removed
+count occurrences on changed lines, and Net is the final HEAD total minus the
+previous-commit total.
+
+| Test file | Previous | Worktree | Added | Removed | Net |
+|---|---:|---:|---:|---:|---:|
+| `src/data/__tests__/createAppStore.test.ts` | 407 | 448 | 41 | 0 | +41 |
+| `src/data/__tests__/migrate.test.ts` | 117 | 120 | 12 | 9 | +3 |
+| `src/data/__tests__/safeStorage.test.ts` | 28 | 28 | 0 | 0 | 0 |
+| `src/domain/__tests__/backup.test.ts` | 89 | 91 | 5 | 3 | +2 |
+| `src/domain/__tests__/dues.test.ts` | 145 | 149 | 6 | 2 | +4 |
+| `src/domain/__tests__/schemas.test.ts` | 235 | 237 | 3 | 1 | +2 |
+| `src/lib/__tests__/progressLedger.test.ts` | 161 | 161 | 3 | 3 | 0 |
+
+The progress-ledger test's old progress totals (`96% (92/96)` and Phase 29
+`94% (16/17)`) are replaced by `97% (94/97)` and `100% (18/18)`; P29-M's
+`Blocked` status is replaced by `Superseded by P29-M2`, and P29-M2 is asserted
+`Done`. Reason: the authorized schema-v18 replacement closes the work while
+retaining P29-M's history.
+
+Other replaced assertions, each with its reason:
+
+- In `migrate.test.ts`, old schema-current calls `migratePersisted(..., 17)`
+  become `migratePersisted(..., 18)`; old future-version inputs `18` become
+  `19`. Reason: v18 is now current and the next version must be refused.
+- In `migrate.test.ts`, migration expectations from versions 12–16 now pass
+  deterministic `today`/`newId` options through the newly required v17-to-v18
+  step. Their expected migrated data remains unchanged; only the injected
+  migration dependencies are added. Reason: preserve deterministic migration
+  tests while the chain reaches v18.
+- In `backup.test.ts`, the old `schemaVersion: 17` and `SCHEMA_VERSION === 17`
+  expectations become version 18; the corresponding newly imported v17 data
+  assertions include its migrated dueDate. Reason: v18 is the authorized
+  schema and matched legacy payments gain explicit slot identity.
+- In `schemas.test.ts`, `SCHEMA_VERSION === 17` becomes `=== 18`. Reason:
+  schema version is intentionally bumped.
+- In `dues.test.ts`, payment tuples previously asserted only `(date, amount)`
+  now assert `(date, amount, dueDate)`; a policy-payment count-only assertion
+  is replaced by an exact one-payment payload assertion including the slot
+  date. Reason: verify the newly persisted slot identity without reducing
+  cardinality or transaction/integrity assertions.
+- In the progress-ledger test, the old totals and P29-M `Blocked` assertion
+  are replaced as described above. No behavioral assertion was weakened.
+
+Physical-device checks remain unverified: native notification/reminder actions
+and dialogs across all five entry points, early/on-time/late payment behavior,
+Undo interaction, schedule edits, month-boundary timing, and font-scale/native
+presentation on iOS and Android. See `docs/memory/open-items.md`.
+
+### DEC-P29O-LEDGER-INVENTORY — Step 1 report-only inventory (2026-11-04)
+
+This inventory was committed before any P29-O source or behavior changes.
+Preflight was clean at `682e0b36a92cfc6a8e68235d2ea0ef57e9bb2a7c` on Node
+26.13.0. The installed app schema is v18 (`SCHEMA_VERSION` in
+`src/domain/schemas.ts`); the root `AGENTS.md` incorrectly said v17, corrected
+in the inventory commit. The owner has authorized the next schema version,
+v19. No holding model, runtime behavior, Home or Budget screen changed in
+Step 1.
+
+#### Existing model and calculations
+
+The persisted `Holding` union in `src/domain/types.ts` has two different shapes:
+
+| Kind | Stored shape | Current entry/schedule semantics |
+|---|---|---|
+| `manual` | `invested`, `value`, optional `valueAsOf`, `logs[]` | Opening capital and current valuation are separate scalar fields; entries are Deposit/Withdrawal. Fixed deposit cannot accept new deposits or recurring schedules, but can receive a maturity Withdrawal. |
+| `plan` | `frequency`, `amount`, `ratePct`, `stepUpPct`, `tenureYears`, `startDate`, `trackFrom`, `opening`, nullable `actualValue`/`actualValueDate`, `logs[]` | Opening capital and recurring-plan configuration are separate from logs; schedule and value snapshot are independent fields. `holdingCapabilities(type).recurring` gates plan creation. |
+
+`InvestmentEntry` currently stores `id`, `date`, `amount`, `note`, `kind`
+(`Deposit`/`Withdrawal`) and optional `snapshotAdjustment`. It has no slot date,
+price, units, value-update kind, opening-entry identity or direct transaction
+ID. Transactions instead point back through
+`source: { kind: 'holding-entry', parentId, entryId }`.
+Budget links are separate `BudgetItem.holdingId` values.
+
+Current formula locations:
+
+- `src/domain/portfolio.ts`: manual invested = opening `invested` + log
+  deposits; plan invested delegates to `planInvested` = `opening` + log
+  deposits. Withdrawals do not reduce either invested number today.
+- `src/domain/portfolio.ts` and `src/domain/sip.ts`: manual value uses the
+  stored `value` when `valueAsOf` exists, otherwise the `invested` opening;
+  it adds/subtracts dated logs after that snapshot through `asOf`, and floors
+  at zero. Plan value uses `actualValue` (or `opening`) and dated logs after
+  its snapshot through `asOf`, also floored at zero. No rate-based interest
+  is currently estimated in either selector.
+- `src/domain/investmentReturns.ts`: returns use opening amount plus all
+  deposits as contributions; withdrawals are counted in gain but not deducted
+  from contributions. The shared P29-A helper computes gain, absolute return,
+  XIRR/CAGR and annualization span. `src/domain/portfolio.ts` suppresses
+  return percentages for Cash and Savings account by capabilities.
+- `src/domain/summary.ts`: net-worth assets sum `holdingValue`; liabilities
+  are subtracted afterward. `src/domain/goalLinks.ts` uses
+  `holdingValue`/`holdingInvested` for holdings linked to goals; Emergency
+  Fund is the auto-goal and uses the same full linked values.
+- `src/domain/budget.ts` uses `planSchedule` for linked recurring rows,
+  commitments and category actual/planned derivation. `holdingId` links at
+  most one Budget item to a recurring-capable holding. EF bucket available
+  amounts are derived from linked holdings by `holdingValue` in
+  `app/emergency-fund.tsx`; the allocation editor also shows `holdingValue`.
+
+#### Schedule matching today
+
+`src/domain/schedule.ts` generates plan slots with IDs `plan:<index>` from
+`startDate`/frequency/tenure and begins at the first scheduled index on or
+after `trackFrom`. It filters logs to Deposits dated on/after `trackFrom` and
+on/before `asOf`, sorts them by date then ID through `matchEntriesFIFO`, and
+assigns them in order to schedule slots. A deposit has no stored slot identity:
+an early deposit consumes the oldest slot, even if it was intended for a
+later one; withdrawals are not schedule payments. `planNextRows` similarly
+counts tracked deposits to find the next unpaid slot. The existing policy
+schedule is separate and its P29-M2 `dueDate` slot identity applies only to
+insurance payments.
+
+#### UI, routes, actions and selectors
+
+| Surface | Current route/files | Current behavior/dependency |
+|---|---|---|
+| Asset list/cards | `/assets` (`app/assets.tsx`), `src/components/InstrumentCard.tsx`, `src/domain/instrumentCard.ts` | `buildPortfolioRows`, `portfolioTotals`, `monthlyCommitment`; manual actions Deposit/Withdraw/Entries/Edit/Confirm; plan actions Log installment/Withdraw/Schedule. Cards display invested/value/gain/return and, for plans, projection, logged count, schedule and due status. |
+| Holding form | `/investment-form` (`app/investment-form.tsx`) | Segments into recurring PlanEditor and one-time ManualEditor. Plan stores schedule/rate/step-up/opening/optional actual value; manual stores invested/value/valueAsOf. Type controls use `holdingCapabilities`. |
+| Entry and schedule list | `/investment-entries` (`app/investment-entries.tsx`) | Plan-capable holdings can switch between Schedule and Entries. Entry totals include Invested, Current value, Total deposits, and Withdrawn; plan Schedule uses `planSchedule`. |
+| Entry form | `/investment-entry-form` (`app/investment-entry-form.tsx`) | Adds/edits/deletes Deposit or Withdrawal; a selected due row supplies date/amount, but not a persisted slot date. Linked transaction is edited/deleted with its entry. |
+| Due/payment routes | `/clear-dues`, `/payment-confirm`, `app/(tabs)/transactions.tsx`, Home (user-owned read-only), `app/reminders.tsx` | Plan rows flow through `planSchedule` to pending dues, pending items, reminder planning and payment actions. Clearing uses plan slot ID but currently creates an entry without due-slot identity. Home and Transactions consume shared due selectors. |
+| Transaction entry/form | `app/transaction-form.tsx`, `src/domain/links.ts` | Investment transactions can be linked to an instrument/holding; linked transactions navigate to `/investment-entries`. Entry transaction source fields link each transaction to the owning holding entry. |
+| Budget linked plan | `app/budget-item-form.tsx`, `app/(tabs)/budget.tsx`, `src/domain/budget.ts` | One Budget item may link to a recurring-capable holding; its amount, due month/day and recurring actual/planned rows derive from the plan schedule. Deleting a holding clears those links. |
+| Goals | `app/(tabs)/goals.tsx`, `/goal-form` (`app/goal-form.tsx`), `src/domain/goalLinks.ts`, `src/domain/goals.ts` | Linkable holdings use the same value/invested selectors. Full current asset value is counted for every linked goal; shared-goal note derives from link count. Plan projection separately reads plan rate, frequency and tenure. |
+| Emergency Fund | `/emergency-fund`, `/ef-allocation-form` | EF goal saved amount and each bucket's available amount use linked holding values. Bucket links are persisted separately in `efBucketLinks`; link integrity is checked with goal links. |
+| Net worth/Home | `src/domain/summary.ts`; `app/(tabs)/index.tsx` (read-only) | `netWorth` and Home summary delegate asset totals to `holdingValue`; Home Upcoming uses shared pending due selectors. Home source remains user-owned. |
+| Persistence/migration/backup | `src/data/createAppStore.ts`, `src/data/migrate.ts`, `src/data/safeStorage.ts`, `src/domain/schemas.ts`, `src/domain/backup.ts` | Store actions wrap domain actions; schema v18 validates the two holding variants and their entries. Existing migration chain is v1-v18 and backup import migrates older versions. Safe storage archives raw bytes under `.premigration.v<N>` and erase-all removes version archives. |
+
+Store/domain action inventory: `addHolding`, `updateHolding`,
+`confirmHoldingValue`, `deleteHolding` in `src/domain/holdingActions.ts`;
+`addPlan`, `updatePlan`, `deletePlan` in `src/domain/planActions.ts`;
+`addInvestmentEntry`, `updateInvestmentEntry`, `deleteInvestmentEntry`,
+`deleteHoldingWithTransactions` and transaction synchronization in
+`src/domain/investmentActions.ts`; and `clearDue`/clear-through/past-due
+operations in `src/domain/dues.ts`. `src/data/createAppStore.ts` exposes the
+corresponding UI actions and applies them through the app store.
+
+#### Current test and fixture surfaces
+
+The holding/ledger dependency tests are in
+`src/domain/__tests__/{investmentActions,investmentReturns,sip,schedule,dues,pending,budget,goalLinks,holdingCapabilities,instrumentCard,instruments,selectors,efAllocation,efAllocationCustom,reminders,schemas,backup}.test.ts`,
+`src/data/__tests__/{createAppStore,migrate,phase5Store,migrateV4}.test.ts`,
+`src/components/__tests__/{InstrumentCard,EmergencyGoalScreens,RouteRenderSmoke,TransactionForm}.test.tsx`,
+and `src/mock/__tests__/{data,demoData}.test.ts`. The old model and calculations
+are exercised across individual domain contracts, store persistence/Undo,
+screen summaries, backups/migrations, link integrity and demo data.
+
+Fixtures exist in `src/mock/data.ts` (three manual and one plan holding, with
+dated plan logs and an actual-value snapshot), `src/mock/demoData.ts` (generated
+manual and plan holdings, linked Budget/goal/EF examples), and legacy
+`src/data/testFixtures/v1.ts`, `v9.ts`, `v10.ts`, `v11.ts`, and `v12.ts`.
+Migration and backup tests also contain inline schema-v13-v17 fixtures. These
+are the required equivalence set for old-versus-new values/net worth before
+the migration is accepted.
+
+#### Decisions for following implementation step
+
+The owner-approved unified model is recorded for implementation under
+P29-O: one entry ledger for every holding, opening Deposit entry, valueUpdate
+delta entries, optional recurring schedule, slotDate-based due settlement,
+per-type valuation methods, and rate-compound estimates with confirmation.
+Schema v19 is authorized. The six required gates, P29-A return rules, current
+`holdingCapabilities` matrix, transaction links, Budget/goal/EF links and
+offline-only pricing remain constraints. No source behavior or existing
+assertion has been changed in this report-only step.

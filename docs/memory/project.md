@@ -10,7 +10,7 @@ runtime synchronization.
   AsyncStorage, Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v17 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v18 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains
@@ -23,9 +23,9 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 86 suites, 1086 tests in the current P29-L test inventory; the
-  final verified run is recorded in
-  [status.md](status.md) for the run date and exact gate results.
+- Test counts: 89 suites, 1120 tests in the latest verified P29-M2 coverage
+  run. See [status.md](status.md) and the [progress
+  ledger](../PROGRESS.md) for exact gate results and coverage.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.

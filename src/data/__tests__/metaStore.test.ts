@@ -95,6 +95,7 @@ describe('backup metadata storage', () => {
     const unsubscribe = meta.subscribe((value) => updates.push(value));
 
     await meta.updateMeta({
+      remindersPromptHandled: true,
       reminders: {
         enabled: true,
         localTime: '09:30',
@@ -104,6 +105,7 @@ describe('backup metadata storage', () => {
       },
     });
     expect(await meta.getMeta()).toMatchObject({
+      remindersPromptHandled: true,
       reminders: {
         enabled: true,
         localTime: '09:30',

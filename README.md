@@ -24,7 +24,8 @@ no cloud or network requests at runtime.
 - Home overview of net worth, account balances, emergency-fund progress,
   Insurance cover and scheduled dues.
 - Income, expense and investment transactions, with linked holding and policy
-  entries where supported.
+  entries where supported. Transactions keeps month selection and cash-flow
+  balances without a Review-month link.
 - Manual and planned investment holdings, investment-entry history, and
   recurring and one-time liabilities with payment tracking.
 - Monthly budgets with spend/invest sections, income entries, recurring item
@@ -37,7 +38,9 @@ no cloud or network requests at runtime.
 - Local backup export and restore with schema validation and a SHA-256
   integrity check.
 - Local payment reminders with privacy-aware notification text and an
-  in-app paid/not-paid confirmation route.
+  in-app paid/not-paid confirmation route. A one-time in-app prompt offers
+  setup after unlock; system permission is requested only after choosing
+  Turn on reminders.
 - Optional device-authenticated app lock and locally stored theme preferences.
 
 ## Screenshots
@@ -152,9 +155,9 @@ its actual recorded date. The calculation does not round between periods.
 This is the app's accounting convention, not a claim about a lender's method;
 compare against a statement using its as-of date and actual payment records.
 
-Zustand persists app data through AsyncStorage. Persisted schema version 17 is
+Zustand persists app data through AsyncStorage. Persisted schema version 18 is
 the current version. The migration chain upgrades supported data from schema
-versions 1 through 16. Backup import verifies the file integrity and validates
+versions 1 through 17. Backup import verifies the file integrity and validates
 the imported data, applying supported migrations where required.
 
 The bottom tabs are Home, Transactions, Goals and Budget. Route screens for
@@ -193,14 +196,23 @@ The next due date is the first premium due. Later dues follow the selected
 monthly, quarterly, half-yearly, yearly or custom interval (1–120 months),
 with month-end date clamping, until an optional existing end date. Pending
 premiums appear in Transactions, Home, Budget and reminders; paying a due
-records the linked transaction and advances the schedule. Typed premium
-categories remain derived from policy type; savings-policy premiums use the
-generic Insurance category. The Budget Insurance system section and its
-categories remain fixed and unchanged; making them editable is out of scope
-and requires a separate product decision.
+records its exact scheduled due date, the linked transaction, and advances the
+schedule in one persisted write. Matching uses the due date the payment
+settles, not the date it was paid, so early and late payments clear the same
+slot. Undo restores the payment and transaction together. Legacy payments
+without a due date keep the prior rule: payments on or after the policy's
+tracking date are matched FIFO. The v17-to-v18 migration annotates only those
+legacy payments that the prior schedule already matched; earlier and unmatched
+payments remain historical records. Typed premium categories remain derived
+from policy type; savings-policy premiums use the generic Insurance category.
+The Budget Insurance system section and its categories remain fixed and
+unchanged; making them editable is out of scope and requires a separate
+product decision.
 
 The migration to schema v17 removes only retired cover-goal records and policy
-goal assignments. Historical policy fields not shown in the simplified form
+goal assignments. Schema v18 adds an optional due date to each policy payment
+and migrates only existing payments already matched to a schedule slot by the
+v17 FIFO rule. Historical policy fields not shown in the simplified form
 remain in stored data. In particular, savings-policy current values and
 goal-linked assets remain available to their existing investment and goal
 features. Policies with a legacy inactive status remain visible as Ended and

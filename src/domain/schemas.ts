@@ -16,7 +16,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 17;
+export const SCHEMA_VERSION = 18;
 
 const isoDateSchema = z.string().refine(isValidISO, 'Enter a valid date');
 const idSchema = z.string().min(1);
@@ -156,8 +156,9 @@ const policyPaymentSchema = z.object({
   date: isoDateSchema,
   amount: moneySchema.positive(),
   note: z.string(),
+  dueDate: isoDateSchema.optional(),
 });
-const policySchema = z.object({
+export const policySchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
   insurer: z.string().max(40),
