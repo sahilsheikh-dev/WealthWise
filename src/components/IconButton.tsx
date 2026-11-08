@@ -7,7 +7,6 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Deposit',
   'Withdraw',
   'Pay EMI',
-  'Log installment',
   'Entries',
   'Schedule',
   'Payments',
@@ -28,9 +27,13 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Send test notification',
   'Clear due',
   'Clear past dues',
+  // This short Home action is text-first but keeps the existing due confirmation.
+  'Marked as paid',
+  // Transactions uses this compact clear-due action.
+  'Paid',
   'Undo',
   // These visible labels are intentional exceptions on the Home screen only.
-  'Add Transaction',
+  'New Transaction',
   'New Investment',
   'New Liability',
   'Log Emergency Fund',

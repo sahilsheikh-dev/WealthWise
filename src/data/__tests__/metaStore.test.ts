@@ -88,25 +88,46 @@ describe('backup metadata storage', () => {
     )).rejects.toThrow('Sort preference is invalid.');
   });
 
-  it('persists Budget history sort choices and falls back to month for an invalid stored key', async () => {
+  it('stores reminder preferences in UI metadata and publishes updates and erase', async () => {
     const storage = new MetaStorage();
     const meta = createMetaStore(storage);
-    const selected = { key: 'actualSpend', dir: 'asc' as const };
-    await meta.updateSortSpec('budgetHistory', selected, SORT_OPTIONS.budgetHistory);
-    expect(storage.writes).toBe(1);
-    await expect(meta.getSortSpec(
-      'budgetHistory',
-      SORT_OPTIONS.budgetHistory,
-      DEFAULT_SORTS.budgetHistory,
-    )).resolves.toEqual(selected);
+    const updates: unknown[] = [];
+    const unsubscribe = meta.subscribe((value) => updates.push(value));
 
-    storage.values.set('wealthwise.meta.v1', JSON.stringify({
-      sortSpecs: { budgetHistory: { key: 'not-registered', dir: 'asc' } },
-    }));
-    await expect(meta.getSortSpec(
-      'budgetHistory',
-      SORT_OPTIONS.budgetHistory,
-      DEFAULT_SORTS.budgetHistory,
-    )).resolves.toEqual({ key: 'month', dir: 'desc' });
+    await meta.updateMeta({
+      remindersPromptHandled: true,
+      reminders: {
+        enabled: true,
+        localTime: '09:30',
+        dayBefore: true,
+        sameDay: false,
+        showAmounts: true,
+      },
+    });
+    expect(await meta.getMeta()).toMatchObject({
+      remindersPromptHandled: true,
+      reminders: {
+        enabled: true,
+        localTime: '09:30',
+        dayBefore: true,
+        sameDay: false,
+        showAmounts: true,
+      },
+    });
+    await expect(meta.updateMeta({
+      reminders: {
+        enabled: true,
+        localTime: '09:15',
+        dayBefore: true,
+        sameDay: true,
+        showAmounts: false,
+      },
+    })).rejects.toThrow('Backup metadata is invalid.');
+    await meta.clearMeta();
+    expect(updates).toHaveLength(2);
+    expect(updates.at(-1)).toEqual({});
+    expect(await meta.getMeta()).toEqual({});
+    unsubscribe();
   });
+
 });

@@ -71,7 +71,7 @@ export default function ClearDuesScreen() {
       title: mode === 'settle' ? 'Mark past dues as already paid?' : 'Record past payments?',
       message: `This will handle ${pending.count} dues totalling ${formatAmount(pending.amount, 'exact', 1)}.${recordWarning}`,
       confirmLabel: 'Confirm',
-      cancelLabel: 'Review',
+      cancelLabel: 'Cancel',
     });
     if (!confirmed) return;
     setBusy(true);
@@ -97,7 +97,7 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Back" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={null}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
@@ -105,10 +105,16 @@ export default function ClearDuesScreen() {
   if (pending.count === 0) {
     return (
       <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Done" onPress={() => router.back()} />}>
-        <EmptyState title="No past dues" subtitle="There are no unpaid installments up to today." />
+        <EmptyState
+          title="No past dues"
+          subtitle={target.kind === 'plan'
+            ? 'There are no unpaid scheduled deposits up to today.'
+            : 'There are no unpaid installments up to today.'}
+        />
       </FormScreen>
     );
   }
+  const dueLabel = target.kind === 'plan' ? 'scheduled deposits' : 'installments';
   const recordedPayments = item.kind === 'recurring'
     ? item.payments.filter((payment) => payment.date <= today).length
     : 0;
@@ -122,7 +128,7 @@ export default function ClearDuesScreen() {
       <Card>
         <AppText weight="semibold">{item.name}</AppText>
         <AppText style={[typography.meta, { marginTop: 6 }]}>
-          {pending.count} installments, {formatAmount(pending.amount, 'exact', 1)} total
+          {pending.count} {dueLabel}, {formatAmount(pending.amount, 'exact', 1)} total
         </AppText>
         <AppText style={[typography.meta, { marginTop: 8 }]}>Affected months</AppText>
         {pending.months.map((month) => (
@@ -131,7 +137,7 @@ export default function ClearDuesScreen() {
           </AppText>
         ))}
       </Card>
-      <AppText weight="semibold">How should these past installments be handled?</AppText>
+      <AppText weight="semibold">How should these past {dueLabel} be handled?</AppText>
       <SegmentedControl
         value={mode}
         options={[
@@ -145,7 +151,7 @@ export default function ClearDuesScreen() {
           <AppText style={[typography.meta, { flex: 1 }]}>Add them to what I have already invested</AppText>
           <Switch
             accessibilityRole="switch"
-            accessibilityLabel="Add missed plan installments to opening investment"
+            accessibilityLabel="Add missed plan deposits to opening investment"
             value={addSkippedToOpening}
             onValueChange={setAddSkippedToOpening}
           />
@@ -169,7 +175,9 @@ export default function ClearDuesScreen() {
       ) : null}
       {mode === 'record' ? (
         <WarningBanner>
-          Each installment will be recorded on its due date. Past months will change.
+          {target.kind === 'plan'
+            ? 'Each scheduled deposit will be recorded on its due date. Past months will change.'
+            : 'Each payment will be recorded on its due date. Past months will change.'}
         </WarningBanner>
       ) : null}
     </FormScreen>

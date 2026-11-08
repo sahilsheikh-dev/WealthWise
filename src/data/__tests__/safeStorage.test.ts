@@ -1,7 +1,10 @@
 import type { StateStorage } from 'zustand/middleware';
 
 import { mockAppData } from '../../mock/data';
-import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture } from '../testFixtures/v1';
+import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
+import { makeV10Fixture } from '../testFixtures/v10';
+import { makeV11Fixture } from '../testFixtures/v11';
+import { makeV12Fixture } from '../testFixtures/v12';
 import { createSafeStorage } from '../safeStorage';
 import { utf8ByteLength } from '../../lib/storageGuard';
 
@@ -27,10 +30,88 @@ class MemoryStorage implements StateStorage {
 
 const blob = (data: unknown = mockAppData, version = 3) => JSON.stringify({ state: { data }, version });
 
-function makeLegacyData(version: 1 | 2 | 3 | 4 | 5): unknown {
+function makeLegacyData(version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19): unknown {
   if (version === 1) return makeV1Fixture();
   if (version === 4) return makeV4Fixture();
   if (version === 5) return makeV5Fixture();
+  if (version === 6) return makeV6Fixture();
+  if (version === 7) {
+    const { budgetPlan: _budgetPlan, ...rest } = mockAppData;
+    return {
+      ...rest,
+      budgetTemplates: [],
+      defaultBudgetTemplateId: null,
+      monthBudgets: [],
+    };
+  }
+  if (version === 8) {
+    const budgetPlan = mockAppData.budgetPlan
+      ? {
+        ...mockAppData.budgetPlan,
+        plannedIncome: mockAppData.budgetPlan.incomes.reduce((total, income) => total + income.amount, 0),
+        incomes: undefined,
+      }
+      : null;
+    return {
+      ...mockAppData,
+      budgetPlan,
+      monthBudgets: (mockAppData.monthBudgets ?? []).map((budget) => ({
+        ...budget,
+        plannedIncome: budget.incomes.reduce((total, income) => total + income.amount, 0),
+        incomes: undefined,
+      })),
+    };
+  }
+  if (version === 9) {
+    const { sections: _sections, items, ...plan } = mockAppData.budgetPlan ?? {
+      incomes: [], repeatMonthly: false, repeatFrom: null, sections: [], items: [],
+    };
+    return {
+      ...mockAppData,
+      budgetPlan: {
+        ...plan,
+        lines: items.map((item) => ({
+          category: item.name,
+          mode: item.mode,
+          value: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })),
+      },
+      monthBudgets: (mockAppData.monthBudgets ?? []).map(({ sections: _snapshotSections, items: snapshotItems, ...budget }) => ({
+        ...budget,
+        lines: snapshotItems.map((item) => ({
+          category: item.name,
+          planned: item.value,
+          ...(item.dueDay === undefined ? {} : { dueDay: item.dueDay }),
+        })),
+      })),
+    };
+  }
+  if (version === 10) return makeV10Fixture();
+  if (version === 11) return makeV11Fixture();
+  if (version === 12) return makeV12Fixture();
+  if (version === 13) return mockAppData;
+  if (version === 14) {
+    return {
+      ...mockAppData,
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+        { type: 'motor', targetMode: 'active-only' },
+        { type: 'home', targetMode: 'active-only' },
+        { type: 'other', targetMode: 'active-only' },
+      ],
+    };
+  }
+  if (version === 15) return mockAppData;
+  if (version === 16) {
+    return {
+      ...mockAppData,
+      coverGoals: [],
+      policies: mockAppData.policies.map((policy) => ({ ...policy, coverGoalId: 'legacy-cover' })),
+    };
+  }
+  if (version === 17 || version === 18 || version === 19) return mockAppData;
   const v2 = makeV2Fixture();
   if (version === 2) return v2;
   return {
@@ -54,8 +135,8 @@ describe('createSafeStorage', () => {
   it.each([
     ['invalid-blob', JSON.stringify({ other: true }), 'corrupt'],
     ['invalid-json', '{not json', 'corrupt'],
-    ['invalid-schema', blob({ transactions: [] }, 6), 'corrupt'],
-    ['newer-version', blob(mockAppData, 7), 'newer-version'],
+    ['invalid-schema', blob({ transactions: [] }, 0), 'corrupt'],
+    ['newer-version', blob(mockAppData, 23), 'newer-version'],
   ] as const)('backs up a %s blob and reports its reason', async (expectedReason, raw, callbackReason) => {
     const base = new MemoryStorage();
     base.values.set('wealthwise.app.v1', raw);
@@ -136,11 +217,11 @@ describe('createSafeStorage', () => {
     expect(onWriteSuccess).not.toHaveBeenCalled();
   });
 
-  it.each([1, 2, 3, 4, 5] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const)('copies the raw v%s payload exactly once and never overwrites its archive', async (version) => {
     const name = 'wealthwise.app.v1';
     const base = new MemoryStorage();
     const raw = blob(makeLegacyData(version), version);
-    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 6 });
+    const migrated = JSON.stringify({ state: { data: mockAppData }, version: 20 });
     const premigrationKey = `${name}.premigration.v${version}`;
     base.values.set(name, raw);
     const safe = createSafeStorage(

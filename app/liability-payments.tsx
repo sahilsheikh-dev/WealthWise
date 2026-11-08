@@ -1,44 +1,29 @@
-import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
-import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { ListRow as SharedListRow } from '../src/components/ListRow';
-import { SortChip } from '../src/components/SortChip';
 import {
   AppText,
+  Button,
   Card,
-  ChipRow,
-  DetailTabBar,
   EmptyState,
   Screen,
   StatusBadge,
 } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
-import { liabilitySummary } from '../src/domain/liability';
-import { liabilitySchedule, type ScheduleRow, type ScheduleStatus } from '../src/domain/schedule';
+import { isLiabilityClosed, liabilitySummary } from '../src/domain/liability';
+import { liabilitySchedule } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
-import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
-
-type Tab = 'Schedule' | 'Payments';
-type ListRow = ScheduleRow | LiabilityPayment;
-
-const badgeTone: Record<ScheduleStatus, 'ok' | 'primary' | 'err' | 'neutral'> = {
-  paid: 'ok',
-  ongoing: 'primary',
-  overdue: 'err',
-  upcoming: 'neutral',
-};
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -48,11 +33,8 @@ export default function LiabilityPaymentsScreen() {
   const liabilityId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
-  const scheduleSorting = useSort('schedules');
-  const paymentSorting = useSort('payments');
   const today = useMemo(() => todayISO(), []);
   const liability = data.liabilities.find((entry) => entry.id === liabilityId);
-  const [tab, setTab] = useState<Tab>('Schedule');
   const schedule = useMemo(
     () => liability ? liabilitySchedule(liability, today) : null,
     [liability, today],
@@ -61,65 +43,40 @@ export default function LiabilityPaymentsScreen() {
     () => liability
       ? liability.payments
         .map((payment, sortCreatedIndex) => ({ ...payment, sortCreatedIndex }))
-        .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+        .sort((left, right) => right.date.localeCompare(left.date) || right.id.localeCompare(left.id))
       : [],
     [liability],
   );
-  const listRows: ListRow[] = tab === 'Schedule'
-    ? scheduleSorting.sort(schedule?.rows ?? [])
-    : paymentSorting.sort(payments);
 
   if (!liability || !schedule) {
-    return <Screen><AppHeader title="Liability schedule" showBack fallbackHref="/liabilities" /><EmptyState title="Liability not found" /></Screen>;
+    return <Screen><AppHeader title="Liability entries" showBack fallbackHref="/liabilities" /><EmptyState title="Liability not found" /></Screen>;
   }
 
-  const openPayment = (row: ListRow) => {
-    if ('status' in row) {
-      if (row.status === 'paid' && row.entryId) {
-        router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, paymentId: row.entryId } });
-      } else if (row.status !== 'paid') {
-        router.push({
-          pathname: '/liability-payment-form',
-          params: {
-            liabilityId: liability.id,
-            date: today,
-            amount: String(row.amount),
-            kind: liability.kind === 'recurring' ? 'EMI' : 'Payment',
-            mode: liability.kind === 'recurring' ? 'emi' : undefined,
-          },
-        });
-      }
-    } else {
-      router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, paymentId: row.id } });
-    }
+  const summary = liabilitySummary(liability, today);
+  const closedDate = liability.kind === 'recurring' ? liability.closure?.date ?? today : today;
+  const openPayment = (payment: LiabilityPayment) => {
+    if (isLiabilityClosed(liability)) return;
+    router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, paymentId: payment.id } });
   };
 
-  const summary = liabilitySummary(liability, today);
   const renderHeader = () => (
     <View>
       <AppHeader
-        title={`${liability.name} ${tab === 'Schedule' ? 'schedule' : 'payments'}`}
+        title={`${liability.name} entries`}
         showBack
         fallbackHref="/liabilities"
-        rightActions={[{
+        rightActions={isLiabilityClosed(liability) ? [] : [{
           icon: 'plus',
           label: 'Add liability payment',
           onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
         }]}
         menu={[
-          ...(liability.kind === 'recurring' && schedule.summary.overdue + schedule.summary.ongoing > 0
-            ? [{
-              label: 'Clear past dues',
-              icon: 'edit' as const,
-              onPress: () => router.push(
-                `/clear-dues?kind=liability&id=${encodeURIComponent(liability.id)}` as Href,
-              ),
-            }]
-            : []),
           {
             label: 'Edit',
-            icon: 'edit',
-            onPress: () => router.push({ pathname: '/liability-form', params: { id: liability.id } }),
+            icon: 'edit-2',
+            onPress: () => router.push(isLiabilityClosed(liability)
+              ? { pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }
+              : { pathname: '/liability-form', params: { id: liability.id } }),
           },
           {
             label: 'Delete',
@@ -127,7 +84,10 @@ export default function LiabilityPaymentsScreen() {
             destructive: true,
             onPress: () => {
               const linkedCount = data.transactions.filter((transaction) =>
-                transaction.source?.kind === 'liability-payment' && transaction.source.parentId === liability.id,
+                (transaction.source?.kind === 'liability-payment'
+                  || transaction.source?.kind === 'liability-closure-charge'
+                  || transaction.source?.kind === 'liability-origin')
+                && transaction.source.parentId === liability.id,
               ).length;
               void choiceAsync({
                 title: 'Delete liability?',
@@ -145,114 +105,87 @@ export default function LiabilityPaymentsScreen() {
           },
         ]}
       />
-      <View style={styles.segment}>
-        <SegmentedControl
-          value={tab}
-          options={[{ label: 'Schedule', value: 'Schedule' }, { label: 'Payments', value: 'Payments' }]}
-          onChange={setTab}
-        />
-      </View>
-      <ChipRow>
-        {tab === 'Schedule'
-          ? <SortChip options={SORT_OPTIONS.schedules} spec={scheduleSorting.spec} onChange={scheduleSorting.setSpec} />
-          : <SortChip options={SORT_OPTIONS.payments} spec={paymentSorting.spec} onChange={paymentSorting.setSpec} />}
-      </ChipRow>
-      {tab === 'Schedule' ? (
-        <>
-          <Card>
-            <AppText style={[typography.label, { color: colors.text3 }]}>Schedule summary</AppText>
-            <AppText
-              weight="semibold"
-              style={styles.summaryLine}
-              accessibilityLabel={summary.cleared
+      {!isLiabilityClosed(liability) ? (
+        <View style={styles.actions}>
+          <Button
+            label="Pay EMI"
+            icon="credit-card"
+            variant="primary"
+            style={styles.action}
+            onPress={() => router.push({
+              pathname: '/liability-payment-form',
+              params: { liabilityId: liability.id, mode: liability.kind === 'recurring' ? 'emi' : undefined },
+            })}
+          />
+          {liability.kind === 'recurring' ? (
+            <Button
+              label="Foreclosure"
+              icon="check-circle"
+              style={styles.action}
+              onPress={() => router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } })}
+            />
+          ) : null}
+        </View>
+      ) : null}
+      <Card>
+        <AppText style={[typography.label, { color: colors.text3 }]}>Summary</AppText>
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Outstanding</AppText>
+            <AmountText value={summary.balance} tier="row" weight="bold" style={[typography.amount, styles.summaryValue]} />
+          </View>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Paid</AppText>
+            <AmountText value={summary.paidTotal} tier="row" weight="bold" style={[typography.amount, styles.summaryValue]} />
+          </View>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Interest accrued</AppText>
+            <AmountText value={summary.interestAccrued} tier="row" weight="bold" style={[typography.amount, styles.summaryValue]} />
+          </View>
+          <View style={styles.summaryCell}>
+            <AppText style={[typography.label, { color: colors.text3 }]}>Next due</AppText>
+            <AppText style={[typography.meta, styles.summaryValue]}>
+              {summary.cleared
                 ? 'Cleared'
                 : schedule.summary.nextDue
-                  ? `Next due ${formatDate(schedule.summary.nextDue.dueDate)}, ${formatAmount(schedule.summary.nextDue.amount, 'exact', 1)}`
-                  : 'Schedule complete'}>
-              {summary.cleared ? 'Cleared' : schedule.summary.nextDue
-                ? <>Next due {formatDate(schedule.summary.nextDue.dueDate)} · <AmountText value={schedule.summary.nextDue.amount} tier="row" /></>
-                : 'Schedule complete'}
+                  ? formatDate(schedule.summary.nextDue.dueDate)
+                  : 'Schedule complete'}
             </AppText>
-            <AppText
-              style={[typography.meta, { color: colors.text3 }]}
-              accessibilityLabel={`Paid ${schedule.summary.paid} · ${schedule.summary.overdue} overdue · Balance ${formatAmount(summary.balance, 'exact', 1)}`}>
-              Paid {schedule.summary.paid} · {schedule.summary.overdue} overdue · Balance <AmountText value={summary.balance} tier="row" />
-            </AppText>
-            {liability.kind === 'recurring' && schedule.neverClears
-              ? <AppText style={[typography.meta, { color: colors.err, marginTop: 5 }]}>EMI does not cover monthly interest</AppText>
-              : null}
-            {liability.kind === 'recurring' && schedule.shortfall
-              ? <AppText style={[typography.meta, { color: colors.err, marginTop: 5 }]}>Balance remains after the final scheduled EMI</AppText>
-              : null}
-          </Card>
-        </>
-      ) : (
-        <>
-          <Card>
-            <AppText style={[typography.label, { color: colors.text3 }]}>Balance</AppText>
-            <AmountText value={summary.balance} tier="hero" weight="bold" style={[typography.big, styles.balance]} />
-            <AppText
-              style={[typography.meta, { color: colors.text3 }]}
-              accessibilityLabel={`Paid ${formatAmount(summary.paidTotal, 'exact', 1)} · Interest accrued ${formatAmount(summary.interestAccrued, 'exact', 1)}`}>
-              Paid <AmountText value={summary.paidTotal} tier="row" /> · Interest accrued <AmountText value={summary.interestAccrued} tier="row" />
-            </AppText>
-          </Card>
-        </>
-      )}
+          </View>
+        </View>
+        {liability.kind === 'recurring' && isLiabilityClosed(liability) ? (
+          <StatusBadge label={`Closed ${formatDate(closedDate)}`} tone="neutral" />
+        ) : schedule.summary.overdue > 0 ? (
+          <StatusBadge label={`${schedule.summary.overdue} overdue`} tone="err" />
+        ) : null}
+        {liability.kind === 'recurring' && schedule.neverClears ? (
+          <AppText style={[typography.meta, styles.summaryNote, { color: colors.err }]}>EMI does not cover monthly interest</AppText>
+        ) : null}
+      </Card>
     </View>
   );
 
   return (
-    <>
     <Screen scroll={false}>
-      <FlatList<ListRow>
-        data={listRows}
+      <FlatList<LiabilityPayment>
+        data={payments}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={<EmptyState title={tab === 'Schedule' ? (summary.cleared ? 'Cleared' : 'No scheduled payments') : 'No payments recorded'} />}
+        ListEmptyComponent={<EmptyState title="No entries recorded" />}
         contentContainerStyle={styles.listContent}
         initialNumToRender={16}
         maxToRenderPerBatch={16}
         windowSize={9}
         renderItem={({ item }) => {
-          if ('status' in item) {
-            const estimated = liability.kind === 'recurring' && item.status !== 'paid';
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}, ${item.status}`}
-                onPress={() => openPayment(item)}
-                style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={styles.rowTop}>
-                  <View style={styles.rowTitle}>
-                    <AppText weight="semibold">
-                      {liability.kind === 'one-time' && liability.dueDate === null
-                        ? 'No due date'
-                        : formatDate(item.dueDate)}
-                    </AppText>
-                    {item.status === 'paid' && item.paidOn
-                      ? <AppText style={[typography.meta, { color: colors.text3 }]}>Paid on {formatDate(item.paidOn)}</AppText>
-                      : null}
-                  </View>
-                  <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
-                </View>
-                <StatusBadge label={item.status} tone={badgeTone[item.status]} />
-                {estimated && item.interest !== undefined ? (
-                  <View style={styles.breakdown}>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={`Estimated · Interest ${formatAmount(item.interest, 'exact', 1)}`}>
-                      Estimated · Interest <AmountText value={item.interest} tier="row" />
-                    </AppText>
-                    <AppText
-                      style={[typography.meta, { color: colors.text3 }]}
-                      accessibilityLabel={`Principal ${formatAmount(item.principal ?? 0, 'exact', 1)} · Balance after ${formatAmount(item.balanceAfter ?? 0, 'exact', 1)}`}>
-                      Principal <AmountText value={item.principal ?? 0} tier="row" /> · Balance after <AmountText value={item.balanceAfter ?? 0} tier="row" />
-                    </AppText>
-                  </View>
-                ) : null}
-              </Pressable>
-            );
+          const content = (
+            <>
+              <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
+              {item.note ? <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText> : null}
+              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+            </>
+          );
+          if (isLiabilityClosed(liability)) {
+            return <View style={[styles.row, { borderColor: colors.border }]}>{content}</View>;
           }
           return (
             <SharedListRow
@@ -261,27 +194,21 @@ export default function LiabilityPaymentsScreen() {
               onEdit={() => openPayment(item)}
               editLabel="Edit liability payment"
               accessibilityLabel={`${formatDate(item.date)}, ${item.kind}, ${formatAmount(item.amount, 'exact', 1)}`}
-            >
-              <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
-              <AppText style={[typography.meta, { color: colors.text3 }]}>{item.note}</AppText>
-              <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
-            </SharedListRow>
+            >{content}</SharedListRow>
           );
         }}
       />
     </Screen>
-    <DetailTabBar active="none" />
-    </>
   );
 }
 
 const styles = StyleSheet.create({
-  segment: { paddingHorizontal: 20, marginTop: 6 },
-  summaryLine: { marginTop: 7, fontSize: 12 },
-  balance: { marginTop: 5 },
+  actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', gap: 8 },
+  action: { flexGrow: 1, minWidth: 100 },
+  summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
+  summaryCell: { width: '48%', gap: 3 },
+  summaryValue: { minHeight: 18 },
+  summaryNote: { marginTop: 7 },
   listContent: { paddingBottom: 120 },
   row: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
-  rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  rowTitle: { flex: 1, gap: 3 },
-  breakdown: { gap: 3, paddingTop: 2 },
 });

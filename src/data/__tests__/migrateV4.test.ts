@@ -1,10 +1,9 @@
 import { migratePersisted, migrateV3ToV4, migrateV4ToV5, migrateV5ToV6 } from '../migrate';
-import { mockAppData } from '../../mock/data';
-import { makeV4Fixture } from '../testFixtures/v1';
+import { makeV3Fixture, makeV4Fixture } from '../testFixtures/v1';
 
 describe('migrate v3 to v4', () => {
   it('adds efAllocation null to a v3 blob without changing its existing fields', () => {
-    const { efAllocation: _field, ...v3Data } = mockAppData;
+    const v3Data = makeV3Fixture();
     const result = migrateV3ToV4(v3Data);
     expect(result).toEqual({ ...v3Data, efAllocation: null });
   });
@@ -19,26 +18,24 @@ describe('migrate v3 to v4', () => {
       insurance: 0,
       other: 0,
     };
-    const v4Data = { ...mockAppData, efAllocation: allocation };
+    const v4Data = { ...makeV4Fixture(), efAllocation: allocation };
     expect(migrateV3ToV4(v4Data)).toEqual(v4Data);
   });
 
   it('chains earlier migrations through v5', () => {
-    const { efAllocation: _field, ...v3Data } = mockAppData;
-    const migrated = migratePersisted({ data: v3Data }, 3);
-    expect(migrated).toMatchObject({
-      data: {
-        ...v3Data,
-        goals: v3Data.goals.map((goal) => ({ ...goal, links: [] })),
-        liabilities: v3Data.liabilities.map((liability) => liability.kind === 'recurring'
-          ? { ...liability, settlement: null }
-          : liability),
-        policies: [],
-        budget: null,
-        efAllocation: null,
-        efCustomBuckets: [],
-        efBucketLinks: {},
-      },
+    const v3Data = makeV3Fixture();
+    const migrated = migratePersisted({ data: v3Data }, 3, {
+      today: '2026-10-10',
+      newId: () => 'migrated-chain-fund',
+    }) as { data: Record<string, unknown> };
+    expect(migrated.data).not.toHaveProperty('efEntries');
+    expect(migrated.data).toMatchObject({
+      efAllocation: null,
+      efCustomBuckets: [],
+      efBucketLinks: {},
+      holdings: expect.arrayContaining([
+        expect.objectContaining({ id: 'migrated-chain-fund', value: 500 }),
+      ]),
     });
   });
 
@@ -52,11 +49,28 @@ describe('migrate v3 to v4', () => {
       budget: null,
     };
     expect(migrateV4ToV5(v4)).toEqual(expected);
-    expect(migratePersisted({ data: v4, metadata: { retained: true } }, 4))
-      .toEqual({
-        data: { ...expected, efCustomBuckets: [], efBucketLinks: {} },
-        metadata: { retained: true },
-      });
+    const migrated = migratePersisted({ data: v4, metadata: { retained: true } }, 4, {
+      today: '2026-10-10',
+      newId: () => 'migrated-v4-fund',
+    }) as { data: Record<string, unknown>; metadata: { retained: boolean } };
+    expect(migrated.metadata).toEqual({ retained: true });
+    expect(migrated.data).toMatchObject({
+      goals: expect.arrayContaining([
+        expect.objectContaining({
+          auto: 'ef',
+          links: [{ instrumentId: 'migrated-v4-fund', share: 100 }],
+        }),
+      ]),
+      liabilities: expected.liabilities,
+      policies: [],
+      budget: null,
+      efCustomBuckets: [],
+      efBucketLinks: {},
+      holdings: expect.arrayContaining([
+        expect.objectContaining({ id: 'migrated-v4-fund', value: 500 }),
+      ]),
+    });
+    expect(migrated.data).not.toHaveProperty('efEntries');
   });
 
   it('rejects malformed v4 envelopes instead of returning partial data', () => {

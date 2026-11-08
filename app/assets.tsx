@@ -6,21 +6,21 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import {
   AppText,
   Button,
   Card,
   Chip,
   ChipRow,
-  DetailTabBar,
   EmptyState,
   Screen,
+  SearchField,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { monthlyBaseline } from '../src/domain/ef';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
   buildPortfolioRows,
@@ -29,28 +29,19 @@ import {
   portfolioTotals,
 } from '../src/domain/portfolio';
 import { planSchedule } from '../src/domain/schedule';
-import type { HoldingType } from '../src/domain/types';
+import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
-import { SORT_OPTIONS } from '../src/lib/sorting';
+import { choiceAsync } from '../src/lib/confirm';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const filters: ('All' | 'Recurring' | HoldingType | 'Emergency fund')[] = [
+const filters = [
   'All',
   'Recurring',
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-  'Emergency fund',
-];
+  ...HOLDING_TYPES,
+] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -60,10 +51,16 @@ export default function AssetsScreen() {
   const actions = useAppActions();
   const asOf = todayISO();
   const [filter, setFilter] = useState<(typeof filters)[number]>('All');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
-    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
+    if (
+      row.kind !== 'plan' ||
+      row.holding?.kind !== 'plan' ||
+      !holdingCapabilities(row.holding.type).recurring
+    ) {
       return { ...row, nextDue: null, progress: null, status: null };
     }
     const schedule = planSchedule(row.holding, asOf);
@@ -83,29 +80,66 @@ export default function AssetsScreen() {
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
   const filteredRows = filterRows(rows, filter);
+  const normalizedQuery = query.trim().toLowerCase();
+  const searchedRows = normalizedQuery
+    ? filteredRows.filter((row) =>
+      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
+    )
+    : filteredRows;
   const visibleRows = filter === 'Recurring'
-    ? sipSorting.sort(filteredRows)
-    : assetSorting.sort(filteredRows);
-  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
+    ? sipSorting.sort(searchedRows)
+    : assetSorting.sort(searchedRows);
+  const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
+  const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
+  const filterActive = filter !== 'All'
+    || activeSorting.spec.key !== activeSortDefault.key
+    || activeSorting.spec.dir !== activeSortDefault.dir;
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
       totalAssets: totals.value,
-      monthlyExpenseBaseline: expenseBaseline,
-      emergencyEntryCount: data.efEntries.length,
     })])),
-    [asOf, data.efEntries.length, expenseBaseline, rows, totals.value],
+    [asOf, rows, totals.value],
   );
   const gainTone = totals.gain >= 0 ? colors.ok : colors.err;
 
   return (
-    <>
     <Screen bottomPadding={120}>
       <AppHeader
         title="Assets"
         showBack
         fallbackHref="/(tabs)"
-        rightActions={[{ icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) }]}
+        rightActions={[
+          {
+            icon: 'filter',
+            label: 'Filter',
+            onPress: () => setFilterPanelOpen((open) => !open),
+            expanded: filterPanelOpen,
+            showIndicator: filterActive,
+          },
+          { icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) },
+        ]}
+      />
+      {filterPanelOpen ? (
+        <View testID="asset-filter-panel">
+          <ChipRow>
+            <SortChip
+              options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
+              spec={activeSorting.spec}
+              onChange={activeSorting.setSpec}
+            />
+            {filters.map((item) => (
+              <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+            ))}
+          </ChipRow>
+        </View>
+      ) : null}
+      <SearchField
+        accessibilityLabel="Search assets"
+        placeholder="Search name or type"
+        value={query}
+        onChangeText={setQuery}
+        onClear={() => setQuery('')}
       />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total value</AppText>
@@ -129,24 +163,13 @@ export default function AssetsScreen() {
             tone={totals.gain >= 0 ? 'ok' : 'err'}
           />
           <StatPill
-            label="Monthly SIP/RD"
+            label="Monthly Invt."
             value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
             accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
             tone="primary"
           />
         </StatPillRow>
       </Card>
-
-      <ChipRow>
-        {<SortChip
-          options={filter === 'Recurring' ? SORT_OPTIONS.sips : SORT_OPTIONS.assets}
-          spec={filter === 'Recurring' ? sipSorting.spec : assetSorting.spec}
-          onChange={filter === 'Recurring' ? sipSorting.setSpec : assetSorting.setSpec}
-        />}
-        {filters.map((item) => (
-          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
-        ))}
-      </ChipRow>
 
       <View style={styles.holdingList}>
         {visibleRows.map((row) => {
@@ -162,33 +185,42 @@ export default function AssetsScreen() {
               dueTarget={row.kind === 'plan' ? { kind: 'plan', id: row.id } : undefined}
               onAction={(action) => {
                 if (action === 'deposit') {
-                  if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Deposit');
-                  else router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
+                  router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
                 } else if (action === 'withdraw') {
-                  if (row.kind === 'auto-ef') router.push('/ef-entry-form?kind=Withdrawal');
-                  else router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
-                } else if (action === 'schedule') {
-                  router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
+                  router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
                 } else if (action === 'entries') {
-                  if (row.kind === 'auto-ef') router.push('/emergency-fund');
-                  else router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
+                  router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
-                  if (row.kind === 'auto-ef') {
-                    const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
-                    if (!emergencyGoal) throw new Error('Emergency fund goal is missing.');
-                    router.push({ pathname: '/goal-form', params: { id: emergencyGoal.id } });
+                  router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
+                } else if (action === 'update') {
+                  router.push(`/holding-valuation-form?id=${encodeURIComponent(holdingId)}` as Href);
+                } else if (action === 'stop') {
+                  const holding = data.holdings.find((item) => item.id === holdingId);
+                  if (!holding || holding.kind !== 'plan') return;
+                  if (holding.stopDate) {
+                    void choiceAsync({
+                      title: 'Resume investment?',
+                      message: 'This restores the plan schedule from the next due after today.',
+                      choices: [
+                        { id: 'cancel', label: 'Cancel' },
+                        { id: 'resume', label: 'Resume' },
+                      ],
+                    }).then((choice) => {
+                      if (choice === 'resume') actions.resumePlan(holdingId);
+                    });
                   } else {
-                    router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
+                    router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holdingId)}` as Href);
                   }
-                } else if (action === 'confirm' && row.kind === 'manual') {
-                  actions.confirmHoldingValue(row.id);
                 }
               }}
             />
           );
         })}
         {visibleRows.length === 0 ? (
-          <EmptyState title={data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'} subtitle="Your holdings will appear here." />
+          <EmptyState
+            title={normalizedQuery ? 'No matches' : data.holdings.length ? 'Nothing in this category yet' : 'No investments yet'}
+            subtitle={normalizedQuery ? undefined : 'Your holdings will appear here.'}
+          />
         ) : null}
       </View>
       {data.holdings.length === 0 ? (
@@ -200,8 +232,6 @@ export default function AssetsScreen() {
         Plan values are estimates unless an actual value is supplied.
       </AppText>
     </Screen>
-    <DetailTabBar active="Home" />
-    </>
   );
 }
 

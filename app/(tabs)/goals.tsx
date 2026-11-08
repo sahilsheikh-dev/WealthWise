@@ -1,19 +1,21 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ChipRow, ProgressBar, Screen } from '../../src/components/ui';
+import { AppText, Card, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { efBalance, monthlyBaseline } from '../../src/domain/ef';
+import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
 import { goalProjection } from '../../src/domain/goalLinks';
 import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { SORT_OPTIONS } from '../../src/lib/sorting';
+import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -23,17 +25,19 @@ export default function GoalsScreen() {
   const { colors } = useTheme();
   const data = useAppData();
   const sorting = useSort('goals');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const asOf = todayISO();
-  const emergencyBalance = efBalance(data.efEntries);
-  const expenseBaseline = monthlyBaseline(data.transactions, 'expense', asOf);
+  const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
+  const expenseBaseline = emergencyBaseline.amount;
   const goals = ensureEfGoal(data.goals, {
     expenseBaseline,
     asOf,
   });
-  const totals = goalTotals(goals, emergencyBalance, expenseBaseline, data, asOf);
+  const totals = goalTotals(goals, expenseBaseline, data, asOf);
   const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
   const sortedGoals = sorting.sort(goals.map((goal) => {
-    const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+    const view = goalView(goal, { expenseBaseline, data, asOf });
     return {
       ...goal,
       targetAmount: view.target,
@@ -42,10 +46,44 @@ export default function GoalsScreen() {
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleGoals = normalizedQuery
+    ? sortedGoals.filter((goal) =>
+      `${goal.name} ${goal.auto === 'ef' ? 'Emergency fund' : ''}`.toLowerCase().includes(normalizedQuery),
+    )
+    : sortedGoals;
+  const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
+    || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
 
   return (
     <Screen>
-      <AppHeader title="Goals" rightActions={[{ icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') }]} />
+      <AppHeader
+        title="Goals"
+        rightActions={[
+          {
+            icon: 'filter',
+            label: 'Filter',
+            onPress: () => setFilterPanelOpen((open) => !open),
+            expanded: filterPanelOpen,
+            showIndicator: filterActive,
+          },
+          { icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') },
+        ]}
+      />
+      {filterPanelOpen ? (
+        <View testID="goal-filter-panel">
+          <ChipRow>
+            <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+          </ChipRow>
+        </View>
+      ) : null}
+      <SearchField
+        accessibilityLabel="Search goals"
+        placeholder="Search goal name"
+        value={query}
+        onChangeText={setQuery}
+        onClear={() => setQuery('')}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Total target</AppText>
         <AmountText value={totals.target} tier="hero" weight="bold" style={[typography.big, styles.total]} />
@@ -56,14 +94,18 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      <ChipRow>
-        <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
-      </ChipRow>
-      {sortedGoals.map((goal) => {
-        const view = goalView(goal, { emergencyBalance, expenseBaseline, data, asOf });
+      {visibleGoals.map((goal) => {
+        const view = goalView(goal, { expenseBaseline, data, asOf });
         const projection = goalProjection(goal, data, asOf);
         const { target, saved, pct: goalPercent } = view;
         const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
+        const coverMonths = goal.auto === 'ef' ? monthsCovered(saved, emergencyBaseline.amount) : null;
+        const sharedGoalCount = new Set(
+          goal.links.flatMap((link) =>
+            data.goals
+              .filter((other) => other.id !== goal.id && other.links.some((candidate) => candidate.instrumentId === link.instrumentId))
+              .map((other) => other.id)),
+        ).size;
         return (
           <Pressable
             key={goal.id}
@@ -88,10 +130,14 @@ export default function GoalsScreen() {
                         Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
                       </AppText>
                     ) : null}
+                    {sharedGoalCount > 0 ? (
+                      <AppText style={[typography.meta, { color: colors.text3 }]}>
+                        Also counted in {sharedGoalCount} other goal(s)
+                      </AppText>
+                    ) : null}
               </View>
               <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
             </View>
-            <ProgressBar percent={goalPercent} />
             <View style={styles.amounts}>
               <AppText
                 style={[typography.meta, { color: colors.ok }]}
@@ -104,48 +150,55 @@ export default function GoalsScreen() {
                 <AmountText value={Math.max(0, target - saved)} tier="row" /> left
               </AppText>
             </View>
-            {goal.auto !== 'ef' ? (
+            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
               <View style={styles.projection}>
                 <AppText style={[typography.meta, { color: colors.text2 }]}>
-                  {projection.projectedDate === 'Already reached'
-                    ? 'Already reached'
-                    : projection.projectedDate
-                      ? `Projected completion ${formatDate(projection.projectedDate)}`
-                      : 'Not reachable with current contributions'}
+                  Projected completion {formatDate(projection.projectedDate)}
                 </AppText>
-                {projection.status !== 'none' ? (
-                  <AppText style={[typography.meta, { color: projection.status === 'behind' ? colors.err : colors.primary }]}>
-                    {projection.status === 'on-track'
-                      ? 'On track'
-                      : projection.status === 'ahead'
-                        ? 'Ahead'
-                        : 'Behind'}
-                  </AppText>
-                ) : null}
               </View>
             ) : null}
             {goal.auto === 'ef' ? (
               <>
                 <AppText
                   style={[typography.meta, styles.minimum, { color: colors.text3 }]}
-                  accessibilityLabel={`Minimum 3 months of expenses: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
-                  Minimum 3 months of expenses: <AmountText value={view.minimum ?? 0} tier="row" />
+                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
+                  Minimum 3 months of cover: <AmountText value={view.minimum ?? 0} tier="row" />
                 </AppText>
                 {expenseBaseline > 0 ? (
                   <AppText
                     style={[typography.meta, { color: colors.text3 }]}
-                    accessibilityLabel={`Based on an average of ${formatAmount(expenseBaseline, 'exact', 1)} monthly expenses`}>
-                    Based on an average of <AmountText value={expenseBaseline} tier="row" /> monthly expenses
+                    accessibilityLabel={emergencyBaseline.source === 'expenses'
+                      ? `Based on your average monthly expenses, ${formatAmount(expenseBaseline, 'exact', 1)}`
+                      : 'Based on your monthly income'}>
+                    {emergencyBaseline.source === 'expenses'
+                      ? <>Based on your average monthly expenses: <AmountText value={expenseBaseline} tier="row" /></>
+                      : 'Based on your monthly income'}
                   </AppText>
-                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add expenses to calculate your 3-month minimum</AppText>}
+                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add your monthly income to see cover</AppText>}
+                <View style={styles.emergencyActions}>
+                  <AppText style={[typography.meta, { color: colors.text2 }]}>
+                    {coverMonths === null ? '—' : `${Math.trunc(coverMonths * 10) / 10} mo of cover`}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Track emergency fund"
+                    onPress={(event) => {
+                      event.stopPropagation?.();
+                      router.push('/emergency-fund');
+                    }}>
+                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+                  </Pressable>
+                </View>
                 {view.raised ? (
                   <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
                 ) : null}
               </>
             ) : null}
+            <GoalProgressRow percent={goalPercent} />
           </Pressable>
         );
       })}
+      {normalizedQuery && visibleGoals.length === 0 ? <EmptyState title="No matches" /> : null}
     </Screen>
   );
 }
@@ -161,4 +214,5 @@ const styles = StyleSheet.create({
   projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
   sortRow: { marginHorizontal: 20, marginVertical: 8 },
+  emergencyActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

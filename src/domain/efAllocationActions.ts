@@ -1,4 +1,11 @@
-import { EF_BUCKET_META, EF_BUCKETS, effectiveAllocation, type EfAllocation, validateAllocation } from './efAllocation';
+import {
+  EF_BUCKET_META,
+  EF_BUCKETS,
+  resolveEfAllocation,
+  type EfAllocation,
+  validateAllocation,
+} from './efAllocation';
+import { linkEmergencyGoalAssets } from './goalLinks';
 import type { AppData, EfCustomBucket } from './types';
 
 export class InvalidAllocationError extends Error {
@@ -52,12 +59,6 @@ function validateCustomBuckets(buckets: readonly EfCustomBucket[]): void {
   }
 }
 
-function assertCustomBucket(data: AppData, bucketId: string): EfCustomBucket {
-  const bucket = data.efCustomBuckets.find(({ id }) => id === bucketId);
-  if (!bucket) throw new InvalidEfCustomBucketError('Custom emergency-fund option was not found.');
-  return bucket;
-}
-
 function assertValidLinks(data: AppData, holdingIds: readonly string[]): void {
   if (holdingIds.length > MAX_LINKED_HOLDINGS) {
     throw new InvalidEfCustomBucketError('Link up to 10 investments per option.');
@@ -70,6 +71,34 @@ function assertValidLinks(data: AppData, holdingIds: readonly string[]): void {
   }
 }
 
+export function repairEfLinkedHoldings(data: AppData): { data: AppData; repaired: boolean } {
+  const holdingIds = new Set(data.holdings.map((holding) => holding.id));
+  const efBucketLinks = Object.fromEntries(
+    Object.entries(data.efBucketLinks).map(([bucketId, holdingIdsForBucket]) => [
+      bucketId,
+      holdingIdsForBucket.filter((holdingId) => holdingIds.has(holdingId)),
+    ]),
+  );
+  const bucketIds = Object.values(efBucketLinks).flat();
+  const efGoalId = data.goals.find((goal) => goal.auto === 'ef')?.id;
+  const goals = data.goals.map((goal) => {
+    if (goal.id !== efGoalId && goal.auto !== 'ef') return goal;
+    const links = goal.links.filter((link) => holdingIds.has(link.instrumentId));
+    const withBuckets = bucketIds.reduce((current, holdingId) => {
+      if (current.some((link) => link.instrumentId === holdingId)) return current;
+      return [...current, { instrumentId: holdingId }];
+    }, links);
+    return { ...goal, links: withBuckets };
+  });
+  const repaired =
+    JSON.stringify(data.efBucketLinks) !== JSON.stringify(efBucketLinks) ||
+    JSON.stringify(data.goals) !== JSON.stringify(goals);
+  return {
+    data: repaired ? { ...data, efBucketLinks, goals } : data,
+    repaired,
+  };
+}
+
 export function setEfAllocation(data: AppData, allocation: EfAllocation): AppData {
   const check = validateAllocation(allocation, true, data.efCustomBuckets);
 
@@ -78,78 +107,8 @@ export function setEfAllocation(data: AppData, allocation: EfAllocation): AppDat
   }
   if (!check) throw new InvalidAllocationError();
 
-  return { ...data, efAllocation: effectiveAllocation(allocation, data.efCustomBuckets) };
-}
-
-export function resetEfAllocation(data: AppData): AppData {
-  return { ...data, efAllocation: null };
-}
-
-export function addEfCustomBucket(
-  data: AppData,
-  input: Omit<EfCustomBucket, 'id'>,
-  newId: () => string,
-): AppData {
-  const bucket = { ...input, name: input.name.trim(), id: newId() };
-  const efCustomBuckets = [...data.efCustomBuckets, bucket];
-  validateCustomBuckets(efCustomBuckets);
-  const efAllocation = data.efAllocation === null || data.efAllocation === undefined
-    ? data.efAllocation
-    : { ...data.efAllocation, [bucket.id]: 0 };
-  return { ...data, efCustomBuckets, efAllocation };
-}
-
-export function renameEfCustomBucket(data: AppData, bucketId: string, name: string): AppData {
-  assertCustomBucket(data, bucketId);
-  const efCustomBuckets = data.efCustomBuckets.map((bucket) =>
-    bucket.id === bucketId ? { ...bucket, name: name.trim() } : bucket,
-  );
-  validateCustomBuckets(efCustomBuckets);
-  return { ...data, efCustomBuckets };
-}
-
-export function setEfCustomBucketAccess(
-  data: AppData,
-  bucketId: string,
-  access: EfCustomBucket['access'],
-): AppData {
-  assertCustomBucket(data, bucketId);
-  const efCustomBuckets = data.efCustomBuckets.map((bucket) =>
-    bucket.id === bucketId ? { ...bucket, access } : bucket,
-  );
-  validateCustomBuckets(efCustomBuckets);
-  return { ...data, efCustomBuckets };
-}
-
-export function deleteEfCustomBucket(
-  data: AppData,
-  bucketId: string,
-  options: { moveTo?: string } = {},
-): AppData {
-  assertCustomBucket(data, bucketId);
-  const amount = data.efAllocation?.[bucketId] ?? 0;
-  if (amount > 0 && !options.moveTo) {
-    throw new InvalidEfCustomBucketError('Move this option’s allocation before deleting it.');
-  }
-  const efAllocation = data.efAllocation ? { ...data.efAllocation } : null;
-  if (efAllocation && options.moveTo) {
-    const moveTarget = options.moveTo;
-    const isKnownTarget = EF_BUCKETS.some((id) => id === moveTarget)
-      || data.efCustomBuckets.some(({ id }) => id === moveTarget && id !== bucketId);
-    if (!isKnownTarget || moveTarget === bucketId) {
-      throw new InvalidEfCustomBucketError('Choose another existing option for the allocation.');
-    }
-    efAllocation[moveTarget] = (efAllocation[moveTarget] ?? 0) + amount;
-  }
-  if (efAllocation) delete efAllocation[bucketId];
-  const efBucketLinks = { ...data.efBucketLinks };
-  delete efBucketLinks[bucketId];
-  return {
-    ...data,
-    efCustomBuckets: data.efCustomBuckets.filter(({ id }) => id !== bucketId),
-    efAllocation,
-    efBucketLinks,
-  };
+  const resolved = resolveEfAllocation({ ...data, efAllocation: allocation });
+  return { ...data, efAllocation: resolved.allocation };
 }
 
 export function setEfBucketLinks(data: AppData, bucketId: string, holdingIds: string[]): AppData {
@@ -157,9 +116,13 @@ export function setEfBucketLinks(data: AppData, bucketId: string, holdingIds: st
     || data.efCustomBuckets.some(({ id }) => id === bucketId);
   if (!knownBucket) throw new InvalidEfCustomBucketError('Emergency-fund option was not found.');
   assertValidLinks(data, holdingIds);
+  const uniqueAcrossBuckets = Object.entries(data.efBucketLinks).every(([otherBucketId, existingIds]) =>
+    otherBucketId === bucketId || !holdingIds.some((holdingId) => existingIds.includes(holdingId)));
+  if (!uniqueAcrossBuckets) throw new InvalidEfCustomBucketError('An investment can only be linked once to an option.');
+  const linkedData = linkEmergencyGoalAssets(data, holdingIds);
   return {
-    ...data,
-    efBucketLinks: { ...data.efBucketLinks, [bucketId]: [...holdingIds] },
+    ...linkedData,
+    efBucketLinks: { ...linkedData.efBucketLinks, [bucketId]: [...holdingIds] },
   };
 }
 
@@ -208,10 +171,15 @@ export function saveEfPlan(
     assertValidLinks(data, holdingIds);
     links[mappedId] = [...holdingIds];
   }
+  const linkedHoldingIds = Object.values(links).flat();
+  if (new Set(linkedHoldingIds).size !== linkedHoldingIds.length) {
+    throw new InvalidEfCustomBucketError('An investment can only be linked once to an option.');
+  }
+  const linkedData = linkEmergencyGoalAssets(data, linkedHoldingIds);
   return {
-    ...data,
+    ...linkedData,
     efCustomBuckets: customBuckets,
-    efAllocation: allocation,
+    efAllocation: resolveEfAllocation({ ...linkedData, efCustomBuckets: customBuckets, efAllocation: allocation }).allocation,
     efBucketLinks: links,
   };
 }

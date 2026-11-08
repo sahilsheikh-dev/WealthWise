@@ -1,5 +1,4 @@
 import { addInvestmentEntry } from './investmentActions';
-import { addEfEntry } from './efActions';
 import { addLiability, addLiabilityPayment, type AddLiabilityInput } from './liabilityActions';
 import { NotFoundError } from './actions';
 import { monthKey, shiftMonth } from './dates';
@@ -30,6 +29,12 @@ export type AvailableBalance = {
   invested: number;
 };
 
+export function normalizeMoney(amount: number): number {
+  if (!Number.isFinite(amount)) throw new RangeError('Money amount must be finite.');
+  const rounded = Math.sign(amount) * Math.round((Math.abs(amount) + Number.EPSILON) * 100) / 100;
+  return rounded === 0 ? 0 : rounded;
+}
+
 export function monthEndDate(month: string): ISODate {
   const nextMonth = shiftMonth(month, 1);
   const year = Number(nextMonth.slice(0, 4));
@@ -44,15 +49,23 @@ function sum(rows: Transaction[], predicate: (row: Transaction) => boolean): num
 
 export function monthPositions(transactions: Transaction[]): MonthPosition[] {
   if (transactions.length === 0) return [];
-  const months = transactions.map((row) => monthKey(row.date)).sort();
-  const first = months[0];
-  const last = months[months.length - 1];
-  if (!first || !last) return [];
+  const rowsByMonth = new Map<string, Transaction[]>();
+  let first = '';
+  let last = '';
+  for (const transaction of transactions) {
+    const month = monthKey(transaction.date);
+    const rows = rowsByMonth.get(month);
+    if (rows) rows.push(transaction);
+    else rowsByMonth.set(month, [transaction]);
+    if (first === '' || month < first) first = month;
+    if (month > last) last = month;
+  }
+  if (first === '' || last === '') return [];
   const positions: MonthPosition[] = [];
   let month = first;
   let opening = 0;
   while (month <= last) {
-    const rows = transactions.filter((row) => monthKey(row.date) === month);
+    const rows = rowsByMonth.get(month) ?? [];
     const income = sum(rows, (row) => row.type === 'income');
     const earnedIncome = sum(rows, (row) =>
       row.type === 'income' && !(NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(row.category),
@@ -63,7 +76,7 @@ export function monthPositions(transactions: Transaction[]): MonthPosition[] {
     const ownFunds = sum(rows, (row) => row.type === 'income' && row.category === 'Own funds');
     const expense = sum(rows, (row) => row.type === 'expense');
     const invest = sum(rows, (row) => row.type === 'invest');
-    const closing = opening + income - expense - invest;
+    const closing = normalizeMoney(opening + income - expense - invest);
     positions.push({
       month, opening, earnedIncome, withdrawals, borrowed, loanProceeds, ownFunds,
       expense, invest, closing,
@@ -107,13 +120,6 @@ export function availableBalance(
   };
 }
 
-export function reviewableMonths(data: AppData, today: ISODate): MonthPosition[] {
-  const currentMonth = monthKey(today);
-  return monthPositions(data.transactions)
-    .filter((position) => position.month < currentMonth && Math.abs(position.closing) >= 1)
-    .sort((a, b) => b.month.localeCompare(a.month));
-}
-
 export class AllocationMismatchError extends Error {
   constructor(message = 'Allocations must be positive and no greater than the available amount.') {
     super(message);
@@ -129,7 +135,6 @@ export type ShortfallAllocation =
 
 export type SurplusAllocation =
   | { kind: 'invest'; instrumentId: string; amount: number }
-  | { kind: 'ef'; amount: number }
   | { kind: 'liability'; liabilityId: string; amount: number };
 
 function assertAllocations(allocations: { amount: number }[], available: number): void {
@@ -223,11 +228,6 @@ export function fundShortfall(
       return appendOriginTransaction(result, liability, allocation.amount, 'Loan proceeds', newId, date);
     }
     if (allocation.kind === 'withdrawal') {
-      if (allocation.instrumentId === 'ef') {
-        return addEfEntry(result, {
-          date, amount: -allocation.amount, note: 'Withdrawal',
-        }, { newId });
-      }
       return addInvestmentEntry(result, allocation.instrumentId, {
         date, amount: allocation.amount, kind: 'Withdrawal', note: 'Withdrawal',
       }, newId, date);
@@ -260,9 +260,6 @@ export function allocateSurplus(
       return addInvestmentEntry(result, holding.id, {
         date: input.date, amount: allocation.amount, kind: 'Deposit', note: 'Deposit',
       }, newId, today);
-    }
-    if (allocation.kind === 'ef') {
-      return addEfEntry(result, { date: input.date, amount: allocation.amount, note: 'Deposit' }, { newId });
     }
     const liability = result.liabilities.find((item) => item.id === allocation.liabilityId);
     if (!liability) throw new NotFoundError('Liability', allocation.liabilityId);
@@ -333,11 +330,6 @@ export function recordMoneyMovement(
     }, { newId });
   }
   if (movement.kind === 'withdraw') {
-    if (movement.instrumentId === 'ef') {
-      return addEfEntry(data, {
-        date: movement.date, amount: -movement.amount, note: movement.note ?? 'Withdrawal',
-      }, { newId });
-    }
     return addInvestmentEntry(data, movement.instrumentId, {
       date: movement.date,
       amount: movement.amount,

@@ -14,10 +14,12 @@ export function DueActions({
   target,
   pendingCount,
   nextAmount,
+  stopParentPress = false,
 }: {
   target: DueTarget;
   pendingCount: number;
   nextAmount: number;
+  stopParentPress?: boolean;
 }) {
   const actions = useAppActions();
   const inProgress = useRef(false);
@@ -72,16 +74,20 @@ export function DueActions({
         icon="check"
         variant="primary"
         disabled={busy || pendingCount < 1}
-        onPress={clear}
+        onPress={(event) => {
+          if (stopParentPress) event?.stopPropagation();
+          clear();
+        }}
       />
       {pendingCount >= 2 ? (
         <Button
           label="Clear past dues"
           icon="clock"
           disabled={busy}
-          onPress={() => router.push(
-            `/clear-dues?kind=${target.kind}&id=${encodeURIComponent(target.id)}` as Href,
-          )}
+          onPress={(event) => {
+            if (stopParentPress) event?.stopPropagation();
+            router.push(`/clear-dues?kind=${target.kind}&id=${encodeURIComponent(target.id)}` as Href);
+          }}
         />
       ) : null}
       {cleared ? (
@@ -90,6 +96,7 @@ export function DueActions({
           actionLabel="Undo"
           onAction={undo}
           onDismiss={() => setCleared(null)}
+          stopParentPress={stopParentPress}
         />
       ) : null}
     </View>

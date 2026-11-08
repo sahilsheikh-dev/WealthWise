@@ -1,41 +1,153 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+> AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
+> finishing, update `status.md` and `open-items.md` there.
 
-## Expo has changed — do not trust your training data
+This `AGENTS.md` is the repository's single instruction entry point for every
+AI tool. Keep tool-specific instruction files out of the repository; update
+these shared instructions instead.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+Reports, audits and generated output belong in chat or `/tmp`; release content
+must remain in Git and never be placed under `/tmp`. Routine documentation
+changes in Git are limited to `docs/memory/*`, `docs/PROGRESS.md`, and
+`docs/releases/**`, including release drafts. Change other documentation only
+when the owner explicitly requests those files.
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
+(`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
+`engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
 
-## Commands
+## COMMON RULES
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+These COMMON RULES apply to every prompt and task, whether or not a prompt
+repeats or pastes them. If a task explicitly authorizes a narrower exception,
+apply only that exception and preserve all other rules.
+
+- **R1 — Preflight and commits:** before other work, list every dirty file and
+  run `git diff --stat` plus the complete diff. Before each commit, show the
+  proposed subject and staged diff-stat. Commit exactly the named files, use
+  one commit per unrelated area, and use a descriptive Conventional Commit
+  subject stating what changed. Subjects require one of `feat`, `fix`, `docs`,
+  `test`, `chore`, `refactor`, `perf`, `style`, `build`, `ci`, or `revert`;
+  optional scopes are allowed. Use a descriptive subject and never bypass
+  the hook, which rejects prohibited placeholder subjects. Preserve owner
+  edits; never use checkout, restore, stash, reset, or old-code reapplication
+  to undo them. Enable the hook with
+  `git config core.hooksPath .githooks`.
+- **R2 — Phase and revision IDs:** align work with its existing phase. A fix
+  to a completed subtask stays in that phase and uses `<ID>-R<n>`; the
+  original row must say `Revised by <ID>-R<n>`. Create a new phase only for
+  genuinely new work.
+- **R3 — History, pushes and release approval:** agents do not push unless
+  the owner explicitly authorizes it, and never force-push or rewrite history.
+  Never publish releases or create, move, or delete release tags without
+  explicit owner approval.
+- **R4 — Documentation scope:** routine Git documentation is limited to
+  `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
+  `SECURITY.md`, and `.github/**`. Change other documentation only when
+  explicitly authorized. Reports and generated output belong in chat or
+  `/tmp`; release content must remain in Git, never `/tmp`.
+
+### Branching
+
+- `main` is stable, released code; changes arrive by release or hotfix merge
+  and receive a `vX.Y.Z` tag. The initial branching adoption baseline may
+  contain legacy unreleased history; this rule applies prospectively.
+- `develop` is the integration branch and must pass all six gates.
+- Create one `phase/NN-slug` branch per phase from `develop`. A revision to a
+  completed phase reopens its existing phase branch from `develop` (R2).
+- Create `task/ID-slug` branches from their phase branch, one per subtask or
+  revision. Example: `task/P29-AB-R2-income-rows`.
+- Create `release/vX.Y.Z` from `develop` for versioning, changelog and draft
+  notes. Merge it `--no-ff` into `main`, tag it, then back-merge into
+  `develop`. Create `hotfix/vX.Y.Z` from `main`, then merge to `main`, tag,
+  and merge to `develop`.
+- External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
+  into `develop`. Contributor PRs are squash-merged with a Conventional
+  Commit title.
+- Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
+  release/hotfix to `main` with `--no-ff`. Agents never commit directly to
+  `main` or `develop`, except the explicitly authorized bootstrap. Delete
+  merged task branches and keep phase branches. Do not push unless asked;
+  report merge commands in chat.
+
+### Gates
+
+Run these six gates in order and record each real exit code:
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
 ```
 
-Run lint and typecheck before declaring any task done.
+Expo exports are allowed when required. EAS builds and local Gradle builds
+are not authorized unless explicitly requested.
 
-## Navigation & Routing
+## Project rules
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- If an owner edit causes a test failure, update the test to match the source
+  and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
+- Read `docs/PROGRESS.md` before changing behavior; update its decision and
+  verification records with the same task commit.
+- Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
+  authorization. Preserve the separately hashed files listed in
+  `docs/memory/rules.md`.
+- Keep `src/domain/` pure: no React/Expo imports, clock reads or randomness.
+  Inject dates and identifiers.
+- A multi-entity action must be one pure domain action and one Zustand store
+  `set`, producing one persisted write.
+- Use Expo Router for navigation. Forms use React Hook Form `Controller` and
+  `useWatch`; React Compiler is enabled.
+- Do not use `!` or `as` to silence nullability in `app/` or
+  `src/components/`. Format amounts with `AmountText` or `formatAmount` and an
+  explicit display tier.
+- Keep tabs Home, Transactions, Goals and Budget. Preserve the Budget cash-flow
+  labels, `SortChip.tsx`, `src/lib/sorting.ts`, frozen inputs in
+  `src/components/form/`, and the `formComponentsFrozen` test unless the task
+  explicitly requires a change.
+- Do not weaken assertions. If a design is superseded, document the old
+  assertion, its replacement and the reason in `docs/PROGRESS.md`.
+- Check the installed Expo major version before using Expo APIs and consult
+  matching Expo documentation. Keep native changes in app config/plugins;
+  do not hand-edit generated native files.
+- For every GitHub release, attach the Android APK named exactly
+  `WealthWise-android.apk`. Anyone starting or continuing release work
+  creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
+  subject `docs: draft vX.Y.Z release notes`. After publication is verified,
+  move it to `docs/releases/published/` and commit the move; never leave a
+  published file in drafts or a draft in published. Include the Download
+  block and SHA-256 in published Markdown and the GitHub release body. The
+  README Download section and latest release Download block must be identical
+  and use the latest route; older releases use their own versioned link. When
+  adding a Download block to an existing published note, add or replace only
+  that block; do not otherwise rewrite the file. When a newer version is
+  published, change only the previous release's Download block to its
+  versioned link. Verify both download links
+  with `curl -I -L`; both must return HTTP 200 and the APK hash must match.
+  Record EAS build ID, Android `versionCode`, source commit and artifact in
+  the `release-history.md` Builds table. A release is incomplete until both
+  links return 200, the hash matches, and the README, published Markdown,
+  release history and GitHub assets agree. Follow
+  `docs/releases/build-config.md`; production Android AABs go to Google Play
+  and APKs to GitHub. iOS distribution is not currently offered.
 
-## Building with EAS
+## Schema and verification
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+Current persisted schema version: **22**. Preserve migration and backup-import
+compatibility.
 
-## Rules
+Run the gates in this order, recording each exit code:
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+```bash
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
+```
+
+Layout tests are simulated. Record physical-device checks that remain
+unverified in `docs/PROGRESS.md`.
