@@ -132,17 +132,18 @@
   task-to-phase PR #42; phase-to-develop PR #43.
 - **Phase 32 screenshots:** supplied screenshots are embedded in README and
   versioned Markdown. The v1.0.0 and v1.1.0 assets are attached to their
-  GitHub releases. The v1.1.1 screenshot is in its owner-approved release
-  draft; attach it to the matching GitHub Release after code is merged. The
-  temporary capture script remains outside the
+  GitHub releases. The v1.1.1 screenshot is attached to its GitHub Release
+  draft, created after code was merged. The temporary capture script remains
+  outside the
   repository and must be deleted after use; it must never be uploaded or
   included in an app build.
 - **v1.1.1 release candidate:** the owner approved the patch-release Markdown
   draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
   Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is based on
-  merged `develop`. Prepare the GitHub Release draft next. The owner APK
-  build/upload, artifact verification and publication remain pending; wait
-  for owner confirmation before verification. Direct source-tree comparison
+  merged `develop`. The GitHub Release draft is created with the versioned
+  screenshot attached. The owner APK build/upload, artifact verification and
+  publication remain pending; wait for owner confirmation before
+  verification. Direct source-tree comparison
   confirms v1.1.0 contains the P30 SQLite persistence repair; v1.0.0 predates
   that repair. Neither release should be described as bug-free, and user
   impact is not established by the available checks.
