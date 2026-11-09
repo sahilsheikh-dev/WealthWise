@@ -35,6 +35,13 @@ the `/latest/` route. Do not include an APK checksum in release material.
 Embed reviewed, version-specific images from
 `docs/releases/screenshots/vX.Y.Z/` using synthetic demo data only. In GitHub
 Release bodies, use the absolute URL of the matching attached image asset.
+Include every screenshot supplied for the release. If no screenshots are
+supplied, reuse the previous release's complete set for this version and the
+README, preserving the original image bytes under the new versioned directory.
+Render thumbnails at 150 pixels wide in table rows with no more than four
+screenshots per row. Order them Home, Assets, Liabilities, Emergency Fund,
+Goals, Insurance, Budget, Transactions; omit screens unavailable for the
+release.
 Never include personal phone data or a capture script.
 
 ## What's Included
@@ -54,16 +61,6 @@ Never include personal phone data or a capture script.
 ## Breaking Changes and Migration
 
 - [Breaking change and required action, or "None."]
-
-## Contributors
-
-List only contributors verified from commits included in this release. Use
-their GitHub username and profile link, following the format in the latest
-published release. Do not use a generic placeholder such as "WealthWise
-contributors," and do not copy previous-release contributors unless they also
-contributed to this release.
-
-- [GitHub username](https://github.com/GitHub-username)
 
 ## Known Limitations
 
