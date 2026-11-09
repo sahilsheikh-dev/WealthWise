@@ -103,10 +103,11 @@ Exclude:
    phase -> `develop` using PRs and the required gates. Never build from an
    unmerged branch. Release notes and GitHub release bodies must not contain a
    Contributors section.
-3. Use all screenshots explicitly supplied for a release. If none are
-   supplied, reuse the previous release's complete screenshot set for the
-   new release and README, preserving the original image bytes under the new
-   versioned screenshot directory.
+3. Use all screenshots explicitly supplied for a release. Name each image
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach it to the matching
+   GitHub Release. Do not retain screenshot files in the repository. If none
+   are supplied, reuse the previous published release's complete set and
+   attach it under the new version's filenames.
 4. After the changes merge to `develop`, create `release/vX.Y.Z` at that
    source and create the GitHub Release draft at the release-branch commit.
    The draft may create the version tag; do not retarget it. Attach every
@@ -173,9 +174,11 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   commit the move; never leave a published file in drafts or a draft in
   published. Release content is never stored in `/tmp`.
 - For every GitHub release:
-  - Attach the current/latest Android APK as
-    `WealthWise-android-latest-vX.Y.Z.apk`; use that filename on the
-    `/latest/` download URL.
+  - Only the latest **published** release may say `Latest version` or use the
+    `/latest/` download URL and filename
+    `WealthWise-android-latest-vX.Y.Z.apk`. A draft does not become latest
+    until publication. Previous versions say `Version`, use their own
+    versioned APK filename and direct URL, and contain no `latest` wording.
   - When publishing a newer version, remove `latest` from the previous
     release asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and
     update the previous release link to the matching versioned filename.
@@ -188,13 +191,14 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   - Update the README Download and What's new sections and its releases-page
     link for every release.
   - Include every supplied screenshot in that version's release Markdown and
-    GitHub Release body. README's Screenshots section contains only the latest
-    release's complete image set, without a version title. Store only approved
-    images under versioned paths in `docs/releases/screenshots/vX.Y.Z/`; attach
-    the same images to the matching GitHub Release and test every rendered URL.
-    Include every image supplied for the version. If none are supplied, reuse
-    the previous release's complete image set for the new version and README;
-    preserve original image bytes under the new versioned directory.
+    GitHub Release body using absolute asset URLs. Name each asset
+    `WealthWise-vX.Y.Z-screenshot-<screen>.png` and store it only on the
+    matching GitHub Release; do not retain a `docs/releases/screenshots/`
+    directory. README's Screenshots section contains only the latest
+    published release's complete image set, without a version title. If no
+    screenshots are supplied, reuse the previous published release's complete
+    image set and attach it under the new version's filenames. Verify every
+    rendered asset URL before removing any local screenshot folder.
     Render images at 150 pixels wide in table rows, with no more than four
     screenshots per row. Order categories Home, Assets, Liabilities,
     Emergency Fund, Goals, Insurance, Budget, Transactions; omit unavailable

@@ -15,19 +15,20 @@
   notification/SMS detection are Held for later. Notes includes text, voice/
   audio recordings, photos and videos. Skeleton loading is planned in Phase
   38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
-- **Release screenshots and APK handoff:** the owner supplied 23
-  version-specific screenshots (7 for v1.0.0, 8 for v1.1.0 and 8 for
-  v1.1.1). They are in versioned repository paths and attached to their
-  corresponding GitHub releases. README shows only the latest set; historical
-  sets remain in their matching notes. The release process requires note
-  approval, moving the finalized note to `published/`, PR integration, then
-  creation of a GitHub Release draft. The agent then builds the APK with EAS
-  `android-apk`, uploads it, and verifies the artifact; publication still
-  requires separate approval. The policy revision is integrated by task PR
-  #60 and Phase 28 PR #61. For v1.1.1, the owner already started this profile's
-  build before the rule changed. It was still in progress at 19:46 on
-  2026-11-09; wait for its APK path and upload/verify that artifact without
-  starting a duplicate build.
+- **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
+  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) are attached to their
+  matching GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`.
+  The local screenshot folder is removed; Markdown embeds absolute asset
+  URLs. Public v1.0.0/v1.1.0 screenshot URLs are verified. The v1.1.1 draft's
+  assets are verified but not anonymously downloadable until publication.
+  The owner-provided APK for EAS build
+  `ecc97480-7229-41ac-8aad-64ea2cd255b5` is byte-verified against EAS
+  (app 1.1.1, `android-apk`, `versionCode` 2) and attached to the GitHub
+  draft. v1.1.0 remains latest-published until separate publication approval;
+  the APK and screenshot URLs, README gallery, and Download block must be
+  rolled over only after approval. Release notes and README reference the
+  latest published screenshot set. The latest/versioned APK links and release
+  publication remain pending the approval/merge workflow.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
@@ -139,27 +140,30 @@
   versioned Markdown. The owner supplied 23 versioned screenshots, visually
   showing synthetic demo content. Their version-specific assets are attached
   to the corresponding v1.0.0, v1.1.0 and v1.1.1 GitHub releases. The
-  v1.1.1 draft body currently references public v1.1.0 image assets so its
-  screenshots render before publication; its own versioned assets are also
-  attached. All galleries use 150-pixel thumbnails, with at most four
-  screenshots per row. README contains only the latest set under the generic
-  Screenshots heading; historical galleries remain in their release notes.
-  Galleries follow the requested Home, Assets, Liabilities, Emergency Fund,
-  Goals, Insurance, Budget, Transactions order, omitting unavailable screens.
+  v1.1.1 draft body and release note use its versioned asset URLs; draft assets
+  are not publicly downloadable until publication. The local screenshot
+  folder has been removed. All galleries use 150-pixel thumbnails, with at
+  most four screenshots per row. README contains only the latest published
+  set under the generic Screenshots heading; historical galleries remain in
+  their release notes. Galleries follow the requested Home, Assets,
+  Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions order,
+  omitting unavailable screens.
   The v1.1.1 note contains all template sections, has owner approval and is
-  moved to `published/`; required PR integration is in progress.
-  The temporary capture script remains outside the repository and
-  must be deleted after use; it must never be uploaded or included in an app
-  build.
+  moved to `published/`; task PR #64 is merged, and Phase PR #65 promotes the
+  screenshot/documentation update to `develop`.
+  No capture script is in the repository; any future one-off script must stay
+  outside it, never be uploaded or included in an app build, and be deleted
+  after use.
 - **v1.1.1 release candidate:** the owner approved the patch-release Markdown
   draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
   Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is based on
   merged `develop`. The GitHub Release draft was created before the revised
   note-approval rule and remains at its original target. The owner approved
-  the complete note, which is now in `published/`; the screenshot/document
-  revision still needs task/phase/develop PR integration. APK build/upload,
-  artifact verification and publication remain pending; N44 is
-  owner-reported Pass, but the release APK has not been built or tested.
+  the complete note, which is now in `published/`; task PR #64 is merged, and
+  Phase PR #65 promotes the screenshot/documentation update to `develop`. The
+  owner-run EAS APK build is complete, the artifact was verified against EAS
+  and attached to the draft; publication remains pending separate approval.
+  N44 is owner-reported Pass.
   Direct source-tree comparison confirms v1.1.0
   contains the P30 SQLite persistence repair; v1.0.0 predates that repair.
   Neither release should be described as bug-free, and user impact is not
