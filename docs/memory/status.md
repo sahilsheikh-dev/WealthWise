@@ -49,9 +49,10 @@
 - P28-F-R4-R1-R1-R1-R1-R1 release-asset revision: the release naming and
   latest-published rules, screenshot embeds and release bodies are aligned;
   the local screenshot folder and temporary asset/APK copies are removed.
-  The focused documentation tests and all six ordered gates pass. Task/Phase
-  28 PR integration is still pending. v1.1.1 remains a GitHub draft; v1.1.0
-  remains latest published, and publication/tag rollover was not performed.
+  The focused documentation tests and all six ordered gates pass. Task PR
+  #64 merged into Phase 28 as `dd8c6b6`; Phase PR #65 carries the change to
+  `develop`. v1.1.1 remains a GitHub draft; v1.1.0 remains latest published,
+  and publication/tag rollover was not performed.
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite
