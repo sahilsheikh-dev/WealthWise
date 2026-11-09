@@ -4,9 +4,9 @@
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite
-  those edits only on explicit request. Task branch:
-  `task/P20-S-R1-R1-preserve-owner-edits`; PR evidence will be recorded in
-  [PROGRESS.md](../PROGRESS.md).
+  those edits only on explicit request. Commit `e955021` is merged by task PR
+  #44 into Phase 20; phase PR #45 is the promotion to `develop`. Details are
+  recorded in [PROGRESS.md](../PROGRESS.md).
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. `develop` began at main baseline

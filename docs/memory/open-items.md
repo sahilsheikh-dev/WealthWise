@@ -7,8 +7,8 @@
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
-  explicitly requested. PR integration evidence is in
-  [PROGRESS.md](../PROGRESS.md).
+  explicitly requested. Task PR #44 is merged; phase PR #45 promotes the
+  revision to `develop`. See [PROGRESS.md](../PROGRESS.md).
 - **Release 2 device checks N39-N43:** the owner reported all five checks Pass
   on 2026-11-08. The device checklist records Pass for income recurrence and
   backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
