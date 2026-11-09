@@ -6,9 +6,10 @@
   task passed all six gates; the same ordered gates passed after the
   screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. Task PRs #56 and #58 and Phase 28 PRs #57 and #59 are merged to
-  `develop`. `release/v1.1.1` and its GitHub Release draft remain at their
-  original release target; all eight screenshots are attached.
+  passed. Task PRs #56, #58 and #60 and Phase 28 PRs #57, #59 and #61 are
+  merged to `develop`. `release/v1.1.1` and its
+  GitHub Release draft remain at their original release target; all eight
+  screenshots are attached.
 - The owner started an EAS `android-apk` build for v1.1.1; it was in progress
   at 19:46 on 2026-11-09, and no APK is attached to the GitHub draft yet. Do
   not start a duplicate build. For this already-running build, the owner will

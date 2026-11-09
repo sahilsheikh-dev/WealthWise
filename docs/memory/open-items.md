@@ -23,10 +23,11 @@
   approval, moving the finalized note to `published/`, PR integration, then
   creation of a GitHub Release draft. The agent then builds the APK with EAS
   `android-apk`, uploads it, and verifies the artifact; publication still
-  requires separate approval. For v1.1.1, the owner already started this
-  profile's build before the rule changed. It was still in progress at
-  19:46 on 2026-11-09; wait for its APK path and upload/verify that artifact
-  without starting a duplicate build.
+  requires separate approval. The policy revision is integrated by task PR
+  #60 and Phase 28 PR #61. For v1.1.1, the owner already started this profile's
+  build before the rule changed. It was still in progress at 19:46 on
+  2026-11-09; wait for its APK path and upload/verify that artifact without
+  starting a duplicate build.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
