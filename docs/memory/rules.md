@@ -53,10 +53,16 @@
   Release content, including checklists, belongs in `docs/releases/` and never
   in `/tmp`.
 - Anyone starting or continuing release work creates or reuses
-  `docs/releases/drafts/vX.Y.Z.md` and commits it as
-  `docs: draft vX.Y.Z release notes`. After publication is verified, move the
-  file into `docs/releases/published/` and commit the move. Never leave a
-  published file in drafts or a draft in published.
+  `docs/releases/drafts/vX.Y.Z.md`. Do not commit it before owner approval of
+  the Markdown draft; then include it in the approved task -> phase ->
+  `develop` PR path with subject `docs: draft vX.Y.Z release notes`. After
+  publication is verified, move the file into `docs/releases/published/` and
+  commit the move. Never leave a published file in drafts or a draft in
+  published.
+- After approved changes merge to `develop`, create a GitHub Release draft
+  and notify the owner. The owner builds from the merged source, uploads the
+  APK and confirms; only then verify the artifact and continue. Publication
+  still requires separate explicit approval.
 - Name the current release APK `WealthWise-android-latest-vX.Y.Z.apk` and use
   that filename on the latest download route. On supersession, remove
   `latest` from the old asset name, rename it to
