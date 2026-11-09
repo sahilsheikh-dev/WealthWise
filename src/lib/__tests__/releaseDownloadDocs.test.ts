@@ -32,7 +32,7 @@ function readScreenshotRowCounts(table: string): number[] {
 }
 
 function readScreenshotCategories(table: string): string[] {
-  return [...table.matchAll(/<img\b[^>]*src="[^"]*WealthWise-v\d+\.\d+\.\d+-([a-z-]+)\.png"/g)]
+  return [...table.matchAll(/<img\b[^>]*src="[^"]*WealthWise-v\d+\.\d+\.\d+-screenshot-([a-z-]+)\.png"/g)]
     .map((match) => match[1] ?? '');
 }
 
@@ -65,6 +65,26 @@ describe('published release download documentation', () => {
         `${releasesBaseUrl}/download/${version}/WealthWise-android-${version}.apk`,
       );
       expect(block).not.toContain(`WealthWise-android-latest-${version}.apk`);
+    }
+  });
+
+  it('uses latest wording only for the latest published release', () => {
+    const readmePath = join(root, 'README.md');
+    const latestVersion = readLatestVersion(
+      readDownloadBlock(readFileSync(readmePath, 'utf8'), readmePath),
+    );
+    const releaseHistoryPath = join(root, 'docs', 'releases', 'release-history.md');
+    const publishedVersions = readPublishedVersions(readFileSync(releaseHistoryPath, 'utf8'));
+
+    for (const version of publishedVersions) {
+      const filePath = join(publishedDirectory, `${version}.md`);
+      const release = readFileSync(filePath, 'utf8');
+      if (version === latestVersion) {
+        expect(release).toContain(`Latest version: ${version}`);
+      } else {
+        expect(release).toContain(`Version: ${version}`);
+        expect(release).not.toMatch(/latest/i);
+      }
     }
   });
 
@@ -144,13 +164,18 @@ describe('published release download documentation', () => {
     expect(template).toContain('## Screenshots');
     expect(template).toContain('synthetic demo data only');
     expect(template).toContain('Never include personal phone data or a capture script.');
-    expect(template).toContain('absolute URL of the matching attached image asset');
+    expect(template).toContain('version-specific image assets attached to the matching GitHub Release');
     expect(template).toContain('Order them Home, Assets, Liabilities, Emergency Fund');
+    expect(template).toContain('WealthWise-vX.Y.Z-screenshot-<screen>.png');
+    expect(template).toContain('do not store screenshot files in the repository');
     expect(releaseConfig).toContain('one-off capture script outside the repository');
     expect(releaseConfig).toContain('owner has explicitly authorized adding release-specific screenshots');
-    expect(releaseConfig).toContain('reuse the previous release\'s complete screenshot set');
+    expect(releaseConfig).toContain('reuse the previous published release\'s complete set');
     expect(releaseConfig).toContain('eas build --platform android --profile android-apk');
     expect(releaseConfig).toContain('Do not wait for the owner to build or upload it manually');
+    expect(releaseConfig).toContain('latest **published** release');
+    expect(releaseConfig).toContain('WealthWise-vX.Y.Z-screenshot-<screen>.png');
+    expect(releaseConfig).toContain('do not retain a `docs/releases/screenshots/` directory');
     expect(releasePrompt).toContain('existing v1.0.0 and v1.1.0 published notes');
     expect(releasePrompt).toContain('attach them to the matching GitHub Release');
     expect(releasePrompt).toContain('delete it after capture');
@@ -160,6 +185,7 @@ describe('published release download documentation', () => {
     expect(releasePrompt).toContain('move the note to `docs/releases/published/vX.Y.Z.md`');
     expect(releaseOverview).toContain('eas build --platform android --profile android-apk');
     expect(releaseOverview).toContain('Do not wait for the owner to build');
+    expect(releaseOverview).toContain('latest **published** release');
     expect(releaseConfig).toContain('Include every supplied screenshot');
     expect(buildConfig).toContain('builds the Android APK from the release branch');
     expect(buildConfig).toContain('eas build --platform android --profile android-apk');
@@ -171,7 +197,7 @@ describe('published release download documentation', () => {
     expect(readmeScreenshotTables).toHaveLength(1);
     for (const [, table = ''] of readmeScreenshotTables) {
       expect(readScreenshotRowCounts(table)).toEqual([4, 4]);
-      expect(readScreenshotCategories(table)).toEqual(screenshotSets['v1.1.1']);
+      expect(readScreenshotCategories(table)).toEqual(screenshotSets['v1.1.0']);
       expect([...table.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
       )).toBe(true);
@@ -191,18 +217,16 @@ describe('published release download documentation', () => {
       )).toBe(true);
 
       for (const category of categories) {
-        const imageName = `WealthWise-${version}-${category}.png`;
-        const repositoryImagePath = `docs/releases/screenshots/${version}/${imageName}`;
-        const releaseImagePath = `../screenshots/${version}/${imageName}`;
-        expect(existsSync(join(root, repositoryImagePath))).toBe(true);
-        if (version === 'v1.1.1') {
-          expect(readme).toContain(repositoryImagePath);
-        } else {
-          expect(readme).not.toContain(repositoryImagePath);
-        }
-        expect(releaseContents).toContain(releaseImagePath);
+        const imageName = `WealthWise-${version}-screenshot-${category}.png`;
+        const releaseImageUrl = `${releasesBaseUrl}/download/${version}/${imageName}`;
+        expect(releaseContents).toContain(releaseImageUrl);
+        expect(readme).toContain(
+          `${releasesBaseUrl}/download/v1.1.0/WealthWise-v1.1.0-screenshot-${category}.png`,
+        );
       }
     }
+    expect(readme).not.toContain('docs/releases/screenshots/');
+    expect(existsSync(join(root, 'docs', 'releases', 'screenshots'))).toBe(false);
 
     const releaseNote = readFileSync(
       join(root, 'docs', 'releases', 'published', 'v1.1.1.md'),

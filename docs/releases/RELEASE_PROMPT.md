@@ -352,7 +352,7 @@ If versioning is uncertain, request clarification.
 
 ---
 
-## 10. Generate Release Notes
+## 9. Generate Release Notes
 
 Use the reusable release-notes skeleton defined in:
 
@@ -366,7 +366,6 @@ Follow these requirements:
 - User-focused descriptions.
 - Accurate PR links.
 - Breaking changes and migration steps.
-- New contributors when verified.
 - Correct full changelog URL.
 
 Write in clear, professional, straightforward English.
@@ -393,7 +392,7 @@ Never invent PR numbers, issue numbers, usernames, or URLs.
 
 ---
 
-## 11. Save Release Draft
+## 10. Save Release Draft
 
 Store unpublished release notes in:
 
@@ -429,7 +428,7 @@ Do not publish at this stage.
 
 ---
 
-## 12. Mandatory Approval Gate
+## 11. Mandatory Approval Gate
 
 Present the following to the user:
 
@@ -452,7 +451,7 @@ Never create tags or GitHub Releases without approval.
 
 ---
 
-## 13. Merge, build and publish the GitHub Release
+## 12. Merge, build and publish the GitHub Release
 
 After the owner explicitly approves the Markdown release draft:
 
@@ -499,7 +498,11 @@ For every GitHub release:
 
 2. Add the version, release date, asset link, iOS availability message and
    releases-page link to the Download block in the published Markdown and
-   GitHub release body. Verify the APK digest privately against the build
+   GitHub release body. The latest **published** version alone may say
+   `Latest version` or use `/latest/`; a draft does not become latest until
+   publication. Previous release notes say `Version`, use their direct
+   version-specific URL and filename, and contain no `latest` wording. Verify
+   the APK digest privately against the build
    artifact, but never include it in human-authored release material. GitHub
    may expose a platform-generated asset digest that cannot be removed by
    editing the release. The latest published block must match the README and
@@ -511,11 +514,11 @@ For every GitHub release:
    published note, add or replace only that block; do not otherwise rewrite
    the file.
 
-3. Keep the README Download section and the latest release Download block
-   byte-identical. When a newer version is published, rename only the previous
-   release asset by removing `latest` from its filename, then replace only
-   that release's Download block with its version-specific URL and filename;
-   do not change anything else in that old note.
+3. Keep the README Download section and the latest published release Download
+   block byte-identical. When a newer version is published, rename only the
+   previous release asset by removing `latest` from its filename, then replace
+   only that release's Download block with its version-specific URL and
+   filename; do not change anything else in that old note.
 4. Verify the current latest link and every affected versioned direct Android
    link with `curl -I -L`; record final HTTP status and `Content-Length`. Each
    must return HTTP 200 with the expected artifact size. Verify digests
@@ -543,10 +546,13 @@ For every GitHub release:
    README, published Markdown, `release-history.md` and GitHub release assets
    agree. The release remains incomplete until every check passes.
 8. Add every supplied screenshot to the release's published Markdown and
-   GitHub Release body. Keep only the latest release's complete screenshot set
-   in the README Screenshots section, without a version title. Store only
-   reviewed images under `docs/releases/screenshots/vX.Y.Z/`, attach them to
-   the matching GitHub Release, and verify that each rendered image link
+   GitHub Release body. Name assets
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach them to the
+   matching GitHub Release only; do not retain screenshot files in the
+   repository.
+   Keep only the latest published release's complete screenshot set in the
+   README Screenshots section, without a version title. Use absolute URLs for
+   the attached release assets and verify that each rendered image link
    works. Display thumbnails at 150 pixels wide, with no more than four per
    row, ordered Home, Assets, Liabilities, Emergency Fund, Goals, Insurance,
    Budget, Transactions; omit unavailable screens. For v1.0.0, v1.1.0 and future releases, use screenshots from
@@ -588,10 +594,10 @@ Never claim success unless GitHub confirms publication.
 
 ---
 
-## 14. Pre-draft Release Note Finalization
+## 13. Pre-draft Release Note Finalization
 
 Complete this section after Markdown approval and before the PR integration
-and GitHub Release draft steps in Section 13.
+and GitHub Release draft steps in Section 12.
 
 1. Move the complete, final release notes to:
 
@@ -633,7 +639,7 @@ post-publication note move.
 
 ---
 
-## 15. Safety Requirements
+## 14. Safety Requirements
 
 - Never force-push.
 - Never rewrite Git history.
@@ -654,7 +660,7 @@ If the working tree contains unrelated changes, do not overwrite them.
 
 ---
 
-## 16. Final Validation
+## 15. Final Validation
 
 Before considering the release complete, verify:
 
@@ -675,11 +681,13 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the current release; the `/latest/`
-  route and each affected version-specific route return HTTP 200 with the
-  expected artifact size. When superseding a release, rename that older asset
-  to `WealthWise-android-vX.Y.Z.apk` and update its Download block. Verify the
-  APK digest privately; do not include it in human-authored release material.
+- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the latest published
+  release; the `/latest/` route and each affected version-specific route
+  return HTTP 200 with the expected artifact size. A draft does not become
+  latest until publication. When superseding a release, rename that older
+  asset to `WealthWise-android-vX.Y.Z.apk` and update its Download block.
+  Verify the APK digest privately; do not include it in human-authored release
+  material.
 - Download block in published Markdown and release body; the latest block
   matches the README and older release blocks use versioned links.
 - The current `/latest/` link and each affected version-specific link checked
@@ -691,17 +699,19 @@ Before considering the release complete, verify:
   release assets.
 - Every supplied version-specific screenshot appears in that release's
   published Markdown and GitHub Release body and is attached to that GitHub
-  Release. The README Screenshots section contains only the latest release's
-  complete screenshot set and has no version title. If none were supplied,
-  reuse the previous release's complete screenshot set for the new release
-  and README. Order thumbnails Home, Assets, Liabilities, Emergency Fund,
+  Release under `WealthWise-vX.Y.Z-screenshot-<screen>.png` names. The README
+  Screenshots section contains only the latest published release's complete
+  screenshot set and has no version title. Do not retain screenshots in the
+  repository. If none were supplied, reuse the previous published release's
+  complete screenshot set for the new release and README. Order thumbnails
+  Home, Assets, Liabilities, Emergency Fund,
   Goals, Insurance, Budget, Transactions. Each image renders. Release notes
   and GitHub release bodies omit a Contributors section. No capture script or
   personal data is included.
 
 ---
 
-## 17. Final Report
+## 16. Final Report
 
 Return:
 

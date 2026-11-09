@@ -126,11 +126,14 @@ require explicit authorization.
 - Check the installed Expo major version before using Expo APIs and consult
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
-- For the current/latest GitHub release, attach the APK as
-  `WealthWise-android-latest-vX.Y.Z.apk`; the `/latest/` URL uses this exact
-  filename. When a newer version is published, remove `latest` from the
-  previous asset name and rename it to `WealthWise-android-vX.Y.Z.apk` before
-  linking it. Each non-latest release uses its own version-specific asset.
+- Treat the latest **published** GitHub release as current; a draft does not
+  become latest until publication. Only the current release's Download block
+  may say `Latest version` or use the `/latest/` route and
+  `WealthWise-android-latest-vX.Y.Z.apk` filename. Previous release notes
+  must say `Version`, use their own versioned APK filename, and contain no
+  `latest` wording or route. When publishing a newer version, rename the
+  previous current APK asset to `WealthWise-android-vX.Y.Z.apk` and update
+  that previous release's Download block and history link.
   Never use the `/latest/` route for an older release. Anyone starting or
   continuing release work creates or reuses
   `docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the
@@ -159,13 +162,15 @@ require explicit authorization.
   be identical.
   Every release updates the README Download and What's new sections and its
   releases-page link. Include all screenshots explicitly supplied for a
-  release in its Markdown and GitHub Release body. The README Screenshots
-  section contains only the latest release's screenshot set and has no
-  version title. If no screenshots are supplied, reuse the previous release's
-  full set for the new release and README, preserving the original image bytes
-  under the new versioned screenshot directory. Display images at 150 pixels
-  wide in table rows, with no more than four screenshots per row. Keep
-  capture scripts outside the app and
+  release in its Markdown and GitHub Release body, named
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Store them only as assets on
+  the matching GitHub Release; do not retain
+  `docs/releases/screenshots/` in the repository. If no screenshots are
+  supplied, reuse the previous release's complete image set and attach it
+  under the new version's filenames. The README Screenshots section contains
+  only the latest published release's screenshot set and has no version title.
+  Display images at 150 pixels wide in table rows, with no more than four
+  screenshots per row. Keep capture scripts outside the app and
   repository. Display categories in this order, omitting unavailable screens:
   Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
   Transactions. Release notes and GitHub release bodies must not contain a
