@@ -1,32 +1,31 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
-- The owner approved the v1.1.1 patch-release draft on 2026-11-09. The app,
+- The owner approved the v1.1.1 patch-release note on 2026-11-09. The app,
   package and lockfile versions are aligned to 1.1.1. The original release
-  task passed all six gates; the same ordered gates passed after the
+  task passed all six gates; the same ordered gates passed after the prior
   screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. Task PRs #56, #58 and #60 and Phase 28 PRs #57, #59 and #61 are
-  merged to `develop`. `release/v1.1.1` and its
-  GitHub Release draft remain at their original release target; all eight
-  screenshots are attached.
-- The owner started an EAS `android-apk` build for v1.1.1; it was in progress
-  at 19:46 on 2026-11-09, and no APK is attached to the GitHub draft yet. Do
-  not start a duplicate build. For this already-running build, the owner will
-  provide the downloaded APK path for private verification and draft upload.
-  For future releases, the release agent builds with `android-apk` and uploads
-  after Markdown approval, merge to `develop`, and GitHub draft creation;
-  publication still requires separate explicit approval.
-- N44 is owner-reported Pass. README shows only the latest screenshot set
-  under the unversioned Screenshots heading; README, release-note and GitHub
-  release galleries use 150-pixel thumbnails, at most four per row, in the
-  owner-specified order: Home, Assets, Liabilities, Emergency Fund, Goals,
-  Insurance, Budget, Transactions. The v1.1.1 note includes every template
-  section and no APK-upload status message. The focused release, ledger and
-  memory tests pass (3 suites, 19 tests); all 23 screenshot assets remain
-  attached to their corresponding releases, and all image links in release
-  bodies return HTTP 200. This documentation-only change does not rerun the
-  six app gates.
+  passed. Task PRs #56, #58, #60 and #62 and Phase 28 PRs #57, #59, #61 and
+  #63 are merged to `develop`. `release/v1.1.1` and its GitHub Release draft
+  remain at the original target.
+- The owner-provided APK for EAS build
+  `ecc97480-7229-41ac-8aad-64ea2cd255b5` finished with app version 1.1.1,
+  Android `versionCode` 2 and profile `android-apk`. Its bytes match the EAS
+  artifact; the 112,150,605-byte APK is attached to the v1.1.1 draft as
+  `WealthWise-android-latest-v1.1.1.apk`. No publication or tag change was
+  made; v1.1.0 remains the latest published release until separate
+  publication approval.
+- N44 is owner-reported Pass. Screenshots are attached to each matching
+  GitHub release using `WealthWise-vX.Y.Z-screenshot-<screen>.png` names;
+  `docs/releases/screenshots/` is removed from the repository. The README
+  gallery points to the latest published v1.1.0 asset set until v1.1.1 is
+  published. The v1.1.0 and v1.0.0 screenshot URLs are public and verified;
+  v1.1.1 draft assets were verified through GitHub asset metadata and remain
+  unavailable to anonymous download until publication. The release prompt
+  heading sequence is corrected, including “Generate Release Notes” as 9.
+  Focused tests and this task's verification results are in the progress
+  ledger; the six app gates are not rerun for this docs/assets revision.
 - Direct comparison confirms the v1.1.0 source tree contains the P30
   persistence repair and its SQLite storage implementation matches current
   develop; v1.0.0 predates that repair.
@@ -35,8 +34,9 @@
   Device Hub.app, synthetic demo data and a one-off script kept outside the
   repository and deleted after use. The owner requests every supplied
   versioned screenshot in README, its release note and matching GitHub
-  release, with all images attached. All 23 supplied screenshots are staged
-  under versioned paths and attached to v1.0.0, v1.1.0 and the v1.1.1 draft.
+  release, with all images attached. All 23 supplied screenshots are attached
+  to v1.0.0, v1.1.0 and the v1.1.1 draft; no screenshot files remain in the
+  repository.
   Release-note Contributors sections were removed. The updated rule requires
   owner approval, full note completion and moving the note to `published/`
   before GitHub draft creation; after draft creation, the agent builds with
@@ -46,6 +46,12 @@
   detection are Held; Notes now includes text, recordings, photos and videos;
   skeleton loading is planned as Phase 38. Details and safeguards are in
   [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- P28-F-R4-R1-R1-R1-R1-R1 release-asset revision: the release naming and
+  latest-published rules, screenshot embeds and release bodies are aligned;
+  the local screenshot folder and temporary asset/APK copies are removed.
+  The focused documentation tests and all six ordered gates pass. Task/Phase
+  28 PR integration is still pending. v1.1.1 remains a GitHub draft; v1.1.0
+  remains latest published, and publication/tag rollover was not performed.
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite

@@ -74,16 +74,16 @@ See the [v1.1.0 changelog](CHANGELOG.md).
 
 <table>
 <tr>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-home.png" alt="WealthWise v1.1.1 Home" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-assets.png" alt="WealthWise v1.1.1 Assets" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-liabilities.png" alt="WealthWise v1.1.1 Liabilities" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-emergency-fund.png" alt="WealthWise v1.1.1 Emergency Fund" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-home.png" alt="WealthWise v1.1.0 Home" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-assets.png" alt="WealthWise v1.1.0 Assets" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-liabilities.png" alt="WealthWise v1.1.0 Liabilities" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-emergency-fund.png" alt="WealthWise v1.1.0 Emergency Fund" width="150"></td>
 </tr>
 <tr>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-goals.png" alt="WealthWise v1.1.1 Goals" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-insurance.png" alt="WealthWise v1.1.1 Insurance" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-budget.png" alt="WealthWise v1.1.1 Budget" width="150"></td>
-<td><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-transactions.png" alt="WealthWise v1.1.1 Transactions" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-goals.png" alt="WealthWise v1.1.0 Goals" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-insurance.png" alt="WealthWise v1.1.0 Insurance" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-budget.png" alt="WealthWise v1.1.0 Budget" width="150"></td>
+<td><img src="https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-screenshot-transactions.png" alt="WealthWise v1.1.0 Transactions" width="150"></td>
 </tr>
 </table>
 

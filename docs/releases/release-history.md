@@ -17,6 +17,7 @@ More versions are listed on the [WealthWise releases page](https://github.com/sa
 
 | EAS build ID | Profile | Android versionCode | Date | Status |
 |---|---|---:|---|---|
+| `ecc97480-7229-41ac-8aad-64ea2cd255b5` | android-apk | 2 | 2026-11-09 | Artifact verified against EAS; attached to v1.1.1 GitHub draft, not published |
 | `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
 | `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
 
@@ -50,11 +51,17 @@ WealthWise follows Semantic Versioning:
   type.
 - Link each Android APK through its versioned release asset and each note in
   `published/`.
-- Name the current/latest APK asset
-  `WealthWise-android-latest-vX.Y.Z.apk`; its `/latest/` URL uses this exact
-  filename. On supersession, remove `latest` and rename the asset to
-  `WealthWise-android-vX.Y.Z.apk`. Update that old release's Download block
-  and table link to its matching version-specific asset URL.
+- Name the latest **published** APK asset
+  `WealthWise-android-latest-vX.Y.Z.apk`; a draft does not become latest
+  until publication. Previous release notes say `Version`, use their own
+  versioned APK filename and direct URL, and contain no `latest` wording.
+  When a newer version is published, remove `latest` from the previous APK
+  asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and update that
+  release's Download block and table link.
+- Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, attach them
+  to the corresponding GitHub Release, and reference the assets directly in
+  Markdown. Do not retain screenshots in `docs/releases/screenshots/`;
+  verify screenshot asset links before removing a local screenshot folder.
 - Never fabricate release or build data or overwrite a published record.
 - Keep unapproved notes in `drafts/`. After owner approval, finalize the note
   and move it to `published/` before GitHub Release draft creation. Add a

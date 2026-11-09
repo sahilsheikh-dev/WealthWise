@@ -107,7 +107,10 @@ Before creating a release build:
    task -> phase -> `develop`.
 7. After merge to `develop`, create `release/vX.Y.Z` from that source and
    create the GitHub Release draft at the release-branch commit. Attach every
-   supplied screenshot and use each absolute asset URL in the draft body.
+   supplied screenshot as
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and use each absolute asset
+   URL in the draft body. Do not retain screenshots in the repository; after
+   upload verification, remove the local `docs/releases/screenshots/` folder.
    Then run `eas build --platform android --profile android-apk` from the
    release branch, wait for a successful build, download the APK outside the
    repository, and upload it to the draft as
@@ -128,20 +131,22 @@ submission track, submission date and store status when submitted. Do not
 infer a successful build or submission from a command being started.
 
 After GitHub draft creation, build the APK with the configured EAS profile
-and upload it as `WealthWise-android-latest-vX.Y.Z.apk`. The latest-route URL
-must use this exact filename. When a newer version is published, remove
-`latest` from the previous release asset name, rename it to
+and upload it as `WealthWise-android-latest-vX.Y.Z.apk`. This filename and
+the `/latest/` route are for the latest **published** release only; a draft
+does not become latest until publication. Previous release notes say
+`Version`, use only their own versioned APK filenames and direct URLs, and
+must not contain `latest` wording or routes. When a newer version is
+published, remove `latest` from the previous release asset name, rename it to
 `WealthWise-android-vX.Y.Z.apk`, and update its historical Download link to
-that exact asset; never use `/latest/` for an old version. Verify the latest
-link and every affected versioned link using `curl -I -L`; all final
-responses must be HTTP 200. Record each final status and `Content-Length`;
-require the expected artifact size. Verify APK digests privately against the
-EAS build artifact, and never include them in human-authored release
-material. GitHub may expose a platform-generated asset digest that cannot be
-removed by editing the release. Keep the root README Download block
-byte-identical to the latest published release Download block. Update the
-README Download and What's new sections and the releases-page link for every
-release. Record the APK EAS build ID, `versionCode`, profile, date and status
-in the Builds table; do not include source commits or digests. A release is
-incomplete until the links return HTTP 200 with expected sizes and the
-README, published notes, `release-history.md` and GitHub assets agree.
+that exact asset. Verify the latest link and every affected versioned link
+using `curl -I -L`; all final responses must be HTTP 200. Record each final
+status and `Content-Length`; require the expected artifact size. Verify APK
+digests privately against the EAS build artifact, and never include them in
+human-authored release material. GitHub may expose a platform-generated
+asset digest that cannot be removed by editing the release. Keep the root
+README Download block byte-identical to the latest published release Download
+block. Update the README Download and What's new sections and the releases-page
+link for every release. Record the APK EAS build ID, `versionCode`, profile,
+date and status in the Builds table; do not include source commits or digests.
+A release is incomplete until the links return HTTP 200 with expected sizes
+and the README, published notes, `release-history.md` and GitHub assets agree.
