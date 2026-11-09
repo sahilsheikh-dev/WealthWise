@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { HelperText } from '../src/components/form/HelperText';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -131,22 +132,34 @@ export default function InvestmentEntryFormScreen() {
         )} />
       )}
       {!capabilities?.entries ? <ReadOnlyRow label="Purpose" value="Maturity payout" /> : null}
-      <Controller control={control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Entry date" />} />
-      <Controller control={control} name="amount" render={({ field }) => <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
+      <Controller control={control} name="date" render={({ field }) => <DateField label="Entry date" value={field.value} onChange={field.onChange} maximumDate={today} error={errors.date?.message} accessibilityLabel="Entry date" />} />
+      <Controller control={control} name="amount" render={({ field }) => (
+        <FieldTitle title="Amount">
+          <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+        </FieldTitle>
+      )} />
       {holding && ['Mutual fund / SIP', 'Stocks / ETF', 'Gold', 'Silver'].includes(holding.type) ? (
         <>
-          <Controller control={control} name="price" render={({ field }) => <MoneyField
-            label="Price per unit (optional)"
-            accessibilityLabel="Entry price per unit"
-            value={field.value ?? ''}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.price?.message}
-          />} />
+          <Controller control={control} name="price" render={({ field }) => (
+            <FieldTitle title="Price per unit (optional)">
+              <MoneyField
+                label="Price per unit (optional)"
+                accessibilityLabel="Entry price per unit"
+                value={field.value ?? ''}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.price?.message}
+              />
+            </FieldTitle>
+          )} />
           <HelperText>For a deposit, units are calculated as amount ÷ price. Enter prices by hand.</HelperText>
         </>
       ) : null}
-      <Controller control={control} name="note" render={({ field }) => <TextField label="Note" accessibilityLabel="Entry note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />} />
+      <Controller control={control} name="note" render={({ field }) => (
+        <FieldTitle title="Note">
+          <TextField label="Note" accessibilityLabel="Entry note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
+        </FieldTitle>
+      )} />
       {entry ? <ReadOnlyRow label="Linked transaction" value={linked ? 'Yes' : 'No'} /> : null}
     </FormScreen>
   );

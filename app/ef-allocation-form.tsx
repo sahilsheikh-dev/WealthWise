@@ -6,6 +6,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { PercentField } from '../src/components/form/PercentField';
 import { IconButton } from '../src/components/IconButton';
@@ -167,12 +168,14 @@ export default function EfAllocationFormScreen() {
                     </AppText>
                   </View>
                   <View style={styles.percentWrap}>
-                    <PercentField
-                      size="compact"
-                      accessibilityLabel={`${metadata.label} allocation percentage`}
-                      value={allocationValues[metadata.id] ?? '0'}
-                      onChangeText={(value) => updateAllocation(metadata.id, value)}
-                    />
+                    <FieldTitle title="Allocation percent">
+                      <PercentField
+                        size="compact"
+                        accessibilityLabel={`${metadata.label} allocation percentage`}
+                        value={allocationValues[metadata.id] ?? '0'}
+                        onChangeText={(value) => updateAllocation(metadata.id, value)}
+                      />
+                    </FieldTitle>
                   </View>
                   <IconButton
                     icon="edit-2"

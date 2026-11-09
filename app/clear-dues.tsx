@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Switch, View } from 'react-native';
 
 import { FormScreen } from '../src/components/form/FormScreen';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { AppText, Button, Card, EmptyState, WarningBanner } from '../src/components/ui';
@@ -159,12 +160,14 @@ export default function ClearDuesScreen() {
       ) : null}
       {mode === 'settle' && target.kind === 'liability' && item.kind === 'recurring' ? (
         <>
-          <MoneyField
-            label="Outstanding balance today"
-            accessibilityLabel="Outstanding balance today"
-            value={balance}
-            onChangeText={setBalance}
-          />
+          <FieldTitle title="Outstanding balance today">
+            <MoneyField
+              label="Outstanding balance today"
+              accessibilityLabel="Outstanding balance today"
+              value={balance}
+              onChangeText={setBalance}
+            />
+          </FieldTitle>
           <AppText style={typography.meta}>Suggested balance: {formatAmount(initialBalance ?? 0, 'exact', 1)}</AppText>
           {recordedPayments > 0 ? (
             <WarningBanner>
