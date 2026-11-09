@@ -103,13 +103,17 @@ Before creating a release build:
    exports do not replace device checks.
 5. Confirm EAS signing credentials and store access without copying secrets
    into the repository.
-6. Confirm the owner approved the Markdown release draft and all approved
-   changes are merged to `develop`.
+6. Confirm the owner approved the Markdown release draft. Finalize all
+   release details and screenshots, move the note to `published/vX.Y.Z.md`,
+   then commit the approved note with the release changes and merge through
+   task -> phase -> `develop`.
 7. After merge to `develop`, create `release/vX.Y.Z` from that source and
-   create the GitHub Release draft at the release-branch commit. Attach the
-   matching screenshot asset and use its absolute URL in the draft body, then
-   notify the owner to build the APK and upload it to that draft. Do not start
-   the build on the owner's behalf.
+   create the GitHub Release draft at the release-branch commit. Attach every
+   supplied screenshot and use each absolute asset URL in the draft body.
+   Immediately use the ask-user dialogue to request the absolute local path to
+   the owner's built APK, stating the required filename. Wait for the owner
+   to provide the path or confirm manual upload. Do not start the build on
+   the owner's behalf.
 8. After the owner confirms upload, privately verify the APK against the
    available build artifact and finish the post-build checks. Obtain explicit
    publication approval, merge the release branch `--no-ff` into `main`, and
@@ -125,7 +129,9 @@ platform build number, EAS build ID, profile, build date and status. Record
 submission track, submission date and store status when submitted. Do not
 infer a successful build or submission from a command being started.
 
-The owner uploads the APK to the GitHub Release draft as
+After GitHub draft creation, the owner supplies the absolute path to the
+built APK in the ask-user dialogue or confirms a manual upload. The owner
+uploads the APK to the GitHub Release draft as
 `WealthWise-android-latest-vX.Y.Z.apk`. The latest-route URL must use this
 exact filename. When a newer version is published, remove `latest` from the
 previous release asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and

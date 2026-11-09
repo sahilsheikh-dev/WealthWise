@@ -88,28 +88,38 @@ Exclude:
 | Approval Required | Yes |
 | Automatic Publication | No |
 | Automatic Tagging | Only after approval |
-| Automatic Documentation Archival | After successful publication |
+| Automatic Documentation Archival | After owner Markdown approval, before GitHub draft |
 | Automatic Git Commit | No (draft and archive commits are required) |
 | Automatic Git Push | No |
 
 ## Owner-led release sequence
 
-1. Prepare the versioned Markdown release draft and ask the owner to approve
-   it. Do not commit the candidate before that approval.
-2. After approval, commit the approved code and release notes on the task
-   branch and merge task -> phase -> `develop` using PRs and the required
-   gates. Never build from an unmerged branch.
-3. After the changes merge to `develop`, create `release/vX.Y.Z` at that
+1. Prepare the versioned Markdown release draft, complete it with verified
+   release details and screenshot links, and ask the owner to approve it. Do
+   not commit the candidate before that approval.
+2. After approval, finalize the release note and move it from `drafts/` to
+   `published/vX.Y.Z.md` before beginning GitHub Release draft setup. Commit
+   the approved code and finalized note on the task branch, then merge task ->
+   phase -> `develop` using PRs and the required gates. Never build from an
+   unmerged branch. Release notes and GitHub release bodies must not contain a
+   Contributors section.
+3. Use all screenshots explicitly supplied for a release. If none are
+   supplied, reuse the previous release's complete screenshot set for the
+   new release and README, preserving the original image bytes under the new
+   versioned screenshot directory.
+4. After the changes merge to `develop`, create `release/vX.Y.Z` at that
    source and create the GitHub Release draft at the release-branch commit.
-   The draft may create the version tag; do not retarget it. Attach the
-   matching screenshot asset and use its absolute URL in the draft body, then
-   notify the owner. The owner builds from that merged source and uploads the
-   APK to the GitHub draft using the exact versioned latest filename. Agents
-   do not start EAS or Gradle builds.
-4. Wait for the owner's upload confirmation. Then verify the APK, digest,
+   The draft may create the version tag; do not retarget it. Attach every
+   screenshot, use each absolute attached-asset URL in the draft body, and
+   immediately use the ask-user dialogue to request the absolute local path to
+   the owner's built APK. State the required filename and wait for the owner
+   to provide the path or confirm manual upload. Agents do not start EAS or
+   Gradle builds.
+5. Wait for the owner's upload confirmation. Then verify the APK, digest,
    links, release notes and build-history record. After separate explicit
    publication approval, merge the release branch `--no-ff` into `main`,
-   verify the tag target, then publish.
+   verify the tag target, then publish. The finalized note is already in
+   `published/`; do not move it after publication.
 
 Build targets and EAS profiles are documented in
 [`build-config.md`](./build-config.md): production Android AAB for Google Play,
@@ -131,12 +141,13 @@ Naming conventions:
 
 Anyone starting or continuing release work creates or reuses
 `docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the owner
-approves the Markdown draft. After approval, commit it with the approved work
-on the task branch using subject `docs: draft vX.Y.Z release notes`, then
-merge task -> phase -> `develop` through PRs. Release content belongs in Git,
-never in `/tmp`. After verifying successful GitHub publication, move the
-draft into `published/` and commit the move. Never leave a published file in
-drafts or a draft in published.
+approves the Markdown draft. After approval, finalize all release details,
+move the note to `published/vX.Y.Z.md`, and commit it with the approved work
+on the task branch using subject `docs: draft vX.Y.Z release notes`; then
+merge task -> phase -> `develop` through PRs. The finalized note must be in
+`published/` before GitHub Release draft creation. Release content belongs in
+Git, never in `/tmp`. Never leave an approved release note in `drafts/` or an
+unapproved draft in `published/`.
 
 ## 7. Safety Policies
 
@@ -175,10 +186,18 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     releases use their versioned asset link and versioned download filename.
   - Update the README Download and What's new sections and its releases-page
     link for every release.
-  - Include release-specific screenshots for new features in README, the
-    release Markdown and the GitHub Release body. Store only approved images
-    under versioned paths in `docs/releases/screenshots/vX.Y.Z/`; attach the
-    same images to the matching GitHub Release and test every rendered URL.
+  - Include every supplied screenshot in that version's release Markdown and
+    GitHub Release body. README's Screenshots section contains only the latest
+    release's complete image set, without a version title. Store only approved
+    images under versioned paths in `docs/releases/screenshots/vX.Y.Z/`; attach
+    the same images to the matching GitHub Release and test every rendered URL.
+    Include every image supplied for the version. If none are supplied, reuse
+    the previous release's complete image set for the new version and README;
+    preserve original image bytes under the new versioned directory.
+    Render images at 150 pixels wide in table rows, with no more than four
+    screenshots per row. Order categories Home, Assets, Liabilities,
+    Emergency Fund, Goals, Insurance, Budget, Transactions; omit unavailable
+    screens.
   - Capture screenshots with deterministic synthetic demo data on the
     owner-designated test setup. Never capture personal phone data. Keep any
     one-off capture script outside the repository, do not package or upload
@@ -188,7 +207,8 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   - For an existing published note, change only its Download block unless the
     owner explicitly authorizes another specific change. The owner has
     explicitly authorized adding release-specific screenshots to v1.0.0,
-    v1.1.0 and future release records; make no unrelated historical edits.
+    v1.1.0 and future release records and removing Contributors sections from
+    all release notes; make no unrelated historical edits.
   - When a newer version is published, replace only the previous release's
     Download block with its versioned link and filename, except for
     separately owner-authorized screenshot additions.
@@ -203,8 +223,14 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     except for screenshot additions explicitly authorized by the owner; do not
     otherwise rewrite the file.
 
-Use the published Markdown as the release-body source. For v1.0.0, the owner
-command is `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
+Immediately after creating a GitHub Release draft, use the ask-user dialogue
+to request the absolute local path to the owner's APK file and state the
+required versioned asset filename. Wait for the owner to provide the path or
+confirm a manual upload before proceeding to artifact verification.
+
+Use the finalized published Markdown as the release-body source. For images
+in GitHub release bodies, replace repository-relative screenshot paths with
+the absolute URLs of the matching attached release assets.
 
 The worktree and release rules are shared policy, not release-specific
 exceptions.

@@ -352,18 +352,6 @@ If versioning is uncertain, request clarification.
 
 ---
 
-## 9. Contributor Identification
-
-Identify first-time contributors included in this release.
-
-Verify contribution history through GitHub.
-
-Do not assume that someone is a new contributor merely because they appear for the first time in the current release.
-
-Include the New Contributors section only when verified.
-
----
-
 ## 10. Generate Release Notes
 
 Use the reusable release-notes skeleton defined in:
@@ -412,12 +400,14 @@ Store unpublished release notes in:
 `docs/releases/drafts/vX.Y.Z.md`
 
 Anyone starting or continuing release work must create or reuse this file and
-request the owner's approval before committing it. After approval, include it
-with the approved work in the task -> phase -> `develop` PR path, using
-subject `docs: draft vX.Y.Z release notes`. Release content belongs in Git,
-never in `/tmp`. After publication is verified, move the file to
-`docs/releases/published/` and commit the move. Never leave a published file
-in drafts or a draft in published.
+request the owner's approval before committing it. After approval, finalize
+all release details and screenshots, move the note to
+`docs/releases/published/vX.Y.Z.md`, then include it with the approved work in
+the task -> phase -> `develop` PR path, using subject
+`docs: draft vX.Y.Z release notes`. The finalized note must be in
+`published/` before GitHub Release draft creation. Release content belongs in
+Git, never in `/tmp`. Never leave an approved release note in `drafts/` or an
+unapproved draft in `published/`.
 
 The file must contain the complete release notes in publication-ready Markdown.
 
@@ -476,19 +466,22 @@ After the owner explicitly approves the Markdown release draft:
    phase -> `develop` through pull requests, following the repository branch
    rules. Run all six gates and complete required device checks before merge.
 8. Create `release/vX.Y.Z` from the merged `develop` commit. Create the
-   GitHub Release draft at that exact release-branch commit, attach the
-   matching screenshot asset and use its absolute URL in the draft body. Then
-   tell the owner it is ready for the APK. Do not start EAS or Gradle builds.
-9. The owner builds the application from that merged source, uploads the APK
-   to this GitHub Release draft under the exact versioned filename, and
+   GitHub Release draft at that exact release-branch commit, attach every
+   supplied screenshot and use each absolute asset URL in the draft body.
+   Immediately use the ask-user dialogue to request the absolute local path
+   to the owner's built APK and state its exact required filename. Wait for
+   the owner to provide the path or confirm manual upload. Do not start EAS
+   or Gradle builds.
+9. The owner builds the application from that merged source and uploads the
+   APK to this GitHub Release draft under the exact versioned filename, then
    confirms the upload is complete.
 10. After confirmation, verify the uploaded APK privately against its build
     artifact and complete the post-build artifact, Download block, link,
     README and build-history checks below while the release remains a draft.
 11. After explicit publication approval and successful verification, merge
     the release branch `--no-ff` into `main`, verify its tag target and publish.
-    Move the note to `published/` after publication is confirmed, then commit
-    that move.
+    The fully reviewed note is already in `published/` before draft creation;
+    record final publication details there without moving or duplicating it.
 12. Verify successful publication and retrieve the actual GitHub Release URL.
 
 Do not commit a release candidate before approval of its Markdown draft. The
@@ -551,11 +544,14 @@ For every GitHub release:
 7. Confirm both links return HTTP 200 with the expected size and that the
    README, published Markdown, `release-history.md` and GitHub release assets
    agree. The release remains incomplete until every check passes.
-8. Add version-specific screenshots for the release's new features to the
-   README Screenshots section, published Markdown and GitHub Release body.
-   Store only reviewed images under `docs/releases/screenshots/vX.Y.Z/`, attach
-   them to the matching GitHub Release, and verify that each rendered image
-   link works. For v1.0.0, v1.1.0 and future releases, use screenshots from
+8. Add every supplied screenshot to the release's published Markdown and
+   GitHub Release body. Keep only the latest release's complete screenshot set
+   in the README Screenshots section, without a version title. Store only
+   reviewed images under `docs/releases/screenshots/vX.Y.Z/`, attach them to
+   the matching GitHub Release, and verify that each rendered image link
+   works. Display thumbnails at 150 pixels wide, with no more than four per
+   row, ordered Home, Assets, Liabilities, Emergency Fund, Goals, Insurance,
+   Budget, Transactions; omit unavailable screens. For v1.0.0, v1.1.0 and future releases, use screenshots from
    the matching release build, not a newer app. Exception: the owner has
    explicitly confirmed that the same supplied image is intentional for
    v1.0.0, v1.1.0 and approved v1.1.1; preserve that image for those versions.
@@ -594,11 +590,12 @@ Never claim success unless GitHub confirms publication.
 
 ---
 
-## 14. Archive Published Release
+## 14. Pre-draft Release Note Finalization
 
-After verifying successful publication:
+Complete this section after Markdown approval and before the PR integration
+and GitHub Release draft steps in Section 13.
 
-1. Move the final release notes to:
+1. Move the complete, final release notes to:
 
    `docs/releases/published/vX.Y.Z.md`
 
@@ -613,10 +610,12 @@ After verifying successful publication:
 4. Confirm the draft was moved, with no duplicate left in `drafts/` or at the
    `docs/releases/` root.
 
-5. Commit the move with a descriptive message. Never leave a published file
-   in drafts or a draft in published.
+5. Commit the approved note with the release work. Never leave an approved
+   release note in drafts or an unapproved draft in published.
 
-6. Verify the release URL, tag, and target commit.
+6. Verify the target commit and that the note is ready to serve as the
+   canonical GitHub release-body source. Record final release URL and
+   publication details only after the release is published.
 
 7. Preserve all historical release records.
 
@@ -631,8 +630,8 @@ Never overwrite an existing release record.
 Keep all published release Markdown files under `docs/releases/published/`;
 never store a published record at the `docs/releases/` root or in `drafts/`.
 Push branches only with the owner's explicit authorization. Never force-push.
-Commit the approved draft with its release task and commit the post-publication
-move as described above.
+Commit the approved, finalized note with its release task. There is no
+post-publication note move.
 
 ---
 
@@ -692,10 +691,14 @@ Before considering the release complete, verify:
   no source commit or digest is published.
 - Matching README, published Markdown, release-history build record and GitHub
   release assets.
-- Version-specific screenshots for each release's new features appear in the
-  README, published Markdown and GitHub Release body, and are attached to that
-  GitHub Release. Each image renders and either matches its release build or
-  has explicit owner approval for reuse across versions. No capture script or
+- Every supplied version-specific screenshot appears in that release's
+  published Markdown and GitHub Release body and is attached to that GitHub
+  Release. The README Screenshots section contains only the latest release's
+  complete screenshot set and has no version title. If none were supplied,
+  reuse the previous release's complete screenshot set for the new release
+  and README. Order thumbnails Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions. Each image renders. Release notes
+  and GitHub release bodies omit a Contributors section. No capture script or
   personal data is included.
 
 ---

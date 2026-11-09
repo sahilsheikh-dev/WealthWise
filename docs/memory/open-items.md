@@ -15,13 +15,13 @@
   notification/SMS detection are Held for later. Notes includes text, voice/
   audio recordings, photos and videos. Skeleton loading is planned in Phase
   38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
-- **Release screenshots and owner handoff:** the owner supplied one identical
-  PNG for v1.0.0, v1.1.0 and approved v1.1.1 and explicitly confirmed reuse is
-  intentional. The first two screenshot assets are uploaded to the matching
-  published GitHub releases; the v1.1.1 screenshot is only in the local
-  release-draft worktree until its draft is approved and merged. The
-  release process now waits for draft approval and PR integration before
-  creating a GitHub Release draft; the owner then builds/uploads the APK and
+- **Release screenshots and owner handoff:** the owner supplied 23
+  version-specific screenshots (7 for v1.0.0, 8 for v1.1.0 and 8 for
+  v1.1.1). They are in versioned repository paths and attached to their
+  corresponding GitHub releases. README shows only the latest set; historical
+  sets remain in their matching notes. The release process requires note
+  approval, moving the finalized note to `published/`, PR integration, then
+  creation of a GitHub Release draft. The owner builds/uploads the APK and
   confirms before artifact verification and separate publication approval.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
@@ -131,21 +131,34 @@
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
 - **Phase 32 screenshots:** supplied screenshots are embedded in README and
-  versioned Markdown. The v1.0.0 and v1.1.0 assets are attached to their
-  GitHub releases. The v1.1.1 screenshot is in its owner-approved release
-  draft; attach it to the matching GitHub Release after code is merged. The
-  temporary capture script remains outside the
-  repository and must be deleted after use; it must never be uploaded or
-  included in an app build.
+  versioned Markdown. The owner supplied 23 versioned screenshots, visually
+  showing synthetic demo content. Their version-specific assets are attached
+  to the corresponding v1.0.0, v1.1.0 and v1.1.1 GitHub releases. The
+  v1.1.1 draft body currently references public v1.1.0 image assets so its
+  screenshots render before publication; its own versioned assets are also
+  attached. All galleries use 150-pixel thumbnails, with at most four
+  screenshots per row. README contains only the latest set under the generic
+  Screenshots heading; historical galleries remain in their release notes.
+  Galleries follow the requested Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions order, omitting unavailable screens.
+  The v1.1.1 note contains all template sections, has owner approval and is
+  moved to `published/`; required PR integration is in progress.
+  The temporary capture script remains outside the repository and
+  must be deleted after use; it must never be uploaded or included in an app
+  build.
 - **v1.1.1 release candidate:** the owner approved the patch-release Markdown
   draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
-  The approved work is being integrated through task -> Phase 28 -> `develop`;
-  the GitHub Release draft, APK build/upload, artifact verification and
-  publication remain pending. The owner will build from merged source and
-  confirm the APK upload before verification. Direct source-tree comparison
-  confirms v1.1.0 contains the P30 SQLite persistence repair; v1.0.0 predates
-  that repair. Neither release should be described as bug-free, and user
-  impact is not established by the available checks.
+  Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is based on
+  merged `develop`. The GitHub Release draft was created before the revised
+  note-approval rule and remains at its original target. The owner approved
+  the complete note, which is now in `published/`; the screenshot/document
+  revision still needs task/phase/develop PR integration. APK build/upload,
+  artifact verification and publication remain pending; N44 is
+  owner-reported Pass, but the release APK has not been built or tested.
+  Direct source-tree comparison confirms v1.1.0
+  contains the P30 SQLite persistence repair; v1.0.0 predates that repair.
+  Neither release should be described as bug-free, and user impact is not
+  established by the available checks.
 - **Branching baseline exception:** the initial `develop` baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and

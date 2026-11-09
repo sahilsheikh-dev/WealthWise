@@ -27,17 +27,33 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 2. Create or reuse `docs/releases/drafts/vX.Y.Z.md`, prepare the candidate
    code and release notes, and ask the owner to approve the Markdown draft.
    Do not commit the release candidate before this approval.
-3. After approval, commit the approved work on its task branch and merge it
+3. Use every screenshot supplied for that release in its release notes and
+   GitHub Release body. The README Screenshots section contains only the
+   latest release's complete screenshot set and has no version title. If none
+   are supplied, reuse the previous release's complete screenshot set for the
+   new release and README, preserving the original image bytes in the new
+   versioned screenshot folder. Render thumbnails 150 pixels wide in table
+   rows with no more than four images per row, ordered Home, Assets,
+   Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions;
+   omit screens that are unavailable for that release.
+4. After the owner approves the Markdown draft, finalize it with all release
+   details and screenshots, move it to `docs/releases/published/`, and include
+   the approved note in the release-work commit before creating the GitHub draft.
+   Release notes and GitHub release bodies must not contain a Contributors
+   section.
+5. Commit the approved work on its task branch and merge it
    task -> phase -> `develop` through PRs. Run all six gates in order and
    complete the physical-device checklist. Never build from unmerged changes.
-4. Once the approved code is merged to `develop`, create
+6. Once the approved code is merged to `develop`, create
    `release/vX.Y.Z` from that commit and create the GitHub Release draft at
    the release-branch commit. This draft may create the version tag; never
-   retarget it. Attach the matching screenshot asset and use its absolute URL
-   in the draft body, then notify the owner. The owner builds the application
-   from that merged source and uploads the APK to the GitHub draft; agents do
-   not build or upload the APK. The owner confirms when upload is complete.
-5. After confirmation, verify the uploaded artifact and release links. The
+   retarget it. Attach every version screenshot and use each absolute asset
+   URL in the draft body. Immediately use the ask-user dialogue to request
+   the absolute local path to the owner-built APK, state the required asset
+   filename, and wait for the owner to provide the path or confirm manual
+   upload. The agent never builds the APK. The owner confirms upload
+   completion.
+7. After confirmation, verify the uploaded artifact and release links. The
    current APK filename must be `WealthWise-android-latest-vX.Y.Z.apk`; the
    latest-route URL must use that exact filename. When publishing a newer
    version, remove `latest` from the previous filename and rename that asset
@@ -45,25 +61,25 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    release and filename, never the latest route.
    Production Android AABs are for Google Play; APKs are for GitHub. iOS
    distribution is not currently offered.
-6. Verify the APK digest privately against the uploaded artifact before
+8. Verify the APK digest privately against the uploaded artifact before
    publication. Never include it in human-authored release material. GitHub
    may expose a platform-generated asset digest that cannot be removed by
    editing the release.
-7. Keep the README Download block byte-identical to the latest published
+9. Keep the README Download block byte-identical to the latest published
    release Download block. Older published notes use their versioned release
    URL and versioned asset filename. Update the README Download and What's new
    sections and its releases page link for every release.
-8. Check the current `/latest/` URL and every affected version-specific URL
+10. Check the current `/latest/` URL and every affected version-specific URL
    with `curl -I -L`; each must return HTTP 200 and the expected artifact size.
    Record the observed status and size in the internal verification record.
-9. Record the build ID, profile, Android `versionCode`, date and status in
+11. Record the build ID, profile, Android `versionCode`, date and status in
    the Builds table using verified owner-supplied build details. Do not list
    source commits or APK digests there.
-10. After successful verification and separate publication approval, merge
+12. After successful verification and separate publication approval, merge
     the release branch `--no-ff` into `main` and verify the tag target. Publish
-    only after that integration. Move
-    the draft to `published/` after publication is confirmed and commit the
-    move. Never overwrite an existing published record.
+    only after that integration. The finalized note is already in
+    `published/`; update it only with owner-authorized final publication
+    details. Never overwrite an existing published record.
 
 ## Release rules
 
