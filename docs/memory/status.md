@@ -39,8 +39,9 @@
   absent at the owner's direction; no editable input was replaced with
   ReadOnlyRow. Owner approved commit/merge. Working branch:
   `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
-  integration PRs are recorded in `docs/PROGRESS.md`. Physical-device
-  rendering remains unverified.
+  integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
+  `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
+  Physical-device rendering remains unverified.
 - P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
   98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   (statements/branches/functions/lines), `src/data`

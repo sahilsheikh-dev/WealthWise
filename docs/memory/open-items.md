@@ -76,7 +76,8 @@
 - **P20-S-R1 device check:** physical-device rendering remains unverified.
   Owner approved commit/merge; SegmentedControl labels removed by the owner
   remain absent. Final gate results and PR integration are in
-  [`PROGRESS.md`](../PROGRESS.md).
+  [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
+  task-to-phase PR #42; phase-to-develop PR #43.
 - **Owner decisions for planned Phases 31-37:** clarify what the accessibility
   statement/audit should mean; decide whether screenshots should be committed
   to Git; decide whether notification/SMS transaction detection is worth its
