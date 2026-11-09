@@ -73,8 +73,9 @@
   `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
   changing the captured `develop` tree. The accompanying changes are limited
   to ledger/memory documentation and a ledger test. The historical archive
-  remains separate; `main` and its v1.1.0 tag are untouched. The task -> Phase
-  28 -> `develop` route is recorded in [PROGRESS.md](../PROGRESS.md).
+  remains separate; `main` and its v1.1.0 tag are untouched. Task PR #47
+  merged into Phase 28; the phase -> `develop` PR completes the authorized
+  route recorded in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
   Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
   merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to

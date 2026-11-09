@@ -12,7 +12,8 @@
   `phase/28-qa-and-release`. The ancestry merges preserve the captured
   `develop` tree; the task adds only ledger/memory documentation and a ledger
   test. No application source or `main` changes are included. The intended
-  integration route remains task -> Phase 28 -> `develop`.
+  task -> Phase 28 integration is PR #47; the phase -> `develop` PR completes
+  the authorized route.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. `develop` began at main baseline
