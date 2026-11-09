@@ -122,4 +122,86 @@ describe('published release download documentation', () => {
     expect(template).toContain('Do not use a generic placeholder');
     expect(template).toContain('unless they also contributed to this release');
   });
+
+  it('documents version-specific screenshots without retaining the capture script', () => {
+    const template = readFileSync(join(root, 'docs', 'releases', 'TEMPLATE.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const releaseConfig = readFileSync(join(root, 'docs', 'releases', 'release-config.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const releasePrompt = readFileSync(join(root, 'docs', 'releases', 'RELEASE_PROMPT.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const buildConfig = readFileSync(join(root, 'docs', 'releases', 'build-config.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const readme = readFileSync(join(root, 'README.md'), 'utf8');
+    const screenshotSections = [
+      {
+        file: 'README.md',
+        heading: '### Screenshots',
+        asset: 'https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-v1.0.0-home.png',
+        image: 'docs/releases/screenshots/v1.0.0/WealthWise-v1.0.0-home.png',
+      },
+      {
+        file: 'docs/releases/published/v1.0.0.md',
+        heading: '## Screenshots',
+        asset: 'https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-v1.0.0-home.png',
+        image: 'docs/releases/screenshots/v1.0.0/WealthWise-v1.0.0-home.png',
+      },
+      {
+        file: 'docs/releases/published/v1.1.0.md',
+        heading: '## Screenshots',
+        asset: 'https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-home.png',
+        image: 'docs/releases/screenshots/v1.1.0/WealthWise-v1.1.0-home.png',
+      },
+      {
+        file: 'docs/releases/drafts/v1.1.1.md',
+        heading: '## Screenshots',
+        asset: '../screenshots/v1.1.1/WealthWise-v1.1.1-home.png',
+        image: 'docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-home.png',
+      },
+    ] as const;
+
+    expect(template).toContain('## Screenshots');
+    expect(template).toContain('synthetic demo data only');
+    expect(template).toContain('Never include personal phone data or a capture script.');
+    expect(template).toContain('absolute URL of the matching attached image asset');
+    expect(releaseConfig).toContain('one-off capture script outside the repository');
+    expect(releaseConfig).toContain('owner has explicitly authorized adding release-specific screenshots');
+    expect(releasePrompt).toContain('existing v1.0.0 and v1.1.0 published notes');
+    expect(releasePrompt).toContain('attach them to the matching GitHub Release');
+    expect(releasePrompt).toContain('delete it after capture');
+    expect(releasePrompt).toContain('the owner explicitly approves the Markdown release draft');
+    expect(releasePrompt).toContain('The owner builds the application from that merged source');
+    expect(releasePrompt).toContain('confirms the upload is complete');
+    expect(releaseConfig).toContain('Attach the matching screenshot asset');
+    expect(buildConfig).toContain('The owner builds the Android APK');
+    expect(buildConfig).toContain('Do not start the build on the owner\'s behalf');
+    expect(readme).toContain('WealthWise-v1.1.0-home.png');
+    expect(readme).toContain('WealthWise-v1.1.1-home.png');
+    for (const { file, heading, asset, image } of screenshotSections) {
+      const contents = readFileSync(join(root, file), 'utf8');
+      expect(contents).toContain(heading);
+      expect(contents).toContain(asset);
+      expect(existsSync(join(root, image))).toBe(true);
+    }
+  });
+
+  it('keeps the approved release draft aligned with application package versions', () => {
+    const appConfig: { expo: { version: string } } = JSON.parse(
+      readFileSync(join(root, 'app.json'), 'utf8'),
+    );
+    const packageManifest: { version: string } = JSON.parse(
+      readFileSync(join(root, 'package.json'), 'utf8'),
+    );
+    const lockfile: { version: string; packages: { '': { version: string } } } = JSON.parse(
+      readFileSync(join(root, 'package-lock.json'), 'utf8'),
+    );
+    const draft = readFileSync(join(root, 'docs', 'releases', 'drafts', 'v1.1.1.md'), 'utf8');
+    const draftVersion = draft.match(/^# WealthWise v(\d+\.\d+\.\d+)$/m)?.[1];
+
+    expect(draftVersion).toBeDefined();
+    expect(appConfig.expo.version).toBe(draftVersion);
+    expect(packageManifest.version).toBe(draftVersion);
+    expect(lockfile.version).toBe(draftVersion);
+    expect(lockfile.packages[''].version).toBe(draftVersion);
+  });
 });

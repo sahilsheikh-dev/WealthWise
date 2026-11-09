@@ -72,8 +72,17 @@ See the [v1.1.0 changelog](CHANGELOG.md).
 
 ### Screenshots
 
-Release screenshots were prepared by the owner; image files are not included
-in this repository.
+#### v1.1.0
+
+![WealthWise v1.1.0 Home screen](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-v1.1.0-home.png)
+
+#### v1.0.0
+
+![WealthWise v1.0.0 Home screen](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-v1.0.0-home.png)
+
+#### v1.1.1 (approved; release draft pending)
+
+![WealthWise v1.1.1 Home screen](docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-home.png)
 
 ### Data and privacy
 

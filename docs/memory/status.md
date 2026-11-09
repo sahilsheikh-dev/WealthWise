@@ -1,6 +1,35 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
+- The owner approved the v1.1.1 patch-release draft on 2026-11-09. The app,
+  package and lockfile versions are aligned to 1.1.1. All six ordered gates
+  passed on the release task branch: 98 suites, 1,269 passed, 1 skipped;
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
+  passed. The task/phase/develop PRs and GitHub Release draft remain pending.
+  N44 is owner-reported Pass, but the release APK has not been built or
+  physically tested. The owner will build/upload from merged source; wait for
+  upload confirmation before artifact verification and separate publication
+  approval. No EAS or Gradle build was run.
+- Direct comparison confirms the v1.1.0 source tree contains the P30
+  persistence repair and its SQLite storage implementation matches current
+  develop; v1.0.0 predates that repair.
+- Owner roadmap decisions: accessibility means a statement plus audit
+  checklist, not new app features. Screenshot capture is planned with
+  Device Hub.app, synthetic demo data and a one-off script kept outside the
+  repository and deleted after use. The owner requests version-specific
+  screenshots in README, each release Markdown and GitHub Release body,
+  with image assets attached to each release, including v1.0.0 and v1.1.0.
+  Versioned screenshot files are now in the repository. The owner confirmed
+  that the identical supplied image is intentional for v1.0.0, v1.1.0 and
+  v1.1.1. The v1.0.0 and v1.1.0 screenshot assets and release bodies are
+  updated; attach the v1.1.1 image to its GitHub Release draft after merge.
+  Release rules now require owner approval of the Markdown draft, PR merge,
+  GitHub draft creation, owner build/upload and confirmation, verification,
+  then separate publication approval.
+  Widgets, quick capture and SMS/notification
+  detection are Held; Notes now includes text, recordings, photos and videos;
+  skeleton loading is planned as Phase 38. Details and safeguards are in
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite
@@ -50,15 +79,15 @@
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
   P28-E's final-verification commit was reconciled in P28-E-R2; the separate
   `codex-changes` branch remains under review.
-- Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
-  Gate 1 has 98 suites, 1,244 passed, 1 skipped; coverage is
-  95.96/92.01/98.01/97.62% overall,
-  `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
-  96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
-  TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
-  succeed. The owner-provided EAS build is verified; no local EAS or Gradle
-  build was run.
-- Current task: P20-S-R1 applies the owner-requested form-control conversion
+- The v1.1.0 release-tree gates passed before publication. The clean
+  2026-11-09 develop preflight at `c939458` passed all six ordered gates;
+  Gate 1 had 98 suites, 1,268 passed and 1 skipped, with 95.96/92.04/98.02/
+  97.63% overall coverage (statements/branches/functions/lines),
+  `src/data` 91.03/87.41/94.46/94.17%, `src/domain`
+  96.94/92.87/98.80/98.33%, and `src/lib` 100% in all four measures.
+  TypeScript and lint pass; Expo Doctor is 21/21; Android and iOS exports
+  succeed. No new EAS or Gradle build was run.
+- Previous task P20-S-R1 applied the owner-requested form-control conversion
   and visible-title pass. App-form ChoiceField usages are Dropdowns;
   ChoiceField remains and filters are unchanged. Editable text, money, number
   and percent controls without a visible title now have persistent
@@ -89,8 +118,8 @@
   91.03/87.41/94.46/94.17%; `src/domain`: 96.94/92.87/98.80/98.33%;
   `src/lib`: 100% in all four measures.
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
-  N44 remains unverified on a physical device; no feature from planned
-  Phases 31-37 has been started. Owner decisions are listed in
+  N44 is owner-reported Pass on a physical device; no feature from planned or
+  held Phases 31-38 has been started. Owner decisions are listed in
   [open-items.md](./open-items.md), with full evidence in
   [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
   Phase 20; phase PR #41 carries the synchronized branch to develop after
@@ -336,10 +365,9 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
-  skipped) in the P28-D run.
-- Latest validated run: 98 suites, 1231 tests (1230 passed, 1 skipped) on
-  2026-11-08; all six gates exit 0. Coverage and exact commands are recorded
+- Test counts: 98 suites, 1270 tests (1269 passed, 1 skipped) on 2026-11-09.
+- Latest validated run: 98 suites, 1270 tests (1269 passed, 1 skipped) on
+  2026-11-09; all six gates exit 0. Coverage and exact commands are recorded
   in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

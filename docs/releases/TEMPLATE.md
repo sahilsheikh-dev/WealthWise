@@ -30,6 +30,13 @@ the `/latest/` route. Do not include an APK checksum in release material.
 
 [One or two sentences summarizing verified user-visible changes.]
 
+## Screenshots
+
+Embed reviewed, version-specific images from
+`docs/releases/screenshots/vX.Y.Z/` using synthetic demo data only. In GitHub
+Release bodies, use the absolute URL of the matching attached image asset.
+Never include personal phone data or a capture script.
+
 ## What's Included
 
 ### New Features

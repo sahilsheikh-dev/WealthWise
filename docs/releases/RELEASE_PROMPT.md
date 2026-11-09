@@ -94,11 +94,13 @@ Never assume that the newest Git tag is necessarily the latest published GitHub 
 
 Use the actual GitHub Release records to establish the baseline.
 
-Create `release/vX.Y.Z` from `develop` as the release candidate branch. The
-approved target is the verified release-branch commit; do not silently release
-`develop` or another development branch. Merge the approved release branch
-into `main` with `--no-ff`, create the approved version tag, and back-merge
-into `develop`.
+Merge owner-approved changes through task -> phase -> `develop` using PRs.
+Then create `release/vX.Y.Z` from the merged `develop` commit and create the
+GitHub Release draft at that exact release-branch commit. Draft creation may
+create the version tag; do not retarget it. Wait for the owner's APK upload
+and confirmation, verify the artifact, and obtain separate publication
+approval. Only then merge the release branch into `main` with `--no-ff`,
+verify the tag target and back-merge into `develop`.
 
 If the repository, baseline, or target commit is ambiguous, stop and explain the problem.
 
@@ -410,10 +412,12 @@ Store unpublished release notes in:
 `docs/releases/drafts/vX.Y.Z.md`
 
 Anyone starting or continuing release work must create or reuse this file and
-commit it with subject `docs: draft vX.Y.Z release notes`. Release content
-belongs in Git, never in `/tmp`. After publication is verified, move the file
-to `docs/releases/published/` and commit the move. Never leave a published
-file in drafts or a draft in published.
+request the owner's approval before committing it. After approval, include it
+with the approved work in the task -> phase -> `develop` PR path, using
+subject `docs: draft vX.Y.Z release notes`. Release content belongs in Git,
+never in `/tmp`. After publication is verified, move the file to
+`docs/releases/published/` and commit the move. Never leave a published file
+in drafts or a draft in published.
 
 The file must contain the complete release notes in publication-ready Markdown.
 
@@ -458,9 +462,9 @@ Never create tags or GitHub Releases without approval.
 
 ---
 
-## 13. Publish the GitHub Release
+## 13. Merge, build and publish the GitHub Release
 
-After explicit approval:
+After the owner explicitly approves the Markdown release draft:
 
 1. Verify GitHub authentication.
 2. Verify repository ownership.
@@ -468,18 +472,35 @@ After explicit approval:
 4. Recheck the approved target commit.
 5. Confirm the version does not already exist.
 6. Verify the final Markdown draft.
-7. Create a GitHub Release draft at the approved target commit.
-8. Complete the post-build artifact, Download block, link-verification, README
-   and build-history checklist below while the release is still a draft.
-9. Publish the approved notes only after the checklist passes.
-10. Verify successful publication and retrieve the actual GitHub Release URL.
+7. Commit the approved release work on its task branch and merge task ->
+   phase -> `develop` through pull requests, following the repository branch
+   rules. Run all six gates and complete required device checks before merge.
+8. Create `release/vX.Y.Z` from the merged `develop` commit. Create the
+   GitHub Release draft at that exact release-branch commit, attach the
+   matching screenshot asset and use its absolute URL in the draft body. Then
+   tell the owner it is ready for the APK. Do not start EAS or Gradle builds.
+9. The owner builds the application from that merged source, uploads the APK
+   to this GitHub Release draft under the exact versioned filename, and
+   confirms the upload is complete.
+10. After confirmation, verify the uploaded APK privately against its build
+    artifact and complete the post-build artifact, Download block, link,
+    README and build-history checks below while the release remains a draft.
+11. After explicit publication approval and successful verification, merge
+    the release branch `--no-ff` into `main`, verify its tag target and publish.
+    Move the note to `published/` after publication is confirmed, then commit
+    that move.
+12. Verify successful publication and retrieve the actual GitHub Release URL.
+
+Do not commit a release candidate before approval of its Markdown draft. The
+owner's APK build/upload confirmation is a separate gate and does not by itself
+authorize publication.
 
 ### Required post-build checklist (before publication)
 
 For every GitHub release:
 
-1. Attach the current release Android APK under the versioned latest filename
-   `WealthWise-android-latest-vX.Y.Z.apk`:
+1. The owner attaches the current release Android APK under the versioned
+   latest filename `WealthWise-android-latest-vX.Y.Z.apk`:
 
    ```bash
    gh release upload vX.Y.Z /path/to/WealthWise-android-latest-vX.Y.Z.apk
@@ -522,13 +543,28 @@ For every GitHub release:
    published release Download block must be identical; older notes use their
    matching versioned release URL and filename, never the latest route. State
    unavailable artifacts plainly; do not publish an invented URL.
-6. Record the EAS build ID, Android `versionCode`, profile, date and status in
-   the `release-history.md` Builds table. Do not record source commits or
-   digests there. Production Android AABs are for Google Play; `android-apk`
-   builds are for GitHub downloads; iOS distribution is not offered.
+6. Record the verified owner-supplied build ID, Android `versionCode`,
+   profile, date and status in the `release-history.md` Builds table. Do not
+   record source commits or digests there. Production Android AABs are for
+   Google Play; `android-apk` builds are for GitHub downloads; iOS distribution
+   is not offered.
 7. Confirm both links return HTTP 200 with the expected size and that the
    README, published Markdown, `release-history.md` and GitHub release assets
    agree. The release remains incomplete until every check passes.
+8. Add version-specific screenshots for the release's new features to the
+   README Screenshots section, published Markdown and GitHub Release body.
+   Store only reviewed images under `docs/releases/screenshots/vX.Y.Z/`, attach
+   them to the matching GitHub Release, and verify that each rendered image
+   link works. For v1.0.0, v1.1.0 and future releases, use screenshots from
+   the matching release build, not a newer app. Exception: the owner has
+   explicitly confirmed that the same supplied image is intentional for
+   v1.0.0, v1.1.0 and approved v1.1.1; preserve that image for those versions.
+   Capture with synthetic demo data on the owner-designated test setup; never
+   capture personal phone data. Keep any one-off capture script outside the
+   repository, do not upload or package it, and delete it after capture. The
+   owner explicitly authorizes screenshot-only additions to the existing
+   v1.0.0 and v1.1.0 published notes and GitHub Release bodies; make no other
+   historical edits.
 
 After verification and approval, publish the draft:
 
@@ -594,8 +630,9 @@ gh release edit vX.Y.Z --notes-file docs/releases/published/vX.Y.Z.md
 Never overwrite an existing release record.
 Keep all published release Markdown files under `docs/releases/published/`;
 never store a published record at the `docs/releases/` root or in `drafts/`.
-Do not push a branch. Commit the draft and the post-publication move as
-described above.
+Push branches only with the owner's explicit authorization. Never force-push.
+Commit the approved draft with its release task and commit the post-publication
+move as described above.
 
 ---
 
@@ -655,6 +692,11 @@ Before considering the release complete, verify:
   no source commit or digest is published.
 - Matching README, published Markdown, release-history build record and GitHub
   release assets.
+- Version-specific screenshots for each release's new features appear in the
+  README, published Markdown and GitHub Release body, and are attached to that
+  GitHub Release. Each image renders and either matches its release build or
+  has explicit owner approval for reuse across versions. No capture script or
+  personal data is included.
 
 ---
 
