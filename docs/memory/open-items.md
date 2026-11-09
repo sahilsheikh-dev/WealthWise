@@ -69,6 +69,13 @@
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
+- **P28-E-R4 history graph integration:** task PR #49 merged into Phase 28
+  (`7f9221a`), then Phase 28 PR #50 merged into `develop` (`b5dbe5f`). The
+  `history/by-phase` tip and every remote branch tip are reachable from
+  `develop`. `main` and `release/v1.1.0` remain at
+  `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, with tree
+  `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. The task branch was deleted;
+  Phase 28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
 - **P28-E-R3 ancestry reconciliation:** owner-authorized `ours` merges record
   `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
   changing the captured `develop` tree. The accompanying changes are limited
@@ -84,13 +91,6 @@
   recorded tip. Main, develop, release and Phase 28 have identical trees.
 
 ## Unresolved
-
-- **P28-E-R4 history graph integration:** the `history/by-phase` tip is merged
-  into the task branch with `ours`; the archive tip is now an ancestor while
-  the develop tree is preserved. Complete the task -> Phase 28 -> `develop`
-  route (task PR #49 is merged; phase PR is pending), then confirm every
-  remote branch tip is reachable from `develop` and `main`/`release/v1.1.0`
-  trees remain unchanged. Evidence is in [PROGRESS.md](../PROGRESS.md).
 
 - **P20-S-R1 device check:** physical-device rendering remains unverified.
   Owner approved commit/merge; SegmentedControl labels removed by the owner
