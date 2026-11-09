@@ -56,8 +56,9 @@ WealthWise follows Semantic Versioning:
   `WealthWise-android-vX.Y.Z.apk`. Update that old release's Download block
   and table link to its matching version-specific asset URL.
 - Never fabricate release or build data or overwrite a published record.
-- Keep unpublished notes in `drafts/`; move notes to `published/` only after
-  verifying successful publication.
+- Keep unapproved notes in `drafts/`. After owner approval, finalize the note
+  and move it to `published/` before GitHub Release draft creation. Add a
+  release-history record only after successful publication.
 - Verify the APK digest before publication, but never publish the digest.
 - For the current latest APK URL and every affected versioned APK URL, use
   `curl -I -L`; require HTTP 200 and the expected artifact size. Record the

@@ -2,30 +2,43 @@
 
 # Status
 - The owner approved the v1.1.1 patch-release draft on 2026-11-09. The app,
-  package and lockfile versions are aligned to 1.1.1. All six ordered gates
-  passed on the release task branch: 98 suites, 1,269 passed, 1 skipped;
+  package and lockfile versions are aligned to 1.1.1. The original release
+  task passed all six gates; the same ordered gates passed again after this
+  screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. The task/phase/develop PRs and GitHub Release draft remain pending.
-  N44 is owner-reported Pass, but the release APK has not been built or
-  physically tested. The owner will build/upload from merged source; wait for
-  upload confirmation before artifact verification and separate publication
-  approval. No EAS or Gradle build was run.
+  passed. Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is
+  based on merged develop. The GitHub Release draft remains a draft at its
+  original release target; all eight v1.1.1 screenshots are attached, and its
+  body uses public screenshot assets so the gallery renders before
+  publication. The owner approved the complete v1.1.1 note; its move to
+  `published/` is complete; the screenshot/documentation revision is awaiting
+  task/phase/develop PR integration.
+  N44 is owner-reported Pass; no new release APK has been built or tested.
+  Wait for the owner's APK path/upload confirmation before
+  verification and separate publication approval. README shows only the latest
+  screenshot set under the unversioned Screenshots heading; all README,
+  release-note and GitHub release galleries use 150-pixel thumbnails with at
+  most four per row, in the owner-specified order: Home, Assets, Liabilities,
+  Emergency Fund, Goals, Insurance, Budget, Transactions. The v1.1.1 note now
+  includes every template section and no APK-upload status message. The
+  focused release, ledger and memory tests pass (3 suites, 19 tests); all 23
+  screenshot assets remain attached to their corresponding releases, and all
+  image links in release bodies return HTTP 200. No EAS or Gradle build was run.
 - Direct comparison confirms the v1.1.0 source tree contains the P30
   persistence repair and its SQLite storage implementation matches current
   develop; v1.0.0 predates that repair.
 - Owner roadmap decisions: accessibility means a statement plus audit
   checklist, not new app features. Screenshot capture is planned with
   Device Hub.app, synthetic demo data and a one-off script kept outside the
-  repository and deleted after use. The owner requests version-specific
-  screenshots in README, each release Markdown and GitHub Release body,
-  with image assets attached to each release, including v1.0.0 and v1.1.0.
-  Versioned screenshot files are now in the repository. The owner confirmed
-  that the identical supplied image is intentional for v1.0.0, v1.1.0 and
-  v1.1.1. The v1.0.0 and v1.1.0 screenshot assets and release bodies are
-  updated; attach the v1.1.1 image to its GitHub Release draft after merge.
-  Release rules now require owner approval of the Markdown draft, PR merge,
-  GitHub draft creation, owner build/upload and confirmation, verification,
-  then separate publication approval.
+  repository and deleted after use. The owner requests every supplied
+  versioned screenshot in README, its release note and matching GitHub
+  release, with all images attached. All 23 supplied screenshots are staged
+  under versioned paths and attached to v1.0.0, v1.1.0 and the v1.1.1 draft.
+  Release-note Contributors sections were removed. The updated rule requires
+  owner approval, full note completion and moving the note to `published/`
+  before GitHub draft creation; immediately after draft creation, use an
+  ask-user dialogue to request the absolute APK path or manual-upload
+  confirmation.
   Widgets, quick capture and SMS/notification
   detection are Held; Notes now includes text, recordings, photos and videos;
   skeleton loading is planned as Phase 38. Details and safeguards are in

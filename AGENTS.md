@@ -128,31 +128,44 @@ are not authorized unless explicitly requested.
   Never use the `/latest/` route for an older release. Anyone starting or
   continuing release work creates or reuses
   `docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the
-  owner approves the Markdown draft; then commit it with the approved release
-  work and merge through the required PR path. After publication is verified,
-  move it to `docs/releases/published/` and commit the move; never leave a
-  published file in drafts or a draft in published. Before each release,
+  owner approves the Markdown draft. After approval, complete all release
+  details and screenshots, move the finalized note to
+  `docs/releases/published/`, and commit it with the approved release work
+  before creating a GitHub Release draft; never leave a published file in
+  drafts or an unapproved draft in published. Before each release,
   verify the APK digest against the artifact privately; never include the
   digest in human-authored release material. GitHub may expose a
   platform-generated asset digest that cannot be removed by editing the
   release.
   Release sequence: obtain approval of the Markdown draft first, then commit
-  the approved code/notes on the task branch and merge task -> phase ->
-  `develop` through PRs. After the merge, create the GitHub Release as a draft
-  at the merged code, attach the matching screenshot and add its absolute URL
-  to the draft body, then notify the owner. The owner builds from that merged
-  source and uploads the APK to that GitHub draft using the exact filename;
-  agents do not build it. Continue only after the owner confirms the upload.
-  Then privately verify the artifact and links, finish the release records,
-  and publish only after explicit publication approval.
+  the approved code and finalized note (already moved to `published/`) on the
+  task branch and merge task -> phase -> `develop` through PRs. After the
+  merge, create the GitHub Release as a draft at the merged code, attach every
+  version screenshot and use each absolute asset URL in the draft body.
+  Immediately use the ask-user dialogue to request the absolute local path to
+  the owner's built APK, state the required filename, and wait for the owner
+  to provide the path or confirm manual upload. Agents do not build APKs.
+  Continue only after owner upload confirmation. Then privately verify the
+  artifact and links, finish the release records, and publish only after
+  explicit publication approval.
   The README Download block and latest published release Download block must
   be identical.
   Every release updates the README Download and What's new sections and its
-  releases-page link. Include version-specific screenshots in README, notes
-  and the matching GitHub Release; keep capture scripts outside the app and
-  repository. When updating an existing published note, change only its
-  Download block except for screenshot additions explicitly authorized by the
-  owner. Verify the current latest URL and every affected
+  releases-page link. Include all screenshots explicitly supplied for a
+  release in its Markdown and GitHub Release body. The README Screenshots
+  section contains only the latest release's screenshot set and has no
+  version title. If no screenshots are supplied, reuse the previous release's
+  full set for the new release and README, preserving the original image bytes
+  under the new versioned screenshot directory. Display images at 150 pixels
+  wide in table rows, with no more than four screenshots per row. Keep
+  capture scripts outside the app and
+  repository. Display categories in this order, omitting unavailable screens:
+  Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
+  Transactions. Release notes and GitHub release bodies must not contain a
+  Contributors section. When updating an existing published note, change
+  only its Download block except for screenshot updates and contributor
+  section removal explicitly requested by the owner. Verify every rendered
+  screenshot URL and the current latest URL and every affected
   versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
   artifact size. Record EAS build
   ID, profile, Android `versionCode`, date and status in the release-history
