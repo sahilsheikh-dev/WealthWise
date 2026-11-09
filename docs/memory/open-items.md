@@ -139,10 +139,10 @@
   included in an app build.
 - **v1.1.1 release candidate:** the owner approved the patch-release Markdown
   draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
-  The approved work is being integrated through task -> Phase 28 -> `develop`;
-  the GitHub Release draft, APK build/upload, artifact verification and
-  publication remain pending. The owner will build from merged source and
-  confirm the APK upload before verification. Direct source-tree comparison
+  Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is based on
+  merged `develop`. Prepare the GitHub Release draft next. The owner APK
+  build/upload, artifact verification and publication remain pending; wait
+  for owner confirmation before verification. Direct source-tree comparison
   confirms v1.1.0 contains the P30 SQLite persistence repair; v1.0.0 predates
   that repair. Neither release should be described as bug-free, and user
   impact is not established by the available checks.

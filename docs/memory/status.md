@@ -5,7 +5,8 @@
   package and lockfile versions are aligned to 1.1.1. All six ordered gates
   passed on the release task branch: 98 suites, 1,269 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. The task/phase/develop PRs and GitHub Release draft remain pending.
+  passed. Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is
+  based on merged develop. The GitHub Release draft is the next handoff step.
   N44 is owner-reported Pass, but the release APK has not been built or
   physically tested. The owner will build/upload from merged source; wait for
   upload confirmation before artifact verification and separate publication
