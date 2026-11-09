@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 87% (151/174)
+Overall progress █████████░ 87% (152/174)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 96% (23/24)
+Phase 28         ██████████ 100% (24/24)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
 Phase 31         ░░░░░░░░░░ 0% (0/3)
@@ -181,7 +181,7 @@ Phase 37         ░░░░░░░░░░ 0% (0/3)
 | CR-95 | — | Done | `a507254`; include all logged income types in historical Budget snapshots, reconcile planned/actual by month, and preserve transaction links. | 2026-11-01 |
 | CR-96 | — | Done | P29-K: Budget scope choices apply immediately; Close, backdrop and Android back dismiss without applying. | 2026-11-03 |
 | CR-97 | — | Done | P29-L: replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues; schema v17 migration preserves backups and linked savings data. | 2026-11-03 |
-| CR-98 | — | In progress | Audit historical first-parent commits, preserve their existing hashes, and establish a `release/v1.0.0` branch at the published tag without changing protected branch trees. | 2026-11-09 |
+| CR-98 | — | Done | Audit historical first-parent commits, preserve their existing hashes, and establish a `release/v1.0.0` branch at the published tag without changing protected branch trees. Task PR #52 is merged into Phase 28; Phase 28 -> `develop` integration remains pending. | 2026-11-09 |
 | P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
 | P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata; Revised by P28-A-R1 for the v13 backup equality regression. Protected routes remain unchanged. | 2026-11-07 |
@@ -198,7 +198,7 @@ Phase 37         ░░░░░░░░░░ 0% (0/3)
 | P28-E-R2 | — | Done | Preserve the local final-remote-verification commit in GitHub history while reconciling its stale status text with the current ledger. Final remote branch/tag and archive checks are recorded; no tag was changed. | 2026-11-08 |
 | P28-E-R3 | — | Done | Added ancestry-only merge records for P25-F, the v1.1.0 merge and the Phase 1 refactor on the task branch. Application source is unchanged; PR #46 remained separate at R3 completion, and P28-E-R4 later connected the complete archive ancestry. PR #47 merged to Phase 28 and PR #48 merged to `develop`. | 2026-11-09 |
 | P28-E-R4 | — | Done | Connected the complete `history/by-phase` archive ancestry to `develop` through task PR #49 and phase PR #50. Every remote branch tip is reachable from `develop`; `main` and `release/v1.1.0` remain unchanged. The ancestry-only merge preserved application code. | 2026-11-09 |
-| P28-E-R5 | — | In progress | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target; PR integration of this audit record is pending. | 2026-11-09 |
+| P28-E-R5 | — | Done | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target. Task PR #52 merged into Phase 28 as `f9bb715`; Phase 28 -> `develop` PR is pending. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3 and P28-F-R3-R3-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, and P28-F-R3-R3-R1 for the merged filename-policy PR chain. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -3338,7 +3338,7 @@ completion checks without hardcoding totals.
 
 | P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; those ancestry commits preserve the develop tree, while the task adds only ledger/memory documentation and a ledger test. Task PR #47 merged into Phase 28 as `3553b73`; phase PR #48 merged into `develop` as `8c1e670`. P28-E-R4 later connected the full archive ancestry. | Task branch `task/P28-E-R3-record-selected-ancestry`; phase branch `phase/28-qa-and-release`; PRs #47 and #48 merged task -> phase -> `develop`. | Old: selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record the three selected commits by `ours` ancestry merges and clarify that the archive tree is an older snapshot. Reason: connect requested commits without changing application source or main. Updated the guard to exact-once track P28-E-R3. | current request |
 | P28-E-R4 | Phase 28 | P28-E | current | 2026-11-09 | Connect the complete `history/by-phase` ancestry to `develop` while preserving `develop`, `release/v1.1.0`, and `main` tracked content. | Done; archive tip `e4a95d57d7bfa3d062d233c3ca315a1a520ef654` is reachable through tree-preserving merge `c4f9aba`. Task PR #49 merged into Phase 28 as `7f9221a`; Phase 28 PR #50 merged into `develop` as `b5dbe5f`. Every remote branch tip is reachable from `develop`. `main` and `release/v1.1.0` remain at `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, tree `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. | Task branch `task/P28-E-R4-connect-history-archive`; phase branch `phase/28-qa-and-release`; PRs #49 and #50 merged task -> phase -> `develop`. | Old assertions expected P28-E-R4 `In progress` and Phase 28 22/23 done. New assertions expect `Done` and 23/23 after PR #50 integration and remote-branch reachability verification. Reason: the work is fully integrated; no guard or threshold was removed. | current request |
-| P28-E-R5 | Phase 28 | P28-E | current | 2026-11-09 | Audit requested first-parent commit subjects and create `release/v1.0.0` at the existing `v1.0.0` tag target without rewriting history or changing protected branch trees. | In progress; 403 non-merge commits after the initial commit are already ancestors of `main` and `develop`. All 30 phase branches exist and every requested commit is reachable from at least one. Eighty-four old subjects do not pass the current Conventional Commit hook; rewording would rewrite history, so no commit IDs or messages were changed. New historical branch `release/v1.0.0` points to tagged commit `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, already an ancestor of `main` and `develop`. | Task branch `task/P28-E-R5-record-v1.0-release-branch`; phase branch `phase/28-qa-and-release`; PR integration pending. | Old: the v1.0.0 tag existed but no matching release branch was present, and 403 historical commits appeared on the first-parent main line. New: a branch points at the published tag; commits remain unchanged because ordinary PRs cannot re-introduce existing ancestors and rewriting is prohibited. Reason: preserve existing code/history while making the historical release branch explicit. | current request |
+| P28-E-R5 | Phase 28 | P28-E | current | 2026-11-09 | Audit requested first-parent commit subjects and create `release/v1.0.0` at the existing `v1.0.0` tag target without rewriting history or changing protected branch trees. | Done; 403 non-merge commits after the initial commit are already ancestors of `main` and `develop`. All 30 phase branches exist and every requested commit is reachable from at least one. Eighty-four old subjects do not pass the current Conventional Commit hook; rewording would rewrite history, so no commit IDs or messages were changed. New historical branch `release/v1.0.0` points to tagged commit `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, already an ancestor of `main` and `develop`. Task PR #52 merged into Phase 28 as `f9bb715`; Phase 28 -> `develop` PR is pending. | Task branch `task/P28-E-R5-record-v1.0-release-branch`; phase branch `phase/28-qa-and-release`; task PR #52 merged, Phase 28 PR pending. | Old: the v1.0.0 tag existed but no matching release branch was present, and 403 historical commits appeared on the first-parent main line. New: a branch points at the published tag; commits remain unchanged because ordinary PRs cannot re-introduce existing ancestors and rewriting is prohibited. Reason: preserve existing code/history while making the historical release branch explicit. | current request |
 
 ## 7. Change-request register
 
@@ -3817,6 +3817,8 @@ order. Physical-device checks do not apply to this history-only change.
 | v1.0.0 release branch | Created | `release/v1.0.0` points to tagged commit `cac6fedc6242b495558f11cc6d7fe8551fd354ea` (the peeled `v1.0.0` tag target). It is already an ancestor of `main` and `develop`; this branch adds no commits or tree changes. |
 | Protected branches | Verified | `main`, `develop`, and `release/v1.1.0` were not moved or modified by creating the historical alias branch. The tag was not moved. |
 | PR feasibility | No PR for original commits | All requested commits are already ancestors of the intended integration branches. GitHub would offer no new diff to merge; retroactively changing their PR provenance or subjects is not possible without rewriting history. |
+| Audit record integration | Task PR merged | Task PR #52 merged into Phase 28 as `f9bb715`. The Phase 28 -> `develop` PR remains to be completed. |
+| Progress-ledger assertions | Updated | Old: P28-E-R5 was asserted as in progress, Phase 28 was 23/24, and overall progress was 151/174. New: P28-E-R5 is done, Phase 28 is 24/24, and overall progress is 152/174. Reason: task PR #52 merged the completed audit record into Phase 28; no progress guard or threshold was removed. |
 
 Ordered task-branch gates before PR: `npm test -- --coverage` 0 (98 suites,
 1,267 passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
@@ -3824,6 +3826,13 @@ Ordered task-branch gates before PR: `npm test -- --coverage` 0 (98 suites,
 (21/21); `npx expo export --platform android` 0; and
 `npx expo export --platform ios` 0. Physical-device checks do not apply to
 this history-only change.
+
+Final ordered Phase 28 branch gates before PR to `develop`: `npm test --
+--coverage` 0 (98 suites, 1,267 passed, 1 skipped; 95.96% statements, 92.04%
+branches, 98.02% functions, 97.63% lines); `npx tsc --noEmit` 0;
+`npx expo lint` 0; `npx expo-doctor` 0 (21/21);
+`npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0.
 
 ### P20-S-R1 — form Dropdowns and visible titles
 
@@ -9371,10 +9380,12 @@ Gradle build, version bump, or release preparation was performed.
   `cac6fedc6242b495558f11cc6d7fe8551fd354ea`. The tag and the `main`,
   `develop`, and `release/v1.1.0` refs/trees were not modified. The new
   release branch is already an ancestor of `main` and `develop`.
-- The documentation/test record is proceeding through the Phase 28 task and
-  phase PR route. The task-branch gates all exit 0: 98 suites, 1,267 passed,
-  1 skipped; coverage 95.96/92.04/98.02/97.63%; TypeScript, lint, Expo Doctor
-  21/21, Android export and iOS export all pass.
+- Task PR #52 merged into Phase 28 as `f9bb715`; the Phase 28 -> `develop` PR
+  remains pending. Task-branch and final Phase 28 branch gates all exit 0:
+  `npm test -- --coverage` (98 suites, 1,267 passed, 1 skipped;
+  95.96/92.04/98.02/97.63% coverage), `npx tsc --noEmit`, `npx expo lint`,
+  `npx expo-doctor` (21/21), `npx expo export --platform android`, and
+  `npx expo export --platform ios`.
 
 ### P28-E-R4 history archive ancestry (2026-11-09)
 

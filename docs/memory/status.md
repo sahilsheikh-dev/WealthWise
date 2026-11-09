@@ -23,8 +23,8 @@
   messages or hashes were changed because that requires rewriting history.
   The new `release/v1.0.0` branch points to the existing tag target
   `cac6fed`; it is already an ancestor of `main` and `develop`. The audit
-  record is being integrated via `task/P28-E-R5-record-v1.0-release-branch`
-  -> Phase 28 -> `develop`.
+  record's task PR #52 merged into Phase 28 as `f9bb715`; the Phase 28 ->
+  `develop` PR remains pending.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. P28-E-R4 is integrated into

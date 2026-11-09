@@ -215,12 +215,12 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
       } else if (phase === 28) {
-        expect(count?.done).toBe(23);
+        expect(count?.done).toBe(24);
         expect(count?.total).toBe(24);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |')))
-          .toContain('| In progress |');
+          .toContain('| Done |');
       } else {
         expect(count?.done).toBe(count?.total);
       }
@@ -434,8 +434,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R3 |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R4 |'))).toContain('| Done;');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| In progress |');
-    expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| In progress;');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| Done |');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB |'))).toContain('Revised by P29-AB-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done; Revised by P29-AB-R2 |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done;');

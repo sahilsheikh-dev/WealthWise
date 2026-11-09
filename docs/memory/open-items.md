@@ -82,8 +82,9 @@
   these original commits: a PR cannot change commit provenance or subjects
   retroactively. The owner-selected `release/v1.0.0` branch was created at
   the existing v1.0.0 tag target and is already an ancestor of `main` and
-  `develop`. Remaining work is to merge the audit record through task PR ->
-  Phase 28 -> `develop`; no application code or protected branch tip changes.
+  `develop`. Task PR #52 merged into Phase 28 as `f9bb715`; remaining work is
+  the Phase 28 -> `develop` PR. No application code or protected branch tip
+  changes.
   Evidence is in [PROGRESS.md](../PROGRESS.md).
 - **P28-E-R3 ancestry reconciliation:** owner-authorized `ours` merges record
   `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
