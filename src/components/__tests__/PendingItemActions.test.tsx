@@ -519,6 +519,51 @@ describe('later due and planned item actions', () => {
     expect(mockStoreState.data).toEqual(original);
   });
 
+  it('routes a snapshot-only manual holding budget row through clearDue', () => {
+    mockStoreState.data.monthBudgets = [{
+      month: '2026-09',
+      items: [{ name: 'Emergency cash', holdingId: 'manual-cash' }],
+    }];
+    mockStoreState.data.holdings = [{
+      id: 'manual-cash',
+      kind: 'manual',
+      name: 'Cash reserve',
+      type: 'Cash',
+      logs: [],
+    }];
+    mockActions.clearDue.mockReturnValue('entry-1');
+    mockStoreState.data.transactions.push({
+      id: 'linked-transaction',
+      amount: 125,
+      date: '2026-09-10',
+      source: { kind: 'holding-entry', parentId: 'manual-cash', entryId: 'entry-1' },
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PendingItemActions
+          item={{
+            ...item({ kind: 'budget', category: 'Emergency cash', type: 'invest' }, 'Emergency cash'),
+            dueDate: '2026-09-10',
+          }}
+          today="2026-10-12"
+          compact
+          actionLabel="Paid"
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Snapshot-only linked budget actions did not render.');
+    act(() => renderer?.root.findByType('button').props.onPress());
+
+    expect(mockActions.clearDue).toHaveBeenCalledWith(
+      { kind: 'holding', id: 'manual-cash' },
+      undefined,
+      125,
+    );
+    expect(mockActions.addTransaction).not.toHaveBeenCalled();
+  });
+
   it('records an income due as one Received transaction with undo', () => {
     const due = item({ kind: 'income', incomeId: 'salary-1' }, 'Salary');
     let renderer: TestRenderer.ReactTestRenderer | undefined;
