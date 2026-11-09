@@ -12,6 +12,11 @@
   from `develop`, the v1.1.1 release branch is reachable from `main`, and no
   open PRs remain. The `main`, `develop` and v1.1.1 release branch trees
   match; the stale local `main` branch was fast-forwarded to `origin/main`.
+- Release policy review confirmed the agent-run EAS
+  `eas build --platform android --profile android-apk` and GitHub draft upload
+  were already required. The guide and shared rules now explicitly prohibit
+  waiting for or asking the owner/developer to provide an APK or local APK
+  path. A documentation regression test guards the handoff requirement.
 - The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` finished with app version 1.1.1,
   Android `versionCode` 2 and profile `android-apk`. Its bytes match the EAS
