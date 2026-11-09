@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 86% (156/182)
+Overall progress █████████░ 85% (159/186)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 96% (27/28)
+Phase 28         █████████░ 94% (30/32)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
 Phase 31         ░░░░░░░░░░ 0% (0/3)
@@ -187,6 +187,8 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | CR-99 | — | Done | Record owner-reported N44 Pass, add screenshot sections to README and prior release Markdown, and prepare a proposed v1.1.1 release note. | 2026-11-09 |
 | CR-100 | — | Done | Add owner-supplied screenshots to versioned documentation and published v1.0.0/v1.1.0 GitHub releases; update release policy to require draft approval, PR merge, owner build/upload and confirmation before artifact verification/publication. | 2026-11-09 |
 | CR-101 | — | In progress | Continue the owner-approved v1.1.1 candidate through version alignment, six-gate validation, task/phase/develop PR integration and creation of a GitHub Release draft; pause for owner APK upload and confirmation. | 2026-11-09 |
+| CR-102 | — | Done | Change the approved release workflow so the agent builds with EAS `android-apk`, uploads and verifies the APK after approved code is merged and the GitHub draft exists; audit ordered-list numbering across all release Markdown. | 2026-11-09 |
+| CR-103 | — | In progress | Align v1.0.0 release metadata to the shared template, remove duplicate metadata, and publish the owner-approved v1.1.1 release with latest-release README/history and previous-APK rollover updates after successful publication. | 2026-11-09 |
 | P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
 | P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata; Revised by P28-A-R1 for the v13 backup equality regression. Protected routes remain unchanged. | 2026-11-07 |
@@ -205,7 +207,7 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | P28-E-R4 | — | Done | Connected the complete `history/by-phase` archive ancestry to `develop` through task PR #49 and phase PR #50. Every remote branch tip is reachable from `develop`; `main` and `release/v1.1.0` remain unchanged. The ancestry-only merge preserved application code. | 2026-11-09 |
 | P28-E-R5 | — | Done; Revised by P28-E-R5-R1 | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target. Task PR #52 merged into Phase 28 as `f9bb715`; phase PR #53 later merged into `develop`. | 2026-11-09 |
 | P28-E-R5-R1 | — | Done | Finalized P28-E-R5 integration evidence: Phase 28 PR #53 merged into `develop` as `0402592`; no historical commit subjects or hashes were changed, and `main` and release branch trees remain unchanged. | 2026-11-09 |
-| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4 and P28-F-R4-R1-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, and P28-F-R4-R1-R1 for the approved v1.1.1 release integration. | 2026-11-08 |
+| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1 and P28-F-R4-R1-R1-R1-R1-R1-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, and P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
 | P28-F-R2-R1 | — | Done; Revised by P28-F-R3 | Corrected stale branch/GitHub audit records; task and Phase 28 PRs are integrated into develop, with release and back-merge PRs carrying the correction through main. Latest six ordered gates pass: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; TypeScript, lint, Doctor 21/21, Android export and iOS export all pass. At that revision v1.1.0 was untagged; publication is recorded by P28-F-R3. | 2026-11-08 |
@@ -216,7 +218,11 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | P28-F-R3-R3-R1 | — | Done | Verified chronological PR integration: task to Phase 28 (#21), Phase 28 to develop (#22), develop to release/v1.1.0 (#23), release to main (#24), and main back to develop (#25). The four remote trees match; the merged task branch was deleted and the phase branch retained. | 2026-11-08 |
 | P28-F-R4 | — | Done; Revised by P28-F-R4-R1 | Prepared proposed v1.1.1 release notes for owner review, added screenshot sections to README and the v1.0.0/v1.1.0 notes, and made the template safe for pending images. No app version, build, tag, GitHub release or merge was changed. | 2026-11-09 |
 | P28-F-R4-R1 | — | Done; Revised by P28-F-R4-R1-R1 | Added the owner-supplied Home screenshot to versioned v1.0.0, v1.1.0 and proposed v1.1.1 repository paths, README and release Markdown. Uploaded screenshot assets and updated the published v1.0.0/v1.1.0 GitHub release bodies; both image URLs returned HTTP 200 with Content-Length 244,108. Owner confirmed the identical image is intentional. Updated release policy for draft approval -> task/phase/develop PR merge -> GitHub draft -> owner build/APK upload/confirmation -> verification -> explicit publication approval. | 2026-11-09 |
-| P28-F-R4-R1-R1 | — | In progress | Owner approved v1.1.1 on 2026-11-09. App/package versions are aligned; all six gates pass. Task PR #56 and Phase 28 PR #57 merged the candidate to `develop`; `release/v1.1.1` is based on the merged source. GitHub Release draft targets the release-branch commit and includes the versioned screenshot. Await owner APK upload/confirmation and separate publication approval. | 2026-11-09 |
+| P28-F-R4-R1-R1 | — | In progress; Revised by P28-F-R4-R1-R1-R1 | Owner-approved v1.1.1 app/package versions passed all six gates and merged through PRs #56/#57 to `develop`; the APK was verified and attached, but the GitHub release is still a draft. Final metadata and publication are tracked by P28-F-R4-R1-R1-R1-R1-R1-R1. | 2026-11-09 |
+| P28-F-R4-R1-R1-R1 | — | Done; Revised by P28-F-R4-R1-R1-R1-R1 | Owner approved the complete v1.1.1 release note, now moved to `published/`. Added all 23 screenshots to versioned paths and all three GitHub releases; README now contains only latest screenshots under the generic heading. All galleries use 150-pixel images, four per row, in the requested category order. Removed Contributors sections, completed all release-template sections, clarified release/APK-path rules, and adjusted regression tests to distinguish finalized notes from actually published releases. Required task/phase/develop integration is recorded by the follow-up revision. | 2026-11-09 |
+| P28-F-R4-R1-R1-R1-R1 | — | Done; Revised by P28-F-R4-R1-R1-R1-R1-R1 | Changed the release default to agent-run EAS `android-apk` build and GitHub draft upload after Markdown approval, merge to `develop`, and draft creation. Audited all 10 release Markdown files; every ordered sequence was consecutive, so no numbering edits were needed. Three focused documentation suites/19 tests and `git diff --check` pass. Task PR #60 merged into Phase 28 as `3605468`; Phase PR #61 merged into `develop` as `c61272f`. | 2026-11-09 |
+| P28-F-R4-R1-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1 | Done; Revised by P28-F-R4-R1-R1-R1-R1-R1-R1 | Corrected release-note numbering and latest-version routing; standardized screenshot assets, removed local screenshot files, verified the owner-supplied APK and aligned README, release notes, GitHub bodies, rules and regression tests. All six gates pass; task PR #64 merged to Phase 28 as `dd8c6b6`, and Phase PR #65 promotes the change to `develop`. v1.1.1 publication and latest-asset rollover remain pending. | 2026-11-09 |
+| P28-F-R4-R1-R1-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1-R1 | In progress | Add template metadata to v1.0.0, remove its duplicate legacy metadata block, and publish the owner-approved v1.1.1 release after the required task/phase/develop/release PR flow. Finalize README and release-history links and rename v1.1.0's APK only after publication. | 2026-11-09 |
 | P29-A | — | Done | Investment returns, emergency-fund bucket targets and full-value linked goal amounts; implementation and validation committed on 2026-11-02. | 2026-11-02 |
 | P29-B | — | Done | Today, goal-year, centered Dropdown and Home-row behavior tests pass; all six final gates exit 0. | 2026-11-02 |
 | P29-C | — | Done | Paid-dialog entry points, actual amounts, Not paid and Undo paths pass; all six final gates exit 0. | 2026-11-02 |
@@ -3166,7 +3172,11 @@ evidence present in exports/checkpoints.
 | P20-A-R2-R1 | Phase 20 | P20-A-R2 | current | 2026-11-09 | Record the owner-reported physical-device result for N44. | Done; owner reported Pass for a linked one-time savings item marked Paid from Transactions creating a holding entry, and Undo removing it. Device identity fields remain blank. | No implementation commit; checklist evidence only. | Old checklist result: Not run. New: Pass based on the owner's report; reason: owner confirmed the physical-device test was completed. | current request |
 | P28-F-R4 | Phase 28 | P28-F | current | 2026-11-09 | Prepare a proposed next-release note and add version-specific screenshot sections for current and previous releases. | Done as a review draft only. Proposed v1.1.1 notes describe the verified manual-savings Paid/Undo flow and shared form titles. Revised by P28-F-R4-R1 to embed supplied screenshots and record the owner-led build/upload sequence. No v1.1.1 version bump, build, tag, publication or merge. | No commit; working-tree draft only. | Old: no next-release draft or per-version screenshot sections; template contained a broken example image URL. New: candidate records pending version approval; screenshot is embedded as owner-designated, and GitHub release creation remains gated on approval and merge. | current request |
 | P28-F-R4-R1 | Phase 28 | P28-F-R4 | current | 2026-11-09 | Add supplied release screenshots and codify the owner-led build/upload/release sequence. | Done; Revised by P28-F-R4-R1-R1. Three supplied PNGs were identical and the owner confirmed intentional reuse. Versioned screenshots are present in README and release Markdown; v1.0.0/v1.1.0 assets and release bodies are updated. Both screenshot URLs return HTTP 200 with Content-Length 244,108. Release rules require owner draft approval, PR integration, GitHub draft creation after merge, owner APK build/upload and confirmation, verification, then separate publication approval. | No commit; current working tree. GitHub image asset edits are complete. | Old: release notes referenced missing screenshots and build guidance did not define the owner handoff. New: release assets render from versioned URLs and roles/gates are explicit; reason: prevent builds from unmerged code and publishing before owner confirmation. | current request |
-| P28-F-R4-R1-R1 | Phase 28 | P28-F-R4-R1 | current | 2026-11-09 | Continue the approved v1.1.1 release candidate through version alignment, six-gate validation, required PR integration and creation of a GitHub Release draft. | In progress; owner approved the Markdown draft. `app.json`, `package.json` and `package-lock.json` are version 1.1.1. All six gates and the focused 3-suite/19-test check pass. Task commit `7a7df6d` merged via PR #56 into Phase 28; Phase 28 PR #57 merged into `develop` at `d16886d`. Release branch `release/v1.1.1` is pushed at `cbb8454`; GitHub draft targets that exact commit with the screenshot attached. Await owner APK upload/confirmation and separate publication approval. | Task branch `task/P28-F-R4-R1-R1-approve-v1-1-1`; Phase 28 branch; PRs #56 and #57; release commit `cbb8454`. | Candidate title/status changed from proposed review to owner-approved release; GitHub draft exists; no APK or published tag exists. | current request |
+| P28-F-R4-R1-R1 | Phase 28 | P28-F-R4-R1 | current | 2026-11-09 | Continue the approved v1.1.1 release candidate through version alignment, six-gate validation, required PR integration and publication. | In progress; owner-approved note and app/package versions passed all six gates, task PR #56 and Phase 28 PR #57 merged the candidate to `develop`, and the APK was verified and attached. The GitHub release remains a draft pending final publication. | Task branch `task/P28-F-R4-R1-R1-approve-v1-1-1`; Phase 28 branch; PRs #56 and #57; release branch and GitHub draft. | Candidate title/status changed from proposed review to owner-approved release; publication remains pending. | current request |
+| P28-F-R4-R1-R1-R1 | Phase 28 | P28-F-R4-R1-R1 | current | 2026-11-09 | Complete screenshots, release-note completeness and screenshot display rules. | Done; Revised by P28-F-R4-R1-R1-R1-R1. Owner approved the note and requested compact thumbnails, latest-only README images, and a fixed category order. Added all 23 screenshots to versioned paths and all three GitHub releases. README now contains only latest screenshots under the generic heading; galleries use 150-pixel images, four per row, ordered Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions (omitting unavailable screens). Removed Contributors sections, completed all template sections in v1.1.1, removed the APK-upload status message and updated policies/tests. All release image URLs return HTTP 200; focused tests and `git diff --check` pass. The approved note is now in `published/`; PRs #58 and #59 merged the screenshot/doc revision to Phase 28 and `develop`. APK upload, verification and publication remain pending. | Task branch `task/P28-F-R4-R1-R1-R1-release-screenshots`; Phase 28 branch; PRs #58/#59; GitHub releases v1.0.0, v1.1.0, v1.1.1 draft. | Old: all releases displayed in README and galleries were vertical; draft omitted template sections and said APK unavailable. New: latest-only README, 150-pixel four-per-row galleries in owner order, complete template note without upload-status message. Release-download tests now identify published versions from the Published release-history table, not every note in `published/`; the progress-ledger test and dashboard account for the integrated subtask. Reason: owner-directed display/review requirements, approval-first note placement, and accurate release/ledger status. | current request |
+| P28-F-R4-R1-R1-R1-R1 | Phase 28 | P28-F-R4-R1-R1-R1 | current | 2026-11-09 | Update the approved release workflow so the agent builds and uploads the Android APK, and audit ordered-list numbering throughout release Markdown. | Done; release rules consistently authorize the agent to build with EAS `android-apk` and upload to the GitHub draft only after Markdown approval, code merge to `develop`, and draft creation. Audited all 10 release Markdown files: every ordered sequence is consecutive; no numbering edits were needed. Three focused suites / 19 tests and `git diff --check` pass. Task PR #60 merged into Phase 28 as `3605468`; Phase PR #61 merged into `develop` as `c61272f`. | Task branch `task/P28-F-R4-R1-R1-R1-R1-agent-apk-release-workflow`; task PR #60; Phase PR #61; `develop` merge `c61272f`. | Old: release docs instructed the owner to build/upload and prompted for an APK path; current ordered lists were already consecutive. New: agent-run EAS build/upload is the default, with separate publication approval retained. Reason: owner-directed release automation without confusing the build step with permission to publish. | current request |
+| P28-F-R4-R1-R1-R1-R1-R1 | Phase 28 | P28-F-R4-R1-R1-R1-R1 | current | 2026-11-09 | Correct release-note numbering, latest-version wording, screenshot asset names/storage, README/release links and the v1.1.1 APK handoff. | Done; all six gates pass. Task PR #64 merged to Phase 28 as `dd8c6b6`; Phase PR #65 promotes the update to `develop`. v1.1.1 remained a draft at that revision; its publication and latest-asset rollover are recorded in the next revision. | Commit `d086756`; task PR #64; Phase PR #65; screenshot/APK assets attached to GitHub releases. | Old: release-numbering gap, conflicting latest labels, repository screenshot directory, and outdated APK handoff state. New: release assets and docs use consistent version-specific names; only publication transfers latest status. Reason: explicit owner direction and accurate, reviewable release material. | current request |
+| P28-F-R4-R1-R1-R1-R1-R1-R1 | Phase 28 | P28-F-R4-R1-R1-R1-R1-R1 | current | 2026-11-09 | Align v1.0.0 metadata to the shared template and publish v1.1.1 with the latest APK and screenshot routes. | In progress; v1.0.0 template metadata is corrected and the v1.1.1 release publication/rollover remain pending. | Task branch `task/P28-F-R4-R1-R1-R1-R1-R1-R1-release-and-metadata`; task/phase/develop and release PRs will be recorded after integration. | Old: v1.0.0 metadata was duplicated below Download, and README/release history still treated v1.1.0 as current. New: template-aligned notes; publication and latest-asset rollover remain pending. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
@@ -3470,6 +3480,7 @@ completion checks without hardcoding totals.
 | CR-96 | P29-K: Budget scope selection applies immediately; Close, backdrop and Android back discard the pending operation. | Done | Shared `ApplyScopeDialog` is used by item, section and income Save/Delete flows; section-delete counts remain in the popup and Undo is preserved. No schema/domain change. |
 | CR-97 | P29-L: Replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | Done | The P29-L acceptance matrix, migration/backup evidence and six ordered gates are recorded in the final P29-L section. |
 | CR-98 | Audit requested first-parent commits and create the historical `release/v1.0.0` branch. | Done | The 403 requested non-merge commits are already ancestors of `main` and `develop`; 84 legacy subjects do not pass the current Conventional Commit hook. Do not rewrite history. `release/v1.0.0` points at the existing v1.0.0 tag target. Task PR #52 and Phase 28 PR #53 are merged through `develop`. |
+| CR-103 | Correct v1.0.0 release metadata to match the template and publish the owner-approved v1.1.1 release with all latest-version links/assets aligned. | In progress | P28-F-R4-R1-R1-R1-R1-R1-R1; finalize latest links and record publication evidence after release verification. |
 
 ## 8. Known issues and risks
 
@@ -3818,11 +3829,14 @@ evidence for the fixes.
   95.96% statements, 92.04% branches, 98.02% functions and 97.63% lines.
   Gates 2-6 exited 0, with Expo Doctor 21/21 and Android/iOS exports complete.
   Those full gates predate this continuation's final documentation/test edits.
-- Current continuation changes are limited to release/memory/ledger
-  documentation and documentation regression tests; app source is unchanged.
-  After these edits, the focused release/memory/ledger command passed 3 suites
-  and 18 tests, and `git diff --check` exited 0. The full suite and Gates 2-6
-  were not rerun after these final documentation-only changes.
+- This revision changes release/memory/ledger documentation and documentation
+  regression tests only; app source is unchanged. The six required gates were
+  rerun in order: `npm test -- --coverage` exited 0 (98 suites, 1,271 passed,
+  1 skipped; 95.96/92.04/98.02/97.63% statements/branches/functions/lines),
+  `npx tsc --noEmit` 0, `npx expo lint` 0, `npx expo-doctor` 0 (21/21),
+  `npx expo export --platform android` 0, and
+  `npx expo export --platform ios` 0. Focused release/memory/ledger tests
+  passed 3 suites/21 tests; `git diff --check` exited 0.
 - Previously recorded ordered gate exit codes:
 
   | Gate | Command | Exit |
@@ -3834,7 +3848,8 @@ evidence for the fixes.
   | 5 | `npx expo export --platform android` | 0 |
   | 6 | `npx expo export --platform ios` | 0 |
 
-  No EAS or Gradle build was run.
+  No new EAS or Gradle build was run; the previously verified owner-provided
+  v1.1.1 APK remains attached to the GitHub draft.
 - P30-A reproduced the stale-SQLite-over-newer-fallback persistence path after
   failed writes, read-back mismatch or legacy fallback; P30-B repaired it and
   P30-C added source guards and diagnostics. The P30 repair is not in the
@@ -3897,6 +3912,103 @@ evidence for the fixes.
   targets `cbb8454` and includes the screenshot asset. N44 remains
   owner-reported Pass; APK/device verification awaits owner build and upload.
   Publication requires separate approval after artifact checks.
+
+### P28-F-R4-R1-R1-R1 — expanded screenshots and clarified release handoff (2026-11-09)
+
+- Copied 23 owner-supplied PNGs into versioned paths and attached them to the
+  corresponding GitHub releases: 7 for v1.0.0, 8 for v1.1.0, and 8 for
+  v1.1.1. The screenshots display demo labels/content. Updated README and all
+  release Markdown screenshot sections; removed Contributors sections from
+  all release notes and GitHub release bodies.
+- Updated release instructions: after owner approval, complete all release
+  details and move the note to `published/` before GitHub Release draft
+  creation. Immediately after draft creation, ask via the ask-user dialogue
+  for the absolute APK path or manual-upload confirmation. If no screenshots
+  are supplied, reuse the previous release's complete set.
+- After owner feedback, changed the README, all three release notes and all
+  three GitHub release bodies to 150-pixel thumbnails in rows of no more than
+  four; the focused documentation test now checks these row limits.
+- Further owner feedback limited README to only the latest screenshot set
+  under the unversioned `Screenshots` heading. The v1.1.1 note now contains
+  every template section, uses the expected versioned latest-download link,
+  and omits the prior APK-upload status message; the existing GitHub draft
+  body mirrors the complete note with public preview image URLs.
+- Owner specified screenshot order: Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions, omitting screens unavailable in a
+  release. Reordered the README, three release notes and GitHub release
+  galleries accordingly.
+- The published v1.1.0 GitHub page visually renders the gallery as two rows
+  of four thumbnails. All 23 image links across the three release bodies
+  return HTTP 200; no APK was built or uploaded and no release was published.
+- The existing v1.1.1 draft predates this revised process and remains at its
+  original target. Its own eight screenshot assets are attached; its body
+  uses byte-identical public v1.1.0 image assets because v1.1.1 draft assets
+  are not publicly fetchable before publication. The revised v1.1.1 Markdown
+  has owner approval and is now moved to `published/`; required task/phase/
+  `develop` PR integration is in progress. The GitHub draft remains
+  unpublished; no APK was built or uploaded.
+- `npm test -- --runInBand src/lib/__tests__/releaseDownloadDocs.test.ts`:
+  passed (1 suite, 7 tests). `git diff --check`: passed.
+- All 23 image links in the three GitHub release bodies returned HTTP 200;
+  each release has the corresponding complete screenshot set attached, and
+  all three release bodies omit Contributors sections.
+- The six required gates were rerun in order on the screenshot/documentation
+  revision: `npm test -- --coverage` 0 (98 suites, 1,269 passed, 1 skipped;
+  95.96/92.04/98.02/97.63% overall coverage); `npx tsc --noEmit` 0;
+  `npx expo lint` 0; `npx expo-doctor` 0 (21/21);
+  `npx expo export --platform android` 0; `npx expo export --platform ios`
+  0. An initial Gate 1 attempt exited 1 because the progress ledger
+  dashboard/index and assertions had not yet been updated for this new
+  in-progress subtask; counts and guards were corrected, then the full
+  ordered rerun passed. Targeted ledger/release tests pass 2 suites/18 tests.
+
+### P28-F-R4-R1-R1-R1-R1 — agent-run APK build and release numbering audit (2026-11-09)
+
+- Updated the shared repository instructions and release docs so the release
+  agent builds with EAS profile `android-apk`, uploads the APK to the GitHub
+  draft and verifies it after Markdown approval, merge to `develop` and draft
+  creation. Separate publication approval remains required. Other EAS builds
+  and local Gradle builds remain gated.
+- Audited all 10 Markdown files under `docs/releases/`. Every ordered list
+  sequence is consecutive, including README lifecycle steps, release/build
+  checklists and numbered RELEASE_PROMPT sections. No renumbering was needed.
+- `npm test -- --runInBand src/lib/__tests__/releaseDownloadDocs.test.ts src/lib/__tests__/progressLedger.test.ts src/lib/__tests__/memoryDocs.test.ts`: exit 0 (3 suites, 19 tests).
+- `git diff --check`: exit 0.
+- The six app gates were not rerun because this is a documentation and test
+  update with no application-source changes. The owner has already started
+  the v1.1.1 `android-apk` EAS build; no duplicate build was started.
+- Task PR #60 merged into Phase 28 as `3605468`; Phase PR #61 merged into
+  `develop` as `c61272f`. The task branch was deleted; Phase 28 remains.
+
+### P28-F-R4-R1-R1-R1-R1-R1 — release screenshot assets and latest-version rules (2026-11-09)
+
+- Corrected `RELEASE_PROMPT.md` section numbering and clarified that only the
+  latest published release uses `Latest version`, `/latest/`, and the
+  `latest` APK filename. Older published notes use `Version` and versioned
+  direct links.
+- Standardized image asset names to
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`, updated README and release
+  galleries to use release asset URLs, and removed the repository screenshot
+  directory after confirming all 23 screenshots were attached to their
+  matching GitHub releases. The README continues to show v1.1.0 screenshots
+  while v1.1.0 is the latest published release.
+- Updated v1.0.0 and v1.1.0 GitHub release bodies to match their versioned
+  screenshot assets. Updated the v1.1.1 draft body to match its approved
+  versioned note and assets; the release remains a draft, so its assets are
+  not publicly downloadable before publication.
+- The owner-provided v1.1.1 APK was previously verified against EAS and
+  remains attached as `WealthWise-android-latest-v1.1.1.apk`; its 112,150,605
+  byte size and build metadata are recorded in the release history. No digest
+  is included here.
+- Focused documentation tests: exit 0 (3 suites, 20 tests).
+- Ordered gates: `npm test -- --coverage` exit 0 (98 suites, 1,270 passed,
+  1 skipped; coverage 95.96/92.04/98.02/97.63% overall); `npx tsc --noEmit`
+  exit 0; `npx expo lint` exit 0; `npx expo-doctor` exit 0 (21/21);
+  `npx expo export --platform android` exit 0; and
+  `npx expo export --platform ios` exit 0. `git diff --check` exits 0.
+- Task PR #64 merged into Phase 28 as `dd8c6b6`; Phase PR #65 carries the
+  completed release documentation to `develop`. v1.1.1 is not published; no
+  tag or latest-route rollover was made.
 
 ### P28-E-R3 — selected history ancestry on develop
 
@@ -10295,15 +10407,17 @@ Gradle build, version bump, or release preparation was performed.
 
 - The owner approved the patch-release Markdown draft. The task branch aligns
   `app.json`, `package.json` and `package-lock.json` at 1.1.1 and contains the
-  approved release notes and screenshot. PR #56 merged into Phase 28 as
-  `1a5af30`; Phase 28 PR #57 merged into `develop` as `d16886d`.
-- All six ordered gates pass; Gate 1 is 98 suites / 1,269 passed / 1 skipped.
-  Focused release/memory/ledger tests pass 3 suites / 19 tests. Candidate
-  commit is `7a7df6d`; `release/v1.1.1` is pushed at `cbb8454`, based on
-  merged develop. The GitHub draft targets that commit and includes the
-  screenshot. No APK, EAS/Gradle build or publication has been made.
-- Wait for owner APK upload and confirmation before artifact verification;
-  publication remains separately gated.
+  approved release notes and screenshot.
+- The original candidate passed all six ordered gates; Gate 1 was 98 suites /
+  1,269 passed / 1 skipped. Task PR #56 and Phase 28 PR #57 merged the
+  candidate to `develop`; `release/v1.1.1` and its GitHub Release draft now
+  exist. The draft predates the later rule requiring note finalization before
+  GitHub draft creation and remains at its original target. The owner APK
+  build/upload and publication remain pending; no EAS/Gradle build or
+  publication was made by the agent.
+- After merge and GitHub draft creation, wait for the owner APK upload and
+  confirmation before artifact verification; publication remains separately
+  gated.
 
 ## 12. Phase branch index
 
@@ -10345,7 +10459,7 @@ are guarded by `progressLedger.test.ts`.
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 28 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 32 |
 | 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 41 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 
