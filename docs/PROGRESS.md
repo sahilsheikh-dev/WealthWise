@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 87% (150/172)
+Overall progress █████████░ 87% (150/173)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -80,7 +80,7 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (22/22)
+Phase 28         ██████████ 96% (22/23)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
 Phase 31         ░░░░░░░░░░ 0% (0/3)
@@ -192,10 +192,11 @@ Phase 37         ░░░░░░░░░░ 0% (0/3)
 | P28-C-R3 | — | Done | Finalized release rules, Download parity and its derived Jest regression; verified both public APK links and SHA-256, matched the EAS build, aligned the approved v1.0.0 tag, and added the owner-run device checklist. No app behavior changed; GitHub release-body edit and physical-device tests remain owner actions. | 2026-11-08 |
 | P28-C-R4 | — | Done | Reorganized README user/developer/documentation sections; removed public APK digest and commit identifiers; aligned release notes, history, release rules and verification tests. GitHub release body was not edited per instruction. | 2026-11-08 |
 | P28-D | — | Done | Established shared branching, commit and gate rules; added contributor/security guidance and GitHub templates. `develop` bootstrapped at `a258579c4b580d6f3a157b8d13de53334aa8d34d`; rule applies prospectively to legacy unreleased history. All six gates pass; Gate 1: 98 suites, 1,230 passed, 1 skipped. | 2026-11-08 |
-| P28-E | — | Done; Revised by P28-E-R1, P28-E-R2 and P28-E-R3 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the 131-commit archive. 512 original commits are mapped exactly once. P28-E-R3 records the selected historical commits as ancestry on `develop` without changing application code. | 2026-11-08 |
+| P28-E | — | Done; Revised by P28-E-R1, P28-E-R2, P28-E-R3 and P28-E-R4 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the 131-commit archive. 512 original commits are mapped exactly once. P28-E-R3 records selected commits; P28-E-R4 connects the complete archive ancestry to `develop` without changing application or release code. | 2026-11-08 |
 | P28-E-R1 | — | Done | Close out the phase-history evidence and record final integrated Release 2 gates, branch integrations, and remaining device/release follow-ups. | 2026-11-08 |
 | P28-E-R2 | — | Done | Preserve the local final-remote-verification commit in GitHub history while reconciling its stale status text with the current ledger. Final remote branch/tag and archive checks are recorded; no tag was changed. | 2026-11-08 |
-| P28-E-R3 | — | Done | Added ancestry-only merge records for P25-F, the v1.1.0 merge and the Phase 1 refactor on the task branch. Application source is unchanged; historical archive PR #46 remains isolated to `history/by-phase`. PR integrations are recorded below. | 2026-11-09 |
+| P28-E-R3 | — | Done | Added ancestry-only merge records for P25-F, the v1.1.0 merge and the Phase 1 refactor on the task branch. Application source is unchanged; historical archive PR #46 remains isolated to `history/by-phase`. PR #47 merged to Phase 28 and PR #48 merged to `develop`. | 2026-11-09 |
+| P28-E-R4 | — | In progress | Connect the complete `history/by-phase` archive ancestry through the Phase 28 task/phase PR route to `develop`, preserving the existing application tree and leaving `main` and `release/v1.1.0` unchanged. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3 and P28-F-R3-R3-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, and P28-F-R3-R3-R1 for the merged filename-policy PR chain. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -3077,7 +3078,7 @@ evidence present in exports/checkpoints.
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
 | P28-D | Phase 28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | `b314113` (`docs: add branching strategy and contributor guide`). | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
 | P28-C-R4 | Phase 28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. The final integrated six-gate run passed: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 all exit 0, Doctor 21/21, Android and iOS exports succeeded. | Task `89739755081f9c5ed32a6067f4b85bdfcbe39edc` (`P28-C-R4: Restructure README and align release documents with the no-public-digest policy`); phase integration `fd0360ab4affd805fda6fa778e5f06d20b6acc8d`. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
-| P28-E | Phase 28 | — | current | 2026-11-08 | Map repository history to phase/subtask IDs and create historical phase branches, completion tags and an archival `history/by-phase` branch. | Done; Revised by P28-E-R1 and P28-E-R2. 30 phase branches/tags and a read-only 131-commit archive are verified. The snapshot contains 512 original commits: 337 directly mapped and 175 date-fallback mapped, with zero unmapped. Each original hash appears once; the archive tree equals main. | Task `73d07f22237fb8db9d039618ffb1709a9d75ca45` (`docs: map phase history and record Release 2 revisions`); Phase 28 integration `c841cf412ea84abf35429a9a23e033f0546abda6`; develop integration `e629ae76cb572a933148664ec6c3cb67e6434a21`. | The baseline hash in P28-D evidence is not treated as P28-D's implementation commit. Phases 7, 9 and 10 use nearest preceding evidenced anchors because no dedicated original commit was found. | current request |
+| P28-E | Phase 28 | — | current | 2026-11-08 | Map repository history to phase/subtask IDs and create historical phase branches, completion tags and an archival `history/by-phase` branch. | Done; Revised by P28-E-R1, P28-E-R2, P28-E-R3 and P28-E-R4. 30 phase branches/tags and the 131-commit archive are verified. The snapshot contains 512 original commits: 337 directly mapped and 175 date-fallback mapped, with zero unmapped. Each original hash appears once. Its tree matched `main` at the original verification point; it is a historical snapshot, not the current main tree. | Task `73d07f22237fb8db9d039618ffb1709a9d75ca45` (`docs: map phase history and record Release 2 revisions`); Phase 28 integration `c841cf412ea84abf35429a9a23e033f0546abda6`; develop integration `e629ae76cb572a933148664ec6c3cb67e6434a21`. | The baseline hash in P28-D evidence is not treated as P28-D's implementation commit. Phases 7, 9 and 10 use nearest preceding evidenced anchors because no dedicated original commit was found. | current request |
 | P28-E-R2 | Phase 28 | P28-E | current | 2026-11-08 | Preserve and reconcile the final P28-E remote-verification record. | Done; local commit `72fb325` is retained in history via merge commit `196deef`. All six gates pass on the reconciliation branch: Gate 1 has 98 suites, 1,244 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; Gates 2-6 exit 0, Expo Doctor 21/21. Its outdated device, release and branch status was not allowed to overwrite the current ledger. | P28-E final-verification commit `72fb325ed395c6f7e968c44e6af177689051f898`; reconciliation merge `196deefc454403614f2994bd976958996be92ce8`. | Old: the local P28-E follow-up mixed valid final-gate evidence with stale release/device status. New: retain its final-gate entry and commit ancestry while using current records for Release 2 status. Reason: preserve useful P28-E evidence without restoring superseded claims. | current request |
 | P28-E-R1 | Phase 28 | P28-E | current | 2026-11-08 | Close out P28-E evidence and record final integrated gates, protected hashes and remaining follow-ups. | Done; final integrated `develop` run: all six gates exit 0. Gate 1: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%. Protected hashes verified: Budget `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c`; Home `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. The archived 512-commit source snapshot predates follow-up commits and remains unchanged. Authorized refs and the final Phase 28/develop ledger integrations were pushed and remotely verified; `v1.0.0` remains unchanged. | Task `a9407d002a527ffa9a1edd8a4d01870cce0eb7d2` (`docs: close P28-E history and record final gates`); follow-up `533aafb07c242fd1be7f682115527074f64026ac` (`docs: verify authorized Budget screen hash`); Phase 28 and develop merges use `--no-ff`. | Old: P28-E was described as in progress with a preliminary 485-source estimate and pending archive checks; the Budget protected hash did not include the later authorized recurring-income editor. New: final evidence records 512 mapped hashes (337 direct, 175 date fallback, zero unmapped), the 131-commit archive, all six gates, and the current Budget/Home blobs. Reason: replace provisional history and stale protected-hash evidence with verified results without rewriting the read-only snapshot. Device checks and v1.1.0 release preparation remain pending. | current request |
 | P28-F | Phase 28 | — | current | 2026-11-08 | Verify branch integration and prepare the Release 2 code on `release/v1.1.0`, then merge to main and back-merge to develop. | Done; all six ordered release-branch gates exit 0: Gate 1 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; Gates 2-6 exit 0, Expo Doctor 21/21. On main, post-merge Gates 1-2 exit 0 with 98 suites, 1,242 passed, 1 skipped. Release PR #2 merged as `91e0cc2`; back-merge PR #3 merged as `0d2bf0a`. Revised by P28-F-R3, which records the later EAS build, tag and publication. | `ed2f596` (`chore: prepare v1.1.0 release`); test correction `29f91ff`; gate evidence `86ca5dd`; PR #2 merge `91e0cc2`; PR #3 merge `0d2bf0a`. | Initial Gate 2 found a TypeScript narrowing issue in the new derived progress assertion (exit 2); the test was corrected and the ordered six-gate rerun passed. Main Gate 1 and 2 also passed. Old: no v1.1.0 release record existed. New: release metadata, changelog, draft and README What's new are integrated while Download remains on v1.0.0. Reason: prepare verified Release 2 changes for owner-led APK build and publication. | current request |
@@ -3333,7 +3334,8 @@ phase counts remain derived from ledger statuses and check the active P28-F row
 as open, then closed after integration. Reason: preserve accurate progress and
 completion checks without hardcoding totals.
 
-| P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; those ancestry commits preserve the develop tree, while the task adds only ledger/memory documentation and a ledger test. Task PR #47 merged into Phase 28 as `3553b73`; phase PR targets `develop`. Historical PR #46 remains isolated to `history/by-phase`; its `f5f1086` tree is not the current main tree. | Task branch `task/P28-E-R3-record-selected-ancestry`; phase branch `phase/28-qa-and-release`; PR #47 merged task -> phase, phase -> `develop` next. | Old: the three selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record their ancestry through `ours` merges while keeping the develop source tree; clarify that the archived tree is a historical snapshot, not current main. Reason: use the requested develop target and correct the stale tree comparison without changing application source or main. Updated ledger guard: old assertion required P28-E to be revised only by R1; new assertion requires R1/R2/R3 and exactly one dashboard/log row for R3. Reason: track this revision without weakening progress/branch-index count checks. | current request |
+| P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; those ancestry commits preserve the develop tree, while the task adds only ledger/memory documentation and a ledger test. Task PR #47 merged into Phase 28 as `3553b73`; phase PR #48 merged into `develop` as `8c1e670`. Historical PR #46 remains separate until P28-E-R4. | Task branch `task/P28-E-R3-record-selected-ancestry`; phase branch `phase/28-qa-and-release`; PRs #47 and #48 merged task -> phase -> `develop`. | Old: selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record the three selected commits by `ours` ancestry merges and clarify that the archive tree is an older snapshot. Reason: connect requested commits without changing application source or main. Updated the guard to exact-once track P28-E-R3. | current request |
+| P28-E-R4 | Phase 28 | P28-E | current | 2026-11-09 | Connect the complete `history/by-phase` ancestry to `develop` while preserving `develop`, `release/v1.1.0`, and `main` tracked content. | In progress; `origin/history/by-phase` tip `e4a95d57d7bfa3d062d233c3ca315a1a520ef654` is now an ancestry parent through tree-preserving merge `c4f9aba` on `task/P28-E-R4-connect-history-archive`. Merge tree equals the captured `develop` tree `ba3afcec6de34a28295ac3cf5f14736c29b1e96d`; release and main remain at `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, tree `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. | Task branch `task/P28-E-R4-connect-history-archive`; task -> Phase 28 -> `develop` PRs pending. | Old: history branch was isolated from application ancestry. New: merge the full archive history with `ours` so every archive commit is reachable from `develop` while retaining the current tree. Reason: connect branch histories without replacing or modifying app/release code. | current request |
 
 ## 7. Change-request register
 
@@ -3770,8 +3772,8 @@ evidence for the fixes.
 
 | Area | Status | Evidence |
 |---|---|---|
-| Ancestry and tree preservation | Verified on task branch | `f994457`, `7bea8e6` and `b779c21` are ancestors via `a654f66`, `be7b394` and `0697d88`. These ancestry commits preserve the captured `origin/develop` tree `dba012ebe61de2796960711ed9948b2fad1352f1`; subsequent changes are limited to ledger/memory documentation and a ledger test. No application source paths changed. `main` remains at baseline `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`. |
-| Archive clarification | Recorded | PR #46 changed only `history/by-phase`; its tree `f5f10867771cf74d03071f4c8d8a5cbfd7941156` is an older snapshot, not the current main tree. Task PR #47 merged into Phase 28 at `3553b736861919d6f617c3048080152268714c42`; the phase PR targets `develop`. |
+| Ancestry and tree preservation | Verified on `develop` | `f994457`, `7bea8e6` and `b779c21` are ancestors via `a654f66`, `be7b394` and `0697d88`. These ancestry commits preserve the captured `origin/develop` tree `dba012ebe61de2796960711ed9948b2fad1352f1`; subsequent changes are limited to ledger/memory documentation and a ledger test. No application source paths changed. `main` remains at baseline `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`. |
+| Archive clarification | Recorded | PR #46 initially changed only `history/by-phase`; P28-E-R4 records its full tip as an ancestry parent on the task branch without taking its tree. The archive tree `f5f10867771cf74d03071f4c8d8a5cbfd7941156` is an older snapshot, not the current main tree; PR integration remains pending. |
 | Progress-ledger assertions | Updated | Old: the dashboard assertion required only `Revised by P28-E-R1`, and the ID lists omitted P28-E-R2/R3. New: the assertion requires `Revised by P28-E-R1, P28-E-R2 and P28-E-R3`, and both ID lists include R2/R3. Reason: ensure the new revision is tracked exactly once while retaining count and branch-index guards. |
 
 Final-tree gates, run in order: `npm test -- --coverage` 0 (98 suites,
@@ -3783,6 +3785,24 @@ Final-tree gates, run in order: `npm test -- --coverage` 0 (98 suites,
 `domain` 96.94/92.87/98.80/98.33%, and `lib` 100% in all four measures.
 The merge PRs follow task -> Phase 28 -> `develop`; no release, tag, or `main`
 change is included.
+
+### P28-E-R4 — connect the history archive to develop
+
+| Area | Status | Evidence |
+|---|---|---|
+| Archive ancestry | Verified on task branch | The full `origin/history/by-phase` tip `e4a95d57d7bfa3d062d233c3ca315a1a520ef654` is an ancestor via merge `c4f9aba`. The merge has an empty tree diff and retained tree `ba3afcec6de34a28295ac3cf5f14736c29b1e96d`, matching the captured `develop`/Phase 28 tree. |
+| Branch code preservation | Verified before PR | `main` and `release/v1.1.0` remain at `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, tree `207ed97e541e55919d5cb58afbd25c4b0ed835c0`; no merge is directed to either branch. |
+| Phase connectivity | Verified | All 30 remote `phase/*` tips are ancestors of `develop`; `history/by-phase` was the only disconnected head found. |
+| Progress assertions | Updated | The test counts P28-E-R4 exactly once and expects the in-progress Phase 28 total, without weakening branch-index, status, or progress-percentage checks. |
+
+Final ordered gates on the ancestry-connected task branch: `npm test -- --coverage`
+0 (98 suites, 1,267 passed, 1 skipped; 95.96% statements, 92.04% branches,
+98.02% functions, 97.63% lines); `npx tsc --noEmit` 0; `npx expo lint` 0;
+`npx expo-doctor` 0 (21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Gate 1 coverage by `src/` directory
+(statements/branches/functions/lines): `data` 91.03/87.41/94.46/94.17%,
+`domain` 96.94/92.87/98.80/98.33%, and `lib` 100% in all measures. PR
+integration remains pending.
 
 ### P20-S-R1 — form Dropdowns and visible titles
 
@@ -9318,6 +9338,22 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### P28-E-R4 history archive ancestry (2026-11-09)
+
+- Added tree-preserving merge `c4f9aba` on
+  `task/P28-E-R4-connect-history-archive`, with
+  `origin/history/by-phase` tip `e4a95d57d7bfa3d062d233c3ca315a1a520ef654`
+  as a parent. The merge's tree equals the captured `develop` tree; the
+  archive tree itself was not checked out. `main` and `release/v1.1.0` remain
+  at their original tip and tree.
+- All 30 remote `phase/*` tips are ancestors of `develop`; `history/by-phase`
+  was the only disconnected head found. The task -> Phase 28 -> `develop`
+  route and final reachability check remain pending.
+- All six ordered gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped;
+  coverage 95.96/92.04/98.02/97.63% overall, `src/data`
+  91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, and
+  `src/lib` 100% in all measures. Gates 2-6 exit 0; Expo Doctor is 21/21.
+
 ### P28-E-R3 selected ancestry (2026-11-09)
 
 - Added three `ours` merge commits on
@@ -10027,8 +10063,10 @@ Gradle build, version bump, or release preparation was performed.
 
 The phase branch tips contain task/phase integration commits; completion tags
 point to the phase's last identified original subtask commit. `history/by-phase`
-is a read-only synthetic archive; its commits are not merged into application
-branches. Subtask counts are derived from the dashboard and are guarded by
+remains a read-only synthetic archive; P28-E-R4 records its complete ancestry
+on the task branch with a tree-preserving merge, without checking out the
+archive tree. The task -> Phase 28 -> `develop` PRs are pending. Subtask counts
+are derived from the dashboard and are guarded by
 `progressLedger.test.ts`.
 
 | Phase | Branch | Tag | Last original commit | Subtask count |
@@ -10060,7 +10098,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 22 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 23 |
 | 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 41 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 
