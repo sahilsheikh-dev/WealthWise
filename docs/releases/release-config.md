@@ -92,7 +92,7 @@ Exclude:
 | Automatic Git Commit | No (draft and archive commits are required) |
 | Automatic Git Push | No |
 
-## Owner-led release sequence
+## Approved release sequence
 
 1. Prepare the versioned Markdown release draft, complete it with verified
    release details and screenshot links, and ask the owner to approve it. Do
@@ -110,16 +110,17 @@ Exclude:
 4. After the changes merge to `develop`, create `release/vX.Y.Z` at that
    source and create the GitHub Release draft at the release-branch commit.
    The draft may create the version tag; do not retarget it. Attach every
-   screenshot, use each absolute attached-asset URL in the draft body, and
-   immediately use the ask-user dialogue to request the absolute local path to
-   the owner's built APK. State the required filename and wait for the owner
-   to provide the path or confirm manual upload. Agents do not start EAS or
-   Gradle builds.
-5. Wait for the owner's upload confirmation. Then verify the APK, digest,
-   links, release notes and build-history record. After separate explicit
-   publication approval, merge the release branch `--no-ff` into `main`,
-   verify the tag target, then publish. The finalized note is already in
-   `published/`; do not move it after publication.
+   screenshot, use each absolute attached-asset URL in the draft body, then
+   run `eas build --platform android --profile android-apk` from the release
+   branch. Wait for the successful build, download the APK outside the
+   repository, and upload it to the draft as
+   `WealthWise-android-latest-vX.Y.Z.apk`. Do not wait for the owner to build
+   or upload it manually.
+5. Privately verify the uploaded APK against its EAS artifact and verify the
+   digest, links, release notes and build-history record. After separate
+   explicit publication approval, merge the release branch `--no-ff` into
+   `main`, verify the tag target, then publish. The finalized note is already
+   in `published/`; do not move it after publication.
 
 Build targets and EAS profiles are documented in
 [`build-config.md`](./build-config.md): production Android AAB for Google Play,
@@ -223,10 +224,10 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     except for screenshot additions explicitly authorized by the owner; do not
     otherwise rewrite the file.
 
-Immediately after creating a GitHub Release draft, use the ask-user dialogue
-to request the absolute local path to the owner's APK file and state the
-required versioned asset filename. Wait for the owner to provide the path or
-confirm a manual upload before proceeding to artifact verification.
+After creating a GitHub Release draft, run the configured EAS Android APK
+build, upload the APK under the required versioned asset filename, and verify
+the artifact before requesting separate publication approval. Do not wait
+for the owner to build or upload the APK manually.
 
 Use the finalized published Markdown as the release-body source. For images
 in GitHub release bodies, replace repository-relative screenshot paths with
