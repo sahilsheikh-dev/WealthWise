@@ -9,7 +9,7 @@ or checksums.
 | Version | Date | Type | Android download | Release notes | Status |
 |---|---|---|---|---|---|
 | v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-latest-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
-| v1.0.0 | 2026-11-07 | Initial stable | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android-v1.0.0.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
+| v1.0.0 | 2026-11-07 | Initial | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android-v1.0.0.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
 
 More versions are listed on the [WealthWise releases page](https://github.com/sahilsheikh-dev/WealthWise/releases).
 

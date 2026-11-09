@@ -101,10 +101,62 @@ describe('published release download documentation', () => {
       const assetName = version === latestVersion
         ? `WealthWise-android-latest-${version}.apk`
         : `WealthWise-android-${version}.apk`;
-      expect(releaseHistory).toContain(
-        `${releasesBaseUrl}/download/${version}/${assetName}`,
-      );
+      const assetUrl = `${releasesBaseUrl}/download/${version}/${assetName}`;
+      expect(releaseHistory).toContain(assetUrl);
     }
+  });
+
+  it('keeps every release note on the template metadata format', () => {
+    const template = readFileSync(join(root, 'docs', 'releases', 'TEMPLATE.md'), 'utf8');
+    const releases = {
+      'v1.0.0': {
+        type: 'Initial',
+        date: '2026-11-07',
+        previous: 'Initial release',
+      },
+      'v1.1.0': {
+        type: 'Minor',
+        date: '2026-11-08',
+        previous: 'v1.0.0',
+      },
+      'v1.1.1': {
+        type: 'Patch',
+        date: 'TBD',
+        previous: 'v1.1.0',
+      },
+    } as const;
+
+    for (const [version, metadata] of Object.entries(releases)) {
+      const release = readFileSync(join(publishedDirectory, `${version}.md`), 'utf8');
+      const metadataSection = release.split('## Download')[0] ?? '';
+      for (const heading of [
+        '## Download',
+        `## What's new in ${version}`,
+        '## Screenshots',
+        '## What\'s Included',
+        '### New Features',
+        '### Improvements',
+        '### Fixes',
+        '## Breaking Changes and Migration',
+        '## Known Limitations',
+        '## Upgrade Instructions',
+        '**Full Changelog:**',
+      ]) {
+        expect(release).toContain(heading);
+      }
+
+      expect(metadataSection).toContain(`**Release type:** ${metadata.type}`);
+      expect(metadataSection).toContain(`**Release date:** ${metadata.date}`);
+      expect(metadataSection).toContain(`**Git tag:** \`${version}\``);
+      expect(metadataSection).toContain(`**Previous version:** ${metadata.previous}`);
+      expect(metadataSection.match(/^\*\*Release type:\*\*/gm)).toHaveLength(1);
+      expect(metadataSection.match(/^\*\*Release date:\*\*/gm)).toHaveLength(1);
+      expect(metadataSection.match(/^\*\*Git tag:\*\*/gm)).toHaveLength(1);
+      expect(metadataSection.match(/^\*\*Previous version:\*\*/gm)).toHaveLength(1);
+    }
+
+    expect(template).toContain('**Release type:** [Initial / major / minor / patch]');
+    expect(template).toContain('**Previous version:** [version or Initial release]');
   });
 
   it('does not publish commit identifiers or APK digests in the README or release notes', () => {
@@ -149,6 +201,8 @@ describe('published release download documentation', () => {
       .replace(/\s+/g, ' ');
     const agents = readFileSync(join(root, 'AGENTS.md'), 'utf8').replace(/\s+/g, ' ');
     const readme = readFileSync(join(root, 'README.md'), 'utf8');
+    const readmePath = join(root, 'README.md');
+    const readmeVersion = readLatestVersion(readDownloadBlock(readme, readmePath));
     const readmeScreenshotTables = [...readme.matchAll(/<table>([\s\S]*?)<\/table>/g)];
     const screenshotSets = {
       'v1.0.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions'],
@@ -197,7 +251,9 @@ describe('published release download documentation', () => {
     expect(readmeScreenshotTables).toHaveLength(1);
     for (const [, table = ''] of readmeScreenshotTables) {
       expect(readScreenshotRowCounts(table)).toEqual([4, 4]);
-      expect(readScreenshotCategories(table)).toEqual(screenshotSets['v1.1.0']);
+      expect(readScreenshotCategories(table)).toEqual(
+        screenshotSets[readmeVersion as keyof typeof screenshotSets],
+      );
       expect([...table.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
       )).toBe(true);
@@ -220,9 +276,7 @@ describe('published release download documentation', () => {
         const imageName = `WealthWise-${version}-screenshot-${category}.png`;
         const releaseImageUrl = `${releasesBaseUrl}/download/${version}/${imageName}`;
         expect(releaseContents).toContain(releaseImageUrl);
-        expect(readme).toContain(
-          `${releasesBaseUrl}/download/v1.1.0/WealthWise-v1.1.0-screenshot-${category}.png`,
-        );
+        if (version === readmeVersion) expect(readme).toContain(releaseImageUrl);
       }
     }
     expect(readme).not.toContain('docs/releases/screenshots/');
