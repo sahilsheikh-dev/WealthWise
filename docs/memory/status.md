@@ -1,4 +1,4 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
 - Branching adoption: local `develop` was bootstrapped from main baseline
@@ -23,21 +23,23 @@
   Gate 1 `npm test -- --coverage` exit 0; Gate 2 `npx tsc --noEmit` exit 0;
   Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 0. Gates 5-6
   (Expo exports) were skipped to honor the explicit no-build boundary.
-- Current task: Release 2 stabilization is implemented and committed locally.
-  P29-AB-R1 fixes recurring-income consumers; P30-A/B/C reproduce and repair
-  stale persisted values and add source guards; P20-N-R1 replaces the stacked
-  bar with accessible per-section actual/planned Pace lines (`f904769`). No
-  schema or version bump, release preparation, build, export or push occurred.
-  P30 confirms SQLite winning over newer verified fallback data after restart;
-  mounted-screen refresh, selector/memoization, module-cache, prior-state
-  mutation, and route-param hypotheses were not reproduced by the harness.
-  The device checklist now marks N39 and N40 Fail and N41 Not run; device
-  re-test and v1.1.0 release preparation remain pending. The full Gate 1 run
-  has 97 suites, 1,227 passed, 1 skipped; coverage is 95.96% statements,
-  92.01% branches, 98.01% functions and 97.62% lines overall. `src/data`:
-  91.03/87.39/94.46/94.17%; `src/domain`: 96.95/92.85/98.80/98.32%;
-  `src/lib`: 100% in all four measures. Gates 1-4 passed; exports were skipped
-  because the task forbids builds. Full evidence is in [PROGRESS.md](../PROGRESS.md).
+- Current task: P20-A-R2 repairs Paid on a linked one-time manual savings
+  Budget row. The pre-fix component reproduction confirmed that a link present
+  only in a viewed-month snapshot fell through to a generic transaction;
+  category-matched actuals hid the missing holding entry. The shared
+  clearDue/undoClearDue path now creates one Deposit and one linked invest
+  transaction in one persisted write, and exact Undo removes both in one
+  write. Store tests cover Savings account, Cash and Other manual holdings at
+  exact, lower and higher amounts. No schema/version/release change was made.
+  Final ordered gates all exit 0: 98 suites, 1,255 passed and 1 skipped;
+  overall coverage 95.96/92.04/98.02/97.63% (statements/branches/functions/
+  lines). `src/data`: 91.03/87.41/94.46/94.17%; `src/domain`:
+  96.94/92.88/98.80/98.33%; `src/lib`: 100% in all four measures.
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
+  N44 remains unverified on a physical device; no feature from planned
+  Phases 31-37 has been started. Owner decisions are listed in
+  [open-items.md](./open-items.md), with full evidence in
+  [PROGRESS.md](../PROGRESS.md).
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and

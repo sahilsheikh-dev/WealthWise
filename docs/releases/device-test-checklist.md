@@ -61,6 +61,7 @@ below is initially **Not run**.
 | N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. | Fail | Release 2 bug: quarterly/yearly income appears every month (P29-AB-R1) |
 | N40 | Edit a value and verify it refreshes immediately without restarting the app. | Fail | Release 2 bug: edited values do not refresh immediately (P30-A/B/C) |
 | N41 | Verify Budget overview shows the per-section Pace graph and no stacked bar. | Not run | P20-N-R1 |
+| N44 | Linked one-time savings item marked Paid from Transactions creates a holding entry; Undo removes it. | Not run | P20-A-R2; verify on device |
 
 ## Owner follow-up
 
@@ -68,7 +69,9 @@ The prior owner-entered report marked 43 checks Pass; this task supersedes
 that report for N39-N41. The owner confirms the Release 2 income and edited-
 value bugs reproduce. N41 remains Not run because the Pace graph has not been
 retested on device. The device model, Android version, tester, and test date
-fields remain blank.
+fields remain blank. N44 is added to the owner re-test list; verify that Paid
+creates the linked holding entry and one-step Undo removes it on a physical
+device.
 
 ## How to run
 
