@@ -339,6 +339,145 @@ describe('pending dues', () => {
 });
 
 describe('one-tap dues and undo', () => {
+  it('rejects missing and non-manual holding targets', () => {
+    const options = {
+      date: '2026-01-10',
+      newId: () => 'manual-payment',
+      actualAmount: 250,
+    };
+
+    expect(() => clearDue(base(), { kind: 'holding', id: 'missing' }, options))
+      .toThrow(NotFoundError);
+    expect(() => clearDue(withPlan(), { kind: 'holding', id: 'plan' }, options))
+      .toThrow(NotFoundError);
+  });
+
+  it('rejects missing, nonpositive and unsupported manual deposit amounts', () => {
+    const data = {
+      ...base(),
+      holdings: [{
+        id: 'manual-savings',
+        kind: 'manual' as const,
+        name: 'Savings reserve',
+        type: 'Savings account' as const,
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: '2026-01-01',
+        logs: [],
+      }],
+    };
+    const target = { kind: 'holding' as const, id: 'manual-savings' };
+    const options = {
+      date: '2026-01-10',
+      newId: () => 'manual-payment',
+    };
+
+    expect(() => clearDue(data, target, options)).toThrow(RangeError);
+    expect(() => clearDue(data, target, { ...options, actualAmount: 0 })).toThrow(RangeError);
+    expect(() => clearDue(data, target, {
+      ...options,
+      actualAmount: 100_000_000_001,
+    })).toThrow(RangeError);
+  });
+
+  it('defaults the note for a manual holding deposit', () => {
+    const data = {
+      ...base(),
+      holdings: [{
+        id: 'manual-savings',
+        kind: 'manual' as const,
+        name: 'Savings reserve',
+        type: 'Savings account' as const,
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: '2026-01-01',
+        logs: [],
+      }],
+    };
+    let id = 0;
+    const result = clearDue(data, { kind: 'holding', id: 'manual-savings' }, {
+      date: '2026-01-10',
+      newId: () => `manual-payment-${++id}`,
+      actualAmount: 250,
+    });
+
+    expect(result.data.holdings[0]).toMatchObject({
+      kind: 'manual',
+      logs: [{ kind: 'Deposit', note: '' }],
+    });
+  });
+
+  it('clears and exactly undoes a manual holding deposit with its linked transaction', () => {
+    const original = {
+      ...base(),
+      holdings: [{
+        id: 'manual-savings',
+        kind: 'manual' as const,
+        name: 'Savings reserve',
+        type: 'Savings account' as const,
+        invested: 1_000,
+        value: 1_100,
+        valueAsOf: '2026-01-15',
+        logs: [],
+      }],
+    };
+    const target = { kind: 'holding' as const, id: 'manual-savings' };
+    let id = 0;
+    const cleared = clearDue(original, target, {
+      date: '2026-01-10',
+      newId: () => `manual-payment-${++id}`,
+      actualAmount: 250,
+      note: 'Monthly savings',
+    });
+
+    expect(cleared.data.holdings[0]).toMatchObject({
+      kind: 'manual',
+      value: 1_350,
+      logs: [{
+        id: 'manual-payment-1',
+        date: '2026-01-10',
+        amount: 250,
+        kind: 'Deposit',
+        note: 'Monthly savings',
+        snapshotAdjustment: 250,
+      }],
+    });
+    expect(cleared.data.transactions).toEqual([expect.objectContaining({
+      id: 'manual-payment-2',
+      type: 'invest',
+      amount: 250,
+      source: {
+        kind: 'holding-entry',
+        parentId: 'manual-savings',
+        entryId: 'manual-payment-1',
+      },
+    })]);
+    expect(validateIntegrity(cleared.data)).toEqual([]);
+    expect(undoClearDue(cleared.data, target, cleared.entryId)).toEqual(original);
+  });
+
+  it('does not allow a fixed deposit to use manual holding clearDue', () => {
+    const data = {
+      ...base(),
+      holdings: [{
+        id: 'fixed',
+        kind: 'manual' as const,
+        name: 'Fixed deposit',
+        type: 'Fixed deposit' as const,
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: '2026-01-01',
+        logs: [],
+      }],
+    };
+
+    expect(() => clearDue(data, { kind: 'holding', id: 'fixed' }, {
+      date: '2026-01-10',
+      newId: () => 'fixed-entry',
+      actualAmount: 100,
+    })).toThrow('does not allow deposits or investment entries');
+  });
+
   it('clears a one-time liability due with a linked Payment transaction', () => {
     const result = clearDue({ ...base(), liabilities: [oneTimeLiability()] }, {
       kind: 'liability', id: 'one-time',

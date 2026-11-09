@@ -2263,6 +2263,95 @@ describe('createAppStore persistence', () => {
     },
   );
 
+  it.each(
+    (['Savings account', 'Cash', 'Other'] as const).flatMap((type) => [
+      { type, label: 'exact', amount: 5_000 },
+      { type, label: 'lower', amount: 3_500 },
+      { type, label: 'higher', amount: 6_500 },
+    ]),
+  )('clears and exactly undoes a linked one-time $type deposit at the $label amount', async ({ type, amount }) => {
+    const storage = new MemoryStorage();
+    const snapshot = monthBudgetFromLines('2026-09', [{
+      category: 'Emergency savings',
+      planned: 5_000,
+      dueDay: 10,
+    }], {
+      incomes: [],
+      sections: [{ id: 'savings', name: 'Savings', type: 'invest' }],
+    });
+    const snapshotItem = snapshot.items[0];
+    if (!snapshotItem) throw new Error('Savings snapshot fixture is missing.');
+    snapshot.items = [{
+      ...snapshotItem,
+      sectionId: 'savings',
+      holdingId: 'manual-savings',
+    }];
+    const initial = {
+      ...emptyAppData('2026-09-10'),
+      holdings: [{
+        id: 'manual-savings',
+        kind: 'manual' as const,
+        name: 'Savings reserve',
+        type,
+        invested: 10_000,
+        value: 10_000,
+        valueAsOf: '2026-09-01',
+        logs: [],
+      }],
+      monthBudgets: [snapshot],
+    };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({
+      state: { data: initial }, version: 14,
+    }));
+    let id = 0;
+    const store = makeStore(storage, {
+      newId: () => `linked-savings-${++id}`,
+      today: () => '2026-09-10',
+      isDev: false,
+    });
+    await waitForHydration(store);
+    const before = store.getState().data;
+    const target = { kind: 'holding' as const, id: 'manual-savings' };
+    const writesBefore = storage.setItemCalls;
+
+    const entryId = store.getState().actions.clearDue(target, undefined, amount, 'Emergency savings');
+
+    expect(store.getState().lastError).toBeNull();
+    expect(entryId).toBe('linked-savings-1');
+    expect(storage.setItemCalls - writesBefore).toBe(1);
+    const data = store.getState().data;
+    const holding = data.holdings[0];
+    if (holding?.kind !== 'manual') throw new Error('Manual savings holding is missing.');
+    const entry = holding.logs[0];
+    expect(entry).toMatchObject({
+      id: entryId,
+      date: '2026-09-10',
+      amount,
+      kind: 'Deposit',
+      note: 'Emergency savings',
+    });
+    expect(data.transactions).toEqual([expect.objectContaining({
+      type: 'invest',
+      amount,
+      category: 'Other investments',
+      source: { kind: 'holding-entry', parentId: holding.id, entryId },
+    })]);
+    expect(holdingInvested(holding)).toBe(10_000 + amount);
+    expect(holdingValue(holding, '2026-09-10')).toBe(10_000 + amount);
+    expect(budgetMonthView(data, '2026-09').lines.find((line) =>
+      line.category === 'Emergency savings')).toMatchObject({
+      planned: 5_000,
+      actual: amount,
+      remaining: 5_000 - amount,
+    });
+
+    const writesBeforeUndo = storage.setItemCalls;
+    store.getState().actions.undoClearDue(target, entryId ?? '');
+    expect(store.getState().lastError).toBeNull();
+    expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
   it('unlinks budget items when a holding is deleted in one persisted write', async () => {
     const storage = new MemoryStorage();
     const initial = {
