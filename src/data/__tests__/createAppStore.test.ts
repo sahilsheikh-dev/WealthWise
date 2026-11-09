@@ -17,7 +17,7 @@ import {
 import { liabilitiesOverview, netWorth } from '../../domain/summary';
 import { makeLiabilityPaymentFormSchema } from '../../domain/schemas';
 import { behindBy } from '../../domain/sip';
-import { holdingValue } from '../../domain/portfolio';
+import { holdingInvested, holdingValue } from '../../domain/portfolio';
 import { pendingItems } from '../../domain/pending';
 import { policySchedule } from '../../domain/policySchedule';
 import { policySummary } from '../../domain/policySummary';
@@ -2191,6 +2191,77 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls - writesBeforeUndo).toBe(1);
     expect(store.getState().data).toEqual(before);
   });
+
+  it.each(['Savings account', 'Cash', 'Other'] as const)(
+    'reproduces a generic paid Budget transaction without a manual %s entry',
+    async (holdingType) => {
+      const storage = new MemoryStorage();
+      const snapshot = monthBudgetFromLines('2026-09', [{
+        category: 'Emergency savings',
+        planned: 5_000,
+        dueDay: 10,
+      }], {
+        incomes: [],
+        sections: [{ id: 'savings', name: 'Savings', type: 'invest' }],
+      });
+      const snapshotItem = snapshot.items[0];
+      if (!snapshotItem) throw new Error('Savings snapshot fixture is missing.');
+      snapshot.items = [{
+        ...snapshotItem,
+        sectionId: 'savings',
+        holdingId: 'manual-savings',
+      }];
+      const initial = {
+        ...emptyAppData('2026-10-12'),
+        holdings: [{
+          id: 'manual-savings',
+          kind: 'manual' as const,
+          name: 'Savings reserve',
+          type: holdingType,
+          invested: 10_000,
+          value: 10_000,
+          valueAsOf: '2026-09-01',
+          logs: [],
+        }],
+        monthBudgets: [snapshot],
+      };
+      storage.values.set('wealthwise.app.v1', JSON.stringify({
+        state: { data: initial }, version: 14,
+      }));
+      const store = makeStore(storage, {
+        newId: (() => {
+          let id = 0;
+          return () => `generic-savings-${++id}`;
+        })(),
+        today: () => '2026-10-12',
+        isDev: false,
+      });
+      await waitForHydration(store);
+      const writesBefore = storage.setItemCalls;
+
+      store.getState().actions.addTransaction({
+        type: 'invest',
+        amount: 5_000,
+        category: 'Emergency savings',
+        note: '',
+        date: '2026-09-10',
+      });
+
+      const data = store.getState().data;
+      const holding = data.holdings[0];
+      if (holding?.kind !== 'manual') throw new Error('Savings holding fixture is missing.');
+      const budgetLine = budgetMonthView(data, '2026-09').lines.find((line) =>
+        line.category === 'Emergency savings');
+      expect(data.transactions).toHaveLength(1);
+      expect(holding.logs).toHaveLength(0);
+      expect(storage.setItemCalls - writesBefore).toBe(1);
+      expect(budgetLine).toMatchObject({ planned: 5_000, actual: 5_000, remaining: 0 });
+      expect(pendingItems(data, '2026-09', '2026-10-12').some((item) =>
+        item.category === 'Emergency savings')).toBe(false);
+      expect(holdingInvested(holding)).toBe(10_000);
+      expect(holdingValue(holding, '2026-10-12')).toBe(10_000);
+    },
+  );
 
   it('unlinks budget items when a holding is deleted in one persisted write', async () => {
     const storage = new MemoryStorage();
