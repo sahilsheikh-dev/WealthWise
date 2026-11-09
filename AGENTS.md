@@ -94,10 +94,11 @@ Expo exports are allowed when required. EAS builds and local Gradle builds
 are not authorized unless explicitly requested, except that an EAS Android
 APK build is authorized for an owner-approved release after the approved
 code is merged to `develop` and the GitHub Release draft exists. Use the
-`android-apk` profile, upload and verify the artifact before requesting
-separate publication approval. Do not wait for the owner to build or upload
-the APK. Builds outside this release sequence and local Gradle builds still
-require explicit authorization.
+`android-apk` profile, download the artifact outside the repository, upload
+it to the draft and verify it before requesting separate publication approval.
+Do not wait for or ask the owner/developer to build or upload the APK, or to
+provide an APK or local APK path. Builds outside this release sequence and
+local Gradle builds still require explicit authorization.
 
 ## Project rules
 

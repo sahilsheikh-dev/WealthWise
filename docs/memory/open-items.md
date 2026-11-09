@@ -33,6 +33,11 @@
   integrated into `develop`; `release/v1.1.1` is integrated into `main`;
   `main`, `develop` and the release branch have identical trees. No open PRs
   or pending merge work remain. The stale local `main` was fast-forwarded.
+- **APK handoff rule (2026-11-09):** the existing guide already required
+  `eas build --platform android --profile android-apk`, artifact download and
+  draft upload without waiting for the owner to build or upload. Clarified in
+  the shared rules and all release guides that the agent must not ask the
+  owner/developer to provide an APK or local APK path.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when

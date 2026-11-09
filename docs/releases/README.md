@@ -57,7 +57,9 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    `eas build --platform android --profile android-apk`, wait for success,
    download the APK outside the repository, and upload it to the draft as
    `WealthWise-android-latest-vX.Y.Z.apk`. Do not wait for the owner to build
-   or upload it manually.
+   or upload it manually, and do not ask the owner/developer to supply an APK
+   or local APK path. The release agent owns the build, artifact download and
+   draft upload.
 7. Verify the uploaded artifact and release links. The latest **published**
    APK filename must be `WealthWise-android-latest-vX.Y.Z.apk`; the
    latest-route URL must use that exact filename. A draft is not yet latest.
@@ -96,8 +98,9 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - After approved release code is merged and the GitHub Release draft exists,
   build the APK from that merged source with EAS using the `android-apk`
   profile, then upload it to the draft. Do not wait for the owner to build or
-  upload the APK. Verify the uploaded artifact before requesting separate
-  publication approval.
+  upload the APK, and do not ask the owner/developer to provide an APK or
+  local APK path. The release agent must build, download and upload the
+  artifact, then verify it before requesting separate publication approval.
 - Follow Semantic Versioning and document confirmed breaking changes.
 - Preserve published notes. When updating an existing note, change only its
   Download block; older releases use versioned links.
