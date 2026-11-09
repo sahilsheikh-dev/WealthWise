@@ -13,13 +13,14 @@
   `develop` tree; the task adds only ledger/memory documentation and a ledger
   test. PR #47 merged to Phase 28 and PR #48 merged to `develop`; no
   application source or `main` changes were included.
-- P28-E-R4 is connecting `history/by-phase` to the product graph. The task
-  branch has an `ours` merge of the archive tip, preserving the captured
-  `develop` tree. It will proceed task -> Phase 28 -> `develop`; `main` and
-  `release/v1.1.0` remain untouched.
+- P28-E-R4 connected the complete `history/by-phase` ancestry through task PR
+  #49 (`7f9221a`) and Phase 28 PR #50 (`b5dbe5f`) to `develop`. The `ours`
+  merge preserves the captured application tree; every remote branch tip is
+  reachable from `develop`. `main` and `release/v1.1.0` remain unchanged.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
-  integrated into GitHub `main` and `develop`. `develop` began at main baseline
+  integrated into GitHub `main` and `develop`. P28-E-R4 is integrated into
+  `develop` only and did not change `main`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
   unreleased Release 2 history; the stable-main rule applies prospectively.
   The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
