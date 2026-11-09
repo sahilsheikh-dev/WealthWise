@@ -48,12 +48,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    `release/vX.Y.Z` from that commit and create the GitHub Release draft at
    the release-branch commit. This draft may create the version tag; never
    retarget it. Attach every version screenshot and use each absolute asset
-   URL in the draft body. Immediately use the ask-user dialogue to request
-   the absolute local path to the owner-built APK, state the required asset
-   filename, and wait for the owner to provide the path or confirm manual
-   upload. The agent never builds the APK. The owner confirms upload
-   completion.
-7. After confirmation, verify the uploaded artifact and release links. The
+   URL in the draft body. Then run
+   `eas build --platform android --profile android-apk`, wait for success,
+   download the APK outside the repository, and upload it to the draft as
+   `WealthWise-android-latest-vX.Y.Z.apk`. Do not wait for the owner to build
+   or upload it manually.
+7. Verify the uploaded artifact and release links. The
    current APK filename must be `WealthWise-android-latest-vX.Y.Z.apk`; the
    latest-route URL must use that exact filename. When publishing a newer
    version, remove `latest` from the previous filename and rename that asset
@@ -73,7 +73,7 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    with `curl -I -L`; each must return HTTP 200 and the expected artifact size.
    Record the observed status and size in the internal verification record.
 11. Record the build ID, profile, Android `versionCode`, date and status in
-   the Builds table using verified owner-supplied build details. Do not list
+   the Builds table using verified EAS build details. Do not list
    source commits or APK digests there.
 12. After successful verification and separate publication approval, merge
     the release branch `--no-ff` into `main` and verify the tag target. Publish
@@ -87,9 +87,11 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - Do not commit a release candidate before the owner approves its Markdown
   draft. After approval, merge the approved code through the required PR path
   before creating a GitHub Release draft.
-- The owner performs the app build from the merged source and uploads the APK
-  to the GitHub Release draft. Wait for the owner's confirmation before
-  artifact verification or publication.
+- After approved release code is merged and the GitHub Release draft exists,
+  build the APK from that merged source with EAS using the `android-apk`
+  profile, then upload it to the draft. Do not wait for the owner to build or
+  upload the APK. Verify the uploaded artifact before requesting separate
+  publication approval.
 - Follow Semantic Versioning and document confirmed breaking changes.
 - Preserve published notes. When updating an existing note, change only its
   Download block; older releases use versioned links.

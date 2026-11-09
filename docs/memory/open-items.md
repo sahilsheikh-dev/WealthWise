@@ -15,14 +15,18 @@
   notification/SMS detection are Held for later. Notes includes text, voice/
   audio recordings, photos and videos. Skeleton loading is planned in Phase
   38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
-- **Release screenshots and owner handoff:** the owner supplied 23
+- **Release screenshots and APK handoff:** the owner supplied 23
   version-specific screenshots (7 for v1.0.0, 8 for v1.1.0 and 8 for
   v1.1.1). They are in versioned repository paths and attached to their
   corresponding GitHub releases. README shows only the latest set; historical
   sets remain in their matching notes. The release process requires note
   approval, moving the finalized note to `published/`, PR integration, then
-  creation of a GitHub Release draft. The owner builds/uploads the APK and
-  confirms before artifact verification and separate publication approval.
+  creation of a GitHub Release draft. The agent then builds the APK with EAS
+  `android-apk`, uploads it, and verifies the artifact; publication still
+  requires separate approval. For v1.1.1, the owner already started this
+  profile's build before the rule changed. It was still in progress at
+  19:46 on 2026-11-09; wait for its APK path and upload/verify that artifact
+  without starting a duplicate build.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
