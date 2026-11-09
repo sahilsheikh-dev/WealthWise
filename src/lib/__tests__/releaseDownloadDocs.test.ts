@@ -227,6 +227,7 @@ describe('published release download documentation', () => {
     expect(releaseConfig).toContain('reuse the previous published release\'s complete set');
     expect(releaseConfig).toContain('eas build --platform android --profile android-apk');
     expect(releaseConfig).toContain('Do not wait for the owner to build or upload it manually');
+    expect(releaseConfig).toContain('do not ask the owner/developer to supply an APK');
     expect(releaseConfig).toContain('latest **published** release');
     expect(releaseConfig).toContain('WealthWise-vX.Y.Z-screenshot-<screen>.png');
     expect(releaseConfig).toContain('do not retain a `docs/releases/screenshots/` directory');
@@ -236,16 +237,20 @@ describe('published release download documentation', () => {
     expect(releasePrompt).toContain('the owner explicitly approves the Markdown release draft');
     expect(releasePrompt).toContain('eas build --platform android --profile android-apk');
     expect(releasePrompt).toContain('Do not wait for the owner to build or upload it manually');
+    expect(releasePrompt).toContain('do not ask the owner/developer to supply an APK');
     expect(releasePrompt).toContain('move the note to `docs/releases/published/vX.Y.Z.md`');
     expect(releaseOverview).toContain('eas build --platform android --profile android-apk');
     expect(releaseOverview).toContain('Do not wait for the owner to build');
+    expect(releaseOverview).toContain('do not ask the owner/developer to provide an APK');
     expect(releaseOverview).toContain('latest **published** release');
     expect(releaseConfig).toContain('Include every supplied screenshot');
     expect(buildConfig).toContain('builds the Android APK from the release branch');
     expect(buildConfig).toContain('eas build --platform android --profile android-apk');
     expect(buildConfig).toContain('Do not wait for the owner to build or upload the APK');
+    expect(buildConfig).toContain('Do not ask the owner/developer to');
     expect(agents).toContain('EAS builds and local Gradle builds are not authorized unless explicitly requested');
     expect(agents).toContain('EAS Android APK build is authorized for an owner-approved release');
+    expect(agents).toContain('provide an APK or local APK path');
     expect(readme).toContain('### Screenshots');
     expect(readme).not.toMatch(/^#### v\d+\.\d+\.\d+/m);
     expect(readmeScreenshotTables).toHaveLength(1);

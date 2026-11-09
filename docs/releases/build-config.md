@@ -68,7 +68,9 @@ After the owner approves the Markdown release draft, the approved code is
 merged to `develop`, and the GitHub Release draft exists, the release agent
 builds the Android APK from the release branch and uploads it to that draft.
 Do not wait for the owner to build or upload the APK. The EAS build must use
-the configured `android-apk` profile:
+the configured `android-apk` profile. Do not ask the owner/developer to
+provide an APK or local APK path; the release agent downloads the EAS artifact
+outside the repository and uploads it to the GitHub Release draft:
 
 ```bash
 eas build --platform android --profile android-apk

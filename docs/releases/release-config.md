@@ -116,7 +116,9 @@ Exclude:
    branch. Wait for the successful build, download the APK outside the
    repository, and upload it to the draft as
    `WealthWise-android-latest-vX.Y.Z.apk`. Do not wait for the owner to build
-   or upload it manually.
+   or upload it manually, and do not ask the owner/developer to supply an APK
+   or local APK path. The release agent owns the build, artifact download and
+   draft upload.
 5. Privately verify the uploaded APK against its EAS artifact and verify the
    digest, links, release notes and build-history record. After separate
    explicit publication approval, merge the release branch `--no-ff` into

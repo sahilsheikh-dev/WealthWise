@@ -470,7 +470,9 @@ After the owner explicitly approves the Markdown release draft:
    Then run `eas build --platform android --profile android-apk` from the
    release branch, wait for success, download the APK outside the repository,
    and upload it to the draft as `WealthWise-android-latest-vX.Y.Z.apk`.
-   Do not wait for the owner to build or upload it manually.
+   Do not wait for the owner to build or upload it manually, and do not ask
+   the owner/developer to supply an APK or local APK path. The release agent
+   owns the build, artifact download and draft upload.
 9. Privately verify the uploaded APK against its EAS build artifact and
    complete the post-build artifact, Download block, link, README and
    build-history checks below while the release remains a draft.
