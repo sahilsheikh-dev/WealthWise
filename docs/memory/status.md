@@ -6,7 +6,12 @@
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
   passed. Release PR #69 merged to `main`; back-merge PR #70 integrated it
-  into `develop`. Tag `v1.1.1` points to the main merge commit.
+  into `develop`. Post-publication record updates were integrated through
+  PRs #71-#74. Tag `v1.1.1` still points to the original main release merge.
+  A fresh audit fetched all 36 remote branches: every branch tip is reachable
+  from `develop`, the v1.1.1 release branch is reachable from `main`, and no
+  open PRs remain. The `main`, `develop` and v1.1.1 release branch trees
+  match; the stale local `main` branch was fast-forwarded to `origin/main`.
 - The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` finished with app version 1.1.1,
   Android `versionCode` 2 and profile `android-apk`. Its bytes match the EAS
