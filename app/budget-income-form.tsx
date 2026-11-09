@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { ApplyScopeDialog } from '../src/components/ApplyScopeDialog';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -201,44 +202,50 @@ export default function BudgetIncomeFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            accessibilityLabel="Income name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            maxLength={40}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              accessibilityLabel="Income name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              maxLength={40}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
         control={control}
         name="amount"
         render={({ field }) => (
-          <MoneyField
-            label="Amount"
-            accessibilityLabel="Income amount"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.amount?.message}
-          />
+          <FieldTitle title="Amount">
+            <MoneyField
+              label="Amount"
+              accessibilityLabel="Income amount"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.amount?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
         control={control}
         name="day"
         render={({ field }) => (
-          <IntegerField
-            label="Day"
-            accessibilityLabel="Income day"
-            icon="calendar-outline"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.day?.message}
-          />
+          <FieldTitle title="Day">
+            <IntegerField
+              label="Day"
+              accessibilityLabel="Income day"
+              icon="calendar-outline"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.day?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
@@ -274,15 +281,17 @@ export default function BudgetIncomeFormScreen() {
           control={control}
           name="firstDueMonth"
           render={({ field }) => (
-            <TextField
-              label="First due month"
-              accessibilityLabel="Income first due month"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              placeholder="YYYY-MM"
-              error={errors.firstDueMonth?.message}
-            />
+            <FieldTitle title="First due month">
+              <TextField
+                label="First due month"
+                accessibilityLabel="Income first due month"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="YYYY-MM"
+                error={errors.firstDueMonth?.message}
+              />
+            </FieldTitle>
           )}
         />
       ) : null}

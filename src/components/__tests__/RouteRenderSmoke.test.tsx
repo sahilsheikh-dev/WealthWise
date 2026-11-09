@@ -42,7 +42,6 @@ import TransactionsScreen from '../../../app/(tabs)/transactions';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 import { AmountText } from '../AmountText';
 import { Dropdown } from '../Dropdown';
-import { ChoiceField } from '../form/ChoiceField';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
@@ -461,14 +460,6 @@ jest.mock('../../components/form/FormScreen', () => {
         ),
         bottomNavigation,
       ),
-  };
-});
-
-jest.mock('../../components/form/ChoiceField', () => {
-  const ReactModule = jest.requireActual('react') as typeof import('react');
-  return {
-    ChoiceField: ({ label, choices }: { label: string; choices: readonly string[] }) =>
-      ReactModule.createElement('text', null, `${label}: ${choices.join(', ')}`),
   };
 });
 
@@ -4925,11 +4916,12 @@ describe('route render smoke audit', () => {
         renderer = renderScreen(React.createElement(InvestmentFormScreen));
         expect(renderer.root.findAllByProps({ label: 'Save' })).toHaveLength(1);
         expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Valuation method')).toBe(true);
-        expect(renderer.root.findAllByType(ChoiceField).some((field) => field.props.label === 'Compounding')).toBe(true);
+        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Compounding')).toBe(true);
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {
-          expect(renderer.root.findAllByType(ChoiceField).some((field) => field.props.label === 'Type')).toBe(true);
+          const manualType = renderer.root.findAllByType(Dropdown).find((field) => field.props.label === 'Type');
+          expect(manualType?.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
         }
         act(() => renderer?.unmount());
         renderer = undefined;
@@ -5057,10 +5049,10 @@ describe('route render smoke audit', () => {
       routeParams.mockReturnValue({ id: fixed.id });
       const manualRenderer = renderScreen(React.createElement(InvestmentFormScreen));
       renderer = manualRenderer;
-      const manualType = manualRenderer.root.findAllByType(ChoiceField)
+      const manualType = manualRenderer.root.findAllByType(Dropdown)
         .find((field) => field.props.label === 'Type');
       if (!manualType) throw new Error('Manual holding type field did not render.');
-      expect(manualType.props.choices).toContain('Fixed deposit');
+      expect(manualType.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
       expect(manualRenderer.root.findAllByType('text')
         .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
 

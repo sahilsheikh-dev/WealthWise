@@ -87,12 +87,6 @@ jest.mock('../../components/form/FormScreen', () => {
       ReactModule.createElement('form', null, children, footer),
   };
 });
-jest.mock('../../components/form/ChoiceField', () => {
-  const ReactModule = jest.requireActual('react') as typeof React;
-  return {
-    ChoiceField: (props: Record<string, unknown>) => ReactModule.createElement('choicefield', props),
-  };
-});
 jest.mock('../../components/Dropdown', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
   return {
@@ -198,15 +192,25 @@ describe('transaction add form', () => {
     });
     if (!renderer) throw new Error('Transaction form renderer was not created.');
 
+    const typeControl = renderer.root.findAll((node) => String(node.type) === 'segmented')[0];
+    expect(typeControl?.props.options.map((option: { value: string }) => option.value))
+      .toEqual(['expense', 'income', 'invest']);
     const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
     if (!amount) throw new Error('Amount input was not rendered.');
+    expect(renderer.root.findAll((node) => String(node.type) === 'text')
+      .some((node) => node.props.children === 'Amount')).toBe(true);
+    expect(renderer.root.findAll((node) => String(node.type) === 'datefield')[0]?.props.label).toBe('Date');
     await act(async () => {
       amount.props.onChangeText('1500');
     });
     if (type === 'invest') {
-      const investment = renderer.root.findAll((node) => String(node.type) === 'choicefield')[0];
+      const investment = renderer.root.findAll((node) =>
+        String(node.type) === 'dropdown' && node.props.label === 'Invest in',
+      )[0];
       if (!investment) throw new Error('Investment selector was not rendered.');
-      const instrumentId = investment.props.choices.find((choice: string) => choice !== '__create-investment__');
+      const instrumentId = investment.props.options.find((option: { value: string }) =>
+        option.value !== '__create-investment__' && option.value !== '__no-investment__',
+      )?.value;
       if (typeof instrumentId !== 'string') throw new Error('No investment choice was rendered.');
       await act(async () => {
         investment.props.onChange(instrumentId);
@@ -371,7 +375,7 @@ describe('transaction add form', () => {
     if (!typeControl) throw new Error('Transaction type selector was not rendered.');
     await act(async () => typeControl.props.onChange('invest'));
     const investment = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+      String(node.type) === 'dropdown' && node.props.label === 'Invest in',
     )[0];
     if (!investment) throw new Error('Investment selector was not rendered.');
     await act(async () => investment.props.onChange(instrumentId));
@@ -417,11 +421,11 @@ describe('transaction add form', () => {
     if (!typeControl) throw new Error('Transaction type selector was not rendered.');
     await act(async () => typeControl.props.onChange('invest'));
     const investment = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+      String(node.type) === 'dropdown' && node.props.label === 'Invest in',
     )[0];
     if (!investment) throw new Error('Investment selector was not rendered.');
 
-    expect(investment.props.choices).not.toContain('fixed');
+    expect(investment.props.options.map((option: { value: string }) => option.value)).not.toContain('fixed');
   });
 
   it.each(['Eating out', 'Entertainment', 'Fashion', 'Culture', 'Unexpected'] as const)(
@@ -493,10 +497,10 @@ describe('transaction add form', () => {
     if (!renderer) throw new Error('Transaction form renderer was not created.');
     const formRenderer = renderer;
     const categoryField = renderer.root.findAll((node) =>
-      String(node.type) === 'choicefield' && node.props.label === 'Category',
+      String(node.type) === 'dropdown' && node.props.label === 'Category',
     )[0];
     if (!categoryField) throw new Error('Income category selector was not rendered.');
-    expect(categoryField.props.choices).toContain('Rental');
+    expect(categoryField.props.options.map((option: { value: string }) => option.value)).toContain('Rental');
     await act(async () => categoryField.props.onChange('Rental'));
     const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
     if (!amount) throw new Error('Amount input was not rendered.');
@@ -536,14 +540,14 @@ describe('transaction add form', () => {
       if (!typeControl) throw new Error('Transaction type selector was not rendered.');
       await act(async () => typeControl.props.onChange('invest'));
       const investment = renderer.root.findAll((node) =>
-        String(node.type) === 'choicefield' && node.props.label === 'Invest in',
+        String(node.type) === 'dropdown' && node.props.label === 'Invest in',
       )[0];
       if (!investment) throw new Error('Investment selector was not rendered.');
-      const otherInvestmentId = Object.entries(investment.props.choiceLabels as Record<string, string>)
-        .find(([, label]) => label.includes('EPFO'))?.[0];
+      const otherInvestmentId = investment.props.options
+        .find((option: { value: string; title: string }) => option.title.includes('EPFO'))?.value;
       if (!otherInvestmentId) throw new Error('Other investment choice was not rendered.');
       await act(async () => investment.props.onChange(otherInvestmentId));
-      expect(renderer.root.findAll((node) => String(node.type) === 'choicefield')
+      expect(renderer.root.findAll((node) => String(node.type) === 'dropdown')
         .some((node) => node.props.label === 'Category')).toBe(false);
       expect(formRenderer.root.findAll((node) => String(node.type) === 'readonly')
         .some((node) => node.props.value === 'Other investments')).toBe(true);

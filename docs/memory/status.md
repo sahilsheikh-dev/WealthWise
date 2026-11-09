@@ -30,7 +30,23 @@
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
   succeed. The owner-provided EAS build is verified; no local EAS or Gradle
   build was run.
-- Current task: P20-A-R2 repairs Paid on a linked one-time manual savings
+- Current task: P20-S-R1 applies the owner-requested form-control conversion
+  and visible-title pass. App-form ChoiceField usages are Dropdowns;
+  ChoiceField remains and filters are unchanged. Editable text, money, number
+  and percent controls without a visible title now have persistent
+  single-line titles; existing Dropdown, SwitchRow, ReadOnlyRow and already
+  titled date controls are preserved. SegmentedControl title props remain
+  absent at the owner's direction; no editable input was replaced with
+  ReadOnlyRow. Owner approved commit/merge. Working branch:
+  `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
+  integration PRs are recorded in `docs/PROGRESS.md`. Physical-device
+  rendering remains unverified.
+- P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
+  98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
+  (statements/branches/functions/lines), `src/data`
+  91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%,
+  and `src/lib` 100% in all measures. Expo Doctor is 21/21.
+- Previous task: P20-A-R2 repairs Paid on a linked one-time manual savings
   Budget row. The pre-fix component reproduction confirmed that a link present
   only in a viewed-month snapshot fell through to a generic transaction;
   category-matched actuals hid the missing holding entry. The shared
